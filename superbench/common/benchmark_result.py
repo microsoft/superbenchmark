@@ -21,12 +21,12 @@ class Result():
         if metric not in self.raw_data:
             self.raw_data[metric] = list()
         self.raw_data[metric].append(value)
-        self.run_count += 1
 
     def add_result(self, metric, value):
         if metric not in self.result:
             self.result[metric] = list()
         self.result[metric].append(value)
+        self.run_count += 1
 
     def set_timestamp(self, start, end):
         self.start_time = start
