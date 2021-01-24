@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 # content of test_sample.py
 # get it from https://docs.pytest.org/en/stable/
 
