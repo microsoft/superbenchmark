@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
+
 FROM ubuntu:18.04
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -28,11 +29,6 @@ RUN \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 10   
 
-# Install dependency for R3Net
-RUN \
-    apt-get update && \
-    apt-get install -y zip unzip 
-        
 # Create workspace
 WORKDIR /superbench
 COPY . /superbench

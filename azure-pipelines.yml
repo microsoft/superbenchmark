@@ -21,6 +21,6 @@ steps:
     displayName: Build uni-test Docker for SuperBench testing
     inputs:
       command: build
-      dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+      dockerfile: '$(Build.SourcesDirectory)/test.dockerfile'
       tags: |
         $(tag)
