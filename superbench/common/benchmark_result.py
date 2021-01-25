@@ -5,9 +5,21 @@ import json
 
 
 class Result():
-    def __init__(self, name='', errcode=0, run_count=0, start_time=0, end_time=0, raw_data=dict(), result=dict()):
+    '''Result class of all benchmarks, defines the result format.
+
+    Args:
+        name: name of benchmark.
+        return_code: return code of benchmark.
+        run_count: run count of benchmark, all runs will be organized as array.
+        start_time: starting time of benchmark.
+        end_time: ending time of benchmark.
+        raw_data: keys are metrics, values are arrays for N runs.
+        result: keys are metrics, values are arrays for N runs.
+    '''
+    def __init__(self, name='', return_code=0, run_count=0, start_time=0,
+                 end_time=0, raw_data=dict(), result=dict()):
         self.name = name
-        self.errcode = errcode
+        self.return_code = return_code
         self.run_count = run_count
         self.start_time = start_time
         self.end_time = end_time
@@ -26,7 +38,6 @@ class Result():
         if metric not in self.result:
             self.result[metric] = list()
         self.result[metric].append(value)
-        self.run_count += 1
 
     def set_timestamp(self, start, end):
         self.start_time = start

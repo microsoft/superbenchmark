@@ -1,10 +1,17 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
+from abc import abstractmethod
 from superbench.benchmarks.benchmark_base import Benchmark
 
 
 class DockerBenchmark(Benchmark):
+    '''The base class of benchmarks packaged in docker container.
+
+    Args:
+        name: benchmark name.
+        argv: benchmark parameters.
+    '''
     def __init__(self, name, argv=''):
         super().__init__(name, argv='')
         self._commands = list()
@@ -12,9 +19,8 @@ class DockerBenchmark(Benchmark):
     def add_parser_auguments(self):
         super().add_parser_auguments()
 
-    @abstractmethod
     def preprocess(self):
-        pass
+        super().preprocess()
 
     @abstractmethod
     def benchmarking(self):
