@@ -16,15 +16,14 @@ class Result():
         raw_data: keys are metrics, values are arrays for N runs.
         result: keys are metrics, values are arrays for N runs.
     '''
-    def __init__(self, name='', return_code=0, run_count=0, start_time=0,
-                 end_time=0, raw_data=dict(), result=dict()):
+    def __init__(self, name, run_count=0):
         self.name = name
-        self.return_code = return_code
         self.run_count = run_count
-        self.start_time = start_time
-        self.end_time = end_time
-        self.raw_data = raw_data
-        self.result = result
+        self.return_code = 0
+        self.start_time = None
+        self.end_time = None
+        self.raw_data = dict()
+        self.result = dict()
 
     def __eq__(self, rhs):
         return self.__dict__ == rhs.__dict__
@@ -45,3 +44,18 @@ class Result():
 
     def to_string(self):
         return json.dumps(self.__dict__)
+
+    @classmethod
+    def from_string(cls, string):
+        obj = json.loads(string)
+        ret = None
+        if 'name' in obj and 'run_count' in obj:
+            ret = cls(obj['name'], obj['run_count'])
+            fields = ret.__dict__.keys()
+            for field in fields:
+                if field not in obj:
+                    return None
+                else:
+                    ret.__dict__[field] = obj[field]
+
+        return ret

@@ -16,11 +16,12 @@ class Benchmark(ABC):
     '''
 
     def __init__(self, name, argv=''):
-
         self._name = name
-        self._argv = argv
+        self._argv = list(filter(None, argv.split(' ')))
         self._parser = argparse.ArgumentParser(
-            add_help=False, usage=argparse.SUPPRESS)
+            add_help=False,
+            usage=argparse.SUPPRESS,
+            allow_abbrev=False)
         self._args = None
         self._start_time = None
         self._end_time = None
@@ -29,16 +30,16 @@ class Benchmark(ABC):
 
     def add_parser_auguments(self):
         self._parser.add_argument(
-            '--run_count', type=int, default=1,
+            '--run_count', type=int, default=1, metavar='',
             required=False, help='The run count of benchmark.'
         )
         self._parser.add_argument(
-            '--duration', type=int, default=0,
+            '--duration', type=int, default=0, metavar='',
             required=False, help='The elapsed time of benchmark.'
         )
 
     def get_configurable_settings(self):
-        return self._parser.format_help()
+        return self._parser.format_help().strip()
 
     def parse_args(self):
         self._args, unknown = self._parser.parse_known_args(self._argv)
