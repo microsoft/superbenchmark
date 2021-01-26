@@ -1,0 +1,26 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+- dev
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+
+steps:
+  - task: Docker@2
+    displayName: Build uni-test Docker for SuperBench testing
+    inputs:
+      command: build
+      dockerfile: '$(Build.SourcesDirectory)/test.dockerfile'
+      tags: |
+        $(tag)
