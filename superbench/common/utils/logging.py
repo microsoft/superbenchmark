@@ -33,4 +33,4 @@ class Logger:
         return logger
 
 
-logger = Logger.create_logger(__name__, level=logging.INFO)
+logger = Logger.create_logger('SuperBench', level=logging.INFO)
