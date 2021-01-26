@@ -181,6 +181,3 @@ def test_launch_benchmark():
     assert(BenchmarkRegistry.check_parameters(context) is False)
 
     BenchmarkRegistry.clean_benchmarks()
-
-
-test_launch_benchmark()
