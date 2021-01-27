@@ -16,8 +16,8 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 
 WORKDIR /superbench
 COPY . /superbench
 
-# Upgrade pip and instll dependencies
-RUN python3 -m pip install --upgrade pip && \
+# Upgrade pip and install dependencies
+RUN python3 -m pip install --upgrade pip setuptools && \
     python3 -m pip install .[test]
 
 # Lint code
