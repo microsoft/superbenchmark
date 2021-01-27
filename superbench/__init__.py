@@ -1,5 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
+"""SuperBench Python module.
 
-__version__ = "0.0.0"
-__author__ = "Microsoft"
+Provide hardware and software  benchmarks for AI systems and machines.
+"""
+
+__version__ = '0.0.0'
+__author__ = 'Microsoft'
