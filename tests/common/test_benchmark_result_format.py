@@ -1,22 +1,24 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from superbench.common.benchmark_result import Result
+from superbench.benchmarks import BenchmarkResult
+
+
+def do_serialize_deserialize(result):
+    result_se = result.to_string()
+    result_de = BenchmarkResult.from_string(result_se)
+    assert(result == result_de)
 
 
 def test_benchmark_result_format():
-    result = Result('pytorch-bert-base1')
+    result = BenchmarkResult('pytorch-bert-base1')
     result.add_result('metric1', '300')
-    result_se = result.to_string()
-    result_de = Result.from_string(result_se)
-    assert(result == result_de)
+    do_serialize_deserialize(result)
 
-    result = Result('pytorch-bert-base2')
+    result = BenchmarkResult('pytorch-bert-base2')
     result.add_result('metric1', '100')
     result.add_result('metric2', '200')
-    result_se = result.to_string()
-    result_de = Result.from_string(result_se)
-    assert(result == result_de)
+    do_serialize_deserialize(result)
 
-    result_de = Result.from_string('{}')
+    result_de = BenchmarkResult.from_string('{}')
     assert(result_de is None)

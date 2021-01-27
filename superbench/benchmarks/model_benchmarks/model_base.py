@@ -2,8 +2,9 @@
 # Licensed under the MIT license.
 
 from abc import abstractmethod
+
 from superbench.common.utils import logger
-from superbench.benchmarks.benchmark_base import Benchmark
+from superbench.benchmarks.base import Benchmark
 
 
 class ModelBenchmark(Benchmark):
@@ -11,10 +12,10 @@ class ModelBenchmark(Benchmark):
 
     Args:
         name: benchmark name.
-        argv: benchmark parameters.
+        parameters: benchmark parameters.
     '''
-    def __init__(self, name, argv=''):
-        super().__init__(name, argv)
+    def __init__(self, name, parameters=''):
+        super().__init__(name, parameters)
 
         self._world_size = 1
         self._dataset = None

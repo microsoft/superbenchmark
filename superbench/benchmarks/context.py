@@ -10,7 +10,6 @@ class Platform(Enum):
     CPU = 'CPU'
     CUDA = 'CUDA'
     ROCM = 'ROCm'
-    UNKNOWN = 'Unknown'
 
 
 class Framework(Enum):

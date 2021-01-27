@@ -4,7 +4,8 @@
 import argparse
 from datetime import datetime
 from abc import ABC, abstractmethod
-from superbench.common.benchmark_result import Result
+
+from superbench.benchmarks import BenchmarkResult
 
 
 class Benchmark(ABC):
@@ -12,12 +13,12 @@ class Benchmark(ABC):
 
     Args:
         name: benchmark name.
-        argv: benchmark parameters.
+        parameters: benchmark parameters.
     '''
 
-    def __init__(self, name, argv=''):
+    def __init__(self, name, parameters=''):
         self._name = name
-        self._argv = list(filter(None, argv.split(' ')))
+        self._argv = list(filter(None, parameters.split(' ')))
         self._parser = argparse.ArgumentParser(
             add_help=False,
             usage=argparse.SUPPRESS,
@@ -48,7 +49,8 @@ class Benchmark(ABC):
     def preprocess(self):
         self.add_parser_auguments()
         self.parse_args()
-        self._result = Result(name=self._name, run_count=self._args.run_count)
+        self._result = BenchmarkResult(name=self._name,
+                                       run_count=self._args.run_count)
 
     @abstractmethod
     def benchmarking(self):
@@ -68,9 +70,9 @@ class Benchmark(ABC):
         return self._result.to_string()
 
     def check_result_format(self):
-        assert(isinstance(self._result, Result)), \
+        assert(isinstance(self._result, BenchmarkResult)), \
             'Result type invalid, expect: {}, got: {}.'.format(
-                type(Result), type(self._result))
+                type(BenchmarkResult), type(self._result))
 
     @abstractmethod
     def print_env_info(self):

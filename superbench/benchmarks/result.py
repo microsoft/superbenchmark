@@ -4,7 +4,7 @@
 import json
 
 
-class Result():
+class BenchmarkResult():
     '''Result class of all benchmarks, defines the result format.
 
     Args:

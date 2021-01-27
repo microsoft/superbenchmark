@@ -2,16 +2,15 @@
 # Licensed under the MIT License.
 
 import re
-from superbench.common.benchmark_context import Platform
-from superbench.common.benchmark_context import Framework
-from superbench.common.benchmark_context import BenchmarkContext
-from superbench.benchmarks.benchmark_base import Benchmark
-from superbench.benchmarks.benchmark_registry import BenchmarkRegistry
+
+from superbench.benchmarks.base import Benchmark
+from superbench.benchmarks import Platform, Framework, \
+    BenchmarkContext, BenchmarkRegistry
 
 
 class AccumulationBenchmark(Benchmark):
-    def __init__(self, name, argv=''):
-        super().__init__(name, argv)
+    def __init__(self, name, parameters=''):
+        super().__init__(name, parameters)
 
     def add_parser_auguments(self):
         super().add_parser_auguments()

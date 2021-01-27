@@ -2,8 +2,7 @@
 # Licensed under the MIT license.
 
 from superbench.common.utils import logger
-from superbench.common.benchmark_context import Platform
-from superbench.common.benchmark_context import Framework
+from superbench.benchmarks import Platform, Framework
 
 
 class BenchmarkRegistry:
