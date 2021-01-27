@@ -72,8 +72,7 @@ class Tester(Command):
 setup(
     name='superbench',
     version=superbench.__version__,
-    description='Provide hardware and software \
-        benchmarks for AI systems and machines.',
+    description='Provide hardware and software benchmarks for AI systems.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/microsoft/superbenchmark',
