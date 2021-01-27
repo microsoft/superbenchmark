@@ -12,16 +12,16 @@ RUN apt-get update && apt-get install -y \
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 10
 
-# Upgrade pip and instll flake8 and pytest 
-RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install flake8 pytest
-
 # Create workspace
 WORKDIR /superbench
 COPY . /superbench
 
-# Check code format using flake8 
-RUN python3 -m flake8
-    
-# Install library and run pytest
-RUN python3 -m pytest -v
+# Upgrade pip and instll dependencies
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install .[test]
+
+# Lint code
+RUN python3 setup.py lint
+
+# Test code
+RUN python3 setup.py test

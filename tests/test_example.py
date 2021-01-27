@@ -4,6 +4,7 @@
 # content of test_sample.py
 # get it from https://docs.pytest.org/en/stable/
 
+
 def inc(x):
     return x + 1
 
