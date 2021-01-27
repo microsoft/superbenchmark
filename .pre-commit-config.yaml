@@ -1,0 +1,33 @@
+# Run `pre-commit install` to install
+# See https://pre-commit.com for more information
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-docstring-first
+      - id: check-json
+      - id: check-yaml
+      - id: detect-private-key
+      - id: double-quote-string-fixer
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/mirrors-yapf
+    rev: v0.30.0
+    hooks:
+      - id: yapf
+        name: Format code using yapf
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.800
+    hooks:
+      - id: mypy
+        name: Check type hint using mypy
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
+    hooks:
+      - id: flake8
+        name: Lint code using flake8
+        additional_dependencies:
+          - flake8-quotes
+          - flake8-docstrings
