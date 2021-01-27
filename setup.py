@@ -98,14 +98,7 @@ setup(
     keywords="benchmark, AI systems",
     packages=find_packages(exclude=["tests"]),
     python_requires=">=3.6, <4",
-    install_requires=[
-        "ansible_base==2.10.4",
-        "ansible_runner==1.4.6",
-        "hydra==2.5",
-        "hydra_colorlog==1.0.0",
-        "hydra_core==1.0.4",
-        "knack==0.7.2",
-    ],
+    install_requires=[],
     extras_require={
         "dev": [],
         "test": [
