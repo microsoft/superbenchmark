@@ -1,0 +1,13 @@
+# SuperBench
+outputs
+*.tar.gz
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Git
+.git
+.github

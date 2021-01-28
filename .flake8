@@ -1,0 +1,6 @@
+[flake8]
+inline-quotes = single
+multiline-quotes = double
+docstring-quotes = double
+docstring-convention = google
+max-complexity = 10
