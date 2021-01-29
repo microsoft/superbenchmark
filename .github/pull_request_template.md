@@ -1,9 +1,12 @@
 **Description**
 Please write a brief description and link the related issue if have.
 
-**Major Revision**
+**Major Revisions**
 - Revision A
 - Revision B
+- ...
 
-**Minor Revision**
-
+**Minor Revisions**
+- Major Revision A
+- Major Revision B
+- ...

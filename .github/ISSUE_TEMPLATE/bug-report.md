@@ -1,10 +1,10 @@
 ---
-name: create an issue
-about: Preport an issue or question while using SuperBenchmark.
+name: Create an issue
+about: Report an issue or question while using SuperBenchmark.
 
 ---
 
-**What issue meet, what's expected?**:
+**What's the issue, what's expected?**:
 
 
 **How to reproduce it?**:
