@@ -2,11 +2,11 @@
 Please write a brief description and link the related issue if have.
 
 **Major Revisions**
-- Revision A
-- Revision B
+- Major Revision A
+- Major Revision B
 - ...
 
 **Minor Revisions**
-- Major Revision A
-- Major Revision B
+- Minor Revision A
+- Minor Revision B
 - ...
