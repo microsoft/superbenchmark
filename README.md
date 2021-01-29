@@ -1,14 +1,80 @@
-# Project
+# SuperBenchmark
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+[![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/microsoft.superbenchmark?branchName=dev)](https://dev.azure.com/msrasrg/SuperBenchmark/_build?definitionId=77)
+[![Lint](https://github.com/microsoft/superbenchmark/workflows/Lint/badge.svg)](https://github.com/microsoft/superbenchmark/actions?query=workflow%3ALint)
 
-As the maintainer of this project, please make a few updates:
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+SuperBench is a benchmarking and diagnosis tool for AI infrastructure,
+which supports:
+* comprehensive AI infrastructure validation
+* detailed performance analysis and diagnosis
+* cross-platform comparison based on AI workload patterns
+
+It includes micro-benchmark for primitive computation and communication benchmarking,
+and model-benchmark to measure domain-aware end-to-end deep learning workloads.
+
+
+## Installation
+
+### Docker Image
+
+TODO
+
+### From Source
+
+If you are installing from source, you will need Python 3.6 or later.
+
+```sh
+# get source code
+git clone https://github.com/microsoft/superbenchmark
+cd superbenchmark
+
+# install superbench
+python3 setup.py install
+```
+
+
+## Usage
+
+TODO
+
+
+## Developer Guide
+
+### Set Up
+
+```sh
+# get dev branch code
+git clone -b dev https://github.com/microsoft/superbenchmark
+cd superbenchmark
+
+# install superbench
+python3 -m pip install -e .[dev,test]
+```
+
+### Lint and Test
+
+```sh
+# format code using yapf
+python3 setup.py format
+
+# check code style with mypy and flake8
+python3 setup.py lint
+
+# run all unit tests
+python3 setup.py test
+```
+
+### Submit a Pull Request
+
+Please install `pre-commit` before `git commit` to run all pre-checks.
+
+```sh
+pre-commit install
+```
+
+Pull requests should be submitted to `dev` branch.
+
 
 ## Contributing
 
