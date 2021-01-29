@@ -2,7 +2,8 @@
 Please write a brief description and link the related issue if have.
 
 **Major Revision**
+- Revision A
+- Revision B
 
-
-**Major Revision**
+**Minor Revision**
 
