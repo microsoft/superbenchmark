@@ -26,11 +26,7 @@ class BenchmarkContext():
 
     Containing all information to launch one benchmark.
     """
-    def __init__(self,
-                 name,
-                 platform,
-                 parameters='',
-                 framework=Framework.NONE):
+    def __init__(self, name, platform, parameters='', framework=Framework.NONE):
         """Constructor.
 
         Args:

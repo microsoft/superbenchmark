@@ -21,9 +21,7 @@ class Benchmark(ABC):
         """
         self._name = name
         self._argv = list(filter(None, parameters.split(' ')))
-        self._parser = argparse.ArgumentParser(add_help=False,
-                                               usage=argparse.SUPPRESS,
-                                               allow_abbrev=False)
+        self._parser = argparse.ArgumentParser(add_help=False, usage=argparse.SUPPRESS, allow_abbrev=False)
         self._args = None
         self._start_time = None
         self._end_time = None
@@ -32,18 +30,22 @@ class Benchmark(ABC):
 
     def add_parser_auguments(self):
         """Add the specified auguments."""
-        self._parser.add_argument('--run_count',
-                                  type=int,
-                                  default=1,
-                                  metavar='',
-                                  required=False,
-                                  help='The run count of benchmark.')
-        self._parser.add_argument('--duration',
-                                  type=int,
-                                  default=0,
-                                  metavar='',
-                                  required=False,
-                                  help='The elapsed time of benchmark.')
+        self._parser.add_argument(
+            '--run_count',
+            type=int,
+            default=1,
+            metavar='',
+            required=False,
+            help='The run count of benchmark.',
+        )
+        self._parser.add_argument(
+            '--duration',
+            type=int,
+            default=0,
+            metavar='',
+            required=False,
+            help='The elapsed time of benchmark.',
+        )
 
     def get_configurable_settings(self):
         """Get all the configurable settings.
@@ -66,8 +68,7 @@ class Benchmark(ABC):
         """Preprocess/preparation operations before the benchmarking."""
         self.add_parser_auguments()
         self.parse_args()
-        self._result = BenchmarkResult(name=self._name,
-                                       run_count=self._args.run_count)
+        self._result = BenchmarkResult(name=self._name, run_count=self._args.run_count)
 
     @abstractmethod
     def benchmarking(self):

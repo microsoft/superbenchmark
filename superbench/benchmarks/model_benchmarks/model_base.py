@@ -33,41 +33,51 @@ class ModelBenchmark(Benchmark):
         """Add the specified auguments."""
         super().add_parser_auguments()
 
-        self._parser.add_argument('--num_warmup_steps',
-                                  type=int,
-                                  default=64,
-                                  metavar='',
-                                  required=False,
-                                  help='The number of warmup step')
-        self._parser.add_argument('--num_steps',
-                                  type=int,
-                                  default=2048,
-                                  metavar='',
-                                  required=False,
-                                  help='The number of test step')
-        self._parser.add_argument('--batch_size',
-                                  type=int,
-                                  default=32,
-                                  metavar='',
-                                  required=False,
-                                  help='The number of batch size')
+        self._parser.add_argument(
+            '--num_warmup_steps',
+            type=int,
+            default=64,
+            metavar='',
+            required=False,
+            help='The number of warmup step',
+        )
+        self._parser.add_argument(
+            '--num_steps',
+            type=int,
+            default=2048,
+            metavar='',
+            required=False,
+            help='The number of test step',
+        )
+        self._parser.add_argument(
+            '--batch_size',
+            type=int,
+            default=32,
+            metavar='',
+            required=False,
+            help='The number of batch size',
+        )
         self._parser.add_argument(
             '--precision',
             type=str,
             default='float,half',
             required=False,
-            help='Model precision, such as (float, half).')
-        self._parser.add_argument('--model_action',
-                                  type=str,
-                                  default='train',
-                                  required=False,
-                                  help='Benchmark type, train or inference.')
+            help='Model precision, such as (float, half).',
+        )
+        self._parser.add_argument(
+            '--model_action',
+            type=str,
+            default='train',
+            required=False,
+            help='Benchmark type, train or inference.',
+        )
         self._parser.add_argument(
             '--distributed_mode',
             type=str,
             default='default',
             required=False,
-            help='Distributed mode. E.g. horovod, native.')
+            help='Distributed mode. E.g. horovod, native.',
+        )
 
     def parse_args(self):
         """Parse the arguments.
@@ -76,9 +86,7 @@ class ModelBenchmark(Benchmark):
             The parsed arguments and unknown arguments.
         """
         self._args, unknown = super().parse_args()
-        self._args.precision = [
-            item.strip() for item in self._args.precision.split(',')
-        ]
+        self._args.precision = [item.strip() for item in self._args.precision.split(',')]
         return self._args, unknown
 
     @abstractmethod
@@ -123,9 +131,10 @@ class ModelBenchmark(Benchmark):
         self.create_model(precision)
         self.create_optimizer()
         step_times = self.training_step(precision)
-        logger.info('{} model {} average train time: {} ms'.format(
-            self._name, precision,
-            sum(step_times) / len(step_times)))
+        logger.info(
+            '{} model {} average train time: {} ms'.format(self._name, precision,
+                                                           sum(step_times) / len(step_times))
+        )
 
         self.process_result('train', precision, step_times)
 
@@ -133,9 +142,12 @@ class ModelBenchmark(Benchmark):
         """Launch the inference benchmark."""
         self.create_model(precision)
         step_times = self.inference_step(precision)
-        logger.info('{} model {} average inference time: {} ms'.format(
-            self._name, precision,
-            sum(step_times) / len(step_times)))
+        logger.info(
+            '{} model {} average inference time: {} ms'.format(
+                self._name, precision,
+                sum(step_times) / len(step_times)
+            )
+        )
 
         self.process_result('inference', precision, step_times)
 
@@ -170,8 +182,7 @@ class ModelBenchmark(Benchmark):
         for precision in self._args.precision:
             # Check if the precision is supported or not.
             if precision not in self._supported_precision:
-                logger.warning("{} model can\'t run with precision {}".format(
-                    self._name, precision))
+                logger.warning("{} model can\'t run with precision {}".format(self._name, precision))
                 continue
 
             if self._args.model_action == 'train':
@@ -179,8 +190,7 @@ class ModelBenchmark(Benchmark):
             elif self._args.model_action == 'inference':
                 self.inference(precision)
             else:
-                logger.warning('{} model has unknown model action {}'.format(
-                    self._name, self._args.model_action))
+                logger.warning('{} model has unknown model action {}'.format(self._name, self._args.model_action))
 
     def process_result(self, model_action, precision, step_times):
         """Function to process raw results and save the summarized results.
@@ -197,10 +207,7 @@ class ModelBenchmark(Benchmark):
         self._result.add_result(metric, avg)
 
         metric = 'throughput_{}_{}'.format(model_action, precision)
-        throughput = [
-            1000 / step_time * self._args.batch_size
-            for step_time in step_times
-        ]
+        throughput = [1000 / step_time * self._args.batch_size for step_time in step_times]
         self._result.add_raw_data(metric, throughput)
         avg = sum(throughput) / len(throughput)
         self._result.add_result(metric, avg)

@@ -23,17 +23,18 @@ class Logger:
         Return:
             logger with the specified name, level and stream.
         """
-        formatter = logging.Formatter('%(asctime)s - %(hostname)s - '
-                                      '%(filename)s:%(lineno)d - '
-                                      '%(levelname)s: %(message)s')
+        formatter = logging.Formatter(
+            '%(asctime)s - %(hostname)s - '
+            '%(filename)s:%(lineno)d - '
+            '%(levelname)s: %(message)s'
+        )
 
         handler = logging.StreamHandler(stream=stream)
         handler.setFormatter(formatter)
         logger = logging.getLogger(name)
         logger.setLevel(level)
         logger.addHandler(handler)
-        logger = logging.LoggerAdapter(
-            logger, extra={'hostname': socket.gethostname()})
+        logger = logging.LoggerAdapter(logger, extra={'hostname': socket.gethostname()})
 
         return logger
 

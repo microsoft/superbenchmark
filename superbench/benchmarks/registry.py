@@ -22,11 +22,7 @@ class BenchmarkRegistry:
     benchmarks: Dict[str, dict] = dict()
 
     @classmethod
-    def register_benchmark(cls,
-                           name,
-                           class_def,
-                           parameters=None,
-                           platform=None):
+    def register_benchmark(cls, name, class_def, parameters=None, platform=None):
         """Register new benchmark, key is the benchmark name.
 
         Args:
@@ -100,8 +96,7 @@ class BenchmarkRegistry:
 
         ret = False
         if benchmark_name:
-            (benchmark_class,
-             params) = cls._select_benchmark(benchmark_name, platform)
+            (benchmark_class, params) = cls._select_benchmark(benchmark_name, platform)
             benchmark = benchmark_class(benchmark_name, customized_parameters)
             benchmark.add_parser_auguments()
             args, unknown = benchmark.parse_args()
@@ -192,9 +187,7 @@ class BenchmarkRegistry:
               register the benchmark.
         """
         if not cls._is_benchmark_registered(name, platform):
-            logger.warning(
-                'Benchmark has no realization, name: {}, platform: {}'.format(
-                    name, platform))
+            logger.warning('Benchmark has no realization, name: {}, platform: {}'.format(name, platform))
             return (None, None)
 
         (benchmark_class, predefine_params) = cls.benchmarks[name][platform]
