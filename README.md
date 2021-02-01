@@ -7,7 +7,7 @@
 SuperBench is a benchmarking and diagnosis tool for AI infrastructure,
 which supports:
 * Comprehensive AI infrastructure validation
-    * Distribute validation tools to validate hundreds or thousands of severs automatically
+    * Distributed validation tools to validate hundreds or thousands of servers automatically
     * Consider both raw hardware and E2E model performance with ML workload patterns
     * Provide a fast and accurate way to detect and locate hardware problems
     * Performance/Quality Gates for hardware and system release
@@ -82,7 +82,8 @@ TODO
 
 ## Developer Guide
 
-Follow [Installation using Python](#using-python) and use `dev` branch code.
+Follow [Installation using Python](#using-python) and
+use [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
 
 ### Set Up
 
@@ -116,7 +117,7 @@ Please install `pre-commit` before `git commit` to run all pre-checks.
 pre-commit install
 ```
 
-Pull requests should be submitted to `dev` branch.
+Pull requests should be submitted to [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
 
 
 ## Contributing
