@@ -23,6 +23,10 @@ and model-benchmark to measure domain-aware end-to-end deep learning workloads.
 
 ## Installation
 
+### PyPI Binary
+
+TODO
+
 ### Docker Image
 
 TODO
@@ -37,7 +41,7 @@ git clone https://github.com/microsoft/superbenchmark
 cd superbenchmark
 
 # install superbench
-python3 setup.py install
+python3 -m pip install .
 ```
 
 

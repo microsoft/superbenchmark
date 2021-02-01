@@ -154,4 +154,8 @@ setup(
         'lint': Linter,
         'test': Tester,
     },
+    project_urls={
+        'Source': 'https://github.com/microsoft/superbenchmark',
+        'Tracker': 'https://github.com/microsoft/superbenchmark/issues',
+    },
 )
