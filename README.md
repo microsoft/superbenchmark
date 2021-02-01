@@ -1,14 +1,124 @@
-# Project
+# SuperBenchmark
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+[![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/microsoft.superbenchmark?branchName=dev)](https://dev.azure.com/msrasrg/SuperBenchmark/_build?definitionId=77)
+[![Lint](https://github.com/microsoft/superbenchmark/workflows/Lint/badge.svg)](https://github.com/microsoft/superbenchmark/actions?query=workflow%3ALint)
 
-As the maintainer of this project, please make a few updates:
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+SuperBench is a benchmarking and diagnosis tool for AI infrastructure,
+which supports:
+* Comprehensive AI infrastructure validation
+    * Distributed validation tools to validate hundreds or thousands of servers automatically
+    * Consider both raw hardware and E2E model performance with ML workload patterns
+    * Provide a fast and accurate way to detect and locate hardware problems
+    * Performance/Quality Gates for hardware and system release
+* Benchmarking with typical AI workload patterns
+    * Provide comprehensive performance comparison between different existing hardware
+    * Give a better understanding for new DL software & hardware
+* Detailed performance analysis and diagnosis
+    * Provide detailed performance report and advanced analysis tool   
+
+It includes micro-benchmark for primitive computation and communication benchmarking,
+and model-benchmark to measure domain-aware end-to-end deep learning workloads.
+
+
+## Installation
+
+### Using Python
+
+System requirements:
+* Python: Python 3.6 or later, pip 18.0 or later
+* Platform: Ubuntu 16.04 or later (64-bit), Windows 10 (64-bit) with WSL2
+
+Check whether Python environment is already configured:
+```sh
+# check Python version
+python3 --version
+# check pip version
+python3 -m pip --version
+```
+If not, install the followings:
+* [Python](https://www.python.org/)
+* [pip](https://pip.pypa.io/en/stable/installing/)
+* [venv](https://docs.python.org/3/library/venv.html)
+
+It's recommended to use a virtual environment (optional):
+```sh
+# create a new virtual environment
+python3 -m venv --system-site-packages ./venv
+# activate the virtual environment
+source ./venv/bin/activate
+
+# exit the virtual environment later
+# after you finish running superbench
+deactivate
+```
+
+Then install superbench through either PyPI binary or from source:
+
+1. PyPI Binary
+
+    TODO
+
+2. From Source
+
+    ```sh
+    # get source code
+    git clone https://github.com/microsoft/superbenchmark
+    cd superbenchmark
+
+    # install superbench
+    python3 -m pip install .
+    ```
+
+### Using Docker
+
+TODO
+
+
+## Usage
+
+TODO
+
+
+## Developer Guide
+
+Follow [Installation using Python](#using-python) and
+use [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
+
+### Set Up
+
+```sh
+# get dev branch code
+git clone -b dev https://github.com/microsoft/superbenchmark
+cd superbenchmark
+
+# install superbench
+python3 -m pip install -e .[dev,test]
+```
+
+### Lint and Test
+
+```sh
+# format code using yapf
+python3 setup.py format
+
+# check code style with mypy and flake8
+python3 setup.py lint
+
+# run all unit tests
+python3 setup.py test
+```
+
+### Submit a Pull Request
+
+Please install `pre-commit` before `git commit` to run all pre-checks.
+
+```sh
+pre-commit install
+```
+
+Pull requests should be submitted to [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
+
 
 ## Contributing
 
