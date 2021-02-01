@@ -6,9 +6,16 @@
 
 SuperBench is a benchmarking and diagnosis tool for AI infrastructure,
 which supports:
-* comprehensive AI infrastructure validation
-* detailed performance analysis and diagnosis
-* cross-platform comparison based on AI workload patterns
+* Comprehensive AI infrastructure validation
+    * Distribute validation tools to validate hundreds or thousands of severs automatically
+    * Consider both raw hardware and E2E model performance with ML workload patterns
+    * Provide a fast and accurate way to detect and locate hardware problems
+    * Performance/Quality Gates for hardware and system release
+* Benchmarking with typical AI workload patterns
+    * Provide comprehensive performance comparison between different existing hardware
+    * Give a better understanding for new DL software & hardware
+* Detailed performance analysis and diagnosis
+    * Provide detailed performance report and advanced analysis tool   
 
 It includes micro-benchmark for primitive computation and communication benchmarking,
 and model-benchmark to measure domain-aware end-to-end deep learning workloads.
