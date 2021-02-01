@@ -42,7 +42,7 @@ class Formatter(Command):
     def run(self):
         """Fromat the code using yapf."""
         errno = os.system('python3 -m yapf --in-place --recursive --exclude .git .')
-        sys.exit(errno)
+        sys.exit(0 if errno == 0 else 1)
 
 
 class Linter(Command):
@@ -75,7 +75,7 @@ class Linter(Command):
                 ]
             )
         )
-        sys.exit(errno)
+        sys.exit(0 if errno == 0 else 1)
 
 
 class Tester(Command):
@@ -100,7 +100,7 @@ class Tester(Command):
     def run(self):
         """Run pytest."""
         errno = os.system('python3 -m pytest -v')
-        sys.exit(errno)
+        sys.exit(0 if errno == 0 else 1)
 
 
 setup(
