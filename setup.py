@@ -41,9 +41,8 @@ class Formatter(Command):
 
     def run(self):
         """Fromat the code using yapf."""
-        errno = os.system(
-            'python3 -m yapf --in-place --recursive --exclude .git .')
-        sys.exit(errno)
+        errno = os.system('python3 -m yapf --in-place --recursive --exclude .git .')
+        sys.exit(0 if errno == 0 else 1)
 
 
 class Linter(Command):
@@ -67,12 +66,16 @@ class Linter(Command):
 
     def run(self):
         """Lint the code with yapf, mypy, and flake8."""
-        errno = os.system(' && '.join([
-            'python3 -m yapf --diff --recursive --exclude .git .',
-            'python3 -m mypy .',
-            'python3 -m flake8',
-        ]))
-        sys.exit(errno)
+        errno = os.system(
+            ' && '.join(
+                [
+                    'python3 -m yapf --diff --recursive --exclude .git .',
+                    'python3 -m mypy .',
+                    'python3 -m flake8',
+                ]
+            )
+        )
+        sys.exit(0 if errno == 0 else 1)
 
 
 class Tester(Command):
@@ -97,7 +100,7 @@ class Tester(Command):
     def run(self):
         """Run pytest."""
         errno = os.system('python3 -m pytest -v')
-        sys.exit(errno)
+        sys.exit(0 if errno == 0 else 1)
 
 
 setup(
