@@ -23,26 +23,56 @@ and model-benchmark to measure domain-aware end-to-end deep learning workloads.
 
 ## Installation
 
-### PyPI Binary
+### Using Python
 
-TODO
+System requirements:
+* Python: Python 3.6 or later, pip 18.0 or later
+* Platform: Ubuntu 16.04 or later (64-bit), Windows 10 (64-bit) with WSL2
 
-### Docker Image
-
-TODO
-
-### From Source
-
-If you are installing from source, you will need Python 3.6 or later.
-
+Check whether Python environment is already configured:
 ```sh
-# get source code
-git clone https://github.com/microsoft/superbenchmark
-cd superbenchmark
-
-# install superbench
-python3 -m pip install .
+# check Python version
+python3 --version
+# check pip version
+python3 -m pip --version
 ```
+If not, install the followings:
+* [Python](https://www.python.org/)
+* [pip](https://pip.pypa.io/en/stable/installing/)
+* [venv](https://docs.python.org/3/library/venv.html)
+
+It's recommended to use a virtual environment (optional):
+```sh
+# create a new virtual environment
+python3 -m venv --system-site-packages ./venv
+# activate the virtual environment
+source ./venv/bin/activate
+
+# exit the virtual environment later
+# after you finish running superbench
+deactivate
+```
+
+Then install superbench through either PyPI binary or from source:
+
+1. PyPI Binary
+
+    TODO
+
+2. From Source
+
+    ```sh
+    # get source code
+    git clone https://github.com/microsoft/superbenchmark
+    cd superbenchmark
+
+    # install superbench
+    python3 -m pip install .
+    ```
+
+### Using Docker
+
+TODO
 
 
 ## Usage
@@ -51,6 +81,8 @@ TODO
 
 
 ## Developer Guide
+
+Follow [Installation using Python](#using-python) and use `dev` branch code.
 
 ### Set Up
 
