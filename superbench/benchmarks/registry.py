@@ -6,7 +6,8 @@
 from typing import Dict
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Platform, Framework
+from superbench.benchmarks import Platform, Framework, BenchmarkContext
+from superbench.benchmarks.base import Benchmark
 
 
 class BenchmarkRegistry:
@@ -31,22 +32,24 @@ class BenchmarkRegistry:
             parameters (str): predefined parameters of benchmark.
             platform (Platform): Platform types like CUDA, ROCM.
         """
+        if not name or not isinstance(name, str):
+            assert (False), 'Registered name of benchmark is not string: {}'.format(type(name))
+
+        if issubclass(class_def, Benchmark) is False:
+            assert (False), 'Registered class is not subclass of Benchmark: {}'.format(type(class_def))
+
         if name not in cls.benchmarks:
             cls.benchmarks[name] = dict()
 
         if platform:
             if platform not in Platform:
                 platform_list = list(map(str, Platform))
-                assert(False), \
-                    'Supportted platforms: {}, but got: {}'.format(
-                        platform_list, platform)
+                assert (False), 'Supportted platforms: {}, but got: {}'.format(platform_list, platform)
 
             if platform not in cls.benchmarks[name]:
                 cls.benchmarks[name][platform] = (class_def, parameters)
             else:
-                assert(False), \
-                    'Duplicate registration, name: {}, platform: {}'.format(
-                        name, platform)
+                assert (False), 'Duplicate registration, name: {}, platform: {}'.format(name, platform)
         else:
             # If not specified the tag, means the
             # benchmark works for all platforms.
@@ -54,29 +57,42 @@ class BenchmarkRegistry:
                 if p not in cls.benchmarks[name]:
                     cls.benchmarks[name][p] = (class_def, parameters)
                 else:
-                    assert(False), \
-                        'Duplicate registration, name: {}'.format(name)
+                    assert (False), 'Duplicate registration, name: {}'.format(name)
 
     @classmethod
-    def get_benchmark_name(cls, benchmark_context):
+    def is_benchmark_context_valid(cls, benchmark_context):
+        """Check wether the benchmark context is valid or not.
+
+        Args:
+            benchmark_context (BenchmarkContext): the benchmark context.
+
+        Return:
+            ret (Boolean): return True if context is valid.
+        """
+        if isinstance(benchmark_context, BenchmarkContext) and benchmark_context.name:
+            return True
+        else:
+            logger.error('Benchmark has invalid context')
+            return False
+
+    @classmethod
+    def __get_benchmark_name(cls, benchmark_context):
         """Return the internal benchmark name.
 
         Args:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            benchmark_name (str): internal benchmark name,
-              None means no benchmark found.
+            benchmark_name (str): internal benchmark name, None means context is invalid.
         """
+        if not cls.is_benchmark_context_valid(benchmark_context):
+            return None
+
         benchmark_name = benchmark_context.name
-        platform = benchmark_context.platform
         framework = benchmark_context.framework
 
         if framework != Framework.NONE:
             benchmark_name = framework.value + '-' + benchmark_name
-
-        if not cls._is_benchmark_registered(benchmark_name, platform):
-            benchmark_name = None
 
         return benchmark_name
 
@@ -88,40 +104,47 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            ret (Boolean): return True if parameters are valid.
+            ret (Boolean): return True if benchmark exists and context/parameters are valid.
         """
-        benchmark_name = cls.get_benchmark_name(benchmark_context)
+        if not cls.is_benchmark_context_valid(benchmark_context):
+            return False
+
+        benchmark_name = cls.__get_benchmark_name(benchmark_context)
         platform = benchmark_context.platform
         customized_parameters = benchmark_context.parameters
 
         ret = False
         if benchmark_name:
-            (benchmark_class, params) = cls._select_benchmark(benchmark_name, platform)
-            benchmark = benchmark_class(benchmark_name, customized_parameters)
-            benchmark.add_parser_auguments()
-            args, unknown = benchmark.parse_args()
-            if len(unknown) < 1:
-                ret = True
+            (benchmark_class, params) = cls.__select_benchmark(benchmark_name, platform)
+            if benchmark_class:
+                benchmark = benchmark_class(benchmark_name, customized_parameters)
+                benchmark.add_parser_auguments()
+                args, unknown = benchmark.parse_args()
+                if len(unknown) < 1:
+                    ret = True
 
         return ret
 
     @classmethod
-    def get_benchmark_configurable_settings(cls, name, platform):
+    def get_benchmark_configurable_settings(cls, benchmark_context):
         """Get all configurable settings of benchmark.
 
         Args:
-            name (str): internal benchmark name got from
-                        get_benchmark_name().
-            platform (Platform): Platform type of benchmark.
+            benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
             All configurable settings in raw string, None means
-            no benchmark found.
+            context is invalid or no benchmark found.
         """
-        (benchmark_class, predefine_params) = \
-            cls._select_benchmark(name, platform)
+        if not cls.is_benchmark_context_valid(benchmark_context):
+            return None
+
+        benchmark_name = cls.__get_benchmark_name(benchmark_context)
+        platform = benchmark_context.platform
+
+        (benchmark_class, predefine_params) = cls.__select_benchmark(benchmark_name, platform)
         if benchmark_class:
-            benchmark = benchmark_class(name)
+            benchmark = benchmark_class(benchmark_name)
             benchmark.add_parser_auguments()
             return benchmark.get_configurable_settings()
         else:
@@ -136,45 +159,53 @@ class BenchmarkRegistry:
 
         Return:
             Serialized result string with json format, None means
-            no benchmark found.
+            context is invalid or no benchmark found.
         """
-        benchmark_name = cls.get_benchmark_name(benchmark_context)
+        if not cls.is_benchmark_context_valid(benchmark_context):
+            return None
+
+        benchmark_name = cls.__get_benchmark_name(benchmark_context)
 
         result = None
         if benchmark_name:
             platform = benchmark_context.platform
             parameters = benchmark_context.parameters
-            (benchmark_class, predefine_params) = \
-                cls._select_benchmark(benchmark_name, platform)
-            if predefine_params:
-                parameters = predefine_params + ' ' + parameters
+            (benchmark_class, predefine_params) = cls.__select_benchmark(benchmark_name, platform)
+            if benchmark_class:
+                if predefine_params:
+                    parameters = predefine_params + ' ' + parameters
 
-            benchmark = benchmark_class(benchmark_name, parameters)
-            result = benchmark.run()
+                benchmark = benchmark_class(benchmark_name, parameters)
+                result = benchmark.run()
 
         return result
 
     @classmethod
-    def _is_benchmark_registered(cls, name, platform):
+    def is_benchmark_registered(cls, benchmark_context):
         """Check wether the benchmark is registered or not.
 
         Args:
-            name (str): internal name of benchmark.
-            platform (Platform): Platform type of benchmark.
+            benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            ret (Boolean): return True if parameters are valid.
+            ret (Boolean): return True if context is valid and benchmark is registered.
         """
-        if name not in cls.benchmarks:
+        if not cls.is_benchmark_context_valid(benchmark_context):
+            return None
+
+        benchmark_name = cls.__get_benchmark_name(benchmark_context)
+        platform = benchmark_context.platform
+
+        if benchmark_name not in cls.benchmarks:
             return False
 
-        if platform not in cls.benchmarks[name]:
+        if platform not in cls.benchmarks[benchmark_name]:
             return False
 
         return True
 
     @classmethod
-    def _select_benchmark(cls, name, platform):
+    def __select_benchmark(cls, name, platform):
         """Select benchmark by name and platform.
 
         Args:
@@ -186,8 +217,8 @@ class BenchmarkRegistry:
             predefine_params (str): predefined parameters which is set when
               register the benchmark.
         """
-        if not cls._is_benchmark_registered(name, platform):
-            logger.warning('Benchmark has no realization, name: {}, platform: {}'.format(name, platform))
+        if name not in cls.benchmarks or platform not in cls.benchmarks[name]:
+            logger.warning('Benchmark has no implementation, name: {}, platform: {}'.format(name, platform))
             return (None, None)
 
         (benchmark_class, predefine_params) = cls.benchmarks[name][platform]

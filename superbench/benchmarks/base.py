@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime
 from abc import ABC, abstractmethod
 
+from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkResult
 
 
@@ -62,16 +63,22 @@ class Benchmark(ABC):
             The parsed arguments and unknown arguments.
         """
         self._args, unknown = self._parser.parse_known_args(self._argv)
+        if len(unknown) > 0:
+            logger.warning(
+                'Benchmark has unknown arguments, name: {}, unknown arguments: {}'.format(
+                    self._name, ' '.join(unknown)
+                )
+            )
+
         return self._args, unknown
 
-    def preprocess(self):
+    def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
         self.add_parser_auguments()
         self.parse_args()
-        self._result = BenchmarkResult(name=self._name, run_count=self._args.run_count)
 
     @abstractmethod
-    def benchmarking(self):
+    def _benchmarking(self):
         """Implementation for benchmarking."""
         pass
 
@@ -81,11 +88,11 @@ class Benchmark(ABC):
         Return:
             The serialized string of BenchmarkResult object.
         """
-        self.preprocess()
+        self._preprocess()
 
         self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         for self._curr_index in range(self._args.run_count):
-            self.benchmarking()
+            self._benchmarking()
         self._end_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
         self._result.set_timestamp(self._start_time, self._end_time)

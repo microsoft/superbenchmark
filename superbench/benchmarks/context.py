@@ -21,6 +21,13 @@ class Framework(Enum):
     NONE = 'none'
 
 
+class BenchmarkType(Enum):
+    """The Enum class representing different types of benchmarks."""
+    MODEL = 'model'
+    MICRO = 'micro'
+    DOCKER = 'docker'
+
+
 class BenchmarkContext():
     """Context class of all benchmarks.
 
@@ -35,7 +42,27 @@ class BenchmarkContext():
             parameters (str): predefined parameters of benchmark.
             framework (Framework): Framework types like ONNX, PYTORCH.
         """
-        self.name = name
-        self.platform = platform
-        self.parameters = parameters
-        self.framework = framework
+        self.__name = name
+        self.__platform = platform
+        self.__parameters = parameters
+        self.__framework = framework
+
+    @property
+    def name(self):
+        """Decoration function to access __name."""
+        return self.__name
+
+    @property
+    def platform(self):
+        """Decoration function to access __platform."""
+        return self.__platform
+
+    @property
+    def parameters(self):
+        """Decoration function to access __parameters."""
+        return self.__parameters
+
+    @property
+    def framework(self):
+        """Decoration function to access __framework."""
+        return self.__framework

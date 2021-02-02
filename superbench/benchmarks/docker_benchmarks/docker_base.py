@@ -5,6 +5,7 @@
 
 from abc import abstractmethod
 
+from superbench.benchmarks import BenchmarkType, BenchmarkResult
 from superbench.benchmarks.base import Benchmark
 
 
@@ -17,29 +18,25 @@ class DockerBenchmark(Benchmark):
             name: benchmark name.
             parameters: benchmark parameters.
         """
-        super().__init__(name, parameters='')
-        self._commands = list()
+        super().__init__(name, parameters)
+        self.__commands = list()
 
     def add_parser_auguments(self):
         """Add the specified auguments."""
         super().add_parser_auguments()
 
-    def preprocess(self):
+    def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
-        super().preprocess()
+        super()._preprocess()
+        self._result = BenchmarkResult(self._name, BenchmarkType.DOCKER.value, run_count=self._args.run_count)
 
     @abstractmethod
-    def benchmarking(self):
+    def _benchmarking(self):
         """Implementation for benchmarking."""
         pass
 
-    @abstractmethod
-    def process_result(self, output):
-        """Function to process raw results and save the summarized results.
-
-        Args:
-            output (str): raw output of the benchmarking.
-        """
+    def _process_result(self, output):
+        """Function to process raw results and save the summarized results."""
         pass
 
     def print_env_info(self):

@@ -5,12 +5,11 @@
 
 import re
 
-from superbench.benchmarks.base import Benchmark
-from superbench.benchmarks import Platform, Framework, \
-    BenchmarkContext, BenchmarkRegistry
+from superbench.benchmarks import Platform, Framework, BenchmarkContext, BenchmarkRegistry
+from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 
 
-class AccumulationBenchmark(Benchmark):
+class AccumulationBenchmark(MicroBenchmark):
     """Benchmark that do accumulation from lower_bound to upper_bound."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -43,7 +42,7 @@ class AccumulationBenchmark(Benchmark):
             help='The upper bound for accumulation.',
         )
 
-    def benchmarking(self):
+    def _benchmarking(self):
         """Implementation for benchmarking."""
         raw_data = []
         result = 0
@@ -58,16 +57,38 @@ class AccumulationBenchmark(Benchmark):
 
 def test_benchmark_registration():
     """Test interface BenchmarkRegistry.register_benchmark()."""
+    # Register the benchmark for all platform if use default platform.
     BenchmarkRegistry.register_benchmark('accumulation', AccumulationBenchmark)
-    assert (BenchmarkRegistry._is_benchmark_registered('accumulation', Platform.CPU))
-    assert (BenchmarkRegistry._is_benchmark_registered('accumulation', Platform.CUDA))
-    assert (BenchmarkRegistry._is_benchmark_registered('accumulation', Platform.ROCM))
-
-    BenchmarkRegistry.register_benchmark('accumulation-cuda', AccumulationBenchmark, platform=Platform.CUDA)
-    assert (BenchmarkRegistry._is_benchmark_registered('accumulation-cuda', Platform.CUDA))
-    assert (BenchmarkRegistry._is_benchmark_registered('accumulation-cuda', Platform.ROCM) is False)
+    context = BenchmarkContext('accumulation', Platform.CPU)
+    assert (BenchmarkRegistry.is_benchmark_registered(context))
+    context = BenchmarkContext('accumulation', Platform.CUDA)
+    assert (BenchmarkRegistry.is_benchmark_registered(context))
+    context = BenchmarkContext('accumulation', Platform.ROCM)
+    assert (BenchmarkRegistry.is_benchmark_registered(context))
 
     BenchmarkRegistry.clean_benchmarks()
+
+    # Register the benchmark for CUDA platform if use platform=Platform.CUDA.
+    BenchmarkRegistry.register_benchmark('accumulation-cuda', AccumulationBenchmark, platform=Platform.CUDA)
+    context = BenchmarkContext('accumulation-cuda', Platform.CUDA)
+    assert (BenchmarkRegistry.is_benchmark_registered(context))
+    context = BenchmarkContext('accumulation-cuda', Platform.ROCM)
+    assert (BenchmarkRegistry.is_benchmark_registered(context) is False)
+
+    BenchmarkRegistry.clean_benchmarks()
+
+
+def test_benchmark_context_valid():
+    """Test interface BenchmarkRegistry.is_benchmark_context_valid()."""
+    # Positive case.
+    context = BenchmarkContext('accumulation', Platform.CPU)
+    assert (BenchmarkRegistry.is_benchmark_context_valid(context))
+
+    # Negative  case.
+    context = 'context'
+    assert (BenchmarkRegistry.is_benchmark_context_valid(context) is False)
+    context = None
+    assert (BenchmarkRegistry.is_benchmark_context_valid(context) is False)
 
 
 def test_get_benchmark_name():
@@ -80,22 +101,22 @@ def test_get_benchmark_name():
 
     # Default framework: Framework.NONE
     context = BenchmarkContext('accumulation', Platform.CPU)
-    name = BenchmarkRegistry.get_benchmark_name(context)
+    name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (name == 'accumulation')
 
     # Framework: Framework.PYTORCH
     context = BenchmarkContext('accumulation', Platform.CPU, framework=Framework.PYTORCH)
-    name = BenchmarkRegistry.get_benchmark_name(context)
+    name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (name == 'pytorch-accumulation')
 
     # Framework: Framework.TENSORFLOW
     context = BenchmarkContext('accumulation', Platform.CPU, framework=Framework.TENSORFLOW)
-    name = BenchmarkRegistry.get_benchmark_name(context)
+    name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (name == 'tf-accumulation')
 
     # Framework: Framework.ONNX
     context = BenchmarkContext('accumulation', Platform.CPU, framework=Framework.ONNX)
-    name = BenchmarkRegistry.get_benchmark_name(context)
+    name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (name == 'onnx-accumulation')
 
     BenchmarkRegistry.clean_benchmarks()
@@ -125,7 +146,8 @@ def test_get_benchmark_configurable_settings():
     # Register benchmarks for testing.
     BenchmarkRegistry.register_benchmark('accumulation', AccumulationBenchmark)
 
-    settings = BenchmarkRegistry.get_benchmark_configurable_settings('accumulation', Platform.CPU)
+    context = BenchmarkContext('accumulation', Platform.CPU)
+    settings = BenchmarkRegistry.get_benchmark_configurable_settings(context)
 
     expected = """optional arguments:
   --run_count     The run count of benchmark.
@@ -158,7 +180,7 @@ def test_launch_benchmark():
         # replace the timestamp as "0"
         result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', '\"0\"', result)
         expected = (
-            '{"name": "tf-accumulation", "run_count": 1, '
+            '{"name": "tf-accumulation", "type": "micro", "run_count": 1, '
             '"return_code": 0, "start_time": "0", "end_time": "0", '
             '"raw_data": {"accumulation_result": [[1, 3, 6, 10]]}, '
             '"result": {"accumulation_result": [10]}}'
@@ -172,7 +194,7 @@ def test_launch_benchmark():
         # replace the timestamp as "0"
         result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', '\"0\"', result)
         expected = (
-            '{"name": "accumulation", "run_count": 1, '
+            '{"name": "accumulation", "type": "micro", "run_count": 1, '
             '"return_code": 0, "start_time": "0", "end_time": "0", '
             '"raw_data": {"accumulation_result": [[1, 3, 6]]}, '
             '"result": {"accumulation_result": [6]}}'

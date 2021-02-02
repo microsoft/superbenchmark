@@ -6,6 +6,7 @@
 from abc import abstractmethod
 
 from superbench.common.utils import logger
+from superbench.benchmarks import BenchmarkType, BenchmarkResult
 from superbench.benchmarks.base import Benchmark
 
 
@@ -90,58 +91,59 @@ class ModelBenchmark(Benchmark):
         return self._args, unknown
 
     @abstractmethod
-    def init_distributed_setting(self):
+    def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU."""
         pass
 
     @abstractmethod
-    def generate_dataset(self):
+    def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info."""
         pass
 
     @abstractmethod
-    def init_dataloader(self):
+    def _init_dataloader(self):
         """Initialize the distributed dataloader."""
         pass
 
-    def preprocess(self):
+    def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
-        super().preprocess()
-        self.init_distributed_setting()
-        self.generate_dataset()
-        self.init_dataloader()
+        super()._preprocess()
+        self._result = BenchmarkResult(self._name, BenchmarkType.MODEL.value, run_count=self._args.run_count)
+        self._init_distributed_setting()
+        self._generate_dataset()
+        self._init_dataloader()
 
     @abstractmethod
-    def create_optimizer(self):
+    def _create_optimizer(self):
         """Create the optimzier instance used for training."""
         pass
 
     @abstractmethod
-    def create_model(self):
+    def _create_model(self):
         """Construct the model for benchmarking."""
         pass
 
-    def train(self, precision):
+    def __train(self, precision):
         """Launch the training benchmark.
 
         Args:
             precision (str): precision of model and input data,
               such as float, half.
         """
-        self.create_model(precision)
-        self.create_optimizer()
-        step_times = self.training_step(precision)
+        self._create_model(precision)
+        self._create_optimizer()
+        step_times = self._training_step(precision)
         logger.info(
             '{} model {} average train time: {} ms'.format(self._name, precision,
                                                            sum(step_times) / len(step_times))
         )
 
-        self.process_result('train', precision, step_times)
+        self.__process_result('train', precision, step_times)
 
-    def inference(self, precision):
+    def __inference(self, precision):
         """Launch the inference benchmark."""
-        self.create_model(precision)
-        step_times = self.inference_step(precision)
+        self._create_model(precision)
+        step_times = self._inference_step(precision)
         logger.info(
             '{} model {} average inference time: {} ms'.format(
                 self._name, precision,
@@ -149,10 +151,10 @@ class ModelBenchmark(Benchmark):
             )
         )
 
-        self.process_result('inference', precision, step_times)
+        self.__process_result('inference', precision, step_times)
 
     @abstractmethod
-    def training_step(self, precision):
+    def _training_step(self, precision):
         """Define the training process.
 
         Args:
@@ -165,7 +167,7 @@ class ModelBenchmark(Benchmark):
         pass
 
     @abstractmethod
-    def inference_step(self, precision):
+    def _inference_step(self, precision):
         """Define the inference process.
 
         Args:
@@ -177,22 +179,22 @@ class ModelBenchmark(Benchmark):
         """
         pass
 
-    def benchmarking(self):
+    def _benchmarking(self):
         """Implementation for benchmarking."""
         for precision in self._args.precision:
             # Check if the precision is supported or not.
             if precision not in self._supported_precision:
-                logger.warning("{} model can\'t run with precision {}".format(self._name, precision))
+                logger.warning("{} model can't run with precision {}".format(self._name, precision))
                 continue
 
             if self._args.model_action == 'train':
-                self.train(precision)
+                self.__train(precision)
             elif self._args.model_action == 'inference':
-                self.inference(precision)
+                self.__inference(precision)
             else:
                 logger.warning('{} model has unknown model action {}'.format(self._name, self._args.model_action))
 
-    def process_result(self, model_action, precision, step_times):
+    def __process_result(self, model_action, precision, step_times):
         """Function to process raw results and save the summarized results.
 
         Args:
@@ -213,7 +215,7 @@ class ModelBenchmark(Benchmark):
         self._result.add_result(metric, avg)
 
     @abstractmethod
-    def cal_params_size(self):
+    def _cal_params_size(self):
         """Calculate the parameters scale of the model.
 
         Return:

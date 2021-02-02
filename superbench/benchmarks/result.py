@@ -5,22 +5,25 @@
 
 import json
 
+from superbench.common.utils import logger
+
 
 class BenchmarkResult():
     """Result class of all benchmarks.
 
     Defines the unified result format.
     """
-    def __init__(self, name, run_count=0):
+    def __init__(self, name, benchmark_type, run_count=0):
         """Constructor.
 
         Args:
             name (str): name of benchmark.
-            return_code (int): return code of benchmark.
+            benchmark_type (str): type of the benchmark, such as model, micro or docker.
             run_count (int): run count of benchmark,
               all runs will be organized as array.
         """
         self.name = name
+        self.type = benchmark_type
         self.run_count = run_count
         self.return_code = 0
         self.start_time = None
@@ -48,10 +51,21 @@ class BenchmarkResult():
             value (str or list): raw benchmark data.
               For e2e model benchmarks, its type is list.
               For micro-benchmarks or docker-benchmarks, its type is string.
+
+        Return:
+            True if succeed to add the raw data.
         """
+        if not metric or not isinstance(metric, str):
+            logger.error(
+                'metric name of benchmark is not string, name: {}, metric type: {}'.format(self.name, type(metric))
+            )
+            return False
+
         if metric not in self.raw_data:
             self.raw_data[metric] = list()
         self.raw_data[metric].append(value)
+
+        return True
 
     def add_result(self, metric, value):
         """Add summarized data into result.
@@ -61,10 +75,21 @@ class BenchmarkResult():
             value (float): summarized data.
               For e2e model benchmarks, the value is step-time or throughput.
               For micro-benchmarks, the value is FLOPS, bandwidth and etc.
+
+        Return:
+            True if succeed to add the result.
         """
+        if not metric or not isinstance(metric, str):
+            logger.error(
+                'metric name of benchmark is not string, name: {}, metric type: {}'.format(self.name, type(metric))
+            )
+            return False
+
         if metric not in self.result:
             self.result[metric] = list()
         self.result[metric].append(value)
+
+        return True
 
     def set_timestamp(self, start, end):
         """Set the start and end timestamp of benchmarking.

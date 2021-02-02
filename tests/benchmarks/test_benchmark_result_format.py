@@ -3,7 +3,7 @@
 
 """Tests for BenchmarkResult module."""
 
-from superbench.benchmarks import BenchmarkResult
+from superbench.benchmarks import BenchmarkType, BenchmarkResult
 
 
 def do_serialize_deserialize(result):
@@ -20,12 +20,12 @@ def do_serialize_deserialize(result):
 def test_benchmark_result_format():
     """Test the format of BenchmarkResult."""
     # Result with one metric.
-    result = BenchmarkResult('pytorch-bert-base1')
+    result = BenchmarkResult('pytorch-bert-base1', BenchmarkType.MICRO.value)
     result.add_result('metric1', '300')
     do_serialize_deserialize(result)
 
     # Result with two metrics.
-    result = BenchmarkResult('pytorch-bert-base2')
+    result = BenchmarkResult('pytorch-bert-base2', BenchmarkType.MICRO.value)
     result.add_result('metric1', '100')
     result.add_result('metric2', '200')
     do_serialize_deserialize(result)
