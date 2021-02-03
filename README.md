@@ -138,9 +138,9 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 ### Contributing principles
 
-SuperBenchmark is an open-source project. Your participation and contribution are highly appreciated. There are several important things you should know before contributing to this project:
+SuperBenchmark is an open-source project. Your participation and contribution are highly appreciated. There are several important things you need know before contributing to this project:
 
-#### What's content can be added to SuperBenchmark
+#### What content can be added to SuperBenchmark
 
 1. Bug fixes for existing features.
 2. New features for benchmark module (micro-benchmark, model-benchmark, etc.)
