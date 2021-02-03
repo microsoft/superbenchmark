@@ -122,6 +122,8 @@ Pull requests should be submitted to [`dev` branch](https://github.com/microsoft
 
 ## Contributing
 
+### Contributor License Agreement
+
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
@@ -133,6 +135,27 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+### Contributing principles
+
+SuperBenchmark is an open-source project. Your participation and contribution are highly appreciated. There are several important things you need know before contributing to this project:
+
+#### What content can be added to SuperBenchmark
+
+1. Bug fixes for existing features.
+2. New features for benchmark module (micro-benchmark, model-benchmark, etc.)
+   
+   If you would like to contribute a new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull request to origin dev branch.
+
+#### Contribution steps
+
+If you would like to contribute to the project, please follow below steps of joint development on GitHub.
+
+1. `Fork` the repo first to your personal GitHub account.
+2. Check out from `dev` branch for feature development.
+3. When you finish the feature, please fetch the latest code from origin repo, merge to your branch and resolve conflict.
+4. Submit pull request to origin `dev` branch.
+5. Please note that there might be comments or questions from reviewers. It will need your help to update the pull request.
 
 ## Trademarks
 
