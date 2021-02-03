@@ -138,23 +138,24 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 ### Contributing principles
 
-SuperBenchmark is an open-source project. Your participation and contribution are highly appreciated. There are several important things you should know before you contribute to this project:
+SuperBenchmark is an open-source project. Your participation and contribution are highly appreciated. There are several important things you should know before contributing to this project:
 
 #### What's content can be added to SuperBenchmark
 
 1. Bug fixes for existing features.
 2. New features for benchmark module (micro-benchmark, model-benchmark, etc.)
    
-   If you would like to contribute the new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull request of the implemenatation.
+   If you would like to contribute a new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull request to origin dev branch.
 
-#### Contribution rules
+#### Contribution steps
 
-If you would like to contribute to the project, please follow the basic rules of joint development on GitHub.
+If you would like to contribute to the project, please follow below steps of joint development on GitHub.
 
 1. `Fork` the repo first to your personal GitHub account.
 2. Check out from `dev` branch for feature development.
 3. When you finish the feature, please fetch the latest code from origin repo, merge to your branch and resolve conflict.
 4. Submit pull request to origin `dev` branch.
+5. Please note that there might be comments or questions from reviewers. It will need your help to update the pull request.
 
 ## Trademarks
 
