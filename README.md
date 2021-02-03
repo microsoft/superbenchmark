@@ -142,7 +142,7 @@ SuperBenchmark is an open-source project. Your participation and contribution ar
 
 #### What's content can be added to SuperBenchmark
 
-1. Bug fixes of the current features.
+1. Bug fixes for existing features.
 2. New features for benchmark module (micro-benchmark, model-benchmark, etc.)
    
    If you would like to contribute the new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull request of the implemenatation.
