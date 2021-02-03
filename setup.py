@@ -99,7 +99,7 @@ class Tester(Command):
 
     def run(self):
         """Run pytest."""
-        errno = os.system('python3 -m pytest -v')
+        errno = os.system('python3 -m pytest -v --cov=superbench --cov-report=xml tests/')
         sys.exit(0 if errno == 0 else 1)
 
 
@@ -143,6 +143,7 @@ setup(
             'flake8-docstrings>=1.5.0',
             'pydocstyle>=5.1.1',
             'pytest>=6.2.2',
+            'pytest-cov>=2.11.1',
         ],
     },
     package_data={},

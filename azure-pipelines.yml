@@ -15,12 +15,18 @@ resources:
 
 variables:
   tag: '$(Build.BuildId)'
+  imageName: test
 
 steps:
   - task: Docker@2
     displayName: Build uni-test Docker for SuperBench testing
     inputs:
       command: build
+      repository: $(imageName)
       dockerfile: '$(Build.SourcesDirectory)/test.dockerfile'
-      tags: |
-        $(tag)
+      tags: $(tag)
+  - script: |
+      ci_env=`bash <(curl -s https://codecov.io/env)`
+      docker run $ci_env $(imageName)
+    env:
+      CODECOV_TOKEN: $(codecovToken)

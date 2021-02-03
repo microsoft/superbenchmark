@@ -25,3 +25,5 @@ RUN python3 setup.py lint
 
 # Test code
 RUN python3 setup.py test
+
+ENTRYPOINT ["bash", "-c", "bash <(curl -s https://codecov.io/bash)"]
