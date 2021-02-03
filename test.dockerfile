@@ -5,6 +5,7 @@ FROM ubuntu:18.04
 
 # Install the python3.7 and pip
 RUN apt-get update && apt-get install -y \
+    curl \
     python3.7-dev \
     python3-pip
 
@@ -25,5 +26,3 @@ RUN python3 setup.py lint
 
 # Test code
 RUN python3 setup.py test
-
-ENTRYPOINT ["bash", "-c", "bash <(curl -s https://codecov.io/bash)"]

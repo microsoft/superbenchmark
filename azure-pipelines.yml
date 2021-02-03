@@ -14,19 +14,21 @@ resources:
 - repo: self
 
 variables:
-  tag: '$(Build.BuildId)'
   imageName: test
+  tag: '$(Build.BuildId)'
 
 steps:
   - task: Docker@2
     displayName: Build uni-test Docker for SuperBench testing
     inputs:
       command: build
-      repository: $(imageName)
       dockerfile: '$(Build.SourcesDirectory)/test.dockerfile'
-      tags: $(tag)
+      repository: $(imageName)
+      tags: |
+        $(tag)
   - script: |
       ci_env=`bash <(curl -s https://codecov.io/env)`
-      docker run $ci_env $(imageName)
+      docker run $ci_env --entrypoint /bin/bash $(imageName):$(tag) -c 'bash <(curl -s https://codecov.io/bash)'
+    displayName: Report coverage results
     env:
       CODECOV_TOKEN: $(codecovToken)
