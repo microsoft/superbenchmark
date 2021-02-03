@@ -99,7 +99,7 @@ class Tester(Command):
 
     def run(self):
         """Run pytest."""
-        errno = os.system('python3 -m pytest -v --cov=superbench --cov-report=xml tests/')
+        errno = os.system('python3 -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/')
         sys.exit(0 if errno == 0 else 1)
 
 
