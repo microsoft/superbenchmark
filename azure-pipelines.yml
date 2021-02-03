@@ -7,11 +7,11 @@
 # https://aka.ms/yaml
 
 trigger:
-- master
-- dev
+  - master
+  - dev
 
 resources:
-- repo: self
+  - repo: self
 
 variables:
   imageName: test
