@@ -5,7 +5,7 @@
 
 from abc import abstractmethod
 
-from superbench.benchmarks import BenchmarkType, BenchmarkResult
+from superbench.benchmarks import BenchmarkType
 from superbench.benchmarks.base import Benchmark
 
 
@@ -15,30 +15,40 @@ class MicroBenchmark(Benchmark):
         """Constructor.
 
         Args:
-            name: benchmark name.
-            parameters: benchmark parameters.
+            name (str): benchmark name.
+            parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
+
+        # Command lines to launch the micro-benchmarks.
         self.__commands = list()
 
-    def add_parser_auguments(self):
-        """Add the specified auguments."""
-        super().add_parser_auguments()
+    '''
+    # If need to add new arguments, super().add_parser_arguments() must be called.
+    def add_parser_arguments(self):
+        """Add the specified arguments."""
+        super().add_parser_arguments()
+    '''
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
         super()._preprocess()
-        self._result = BenchmarkResult(self._name, BenchmarkType.MICRO.value, run_count=self._args.run_count)
+        self._result.set_benchmark_type(BenchmarkType.MICRO.value)
 
     @abstractmethod
-    def _benchmarking(self):
+    def _benchmark(self):
         """Implementation for benchmarking."""
         pass
 
-    def _process_result(self, output):
-        """Function to process raw results and save the summarized results."""
+    def _process_micro_result(self, output):
+        """Function to process raw results and save the summarized results.
+
+        Args:
+            output (str): raw output string of the micro-benchmark.
+        """
         pass
 
     def print_env_info(self):
         """Print environments or dependencies information."""
+        # TODO: will implement it when add real benchmarks in the future.
         pass

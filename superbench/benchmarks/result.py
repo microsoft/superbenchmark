@@ -13,17 +13,15 @@ class BenchmarkResult():
 
     Defines the unified result format.
     """
-    def __init__(self, name, benchmark_type, run_count=0):
+    def __init__(self, name, run_count=0):
         """Constructor.
 
         Args:
             name (str): name of benchmark.
-            benchmark_type (str): type of the benchmark, such as model, micro or docker.
-            run_count (int): run count of benchmark,
-              all runs will be organized as array.
+            run_count (int): run count of benchmark, all runs will be organized as array.
         """
         self.name = name
-        self.type = benchmark_type
+        self.type = None
         self.run_count = run_count
         self.return_code = 0
         self.start_time = None
@@ -38,8 +36,7 @@ class BenchmarkResult():
             rhs (BenchmarkResult): instance to compare.
 
         Return:
-            True if two instances have all the same values
-              for all the same attributes.
+            True if two instances have all the same values for all the same attributes.
         """
         return self.__dict__ == rhs.__dict__
 
@@ -100,6 +97,14 @@ class BenchmarkResult():
         """
         self.start_time = start
         self.end_time = end
+
+    def set_benchmark_type(self, benchmark_type):
+        """Set the type of benchmark.
+
+        Args:
+            benchmark_type (str): type of benchmark, such as 'model', 'micro' or 'docker'.
+        """
+        self.type = benchmark_type
 
     def to_string(self):
         """Serialize the BenchmarkResult object to string.

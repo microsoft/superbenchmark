@@ -32,11 +32,14 @@ class BenchmarkRegistry:
             parameters (str): predefined parameters of benchmark.
             platform (Platform): Platform types like CUDA, ROCM.
         """
-        if not name or not isinstance(name, str):
-            assert (False), 'Registered name of benchmark is not string: {}'.format(type(name))
+        logger.log_assert(
+            name and isinstance(name, str), 'Registered name of benchmark is not string: {}'.format(type(name))
+        )
 
-        if issubclass(class_def, Benchmark) is False:
-            assert (False), 'Registered class is not subclass of Benchmark: {}'.format(type(class_def))
+        logger.log_assert(
+            issubclass(class_def, Benchmark),
+            'Registered class is not subclass of Benchmark: {}'.format(type(class_def))
+        )
 
         if name not in cls.benchmarks:
             cls.benchmarks[name] = dict()
@@ -44,12 +47,12 @@ class BenchmarkRegistry:
         if platform:
             if platform not in Platform:
                 platform_list = list(map(str, Platform))
-                assert (False), 'Supportted platforms: {}, but got: {}'.format(platform_list, platform)
+                logger.log_assert(False, 'Supportted platforms: {}, but got: {}'.format(platform_list, platform))
 
             if platform not in cls.benchmarks[name]:
                 cls.benchmarks[name][platform] = (class_def, parameters)
             else:
-                assert (False), 'Duplicate registration, name: {}, platform: {}'.format(name, platform)
+                logger.log_assert(False, 'Duplicate registration, name: {}, platform: {}'.format(name, platform))
         else:
             # If not specified the tag, means the
             # benchmark works for all platforms.
@@ -57,7 +60,7 @@ class BenchmarkRegistry:
                 if p not in cls.benchmarks[name]:
                     cls.benchmarks[name][p] = (class_def, parameters)
                 else:
-                    assert (False), 'Duplicate registration, name: {}'.format(name)
+                    logger.log_assert(False, 'Duplicate registration, name: {}'.format(name))
 
     @classmethod
     def is_benchmark_context_valid(cls, benchmark_context):
@@ -67,7 +70,7 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            ret (Boolean): return True if context is valid.
+            ret (bool): return True if context is valid.
         """
         if isinstance(benchmark_context, BenchmarkContext) and benchmark_context.name:
             return True
@@ -104,7 +107,7 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            ret (Boolean): return True if benchmark exists and context/parameters are valid.
+            ret (bool): return True if benchmark exists and context/parameters are valid.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
             return False
@@ -118,7 +121,7 @@ class BenchmarkRegistry:
             (benchmark_class, params) = cls.__select_benchmark(benchmark_name, platform)
             if benchmark_class:
                 benchmark = benchmark_class(benchmark_name, customized_parameters)
-                benchmark.add_parser_auguments()
+                benchmark.add_parser_arguments()
                 args, unknown = benchmark.parse_args()
                 if len(unknown) < 1:
                     ret = True
@@ -133,8 +136,7 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            All configurable settings in raw string, None means
-            context is invalid or no benchmark found.
+            All configurable settings in raw string, None means context is invalid or no benchmark found.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
             return None
@@ -145,7 +147,7 @@ class BenchmarkRegistry:
         (benchmark_class, predefine_params) = cls.__select_benchmark(benchmark_name, platform)
         if benchmark_class:
             benchmark = benchmark_class(benchmark_name)
-            benchmark.add_parser_auguments()
+            benchmark.add_parser_arguments()
             return benchmark.get_configurable_settings()
         else:
             return None
@@ -158,8 +160,7 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            Serialized result string with json format, None means
-            context is invalid or no benchmark found.
+            Serialized result string with json format, None means context is invalid or no benchmark found.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
             return None
@@ -188,10 +189,10 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            ret (Boolean): return True if context is valid and benchmark is registered.
+            ret (bool): return True if context is valid and benchmark is registered.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
-            return None
+            return False
 
         benchmark_name = cls.__get_benchmark_name(benchmark_context)
         platform = benchmark_context.platform
@@ -214,8 +215,7 @@ class BenchmarkRegistry:
 
         Return:
             benchmark_class (Benchmark): class object of benchmark.
-            predefine_params (str): predefined parameters which is set when
-              register the benchmark.
+            predefine_params (str): predefined parameters which is set when register the benchmark.
         """
         if name not in cls.benchmarks or platform not in cls.benchmarks[name]:
             logger.warning('Benchmark has no implementation, name: {}, platform: {}'.format(name, platform))

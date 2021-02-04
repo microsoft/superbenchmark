@@ -28,6 +28,25 @@ class BenchmarkType(Enum):
     DOCKER = 'docker'
 
 
+class Precision(Enum):
+    """The Enum class representing different data precisions."""
+    FLOAT16 = 'float16'
+    FLOAT32 = 'float32'
+    FLOAT64 = 'float64'
+    BFLOAT16 = 'bfloat16'
+    UINT8 = 'uint8'
+    INT8 = 'int8'
+    INT16 = 'int16'
+    INT32 = 'int32'
+    INT64 = 'int64'
+
+
+class ModelAction(Enum):
+    """The Enum class representing different model action."""
+    TRAIN = 'train'
+    INFEENCE = 'inference'
+
+
 class BenchmarkContext():
     """Context class of all benchmarks.
 

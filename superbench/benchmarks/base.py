@@ -17,8 +17,8 @@ class Benchmark(ABC):
         """Constructor.
 
         Args:
-            name: benchmark name.
-            parameters: benchmark parameters.
+            name (str): benchmark name.
+            parameters (str): benchmark parameters.
         """
         self._name = name
         self._argv = list(filter(None, parameters.split(' ')))
@@ -29,8 +29,8 @@ class Benchmark(ABC):
         self._curr_index = 0
         self._result = None
 
-    def add_parser_auguments(self):
-        """Add the specified auguments."""
+    def add_parser_arguments(self):
+        """Add the specified arguments."""
         self._parser.add_argument(
             '--run_count',
             type=int,
@@ -74,11 +74,12 @@ class Benchmark(ABC):
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
-        self.add_parser_auguments()
+        self.add_parser_arguments()
         self.parse_args()
+        self._result = BenchmarkResult(self._name, run_count=self._args.run_count)
 
     @abstractmethod
-    def _benchmarking(self):
+    def _benchmark(self):
         """Implementation for benchmarking."""
         pass
 
@@ -92,7 +93,7 @@ class Benchmark(ABC):
 
         self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         for self._curr_index in range(self._args.run_count):
-            self._benchmarking()
+            self._benchmark()
         self._end_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
         self._result.set_timestamp(self._start_time, self._end_time)
@@ -106,10 +107,12 @@ class Benchmark(ABC):
         Return:
             True if the result is instance of BenchmarkResult.
         """
-        assert(isinstance(self._result, BenchmarkResult)), \
-            'Result type invalid, expect: {}, got: {}.'.format(
-                type(BenchmarkResult), type(self._result))
+        logger.log_assert(
+            isinstance(self._result, BenchmarkResult),
+            'Result type invalid, expect: {}, got: {}.'.format(type(BenchmarkResult), type(self._result))
+        )
 
     def print_env_info(self):
         """Print environments or dependencies information."""
+        # TODO: will implement it when add real benchmarks in the future.
         pass
