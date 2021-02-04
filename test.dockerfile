@@ -5,6 +5,8 @@ FROM ubuntu:18.04
 
 # Install the python3.7 and pip
 RUN apt-get update && apt-get install -y \
+    git \
+    curl \
     python3.7-dev \
     python3-pip
 

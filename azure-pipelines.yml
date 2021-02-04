@@ -7,13 +7,14 @@
 # https://aka.ms/yaml
 
 trigger:
-- master
-- dev
+  - master
+  - dev
 
 resources:
-- repo: self
+  - repo: self
 
 variables:
+  imageName: test
   tag: '$(Build.BuildId)'
 
 steps:
@@ -22,5 +23,12 @@ steps:
     inputs:
       command: build
       dockerfile: '$(Build.SourcesDirectory)/test.dockerfile'
+      repository: $(imageName)
       tags: |
         $(tag)
+  - script: |
+      ci_env=`bash <(curl -s https://codecov.io/env)`
+      docker run $ci_env --entrypoint /bin/bash $(imageName):$(tag) -c 'bash <(curl -s https://codecov.io/bash)'
+    displayName: Report coverage results
+    env:
+      CODECOV_TOKEN: $(codecovToken)
