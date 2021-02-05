@@ -19,7 +19,7 @@ class MicroBenchmark(Benchmark):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-
+        self._benchmark_type = BenchmarkType.MICRO
         # Command lines to launch the micro-benchmarks.
         self.__commands = list()
 
@@ -33,7 +33,6 @@ class MicroBenchmark(Benchmark):
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
         super()._preprocess()
-        self._result.set_benchmark_type(BenchmarkType.MICRO.value)
 
     @abstractmethod
     def _benchmark(self):

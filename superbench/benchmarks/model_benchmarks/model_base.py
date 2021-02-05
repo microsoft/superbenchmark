@@ -4,11 +4,17 @@
 """Module of the model-benchmark base class."""
 
 from abc import abstractmethod
+from enum import Enum
 
 from superbench.common.utils import logger
 from superbench.benchmarks import Precision, ModelAction, BenchmarkType
 from superbench.benchmarks.base import Benchmark
-from superbench.benchmarks.model_benchmarks import DistributedMode
+
+
+class DistributedMode(Enum):
+    """The Enum class representing different distributed mode."""
+    DDP = 'pytorch-ddp'
+    HOROVOD = 'horovod'
 
 
 class ModelBenchmark(Benchmark):
@@ -22,7 +28,8 @@ class ModelBenchmark(Benchmark):
         """
         super().__init__(name, parameters)
 
-        self._world_size = 1
+        self._benchmark_type = BenchmarkType.MODEL
+        self._world_size = None
         self._dataset = None
         self._dataloader = None
         self._model = None
@@ -121,7 +128,6 @@ class ModelBenchmark(Benchmark):
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
         super()._preprocess()
-        self._result.set_benchmark_type(BenchmarkType.MODEL.value)
         self._init_distributed_setting()
         self._generate_dataset()
         self._init_dataloader()
@@ -148,6 +154,7 @@ class ModelBenchmark(Benchmark):
         """
         self._create_model(precision)
         self._create_optimizer()
+        # The unit of step time should be milisecond.
         step_times = self._train_step(precision)
         logger.info(
             'Average train time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
@@ -165,6 +172,7 @@ class ModelBenchmark(Benchmark):
             precision (str): precision of model and input data, such as float32, float16.
         """
         self._create_model(precision)
+        # The unit of step time should be milisecond.
         step_times = self._inference_step(precision)
         logger.info(
             'Average inference time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
@@ -222,13 +230,14 @@ class ModelBenchmark(Benchmark):
         Args:
             model_action (str): train or inference.
             precision (str): precision of model and input data, such as float32, float16.
-            step_times (list): The list of every training/inference step.
+            step_times (list): The step time list of every training/inference step, unit is millisecond.
         """
         metric = 'steptime_{}_{}'.format(model_action, precision)
         self._result.add_raw_data(metric, step_times)
         avg = sum(step_times) / len(step_times)
         self._result.add_result(metric, avg)
 
+        # The unit of step time is milisecond, use it to calculate the throughput with the unit samples/sec.
         metric = 'throughput_{}_{}'.format(model_action, precision)
         throughput = [1000 / step_time * self._args.batch_size for step_time in step_times]
         self._result.add_raw_data(metric, throughput)

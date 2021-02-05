@@ -160,14 +160,14 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            Serialized result string with json format, None means context is invalid or no benchmark found.
+            benchmark (Benchmark): the benchmark instance contains all results.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
             return None
 
         benchmark_name = cls.__get_benchmark_name(benchmark_context)
 
-        result = None
+        benchmark = None
         if benchmark_name:
             platform = benchmark_context.platform
             parameters = benchmark_context.parameters
@@ -177,9 +177,9 @@ class BenchmarkRegistry:
                     parameters = predefine_params + ' ' + parameters
 
                 benchmark = benchmark_class(benchmark_name, parameters)
-                result = benchmark.run()
+                benchmark.run()
 
-        return result
+        return benchmark
 
     @classmethod
     def is_benchmark_registered(cls, benchmark_context):

@@ -8,7 +8,8 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkResult
+from superbench.benchmarks import BenchmarkType
+from superbench.benchmarks.result import BenchmarkResult
 
 
 class Benchmark(ABC):
@@ -22,10 +23,9 @@ class Benchmark(ABC):
         """
         self._name = name
         self._argv = list(filter(None, parameters.split(' ')))
+        self._benchmark_type = None
         self._parser = argparse.ArgumentParser(add_help=False, usage=argparse.SUPPRESS, allow_abbrev=False)
         self._args = None
-        self._start_time = None
-        self._end_time = None
         self._curr_index = 0
         self._result = None
 
@@ -76,7 +76,11 @@ class Benchmark(ABC):
         """Preprocess/preparation operations before the benchmarking."""
         self.add_parser_arguments()
         self.parse_args()
-        self._result = BenchmarkResult(self._name, run_count=self._args.run_count)
+        logger.log_assert(
+            isinstance(self._benchmark_type, BenchmarkType),
+            'Invalid benchmark type - name: {}, type: {}'.format(self._name, type(self._benchmark_type))
+        )
+        self._result = BenchmarkResult(self._name, self._benchmark_type.value, run_count=self._args.run_count)
 
     @abstractmethod
     def _benchmark(self):
@@ -116,3 +120,48 @@ class Benchmark(ABC):
         """Print environments or dependencies information."""
         # TODO: will implement it when add real benchmarks in the future.
         pass
+
+    @property
+    def name(self):
+        """Decoration function to access benchmark name."""
+        return self._result.name
+
+    @property
+    def type(self):
+        """Decoration function to access benchmark type."""
+        return self._result.type
+
+    @property
+    def run_count(self):
+        """Decoration function to access benchmark run_count."""
+        return self._result.run_count
+
+    @property
+    def return_code(self):
+        """Decoration function to access benchmark return_code."""
+        return self._result.return_code
+
+    @property
+    def start_time(self):
+        """Decoration function to access benchmark start_time."""
+        return self._result.start_time
+
+    @property
+    def end_time(self):
+        """Decoration function to access benchmark end_time."""
+        return self._result.end_time
+
+    @property
+    def raw_data(self):
+        """Decoration function to access benchmark raw_data."""
+        return self._result.raw_data
+
+    @property
+    def result(self):
+        """Decoration function to access benchmark result."""
+        return self._result.result
+
+    @property
+    def serialized_result(self):
+        """Decoration function to access benchmark result."""
+        return self._result.to_string()

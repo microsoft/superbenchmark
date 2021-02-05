@@ -19,7 +19,7 @@ class DockerBenchmark(Benchmark):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-
+        self._benchmark_type = BenchmarkType.DOCKER
         # Command lines to launch the docker image and run the benchmarks inside docker.
         self.__commands = list()
 
@@ -33,7 +33,6 @@ class DockerBenchmark(Benchmark):
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking."""
         super()._preprocess()
-        self._result.set_benchmark_type(BenchmarkType.DOCKER.value)
 
     @abstractmethod
     def _benchmark(self):
@@ -41,7 +40,12 @@ class DockerBenchmark(Benchmark):
         pass
 
     def _process_docker_result(self, output):
-        """Function to process raw results and save the summarized results."""
+        """Function to process raw results and save the summarized results.
+
+        Args:
+            output (str): raw output string of the docker benchmark.
+        """
+        # TODO: will implement it when add real benchmarks in the future.
         pass
 
     def print_env_info(self):

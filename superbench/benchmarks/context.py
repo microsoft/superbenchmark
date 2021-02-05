@@ -17,7 +17,8 @@ class Framework(Enum):
     """The Enum class representing different frameworks."""
     ONNX = 'onnx'
     PYTORCH = 'pytorch'
-    TENSORFLOW = 'tf'
+    TENSORFLOW = 'tf1'
+    TENSORFLOW2 = 'tf2'
     NONE = 'none'
 
 

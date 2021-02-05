@@ -13,21 +13,22 @@ class BenchmarkResult():
 
     Defines the unified result format.
     """
-    def __init__(self, name, run_count=0):
+    def __init__(self, name, type, run_count=0):
         """Constructor.
 
         Args:
             name (str): name of benchmark.
+            type (str): type of benchmark.
             run_count (int): run count of benchmark, all runs will be organized as array.
         """
-        self.name = name
-        self.type = None
-        self.run_count = run_count
-        self.return_code = 0
-        self.start_time = None
-        self.end_time = None
-        self.raw_data = dict()
-        self.result = dict()
+        self.__name = name
+        self.__type = type
+        self.__run_count = run_count
+        self.__return_code = 0
+        self.__start_time = None
+        self.__end_time = None
+        self.__raw_data = dict()
+        self.__result = dict()
 
     def __eq__(self, rhs):
         """Override equal function for deep comparison.
@@ -54,13 +55,13 @@ class BenchmarkResult():
         """
         if not metric or not isinstance(metric, str):
             logger.error(
-                'metric name of benchmark is not string, name: {}, metric type: {}'.format(self.name, type(metric))
+                'metric name of benchmark is not string, name: {}, metric type: {}'.format(self.__name, type(metric))
             )
             return False
 
-        if metric not in self.raw_data:
-            self.raw_data[metric] = list()
-        self.raw_data[metric].append(value)
+        if metric not in self.__raw_data:
+            self.__raw_data[metric] = list()
+        self.__raw_data[metric].append(value)
 
         return True
 
@@ -78,13 +79,13 @@ class BenchmarkResult():
         """
         if not metric or not isinstance(metric, str):
             logger.error(
-                'metric name of benchmark is not string, name: {}, metric type: {}'.format(self.name, type(metric))
+                'metric name of benchmark is not string, name: {}, metric type: {}'.format(self.__name, type(metric))
             )
             return False
 
-        if metric not in self.result:
-            self.result[metric] = list()
-        self.result[metric].append(value)
+        if metric not in self.__result:
+            self.__result[metric] = list()
+        self.__result[metric].append(value)
 
         return True
 
@@ -95,8 +96,8 @@ class BenchmarkResult():
             start (datetime): start timestamp of benchmarking.
             end (datetime): end timestamp of benchmarking.
         """
-        self.start_time = start
-        self.end_time = end
+        self.__start_time = start
+        self.__end_time = end
 
     def set_benchmark_type(self, benchmark_type):
         """Set the type of benchmark.
@@ -104,7 +105,7 @@ class BenchmarkResult():
         Args:
             benchmark_type (str): type of benchmark, such as 'model', 'micro' or 'docker'.
         """
-        self.type = benchmark_type
+        self.__type = benchmark_type
 
     def to_string(self):
         """Serialize the BenchmarkResult object to string.
@@ -112,7 +113,13 @@ class BenchmarkResult():
         Return:
             The serialized string of BenchmarkResult object.
         """
-        return json.dumps(self.__dict__)
+        formatted_obj = dict()
+        for key in self.__dict__:
+            # The name of internal member is like '_BenchmarkResult__name'.
+            # For the result object return to caller, just keep 'name'.
+            formatted_obj[key.split('__')[1]] = self.__dict__[key]
+
+        return json.dumps(formatted_obj)
 
     @classmethod
     def from_string(cls, string):
@@ -130,9 +137,51 @@ class BenchmarkResult():
             ret = cls(obj['name'], obj['run_count'])
             fields = ret.__dict__.keys()
             for field in fields:
-                if field not in obj:
+                # The name of internal member is like '_BenchmarkResult__name'.
+                # For the result object return to caller, just keep 'name'.
+                if field.split('__')[1] not in obj:
                     return None
                 else:
-                    ret.__dict__[field] = obj[field]
+                    ret.__dict__[field] = obj[field.split('__')[1]]
 
         return ret
+
+    @property
+    def name(self):
+        """Decoration function to access __name."""
+        return self.__name
+
+    @property
+    def type(self):
+        """Decoration function to access __type."""
+        return self.__type
+
+    @property
+    def run_count(self):
+        """Decoration function to access __run_count."""
+        return self.__run_count
+
+    @property
+    def return_code(self):
+        """Decoration function to access __return_code."""
+        return self.__return_code
+
+    @property
+    def start_time(self):
+        """Decoration function to access __start_time."""
+        return self.__start_time
+
+    @property
+    def end_time(self):
+        """Decoration function to access __end_time."""
+        return self.__end_time
+
+    @property
+    def raw_data(self):
+        """Decoration function to access __raw_data."""
+        return self.__raw_data
+
+    @property
+    def result(self):
+        """Decoration function to access __result."""
+        return self.__result
