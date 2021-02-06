@@ -158,7 +158,7 @@ class ModelBenchmark(Benchmark):
         step_times = self._train_step(precision)
         logger.info(
             'Average train time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
-                self._curr_index, self._name, precision,
+                self._curr_run_index, self._name, precision,
                 sum(step_times) / len(step_times)
             )
         )
@@ -176,7 +176,7 @@ class ModelBenchmark(Benchmark):
         step_times = self._inference_step(precision)
         logger.info(
             'Average inference time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
-                self._curr_index, self._name, precision,
+                self._curr_run_index, self._name, precision,
                 sum(step_times) / len(step_times)
             )
         )
@@ -238,8 +238,9 @@ class ModelBenchmark(Benchmark):
         self._result.add_result(metric, avg)
 
         # The unit of step time is milisecond, use it to calculate the throughput with the unit samples/sec.
+        millisecond_per_second = 1000
+        throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
         metric = 'throughput_{}_{}'.format(model_action, precision)
-        throughput = [1000 / step_time * self._args.batch_size for step_time in step_times]
         self._result.add_raw_data(metric, throughput)
         avg = sum(throughput) / len(throughput)
         self._result.add_result(metric, avg)

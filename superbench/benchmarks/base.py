@@ -26,7 +26,7 @@ class Benchmark(ABC):
         self._benchmark_type = None
         self._parser = argparse.ArgumentParser(add_help=False, usage=argparse.SUPPRESS, allow_abbrev=False)
         self._args = None
-        self._curr_index = 0
+        self._curr_run_index = 0
         self._result = None
 
     def add_parser_arguments(self):
@@ -96,7 +96,7 @@ class Benchmark(ABC):
         self._preprocess()
 
         self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        for self._curr_index in range(self._args.run_count):
+        for self._curr_run_index in range(self._args.run_count):
             self._benchmark()
         self._end_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
