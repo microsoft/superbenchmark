@@ -154,7 +154,7 @@ class ModelBenchmark(Benchmark):
         """
         self._create_model(precision)
         self._create_optimizer()
-        # The unit of step time should be milisecond.
+        # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
         logger.info(
             'Average train time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
@@ -172,7 +172,7 @@ class ModelBenchmark(Benchmark):
             precision (str): precision of model and input data, such as float32, float16.
         """
         self._create_model(precision)
-        # The unit of step time should be milisecond.
+        # The unit of step time should be millisecond.
         step_times = self._inference_step(precision)
         logger.info(
             'Average inference time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
@@ -237,7 +237,7 @@ class ModelBenchmark(Benchmark):
         avg = sum(step_times) / len(step_times)
         self._result.add_result(metric, avg)
 
-        # The unit of step time is milisecond, use it to calculate the throughput with the unit samples/sec.
+        # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
         metric = 'throughput_{}_{}'.format(model_action, precision)
