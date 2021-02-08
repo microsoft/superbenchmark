@@ -4,6 +4,7 @@
 """Module of the base class."""
 
 import argparse
+import numbers
 from datetime import datetime
 from abc import ABC, abstractmethod
 
@@ -24,7 +25,12 @@ class Benchmark(ABC):
         self._name = name
         self._argv = list(filter(None, parameters.split(' ')))
         self._benchmark_type = None
-        self._parser = argparse.ArgumentParser(add_help=False, usage=argparse.SUPPRESS, allow_abbrev=False)
+        self._parser = argparse.ArgumentParser(
+            add_help=False,
+            usage=argparse.SUPPRESS,
+            allow_abbrev=False,
+            formatter_class=argparse.MetavarTypeHelpFormatter
+        )
         self._args = None
         self._curr_run_index = 0
         self._result = None
@@ -35,7 +41,6 @@ class Benchmark(ABC):
             '--run_count',
             type=int,
             default=1,
-            metavar='',
             required=False,
             help='The run count of benchmark.',
         )
@@ -43,9 +48,8 @@ class Benchmark(ABC):
             '--duration',
             type=int,
             default=0,
-            metavar='',
             required=False,
-            help='The elapsed time of benchmark.',
+            help='The elapsed time of benchmark in seconds.',
         )
 
     def get_configurable_settings(self):
@@ -109,12 +113,55 @@ class Benchmark(ABC):
         """Check the type of result object.
 
         Return:
-            True if the result is instance of BenchmarkResult.
+            True if the result is valid.
         """
+        # Check if the result is instance of BenchmarkResult.
         logger.log_assert(
             isinstance(self._result, BenchmarkResult),
-            'Result type invalid, expect: {}, got: {}.'.format(type(BenchmarkResult), type(self._result))
+            'Type of result is invalid - expect: {}, got: {}.'.format(type(BenchmarkResult), type(self._result))
         )
+        self.__check_summarized_result()
+        self.__check_raw_data()
+
+    def __check_summarized_result(self):
+        # Check if the summary result is instance of List[Number].
+        for metric in self._result.result:
+            valid = isinstance(self._result.result[metric], list)
+            if valid:
+                for value in self._result.result[metric]:
+                    valid |= isinstance(value, numbers.Number)
+
+            logger.log_assert(
+                valid,
+                'Type of summarized result is invalid - benchmark: {}, metric name: {}, expect: List[Number], got: {}.'.
+                format(self._name, metric, type(self._result.result[metric]))
+            )
+
+    def __check_raw_data(self):
+        # Check if the raw data is:
+        #   instance of List[List[Number]] for BenchmarkType.MODEL, and BenchmarkType.DOCKER.
+        #   instance of List[str] for BenchmarkType.MICRO.
+        for metric in self._result.raw_data:
+            valid = isinstance(self._result.raw_data[metric], list)
+            if valid:
+                for run in self._result.raw_data[metric]:
+                    if self._benchmark_type in [BenchmarkType.MODEL, BenchmarkType.DOCKER]:
+                        valid = isinstance(run, list)
+                        if not valid:
+                            break
+                        for value in run:
+                            valid = isinstance(run, numbers.Number)
+
+                    elif self._benchmark_type in [BenchmarkType.MICRO]:
+                        valid = isinstance(run, str)
+
+            logger.log_assert(
+                valid, 'Type of raw data is invalid - benchmark: {}, metric name: {}, expect: {}, got: {}.'.format(
+                    self._name, metric,
+                    'List[str]' if self._benchmark_type == BenchmarkType.MICRO else 'List[List[Number]]',
+                    type(self._result.raw_data[metric])
+                )
+            )
 
     def print_env_info(self):
         """Print environments or dependencies information."""

@@ -121,31 +121,6 @@ class BenchmarkResult():
 
         return json.dumps(formatted_obj)
 
-    @classmethod
-    def from_string(cls, string):
-        """Deserialize the string to BenchmarkResult object.
-
-        Args:
-            string (str): serialized string of BenchmarkResult object.
-
-        Return:
-            The deserialized BenchmarkResult object.
-        """
-        obj = json.loads(string)
-        ret = None
-        if 'name' in obj and 'run_count' in obj:
-            ret = cls(obj['name'], obj['run_count'])
-            fields = ret.__dict__.keys()
-            for field in fields:
-                # The name of internal member is like '_BenchmarkResult__name'.
-                # For the result object return to caller, just keep 'name'.
-                if field.split('__')[1] not in obj:
-                    return None
-                else:
-                    ret.__dict__[field] = obj[field.split('__')[1]]
-
-        return ret
-
     @property
     def name(self):
         """Decoration function to access __name."""

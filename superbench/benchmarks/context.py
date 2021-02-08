@@ -3,7 +3,16 @@
 
 """A module for unified context of benchmarks."""
 
-from enum import Enum
+import enum
+
+
+class Enum(enum.Enum):
+    """Customized Enum class."""
+    @classmethod
+    def get_values(cls):
+        """Return the value list."""
+        values = [item.value for item in cls]
+        return values
 
 
 class Platform(Enum):
@@ -43,9 +52,9 @@ class Precision(Enum):
 
 
 class ModelAction(Enum):
-    """The Enum class representing different model action."""
+    """The Enum class representing different model process."""
     TRAIN = 'train'
-    INFEENCE = 'inference'
+    INFERENCE = 'inference'
 
 
 class BenchmarkContext():

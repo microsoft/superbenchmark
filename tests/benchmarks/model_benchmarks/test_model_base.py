@@ -26,7 +26,6 @@ class FakeModelBenchmark(ModelBenchmark):
             '--hidden_size',
             type=int,
             default=1024,
-            metavar='',
             required=False,
             help='Hidden size',
         )
@@ -35,7 +34,6 @@ class FakeModelBenchmark(ModelBenchmark):
             '--seq_len',
             type=int,
             default=512,
-            metavar='',
             required=False,
             help='Sequence length',
         )
@@ -131,19 +129,25 @@ def test_arguments_related_interfaces():
     benchmark.parse_args()
 
     settings = benchmark.get_configurable_settings()
-    expected_settings = """optional arguments:
-  --run_count           The run count of benchmark.
-  --duration            The elapsed time of benchmark.
-  --num_warmup          The number of warmup step
-  --num_steps           The number of test step
-  --batch_size          The number of batch size
-  --precision  [ ...]   Model precision. E.g. float16 float32 float64 bfloat16
+    expected_settings = (
+        """optional arguments:
+  --run_count int       The run count of benchmark.
+  --duration int        The elapsed time of benchmark in seconds.
+  --num_warmup int      The number of warmup step
+  --num_steps int       The number of test step
+  --batch_size int      The number of batch size
+  --precision {float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} """
+        """[{float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} ...]
+                        Model precision. E.g. float16 float32 float64 bfloat16
                         uint8 int8 int16 int32 int64.
-  --model_action  [ ...]
+  --model_action {train,inference} [{train,inference} ...]
                         Benchmark type. E.g. train inference.
-  --distributed_mode    Distributed mode. E.g. pytorch-ddp horovod
-  --hidden_size         Hidden size
-  --seq_len             Sequence length"""
+  --distributed_mode {pytorch-ddp-nccl,tf-mirrored,tf-multiworkermirrored,tf-parameterserver,horovod}
+                        Distributed mode. E.g. pytorch-ddp-nccl tf-mirrored
+                        tf-multiworkermirrored tf-parameterserver horovod
+  --hidden_size int     Hidden size
+  --seq_len int         Sequence length"""
+    )
     assert (settings == expected_settings)
 
 
@@ -156,19 +160,25 @@ def test_preprocess():
     assert (benchmark._result._BenchmarkResult__type == BenchmarkType.MODEL.value)
 
     settings = benchmark.get_configurable_settings()
-    expected_settings = """optional arguments:
-  --run_count           The run count of benchmark.
-  --duration            The elapsed time of benchmark.
-  --num_warmup          The number of warmup step
-  --num_steps           The number of test step
-  --batch_size          The number of batch size
-  --precision  [ ...]   Model precision. E.g. float16 float32 float64 bfloat16
+    expected_settings = (
+        """optional arguments:
+  --run_count int       The run count of benchmark.
+  --duration int        The elapsed time of benchmark in seconds.
+  --num_warmup int      The number of warmup step
+  --num_steps int       The number of test step
+  --batch_size int      The number of batch size
+  --precision {float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} """
+        """[{float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} ...]
+                        Model precision. E.g. float16 float32 float64 bfloat16
                         uint8 int8 int16 int32 int64.
-  --model_action  [ ...]
+  --model_action {train,inference} [{train,inference} ...]
                         Benchmark type. E.g. train inference.
-  --distributed_mode    Distributed mode. E.g. pytorch-ddp horovod
-  --hidden_size         Hidden size
-  --seq_len             Sequence length"""
+  --distributed_mode {pytorch-ddp-nccl,tf-mirrored,tf-multiworkermirrored,tf-parameterserver,horovod}
+                        Distributed mode. E.g. pytorch-ddp-nccl tf-mirrored
+                        tf-multiworkermirrored tf-parameterserver horovod
+  --hidden_size int     Hidden size
+  --seq_len int         Sequence length"""
+    )
     assert (settings == expected_settings)
 
 
@@ -178,7 +188,7 @@ def test_train():
 
     benchmark = benchmark_class(name, parameters)
     benchmark._preprocess()
-    benchmark._ModelBenchmark__train('float32')
+    benchmark._ModelBenchmark__train(Precision.FLOAT32.value)
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {"steptime_train_float32": [[2, 2, 2, 2, 2, 2, 2, 2]], '
@@ -194,7 +204,7 @@ def test_inference():
 
     benchmark = benchmark_class(name, parameters)
     benchmark._preprocess()
-    benchmark._ModelBenchmark__inference('float16')
+    benchmark._ModelBenchmark__inference(Precision.FLOAT16.value)
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {"steptime_inference_float16": [[4, 4, 4, 4, 4, 4, 4, 4]], '

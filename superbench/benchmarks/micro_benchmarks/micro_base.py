@@ -45,6 +45,7 @@ class MicroBenchmark(Benchmark):
         Args:
             output (str): raw output string of the micro-benchmark.
         """
+        # TODO: will implement it when add real benchmarks in the future.
         pass
 
     def print_env_info(self):

@@ -28,7 +28,6 @@ class AccumulationBenchmark(MicroBenchmark):
             '--lower_bound',
             type=int,
             default=0,
-            metavar='',
             required=False,
             help='The lower bound for accumulation.',
         )
@@ -37,7 +36,6 @@ class AccumulationBenchmark(MicroBenchmark):
             '--upper_bound',
             type=int,
             default=2,
-            metavar='',
             required=False,
             help='The upper bound for accumulation.',
         )
@@ -48,10 +46,10 @@ class AccumulationBenchmark(MicroBenchmark):
         result = 0
         for i in range(self._args.lower_bound, self._args.upper_bound):
             result += i
-            raw_data.append(result)
+            raw_data.append(str(result))
 
         metric = 'accumulation_result'
-        self._result.add_raw_data(metric, raw_data)
+        self._result.add_raw_data(metric, ','.join(raw_data))
         self._result.add_result(metric, result)
 
 
@@ -114,7 +112,7 @@ def test_check_parameters():
     context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower_bound=1')
     assert (BenchmarkRegistry.check_parameters(context))
 
-    # Negative  case.
+    # Negative case.
     context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower=1')
     assert (BenchmarkRegistry.check_parameters(context) is False)
 
@@ -133,11 +131,10 @@ def test_get_benchmark_configurable_settings():
     settings = BenchmarkRegistry.get_benchmark_configurable_settings(context)
 
     expected = """optional arguments:
-  --run_count     The run count of benchmark.
-  --duration      The elapsed time of benchmark.
-  --lower_bound   The lower bound for accumulation.
-  --upper_bound   The upper bound for accumulation."""
-
+  --run_count int    The run count of benchmark.
+  --duration int     The elapsed time of benchmark in seconds.
+  --lower_bound int  The lower bound for accumulation.
+  --upper_bound int  The upper bound for accumulation."""
     assert (settings == expected)
 
     BenchmarkRegistry.clean_benchmarks()
@@ -149,36 +146,31 @@ def test_launch_benchmark():
     BenchmarkRegistry.register_benchmark(
         'accumulation', AccumulationBenchmark, parameters='--upper_bound=5', platform=Platform.CPU
     )
-    BenchmarkRegistry.register_benchmark(
-        'tf1-accumulation', AccumulationBenchmark, parameters='--upper_bound=5', platform=Platform.CPU
-    )
 
     # Launch benchmark.
-    context = BenchmarkContext(
-        'accumulation', Platform.CPU, parameters='--lower_bound=1', framework=Framework.TENSORFLOW
-    )
+    context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower_bound=1')
 
     if BenchmarkRegistry.check_parameters(context):
         benchmark = BenchmarkRegistry.launch_benchmark(context)
         assert (benchmark)
-        assert (benchmark.name == 'tf1-accumulation')
+        assert (benchmark.name == 'accumulation')
         assert (benchmark.type == BenchmarkType.MICRO.value)
         assert (benchmark.run_count == 1)
         assert (benchmark.return_code == 0)
-        assert (benchmark.raw_data == {'accumulation_result': [[1, 3, 6, 10]]})
+        assert (benchmark.raw_data == {'accumulation_result': ['1,3,6,10']})
         assert (benchmark.result == {'accumulation_result': [10]})
 
-        # replace the timestamp as "0"
+        # Replace the timestamp as "0".
         result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', '\"0\"', benchmark.serialized_result)
         expected = (
-            '{"name": "tf1-accumulation", "type": "micro", "run_count": 1, '
+            '{"name": "accumulation", "type": "micro", "run_count": 1, '
             '"return_code": 0, "start_time": "0", "end_time": "0", '
-            '"raw_data": {"accumulation_result": [[1, 3, 6, 10]]}, '
+            '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
             '"result": {"accumulation_result": [10]}}'
         )
         assert (result == expected)
 
-    # Launch benchmark with overrided parameters
+    # Launch benchmark with overridden parameters.
     context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower_bound=1 --upper_bound=4')
     if BenchmarkRegistry.check_parameters(context):
         benchmark = BenchmarkRegistry.launch_benchmark(context)
@@ -187,15 +179,15 @@ def test_launch_benchmark():
         assert (benchmark.type == BenchmarkType.MICRO.value)
         assert (benchmark.run_count == 1)
         assert (benchmark.return_code == 0)
-        assert (benchmark.raw_data == {'accumulation_result': [[1, 3, 6]]})
+        assert (benchmark.raw_data == {'accumulation_result': ['1,3,6']})
         assert (benchmark.result == {'accumulation_result': [6]})
 
-        # replace the timestamp as "0"
+        # Replace the timestamp as "0".
         result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', '\"0\"', benchmark.serialized_result)
         expected = (
             '{"name": "accumulation", "type": "micro", "run_count": 1, '
             '"return_code": 0, "start_time": "0", "end_time": "0", '
-            '"raw_data": {"accumulation_result": [[1, 3, 6]]}, '
+            '"raw_data": {"accumulation_result": ["1,3,6"]}, '
             '"result": {"accumulation_result": [6]}}'
         )
         assert (result == expected)

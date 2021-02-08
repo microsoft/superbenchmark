@@ -107,7 +107,7 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            ret (bool): return True if benchmark exists and context/parameters are valid.
+            Return True if benchmark exists and context/parameters are valid.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
             return False
@@ -116,7 +116,6 @@ class BenchmarkRegistry:
         platform = benchmark_context.platform
         customized_parameters = benchmark_context.parameters
 
-        ret = False
         if benchmark_name:
             (benchmark_class, params) = cls.__select_benchmark(benchmark_name, platform)
             if benchmark_class:
@@ -124,9 +123,9 @@ class BenchmarkRegistry:
                 benchmark.add_parser_arguments()
                 args, unknown = benchmark.parse_args()
                 if len(unknown) < 1:
-                    ret = True
+                    return True
 
-        return ret
+        return False
 
     @classmethod
     def get_benchmark_configurable_settings(cls, benchmark_context):
@@ -197,13 +196,7 @@ class BenchmarkRegistry:
         benchmark_name = cls.__get_benchmark_name(benchmark_context)
         platform = benchmark_context.platform
 
-        if benchmark_name not in cls.benchmarks:
-            return False
-
-        if platform not in cls.benchmarks[benchmark_name]:
-            return False
-
-        return True
+        return cls.benchmarks.get(benchmark_name, {}).get(platform) is not None
 
     @classmethod
     def __select_benchmark(cls, name, platform):

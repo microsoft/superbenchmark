@@ -4,16 +4,18 @@
 """Module of the model-benchmark base class."""
 
 from abc import abstractmethod
-from enum import Enum
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Precision, ModelAction, BenchmarkType
+from superbench.benchmarks import Enum, Precision, ModelAction, BenchmarkType
 from superbench.benchmarks.base import Benchmark
 
 
 class DistributedMode(Enum):
     """The Enum class representing different distributed mode."""
-    DDP = 'pytorch-ddp'
+    PYTORCH_DDP_NCCL = 'pytorch-ddp-nccl'
+    TF_MIRRORED = 'tf-mirrored'
+    TF_MW_MIRRORED = 'tf-multiworkermirrored'
+    TF_PS = 'tf-parameterserver'
     HOROVOD = 'horovod'
 
 
@@ -46,7 +48,6 @@ class ModelBenchmark(Benchmark):
             '--num_warmup',
             type=int,
             default=64,
-            metavar='',
             required=False,
             help='The number of warmup step',
         )
@@ -54,7 +55,6 @@ class ModelBenchmark(Benchmark):
             '--num_steps',
             type=int,
             default=2048,
-            metavar='',
             required=False,
             help='The number of test step',
         )
@@ -62,53 +62,34 @@ class ModelBenchmark(Benchmark):
             '--batch_size',
             type=int,
             default=32,
-            metavar='',
             required=False,
             help='The number of batch size',
         )
-        precision_choice = [p.value for p in Precision]
         self._parser.add_argument(
             '--precision',
             type=str,
             default=[Precision.FLOAT32.value, Precision.FLOAT16.value],
-            choices=precision_choice,
+            choices=Precision.get_values(),
             nargs='+',
-            metavar='',
             required=False,
-            help='Model precision. E.g. {}.'.format(' '.join(precision_choice)),
+            help='Model precision. E.g. {}.'.format(' '.join(Precision.get_values())),
         )
-        model_action_choice = [p.value for p in ModelAction]
         self._parser.add_argument(
             '--model_action',
             type=str,
             default=[ModelAction.TRAIN.value],
-            choices=model_action_choice,
+            choices=ModelAction.get_values(),
             nargs='+',
-            metavar='',
             required=False,
-            help='Benchmark type. E.g. {}.'.format(' '.join(model_action_choice)),
+            help='Benchmark type. E.g. {}.'.format(' '.join(ModelAction.get_values())),
         )
-        distributed_mode_choice = [p.value for p in DistributedMode]
         self._parser.add_argument(
             '--distributed_mode',
             type=str,
-            choices=distributed_mode_choice,
-            metavar='',
+            choices=DistributedMode.get_values(),
             required=False,
-            help='Distributed mode. E.g. {}'.format(' '.join(distributed_mode_choice)),
+            help='Distributed mode. E.g. {}'.format(' '.join(DistributedMode.get_values())),
         )
-
-    '''
-    def parse_args(self):
-        """Parse the arguments.
-
-        Return:
-            The parsed arguments and unknown arguments.
-        """
-        self._args, unknown = super().parse_args()
-        self._args.precision = [item.strip() for item in self._args.precision.split(',')]
-        return self._args, unknown
-    '''
 
     @abstractmethod
     def _init_distributed_setting(self):
@@ -156,10 +137,10 @@ class ModelBenchmark(Benchmark):
         self._create_optimizer()
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
+        average_time = sum(step_times) / len(step_times) if len(step_times) > 0 else 0
         logger.info(
-            'Average train time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
-                self._curr_run_index, self._name, precision,
-                sum(step_times) / len(step_times)
+            'Average train time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
+                self._curr_run_index, self._name, precision, average_time
             )
         )
 
@@ -174,14 +155,14 @@ class ModelBenchmark(Benchmark):
         self._create_model(precision)
         # The unit of step time should be millisecond.
         step_times = self._inference_step(precision)
+        average_time = sum(step_times) / len(step_times) if len(step_times) > 0 else 0
         logger.info(
-            'Average inference time - round: {}, model: {}, precision: {}, step time: {} ms.'.format(
-                self._curr_run_index, self._name, precision,
-                sum(step_times) / len(step_times)
+            'Average inference time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
+                self._curr_run_index, self._name, precision, average_time
             )
         )
 
-        self.__process_model_result(ModelAction.INFEENCE.value, precision, step_times)
+        self.__process_model_result(ModelAction.INFERENCE.value, precision, step_times)
 
     @abstractmethod
     def _train_step(self, precision):
@@ -219,7 +200,7 @@ class ModelBenchmark(Benchmark):
             for model_action in self._args.model_action:
                 if model_action == ModelAction.TRAIN.value:
                     self.__train(precision)
-                elif model_action == ModelAction.INFEENCE.value:
+                elif model_action == ModelAction.INFERENCE.value:
                     self.__inference(precision)
                 else:
                     logger.warning('{} model has unknown model action {}'.format(self._name, self._args.model_action))

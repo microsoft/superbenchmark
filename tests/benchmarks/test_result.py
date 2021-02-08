@@ -73,10 +73,3 @@ def test_serialize_deserialize():
         '"result": {"metric1": [300, 200], "metric2": [100]}}'
     )
     assert (result.to_string() == expected)
-    result_se = result.to_string()
-    result_de = BenchmarkResult.from_string(result_se)
-    assert (result == result_de)
-
-    # Empty result.
-    result_de = BenchmarkResult.from_string('{}')
-    assert (result_de is None)
