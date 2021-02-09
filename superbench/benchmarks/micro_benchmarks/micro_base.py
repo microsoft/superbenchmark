@@ -31,8 +31,12 @@ class MicroBenchmark(Benchmark):
     '''
 
     def _preprocess(self):
-        """Preprocess/preparation operations before the benchmarking."""
-        super()._preprocess()
+        """Preprocess/preparation operations before the benchmarking.
+
+        Return:
+            True if _preprocess() succeed.
+        """
+        return super()._preprocess()
 
     @abstractmethod
     def _benchmark(self):

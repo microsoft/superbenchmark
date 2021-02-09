@@ -3,7 +3,8 @@
 
 """Tests for BenchmarkRegistry module."""
 
-from superbench.benchmarks import Platform, Framework, Precision, BenchmarkContext, BenchmarkRegistry, BenchmarkType
+from superbench.benchmarks import Platform, Framework, Precision, \
+    BenchmarkContext, BenchmarkRegistry, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks import ModelBenchmark
 
 
@@ -97,7 +98,7 @@ class FakeModelBenchmark(ModelBenchmark):
         return 200
 
 
-def create_benchmark():
+def create_benchmark(params='--num_steps=8'):
     """Register and create benchmark."""
     # Register the FakeModelBenchmark benchmark.
     BenchmarkRegistry.register_benchmark(
@@ -106,13 +107,13 @@ def create_benchmark():
         parameters='--hidden_size=2',
         platform=Platform.CUDA,
     )
-    context = BenchmarkContext('fake-model', Platform.CUDA, parameters='--num_steps=8', framework=Framework.PYTORCH)
+    context = BenchmarkContext('fake-model', Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
     name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (name)
     (benchmark_class, predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(name, context.platform)
     assert (benchmark_class)
     BenchmarkRegistry.clean_benchmarks()
-    return (benchmark_class, name, predefine_params + ' ' + context.parameters)
+    return benchmark_class(name, predefine_params + ' ' + context.parameters)
 
 
 def test_arguments_related_interfaces():
@@ -122,12 +123,19 @@ def test_arguments_related_interfaces():
     Benchmark.parse_args(),
     Benchmark.get_configurable_settings()
     """
-    (benchmark_class, name, parameters) = create_benchmark()
-
-    benchmark = benchmark_class(name, parameters)
+    # Positive case for parse_args().
+    benchmark = create_benchmark('--num_steps=9')
     benchmark.add_parser_arguments()
-    benchmark.parse_args()
+    (ret, args, unknown) = benchmark.parse_args()
+    assert (ret and args.num_steps == 9)
 
+    # Negative case for parse_args() - invalid precision.
+    benchmark = create_benchmark('--num_steps=8 --precision=fp32')
+    benchmark.add_parser_arguments()
+    (ret, args, unknown) = benchmark.parse_args()
+    assert (ret is False)
+
+    # Test get_configurable_settings().
     settings = benchmark.get_configurable_settings()
     expected_settings = (
         """optional arguments:
@@ -136,13 +144,12 @@ def test_arguments_related_interfaces():
   --num_warmup int      The number of warmup step
   --num_steps int       The number of test step
   --batch_size int      The number of batch size
-  --precision {float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} """
-        """[{float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} ...]
+  --precision str [str ...]
                         Model precision. E.g. float16 float32 float64 bfloat16
                         uint8 int8 int16 int32 int64.
-  --model_action {train,inference} [{train,inference} ...]
-                        Benchmark type. E.g. train inference.
-  --distributed_mode {pytorch-ddp-nccl,tf-mirrored,tf-multiworkermirrored,tf-parameterserver,horovod}
+  --model_action str [str ...]
+                        Benchmark model process. E.g. train inference.
+  --distributed_mode str
                         Distributed mode. E.g. pytorch-ddp-nccl tf-mirrored
                         tf-multiworkermirrored tf-parameterserver horovod
   --hidden_size int     Hidden size
@@ -153,12 +160,10 @@ def test_arguments_related_interfaces():
 
 def test_preprocess():
     """Test interface Benchmark._preprocess()."""
-    (benchmark_class, name, parameters) = create_benchmark()
-
-    benchmark = benchmark_class(name, parameters)
-    benchmark._preprocess()
-    assert (benchmark._result._BenchmarkResult__type == BenchmarkType.MODEL.value)
-
+    # Positive case for _preprocess().
+    benchmark = create_benchmark('--num_steps=8')
+    assert (benchmark._preprocess())
+    assert (benchmark.return_code == ReturnCode.SUCCESS.value)
     settings = benchmark.get_configurable_settings()
     expected_settings = (
         """optional arguments:
@@ -167,13 +172,12 @@ def test_preprocess():
   --num_warmup int      The number of warmup step
   --num_steps int       The number of test step
   --batch_size int      The number of batch size
-  --precision {float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} """
-        """[{float16,float32,float64,bfloat16,uint8,int8,int16,int32,int64} ...]
+  --precision str [str ...]
                         Model precision. E.g. float16 float32 float64 bfloat16
                         uint8 int8 int16 int32 int64.
-  --model_action {train,inference} [{train,inference} ...]
-                        Benchmark type. E.g. train inference.
-  --distributed_mode {pytorch-ddp-nccl,tf-mirrored,tf-multiworkermirrored,tf-parameterserver,horovod}
+  --model_action str [str ...]
+                        Benchmark model process. E.g. train inference.
+  --distributed_mode str
                         Distributed mode. E.g. pytorch-ddp-nccl tf-mirrored
                         tf-multiworkermirrored tf-parameterserver horovod
   --hidden_size int     Hidden size
@@ -181,50 +185,76 @@ def test_preprocess():
     )
     assert (settings == expected_settings)
 
+    # Negative case for _preprocess() - invalid precision.
+    benchmark = create_benchmark('--num_steps=8 --precision=fp32')
+    assert (benchmark._preprocess() is False)
+    assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT.value)
+
+    # Negative case for _preprocess() - invalid benchmark type.
+    benchmark = create_benchmark('--num_steps=8 --precision=float32')
+    benchmark._benchmark_type = Platform.CUDA
+    assert (benchmark._preprocess() is False)
+    assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_TYPE.value)
+
 
 def test_train():
     """Test interface Benchmark.__train()."""
-    (benchmark_class, name, parameters) = create_benchmark()
-
-    benchmark = benchmark_class(name, parameters)
-    benchmark._preprocess()
-    benchmark._ModelBenchmark__train(Precision.FLOAT32.value)
+    benchmark = create_benchmark()
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {"steptime_train_float32": [[2, 2, 2, 2, 2, 2, 2, 2]], '
         '"throughput_train_float32": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
         '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0]}}'
     )
-    assert (benchmark._result.to_string() == expected_result)
+    assert (benchmark._preprocess())
+    assert (benchmark._ModelBenchmark__train(Precision.FLOAT32.value))
+    assert (benchmark.serialized_result == expected_result)
+
+    # Step time list is empty (simulate training failure).
+    benchmark = create_benchmark('--num_steps=0')
+    expected_result = (
+        '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
+    )
+    assert (benchmark._preprocess())
+    assert (benchmark._ModelBenchmark__train(Precision.FLOAT32.value) is False)
+    assert (benchmark.serialized_result == expected_result)
 
 
 def test_inference():
     """Test interface Benchmark.__inference()."""
-    (benchmark_class, name, parameters) = create_benchmark()
-
-    benchmark = benchmark_class(name, parameters)
-    benchmark._preprocess()
-    benchmark._ModelBenchmark__inference(Precision.FLOAT16.value)
+    benchmark = create_benchmark()
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {"steptime_inference_float16": [[4, 4, 4, 4, 4, 4, 4, 4]], '
         '"throughput_inference_float16": [[8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0]]}, '
         '"result": {"steptime_inference_float16": [4.0], "throughput_inference_float16": [8000.0]}}'
     )
-    assert (benchmark._result.to_string() == expected_result)
+    assert (benchmark._preprocess())
+    assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16.value))
+    assert (benchmark.serialized_result == expected_result)
+
+    # Step time list is empty (simulate inference failure).
+    benchmark = create_benchmark('--num_steps=0')
+    expected_result = (
+        '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
+    )
+    assert (benchmark._preprocess())
+    assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16.value) is False)
+    assert (benchmark.serialized_result == expected_result)
 
 
 def test_benchmark():
     """Test interface Benchmark._benchmark()."""
-    (benchmark_class, name, parameters) = create_benchmark()
-
-    benchmark = benchmark_class(name, parameters)
+    # Positive case for _benchmark().
+    benchmark = create_benchmark()
     benchmark._preprocess()
-    benchmark._benchmark()
+    assert (benchmark._benchmark())
     assert (benchmark.name == 'pytorch-fake-model')
     assert (benchmark.type == BenchmarkType.MODEL.value)
     assert (benchmark.run_count == 1)
-    assert (benchmark.return_code == 0)
+    assert (benchmark.return_code == ReturnCode.SUCCESS.value)
     expected_raw_data = {
         'steptime_train_float32': [[2, 2, 2, 2, 2, 2, 2, 2]],
         'throughput_train_float32': [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]],
@@ -250,3 +280,44 @@ def test_benchmark():
         '"steptime_train_float16": [2.0], "throughput_train_float16": [16000.0]}}'
     )
     assert (benchmark.serialized_result == expected_serialized_result)
+
+    # Negative case for _benchmark() - no supported precision found.
+    benchmark = create_benchmark('--precision=int16')
+    assert (benchmark._preprocess())
+    assert (benchmark._benchmark() is False)
+    assert (benchmark.return_code == ReturnCode.NO_SUPPORTED_PRECISION.value)
+
+    # Negative case for _benchmark() - model train failure, step time list is empty.
+    benchmark = create_benchmark('--num_steps=0')
+    assert (benchmark._preprocess())
+    assert (benchmark._benchmark() is False)
+    assert (benchmark.return_code == ReturnCode.MODEL_TRAIN_FAILURE.value)
+
+    # Negative case for _benchmark() - model inference failure, step time list is empty.
+    benchmark = create_benchmark('--model_action=inference --num_steps=0')
+    assert (benchmark._preprocess())
+    assert (benchmark._benchmark() is False)
+    assert (benchmark.return_code == ReturnCode.MODEL_INFERENCE_FAILURE.value)
+
+
+def test_check_result_format():
+    """Test interface Benchmark.__check_result_format()."""
+    # Positive case for __check_result_format().
+    benchmark = create_benchmark()
+    benchmark._preprocess()
+    assert (benchmark._benchmark())
+    assert (benchmark._Benchmark__check_result_type())
+    assert (benchmark._Benchmark__check_summarized_result())
+    assert (benchmark._Benchmark__check_raw_data())
+
+    # Negative case for __check_result_format() - change List[int] to List[str].
+    benchmark._result._BenchmarkResult__result = {'metric1': ['2.0']}
+    assert (benchmark._Benchmark__check_summarized_result() is False)
+
+    # Negative case for __check_raw_data() - change List[List[int]] to List[List[str]].
+    benchmark._result._BenchmarkResult__raw_data = {'metric1': [['2.0']]}
+    assert (benchmark._Benchmark__check_raw_data() is False)
+
+    # Negative case for __check_raw_data() - invalid benchmark result.
+    assert (benchmark._Benchmark__check_result_format() is False)
+    assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT)

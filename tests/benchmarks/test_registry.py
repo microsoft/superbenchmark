@@ -5,7 +5,7 @@
 
 import re
 
-from superbench.benchmarks import Platform, Framework, BenchmarkType, BenchmarkContext, BenchmarkRegistry
+from superbench.benchmarks import Platform, Framework, BenchmarkType, BenchmarkContext, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 
 
@@ -51,6 +51,8 @@ class AccumulationBenchmark(MicroBenchmark):
         metric = 'accumulation_result'
         self._result.add_raw_data(metric, ','.join(raw_data))
         self._result.add_result(metric, result)
+
+        return True
 
 
 def test_register_benchmark():
@@ -156,15 +158,15 @@ def test_launch_benchmark():
         assert (benchmark.name == 'accumulation')
         assert (benchmark.type == BenchmarkType.MICRO.value)
         assert (benchmark.run_count == 1)
-        assert (benchmark.return_code == 0)
+        assert (benchmark.return_code == ReturnCode.SUCCESS.value)
         assert (benchmark.raw_data == {'accumulation_result': ['1,3,6,10']})
         assert (benchmark.result == {'accumulation_result': [10]})
 
-        # Replace the timestamp as "0".
-        result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', '\"0\"', benchmark.serialized_result)
+        # Replace the timestamp as null.
+        result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
         expected = (
             '{"name": "accumulation", "type": "micro", "run_count": 1, '
-            '"return_code": 0, "start_time": "0", "end_time": "0", '
+            '"return_code": 0, "start_time": null, "end_time": null, '
             '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
             '"result": {"accumulation_result": [10]}}'
         )
@@ -182,11 +184,11 @@ def test_launch_benchmark():
         assert (benchmark.raw_data == {'accumulation_result': ['1,3,6']})
         assert (benchmark.result == {'accumulation_result': [6]})
 
-        # Replace the timestamp as "0".
-        result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', '\"0\"', benchmark.serialized_result)
+        # Replace the timestamp as null.
+        result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
         expected = (
             '{"name": "accumulation", "type": "micro", "run_count": 1, '
-            '"return_code": 0, "start_time": "0", "end_time": "0", '
+            '"return_code": 0, "start_time": null, "end_time": null, '
             '"raw_data": {"accumulation_result": ["1,3,6"]}, '
             '"result": {"accumulation_result": [6]}}'
         )

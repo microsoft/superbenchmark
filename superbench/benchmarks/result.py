@@ -13,18 +13,19 @@ class BenchmarkResult():
 
     Defines the unified result format.
     """
-    def __init__(self, name, type, run_count=0):
+    def __init__(self, name, type, return_code, run_count=0):
         """Constructor.
 
         Args:
             name (str): name of benchmark.
             type (str): type of benchmark.
+            return_code (int): return code of benchmark.
             run_count (int): run count of benchmark, all runs will be organized as array.
         """
         self.__name = name
         self.__type = type
         self.__run_count = run_count
-        self.__return_code = 0
+        self.__return_code = return_code
         self.__start_time = None
         self.__end_time = None
         self.__raw_data = dict()
@@ -106,6 +107,14 @@ class BenchmarkResult():
             benchmark_type (str): type of benchmark, such as 'model', 'micro' or 'docker'.
         """
         self.__type = benchmark_type
+
+    def set_return_code(self, return_code):
+        """Set the return code.
+
+        Args:
+            return_code (int): value of return code defined in superbench.benchmarks.ReturnCode.
+        """
+        self.__return_code = return_code
 
     def to_string(self):
         """Serialize the BenchmarkResult object to string.

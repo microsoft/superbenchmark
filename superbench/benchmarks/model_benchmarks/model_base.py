@@ -6,7 +6,7 @@
 from abc import abstractmethod
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Enum, Precision, ModelAction, BenchmarkType
+from superbench.benchmarks import Enum, Precision, ModelAction, BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 
 
@@ -69,7 +69,6 @@ class ModelBenchmark(Benchmark):
             '--precision',
             type=str,
             default=[Precision.FLOAT32.value, Precision.FLOAT16.value],
-            choices=Precision.get_values(),
             nargs='+',
             required=False,
             help='Model precision. E.g. {}.'.format(' '.join(Precision.get_values())),
@@ -78,18 +77,55 @@ class ModelBenchmark(Benchmark):
             '--model_action',
             type=str,
             default=[ModelAction.TRAIN.value],
-            choices=ModelAction.get_values(),
             nargs='+',
             required=False,
-            help='Benchmark type. E.g. {}.'.format(' '.join(ModelAction.get_values())),
+            help='Benchmark model process. E.g. {}.'.format(' '.join(ModelAction.get_values())),
         )
         self._parser.add_argument(
             '--distributed_mode',
             type=str,
-            choices=DistributedMode.get_values(),
+            default=None,
             required=False,
             help='Distributed mode. E.g. {}'.format(' '.join(DistributedMode.get_values())),
         )
+
+    def parse_args(self):
+        """Parse and check the validation of arguments.
+
+        Return:
+            ret (bool): whether parse succeed or not.
+            args (argparse.Namespace): parsed arguments.
+            unknown (list): unknown arguments.
+        """
+        ret, args, unknown = super().parse_args()
+        for precision in args.precision:
+            if precision not in Precision.get_values():
+                logger.error(
+                    'Invalid precision argument - benchmark: {}, expect: {}, got: {}.'.format(
+                        self._name, ' '.join(Precision.get_values()), precision
+                    )
+                )
+                ret = False
+        for model_action in args.model_action:
+            if model_action not in ModelAction.get_values():
+                logger.error(
+                    'Invalid model_action argument - benchmark: {}, expect: {}, got: {}.'.format(
+                        self._name, ' '.join(ModelAction.get_values()), model_action
+                    )
+                )
+                ret = False
+
+        if args.distributed_mode:
+            for distributed_mode in args.distributed_mode:
+                if distributed_mode not in DistributedMode.get_values():
+                    logger.error(
+                        'Invalid distributed_mode argument - benchmark: {}, expect: {}, got: {}.'.format(
+                            self._name, ' '.join(DistributedMode.get_values()), distributed_mode
+                        )
+                    )
+                    ret = False
+
+        return ret, args, unknown
 
     @abstractmethod
     def _init_distributed_setting(self):
@@ -107,11 +143,19 @@ class ModelBenchmark(Benchmark):
         pass
 
     def _preprocess(self):
-        """Preprocess/preparation operations before the benchmarking."""
-        super()._preprocess()
+        """Preprocess/preparation operations before the benchmarking.
+
+        Return:
+            True if _preprocess() succeed.
+        """
+        ret = super()._preprocess()
+        if not ret:
+            return False
+
         self._init_distributed_setting()
         self._generate_dataset()
         self._init_dataloader()
+        return True
 
     @abstractmethod
     def _create_optimizer(self):
@@ -132,12 +176,23 @@ class ModelBenchmark(Benchmark):
 
         Args:
             precision (str): precision of model and input data, such as float32, float16.
+
+        Return:
+            True if step_times list is not empty.
         """
         self._create_model(precision)
         self._create_optimizer()
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
-        average_time = sum(step_times) / len(step_times) if len(step_times) > 0 else 0
+        if len(step_times) == 0:
+            logger.error(
+                'Step time list for training is empty - round: {}, model: {}, precision: {}.'.format(
+                    self._curr_run_index, self._name, precision
+                )
+            )
+            return False
+
+        average_time = sum(step_times) / len(step_times)
         logger.info(
             'Average train time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
                 self._curr_run_index, self._name, precision, average_time
@@ -145,17 +200,29 @@ class ModelBenchmark(Benchmark):
         )
 
         self.__process_model_result(ModelAction.TRAIN.value, precision, step_times)
+        return True
 
     def __inference(self, precision):
         """Launch the inference benchmark.
 
         Args:
             precision (str): precision of model and input data, such as float32, float16.
+
+        Return:
+            True if step_times list is not empty.
         """
         self._create_model(precision)
         # The unit of step time should be millisecond.
         step_times = self._inference_step(precision)
-        average_time = sum(step_times) / len(step_times) if len(step_times) > 0 else 0
+        if len(step_times) == 0:
+            logger.error(
+                'Step time list for inference is empty - round: {}, model: {}, precision: {}.'.format(
+                    self._curr_run_index, self._name, precision
+                )
+            )
+            return False
+
+        average_time = sum(step_times) / len(step_times)
         logger.info(
             'Average inference time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
                 self._curr_run_index, self._name, precision, average_time
@@ -163,6 +230,7 @@ class ModelBenchmark(Benchmark):
         )
 
         self.__process_model_result(ModelAction.INFERENCE.value, precision, step_times)
+        return True
 
     @abstractmethod
     def _train_step(self, precision):
@@ -190,20 +258,44 @@ class ModelBenchmark(Benchmark):
         pass
 
     def _benchmark(self):
-        """Implementation for benchmarking."""
+        """Implementation for benchmarking.
+
+        Return:
+            True if run benchmark successfully.
+        """
+        precision_need_to_run = list()
         for precision in self._args.precision:
             # Check if the precision is supported or not.
             if precision not in self._supported_precision:
-                logger.warning("{} model can't run with precision {}".format(self._name, precision))
-                continue
+                logger.warning(
+                    'Can not run with specified precision - model: {}, supprted precision: {}, specified precision: {}'.
+                    format(self._name, ' '.join(self._supported_precision), precision)
+                )
+            else:
+                precision_need_to_run.append(precision)
 
+        if len(precision_need_to_run) == 0:
+            self._result.set_return_code(ReturnCode.NO_SUPPORTED_PRECISION.value)
+            return False
+
+        for precision in precision_need_to_run:
             for model_action in self._args.model_action:
                 if model_action == ModelAction.TRAIN.value:
-                    self.__train(precision)
+                    if not self.__train(precision):
+                        self._result.set_return_code(ReturnCode.MODEL_TRAIN_FAILURE.value)
+                        return False
                 elif model_action == ModelAction.INFERENCE.value:
-                    self.__inference(precision)
+                    if not self.__inference(precision):
+                        self._result.set_return_code(ReturnCode.MODEL_INFERENCE_FAILURE.value)
+                        return False
                 else:
-                    logger.warning('{} model has unknown model action {}'.format(self._name, self._args.model_action))
+                    logger.warning(
+                        'Model action has no implementation yet - model: {}, model_action: {}'.format(
+                            self._name, model_action
+                        )
+                    )
+
+        return True
 
     def __process_model_result(self, model_action, precision, step_times):
         """Function to process raw results and save the summarized results.

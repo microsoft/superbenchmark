@@ -9,7 +9,7 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkType
+from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.result import BenchmarkResult
 
 
@@ -64,27 +64,44 @@ class Benchmark(ABC):
         """Parse the arguments.
 
         Return:
-            The parsed arguments and unknown arguments.
+            ret (bool): whether parse succeed or not.
+            args (argparse.Namespace): parsed arguments.
+            unknown (list): unknown arguments.
         """
-        self._args, unknown = self._parser.parse_known_args(self._argv)
+        args, unknown = self._parser.parse_known_args(self._argv)
         if len(unknown) > 0:
             logger.warning(
-                'Benchmark has unknown arguments, name: {}, unknown arguments: {}'.format(
+                'Benchmark has unknown arguments - benchmark: {}, unknown arguments: {}'.format(
                     self._name, ' '.join(unknown)
                 )
             )
 
-        return self._args, unknown
+        return True, args, unknown
 
     def _preprocess(self):
-        """Preprocess/preparation operations before the benchmarking."""
+        """Preprocess/preparation operations before the benchmarking.
+
+        Return:
+            True if _preprocess() succeed.
+        """
         self.add_parser_arguments()
-        self.parse_args()
-        logger.log_assert(
-            isinstance(self._benchmark_type, BenchmarkType),
-            'Invalid benchmark type - name: {}, type: {}'.format(self._name, type(self._benchmark_type))
+        ret, self._args, unknown = self.parse_args()
+        self._result = BenchmarkResult(
+            self._name, self._benchmark_type.value, ReturnCode.SUCCESS.value, run_count=self._args.run_count
         )
-        self._result = BenchmarkResult(self._name, self._benchmark_type.value, run_count=self._args.run_count)
+
+        if not ret:
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT.value)
+            return False
+
+        if not isinstance(self._benchmark_type, BenchmarkType):
+            logger.error(
+                'Invalid benchmark type - benchmark: {}, type: {}'.format(self._name, type(self._benchmark_type))
+            )
+            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_TYPE.value)
+            return False
+
+        return True
 
     @abstractmethod
     def _benchmark(self):
@@ -95,73 +112,108 @@ class Benchmark(ABC):
         """Function to launch the benchmarking.
 
         Return:
-            The serialized string of BenchmarkResult object.
+            True if run benchmark successfully.
         """
-        self._preprocess()
+        if not self._preprocess():
+            return False
 
         self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         for self._curr_run_index in range(self._args.run_count):
-            self._benchmark()
+            if not self._benchmark():
+                return False
+
         self._end_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-
         self._result.set_timestamp(self._start_time, self._end_time)
-        self.check_result_format()
 
-        return self._result.to_string()
+        if not self.__check_result_format():
+            return False
 
-    def check_result_format(self):
-        """Check the type of result object.
+        return True
+
+    def __check_result_format(self):
+        """Check the validation of result object.
 
         Return:
             True if the result is valid.
         """
-        # Check if the result is instance of BenchmarkResult.
-        logger.log_assert(
-            isinstance(self._result, BenchmarkResult),
-            'Type of result is invalid - expect: {}, got: {}.'.format(type(BenchmarkResult), type(self._result))
-        )
-        self.__check_summarized_result()
-        self.__check_raw_data()
+        if (not self.__check_result_type()) or (not self.__check_summarized_result()) or (not self.__check_raw_data()):
+            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
+            return False
+
+        return True
+
+    def __check_result_type(self):
+        """Check the type of result object.
+
+        Return:
+            True if the result is instance of BenchmarkResult.
+        """
+        if not isinstance(self._result, BenchmarkResult):
+            logger.error(
+                'Invalid benchmark result type - benchmark: {}, type: {}'.format(self._name, type(self._result))
+            )
+            return False
+
+        return True
 
     def __check_summarized_result(self):
-        # Check if the summary result is instance of List[Number].
-        for metric in self._result.result:
-            valid = isinstance(self._result.result[metric], list)
-            if valid:
-                for value in self._result.result[metric]:
-                    valid |= isinstance(value, numbers.Number)
+        """Check the validation of summary result.
 
-            logger.log_assert(
-                valid,
-                'Type of summarized result is invalid - benchmark: {}, metric name: {}, expect: List[Number], got: {}.'.
-                format(self._name, metric, type(self._result.result[metric]))
-            )
+        Return:
+            True if the summary result is instance of List[Number].
+        """
+        for metric in self._result.result:
+            is_valid = isinstance(self._result.result[metric], list)
+            if is_valid:
+                for value in self._result.result[metric]:
+                    if not isinstance(value, numbers.Number):
+                        is_valid = False
+                        break
+
+            if not is_valid:
+                logger.error(
+                    'Invalid summarized result - benchmark: {}, metric name: {}, expect: List[Number], got: {}.'.format(
+                        self._name, metric, type(self._result.result[metric])
+                    )
+                )
+                return False
+
+        return True
 
     def __check_raw_data(self):
-        # Check if the raw data is:
-        #   instance of List[List[Number]] for BenchmarkType.MODEL, and BenchmarkType.DOCKER.
-        #   instance of List[str] for BenchmarkType.MICRO.
+        """Check the validation of raw data.
+
+        Return:
+            True if the raw data is:
+              instance of List[List[Number]] for BenchmarkType.MODEL, and BenchmarkType.DOCKER.
+              instance of List[str] for BenchmarkType.MICRO.
+        """
         for metric in self._result.raw_data:
-            valid = isinstance(self._result.raw_data[metric], list)
-            if valid:
+            is_valid = isinstance(self._result.raw_data[metric], list)
+            if is_valid:
                 for run in self._result.raw_data[metric]:
                     if self._benchmark_type in [BenchmarkType.MODEL, BenchmarkType.DOCKER]:
-                        valid = isinstance(run, list)
-                        if not valid:
+                        if not isinstance(run, list):
+                            is_valid = False
                             break
                         for value in run:
-                            valid = isinstance(run, numbers.Number)
-
+                            if not isinstance(value, numbers.Number):
+                                is_valid = False
+                                break
                     elif self._benchmark_type in [BenchmarkType.MICRO]:
-                        valid = isinstance(run, str)
+                        is_valid = isinstance(run, str)
 
-            logger.log_assert(
-                valid, 'Type of raw data is invalid - benchmark: {}, metric name: {}, expect: {}, got: {}.'.format(
-                    self._name, metric,
-                    'List[str]' if self._benchmark_type == BenchmarkType.MICRO else 'List[List[Number]]',
-                    type(self._result.raw_data[metric])
+            if not is_valid:
+                logger.error(
+                    'Invalid raw data - benchmark: {}, metric name: {}, expect: {}, got: {}.'.format(
+                        self._name, metric,
+                        'List[str]' if self._benchmark_type == BenchmarkType.MICRO else 'List[List[Number]]',
+                        type(self._result.raw_data[metric])
+                    )
                 )
-            )
+                return False
+
+        return True
 
     def print_env_info(self):
         """Print environments or dependencies information."""

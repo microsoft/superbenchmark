@@ -121,8 +121,8 @@ class BenchmarkRegistry:
             if benchmark_class:
                 benchmark = benchmark_class(benchmark_name, customized_parameters)
                 benchmark.add_parser_arguments()
-                args, unknown = benchmark.parse_args()
-                if len(unknown) < 1:
+                ret, args, unknown = benchmark.parse_args()
+                if ret and len(unknown) < 1:
                     return True
 
         return False
@@ -135,7 +135,7 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            All configurable settings in raw string, None means context is invalid or no benchmark found.
+            All configurable settings in raw string, None means context is invalid or no benchmark is found.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
             return None
@@ -159,7 +159,8 @@ class BenchmarkRegistry:
             benchmark_context (BenchmarkContext): the benchmark context.
 
         Return:
-            benchmark (Benchmark): the benchmark instance contains all results.
+            benchmark (Benchmark): the benchmark instance contains all results,
+              None means context is invalid or no benchmark is found.
         """
         if not cls.is_benchmark_context_valid(benchmark_context):
             return None
@@ -176,7 +177,8 @@ class BenchmarkRegistry:
                     parameters = predefine_params + ' ' + parameters
 
                 benchmark = benchmark_class(benchmark_name, parameters)
-                benchmark.run()
+                ret = benchmark.run()
+                print('ret = {}'.format(ret))
 
         return benchmark
 
@@ -196,7 +198,10 @@ class BenchmarkRegistry:
         benchmark_name = cls.__get_benchmark_name(benchmark_context)
         platform = benchmark_context.platform
 
-        return cls.benchmarks.get(benchmark_name, {}).get(platform) is not None
+        if cls.benchmarks.get(benchmark_name, {}).get(platform) is None:
+            return False
+
+        return True
 
     @classmethod
     def __select_benchmark(cls, name, platform):
