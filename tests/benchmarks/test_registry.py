@@ -96,7 +96,7 @@ def test_get_benchmark_name():
         BenchmarkRegistry.register_benchmark(name, AccumulationBenchmark)
 
     # Test benchmark name for different Frameworks.
-    benchmark_frameworks = [Framework.NONE, Framework.PYTORCH, Framework.TENSORFLOW, Framework.ONNX]
+    benchmark_frameworks = [Framework.NONE, Framework.PYTORCH, Framework.TENSORFLOW1, Framework.ONNX]
     for i in range(len(benchmark_names)):
         context = BenchmarkContext('accumulation', Platform.CPU, framework=benchmark_frameworks[i])
         name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
@@ -156,9 +156,9 @@ def test_launch_benchmark():
         benchmark = BenchmarkRegistry.launch_benchmark(context)
         assert (benchmark)
         assert (benchmark.name == 'accumulation')
-        assert (benchmark.type == BenchmarkType.MICRO.value)
+        assert (benchmark.type == BenchmarkType.MICRO)
         assert (benchmark.run_count == 1)
-        assert (benchmark.return_code == ReturnCode.SUCCESS.value)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
         assert (benchmark.raw_data == {'accumulation_result': ['1,3,6,10']})
         assert (benchmark.result == {'accumulation_result': [10]})
 
@@ -178,9 +178,9 @@ def test_launch_benchmark():
         benchmark = BenchmarkRegistry.launch_benchmark(context)
         assert (benchmark)
         assert (benchmark.name == 'accumulation')
-        assert (benchmark.type == BenchmarkType.MICRO.value)
+        assert (benchmark.type == BenchmarkType.MICRO)
         assert (benchmark.run_count == 1)
-        assert (benchmark.return_code == 0)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
         assert (benchmark.raw_data == {'accumulation_result': ['1,3,6']})
         assert (benchmark.result == {'accumulation_result': [6]})
 

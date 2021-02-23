@@ -6,6 +6,7 @@
 from typing import Dict
 
 from superbench.common.utils import logger
+from superbench.common.errors import DuplicateBenchmarkRegistrationError
 from superbench.benchmarks import Platform, Framework, BenchmarkContext
 from superbench.benchmarks.base import Benchmark
 
@@ -32,14 +33,17 @@ class BenchmarkRegistry:
             parameters (str): predefined parameters of benchmark.
             platform (Platform): Platform types like CUDA, ROCM.
         """
-        logger.log_assert(
-            name and isinstance(name, str), 'Registered name of benchmark is not string: {}'.format(type(name))
-        )
+        if not name or not isinstance(name, str):
+            logger.log_and_raise(
+                TypeError,
+                'Name of registered benchmark is not string - benchmark: {}, type: {}'.format(name, type(name))
+            )
 
-        logger.log_assert(
-            issubclass(class_def, Benchmark),
-            'Registered class is not subclass of Benchmark: {}'.format(type(class_def))
-        )
+        if not issubclass(class_def, Benchmark):
+            logger.log_and_raise(
+                TypeError,
+                'Registered class is not subclass of Benchmark - benchmark: {}, type: {}'.format(name, type(class_def))
+            )
 
         if name not in cls.benchmarks:
             cls.benchmarks[name] = dict()
@@ -47,12 +51,19 @@ class BenchmarkRegistry:
         if platform:
             if platform not in Platform:
                 platform_list = list(map(str, Platform))
-                logger.log_assert(False, 'Supportted platforms: {}, but got: {}'.format(platform_list, platform))
+                logger.log_and_raise(
+                    TypeError, 'Unknown platform - benchmark: {}, supportted platforms: {}, but got: {}'.format(
+                        name, platform_list, platform
+                    )
+                )
 
             if platform not in cls.benchmarks[name]:
                 cls.benchmarks[name][platform] = (class_def, parameters)
             else:
-                logger.log_assert(False, 'Duplicate registration, name: {}, platform: {}'.format(name, platform))
+                logger.log_and_raise(
+                    DuplicateBenchmarkRegistrationError,
+                    'Duplicate registration - benchmark: {}, platform: {}'.format(name, platform)
+                )
         else:
             # If not specified the tag, means the
             # benchmark works for all platforms.
@@ -60,7 +71,9 @@ class BenchmarkRegistry:
                 if p not in cls.benchmarks[name]:
                     cls.benchmarks[name][p] = (class_def, parameters)
                 else:
-                    logger.log_assert(False, 'Duplicate registration, name: {}'.format(name))
+                    logger.log_and_raise(
+                        DuplicateBenchmarkRegistrationError, 'Duplicate registration - benchmark: {}'.format(name)
+                    )
 
     @classmethod
     def is_benchmark_context_valid(cls, benchmark_context):

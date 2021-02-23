@@ -10,18 +10,17 @@ import io
 
 
 class LoggerAdapter(logging.LoggerAdapter):
-    """LoggerAdapter class which add customized function for log error and assert."""
-    def log_assert(self, condition, msg, *args):
-        """Log error and assert.
+    """LoggerAdapter class which add customized function for log error and raise exception."""
+    def log_and_raise(self, exception, msg, *args):
+        """Log error and raise exception.
 
         Args:
-            condition (bool): condation result.
+            exception (BaseException): Exception class.
             msg (str): logging message.
             args (dict): arguments dict for message.
         """
-        if not condition:
-            self.error(msg, *args)
-            assert (False), msg % args
+        self.error(msg, *args)
+        raise exception(msg % args)
 
 
 class Logger:

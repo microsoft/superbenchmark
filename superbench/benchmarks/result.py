@@ -4,6 +4,7 @@
 """A module for unified result of benchmarks."""
 
 import json
+from enum import Enum
 
 from superbench.common.utils import logger
 
@@ -18,8 +19,8 @@ class BenchmarkResult():
 
         Args:
             name (str): name of benchmark.
-            type (str): type of benchmark.
-            return_code (int): return code of benchmark.
+            type (BenchmarkType): type of benchmark.
+            return_code (ReturnCode): return code of benchmark.
             run_count (int): run count of benchmark, all runs will be organized as array.
         """
         self.__name = name
@@ -104,7 +105,7 @@ class BenchmarkResult():
         """Set the type of benchmark.
 
         Args:
-            benchmark_type (str): type of benchmark, such as 'model', 'micro' or 'docker'.
+            benchmark_type (BenchmarkType): type of benchmark, such as BenchmarkType.MODEL, BenchmarkType.MICRO.
         """
         self.__type = benchmark_type
 
@@ -112,7 +113,7 @@ class BenchmarkResult():
         """Set the return code.
 
         Args:
-            return_code (int): value of return code defined in superbench.benchmarks.ReturnCode.
+            return_code (ReturnCode): return code defined in superbench.benchmarks.ReturnCode.
         """
         self.__return_code = return_code
 
@@ -126,7 +127,11 @@ class BenchmarkResult():
         for key in self.__dict__:
             # The name of internal member is like '_BenchmarkResult__name'.
             # For the result object return to caller, just keep 'name'.
-            formatted_obj[key.split('__')[1]] = self.__dict__[key]
+            formatted_key = key.split('__')[1]
+            if isinstance(self.__dict__[key], Enum):
+                formatted_obj[formatted_key] = self.__dict__[key].value
+            else:
+                formatted_obj[formatted_key] = self.__dict__[key]
 
         return json.dumps(formatted_obj)
 

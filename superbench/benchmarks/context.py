@@ -14,6 +14,10 @@ class Enum(enum.Enum):
         values = [item.value for item in cls]
         return values
 
+    def __str__(self):
+        """Value as the string."""
+        return self.value
+
 
 class Platform(Enum):
     """The Enum class representing different platforms."""
@@ -26,7 +30,7 @@ class Framework(Enum):
     """The Enum class representing different frameworks."""
     ONNX = 'onnx'
     PYTORCH = 'pytorch'
-    TENSORFLOW = 'tf1'
+    TENSORFLOW1 = 'tf1'
     TENSORFLOW2 = 'tf2'
     NONE = 'none'
 

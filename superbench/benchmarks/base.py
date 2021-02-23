@@ -68,7 +68,12 @@ class Benchmark(ABC):
             args (argparse.Namespace): parsed arguments.
             unknown (list): unknown arguments.
         """
-        args, unknown = self._parser.parse_known_args(self._argv)
+        try:
+            args, unknown = self._parser.parse_known_args(self._argv)
+        except BaseException as e:
+            logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
+            return False, None, None
+
         if len(unknown) > 0:
             logger.warning(
                 'Benchmark has unknown arguments - benchmark: {}, unknown arguments: {}'.format(
@@ -86,19 +91,20 @@ class Benchmark(ABC):
         """
         self.add_parser_arguments()
         ret, self._args, unknown = self.parse_args()
-        self._result = BenchmarkResult(
-            self._name, self._benchmark_type.value, ReturnCode.SUCCESS.value, run_count=self._args.run_count
-        )
 
         if not ret:
-            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT.value)
+            self._result = BenchmarkResult(self._name, self._benchmark_type, ReturnCode.INVALID_ARGUMENT)
             return False
+
+        self._result = BenchmarkResult(
+            self._name, self._benchmark_type, ReturnCode.SUCCESS, run_count=self._args.run_count
+        )
 
         if not isinstance(self._benchmark_type, BenchmarkType):
             logger.error(
                 'Invalid benchmark type - benchmark: {}, type: {}'.format(self._name, type(self._benchmark_type))
             )
-            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_TYPE.value)
+            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_TYPE)
             return False
 
         return True

@@ -6,17 +6,25 @@
 from abc import abstractmethod
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Enum, Precision, ModelAction, BenchmarkType, ReturnCode
+from superbench.benchmarks import Precision, ModelAction, BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
+from superbench.benchmarks.context import Enum
 
 
-class DistributedMode(Enum):
-    """The Enum class representing different distributed mode."""
-    PYTORCH_DDP_NCCL = 'pytorch-ddp-nccl'
-    TF_MIRRORED = 'tf-mirrored'
-    TF_MW_MIRRORED = 'tf-multiworkermirrored'
-    TF_PS = 'tf-parameterserver'
+class DistributedImpl(Enum):
+    """The Enum class representing different distributed implementations."""
+    DDP = 'ddp'
+    MIRRORED = 'mirrored'
+    MW_MIRRORED = 'multiworkermirrored'
+    PS = 'parameterserver'
     HOROVOD = 'horovod'
+
+
+class DistributedBackend(Enum):
+    """The Enum class representing different distributed backends."""
+    NCCL = 'nccl'
+    MPI = 'mpi'
+    GLOO = 'gloo'
 
 
 class ModelBenchmark(Benchmark):
@@ -67,65 +75,35 @@ class ModelBenchmark(Benchmark):
         )
         self._parser.add_argument(
             '--precision',
-            type=str,
-            default=[Precision.FLOAT32.value, Precision.FLOAT16.value],
+            type=Precision,
+            default=[Precision.FLOAT32, Precision.FLOAT16],
             nargs='+',
             required=False,
             help='Model precision. E.g. {}.'.format(' '.join(Precision.get_values())),
         )
         self._parser.add_argument(
             '--model_action',
-            type=str,
-            default=[ModelAction.TRAIN.value],
+            type=ModelAction,
+            default=[ModelAction.TRAIN],
             nargs='+',
             required=False,
             help='Benchmark model process. E.g. {}.'.format(' '.join(ModelAction.get_values())),
         )
         self._parser.add_argument(
-            '--distributed_mode',
-            type=str,
+            '--distributed_impl',
+            type=DistributedImpl,
             default=None,
             required=False,
-            help='Distributed mode. E.g. {}'.format(' '.join(DistributedMode.get_values())),
+            help='Distributed implementations. E.g. {}'.format(' '.join(DistributedImpl.get_values())),
         )
 
-    def parse_args(self):
-        """Parse and check the validation of arguments.
-
-        Return:
-            ret (bool): whether parse succeed or not.
-            args (argparse.Namespace): parsed arguments.
-            unknown (list): unknown arguments.
-        """
-        ret, args, unknown = super().parse_args()
-        for precision in args.precision:
-            if precision not in Precision.get_values():
-                logger.error(
-                    'Invalid precision argument - benchmark: {}, expect: {}, got: {}.'.format(
-                        self._name, ' '.join(Precision.get_values()), precision
-                    )
-                )
-                ret = False
-        for model_action in args.model_action:
-            if model_action not in ModelAction.get_values():
-                logger.error(
-                    'Invalid model_action argument - benchmark: {}, expect: {}, got: {}.'.format(
-                        self._name, ' '.join(ModelAction.get_values()), model_action
-                    )
-                )
-                ret = False
-
-        if args.distributed_mode:
-            for distributed_mode in args.distributed_mode:
-                if distributed_mode not in DistributedMode.get_values():
-                    logger.error(
-                        'Invalid distributed_mode argument - benchmark: {}, expect: {}, got: {}.'.format(
-                            self._name, ' '.join(DistributedMode.get_values()), distributed_mode
-                        )
-                    )
-                    ret = False
-
-        return ret, args, unknown
+        self._parser.add_argument(
+            '--distributed_backend',
+            type=DistributedBackend,
+            default=None,
+            required=False,
+            help='Distributed backends. E.g. {}'.format(' '.join(DistributedBackend.get_values())),
+        )
 
     @abstractmethod
     def _init_distributed_setting(self):
@@ -167,7 +145,7 @@ class ModelBenchmark(Benchmark):
         """Construct the model for benchmarking.
 
         Args:
-            precision (str): precision of model and input data, such as float32, float16.
+            precision (Precision): precision of model and input data, such as float32, float16.
         """
         pass
 
@@ -175,7 +153,7 @@ class ModelBenchmark(Benchmark):
         """Launch the training benchmark.
 
         Args:
-            precision (str): precision of model and input data, such as float32, float16.
+            precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
             True if step_times list is not empty.
@@ -199,14 +177,14 @@ class ModelBenchmark(Benchmark):
             )
         )
 
-        self.__process_model_result(ModelAction.TRAIN.value, precision, step_times)
+        self.__process_model_result(ModelAction.TRAIN, precision, step_times)
         return True
 
     def __inference(self, precision):
         """Launch the inference benchmark.
 
         Args:
-            precision (str): precision of model and input data, such as float32, float16.
+            precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
             True if step_times list is not empty.
@@ -229,7 +207,7 @@ class ModelBenchmark(Benchmark):
             )
         )
 
-        self.__process_model_result(ModelAction.INFERENCE.value, precision, step_times)
+        self.__process_model_result(ModelAction.INFERENCE, precision, step_times)
         return True
 
     @abstractmethod
@@ -237,7 +215,7 @@ class ModelBenchmark(Benchmark):
         """Define the training process.
 
         Args:
-            precision (str): precision of model and input data, such as float32, float16.
+            precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
             The step-time list of every training step.
@@ -249,7 +227,7 @@ class ModelBenchmark(Benchmark):
         """Define the inference process.
 
         Args:
-            precision (str): precision of model and input data,
+            precision (Precision): precision of model and input data,
               such as float32, float16.
 
         Return:
@@ -269,24 +247,24 @@ class ModelBenchmark(Benchmark):
             if precision not in self._supported_precision:
                 logger.warning(
                     'Can not run with specified precision - model: {}, supprted precision: {}, specified precision: {}'.
-                    format(self._name, ' '.join(self._supported_precision), precision)
+                    format(self._name, ' '.join([p.value for p in self._supported_precision]), precision)
                 )
             else:
                 precision_need_to_run.append(precision)
 
         if len(precision_need_to_run) == 0:
-            self._result.set_return_code(ReturnCode.NO_SUPPORTED_PRECISION.value)
+            self._result.set_return_code(ReturnCode.NO_SUPPORTED_PRECISION)
             return False
 
         for precision in precision_need_to_run:
             for model_action in self._args.model_action:
-                if model_action == ModelAction.TRAIN.value:
+                if model_action == ModelAction.TRAIN:
                     if not self.__train(precision):
-                        self._result.set_return_code(ReturnCode.MODEL_TRAIN_FAILURE.value)
+                        self._result.set_return_code(ReturnCode.MODEL_TRAIN_FAILURE)
                         return False
-                elif model_action == ModelAction.INFERENCE.value:
+                elif model_action == ModelAction.INFERENCE:
                     if not self.__inference(precision):
-                        self._result.set_return_code(ReturnCode.MODEL_INFERENCE_FAILURE.value)
+                        self._result.set_return_code(ReturnCode.MODEL_INFERENCE_FAILURE)
                         return False
                 else:
                     logger.warning(
@@ -301,11 +279,11 @@ class ModelBenchmark(Benchmark):
         """Function to process raw results and save the summarized results.
 
         Args:
-            model_action (str): train or inference.
-            precision (str): precision of model and input data, such as float32, float16.
+            model_action (ModelAction): train or inference.
+            precision (Precision): precision of model and input data, such as float32, float16.
             step_times (list): The step time list of every training/inference step, unit is millisecond.
         """
-        metric = 'steptime_{}_{}'.format(model_action, precision)
+        metric = 'steptime_{}_{}'.format(model_action.value, precision.value)
         self._result.add_raw_data(metric, step_times)
         avg = sum(step_times) / len(step_times)
         self._result.add_result(metric, avg)
@@ -313,7 +291,7 @@ class ModelBenchmark(Benchmark):
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
-        metric = 'throughput_{}_{}'.format(model_action, precision)
+        metric = 'throughput_{}_{}'.format(model_action.value, precision.value)
         self._result.add_raw_data(metric, throughput)
         avg = sum(throughput) / len(throughput)
         self._result.add_result(metric, avg)
