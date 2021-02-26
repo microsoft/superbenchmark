@@ -132,7 +132,11 @@ setup(
     keywords='benchmark, AI systems',
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
-    install_requires=[],
+    install_requires=[
+        'knack>=0.7.2',
+        'hydra-core>=1.0.4',
+        'hydra-colorlog>=1.0.0',
+    ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
         'test': [
