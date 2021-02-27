@@ -150,9 +150,13 @@ setup(
             'pytest-cov>=2.11.1',
         ],
     },
-    package_data={},
+    include_package_data=True,
     entry_points={
-        'console_scripts': [],
+        'console_scripts': [
+            'sb = superbench.cli.sb:main',
+            'sb-exec = superbench.cli.sb_exec:main',
+            'sb-run = superbench.cli.sb_run:main',
+        ],
     },
     cmdclass={
         'format': Formatter,

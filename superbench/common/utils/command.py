@@ -15,7 +15,7 @@ def get_sb_command(cli, output_path, config_override):
     Returns:
         str: Command to run.
     """
-    sb_cmd = './superbench/cli/{cli} ' \
+    sb_cmd = '{cli} ' \
         '--config-name=merge ' \
         '--config-dir={path} ' \
         'hydra.run.dir={path} ' \
