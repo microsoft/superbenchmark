@@ -100,9 +100,6 @@ def exec_command_handler(
     config['docker'] = {}
     for n in ['image', 'username', 'password']:
         config['docker'][n] = eval('docker_{}'.format(n))
-    config['ansible'] = {}
-    for n in ['file', 'list', 'username', 'password']:
-        config['ansible']['host_{}'.format(n)] = eval('host_{}'.format(n))
     output_dir = new_output_dir()
     with (Path(output_dir) / 'merge.yaml').open(mode='w') as f:
         yaml.safe_dump(config, f)

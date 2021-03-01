@@ -25,15 +25,17 @@ class SuperBenchCLI(CLI):
         return superbench.__version__
 
 
+sb_cli = SuperBenchCLI(
+    cli_name=CLI_NAME,
+    config_env_var_prefix=CLI_NAME,
+    commands_loader_cls=SuperBenchCommandsLoader,
+    help_cls=SuperBenchCLIHelp,
+)
+
+
 def main():
     """The main function for CLI."""
-    cli = SuperBenchCLI(
-        cli_name=CLI_NAME,
-        config_env_var_prefix=CLI_NAME,
-        commands_loader_cls=SuperBenchCommandsLoader,
-        help_cls=SuperBenchCLIHelp,
-    )
-    exit_code = cli.invoke(sys.argv[1:])
+    exit_code = sb_cli.invoke(sys.argv[1:])
     sys.exit(exit_code)
 
 

@@ -140,6 +140,7 @@ setup(
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
         'test': [
+            'vcrpy>=4.1.1',
             'yapf>=0.30.0',
             'mypy>=0.800',
             'flake8>=3.8.4',
