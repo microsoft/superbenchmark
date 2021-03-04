@@ -39,10 +39,12 @@ class ModelBenchmark(Benchmark):
         super().__init__(name, parameters)
 
         self._benchmark_type = BenchmarkType.MODEL
-        self._world_size = None
+        self._world_size = 1
+        self._local_rank = None
         self._dataset = None
         self._dataloader = None
         self._model = None
+        self._optimizer_type = None
         self._optimizer = None
         self._loss_fn = None
         self._target = None
@@ -107,17 +109,29 @@ class ModelBenchmark(Benchmark):
 
     @abstractmethod
     def _init_distributed_setting(self):
-        """Initialize the distributed library and bind the worker to GPU."""
+        """Initialize the distributed library and bind the worker to GPU.
+
+        Return:
+            True if distributed library is initialized successfully.
+        """
         pass
 
     @abstractmethod
     def _generate_dataset(self):
-        """Generate dataset for benchmarking according to shape info."""
+        """Generate dataset for benchmarking according to shape info.
+
+        Return:
+            True if dataset is created successfully.
+        """
         pass
 
     @abstractmethod
     def _init_dataloader(self):
-        """Initialize the distributed dataloader."""
+        """Initialize the dataloader.
+
+        Return:
+            True if dataloader is created successfully.
+        """
         pass
 
     def _preprocess(self):
@@ -126,18 +140,30 @@ class ModelBenchmark(Benchmark):
         Return:
             True if _preprocess() succeed.
         """
-        ret = super()._preprocess()
-        if not ret:
+        if not super()._preprocess():
             return False
 
-        self._init_distributed_setting()
-        self._generate_dataset()
-        self._init_dataloader()
+        if not self._init_distributed_setting():
+            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
+            return False
+
+        if not self._generate_dataset():
+            self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
+            return False
+
+        if not self._init_dataloader():
+            self._result.set_return_code(ReturnCode.DATALOADER_INIT_FAILURE)
+            return False
+
         return True
 
     @abstractmethod
     def _create_optimizer(self):
-        """Create the optimzier instance used for training."""
+        """Create the optimzier instance used for training and wrap with distributed library if need.
+
+        Return:
+            True if optimizer instance is created successfully.
+        """
         pass
 
     @abstractmethod
@@ -158,8 +184,14 @@ class ModelBenchmark(Benchmark):
         Return:
             True if step_times list is not empty.
         """
-        self._create_model(precision)
-        self._create_optimizer()
+        if not self._create_model(precision):
+            self._result.set_return_code(ReturnCode.MODEL_CREATION_FAILURE)
+            return False
+
+        if not self._create_optimizer():
+            self._result.set_return_code(ReturnCode.OPTIMIZER_CREATION_FAILURE)
+            return False
+
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
         if len(step_times) == 0:

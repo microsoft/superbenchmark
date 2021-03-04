@@ -41,23 +41,23 @@ class FakeModelBenchmark(ModelBenchmark):
 
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU."""
-        pass
+        return True
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info."""
-        pass
+        return True
 
     def _init_dataloader(self):
         """Initialize the distributed dataloader."""
-        pass
+        return True
 
     def _create_optimizer(self):
         """Create the optimzier instance used for training."""
-        pass
+        return True
 
     def _create_model(self, precision):
         """Construct the model for benchmarking."""
-        pass
+        return True
 
     def _train_step(self, precision):
         """Define the training process.
