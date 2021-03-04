@@ -190,8 +190,7 @@ class BenchmarkRegistry:
                     parameters = predefine_params + ' ' + parameters
 
                 benchmark = benchmark_class(benchmark_name, parameters)
-                ret = benchmark.run()
-                print('ret = {}'.format(ret))
+                benchmark.run()
 
         return benchmark
 

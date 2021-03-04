@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""SuperBench loggin module."""
+"""SuperBench logging module."""
 
 import socket
 import logging
