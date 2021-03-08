@@ -46,6 +46,13 @@ class PytorchBase(ModelBenchmark):
                 self._local_rank = int(hvd.local_rank())
             elif self._args.distributed_impl == DistributedImpl.DDP:
                 torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
+                if os.environ.get('WORLD_SIZE') is False or os.environ.get('LOCAL_RANK') is False:
+                    logger.error(
+                        'Can not find WORLD_SIZE or LOCAL_RANK in env variables - model: {},'
+                        ' distributed implementation: {}.'.format(self._name, self._args.distributed_impl.value)
+                    )
+                    return False
+
                 self._world_size = int(os.environ['WORLD_SIZE'])
                 self._local_rank = int(os.environ['LOCAL_RANK'])
             else:
