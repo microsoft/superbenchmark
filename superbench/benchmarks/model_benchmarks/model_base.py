@@ -56,6 +56,7 @@ class ModelBenchmark(Benchmark):
         self._loss_fn = None
         self._target = None
         self._supported_precision = []
+        self._gpu_avaliable = None
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -114,6 +115,18 @@ class ModelBenchmark(Benchmark):
             help='Distributed backends. E.g. {}'.format(' '.join(DistributedBackend.get_values())),
         )
 
+        self._parser.add_argument(
+            '--no_gpu',
+            action='store_true',
+            default=False,
+            help='Disable GPU training.',
+        )
+
+    @abstractmethod
+    def _judge_gpu_availability(self):
+        """Judge GPUs' avaliability according to arguments and runing environment."""
+        pass
+
     @abstractmethod
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU.
@@ -149,6 +162,9 @@ class ModelBenchmark(Benchmark):
         """
         if not super()._preprocess():
             return False
+
+        self._judge_gpu_availability()
+        logger.info('GPU avaliablility - model: {}, avaliablility: {}.'.format(self._name, self._gpu_avaliable))
 
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)

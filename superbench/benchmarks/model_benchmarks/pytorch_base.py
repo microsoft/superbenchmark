@@ -27,6 +27,10 @@ class PytorchBase(ModelBenchmark):
         self._framework = Framework.PYTORCH
         torch.backends.cudnn.benchmark = True
 
+    def _judge_gpu_availability(self):
+        """Judge GPUs' avaliability according to arguments and runing environment."""
+        self._gpu_avaliable = not self._args.no_gpu and torch.cuda.is_available()
+
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU.
 
@@ -63,7 +67,7 @@ class PytorchBase(ModelBenchmark):
                 )
                 return False
 
-            if torch.cuda.is_available():
+            if self._gpu_avaliable:
                 torch.cuda.set_device(self._local_rank)
 
         return True
