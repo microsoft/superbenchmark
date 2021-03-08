@@ -56,7 +56,7 @@ class ModelBenchmark(Benchmark):
         self._loss_fn = None
         self._target = None
         self._supported_precision = []
-        self._gpu_avaliable = None
+        self._gpu_available = None
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -124,7 +124,7 @@ class ModelBenchmark(Benchmark):
 
     @abstractmethod
     def _judge_gpu_availability(self):
-        """Judge GPUs' avaliability according to arguments and runing environment."""
+        """Judge GPUs' availability according to arguments and running environment."""
         pass
 
     @abstractmethod
@@ -164,7 +164,7 @@ class ModelBenchmark(Benchmark):
             return False
 
         self._judge_gpu_availability()
-        logger.info('GPU avaliablility - model: {}, avaliablility: {}.'.format(self._name, self._gpu_avaliable))
+        logger.info('GPU availablility - model: {}, availablility: {}.'.format(self._name, self._gpu_available))
 
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
