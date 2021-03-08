@@ -39,6 +39,10 @@ class FakeModelBenchmark(ModelBenchmark):
             help='Sequence length',
         )
 
+    def _judge_gpu_availability(self):
+        """Judge GPUs' availability according to arguments and running environment."""
+        self._gpu_available = False
+
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU."""
         return True
@@ -154,9 +158,11 @@ def test_arguments_related_interfaces():
                         multiworkermirrored parameterserver horovod
   --distributed_backend DistributedBackend
                         Distributed backends. E.g. nccl mpi gloo
+  --no_gpu              Disable GPU training.
   --hidden_size int     Hidden size
   --seq_len int         Sequence length"""
     )
+    print(settings)
     assert (settings == expected_settings)
 
 
@@ -184,6 +190,7 @@ def test_preprocess():
                         multiworkermirrored parameterserver horovod
   --distributed_backend DistributedBackend
                         Distributed backends. E.g. nccl mpi gloo
+  --no_gpu              Disable GPU training.
   --hidden_size int     Hidden size
   --seq_len int         Sequence length"""
     )
