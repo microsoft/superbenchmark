@@ -336,7 +336,7 @@ class ModelBenchmark(Benchmark):
         self._result.add_result(metric, avg)
 
     @abstractmethod
-    def _cal_params_count(self):
+    def _cal_params_size(self):
         """Calculate the parameters scale of the model.
 
         Return:

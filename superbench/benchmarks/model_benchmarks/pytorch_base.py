@@ -10,8 +10,7 @@ from torch.utils.data import DataLoader
 
 from superbench.common.utils import logger
 from superbench.benchmarks import Framework
-from superbench.benchmarks.model_benchmarks.model_base import DistributedImpl, ModelBenchmark
-from superbench.benchmarks.model_benchmarks.optimizer import create_torch_optimizer
+from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, ModelBenchmark
 
 
 class PytorchBase(ModelBenchmark):
@@ -113,7 +112,15 @@ class PytorchBase(ModelBenchmark):
                 self._model, device_ids=[self._local_rank], output_device=self._local_rank
             )
 
-        self._optimizer = create_torch_optimizer(self._optimizer_type, self._model.parameters())
+        if self._optimizer_type == Optimizer.SGD:
+            self._optimizer = torch.optim.SGD(
+                self._model.parameters(), lr=1e-5, momentum=0.9, weight_decay=1e-4, nesterov=True
+            )
+        elif self._optimizer_type == Optimizer.ADAM:
+            self._optimizer = torch.optim.Adam(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
+        elif self._optimizer_type == Optimizer.ADAMW:
+            self._optimizer = torch.optim.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
+
         if not self._optimizer:
             logger.error(
                 'Create optimizer failed - model: {}, optimizer type: {}.'.format(
@@ -135,7 +142,7 @@ class PytorchBase(ModelBenchmark):
 
         return True
 
-    def _cal_params_count(self):
+    def _cal_params_size(self):
         """Calculate the parameters scale of the model.
 
         Return:
