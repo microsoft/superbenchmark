@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Framework, Precision
+from superbench.benchmarks import Framework
 from superbench.benchmarks.model_benchmarks.model_base import DistributedImpl, ModelBenchmark
 from superbench.benchmarks.model_benchmarks.optimizer import create_torch_optimizer
 
@@ -135,28 +135,10 @@ class PytorchBase(ModelBenchmark):
 
         return True
 
-    def _cal_params_size(self):
+    def _cal_params_count(self):
         """Calculate the parameters scale of the model.
 
         Return:
             The count of trainable parameters.
         """
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
-
-    @classmethod
-    def _get_torch_precision_function_name(cls, precision):
-        """Convert the precision to torch fuction name of torch.Module.
-
-        Return:
-            Torch fuction name of torch.Module, None means no torch function support.
-        """
-        precision_converter_map = {
-            Precision.FLOAT16: 'half',
-            Precision.FLOAT32: 'float',
-            Precision.FLOAT64: 'double',
-            Precision.BFLOAT16: 'bfloat16'
-        }
-        if precision not in precision_converter_map:
-            return None
-
-        return precision_converter_map[precision]
