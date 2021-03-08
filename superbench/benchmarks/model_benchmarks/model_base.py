@@ -11,6 +11,13 @@ from superbench.benchmarks.base import Benchmark
 from superbench.benchmarks.context import Enum
 
 
+class Optimizer(Enum):
+    """The Enum class representing different optimizers."""
+    SGD = 'sgd'
+    ADAM = 'adam'
+    ADAMW = 'adamw'
+
+
 class DistributedImpl(Enum):
     """The Enum class representing different distributed implementations."""
     DDP = 'ddp'
