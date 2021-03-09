@@ -89,7 +89,7 @@ class FakeModelBenchmark(ModelBenchmark):
             duration.append(4)
         return duration
 
-    def _cal_params_size(self):
+    def _cal_params_count(self):
         """Calculate the parameters scale of the model.
 
         Return:

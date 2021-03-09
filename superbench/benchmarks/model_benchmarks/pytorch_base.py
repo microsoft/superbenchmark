@@ -149,7 +149,7 @@ class PytorchBase(ModelBenchmark):
 
         return True
 
-    def _cal_params_size(self):
+    def _cal_params_count(self):
         """Calculate the parameters scale of the model.
 
         Return:
