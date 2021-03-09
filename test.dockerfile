@@ -28,7 +28,7 @@ RUN pip3 install \
     torchvision==0.9.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
 # Lint code
-#RUN python3 setup.py lint
+RUN python3 setup.py lint
 
 # Test code
 RUN python3 setup.py test
