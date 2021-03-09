@@ -67,21 +67,21 @@ class ModelBenchmark(Benchmark):
             type=int,
             default=64,
             required=False,
-            help='The number of warmup step',
+            help='The number of warmup step.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
             default=2048,
             required=False,
-            help='The number of test step',
+            help='The number of test step.',
         )
         self._parser.add_argument(
             '--batch_size',
             type=int,
             default=32,
             required=False,
-            help='The number of batch size',
+            help='The number of batch size.',
         )
         self._parser.add_argument(
             '--precision',
@@ -104,7 +104,7 @@ class ModelBenchmark(Benchmark):
             type=DistributedImpl,
             default=None,
             required=False,
-            help='Distributed implementations. E.g. {}'.format(' '.join(DistributedImpl.get_values())),
+            help='Distributed implementations. E.g. {}.'.format(' '.join(DistributedImpl.get_values())),
         )
 
         self._parser.add_argument(
@@ -112,7 +112,7 @@ class ModelBenchmark(Benchmark):
             type=DistributedBackend,
             default=None,
             required=False,
-            help='Distributed backends. E.g. {}'.format(' '.join(DistributedBackend.get_values())),
+            help='Distributed backends. E.g. {}.'.format(' '.join(DistributedBackend.get_values())),
         )
 
         self._parser.add_argument(

@@ -28,7 +28,7 @@ class FakeModelBenchmark(ModelBenchmark):
             type=int,
             default=1024,
             required=False,
-            help='Hidden size',
+            help='Hidden size.',
         )
 
         self._parser.add_argument(
@@ -36,7 +36,7 @@ class FakeModelBenchmark(ModelBenchmark):
             type=int,
             default=512,
             required=False,
-            help='Sequence length',
+            help='Sequence length.',
         )
 
     def _judge_gpu_availability(self):
@@ -145,9 +145,9 @@ def test_arguments_related_interfaces():
         """optional arguments:
   --run_count int       The run count of benchmark.
   --duration int        The elapsed time of benchmark in seconds.
-  --num_warmup int      The number of warmup step
-  --num_steps int       The number of test step
-  --batch_size int      The number of batch size
+  --num_warmup int      The number of warmup step.
+  --num_steps int       The number of test step.
+  --batch_size int      The number of batch size.
   --precision Precision [Precision ...]
                         Model precision. E.g. float16 float32 float64 bfloat16
                         uint8 int8 int16 int32 int64.
@@ -155,14 +155,13 @@ def test_arguments_related_interfaces():
                         Benchmark model process. E.g. train inference.
   --distributed_impl DistributedImpl
                         Distributed implementations. E.g. ddp mirrored
-                        multiworkermirrored parameterserver horovod
+                        multiworkermirrored parameterserver horovod.
   --distributed_backend DistributedBackend
-                        Distributed backends. E.g. nccl mpi gloo
+                        Distributed backends. E.g. nccl mpi gloo.
   --no_gpu              Disable GPU training.
-  --hidden_size int     Hidden size
-  --seq_len int         Sequence length"""
+  --hidden_size int     Hidden size.
+  --seq_len int         Sequence length."""
     )
-    print(settings)
     assert (settings == expected_settings)
 
 
@@ -177,9 +176,9 @@ def test_preprocess():
         """optional arguments:
   --run_count int       The run count of benchmark.
   --duration int        The elapsed time of benchmark in seconds.
-  --num_warmup int      The number of warmup step
-  --num_steps int       The number of test step
-  --batch_size int      The number of batch size
+  --num_warmup int      The number of warmup step.
+  --num_steps int       The number of test step.
+  --batch_size int      The number of batch size.
   --precision Precision [Precision ...]
                         Model precision. E.g. float16 float32 float64 bfloat16
                         uint8 int8 int16 int32 int64.
@@ -187,12 +186,12 @@ def test_preprocess():
                         Benchmark model process. E.g. train inference.
   --distributed_impl DistributedImpl
                         Distributed implementations. E.g. ddp mirrored
-                        multiworkermirrored parameterserver horovod
+                        multiworkermirrored parameterserver horovod.
   --distributed_backend DistributedBackend
-                        Distributed backends. E.g. nccl mpi gloo
+                        Distributed backends. E.g. nccl mpi gloo.
   --no_gpu              Disable GPU training.
-  --hidden_size int     Hidden size
-  --seq_len int         Sequence length"""
+  --hidden_size int     Hidden size.
+  --seq_len int         Sequence length."""
     )
     print(settings)
     assert (settings == expected_settings)
