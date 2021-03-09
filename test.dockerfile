@@ -22,8 +22,13 @@ COPY . /superbench
 RUN python3 -m pip install --upgrade pip setuptools && \
     python3 -m pip install .[test]
 
+# Install framework
+RUN pip3 install \
+    torch==1.8.0+cpu \
+    torchvision==0.9.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
 # Lint code
-RUN python3 setup.py lint
+#RUN python3 setup.py lint
 
 # Test code
 RUN python3 setup.py test
