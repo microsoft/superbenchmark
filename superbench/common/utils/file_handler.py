@@ -31,10 +31,12 @@ def get_config(config_file):
         config_file (str): config file path.
 
     Returns:
-        dict: Config object.
+        dict: Config object, None if file does not exist.
     """
     here = Path(__file__).parent.resolve()
     p = Path(config_file) if config_file else here / '../../config/default.yaml'
+    if not p.is_file():
+        return None
     with p.open() as f:
         config = yaml.safe_load(f)
     return config

@@ -45,7 +45,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
             method_name (str): ScenarioTest method_name.
         """
         sb_cli = SuperBenchCLI.get_cli()
-        super(SuperBenchCLIScenarioTest, self).__init__(sb_cli, method_name)
+        super().__init__(sb_cli, method_name)
 
     def test_sb_version(self):
         """Test sb version."""

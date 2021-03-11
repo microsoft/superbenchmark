@@ -95,13 +95,13 @@ def exec_command_handler(
         raise CLIError('Must specify both docker_username and docker_password if authentication is needed.')
     check_argument_file('config_file', config_file)
 
-    # Dump configs into outputs/date/merge.yaml
+    # Dump configs into outputs/date/config.merge.yaml
     config = get_config(config_file)
     config['docker'] = {}
-    for n in ['image', 'username', 'password']:
-        config['docker'][n] = eval('docker_{}'.format(n))
+    for key in ['image', 'username', 'password']:
+        config['docker'][key] = eval('docker_{}'.format(key))
     output_dir = new_output_dir()
-    with (Path(output_dir) / 'merge.yaml').open(mode='w') as f:
+    with (Path(output_dir) / 'config.merge.yaml').open(mode='w') as f:
         yaml.safe_dump(config, f)
     os.system(get_sb_command('sb-exec', output_dir, config_override or ''))
 
@@ -146,15 +146,15 @@ def run_command_handler(
     check_argument_file('private_key', private_key)
     check_argument_file('config_file', config_file)
 
-    # Dump configs into outputs/date/merge.yaml
+    # Dump configs into outputs/date/config.merge.yaml
     config = get_config(config_file)
     config['docker'] = {}
-    for n in ['image', 'username', 'password']:
-        config['docker'][n] = eval('docker_{}'.format(n))
+    for key in ['image', 'username', 'password']:
+        config['docker'][key] = eval('docker_{}'.format(key))
     config['ansible'] = {}
-    for n in ['file', 'list', 'username', 'password']:
-        config['ansible']['host_{}'.format(n)] = eval('host_{}'.format(n))
+    for key in ['file', 'list', 'username', 'password']:
+        config['ansible']['host_{}'.format(key)] = eval('host_{}'.format(key))
     output_dir = new_output_dir()
-    with (Path(output_dir) / 'merge.yaml').open(mode='w') as f:
+    with (Path(output_dir) / 'config.merge.yaml').open(mode='w') as f:
         yaml.safe_dump(config, f)
     os.system(get_sb_command('sb-run', output_dir, config_override or ''))

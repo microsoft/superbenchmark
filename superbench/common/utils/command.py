@@ -16,7 +16,7 @@ def get_sb_command(cli, output_path, config_override):
         str: Command to run.
     """
     sb_cmd = '{cli} ' \
-        '--config-name=merge ' \
+        '--config-name=config.merge ' \
         '--config-dir={path} ' \
         'hydra.run.dir={path} ' \
         'hydra.sweep.dir={path} ' \
