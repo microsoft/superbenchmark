@@ -24,17 +24,24 @@ class SuperBenchCLI(CLI):
         """
         return superbench.__version__
 
+    @classmethod
+    def get_cli(cls):
+        """Get CLI instance.
 
-sb_cli = SuperBenchCLI(
-    cli_name=CLI_NAME,
-    config_env_var_prefix=CLI_NAME,
-    commands_loader_cls=SuperBenchCommandsLoader,
-    help_cls=SuperBenchCLIHelp,
-)
+        Returns:
+            SuperBenchCLI: An instance for SuperBench CLI.
+        """
+        return cls(
+            cli_name=CLI_NAME,
+            config_env_var_prefix=CLI_NAME,
+            commands_loader_cls=SuperBenchCommandsLoader,
+            help_cls=SuperBenchCLIHelp,
+        )
 
 
 def main():
     """The main function for CLI."""
+    sb_cli = SuperBenchCLI.get_cli()
     exit_code = sb_cli.invoke(sys.argv[1:])
     sys.exit(exit_code)
 

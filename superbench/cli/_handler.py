@@ -95,7 +95,7 @@ def exec_command_handler(
         raise CLIError('Must specify both docker_username and docker_password if authentication is needed.')
     check_argument_file('config_file', config_file)
 
-    # dump configs into outputs/date/merge.yaml
+    # Dump configs into outputs/date/merge.yaml
     config = get_config(config_file)
     config['docker'] = {}
     for n in ['image', 'username', 'password']:
@@ -146,7 +146,7 @@ def run_command_handler(
     check_argument_file('private_key', private_key)
     check_argument_file('config_file', config_file)
 
-    # dump configs into outputs/date/merge.yaml
+    # Dump configs into outputs/date/merge.yaml
     config = get_config(config_file)
     config['docker'] = {}
     for n in ['image', 'username', 'password']:

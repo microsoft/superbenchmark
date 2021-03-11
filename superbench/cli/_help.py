@@ -22,7 +22,7 @@ Welcome to the SB CLI!
 
 helps['version'] = """
     type: command
-    short-summary: Print the current SuperBench tool version.
+    short-summary: Print the current SuperBench CLI version.
     examples:
         - name: print version
           text: {cli_name} version
@@ -66,4 +66,4 @@ class SuperBenchCLIHelp(CLIHelp):
         Args:
             cli_ctx (knack.cli.CLI, optional): CLI Context. Defaults to None.
         """
-        super(SuperBenchCLIHelp, self).__init__(cli_ctx=cli_ctx, welcome_message=WELCOME_MESSAGE)
+        super().__init__(cli_ctx=cli_ctx, welcome_message=WELCOME_MESSAGE)

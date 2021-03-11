@@ -7,8 +7,6 @@ import yaml
 from pathlib import Path
 from datetime import datetime
 
-here = Path(__file__).parent.resolve()
-
 
 def new_output_dir():
     """Generate a new output directory.
@@ -19,9 +17,9 @@ def new_output_dir():
         str: Output directory name.
     """
     output_name = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    output_dir = './outputs/{}'.format(output_name)
-    Path(output_dir).mkdir(mode=0o755, parents=True, exist_ok=True)
-    return output_dir
+    output_path = Path('.', 'outputs', output_name)
+    output_path.mkdir(mode=0o755, parents=True, exist_ok=True)
+    return str(output_path)
 
 
 def get_config(config_file):
@@ -35,6 +33,7 @@ def get_config(config_file):
     Returns:
         dict: Config object.
     """
+    here = Path(__file__).parent.resolve()
     p = Path(config_file) if config_file else here / '../../config/default.yaml'
     with p.open() as f:
         config = yaml.safe_load(f)

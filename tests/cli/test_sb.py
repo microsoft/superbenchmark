@@ -9,7 +9,7 @@ from functools import wraps
 from knack.testsdk import ScenarioTest, StringCheck, NoneCheck
 
 import superbench
-from superbench.cli import sb_cli
+from superbench.cli import SuperBenchCLI
 
 
 def capture_system_exit(func):
@@ -44,6 +44,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         Args:
             method_name (str): ScenarioTest method_name.
         """
+        sb_cli = SuperBenchCLI.get_cli()
         super(SuperBenchCLIScenarioTest, self).__init__(sb_cli, method_name)
 
     def test_sb_version(self):
