@@ -56,6 +56,7 @@ class ModelBenchmark(Benchmark):
         self._loss_fn = None
         self._target = None
         self._supported_precision = []
+        self._gpu_available = None
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -66,21 +67,21 @@ class ModelBenchmark(Benchmark):
             type=int,
             default=64,
             required=False,
-            help='The number of warmup step',
+            help='The number of warmup step.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
             default=2048,
             required=False,
-            help='The number of test step',
+            help='The number of test step.',
         )
         self._parser.add_argument(
             '--batch_size',
             type=int,
             default=32,
             required=False,
-            help='The number of batch size',
+            help='The number of batch size.',
         )
         self._parser.add_argument(
             '--precision',
@@ -103,7 +104,7 @@ class ModelBenchmark(Benchmark):
             type=DistributedImpl,
             default=None,
             required=False,
-            help='Distributed implementations. E.g. {}'.format(' '.join(DistributedImpl.get_values())),
+            help='Distributed implementations. E.g. {}.'.format(' '.join(DistributedImpl.get_values())),
         )
 
         self._parser.add_argument(
@@ -111,8 +112,20 @@ class ModelBenchmark(Benchmark):
             type=DistributedBackend,
             default=None,
             required=False,
-            help='Distributed backends. E.g. {}'.format(' '.join(DistributedBackend.get_values())),
+            help='Distributed backends. E.g. {}.'.format(' '.join(DistributedBackend.get_values())),
         )
+
+        self._parser.add_argument(
+            '--no_gpu',
+            action='store_true',
+            default=False,
+            help='Disable GPU training.',
+        )
+
+    @abstractmethod
+    def _judge_gpu_availability(self):
+        """Judge GPUs' availability according to arguments and running environment."""
+        pass
 
     @abstractmethod
     def _init_distributed_setting(self):
@@ -149,6 +162,9 @@ class ModelBenchmark(Benchmark):
         """
         if not super()._preprocess():
             return False
+
+        self._judge_gpu_availability()
+        logger.info('GPU availablility - model: {}, availablility: {}.'.format(self._name, self._gpu_available))
 
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
