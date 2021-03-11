@@ -11,6 +11,13 @@ from superbench.benchmarks.base import Benchmark
 from superbench.benchmarks.context import Enum
 
 
+class Optimizer(Enum):
+    """The Enum class representing different optimizers."""
+    SGD = 'sgd'
+    ADAM = 'adam'
+    ADAMW = 'adamw'
+
+
 class DistributedImpl(Enum):
     """The Enum class representing different distributed implementations."""
     DDP = 'ddp'
@@ -39,14 +46,17 @@ class ModelBenchmark(Benchmark):
         super().__init__(name, parameters)
 
         self._benchmark_type = BenchmarkType.MODEL
-        self._world_size = None
+        self._world_size = 1
+        self._local_rank = None
         self._dataset = None
         self._dataloader = None
         self._model = None
+        self._optimizer_type = None
         self._optimizer = None
         self._loss_fn = None
         self._target = None
         self._supported_precision = []
+        self._gpu_available = None
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -57,21 +67,21 @@ class ModelBenchmark(Benchmark):
             type=int,
             default=64,
             required=False,
-            help='The number of warmup step',
+            help='The number of warmup step.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
             default=2048,
             required=False,
-            help='The number of test step',
+            help='The number of test step.',
         )
         self._parser.add_argument(
             '--batch_size',
             type=int,
             default=32,
             required=False,
-            help='The number of batch size',
+            help='The number of batch size.',
         )
         self._parser.add_argument(
             '--precision',
@@ -94,7 +104,7 @@ class ModelBenchmark(Benchmark):
             type=DistributedImpl,
             default=None,
             required=False,
-            help='Distributed implementations. E.g. {}'.format(' '.join(DistributedImpl.get_values())),
+            help='Distributed implementations. E.g. {}.'.format(' '.join(DistributedImpl.get_values())),
         )
 
         self._parser.add_argument(
@@ -102,22 +112,46 @@ class ModelBenchmark(Benchmark):
             type=DistributedBackend,
             default=None,
             required=False,
-            help='Distributed backends. E.g. {}'.format(' '.join(DistributedBackend.get_values())),
+            help='Distributed backends. E.g. {}.'.format(' '.join(DistributedBackend.get_values())),
+        )
+
+        self._parser.add_argument(
+            '--no_gpu',
+            action='store_true',
+            default=False,
+            help='Disable GPU training.',
         )
 
     @abstractmethod
+    def _judge_gpu_availability(self):
+        """Judge GPUs' availability according to arguments and running environment."""
+        pass
+
+    @abstractmethod
     def _init_distributed_setting(self):
-        """Initialize the distributed library and bind the worker to GPU."""
+        """Initialize the distributed library and bind the worker to GPU.
+
+        Return:
+            True if distributed library is initialized successfully.
+        """
         pass
 
     @abstractmethod
     def _generate_dataset(self):
-        """Generate dataset for benchmarking according to shape info."""
+        """Generate dataset for benchmarking according to shape info.
+
+        Return:
+            True if dataset is created successfully.
+        """
         pass
 
     @abstractmethod
     def _init_dataloader(self):
-        """Initialize the distributed dataloader."""
+        """Initialize the dataloader.
+
+        Return:
+            True if dataloader is created successfully.
+        """
         pass
 
     def _preprocess(self):
@@ -126,18 +160,33 @@ class ModelBenchmark(Benchmark):
         Return:
             True if _preprocess() succeed.
         """
-        ret = super()._preprocess()
-        if not ret:
+        if not super()._preprocess():
             return False
 
-        self._init_distributed_setting()
-        self._generate_dataset()
-        self._init_dataloader()
+        self._judge_gpu_availability()
+        logger.info('GPU availablility - model: {}, availablility: {}.'.format(self._name, self._gpu_available))
+
+        if not self._init_distributed_setting():
+            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
+            return False
+
+        if not self._generate_dataset():
+            self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
+            return False
+
+        if not self._init_dataloader():
+            self._result.set_return_code(ReturnCode.DATALOADER_INIT_FAILURE)
+            return False
+
         return True
 
     @abstractmethod
     def _create_optimizer(self):
-        """Create the optimzier instance used for training."""
+        """Create the optimzier instance used for training and wrap with distributed library if need.
+
+        Return:
+            True if optimizer instance is created successfully.
+        """
         pass
 
     @abstractmethod
@@ -158,8 +207,14 @@ class ModelBenchmark(Benchmark):
         Return:
             True if step_times list is not empty.
         """
-        self._create_model(precision)
-        self._create_optimizer()
+        if not self._create_model(precision):
+            self._result.set_return_code(ReturnCode.MODEL_CREATION_FAILURE)
+            return False
+
+        if not self._create_optimizer():
+            self._result.set_return_code(ReturnCode.OPTIMIZER_CREATION_FAILURE)
+            return False
+
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
         if len(step_times) == 0:
@@ -297,7 +352,7 @@ class ModelBenchmark(Benchmark):
         self._result.add_result(metric, avg)
 
     @abstractmethod
-    def _cal_params_size(self):
+    def _cal_params_count(self):
         """Calculate the parameters scale of the model.
 
         Return:
