@@ -22,10 +22,10 @@ class TorchRandomDataset(Dataset):
         self._len = 0
         self._data = None
 
-        if dtype in [torch.float16, torch.float32, torch.float64, torch.bfloat16]:
+        if dtype in [torch.float32, torch.float64]:
             self._data = torch.randn(*shape, dtype=dtype)
         elif dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
-            self._data = torch.randint(0, 10000, tuple(shape), dtype=dtype)
+            self._data = torch.randint(0, 128, tuple(shape), dtype=dtype)
         else:
             logger.error('Unsupported precision for RandomDataset - data type: {}.'.format(dtype))
             return
