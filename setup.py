@@ -145,6 +145,11 @@ setup(
             'pytest>=6.2.2',
             'pytest-cov>=2.11.1',
         ],
+        'torch': [
+            'torch==1.7.0',
+            'torchvision==0.8.0',
+            'transformers==4.3.3',
+        ],
     },
     package_data={},
     entry_points={

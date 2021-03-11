@@ -20,7 +20,7 @@ COPY . /superbench
 
 # Upgrade pip and install dependencies
 RUN python3 -m pip install --upgrade pip setuptools && \
-    python3 -m pip install .[test]
+    python3 -m pip install .[test,torch]
 
 # Lint code
 RUN python3 setup.py lint
