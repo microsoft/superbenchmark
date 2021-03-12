@@ -150,6 +150,11 @@ setup(
             'vcrpy>=4.1.1',
             'yapf>=0.30.0',
         ],
+        'torch': [
+            'torch==1.7.0',
+            'torchvision==0.8.0',
+            'transformers==4.3.3',
+        ],
     },
     include_package_data=True,
     entry_points={
