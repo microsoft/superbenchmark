@@ -10,7 +10,7 @@ import torch
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Precision, Platform, BenchmarkContext, ReturnCode
-from superbench.benchmarks.model_benchmarks.model_base import Optimizer
+from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, DistributedBackend
 from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
 
@@ -151,12 +151,12 @@ class PytorchMNIST(PytorchBase):
             self._model.eval()
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
-                torch.cuda.synchronize()
                 start = time.time()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._model(sample)
-                torch.cuda.synchronize()
+                if self._gpu_available:
+                    torch.cuda.synchronize()
                 end = time.time()
                 if idx % 10 == 0:
                     logger.info(
@@ -169,7 +169,7 @@ class PytorchMNIST(PytorchBase):
         return duration
 
 
-def test_pytorch_mnist():
+def test_pytorch_base():
     """Test PytorchBase class."""
     # Register BERT Base benchmark.
     BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
@@ -189,6 +189,7 @@ def test_pytorch_mnist():
         assert (benchmark.name == 'pytorch-mnist')
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
+        # Test results.
         for metric in [
             'steptime_train_float32', 'steptime_inference_float32', 'throughput_train_float32',
             'throughput_inference_float32'
@@ -197,3 +198,40 @@ def test_pytorch_mnist():
             assert (len(benchmark.raw_data[metric][0]) == 64)
             assert (len(benchmark.result[metric]) == 1)
             assert (isinstance(benchmark.result[metric][0], numbers.Number))
+
+        # Test _cal_params_count().
+        assert (benchmark._cal_params_count() == 1199882)
+
+        # Test _judge_gpu_availability().
+        assert (benchmark._gpu_available is False)
+
+        # Test _init_distributed_setting().
+        assert (benchmark._args.distributed_impl is None)
+        assert (benchmark._args.distributed_backend is None)
+        assert (benchmark._init_distributed_setting() is True)
+        benchmark._args.distributed_impl = DistributedImpl.DDP
+        benchmark._args.distributed_backend = DistributedBackend.NCCL
+        assert (benchmark._init_distributed_setting() is False)
+        benchmark._args.distributed_impl = DistributedImpl.MIRRORED
+        assert (benchmark._init_distributed_setting() is False)
+
+        # Test _init_dataloader().
+        benchmark._args.distributed_impl = None
+        assert (benchmark._init_dataloader() is True)
+        benchmark._args.distributed_impl = DistributedImpl.DDP
+        assert (benchmark._init_dataloader() is False)
+        benchmark._args.distributed_impl = DistributedImpl.MIRRORED
+        assert (benchmark._init_dataloader() is False)
+
+        # Test _create_optimizer().
+        assert (isinstance(benchmark._optimizer, torch.optim.AdamW))
+        benchmark._optimizer_type = Optimizer.ADAM
+        assert (benchmark._create_optimizer() is True)
+        assert (isinstance(benchmark._optimizer, torch.optim.Adam))
+        benchmark._optimizer_type = Optimizer.SGD
+        assert (benchmark._create_optimizer() is True)
+        assert (isinstance(benchmark._optimizer, torch.optim.SGD))
+        benchmark._optimizer_type = None
+        assert (benchmark._create_optimizer() is False)
+
+    BenchmarkRegistry.clean_benchmarks()
