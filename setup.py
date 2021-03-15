@@ -132,18 +132,23 @@ setup(
     keywords='benchmark, AI systems',
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
-    install_requires=[],
+    install_requires=[
+        'hydra-colorlog>=1.0.0',
+        'hydra-core>=1.0.4',
+        'knack>=0.7.2',
+    ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
         'test': [
-            'yapf>=0.30.0',
-            'mypy>=0.800',
-            'flake8>=3.8.4',
-            'flake8-quotes>=3.2.0',
             'flake8-docstrings>=1.5.0',
+            'flake8-quotes>=3.2.0',
+            'flake8>=3.8.4',
+            'mypy>=0.800',
             'pydocstyle>=5.1.1',
-            'pytest>=6.2.2',
             'pytest-cov>=2.11.1',
+            'pytest>=6.2.2',
+            'vcrpy>=4.1.1',
+            'yapf>=0.30.0',
         ],
         'torch': [
             'torch==1.7.0',
@@ -151,9 +156,13 @@ setup(
             'transformers==4.3.3',
         ],
     },
-    package_data={},
+    include_package_data=True,
     entry_points={
-        'console_scripts': [],
+        'console_scripts': [
+            'sb = superbench.cli.sb:main',
+            'sb-exec = superbench.cli.sb_exec:main',
+            'sb-run = superbench.cli.sb_run:main',
+        ],
     },
     cmdclass={
         'format': Formatter,
