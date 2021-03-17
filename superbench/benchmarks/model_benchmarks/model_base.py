@@ -77,6 +77,13 @@ class ModelBenchmark(Benchmark):
             help='The number of test step.',
         )
         self._parser.add_argument(
+            '--sample_count',
+            type=int,
+            default=128,
+            required=False,
+            help='The number of data samples.',
+        )
+        self._parser.add_argument(
             '--batch_size',
             type=int,
             default=32,
@@ -169,6 +176,9 @@ class ModelBenchmark(Benchmark):
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
             return False
+
+        # Set sample_count aligned with batch_size.
+        self._args.sample_count = (self._args.sample_count / self._args.batch_size + 1) * self._args.batch_size
 
         if not self._generate_dataset():
             self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
