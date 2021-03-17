@@ -116,7 +116,6 @@ def create_benchmark(params='--num_steps=8'):
     assert (name)
     (benchmark_class, predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(name, context.platform)
     assert (benchmark_class)
-    BenchmarkRegistry.clean_benchmarks()
     return benchmark_class(name, predefine_params + ' ' + context.parameters)
 
 

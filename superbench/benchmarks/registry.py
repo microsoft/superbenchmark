@@ -6,7 +6,6 @@
 from typing import Dict
 
 from superbench.common.utils import logger
-from superbench.common.errors import DuplicateBenchmarkRegistrationError
 from superbench.benchmarks import Platform, Framework, BenchmarkContext
 from superbench.benchmarks.base import Benchmark
 
@@ -57,23 +56,11 @@ class BenchmarkRegistry:
                     )
                 )
 
-            if platform not in cls.benchmarks[name]:
-                cls.benchmarks[name][platform] = (class_def, parameters)
-            else:
-                logger.log_and_raise(
-                    DuplicateBenchmarkRegistrationError,
-                    'Duplicate registration - benchmark: {}, platform: {}'.format(name, platform)
-                )
+            cls.benchmarks[name][platform] = (class_def, parameters)
         else:
-            # If not specified the tag, means the
-            # benchmark works for all platforms.
+            # If not specified the tag, means the benchmark works for all platforms.
             for p in Platform:
-                if p not in cls.benchmarks[name]:
-                    cls.benchmarks[name][p] = (class_def, parameters)
-                else:
-                    logger.log_and_raise(
-                        DuplicateBenchmarkRegistrationError, 'Duplicate registration - benchmark: {}'.format(name)
-                    )
+                cls.benchmarks[name][p] = (class_def, parameters)
 
     @classmethod
     def is_benchmark_context_valid(cls, benchmark_context):
