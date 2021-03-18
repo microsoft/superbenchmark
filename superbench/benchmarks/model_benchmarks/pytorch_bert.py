@@ -147,7 +147,7 @@ class PytorchBERT(PytorchBase):
                 self._optimizer.step()
                 end = time.time()
                 total_step += 1
-                if idx >= self._args.num_warmup:
+                if total_step > self._args.num_warmup:
                     duration.append((end - start) * 1000)
                 if self._is_finished(total_step):
                     return duration
@@ -164,9 +164,9 @@ class PytorchBERT(PytorchBase):
         """
         duration = []
         total_step = 0
-        while True:
-            with torch.no_grad():
-                self._model.eval()
+        with torch.no_grad():
+            self._model.eval()
+            while True:
                 for idx, sample in enumerate(self._dataloader):
                     torch.cuda.synchronize()
                     start = time.time()
@@ -175,7 +175,7 @@ class PytorchBERT(PytorchBase):
                     torch.cuda.synchronize()
                     end = time.time()
                     total_step += 1
-                    if idx >= self._args.num_warmup:
+                    if total_step > self._args.num_warmup:
                         duration.append((end - start) * 1000)
                     if self._is_finished(total_step):
                         return duration
