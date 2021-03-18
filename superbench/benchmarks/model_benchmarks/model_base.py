@@ -3,6 +3,7 @@
 
 """Module of the model-benchmark base class."""
 
+import math
 from abc import abstractmethod
 
 from superbench.common.utils import logger
@@ -75,6 +76,13 @@ class ModelBenchmark(Benchmark):
             default=2048,
             required=False,
             help='The number of test step.',
+        )
+        self._parser.add_argument(
+            '--sample_count',
+            type=int,
+            default=128,
+            required=False,
+            help='The number of data samples in dataset.',
         )
         self._parser.add_argument(
             '--batch_size',
@@ -169,6 +177,9 @@ class ModelBenchmark(Benchmark):
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
             return False
+
+        # Set sample_count aligned with batch_size.
+        self._args.sample_count = math.ceil(self._args.sample_count / self._args.batch_size) * self._args.batch_size
 
         if not self._generate_dataset():
             self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)

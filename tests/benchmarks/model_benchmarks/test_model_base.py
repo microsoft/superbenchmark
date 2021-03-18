@@ -146,6 +146,7 @@ def test_arguments_related_interfaces():
   --duration int        The elapsed time of benchmark in seconds.
   --num_warmup int      The number of warmup step.
   --num_steps int       The number of test step.
+  --sample_count int    The number of data samples in dataset.
   --batch_size int      The number of batch size.
   --precision Precision [Precision ...]
                         Model precision. E.g. float16 float32 float64 bfloat16
@@ -177,6 +178,7 @@ def test_preprocess():
   --duration int        The elapsed time of benchmark in seconds.
   --num_warmup int      The number of warmup step.
   --num_steps int       The number of test step.
+  --sample_count int    The number of data samples in dataset.
   --batch_size int      The number of batch size.
   --precision Precision [Precision ...]
                         Model precision. E.g. float16 float32 float64 bfloat16
