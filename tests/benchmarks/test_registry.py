@@ -63,16 +63,12 @@ def test_register_benchmark():
         context = BenchmarkContext('accumulation', platform)
         assert (BenchmarkRegistry.is_benchmark_registered(context))
 
-    BenchmarkRegistry.clean_benchmarks()
-
     # Register the benchmark for CUDA platform if use platform=Platform.CUDA.
     BenchmarkRegistry.register_benchmark('accumulation-cuda', AccumulationBenchmark, platform=Platform.CUDA)
     context = BenchmarkContext('accumulation-cuda', Platform.CUDA)
     assert (BenchmarkRegistry.is_benchmark_registered(context))
     context = BenchmarkContext('accumulation-cuda', Platform.ROCM)
     assert (BenchmarkRegistry.is_benchmark_registered(context) is False)
-
-    BenchmarkRegistry.clean_benchmarks()
 
 
 def test_is_benchmark_context_valid():
@@ -102,8 +98,6 @@ def test_get_benchmark_name():
         name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
         assert (name == benchmark_names[i])
 
-    BenchmarkRegistry.clean_benchmarks()
-
 
 def test_check_parameters():
     """Test interface BenchmarkRegistry.check_parameters()."""
@@ -117,8 +111,6 @@ def test_check_parameters():
     # Negative case.
     context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower=1')
     assert (BenchmarkRegistry.check_parameters(context) is False)
-
-    BenchmarkRegistry.clean_benchmarks()
 
 
 def test_get_benchmark_configurable_settings():
@@ -138,8 +130,6 @@ def test_get_benchmark_configurable_settings():
   --lower_bound int  The lower bound for accumulation.
   --upper_bound int  The upper bound for accumulation."""
     assert (settings == expected)
-
-    BenchmarkRegistry.clean_benchmarks()
 
 
 def test_launch_benchmark():
@@ -194,10 +184,8 @@ def test_launch_benchmark():
         )
         assert (result == expected)
 
-    # Failed to launch benchmark.
+    # Failed to launch benchmark due to 'benchmark not found'.
     context = BenchmarkContext(
-        'accumulation', Platform.CPU, parameters='--lower_bound=1 --upper_bound=4', framework=Framework.PYTORCH
+        'accumulation-fail', Platform.CPU, parameters='--lower_bound=1 --upper_bound=4', framework=Framework.PYTORCH
     )
     assert (BenchmarkRegistry.check_parameters(context) is False)
-
-    BenchmarkRegistry.clean_benchmarks()

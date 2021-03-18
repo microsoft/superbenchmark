@@ -22,12 +22,18 @@ class TorchRandomDataset(Dataset):
         self._len = 0
         self._data = None
 
-        if dtype in [torch.float32, torch.float64]:
-            self._data = torch.randn(*shape, dtype=dtype)
-        elif dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
-            self._data = torch.randint(0, 128, tuple(shape), dtype=dtype)
-        else:
-            logger.error('Unsupported precision for RandomDataset - data type: {}.'.format(dtype))
+        try:
+            if dtype in [torch.float32, torch.float64]:
+                self._data = torch.randn(*shape, dtype=dtype)
+            elif dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
+                self._data = torch.randint(0, 128, tuple(shape), dtype=dtype)
+            else:
+                logger.error('Unsupported precision for RandomDataset - data type: {}.'.format(dtype))
+                return
+        except BaseException as e:
+            logger.error(
+                'Generate random dataset failed - data type: {}, shape: {}, message: {}.'.format(dtype, shape, str(e))
+            )
             return
 
         self._len = shape[0] * world_size
