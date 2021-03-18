@@ -4,6 +4,7 @@
 """Module of the model-benchmark base class."""
 
 import math
+import time
 from abc import abstractmethod
 
 from superbench.common.utils import logger
@@ -324,6 +325,7 @@ class ModelBenchmark(Benchmark):
 
         for precision in precision_need_to_run:
             for model_action in self._args.model_action:
+                self._sub_benchmark_start_time = time.time()
                 if model_action == ModelAction.TRAIN:
                     if not self.__train(precision):
                         self._result.set_return_code(ReturnCode.MODEL_TRAIN_FAILURE)
@@ -340,6 +342,17 @@ class ModelBenchmark(Benchmark):
                     )
 
         return True
+
+    def _is_finished(self, curr_step):
+        total_steps = self._args.num_warmup + self._args.num_steps
+
+        if (
+            (self._args.duration > 0 and (time.time() - self._sub_benchmark_start_time) > self._args.duration)
+            or (total_steps > 0 and curr_step >= total_steps)
+        ):
+            return True
+
+        return False
 
     def __process_model_result(self, model_action, precision, step_times):
         """Function to process raw results and save the summarized results.
