@@ -8,6 +8,9 @@ from typing import Dict
 from superbench.common.utils import logger
 from superbench.benchmarks import Platform, Framework, BenchmarkContext
 from superbench.benchmarks.base import Benchmark
+import superbench.benchmarks.model_benchmarks    # noqa pylint: disable=unused-import
+import superbench.benchmarks.micro_benchmarks    # noqa pylint: disable=unused-import
+import superbench.benchmarks.docker_benchmarks    # noqa pylint: disable=unused-import
 
 
 class BenchmarkRegistry:
