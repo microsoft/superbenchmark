@@ -3,6 +3,7 @@
 
 """Module of the model-benchmark base class."""
 
+import math
 from abc import abstractmethod
 
 from superbench.common.utils import logger
@@ -81,7 +82,7 @@ class ModelBenchmark(Benchmark):
             type=int,
             default=128,
             required=False,
-            help='The number of data samples.',
+            help='The number of data samples in dataset.',
         )
         self._parser.add_argument(
             '--batch_size',
@@ -178,7 +179,7 @@ class ModelBenchmark(Benchmark):
             return False
 
         # Set sample_count aligned with batch_size.
-        self._args.sample_count = (self._args.sample_count // self._args.batch_size + 1) * self._args.batch_size
+        self._args.sample_count = math.ceil(self._args.sample_count / self._args.batch_size) * self._args.batch_size
 
         if not self._generate_dataset():
             self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
