@@ -55,11 +55,16 @@ class BenchmarkRegistry:
                         name, platform_list, platform
                     )
                 )
+            if platform in cls.benchmarks[name]:
+                logger.warning('Duplicate registration - benchmark: {}, platform: {}'.format(name, platform))
 
             cls.benchmarks[name][platform] = (class_def, parameters)
         else:
             # If not specified the tag, means the benchmark works for all platforms.
             for p in Platform:
+                if p in cls.benchmarks[name]:
+                    logger.warning('Duplicate registration - benchmark: {}, platform: {}'.format(name, p))
+
                 cls.benchmarks[name][p] = (class_def, parameters)
 
     @classmethod
