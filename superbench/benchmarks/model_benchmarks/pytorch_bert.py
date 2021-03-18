@@ -83,8 +83,9 @@ class PytorchBERT(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
-        samples_count = (self._args.batch_size * (self._args.num_warmup + self._args.num_steps))
-        self._dataset = TorchRandomDataset([samples_count, self._args.seq_len], self._world_size, dtype=torch.long)
+        self._dataset = TorchRandomDataset(
+            [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
+        )
         if len(self._dataset) == 0:
             logger.error('Generate random dataset failed - model: {}'.format(self._name))
             return False
@@ -133,10 +134,8 @@ class PytorchBERT(PytorchBase):
             The step-time list of every training step.
         """
         duration = []
-        benchmark_start = time.time()
-        run = False
-        while run is False or (self._args.duration > 0 and (time.time() - benchmark_start) < self._args.duration):
-            run = True
+        total_step = 0
+        while True:
             for idx, sample in enumerate(self._dataloader):
                 start = time.time()
                 if self._gpu_available:
@@ -147,11 +146,11 @@ class PytorchBERT(PytorchBase):
                 loss.backward()
                 self._optimizer.step()
                 end = time.time()
+                total_step += 1
                 if idx >= self._args.num_warmup:
                     duration.append((end - start) * 1000)
-                if self._args.duration > 0 and (end - benchmark_start) > self._args.duration:
-                    break
-        return duration
+                if self._is_finished(total_step):
+                    return duration
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -164,10 +163,8 @@ class PytorchBERT(PytorchBase):
             The latency list of every inference operation.
         """
         duration = []
-        benchmark_start = time.time()
-        run = False
-        while run is False or (self._args.duration > 0 and (time.time() - benchmark_start) < self._args.duration):
-            run = True
+        total_step = 0
+        while True:
             with torch.no_grad():
                 self._model.eval()
                 for idx, sample in enumerate(self._dataloader):
@@ -177,11 +174,11 @@ class PytorchBERT(PytorchBase):
                     self._model(sample)
                     torch.cuda.synchronize()
                     end = time.time()
+                    total_step += 1
                     if idx >= self._args.num_warmup:
                         duration.append((end - start) * 1000)
-                    if self._args.duration > 0 and (end - benchmark_start) > self._args.duration:
-                        break
-        return duration
+                    if self._is_finished(total_step):
+                        return duration
 
 
 # Register BERT Large benchmark.
