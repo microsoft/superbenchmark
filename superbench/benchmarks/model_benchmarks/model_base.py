@@ -343,11 +343,11 @@ class ModelBenchmark(Benchmark):
 
         return True
 
-    def _is_finished(self, curr_step):
+    def _is_finished(self, curr_step, curr_time):
         total_steps = self._args.num_warmup + self._args.num_steps
 
         if (
-            (self._args.duration > 0 and (time.time() - self._sub_benchmark_start_time) > self._args.duration)
+            (self._args.duration > 0 and (curr_time - self._sub_benchmark_start_time) >= self._args.duration)
             or (total_steps > 0 and curr_step >= total_steps)
         ):
             return True
