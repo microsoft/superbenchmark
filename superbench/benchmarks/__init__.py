@@ -6,9 +6,7 @@
 from superbench.benchmarks.return_code import ReturnCode
 from superbench.benchmarks.context import Platform, Framework, Precision, ModelAction, BenchmarkType, BenchmarkContext
 from superbench.benchmarks.registry import BenchmarkRegistry
-import superbench.benchmarks.model_benchmarks    # noqa pylint: disable=unused-import
-import superbench.benchmarks.micro_benchmarks    # noqa pylint: disable=unused-import
-import superbench.benchmarks.docker_benchmarks    # noqa pylint: disable=unused-import
+from superbench.benchmarks import model_benchmarks, micro_benchmarks, docker_benchmarks    # noqa pylint: disable=unused-import
 
 __all__ = [
     'ReturnCode', 'Platform', 'Framework', 'BenchmarkType', 'Precision', 'ModelAction', 'BenchmarkContext',
