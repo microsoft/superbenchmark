@@ -133,9 +133,9 @@ setup(
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
     install_requires=[
-        'hydra-colorlog>=1.0.0',
-        'hydra-core>=1.0.4',
+        'colorlog>=4.7.2',
         'knack>=0.7.2',
+        'omegaconf>=2.0.6',
     ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
@@ -160,8 +160,6 @@ setup(
     entry_points={
         'console_scripts': [
             'sb = superbench.cli.sb:main',
-            'sb-exec = superbench.cli.sb_exec:main',
-            'sb-run = superbench.cli.sb_run:main',
         ],
     },
     cmdclass={

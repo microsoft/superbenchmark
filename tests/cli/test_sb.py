@@ -6,7 +6,7 @@
 import io
 import contextlib
 from functools import wraps
-from knack.testsdk import ScenarioTest, StringCheck, NoneCheck
+from knack.testsdk import ScenarioTest, StringCheck
 
 import superbench
 from superbench.cli import SuperBenchCLI
@@ -63,7 +63,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_exec(self):
         """Test sb exec."""
-        self.cmd('sb exec --docker-image test:cuda11.1', checks=[NoneCheck()])
+        self.cmd('sb exec --docker-image test:cuda11.1', expect_failure=True)
 
     @capture_system_exit
     def test_sb_exec_no_docker_image(self):
@@ -73,7 +73,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_run(self):
         """Test sb run."""
-        self.cmd('sb run --docker-image test:cuda11.1 --host-list localhost', checks=[NoneCheck()])
+        self.cmd('sb run --docker-image test:cuda11.1 --host-list localhost', expect_failure=True)
 
     @capture_system_exit
     def test_sb_run_no_docker_image(self):

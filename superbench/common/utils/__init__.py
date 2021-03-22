@@ -3,8 +3,7 @@
 
 """Exposes the interface of SuperBench common utilities."""
 
-from .logging import logger
-from .file_handler import new_output_dir, get_config
-from .command import get_sb_command
+from superbench.common.utils.logging import SuperBenchLogger, logger
+from superbench.common.utils.file_handler import create_output_dir, get_sb_config
 
-__all__ = ['logger', 'new_output_dir', 'get_config', 'get_sb_command']
+__all__ = ['SuperBenchLogger', 'logger', 'create_output_dir', 'get_sb_config']
