@@ -37,8 +37,7 @@ class BertBenchmarkModel(torch.nn.Module):
 
         Return:
             result (torch.FloatTensor): Last layer hidden-state of the first token of the sequence
-              (classification token) further processed by a Linear layer and a Tanh activation function,
-              shape (batch_size, hidden_size).
+              (classification token) further processed by a Linear layer, shape (batch_size, hidden_size).
         """
         outputs = self._bert(input)
         result = self._linear(outputs[1])
@@ -61,7 +60,10 @@ class PytorchBERT(PytorchBase):
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
     def add_parser_arguments(self):
-        """Add the BERT-specified arguments."""
+        """Add the BERT-specified arguments.
+
+        BERT model reference: https://huggingface.co/transformers/model_doc/bert.html
+        """
         super().add_parser_arguments()
 
         self._parser.add_argument('--num_classes', type=int, default=100, required=False, help='Num of class.')
@@ -134,7 +136,7 @@ class PytorchBERT(PytorchBase):
             The step-time list of every training step.
         """
         duration = []
-        total_step = 0
+        curr_step = 0
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = time.time()
@@ -146,10 +148,11 @@ class PytorchBERT(PytorchBase):
                 loss.backward()
                 self._optimizer.step()
                 end = time.time()
-                total_step += 1
-                if total_step > self._args.num_warmup:
+                curr_step += 1
+                if curr_step > self._args.num_warmup:
+                    # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                if self._is_finished(total_step):
+                if self._is_finished(curr_step, end):
                     return duration
 
     def _inference_step(self, precision):
@@ -163,7 +166,7 @@ class PytorchBERT(PytorchBase):
             The latency list of every inference operation.
         """
         duration = []
-        total_step = 0
+        curr_step = 0
         with torch.no_grad():
             self._model.eval()
             while True:
@@ -174,14 +177,16 @@ class PytorchBERT(PytorchBase):
                     self._model(sample)
                     torch.cuda.synchronize()
                     end = time.time()
-                    total_step += 1
-                    if total_step > self._args.num_warmup:
+                    curr_step += 1
+                    if curr_step > self._args.num_warmup:
+                        # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
-                    if self._is_finished(total_step):
+                    if self._is_finished(curr_step, end):
                         return duration
 
 
 # Register BERT Large benchmark.
+# Reference: https://huggingface.co/transformers/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-bert-large',
     PytorchBERT,
@@ -189,6 +194,7 @@ BenchmarkRegistry.register_benchmark(
 )
 
 # Register BERT Base benchmark.
+# Reference: https://huggingface.co/transformers/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-bert-base',
     PytorchBERT,
