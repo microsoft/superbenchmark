@@ -3,6 +3,6 @@
 
 """A module containing all the micro-benchmarks."""
 
-from .micro_base import MicroBenchmark
+from superbench.benchmarks.micro_benchmarks.micro_base import MicroBenchmark
 
 __all__ = ['MicroBenchmark']
