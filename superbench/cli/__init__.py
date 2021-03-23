@@ -3,6 +3,6 @@
 
 """SuperBench cli module."""
 
-from .sb import SuperBenchCLI
+from superbench.cli.sb import SuperBenchCLI
 
 __all__ = ['SuperBenchCLI']

@@ -4,13 +4,13 @@
 """SuperBench CLI command handler."""
 
 import os
-import yaml
 from pathlib import Path
 
 from knack.util import CLIError
+from omegaconf import OmegaConf
 
 import superbench
-from superbench.common.utils import get_sb_command, get_config, new_output_dir
+from superbench.common.utils import create_output_dir, get_sb_config
 
 
 def check_argument_file(name, file):
@@ -67,6 +67,8 @@ def deploy_command_handler(
     Raises:
         CLIError: If input arguments are invalid.
     """
+    if bool(docker_username) != bool(docker_password):
+        raise CLIError('Must specify both docker_username and docker_password if authentication is needed.')
     if not (host_file or host_list):
         raise CLIError('Must specify one of host_file or host_list.')
     check_argument_file('host_file', host_file)
@@ -95,15 +97,20 @@ def exec_command_handler(
         raise CLIError('Must specify both docker_username and docker_password if authentication is needed.')
     check_argument_file('config_file', config_file)
 
-    # Dump configs into outputs/date/config.merge.yaml
-    config = get_config(config_file)
-    config['docker'] = {}
+    # Docker config
+    docker_config = OmegaConf.create()
     for key in ['image', 'username', 'password']:
-        config['docker'][key] = eval('docker_{}'.format(key))
-    output_dir = new_output_dir()
-    with (Path(output_dir) / 'config.merge.yaml').open(mode='w') as f:
-        yaml.safe_dump(config, f)
-    os.system(get_sb_command('sb-exec', output_dir, config_override or ''))
+        docker_config[key] = eval('docker_{}'.format(key))
+    # SuperBench config
+    sb_config = get_sb_config(config_file)
+    if config_override:
+        sb_config_from_override = OmegaConf.from_dotlist(config_override)
+        sb_config = OmegaConf.merge(sb_config, sb_config_from_override)
+
+    # create output directory
+    output_dir = create_output_dir()
+
+    os.system('sb-exec {}'.format(output_dir))
 
 
 def run_command_handler(
@@ -146,15 +153,21 @@ def run_command_handler(
     check_argument_file('private_key', private_key)
     check_argument_file('config_file', config_file)
 
-    # Dump configs into outputs/date/config.merge.yaml
-    config = get_config(config_file)
-    config['docker'] = {}
+    # Docker config
+    docker_config = OmegaConf.create()
     for key in ['image', 'username', 'password']:
-        config['docker'][key] = eval('docker_{}'.format(key))
-    config['ansible'] = {}
+        docker_config[key] = eval('docker_{}'.format(key))
+    # Ansible config
+    ansible_config = OmegaConf.create()
     for key in ['file', 'list', 'username', 'password']:
-        config['ansible']['host_{}'.format(key)] = eval('host_{}'.format(key))
-    output_dir = new_output_dir()
-    with (Path(output_dir) / 'config.merge.yaml').open(mode='w') as f:
-        yaml.safe_dump(config, f)
-    os.system(get_sb_command('sb-run', output_dir, config_override or ''))
+        ansible_config['host_{}'.format(key)] = eval('host_{}'.format(key))
+    # SuperBench config
+    sb_config = get_sb_config(config_file)
+    if config_override:
+        sb_config_from_override = OmegaConf.from_dotlist(config_override)
+        sb_config = OmegaConf.merge(sb_config, sb_config_from_override)
+
+    # create output directory
+    output_dir = create_output_dir()
+
+    os.system('sb-run {}'.format(output_dir))
