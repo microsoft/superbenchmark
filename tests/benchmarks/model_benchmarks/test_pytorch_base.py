@@ -233,5 +233,3 @@ def test_pytorch_base():
         assert (isinstance(benchmark._optimizer, torch.optim.SGD))
         benchmark._optimizer_type = None
         assert (benchmark._create_optimizer() is False)
-
-    BenchmarkRegistry.clean_benchmarks()
