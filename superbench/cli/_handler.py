@@ -107,7 +107,7 @@ def exec_command_handler(
         sb_config_from_override = OmegaConf.from_dotlist(config_override)
         sb_config = OmegaConf.merge(sb_config, sb_config_from_override)
 
-    # create output directory
+    # Create output directory
     output_dir = create_output_dir()
 
     os.system('sb-exec {}'.format(output_dir))
@@ -167,7 +167,7 @@ def run_command_handler(
         sb_config_from_override = OmegaConf.from_dotlist(config_override)
         sb_config = OmegaConf.merge(sb_config, sb_config_from_override)
 
-    # create output directory
+    # Create output directory
     output_dir = create_output_dir()
 
     os.system('sb-run {}'.format(output_dir))
