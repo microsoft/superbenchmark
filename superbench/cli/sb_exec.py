@@ -5,15 +5,9 @@
 
 """SuperBench sb exec command."""
 
-import hydra
 
-from superbench.common.utils import logger
-
-
-@hydra.main(config_path='../config', config_name='default')
-def main(config):
+def main():
     """The main entrypoint for sb-exec."""
-    logger.info(config)
     # executor = SuperBenchExecutor(config)
     # executor.exec()
 
