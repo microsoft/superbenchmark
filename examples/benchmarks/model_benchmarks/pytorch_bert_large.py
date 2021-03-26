@@ -7,11 +7,11 @@ from superbench.benchmarks import Platform, Framework, BenchmarkRegistry, Benchm
 from superbench.common.utils import logger
 
 if __name__ == '__main__':
-    # Create context for bert-large benchmark and run it for 300 seconds.
+    # Create context for bert-large benchmark and run it for 120 * 2 seconds.
     context = BenchmarkContext(
         'bert-large',
         Platform.CUDA,
-        parameters='--batch_size=2 --duration=300 --seq_len=512 --precision float32',
+        parameters='--batch_size=2 --duration=120 --seq_len=512 --precision float32 --run_count 2',
         framework=Framework.PYTORCH
     )
 
