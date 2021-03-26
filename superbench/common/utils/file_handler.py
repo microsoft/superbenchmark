@@ -3,13 +3,14 @@
 
 """Utilities for file."""
 
-import yaml
 from pathlib import Path
 from datetime import datetime
 
+from omegaconf import OmegaConf
 
-def new_output_dir():
-    """Generate a new output directory.
+
+def create_output_dir():
+    """Create a new output directory.
 
     Generate a new output directory name based on current time and create it on filesystem.
 
@@ -22,7 +23,7 @@ def new_output_dir():
     return str(output_path)
 
 
-def get_config(config_file):
+def get_sb_config(config_file):
     """Read SuperBench config yaml.
 
     Read config file, use default config if None is provided.
@@ -31,12 +32,10 @@ def get_config(config_file):
         config_file (str): config file path.
 
     Returns:
-        dict: Config object, None if file does not exist.
+        OmegaConf: Config object, None if file does not exist.
     """
-    here = Path(__file__).parent.resolve()
-    p = Path(config_file) if config_file else here / '../../config/default.yaml'
+    default_config_file = Path(__file__).parent / '../../config/default.yaml'
+    p = Path(config_file) if config_file else default_config_file
     if not p.is_file():
         return None
-    with p.open() as f:
-        config = yaml.safe_load(f)
-    return config
+    return OmegaConf.load(str(p))

@@ -49,6 +49,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 'config_override',
                 options_list=('--config-override', '-C'),
                 type=str,
-                help='Extra arguments to override config_file, following Hydra syntax.'
+                nargs='+',
+                help='Extra arguments to override config_file.'
             )
         super().load_arguments(command)

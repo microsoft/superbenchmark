@@ -134,9 +134,8 @@ setup(
     python_requires='>=3.6, <4',
     install_requires=[
         'colorlog>=4.7.2',
-        'hydra-colorlog>=1.0.0',
-        'hydra-core>=1.0.4',
         'knack>=0.7.2',
+        'omegaconf>=2.0.6',
     ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
