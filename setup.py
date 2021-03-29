@@ -133,6 +133,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
     install_requires=[
+        'colorlog>=4.7.2',
         'knack>=0.7.2',
         'omegaconf>=2.0.6',
     ],

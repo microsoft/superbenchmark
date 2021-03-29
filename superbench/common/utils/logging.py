@@ -6,7 +6,8 @@
 import socket
 import logging
 import sys
-import io
+
+import colorlog
 
 
 class LoggerAdapter(logging.LoggerAdapter):
@@ -23,57 +24,54 @@ class LoggerAdapter(logging.LoggerAdapter):
         raise exception(msg % args)
 
 
-class Logger:
-    """Logger class which creates logger instance."""
+class SuperBenchLogger:
+    """SuperBench Logger class."""
     @staticmethod
-    def create_logger(name, level=logging.INFO, stream=sys.stdout):
+    def add_handler(logger, stream=sys.stdout, filename=None, color=False):
+        """Add handler for logger.
+
+        Args:
+            logger (Logger): Logger to which the handler is added.
+            stream (IO, optional): The stream that the stream handler should use. Defaults to sys.stdout.
+            filename (str, optional): The filename that file handler should use. Defaults to None.
+            color (bool, optional): Colored format or not. Defaults to False.
+        """
+        formatter = logging.Formatter('[%(asctime)s %(hostname)s][%(filename)s:%(lineno)s][%(levelname)s] %(message)s')
+        if color:
+            formatter = colorlog.ColoredFormatter(
+                '[%(cyan)s%(asctime)s %(hostname)s%(reset)s]'
+                '[%(blue)s%(filename)s:%(lineno)s%(reset)s]'
+                '[%(log_color)s%(levelname)s%(reset)s] %(message)s'
+            )
+
+        handler = logging.NullHandler()
+        if filename:
+            # Create file handler if filename exists
+            handler = logging.FileHandler(filename)
+        else:
+            # Create stream handler otherwise
+            handler = logging.StreamHandler(stream=stream)
+
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    @staticmethod
+    def create_logger(name, level=logging.INFO):
         """Create logger instance with customized format.
 
         Args:
-            name (str): project name.
-            level (int): logging level, default is INFO.
-            stream (TextIOBase): stream object, such as stdout or file object,
-              default is sys.stdout.
+            name (str): Logger name.
+            level (int): Logging level. Defaults to logging.INFO.
 
         Return:
-            logger with the specified name, level and stream.
+            Logger: logger with the specified name, level and adapters.
         """
-        is_level_valid = True
-        if level not in logging._levelToName.keys():
-            invalid_level = level
-            level = logging.INFO
-            is_level_valid = False
-
-        is_stream_valid = True
-        if not isinstance(stream, io.IOBase):
-            invalid_stream = stream
-            stream = sys.stdout
-            is_stream_valid = False
-
-        formatter = logging.Formatter(
-            '%(asctime)s - %(hostname)s - '
-            '%(filename)s:%(lineno)d - '
-            '%(levelname)s: %(message)s'
-        )
-
-        handler = logging.StreamHandler(stream=stream)
-        handler.setFormatter(formatter)
         logger = logging.getLogger(name)
         logger.setLevel(level)
-        logger.addHandler(handler)
+        SuperBenchLogger.add_handler(logger, stream=sys.stdout, color=True)
         logger = LoggerAdapter(logger, extra={'hostname': socket.gethostname()})
-
-        if not is_level_valid:
-            logger.error(
-                'Log level is invalid, replace it to logging.INFO - level: {}, expected: {}'.format(
-                    invalid_level, ' '.join(str(x) for x in logging._levelToName.keys())
-                )
-            )
-
-        if not is_stream_valid:
-            logger.error('Stream is invalid, replace it to sys.stdout - stream type: {}'.format(type(invalid_stream)))
 
         return logger
 
 
-logger = Logger.create_logger('SuperBench', level=logging.INFO)
+logger = SuperBenchLogger.create_logger('superbench')
