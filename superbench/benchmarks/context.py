@@ -16,7 +16,7 @@ class Enum(enum.Enum):
 
     def __str__(self):
         """Value as the string."""
-        return self.value
+        return str(self.value)
 
 
 class Platform(Enum):
