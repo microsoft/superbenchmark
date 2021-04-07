@@ -43,14 +43,17 @@ class DockerBenchmark(Benchmark):
         """Implementation for benchmarking."""
         pass
 
-    def _process_docker_result(self, output):
+    def _process_raw_result(self, raw_output):
         """Function to process raw results and save the summarized results.
 
         Args:
-            output (str): raw output string of the docker benchmark.
+            raw_output (str): raw output string of the docker benchmark.
+
+        Return:
+            True if the raw output string is valid and result can be extracted.
         """
         # TODO: will implement it when add real benchmarks in the future.
-        pass
+        return True
 
     def print_env_info(self):
         """Print environments or dependencies information."""
