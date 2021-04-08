@@ -229,22 +229,16 @@ class ModelBenchmark(Benchmark):
 
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
-        if len(step_times) == 0:
-            logger.error(
-                'Step time list for training is empty - round: {}, model: {}, precision: {}.'.format(
-                    self._curr_run_index, self._name, precision
-                )
-            )
+        if not self.__process_model_result(ModelAction.TRAIN, precision, step_times):
             return False
 
-        average_time = sum(step_times) / len(step_times)
         logger.info(
             'Average train time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
-                self._curr_run_index, self._name, precision, average_time
+                self._curr_run_index, self._name, precision,
+                sum(step_times) / len(step_times)
             )
         )
 
-        self.__process_model_result(ModelAction.TRAIN, precision, step_times)
         return True
 
     def __inference(self, precision):
@@ -259,22 +253,16 @@ class ModelBenchmark(Benchmark):
         self._create_model(precision)
         # The unit of step time should be millisecond.
         step_times = self._inference_step(precision)
-        if len(step_times) == 0:
-            logger.error(
-                'Step time list for inference is empty - round: {}, model: {}, precision: {}.'.format(
-                    self._curr_run_index, self._name, precision
-                )
-            )
+        if not self.__process_model_result(ModelAction.INFERENCE, precision, step_times):
             return False
 
-        average_time = sum(step_times) / len(step_times)
         logger.info(
             'Average inference time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
-                self._curr_run_index, self._name, precision, average_time
+                self._curr_run_index, self._name, precision,
+                sum(step_times) / len(step_times)
             )
         )
 
-        self.__process_model_result(ModelAction.INFERENCE, precision, step_times)
         return True
 
     @abstractmethod
@@ -361,8 +349,19 @@ class ModelBenchmark(Benchmark):
             model_action (ModelAction): train or inference.
             precision (Precision): precision of model and input data, such as float32, float16.
             step_times (list): The step time list of every training/inference step, unit is millisecond.
+
+        Return:
+            True if step_times list is not empty.
         """
-        metric = 'steptime_{}_{}'.format(model_action.value, precision.value)
+        if len(step_times) == 0:
+            logger.error(
+                'Step time list is empty - round: {}, model: {}, model_action: {}, precision: {}.'.format(
+                    self._curr_run_index, self._name, model_action, precision
+                )
+            )
+            return False
+
+        metric = 'steptime_{}_{}'.format(model_action, precision)
         self._result.add_raw_data(metric, step_times)
         avg = sum(step_times) / len(step_times)
         self._result.add_result(metric, avg)
@@ -370,10 +369,12 @@ class ModelBenchmark(Benchmark):
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
-        metric = 'throughput_{}_{}'.format(model_action.value, precision.value)
+        metric = 'throughput_{}_{}'.format(model_action, precision)
         self._result.add_raw_data(metric, throughput)
         avg = sum(throughput) / len(throughput)
         self._result.add_result(metric, avg)
+
+        return True
 
     @abstractmethod
     def _cal_params_count(self):

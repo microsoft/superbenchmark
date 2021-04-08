@@ -5,6 +5,7 @@
 
 from abc import abstractmethod
 
+from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkType
 from superbench.benchmarks.base import Benchmark
 
@@ -40,17 +41,48 @@ class MicroBenchmark(Benchmark):
 
     @abstractmethod
     def _benchmark(self):
-        """Implementation for benchmarking."""
+        """Implementation for benchmarking.
+
+        Return:
+            True if run benchmark successfully.
+        """
         pass
 
-    def _process_micro_result(self, output):
-        """Function to process raw results and save the summarized results.
+    def _process_numeric_result(self, metric, result):
+        """Function to save the numerical results.
 
         Args:
-            output (str): raw output string of the micro-benchmark.
+            metric (str): metric name which is the key.
+            result (List[numbers.Number]): numerical result.
+
+        Return:
+            True if result list is not empty.
+        """
+        if len(result) == 0:
+            logger.error(
+                'Numerical result of benchmark is empty - round: {}, name: {}.'.format(
+                    self._curr_run_index, self._name
+                )
+            )
+            return False
+
+        self._result.add_raw_data(metric, result)
+        self._result.add_result(metric, sum(result) / len(result))
+        return True
+
+    def _process_raw_result(self, raw_output):
+        """Function to process raw results and save the summarized results.
+
+          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
+        Args:
+            raw_output (str): raw output string of the micro-benchmark.
+
+        Return:
+            True if the raw output string is valid and result can be extracted.
         """
         # TODO: will implement it when add real benchmarks in the future.
-        pass
+        return True
 
     def print_env_info(self):
         """Print environments or dependencies information."""
