@@ -9,7 +9,7 @@ import numbers
 import torch
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Precision, Platform, BenchmarkContext, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, Precision, ReturnCode
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, DistributedBackend
 from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
@@ -174,62 +174,58 @@ def test_pytorch_base():
     # Register BERT Base benchmark.
     BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
 
-    # Launch benchmark for testing.
-    context = BenchmarkContext(
+    # Launch benchmark with --no_gpu for testing.
+    context = BenchmarkRegistry.create_benchmark_context(
         'pytorch-mnist',
-        Platform.CPU,
         parameters='--batch_size=32 --num_warmup=8 --num_steps=64 --model_action train inference --no_gpu'
     )
 
-    assert (BenchmarkRegistry.check_parameters(context))
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert (benchmark)
+    assert (benchmark.name == 'pytorch-mnist')
+    assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-    if BenchmarkRegistry.check_parameters(context):
-        benchmark = BenchmarkRegistry.launch_benchmark(context)
+    # Test results.
+    for metric in [
+        'steptime_train_float32', 'steptime_inference_float32', 'throughput_train_float32',
+        'throughput_inference_float32'
+    ]:
+        assert (len(benchmark.raw_data[metric]) == 1)
+        assert (len(benchmark.raw_data[metric][0]) == 64)
+        assert (len(benchmark.result[metric]) == 1)
+        assert (isinstance(benchmark.result[metric][0], numbers.Number))
 
-        assert (benchmark.name == 'pytorch-mnist')
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
+    # Test _cal_params_count().
+    assert (benchmark._cal_params_count() == 1199882)
 
-        # Test results.
-        for metric in [
-            'steptime_train_float32', 'steptime_inference_float32', 'throughput_train_float32',
-            'throughput_inference_float32'
-        ]:
-            assert (len(benchmark.raw_data[metric]) == 1)
-            assert (len(benchmark.raw_data[metric][0]) == 64)
-            assert (len(benchmark.result[metric]) == 1)
-            assert (isinstance(benchmark.result[metric][0], numbers.Number))
+    # Test _judge_gpu_availability().
+    assert (benchmark._gpu_available is False)
 
-        # Test _cal_params_count().
-        assert (benchmark._cal_params_count() == 1199882)
+    # Test _init_distributed_setting().
+    assert (benchmark._args.distributed_impl is None)
+    assert (benchmark._args.distributed_backend is None)
+    assert (benchmark._init_distributed_setting() is True)
+    benchmark._args.distributed_impl = DistributedImpl.DDP
+    benchmark._args.distributed_backend = DistributedBackend.NCCL
+    assert (benchmark._init_distributed_setting() is False)
+    benchmark._args.distributed_impl = DistributedImpl.MIRRORED
+    assert (benchmark._init_distributed_setting() is False)
 
-        # Test _judge_gpu_availability().
-        assert (benchmark._gpu_available is False)
+    # Test _init_dataloader().
+    benchmark._args.distributed_impl = None
+    assert (benchmark._init_dataloader() is True)
+    benchmark._args.distributed_impl = DistributedImpl.DDP
+    assert (benchmark._init_dataloader() is False)
+    benchmark._args.distributed_impl = DistributedImpl.MIRRORED
+    assert (benchmark._init_dataloader() is False)
 
-        # Test _init_distributed_setting().
-        assert (benchmark._args.distributed_impl is None)
-        assert (benchmark._args.distributed_backend is None)
-        assert (benchmark._init_distributed_setting() is True)
-        benchmark._args.distributed_impl = DistributedImpl.DDP
-        benchmark._args.distributed_backend = DistributedBackend.NCCL
-        assert (benchmark._init_distributed_setting() is False)
-        benchmark._args.distributed_impl = DistributedImpl.MIRRORED
-        assert (benchmark._init_distributed_setting() is False)
-
-        # Test _init_dataloader().
-        benchmark._args.distributed_impl = None
-        assert (benchmark._init_dataloader() is True)
-        benchmark._args.distributed_impl = DistributedImpl.DDP
-        assert (benchmark._init_dataloader() is False)
-        benchmark._args.distributed_impl = DistributedImpl.MIRRORED
-        assert (benchmark._init_dataloader() is False)
-
-        # Test _create_optimizer().
-        assert (isinstance(benchmark._optimizer, torch.optim.AdamW))
-        benchmark._optimizer_type = Optimizer.ADAM
-        assert (benchmark._create_optimizer() is True)
-        assert (isinstance(benchmark._optimizer, torch.optim.Adam))
-        benchmark._optimizer_type = Optimizer.SGD
-        assert (benchmark._create_optimizer() is True)
-        assert (isinstance(benchmark._optimizer, torch.optim.SGD))
-        benchmark._optimizer_type = None
-        assert (benchmark._create_optimizer() is False)
+    # Test _create_optimizer().
+    assert (isinstance(benchmark._optimizer, torch.optim.AdamW))
+    benchmark._optimizer_type = Optimizer.ADAM
+    assert (benchmark._create_optimizer() is True)
+    assert (isinstance(benchmark._optimizer, torch.optim.Adam))
+    benchmark._optimizer_type = Optimizer.SGD
+    assert (benchmark._create_optimizer() is True)
+    assert (isinstance(benchmark._optimizer, torch.optim.SGD))
+    benchmark._optimizer_type = None
+    assert (benchmark._create_optimizer() is False)

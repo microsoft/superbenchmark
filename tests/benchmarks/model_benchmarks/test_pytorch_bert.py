@@ -3,21 +3,20 @@
 
 """Tests for BERT model benchmarks."""
 
-from superbench.benchmarks import BenchmarkRegistry, Precision, Platform, Framework, BenchmarkContext
+from superbench.benchmarks import BenchmarkRegistry, Precision, Platform, Framework
 import superbench.benchmarks.model_benchmarks.pytorch_bert as pybert
 
 
 def test_pytorch_bert_base():
     """Test pytorch-bert-base benchmark."""
-    context = BenchmarkContext(
+    context = BenchmarkRegistry.create_benchmark_context(
         'bert-base',
-        Platform.CUDA,
+        platform=Platform.CUDA,
         parameters='--batch_size=32 --num_classes=5 --seq_len=512',
         framework=Framework.PYTORCH
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
-    assert (BenchmarkRegistry.check_parameters(context))
 
     benchmark_name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (benchmark_name == 'pytorch-bert-base')
@@ -54,15 +53,14 @@ def test_pytorch_bert_base():
 
 def test_pytorch_bert_large():
     """Test pytorch-bert-large benchmark."""
-    context = BenchmarkContext(
+    context = BenchmarkRegistry.create_benchmark_context(
         'bert-large',
-        Platform.CUDA,
+        platform=Platform.CUDA,
         parameters='--batch_size=32 --num_classes=5 --seq_len=512',
         framework=Framework.PYTORCH
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
-    assert (BenchmarkRegistry.check_parameters(context))
 
     benchmark_name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (benchmark_name == 'pytorch-bert-large')

@@ -74,14 +74,14 @@ class Benchmark(ABC):
             logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
             return False, None, None
 
+        ret = True
         if len(unknown) > 0:
-            logger.warning(
-                'Benchmark has unknown arguments - benchmark: {}, unknown arguments: {}'.format(
-                    self._name, ' '.join(unknown)
-                )
+            logger.error(
+                'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
             )
+            ret = False
 
-        return True, args, unknown
+        return ret, args, unknown
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
