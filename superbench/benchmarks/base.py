@@ -168,18 +168,16 @@ class Benchmark(ABC):
         Return:
             True if the summary result is instance of List[Number].
         """
-        for metric in self._result.result:
-            is_valid = isinstance(self._result.result[metric], list)
-            if is_valid:
-                for value in self._result.result[metric]:
-                    if not isinstance(value, numbers.Number):
-                        is_valid = False
-                        break
+        def __is_list_number(data):
+            if isinstance(data, list) and all(isinstance(item, numbers.Number) for item in data):
+                return True
+            return False
 
-            if not is_valid:
+        for metric in self._result.result:
+            if not __is_list_number(self._result.result[metric]):
                 logger.error(
-                    'Invalid summarized result - benchmark: {}, metric name: {}, expect: List[Number], got: {}.'.format(
-                        self._name, metric, type(self._result.result[metric])
+                    'Invalid summarized result - benchmark: {}, metric: {}, result: {}.'.format(
+                        self._name, metric, self._result.result[metric]
                     )
                 )
                 return False
@@ -195,15 +193,15 @@ class Benchmark(ABC):
               instance of List[str] for BenchmarkType.DOCKER.
               instance of List[List[Number]] or List[str] for BenchmarkType.MICRO.
         """
-        def is_list_str(data):
+        def __is_list_str(data):
             if isinstance(data, list) and all(isinstance(item, str) for item in data):
                 return True
             return False
 
-        def is_list_list_number(data):
+        def __is_list_list_number(data):
             if (
                 isinstance(data, list) and all(isinstance(item, list) for item in data)
-                and all((isinstance(value, numbers.Number) for value in item) for item in data)
+                and all(isinstance(value, numbers.Number) for item in data for value in item)
             ):
                 return True
             return False
@@ -211,12 +209,12 @@ class Benchmark(ABC):
         for metric in self._result.raw_data:
             is_valid = True
             if self._benchmark_type == BenchmarkType.MODEL:
-                is_valid = is_list_list_number(self._result.raw_data[metric])
+                is_valid = __is_list_list_number(self._result.raw_data[metric])
             elif self._benchmark_type == BenchmarkType.DOCKER:
-                is_valid = is_list_str(self._result.raw_data[metric])
+                is_valid = __is_list_str(self._result.raw_data[metric])
             elif self._benchmark_type == BenchmarkType.MICRO:
-                is_valid = is_list_str(self._result.raw_data[metric]
-                                       ) or is_list_list_number(self._result.raw_data[metric])
+                is_valid = __is_list_str(self._result.raw_data[metric]
+                                         ) or __is_list_list_number(self._result.raw_data[metric])
             if not is_valid:
                 logger.error(
                     'Invalid raw data type - benchmark: {}, metric: {}, raw data: {}.'.format(
