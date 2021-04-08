@@ -73,6 +73,8 @@ class MicroBenchmark(Benchmark):
     def _process_raw_result(self, raw_output):
         """Function to process raw results and save the summarized results.
 
+          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
         Args:
             raw_output (str): raw output string of the micro-benchmark.
 
