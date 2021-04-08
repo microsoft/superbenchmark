@@ -3,8 +3,7 @@
 
 """Tests for BenchmarkRegistry module."""
 
-from superbench.benchmarks import Platform, Framework, Precision, \
-    BenchmarkContext, BenchmarkRegistry, BenchmarkType, ReturnCode
+from superbench.benchmarks import Platform, Framework, Precision, BenchmarkRegistry, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks import ModelBenchmark
 
 
@@ -111,7 +110,9 @@ def create_benchmark(params='--num_steps=8'):
         parameters='--hidden_size=2',
         platform=Platform.CUDA,
     )
-    context = BenchmarkContext('fake-model', Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    context = BenchmarkRegistry.create_benchmark_context(
+        'fake-model', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH
+    )
     name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
     assert (name)
     (benchmark_class, predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(name, context.platform)

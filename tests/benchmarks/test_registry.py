@@ -5,7 +5,7 @@
 
 import re
 
-from superbench.benchmarks import Platform, Framework, BenchmarkType, BenchmarkContext, BenchmarkRegistry, ReturnCode
+from superbench.benchmarks import Platform, Framework, BenchmarkType, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 
 
@@ -60,21 +60,21 @@ def test_register_benchmark():
     # Register the benchmark for all platform if use default platform.
     BenchmarkRegistry.register_benchmark('accumulation', AccumulationBenchmark)
     for platform in Platform:
-        context = BenchmarkContext('accumulation', platform)
+        context = BenchmarkRegistry.create_benchmark_context('accumulation', platform=platform)
         assert (BenchmarkRegistry.is_benchmark_registered(context))
 
     # Register the benchmark for CUDA platform if use platform=Platform.CUDA.
     BenchmarkRegistry.register_benchmark('accumulation-cuda', AccumulationBenchmark, platform=Platform.CUDA)
-    context = BenchmarkContext('accumulation-cuda', Platform.CUDA)
+    context = BenchmarkRegistry.create_benchmark_context('accumulation-cuda', platform=Platform.CUDA)
     assert (BenchmarkRegistry.is_benchmark_registered(context))
-    context = BenchmarkContext('accumulation-cuda', Platform.ROCM)
+    context = BenchmarkRegistry.create_benchmark_context('accumulation-cuda', platform=Platform.ROCM)
     assert (BenchmarkRegistry.is_benchmark_registered(context) is False)
 
 
 def test_is_benchmark_context_valid():
     """Test interface BenchmarkRegistry.is_benchmark_context_valid()."""
     # Positive case.
-    context = BenchmarkContext('accumulation', Platform.CPU)
+    context = BenchmarkRegistry.create_benchmark_context('accumulation', platform=Platform.CPU)
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
 
     # Negative case.
@@ -94,23 +94,11 @@ def test_get_benchmark_name():
     # Test benchmark name for different Frameworks.
     benchmark_frameworks = [Framework.NONE, Framework.PYTORCH, Framework.TENSORFLOW1, Framework.ONNX]
     for i in range(len(benchmark_names)):
-        context = BenchmarkContext('accumulation', Platform.CPU, framework=benchmark_frameworks[i])
+        context = BenchmarkRegistry.create_benchmark_context(
+            'accumulation', platform=Platform.CPU, framework=benchmark_frameworks[i]
+        )
         name = BenchmarkRegistry._BenchmarkRegistry__get_benchmark_name(context)
         assert (name == benchmark_names[i])
-
-
-def test_check_parameters():
-    """Test interface BenchmarkRegistry.check_parameters()."""
-    # Register benchmarks for testing.
-    BenchmarkRegistry.register_benchmark('accumulation', AccumulationBenchmark)
-
-    # Positive case.
-    context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower_bound=1')
-    assert (BenchmarkRegistry.check_parameters(context))
-
-    # Negative case.
-    context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower=1')
-    assert (BenchmarkRegistry.check_parameters(context) is False)
 
 
 def test_get_benchmark_configurable_settings():
@@ -121,7 +109,7 @@ def test_get_benchmark_configurable_settings():
     # Register benchmarks for testing.
     BenchmarkRegistry.register_benchmark('accumulation', AccumulationBenchmark)
 
-    context = BenchmarkContext('accumulation', Platform.CPU)
+    context = BenchmarkRegistry.create_benchmark_context('accumulation', platform=Platform.CPU)
     settings = BenchmarkRegistry.get_benchmark_configurable_settings(context)
 
     expected = """optional arguments:
@@ -140,52 +128,71 @@ def test_launch_benchmark():
     )
 
     # Launch benchmark.
-    context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower_bound=1')
+    context = BenchmarkRegistry.create_benchmark_context(
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1'
+    )
 
-    if BenchmarkRegistry.check_parameters(context):
-        benchmark = BenchmarkRegistry.launch_benchmark(context)
-        assert (benchmark)
-        assert (benchmark.name == 'accumulation')
-        assert (benchmark.type == BenchmarkType.MICRO)
-        assert (benchmark.run_count == 1)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.raw_data == {'accumulation_result': ['1,3,6,10']})
-        assert (benchmark.result == {'accumulation_result': [10]})
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert (benchmark)
+    assert (benchmark.name == 'accumulation')
+    assert (benchmark.type == BenchmarkType.MICRO)
+    assert (benchmark.run_count == 1)
+    assert (benchmark.return_code == ReturnCode.SUCCESS)
+    assert (benchmark.raw_data == {'accumulation_result': ['1,3,6,10']})
+    assert (benchmark.result == {'accumulation_result': [10]})
 
-        # Replace the timestamp as null.
-        result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
-        expected = (
-            '{"name": "accumulation", "type": "micro", "run_count": 1, '
-            '"return_code": 0, "start_time": null, "end_time": null, '
-            '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
-            '"result": {"accumulation_result": [10]}}'
-        )
-        assert (result == expected)
+    # Replace the timestamp as null.
+    result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
+    expected = (
+        '{"name": "accumulation", "type": "micro", "run_count": 1, '
+        '"return_code": 0, "start_time": null, "end_time": null, '
+        '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
+        '"result": {"accumulation_result": [10]}}'
+    )
+    assert (result == expected)
 
     # Launch benchmark with overridden parameters.
-    context = BenchmarkContext('accumulation', Platform.CPU, parameters='--lower_bound=1 --upper_bound=4')
-    if BenchmarkRegistry.check_parameters(context):
-        benchmark = BenchmarkRegistry.launch_benchmark(context)
-        assert (benchmark)
-        assert (benchmark.name == 'accumulation')
-        assert (benchmark.type == BenchmarkType.MICRO)
-        assert (benchmark.run_count == 1)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.raw_data == {'accumulation_result': ['1,3,6']})
-        assert (benchmark.result == {'accumulation_result': [6]})
+    context = BenchmarkRegistry.create_benchmark_context(
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1 --upper_bound=4'
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert (benchmark)
+    assert (benchmark.name == 'accumulation')
+    assert (benchmark.type == BenchmarkType.MICRO)
+    assert (benchmark.run_count == 1)
+    assert (benchmark.return_code == ReturnCode.SUCCESS)
+    assert (benchmark.raw_data == {'accumulation_result': ['1,3,6']})
+    assert (benchmark.result == {'accumulation_result': [6]})
 
-        # Replace the timestamp as null.
-        result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
-        expected = (
-            '{"name": "accumulation", "type": "micro", "run_count": 1, '
-            '"return_code": 0, "start_time": null, "end_time": null, '
-            '"raw_data": {"accumulation_result": ["1,3,6"]}, '
-            '"result": {"accumulation_result": [6]}}'
-        )
-        assert (result == expected)
+    # Replace the timestamp as null.
+    result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
+    expected = (
+        '{"name": "accumulation", "type": "micro", "run_count": 1, '
+        '"return_code": 0, "start_time": null, "end_time": null, '
+        '"raw_data": {"accumulation_result": ["1,3,6"]}, '
+        '"result": {"accumulation_result": [6]}}'
+    )
+    assert (result == expected)
 
     # Failed to launch benchmark due to 'benchmark not found'.
-    context = BenchmarkContext(
+    context = BenchmarkRegistry.create_benchmark_context(
         'accumulation-fail', Platform.CPU, parameters='--lower_bound=1 --upper_bound=4', framework=Framework.PYTORCH
     )
-    assert (BenchmarkRegistry.check_parameters(context) is False)
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert (benchmark is None)
+
+    # Failed to launch benchmark due to 'unknown arguments'.
+    context = BenchmarkRegistry.create_benchmark_context(
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1 --test=4'
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert (benchmark)
+    assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+
+    # Failed to launch benchmark due to 'invalid arguments'.
+    context = BenchmarkRegistry.create_benchmark_context(
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1 --upper_bound=x'
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert (benchmark)
+    assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
