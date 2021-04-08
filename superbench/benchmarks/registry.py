@@ -105,14 +105,14 @@ class BenchmarkRegistry:
         return benchmark_name
 
     @classmethod
-    def create_benchmark_context(cls, name, platform=Platform.CUDA, parameters='', framework=Framework.NONE):
+    def create_benchmark_context(cls, name, platform=Platform.CPU, parameters='', framework=Framework.NONE):
         """Constructor.
 
         Args:
             name (str): name of benchmark in config file.
-            platform (Platform): Platform types like CUDA, ROCM.
+            platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM.
             parameters (str): predefined parameters of benchmark.
-            framework (Framework): Framework types like ONNX, PYTORCH.
+            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNX.
 
         Return:
             benchmark_context (BenchmarkContext): the benchmark context.
