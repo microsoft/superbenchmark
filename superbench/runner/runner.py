@@ -43,4 +43,5 @@ class SuperBenchRunner():
             NotImplementedError: Not implemented yet.
         """
         logger.info(self._sb_config)
-        raise NotImplementedError
+        logger.error('Work in progress, not implemented yet.')
+        pass
