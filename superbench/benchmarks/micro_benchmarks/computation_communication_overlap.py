@@ -3,10 +3,15 @@
 
 """Module of the ComputationCommunicationOverlap benchmarks.
 
-ComputationCommunicationOverlap benchmark is used to test the performance of single node when communication and computation overlap and figure out the issued GPU if the node has performance downgrade on this context:
+ComputationCommunicationOverlap benchmark is used to test the performance of single node
+when communication and computation overlap and figure out the issued GPU
+if the node has performance downgrade on this context:
     -Currently, 2 computation kernels are supported: mul and matmul of the matrix
     -Communication kernel: NCCL AllReduce
-    -Each GPU will run the computation kernel and communication kernels in pipeline to achieve overlap in some degree, in every loop, they will fist launch a nccl allreduce kernel async and then launch #ratio computation kernels at once.
+    -Each GPU will run the computation kernel and communication kernels in pipeline
+        to achieve overlap in some degree, in every loop,
+        they will fist launch a nccl allreduce kernel async
+        and then launch #ratio computation kernels at once。
 """
 
 import os
@@ -83,11 +88,11 @@ class ComputationCommunicationOverlap(MicroBenchmark):
             help='The Q dim of Tensor(P, Q) to transfer in Nccl AllReduce.',
         )
         self._parser.add_argument(
-            "--ratio",
+            '--ratio',
             type=int,
             default=30,
             required=False,
-            help="The execution ratio number between computation kernel and nccl kernel",
+            help='The execution ratio number between computation kernel and nccl kernel',
         )
         self._parser.add_argument(
             '--kernel',
@@ -99,14 +104,14 @@ class ComputationCommunicationOverlap(MicroBenchmark):
         self._parser.add_argument(
             '--num_warmup',
             type=int,
-            default=10,
+            default=64,
             required=False,
             help='The number of warmup step.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
-            default=2000,
+            default=2048,
             required=False,
             help='The number of test step.',
         )
@@ -135,28 +140,27 @@ class ComputationCommunicationOverlap(MicroBenchmark):
         return True
 
     def __kernel_nccl_pipeline(self, kernel, matA, matB, stages, message, times):
-        """computation and nccl kernel pipeline with single GPU.
+        """Computation and nccl kernel pipeline with single GPU.
 
         Args:
             kernel (ComputationKernelType): the type of the computation kernel to run
             matA (list[tensor]): the matrix list used in matmul or mul for every stage
             matB (tensor): the matrix used in matmul
             stages (int): the ratio number of computation kernel and communication kernel
-            message(tensor): the data used to be transfered through NCCL
+            message(tensor): the data used to be transferred through NCCL
             times(int): number of times in one step to run
 
         Return:
             True of False: if computation kernel type is invalid, return False, else, return True
         """
-
         for i in range(times):
             if self.__world_size > 1:
                 torch.distributed.all_reduce(message, op=torch.distributed.ReduceOp.SUM, async_op=True)
             for stage in range(stages):
                 if kernel == ComputationKernelType.MUL:
-                    matC = matA[stage].mul(matA[stage])
+                    matA[stage].mul(matA[stage])
                 elif kernel == ComputationKernelType.MATMUL:
-                    matC = matA[stage].matmul(matB)
+                    matA[stage].matmul(matB)
                 else:
                     logger.error(
                         'Unknown comoputation kernel type - benchmark: {}, type: {}.'.format(self._name, kernel)
@@ -174,8 +178,12 @@ class ComputationCommunicationOverlap(MicroBenchmark):
         kernel = self._args.kernel
         if self.__local_rank == 0:
             logger.info(
-                "Computation Communication Overlap - using {} GPUs, matrix shape for computation: M={} K={} N={}, message tensor shape of nccl = [{},{}], ratio between computation kernel and nccl kernel={}"
-                .format(self.__world_size, M, K, N, P, Q, self._args.ratio)
+                'Computation Communication Overlap - using {} GPUs,\
+                matrix shape for computation: M={} K={} N={},\
+                message tensor shape of nccl = [{},{}],\
+                ratio between computation kernel and nccl kernel={}'.format(
+                    self.__world_size, M, K, N, P, Q, self._args.ratio
+                )
             )
 
         MatA = list()
@@ -204,7 +212,7 @@ class ComputationCommunicationOverlap(MicroBenchmark):
         end = time.perf_counter()
 
         logger.info(
-            "GPU {} total compute cost {}".format(
+            'GPU {} total compute cost {}'.format(
                 self.__local_rank, (compute_end - start) * 1000 / self._args.num_steps
             )
         )
@@ -218,7 +226,7 @@ class ComputationCommunicationOverlap(MicroBenchmark):
             return False
 
         logger.info(
-            " GPU: {} {} pipeline mean cost of each stage with NCCL all_reduce, time: {} ms".format(
+            'GPU: {} {} pipeline mean cost of each stage with NCCL all_reduce, time: {} ms'.format(
                 self.__local_rank, kernel, (end - start) * 1000 / self._args.num_steps
             )
         )
