@@ -1,11 +1,20 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Module of the ShardingMatmul benchmarks."""
+"""Module of the ShardingMatmul benchmarks.
+
+ShardingMatmul benchmark is used to test the performance of large scale matmul operation with multiple GPUs:
+  allreduce: Each GPU will calculate part of the MM calculation, and use AllReduce to merge all data into one tensor.
+  allgather: Each GPU will calculate part of the MM calculation, and use AllGather + Concat to merge all data into
+   one tensor.
+  nosharding: Pure matmul operation with one GPU.
+
+"""
 
 import os
 import time
 
+# TODO - add mechanism to import torch as needed according to docker
 import torch
 
 from superbench.common.utils import logger
@@ -235,5 +244,5 @@ class ShardingMatmul(MicroBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark('sharding-matmul', ShardingMatmul, parameters='--mode allreduce allgather')
-BenchmarkRegistry.register_benchmark('matmul', ShardingMatmul, parameters='--mode nosharding')
+BenchmarkRegistry.register_benchmark('pytorch-sharding-matmul', ShardingMatmul, parameters='--mode allreduce allgather')
+BenchmarkRegistry.register_benchmark('pytorch-matmul', ShardingMatmul, parameters='--mode nosharding')
