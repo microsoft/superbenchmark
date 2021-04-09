@@ -43,7 +43,11 @@ class SuperBenchExecutor():
         SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / filename))
 
     def __validate_sb_config(self):
-        """Validate SuperBench config object."""
+        """Validate SuperBench config object.
+
+        Raise:
+            InvalidConfigError: If input config is invalid.
+        """
         # TODO: add validation
 
     def __get_enabled_benchmarks(self):
@@ -52,13 +56,18 @@ class SuperBenchExecutor():
         Return:
             list: List of benchmarks which will be executed.
         """
-        if self._sb_config.superbench.use:
-            if isinstance(self._sb_config.superbench.use, str):
-                return [self._sb_config.superbench.use]
-            elif isinstance(self._sb_config.superbench.use, (list, ListConfig)):
-                return list(self._sb_config.superbench.use)
+        if self._sb_config.superbench.enable:
+            if isinstance(self._sb_config.superbench.enable, str):
+                return [self._sb_config.superbench.enable]
+            elif isinstance(self._sb_config.superbench.enable, (list, ListConfig)):
+                return list(self._sb_config.superbench.enable)
         # TODO: may exist order issue
-        return [k for k, v in self._sb_benchmarks.items() if v.use]
+        return [k for k, v in self._sb_benchmarks.items() if v.enable]
+
+    def __get_platform(self):
+        """Detect runninng platform by environment."""
+        # TODO: check devices and env vars
+        return Platform.CUDA
 
     def __get_arguments(self, parameters):
         """Get command line arguments for argparse.
@@ -93,7 +102,7 @@ class SuperBenchExecutor():
                         logger.info('Executor is going to execute %s: %s/%s.', benchmark_name, framework, model)
                         context = BenchmarkRegistry.create_benchmark_context(
                             model,
-                            platform=Platform.CUDA,
+                            platform=self.__get_platform(),
                             framework=Framework(framework.lower()).name,
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )

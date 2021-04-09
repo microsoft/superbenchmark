@@ -36,22 +36,26 @@ class ExecutorTestCase(unittest.TestCase):
         expected_log_file = Path(self.executor._output_dir) / 'sb-exec.log'
         self.assertTrue(expected_log_file.is_file())
 
-    def test_get_enabled_benchmarks_use_none(self):
-        """Test enabled benchmarks when superbench.use is none."""
+    def test_get_enabled_benchmarks_enable_none(self):
+        """Test enabled benchmarks when superbench.enable is none."""
         expected_enabled_benchmarks = list(self.default_config.superbench.benchmarks.keys())
         self.assertListEqual(self.executor._sb_enabled, expected_enabled_benchmarks)
 
-    def test_get_enabled_benchmarks_use_str(self):
-        """Test enabled benchmarks when superbench.use is string."""
-        self.executor._sb_config.superbench.use = 'benchmark_alpha'
+    def test_get_enabled_benchmarks_enable_str(self):
+        """Test enabled benchmarks when superbench.enable is string."""
+        self.executor._sb_config.superbench.enable = 'benchmark_alpha'
         expected_enabled_benchmarks = ['benchmark_alpha']
         self.assertListEqual(self.executor._SuperBenchExecutor__get_enabled_benchmarks(), expected_enabled_benchmarks)
 
-    def test_get_enabled_benchmarks_use_list(self):
-        """Test enabled benchmarks when superbench.use is list."""
-        self.executor._sb_config.superbench.use = ['benchmark_alpha', 'benchmark_beta']
+    def test_get_enabled_benchmarks_enable_list(self):
+        """Test enabled benchmarks when superbench.enable is list."""
+        self.executor._sb_config.superbench.enable = ['benchmark_alpha', 'benchmark_beta']
         expected_enabled_benchmarks = ['benchmark_alpha', 'benchmark_beta']
         self.assertListEqual(self.executor._SuperBenchExecutor__get_enabled_benchmarks(), expected_enabled_benchmarks)
+
+    def test_get_platform(self):
+        """Test get platform."""
+        self.assertEqual(self.executor._SuperBenchExecutor__get_platform().value, 'CUDA')
 
     def test_get_arguments(self):
         """Test benchmarks arguments."""

@@ -1,9 +1,9 @@
 # SuperBench Config
 superbench:
-  use: null
+  enable: null
   benchmarks:
     bert_models:
-      use: on
+      enable: true
       frameworks:
         - pytorch
       models:
