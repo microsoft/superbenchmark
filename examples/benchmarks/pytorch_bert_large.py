@@ -1,7 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Model benchmark example for bert-large."""
+"""Model benchmark example for bert-large.
+
+Commands to run:
+  python3 examples/benchmarks/pytorch_bert_large.py (Single GPU)
+  python3 -m torch.distributed.launch --nproc_per_node=8 examples/benchmarks/pytorch_bert_large.py (Distributed)
+"""
 
 from superbench.benchmarks import Framework, BenchmarkRegistry
 from superbench.common.utils import logger
