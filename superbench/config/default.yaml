@@ -1,25 +1,34 @@
-# @package _global_
-
-# Hydra config
-hydra:
-  run:
-    dir: ./outputs/${now:%Y-%m-%d_%H-%M-%S}
-  sweep:
-    dir: ./outputs/${now:%Y-%m-%d_%H-%M-%S}
-  job_logging:
-    formatters:
-      colorlog:
-        format: >-
-          [%(cyan)s%(asctime)s %(hostname)s%(reset)s][%(blue)s%(filename)s:%(lineno)s%(reset)s][%(log_color)s%(levelname)s%(reset)s] %(message)s
-defaults:
-  - hydra/job_logging: colorlog
-  - hydra/hydra_logging: colorlog
-
-# SuperBench config
+# SuperBench Config
 superbench:
-  use: []
+  enable: null
   benchmarks:
-    pytorch_models:
+    matmul:
       enable: true
+      frameworks:
+        - pytorch
       parameters:
+        num_steps: 2048
+    sharding_matmul:
+      enable: true
+      frameworks:
+        - pytorch
+      parameters:
+        num_steps: 2048
+    bert_models:
+      enable: true
+      frameworks:
+        - pytorch
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        duration: 0
+        num_warmup: 64
+        num_steps: 2048
         batch_size: 32
+        precision:
+          - float32
+          - float16
+        model_action:
+          - train
+          - inference
