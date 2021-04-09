@@ -8,9 +8,6 @@ from typing import Dict
 from superbench.common.utils import logger
 from superbench.benchmarks import Platform, Framework, BenchmarkContext
 from superbench.benchmarks.base import Benchmark
-import superbench.benchmarks.model_benchmarks    # noqa pylint: disable=unused-import
-import superbench.benchmarks.micro_benchmarks    # noqa pylint: disable=unused-import
-import superbench.benchmarks.docker_benchmarks    # noqa pylint: disable=unused-import
 
 
 class BenchmarkRegistry:
@@ -108,32 +105,19 @@ class BenchmarkRegistry:
         return benchmark_name
 
     @classmethod
-    def check_parameters(cls, benchmark_context):
-        """Check the validation of customized parameters.
+    def create_benchmark_context(cls, name, platform=Platform.CPU, parameters='', framework=Framework.NONE):
+        """Constructor.
 
         Args:
-            benchmark_context (BenchmarkContext): the benchmark context.
+            name (str): name of benchmark in config file.
+            platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM.
+            parameters (str): predefined parameters of benchmark.
+            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNX.
 
         Return:
-            Return True if benchmark exists and context/parameters are valid.
+            benchmark_context (BenchmarkContext): the benchmark context.
         """
-        if not cls.is_benchmark_context_valid(benchmark_context):
-            return False
-
-        benchmark_name = cls.__get_benchmark_name(benchmark_context)
-        platform = benchmark_context.platform
-        customized_parameters = benchmark_context.parameters
-
-        if benchmark_name:
-            (benchmark_class, params) = cls.__select_benchmark(benchmark_name, platform)
-            if benchmark_class:
-                benchmark = benchmark_class(benchmark_name, customized_parameters)
-                benchmark.add_parser_arguments()
-                ret, args, unknown = benchmark.parse_args()
-                if ret and len(unknown) < 1:
-                    return True
-
-        return False
+        return BenchmarkContext(name, platform, parameters, framework)
 
     @classmethod
     def get_benchmark_configurable_settings(cls, benchmark_context):

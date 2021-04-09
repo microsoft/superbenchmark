@@ -74,14 +74,14 @@ class Benchmark(ABC):
             logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
             return False, None, None
 
+        ret = True
         if len(unknown) > 0:
-            logger.warning(
-                'Benchmark has unknown arguments - benchmark: {}, unknown arguments: {}'.format(
-                    self._name, ' '.join(unknown)
-                )
+            logger.error(
+                'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
             )
+            ret = False
 
-        return True, args, unknown
+        return ret, args, unknown
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -162,6 +162,16 @@ class Benchmark(ABC):
 
         return True
 
+    def __is_list_type(self, data, t):
+        if isinstance(data, list) and all(isinstance(item, t) for item in data):
+            return True
+        return False
+
+    def __is_list_list_type(self, data, t):
+        if (self.__is_list_type(data, list) and all(isinstance(value, t) for item in data for value in item)):
+            return True
+        return False
+
     def __check_summarized_result(self):
         """Check the validation of summary result.
 
@@ -169,17 +179,10 @@ class Benchmark(ABC):
             True if the summary result is instance of List[Number].
         """
         for metric in self._result.result:
-            is_valid = isinstance(self._result.result[metric], list)
-            if is_valid:
-                for value in self._result.result[metric]:
-                    if not isinstance(value, numbers.Number):
-                        is_valid = False
-                        break
-
-            if not is_valid:
+            if not self.__is_list_type(self._result.result[metric], numbers.Number):
                 logger.error(
-                    'Invalid summarized result - benchmark: {}, metric name: {}, expect: List[Number], got: {}.'.format(
-                        self._name, metric, type(self._result.result[metric])
+                    'Invalid summarized result - benchmark: {}, metric: {}, result: {}.'.format(
+                        self._name, metric, self._result.result[metric]
                     )
                 )
                 return False
@@ -191,30 +194,24 @@ class Benchmark(ABC):
 
         Return:
             True if the raw data is:
-              instance of List[List[Number]] for BenchmarkType.MODEL, and BenchmarkType.DOCKER.
-              instance of List[str] for BenchmarkType.MICRO.
+              instance of List[List[Number]] for BenchmarkType.MODEL.
+              instance of List[str] for BenchmarkType.DOCKER.
+              instance of List[List[Number]] or List[str] for BenchmarkType.MICRO.
         """
         for metric in self._result.raw_data:
-            is_valid = isinstance(self._result.raw_data[metric], list)
-            if is_valid:
-                for run in self._result.raw_data[metric]:
-                    if self._benchmark_type in [BenchmarkType.MODEL, BenchmarkType.DOCKER]:
-                        if not isinstance(run, list):
-                            is_valid = False
-                            break
-                        for value in run:
-                            if not isinstance(value, numbers.Number):
-                                is_valid = False
-                                break
-                    elif self._benchmark_type in [BenchmarkType.MICRO]:
-                        is_valid = isinstance(run, str)
-
+            is_valid = True
+            if self._benchmark_type == BenchmarkType.MODEL:
+                is_valid = self.__is_list_list_type(self._result.raw_data[metric], numbers.Number)
+            elif self._benchmark_type == BenchmarkType.DOCKER:
+                is_valid = self.__is_list_type(self._result.raw_data[metric], str)
+            elif self._benchmark_type == BenchmarkType.MICRO:
+                is_valid = self.__is_list_type(self._result.raw_data[metric], str) or self.__is_list_list_type(
+                    self._result.raw_data[metric], numbers.Number
+                )
             if not is_valid:
                 logger.error(
-                    'Invalid raw data - benchmark: {}, metric name: {}, expect: {}, got: {}.'.format(
-                        self._name, metric,
-                        'List[str]' if self._benchmark_type == BenchmarkType.MICRO else 'List[List[Number]]',
-                        type(self._result.raw_data[metric])
+                    'Invalid raw data type - benchmark: {}, metric: {}, raw data: {}.'.format(
+                        self._name, metric, self._result.raw_data[metric]
                     )
                 )
                 return False

@@ -108,7 +108,7 @@ def exec_command_handler(
         sb_config_from_override = OmegaConf.from_dotlist(config_override)
         sb_config = OmegaConf.merge(sb_config, sb_config_from_override)
 
-    # create output directory
+    # Create output directory
     output_dir = create_output_dir()
 
     executor = SuperBenchExecutor(sb_config, docker_config, output_dir)
@@ -169,7 +169,7 @@ def run_command_handler(
         sb_config_from_override = OmegaConf.from_dotlist(config_override)
         sb_config = OmegaConf.merge(sb_config, sb_config_from_override)
 
-    # create output directory
+    # Create output directory
     output_dir = create_output_dir()
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
