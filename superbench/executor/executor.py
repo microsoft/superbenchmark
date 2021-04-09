@@ -90,33 +90,50 @@ class SuperBenchExecutor():
                 argv.append('--{}'.format(name))
         return ' '.join(argv)
 
+    def __exec_benchmark(self, context, log_suffix):
+        """Launch benchmark for context.
+
+        Args:
+            context (BenchmarkContext): Benchmark context to launch.
+            log_suffix (str): Log string suffix.
+        """
+        benchmark = BenchmarkRegistry.launch_benchmark(context)
+        if benchmark:
+            logger.debug(
+                'benchmark: %s, return code: %s, result: %s.', benchmark.name, benchmark.return_code, benchmark.result
+            )
+            if benchmark.return_code == 0:
+                logger.info('Executor succeeded in %s.', log_suffix)
+            else:
+                logger.error('Executor failed in %s.', log_suffix)
+        else:
+            logger.error('Executor failed in %s, invalid context.', log_suffix)
+
     def exec(self):
         """Run the SuperBench benchmarks locally."""
         for benchmark_name in self._sb_benchmarks:
             if benchmark_name not in self._sb_enabled:
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
-            if benchmark_name.endswith('_models'):
-                for framework in benchmark_config.frameworks:
+            for framework in benchmark_config.frameworks or [Framework.NONE]:
+                if benchmark_name.endswith('_models'):
                     for model in benchmark_config.models:
-                        logger.info('Executor is going to execute %s: %s/%s.', benchmark_name, framework, model)
+                        log_suffix = 'model-benchmark {}: {}/{}'.format(benchmark_name, framework, model)
+                        logger.info('Executor is going to execute %s.', log_suffix)
                         context = BenchmarkRegistry.create_benchmark_context(
                             model,
                             platform=self.__get_platform(),
                             framework=Framework(framework.lower()).name,
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )
-                        benchmark = BenchmarkRegistry.launch_benchmark(context)
-                        if benchmark:
-                            logger.debug(
-                                'benchmark: %s, return code: %s, result: %s', benchmark.name, benchmark.return_code,
-                                benchmark.result
-                            )
-                            if benchmark.return_code == 0:
-                                logger.info('Executor succeeded in %s: %s/%s.', benchmark_name, framework, model)
-                            else:
-                                logger.error('Executor failed in %s: %s/%s.', benchmark_name, framework, model)
-                        else:
-                            logger.error(
-                                'Executor failed in %s: %s/%s, invalid context.', benchmark_name, framework, model
-                            )
+                        self.__exec_benchmark(context, log_suffix)
+                else:
+                    log_suffix = 'micro-benchmark {}: {}'.format(benchmark_name, framework)
+                    logger.info('Executor is going to execute %s.', log_suffix)
+                    context = BenchmarkRegistry.create_benchmark_context(
+                        benchmark_name,
+                        platform=self.__get_platform(),
+                        framework=Framework(framework.lower()).name,
+                        parameters=self.__get_arguments(benchmark_config.parameters)
+                    )
+                    self.__exec_benchmark(context, log_suffix)

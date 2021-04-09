@@ -2,6 +2,18 @@
 superbench:
   enable: null
   benchmarks:
+    matmul:
+      enable: true
+      frameworks:
+        - pytorch
+      parameters:
+        num_steps: 2048
+    sharding_matmul:
+      enable: true
+      frameworks:
+        - pytorch
+      parameters:
+        num_steps: 2048
     bert_models:
       enable: true
       frameworks:
