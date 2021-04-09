@@ -35,8 +35,3 @@ class RunnerTestCase(unittest.TestCase):
         """Test log file exists."""
         expected_log_file = Path(self.runner._output_dir) / 'sb-run.log'
         self.assertTrue(expected_log_file.is_file())
-
-    def test_run(self):
-        """Test run, should raise NotImplementedError."""
-        with self.assertRaises(NotImplementedError):
-            self.runner.run()
