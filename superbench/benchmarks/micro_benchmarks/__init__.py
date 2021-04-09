@@ -4,5 +4,6 @@
 """A module containing all the micro-benchmarks."""
 
 from superbench.benchmarks.micro_benchmarks.micro_base import MicroBenchmark
+from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul
 
-__all__ = ['MicroBenchmark']
+__all__ = ['MicroBenchmark', 'ShardingMatmul']
