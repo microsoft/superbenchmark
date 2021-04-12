@@ -6,7 +6,7 @@
 import io
 import contextlib
 from functools import wraps
-from knack.testsdk import ScenarioTest, StringCheck
+from knack.testsdk import ScenarioTest, StringCheck, NoneCheck
 
 import superbench
 from superbench.cli import SuperBenchCLI
@@ -63,17 +63,11 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_exec(self):
         """Test sb exec."""
-        self.cmd('sb exec --docker-image test:cuda11.1', expect_failure=True)
-
-    @capture_system_exit
-    def test_sb_exec_no_docker_image(self):
-        """Test sb exec, no --docker-image argument, should fail."""
-        self.cmd('sb exec', expect_failure=True)
-        self.assertIn('sb exec: error: the following arguments are required: --docker-image', self.stderr)
+        self.cmd('sb exec --config-override superbench.enable=["none"]', checks=[NoneCheck()])
 
     def test_sb_run(self):
         """Test sb run."""
-        self.cmd('sb run --docker-image test:cuda11.1 --host-list localhost', expect_failure=True)
+        self.cmd('sb run --docker-image test:cuda11.1 --host-list localhost', checks=[NoneCheck()])
 
     @capture_system_exit
     def test_sb_run_no_docker_image(self):
