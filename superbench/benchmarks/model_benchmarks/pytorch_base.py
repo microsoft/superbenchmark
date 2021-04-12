@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Framework
+from superbench.benchmarks import Framework, ReturnCode
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, ModelBenchmark
 
 
@@ -158,6 +158,29 @@ class PytorchBase(ModelBenchmark):
             )
             hvd.broadcast_parameters(self._model.state_dict(), root_rank=0)
             hvd.broadcast_optimizer_state(self._optimizer, root_rank=0)
+
+        return True
+
+    def _postprocess(self):
+        """Postprocess/cleanup operations after the benchmarking.
+
+        Return:
+            True if _postprocess() succeed.
+        """
+        if not super()._postprocess():
+            return False
+
+        try:
+            if self._args.distributed_impl == DistributedImpl.DDP:
+                torch.distributed.destroy_process_group()
+        except BaseException as e:
+            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE)
+            logger.error(
+                'Post process failed - model: {}, distributed implementation: {}, message: {}.'.format(
+                    self._name, self._args.distributed_impl, str(e)
+                )
+            )
+            return False
 
         return True
 
