@@ -151,17 +151,15 @@ setup(
             'yapf>=0.30.0',
         ],
         'torch': [
-            'torch==1.7.0',
-            'torchvision==0.8.0',
-            'transformers==4.3.3',
+            'torch>=1.7.0',
+            'torchvision>=0.8.0',
+            'transformers>=4.3.3',
         ],
     },
     include_package_data=True,
     entry_points={
         'console_scripts': [
             'sb = superbench.cli.sb:main',
-            'sb-exec = superbench.cli.sb_exec:main',
-            'sb-run = superbench.cli.sb_run:main',
         ],
     },
     cmdclass={
