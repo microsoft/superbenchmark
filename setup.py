@@ -160,8 +160,6 @@ setup(
     entry_points={
         'console_scripts': [
             'sb = superbench.cli.sb:main',
-            'sb-exec = superbench.cli.sb_exec:main',
-            'sb-run = superbench.cli.sb_run:main',
         ],
     },
     cmdclass={
