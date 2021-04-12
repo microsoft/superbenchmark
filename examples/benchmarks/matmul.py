@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'matmul', parameters='--num_steps=20', framework=Framework.PYTORCH
+        'matmul', parameters='--num_steps 20', framework=Framework.PYTORCH
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
