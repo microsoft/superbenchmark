@@ -124,12 +124,12 @@ def test_launch_benchmark():
     """Test interface BenchmarkRegistry.launch_benchmark()."""
     # Register benchmarks for testing.
     BenchmarkRegistry.register_benchmark(
-        'accumulation', AccumulationBenchmark, parameters='--upper_bound=5', platform=Platform.CPU
+        'accumulation', AccumulationBenchmark, parameters='--upper_bound 5', platform=Platform.CPU
     )
 
     # Launch benchmark.
     context = BenchmarkRegistry.create_benchmark_context(
-        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1'
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound 1'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
@@ -153,7 +153,7 @@ def test_launch_benchmark():
 
     # Launch benchmark with overridden parameters.
     context = BenchmarkRegistry.create_benchmark_context(
-        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1 --upper_bound=4'
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound 1 --upper_bound 4'
     )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     assert (benchmark)
@@ -176,14 +176,14 @@ def test_launch_benchmark():
 
     # Failed to launch benchmark due to 'benchmark not found'.
     context = BenchmarkRegistry.create_benchmark_context(
-        'accumulation-fail', Platform.CPU, parameters='--lower_bound=1 --upper_bound=4', framework=Framework.PYTORCH
+        'accumulation-fail', Platform.CPU, parameters='--lower_bound 1 --upper_bound 4', framework=Framework.PYTORCH
     )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     assert (benchmark is None)
 
     # Failed to launch benchmark due to 'unknown arguments'.
     context = BenchmarkRegistry.create_benchmark_context(
-        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1 --test=4'
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound 1 --test 4'
     )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     assert (benchmark)
@@ -191,7 +191,7 @@ def test_launch_benchmark():
 
     # Failed to launch benchmark due to 'invalid arguments'.
     context = BenchmarkRegistry.create_benchmark_context(
-        'accumulation', platform=Platform.CPU, parameters='--lower_bound=1 --upper_bound=x'
+        'accumulation', platform=Platform.CPU, parameters='--lower_bound 1 --upper_bound x'
     )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     assert (benchmark)

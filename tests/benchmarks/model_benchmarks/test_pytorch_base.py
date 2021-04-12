@@ -179,7 +179,7 @@ def test_pytorch_base():
     # Launch benchmark with --no_gpu for testing.
     context = BenchmarkRegistry.create_benchmark_context(
         'pytorch-mnist',
-        parameters='--batch_size=32 --num_warmup=8 --num_steps=64 --model_action train inference --no_gpu'
+        parameters='--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

@@ -15,7 +15,7 @@ def test_pytorch_bert_base():
     context = BenchmarkRegistry.create_benchmark_context(
         'bert-base',
         platform=Platform.CUDA,
-        parameters='--batch_size=32 --num_classes=5 --seq_len=512',
+        parameters='--batch_size 32 --num_classes 5 --seq_len 512',
         framework=Framework.PYTORCH
     )
 
@@ -61,7 +61,7 @@ def test_pytorch_bert_large():
     context = BenchmarkRegistry.create_benchmark_context(
         'bert-large',
         platform=Platform.CUDA,
-        parameters='--batch_size=32 --num_classes=5 --seq_len=512',
+        parameters='--batch_size 32 --num_classes 5 --seq_len 512',
         framework=Framework.PYTORCH
     )
 
