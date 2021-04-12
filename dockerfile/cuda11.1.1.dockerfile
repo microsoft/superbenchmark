@@ -21,6 +21,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    libpci-dev \
     libaio-dev \
     libcap2 \
     libtinfo5
