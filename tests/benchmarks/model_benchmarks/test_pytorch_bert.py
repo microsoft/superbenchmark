@@ -3,10 +3,13 @@
 
 """Tests for BERT model benchmarks."""
 
+from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Precision, Platform, Framework
 import superbench.benchmarks.model_benchmarks.pytorch_bert as pybert
 
 
+@decorator.cuda_test
+@decorator.pytorch_test
 def test_pytorch_bert_base():
     """Test pytorch-bert-base benchmark."""
     context = BenchmarkRegistry.create_benchmark_context(
@@ -51,6 +54,8 @@ def test_pytorch_bert_base():
     assert (isinstance(benchmark._model, pybert.BertBenchmarkModel))
 
 
+@decorator.cuda_test
+@decorator.pytorch_test
 def test_pytorch_bert_large():
     """Test pytorch-bert-large benchmark."""
     context = BenchmarkRegistry.create_benchmark_context(
