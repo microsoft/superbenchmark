@@ -40,8 +40,6 @@ class ShardingMatmul(MicroBenchmark):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-        # Command lines to launch the micro-benchmarks.
-        self.__commands = list()
         self.__world_size = 1
         self.__local_rank = 0
         torch.backends.cudnn.benchmark = True
@@ -221,7 +219,7 @@ class ShardingMatmul(MicroBenchmark):
         K = self._args.k
         N = self._args.n
         for mode in self._args.mode:
-            if mode == ShardingMode.NOSHARDING or self.__world_size == 1:
+            if mode == ShardingMode.NOSHARDING:
                 elapse_times = self.__matmul_nosharding(M, K, N)
             elif mode == ShardingMode.ALLREDUCE:
                 elapse_times = self.__matmul_allreduce(M, K, N)
