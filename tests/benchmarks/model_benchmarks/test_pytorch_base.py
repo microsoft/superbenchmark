@@ -8,6 +8,7 @@ import numbers
 
 import torch
 
+from tests.helper import decorator
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Precision, ReturnCode
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, DistributedBackend
@@ -169,6 +170,7 @@ class PytorchMNIST(PytorchBase):
         return duration
 
 
+@decorator.pytorch_test
 def test_pytorch_base():
     """Test PytorchBase class."""
     # Register BERT Base benchmark.
