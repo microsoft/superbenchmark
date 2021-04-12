@@ -63,13 +63,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_exec(self):
         """Test sb exec."""
-        self.cmd('sb exec --docker-image test:cuda11.1', checks=[NoneCheck()])
-
-    @capture_system_exit
-    def test_sb_exec_no_docker_image(self):
-        """Test sb exec, no --docker-image argument, should fail."""
-        self.cmd('sb exec', expect_failure=True)
-        self.assertIn('sb exec: error: the following arguments are required: --docker-image', self.stderr)
+        self.cmd('sb exec --config-override superbench.enable=["none"]', checks=[NoneCheck()])
 
     def test_sb_run(self):
         """Test sb run."""

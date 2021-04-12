@@ -123,7 +123,7 @@ class SuperBenchExecutor():
                         context = BenchmarkRegistry.create_benchmark_context(
                             model,
                             platform=self.__get_platform(),
-                            framework=Framework(framework.lower()).name,
+                            framework=Framework(framework.lower()),
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )
                         self.__exec_benchmark(context, log_suffix)
@@ -133,7 +133,7 @@ class SuperBenchExecutor():
                     context = BenchmarkRegistry.create_benchmark_context(
                         benchmark_name,
                         platform=self.__get_platform(),
-                        framework=Framework(framework.lower()).name,
+                        framework=Framework(framework.lower()),
                         parameters=self.__get_arguments(benchmark_config.parameters)
                     )
                     self.__exec_benchmark(context, log_suffix)
