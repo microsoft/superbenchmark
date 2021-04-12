@@ -3,10 +3,13 @@
 
 """Tests for matmul benchmark."""
 
+from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMode
 
 
+@decorator.cuda_test
+@decorator.pytorch_test
 def test_pytorch_matmul():
     """Test pytorch-matmul benchmark."""
     context = BenchmarkRegistry.create_benchmark_context(
