@@ -5,7 +5,7 @@
 
 ComputationCommunicationOverlap benchmark is used to test the performance of single node
 when communication and computation overlap and figure out the issued GPU.
-if the node has performance downgrade on this context:
+If the node has performance downgrade on this context:
     -Currently, 2 computation kernels are supported: mul and matmul of the matrix.
     -Communication kernel: NCCL AllReduce.
     -Each GPU will run the computation kernel and communication kernels in pipeline.
