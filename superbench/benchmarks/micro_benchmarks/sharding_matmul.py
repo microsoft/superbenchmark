@@ -40,8 +40,6 @@ class ShardingMatmul(MicroBenchmark):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-        # Command lines to launch the micro-benchmarks.
-        self.__commands = list()
         self.__world_size = 1
         self.__local_rank = 0
         torch.backends.cudnn.benchmark = True
