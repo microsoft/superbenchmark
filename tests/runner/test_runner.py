@@ -14,11 +14,7 @@ from superbench.runner import SuperBenchRunner
 
 
 class RunnerTestCase(unittest.TestCase):
-    """A class for runner test cases.
-
-    Args:
-        unittest.TestCase (unittest.TestCase): TestCase class.
-    """
+    """A class for runner test cases."""
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
         default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
