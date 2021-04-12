@@ -14,7 +14,7 @@ ShardingMatmul benchmark is used to test the performance of large scale matmul o
 import os
 import time
 
-# TODO - add mechanism to import torch as needed according to docker
+# TODO - add mechanism to import torch as needed according to docker.
 import torch
 
 from superbench.common.utils import logger
@@ -40,8 +40,6 @@ class ShardingMatmul(MicroBenchmark):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-        # Command lines to launch the micro-benchmarks.
-        self.__commands = list()
         self.__world_size = 1
         self.__local_rank = 0
         torch.backends.cudnn.benchmark = True
@@ -110,6 +108,7 @@ class ShardingMatmul(MicroBenchmark):
                 self.__local_rank = int(os.environ['LOCAL_RANK'])
             except BaseException as e:
                 self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
+                torch.distributed.destroy_process_group()
                 logger.error(
                     'Initialize distributed env failed - benchmark: {}, message: {}.'.format(self._name, str(e))
                 )
@@ -221,7 +220,7 @@ class ShardingMatmul(MicroBenchmark):
         K = self._args.k
         N = self._args.n
         for mode in self._args.mode:
-            if mode == ShardingMode.NOSHARDING or self.__world_size == 1:
+            if mode == ShardingMode.NOSHARDING:
                 elapse_times = self.__matmul_nosharding(M, K, N)
             elif mode == ShardingMode.ALLREDUCE:
                 elapse_times = self.__matmul_allreduce(M, K, N)
@@ -231,7 +230,7 @@ class ShardingMatmul(MicroBenchmark):
                 logger.error('Unknown sharding mode - benchmark: {}, mode: {}.'.format(self._name, mode))
                 return False
 
-            metric = 'matmul_sharding_{}'.format(mode)
+            metric = '{}'.format(mode)
             if not self._process_numeric_result(metric, elapse_times):
                 return False
 
@@ -240,6 +239,29 @@ class ShardingMatmul(MicroBenchmark):
                 format(self._curr_run_index, self._name, M, K, N, mode,
                        sum(elapse_times) / len(elapse_times))
             )
+
+        return True
+
+    def _postprocess(self):
+        """Postprocess/cleanup operations after the benchmarking.
+
+        Return:
+            True if _postprocess() succeed.
+        """
+        if not super()._postprocess():
+            return False
+
+        try:
+            if ShardingMode.ALLGATHER in self._args.mode or ShardingMode.ALLREDUCE in self._args.mode:
+                torch.distributed.destroy_process_group()
+        except BaseException as e:
+            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE)
+            logger.error(
+                'Post process failed - benchmark: {}, mode: {}, message: {}.'.format(
+                    self._name, self._args.mode, str(e)
+                )
+            )
+            return False
 
         return True
 
