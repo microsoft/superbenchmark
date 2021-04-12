@@ -229,7 +229,7 @@ class ShardingMatmul(MicroBenchmark):
                 logger.error('Unknown sharding mode - benchmark: {}, mode: {}.'.format(self._name, mode))
                 return False
 
-            metric = 'matmul_sharding_{}'.format(mode)
+            metric = '{}'.format(mode)
             if not self._process_numeric_result(metric, elapse_times):
                 return False
 
