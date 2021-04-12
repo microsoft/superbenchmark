@@ -109,6 +109,14 @@ class Benchmark(ABC):
 
         return True
 
+    def _postprocess(self):
+        """Postprocess/cleanup operations after the benchmarking.
+
+        Return:
+            True if _postprocess() succeed.
+        """
+        return True
+
     @abstractmethod
     def _benchmark(self):
         """Implementation for benchmarking."""
@@ -132,6 +140,9 @@ class Benchmark(ABC):
         self._result.set_timestamp(self._start_time, self._end_time)
 
         if not self.__check_result_format():
+            return False
+
+        if not self._postprocess():
             return False
 
         return True
