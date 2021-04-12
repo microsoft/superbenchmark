@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # Create context for bert-large benchmark and run it for 120 * 2 seconds.
     context = BenchmarkRegistry.create_benchmark_context(
         'bert-large',
-        parameters='--batch_size=1 --duration=120 --seq_len=512 --precision=float32 --run_count=2',
+        parameters='--batch_size 1 --duration 120 --seq_len 8 --precision float32 --run_count 2',
         framework=Framework.PYTORCH
     )
 

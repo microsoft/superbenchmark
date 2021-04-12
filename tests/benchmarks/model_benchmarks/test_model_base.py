@@ -101,13 +101,13 @@ class FakeModelBenchmark(ModelBenchmark):
         return 200
 
 
-def create_benchmark(params='--num_steps=8'):
+def create_benchmark(params='--num_steps 8'):
     """Register and create benchmark."""
     # Register the FakeModelBenchmark benchmark.
     BenchmarkRegistry.register_benchmark(
         'pytorch-fake-model',
         FakeModelBenchmark,
-        parameters='--hidden_size=2',
+        parameters='--hidden_size 2',
         platform=Platform.CUDA,
     )
     context = BenchmarkRegistry.create_benchmark_context(
@@ -128,13 +128,13 @@ def test_arguments_related_interfaces():
     Benchmark.get_configurable_settings()
     """
     # Positive case for parse_args().
-    benchmark = create_benchmark('--num_steps=9')
+    benchmark = create_benchmark('--num_steps 9')
     benchmark.add_parser_arguments()
     (ret, args, unknown) = benchmark.parse_args()
     assert (ret and args.num_steps == 9)
 
     # Negative case for parse_args() - invalid precision.
-    benchmark = create_benchmark('--num_steps=8 --precision=fp32')
+    benchmark = create_benchmark('--num_steps 8 --precision fp32')
     benchmark.add_parser_arguments()
     (ret, args, unknown) = benchmark.parse_args()
     assert (ret is False)
@@ -169,7 +169,7 @@ def test_arguments_related_interfaces():
 def test_preprocess():
     """Test interface Benchmark._preprocess()."""
     # Positive case for _preprocess().
-    benchmark = create_benchmark('--num_steps=8')
+    benchmark = create_benchmark('--num_steps 8')
     assert (benchmark._preprocess())
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     settings = benchmark.get_configurable_settings()
@@ -199,12 +199,12 @@ def test_preprocess():
     assert (settings == expected_settings)
 
     # Negative case for _preprocess() - invalid precision.
-    benchmark = create_benchmark('--num_steps=8 --precision=fp32')
+    benchmark = create_benchmark('--num_steps 8 --precision fp32')
     assert (benchmark._preprocess() is False)
     assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
 
     # Negative case for _preprocess() - invalid benchmark type.
-    benchmark = create_benchmark('--num_steps=8 --precision=float32')
+    benchmark = create_benchmark('--num_steps 8 --precision float32')
     benchmark._benchmark_type = Platform.CUDA
     assert (benchmark._preprocess() is False)
     assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_TYPE)
@@ -224,7 +224,7 @@ def test_train():
     assert (benchmark.serialized_result == expected_result)
 
     # Step time list is empty (simulate training failure).
-    benchmark = create_benchmark('--num_steps=0')
+    benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
@@ -248,7 +248,7 @@ def test_inference():
     assert (benchmark.serialized_result == expected_result)
 
     # Step time list is empty (simulate inference failure).
-    benchmark = create_benchmark('--num_steps=0')
+    benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
@@ -295,19 +295,19 @@ def test_benchmark():
     assert (benchmark.serialized_result == expected_serialized_result)
 
     # Negative case for _benchmark() - no supported precision found.
-    benchmark = create_benchmark('--precision=int16')
+    benchmark = create_benchmark('--precision int16')
     assert (benchmark._preprocess())
     assert (benchmark._benchmark() is False)
     assert (benchmark.return_code == ReturnCode.NO_SUPPORTED_PRECISION)
 
     # Negative case for _benchmark() - model train failure, step time list is empty.
-    benchmark = create_benchmark('--num_steps=0')
+    benchmark = create_benchmark('--num_steps 0')
     assert (benchmark._preprocess())
     assert (benchmark._benchmark() is False)
     assert (benchmark.return_code == ReturnCode.MODEL_TRAIN_FAILURE)
 
     # Negative case for _benchmark() - model inference failure, step time list is empty.
-    benchmark = create_benchmark('--model_action=inference --num_steps=0')
+    benchmark = create_benchmark('--model_action inference --num_steps 0')
     assert (benchmark._preprocess())
     assert (benchmark._benchmark() is False)
     assert (benchmark.return_code == ReturnCode.MODEL_INFERENCE_FAILURE)
