@@ -12,19 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'computation-communication-overlap-mul', parameters='--num_steps 2000', framework=Framework.PYTORCH
-    )
-
-    benchmark = BenchmarkRegistry.launch_benchmark(context)
-    if benchmark:
-        logger.info(
-            'benchmark: {}, return code: {}, result: {}'.format(
-                benchmark.name, benchmark.return_code, benchmark.result
-            )
-        )
-
-    context = BenchmarkRegistry.create_benchmark_context(
-        'computation-communication-overlap-matmul', parameters='--num_steps 2000', framework=Framework.PYTORCH
+        'computation-communication-overlap', parameters='--num_steps 100', framework=Framework.PYTORCH
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
