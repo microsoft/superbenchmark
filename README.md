@@ -1,6 +1,6 @@
 # SuperBenchmark
 
-[![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/microsoft.superbenchmark?branchName=dev)](https://dev.azure.com/msrasrg/SuperBenchmark/_build?definitionId=77)
+[![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=dev)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=dev)
 [![Lint](https://github.com/microsoft/superbenchmark/workflows/Lint/badge.svg)](https://github.com/microsoft/superbenchmark/actions?query=workflow%3ALint)
 [![Codecov](https://codecov.io/gh/microsoft/superbenchmark/branch/dev/graph/badge.svg?token=DDiDLW7pSd)](https://codecov.io/gh/microsoft/superbenchmark/branch/dev)
 
@@ -21,8 +21,21 @@ which supports:
 It includes micro-benchmark for primitive computation and communication benchmarking,
 and model-benchmark to measure domain-aware end-to-end deep learning workloads.
 
+> 🔴 __Note__:
+SuperBench is in the early pre-alpha stage for open source, and not ready for general public yet.
+If you want to jump in early, you can try building [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev) yourself.
+
 
 ## Installation
+
+### Using Docker (_Preferred_)
+
+```sh
+docker pull superbench/superbench:dev-cuda11.1.1
+docker run -it --rm \
+    --privileged --net=host --ipc=host --gpus=all \
+    superbench/superbench:dev-cuda11.1.1 bash
+```
 
 ### Using Python
 
@@ -58,7 +71,9 @@ Then install superbench through either PyPI binary or from source:
 
 1. PyPI Binary
 
-    TODO
+    ```sh
+    # not available yet
+    ```
 
 2. From Source
 
@@ -71,14 +86,22 @@ Then install superbench through either PyPI binary or from source:
     python3 -m pip install .
     ```
 
-### Using Docker
-
-TODO
-
 
 ## Usage
 
-TODO
+### Run Benchmarks
+
+```sh
+# run benchmarks in default settings
+sb exec
+
+# use a custom config
+sb exec --config-file ./superbench/config/default.yaml
+```
+
+### Benchmark Gallary
+
+Please find more benchmark examples [here](examples/benchmarks/).
 
 
 ## Developer Guide
@@ -146,16 +169,16 @@ SuperBenchmark is an open-source project. Your participation and contribution ar
 1. Bug fixes for existing features.
 2. New features for benchmark module (micro-benchmark, model-benchmark, etc.)
 
-   If you would like to contribute a new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull request to origin dev branch.
+   If you would like to contribute a new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull request to origin [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
 
 #### Contribution steps
 
 If you would like to contribute to the project, please follow below steps of joint development on GitHub.
 
 1. `Fork` the repo first to your personal GitHub account.
-2. Check out from `dev` branch for feature development.
+2. Check out from [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev) for feature development.
 3. When you finish the feature, please fetch the latest code from origin repo, merge to your branch and resolve conflict.
-4. Submit pull request to origin `dev` branch.
+4. Submit pull request to origin [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
 5. Please note that there might be comments or questions from reviewers. It will need your help to update the pull request.
 
 ## Trademarks
