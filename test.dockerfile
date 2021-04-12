@@ -26,4 +26,4 @@ RUN python3 -m pip install --upgrade pip setuptools && \
 RUN python3 setup.py lint
 
 # Test code
-RUN python3 setup.py test
+RUN TEST_CUDA=0 python3 setup.py test
