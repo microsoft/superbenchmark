@@ -23,7 +23,18 @@ class SuperBenchRunner():
         self._docker_config = docker_config
         self._ansible_config = ansible_config
         self._output_dir = output_dir
-        SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / 'sb-run.log'))
+
+        self.__set_logger('sb-run.log')
+        logger.info('Runner uses config: %s.', self._sb_config)
+        logger.info('Runner writes to: %s.', self._output_dir)
+
+    def __set_logger(self, filename):
+        """Set logger and add file handler.
+
+        Args:
+            filename (str): Log file name.
+        """
+        SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / filename))
 
     def run(self):
         """Run the SuperBench benchmarks distributedly.
@@ -32,4 +43,5 @@ class SuperBenchRunner():
             NotImplementedError: Not implemented yet.
         """
         logger.info(self._sb_config)
-        raise NotImplementedError
+        logger.error('Work in progress, not implemented yet.')
+        pass
