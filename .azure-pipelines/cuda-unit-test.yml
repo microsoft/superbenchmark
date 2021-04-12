@@ -5,29 +5,23 @@ trigger:
   - master
   - dev
 
-resources:
-  - repo: self
-
 pool:
   name: SuperBench CI
   vmImage: ubuntu-latest
 
-variables:
-  imageName: test.cuda
-  tag: '$(Build.BuildId)'
+container:
+  image: nvcr.io/nvidia/pytorch:20.12-py3
 
 steps:
-  - task: Docker@2
-    displayName: Build CUDA unit-test Docker for SuperBench testing
-    inputs:
-      command: build
-      dockerfile: '$(Build.SourcesDirectory)/test.dockerfile' # TODO: need cuda image
-      repository: $(imageName)
-      tags: |
-        $(tag)
   - script: |
-      ci_env=`bash <(curl -s https://codecov.io/env)`
-      docker run $ci_env --entrypoint /bin/bash $(imageName):$(tag) -c 'bash <(curl -s https://codecov.io/bash)'
+      python3 -m pip install .[test,torch]
+    displayName: Install dependencies
+  - script: |
+      python3 setup.py lint
+    displayName: Run code lint
+  - script: |
+      python3 setup.py test
+    displayName: Run unit tests
+  - script: |
+      bash <(curl -s https://codecov.io/bash)
     displayName: Report coverage results
-    env:
-      CODECOV_TOKEN: $(codecovToken)
