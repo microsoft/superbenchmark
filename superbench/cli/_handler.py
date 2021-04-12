@@ -3,13 +3,14 @@
 
 """SuperBench CLI command handler."""
 
-import os
 from pathlib import Path
 
 from knack.util import CLIError
 from omegaconf import OmegaConf
 
 import superbench
+from superbench.runner import SuperBenchRunner
+from superbench.executor import SuperBenchExecutor
 from superbench.common.utils import create_output_dir, get_sb_config
 
 
@@ -78,12 +79,12 @@ def deploy_command_handler(
 
 
 def exec_command_handler(
-    docker_image, docker_username=None, docker_password=None, config_file=None, config_override=None
+    docker_image=None, docker_username=None, docker_password=None, config_file=None, config_override=None
 ):
     """Run the SuperBench benchmarks locally.
 
     Args:
-        docker_image (str): Docker image URI.
+        docker_image (str, optional): Docker image URI.
         docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
         docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
@@ -110,7 +111,8 @@ def exec_command_handler(
     # Create output directory
     output_dir = create_output_dir()
 
-    os.system('sb-exec {}'.format(output_dir))
+    executor = SuperBenchExecutor(sb_config, docker_config, output_dir)
+    executor.exec()
 
 
 def run_command_handler(
@@ -170,4 +172,5 @@ def run_command_handler(
     # Create output directory
     output_dir = create_output_dir()
 
-    os.system('sb-run {}'.format(output_dir))
+    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
+    runner.run()
