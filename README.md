@@ -30,52 +30,68 @@ If you want to jump in early, you can try building [`dev` branch](https://github
 
 ### Using Docker (_Preferred_)
 
-```sh
-docker pull superbench/superbench:dev-cuda11.1.1
-docker run -it --rm \
-    --privileged --net=host --ipc=host --gpus=all \
-    superbench/superbench:dev-cuda11.1.1 bash
-```
+__System Requirements__
+
+* Platform: Ubuntu 18.04 or later (64-bit)
+* Docker: Docker CE 19.03 or later
+
+__Install SuperBench__
+
+* Using Pre-Build Images
+
+    ```sh
+    docker pull superbench/superbench:dev-cuda11.1.1
+    docker run -it --rm \
+        --privileged --net=host --ipc=host --gpus=all \
+        superbench/superbench:dev-cuda11.1.1 bash
+    ```
+
+* Building the Image
+
+    ```sh
+    docker build -f dockerfile/cuda11.1.1.dockerfile -t superbench/superbench:dev .
+    ```
 
 ### Using Python
 
-System requirements:
+__System Requirements__
+
+* Platform: Ubuntu 18.04 or later (64-bit); Windows 10 (64-bit) with WSL2
 * Python: Python 3.6 or later, pip 18.0 or later
-* Platform: Ubuntu 16.04 or later (64-bit), Windows 10 (64-bit) with WSL2
 
-Check whether Python environment is already configured:
-```sh
-# check Python version
-python3 --version
-# check pip version
-python3 -m pip --version
-```
-If not, install the followings:
-* [Python](https://www.python.org/)
-* [pip](https://pip.pypa.io/en/stable/installing/)
-* [venv](https://docs.python.org/3/library/venv.html)
+    Check whether Python environment is already configured:
+    ```sh
+    # check Python version
+    python3 --version
+    # check pip version
+    python3 -m pip --version
+    ```
+    If not, install the followings:
+    * [Python](https://www.python.org/)
+    * [pip](https://pip.pypa.io/en/stable/installing/)
+    * [venv](https://docs.python.org/3/library/venv.html)
 
-It's recommended to use a virtual environment (optional):
-```sh
-# create a new virtual environment
-python3 -m venv --system-site-packages ./venv
-# activate the virtual environment
-source ./venv/bin/activate
+    It's recommended to use a virtual environment (optional):
+    ```sh
+    # create a new virtual environment
+    python3 -m venv --system-site-packages ./venv
+    # activate the virtual environment
+    source ./venv/bin/activate
 
-# exit the virtual environment later
-# after you finish running superbench
-deactivate
-```
+    # exit the virtual environment later
+    # after you finish running superbench
+    deactivate
+    ```
 
-Then install superbench through either PyPI binary or from source:
+__Install SuperBench__
 
-1. PyPI Binary
+* PyPI Binary
 
     ```sh
     # not available yet
     ```
 
-2. From Source
+* From Source
 
     ```sh
     # get source code
@@ -89,7 +105,7 @@ Then install superbench through either PyPI binary or from source:
 
 ## Usage
 
-### Run Benchmarks
+### Run SuperBench
 
 ```sh
 # run benchmarks in default settings
