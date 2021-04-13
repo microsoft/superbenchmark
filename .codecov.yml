@@ -1,12 +1,21 @@
 codecov:
   require_ci_to_pass: yes
 
+flag_management:
+  default_rules:
+    carryforward: false
+    paths:
+      - superbench/
+
 coverage:
   status:
     project:
       default:
         target: 80%
         threshold: 1%
+        flags:
+          - cpu-unit-test
+          - cuda-unit-test
         branches:
           - main
           - dev
@@ -14,9 +23,9 @@ coverage:
       default:
         target: 80%
         threshold: 1%
+        flags:
+          - cpu-unit-test
+          - cuda-unit-test
         branches:
           - main
           - dev
-
-comment:
-  show_carryforward_flags: true
