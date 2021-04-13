@@ -28,7 +28,7 @@ steps:
         $(tag)
   - script: |
       ci_env=`bash <(curl -s https://codecov.io/env)`
-      docker run $ci_env --entrypoint /bin/bash $(imageName):$(tag) -c 'bash <(curl -s https://codecov.io/bash)'
+      docker run $ci_env --entrypoint /bin/bash $(imageName):$(tag) -c 'bash <(curl -s https://codecov.io/bash) -cF cpu-unit-test'
     displayName: Report coverage results
     env:
       CODECOV_TOKEN: $(codecovToken)

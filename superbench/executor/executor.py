@@ -97,17 +97,21 @@ class SuperBenchExecutor():
             context (BenchmarkContext): Benchmark context to launch.
             log_suffix (str): Log string suffix.
         """
-        benchmark = BenchmarkRegistry.launch_benchmark(context)
-        if benchmark:
-            logger.debug(
-                'benchmark: %s, return code: %s, result: %s.', benchmark.name, benchmark.return_code, benchmark.result
-            )
-            if benchmark.return_code == 0:
-                logger.info('Executor succeeded in %s.', log_suffix)
+        try:
+            benchmark = BenchmarkRegistry.launch_benchmark(context)
+            if benchmark:
+                logger.info(
+                    'benchmark: %s, return code: %s, result: %s.', benchmark.name, benchmark.return_code,
+                    benchmark.result
+                )
+                if benchmark.return_code.value == 0:
+                    logger.info('Executor succeeded in %s.', log_suffix)
+                else:
+                    logger.error('Executor failed in %s.', log_suffix)
             else:
-                logger.error('Executor failed in %s.', log_suffix)
-        else:
-            logger.error('Executor failed in %s, invalid context.', log_suffix)
+                logger.error('Executor failed in %s, invalid context.', log_suffix)
+        except Exception:
+            logger.error('Executor failed in %s.', log_suffix)
 
     def exec(self):
         """Run the SuperBench benchmarks locally."""
@@ -128,7 +132,7 @@ class SuperBenchExecutor():
                         )
                         self.__exec_benchmark(context, log_suffix)
                 else:
-                    log_suffix = 'micro-benchmark {}: {}'.format(benchmark_name, framework)
+                    log_suffix = 'micro-benchmark {}'.format(benchmark_name)
                     logger.info('Executor is going to execute %s.', log_suffix)
                     context = BenchmarkRegistry.create_benchmark_context(
                         benchmark_name,
