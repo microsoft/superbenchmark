@@ -7,7 +7,7 @@ superbench:
       frameworks:
         - pytorch
       parameters:
-        num_steps: 256
+        num_steps: 2048
     bert_models:
       enable: true
       frameworks:
@@ -17,8 +17,8 @@ superbench:
         - bert-large
       parameters:
         duration: 0
-        num_warmup: 8
-        num_steps: 256
+        num_warmup: 64
+        num_steps: 2048
         batch_size: 16
         precision:
           - float32
