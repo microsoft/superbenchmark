@@ -23,5 +23,7 @@ steps:
       python3 setup.py test
     displayName: Run unit tests
   - script: |
-      bash <(curl -s https://codecov.io/bash)
+      bash <(curl -s https://codecov.io/bash) -cF cuda-unit-test
     displayName: Report coverage results
+    env:
+      CODECOV_TOKEN: $(codecovToken)
