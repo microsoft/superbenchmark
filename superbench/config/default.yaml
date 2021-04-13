@@ -8,12 +8,6 @@ superbench:
         - pytorch
       parameters:
         num_steps: 2048
-    sharding_matmul:
-      enable: true
-      frameworks:
-        - pytorch
-      parameters:
-        num_steps: 2048
     bert_models:
       enable: true
       frameworks:
@@ -25,7 +19,7 @@ superbench:
         duration: 0
         num_warmup: 64
         num_steps: 2048
-        batch_size: 32
+        batch_size: 16
         precision:
           - float32
           - float16
