@@ -22,7 +22,7 @@ def test_pytorch_sharding_matmul():
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
 
-    utils.setup_simulated_ddp_distributed_env()
+    utils.setup_simulated_ddp_distributed_env(1, 0, utils.get_free_port())
     benchmark = BenchmarkRegistry.launch_benchmark(context)
 
     # Check basic information.
