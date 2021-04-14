@@ -23,7 +23,7 @@ class BenchmarkRegistry:
     benchmarks: Dict[str, dict] = dict()
 
     @classmethod
-    def register_benchmark(cls, name, class_def, parameters=None, platform=None):
+    def register_benchmark(cls, name, class_def, parameters='', platform=None):
         """Register new benchmark, key is the benchmark name.
 
         Args:
