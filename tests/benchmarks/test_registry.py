@@ -202,7 +202,6 @@ def test_launch_benchmark():
 def test_get_all_benchmark_predefine_settings():
     """Test interface BenchmarkRegistry.get_all_benchmark_predefine_settings()."""
     benchmark_params = BenchmarkRegistry.get_all_benchmark_predefine_settings()
-    print(benchmark_params)
 
     # Choose benchmark 'pytorch-sharding-matmul' for testing.
     benchmark_name = 'pytorch-sharding-matmul'
