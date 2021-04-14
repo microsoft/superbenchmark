@@ -11,15 +11,6 @@ from multiprocessing import Process
 from superbench.benchmarks import BenchmarkRegistry
 
 
-def setup_simulated_ddp_distributed_env():
-    """Function to setup the simulated DDP distributed envionment variables."""
-    os.environ['WORLD_SIZE'] = '1'
-    os.environ['RANK'] = '0'
-    os.environ['LOCAL_RANK'] = '0'
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12345'
-
-
 def clean_simulated_ddp_distributed_env():
     """Function to clean up the simulated DDP distributed envionment variables."""
     os.environ.pop('WORLD_SIZE')
@@ -37,7 +28,7 @@ def get_free_port():
         return s.getsockname()[1]
 
 
-def setup_simulated_ddp_distributed_env_custom(world_size, local_rank, port):
+def setup_simulated_ddp_distributed_env(world_size, local_rank, port):
     """Function to setup the simulated DDP distributed envionment variables."""
     os.environ['WORLD_SIZE'] = str(world_size)
     os.environ['RANK'] = str(local_rank)
