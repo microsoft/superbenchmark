@@ -39,7 +39,7 @@ def setup_simulated_ddp_distributed_env(world_size, local_rank, port):
 
 def benchmark_in_one_process(context, world_size, local_rank, port, queue):
     """Function to setup env for DDP initialization and run the benchmark in each single process."""
-    setup_simulated_ddp_distributed_env_custom(world_size, local_rank, port)
+    setup_simulated_ddp_distributed_env(world_size, local_rank, port)
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     # parser object must be removed becaues it can not be serialized.
     benchmark._parser = None
