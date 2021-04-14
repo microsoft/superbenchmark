@@ -38,8 +38,8 @@ def test_pytorch_gpt2_small():
     assert (benchmark._args.batch_size == 1)
     assert (benchmark._args.num_classes == 5)
     assert (benchmark._args.seq_len == 8)
-    assert (benchmark._args.num_warmup == 8)
-    assert (benchmark._args.num_steps == 32)
+    assert (benchmark._args.num_warmup == 4)
+    assert (benchmark._args.num_steps == 16)
 
     # Test Dataset.
     assert (len(benchmark._dataset) == benchmark._args.sample_count * benchmark._world_size)
