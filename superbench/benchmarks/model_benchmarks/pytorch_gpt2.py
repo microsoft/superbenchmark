@@ -62,7 +62,7 @@ class PytorchGPT2(PytorchBase):
     def add_parser_arguments(self):
         """Add the GPT2-specified arguments.
 
-        BERT model reference: https://huggingface.co/transformers/model_doc/gpt2.html
+        GPT2 model reference: https://huggingface.co/transformers/model_doc/gpt2.html
         """
         super().add_parser_arguments()
 
@@ -165,11 +165,12 @@ class PytorchGPT2(PytorchBase):
             self._model.eval()
             while True:
                 for idx, sample in enumerate(self._dataloader):
-                    torch.cuda.synchronize()
                     start = time.time()
-                    sample = sample.cuda()
+                    if self._gpu_available:
+                        sample = sample.cuda()
                     self._model(sample)
-                    torch.cuda.synchronize()
+                    if self._gpu_available:
+                        torch.cuda.synchronize()
                     end = time.time()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
