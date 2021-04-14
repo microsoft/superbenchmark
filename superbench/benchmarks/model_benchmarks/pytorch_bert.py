@@ -171,11 +171,12 @@ class PytorchBERT(PytorchBase):
             self._model.eval()
             while True:
                 for idx, sample in enumerate(self._dataloader):
-                    torch.cuda.synchronize()
                     start = time.time()
-                    sample = sample.cuda()
+                    if self._gpu_available:
+                        sample = sample.cuda()
                     self._model(sample)
-                    torch.cuda.synchronize()
+                    if self._gpu_available:
+                        torch.cuda.synchronize()
                     end = time.time()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
