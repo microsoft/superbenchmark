@@ -1,8 +1,12 @@
 # SuperBenchmark
 
-[![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=dev)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=dev)
 [![Lint](https://github.com/microsoft/superbenchmark/workflows/Lint/badge.svg)](https://github.com/microsoft/superbenchmark/actions?query=workflow%3ALint)
-[![Codecov](https://codecov.io/gh/microsoft/superbenchmark/branch/dev/graph/badge.svg?token=DDiDLW7pSd)](https://codecov.io/gh/microsoft/superbenchmark/branch/dev)
+[![Codecov](https://codecov.io/gh/microsoft/superbenchmark/branch/main/graph/badge.svg?token=DDiDLW7pSd)](https://codecov.io/gh/microsoft/superbenchmark)
+
+| Azure Pipelines | Build Status |
+| :---: | :---: |
+| cpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/microsoft.superbenchmark?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=77&branchName=main) |
+| gpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main) |
 
 
 SuperBench is a benchmarking and diagnosis tool for AI infrastructure,
@@ -23,7 +27,7 @@ and model-benchmark to measure domain-aware end-to-end deep learning workloads.
 
 > 🔴 __Note__:
 SuperBench is in the early pre-alpha stage for open source, and not ready for general public yet.
-If you want to jump in early, you can try building [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev) yourself.
+If you want to jump in early, you can try building latest code yourself.
 
 
 ## Installation
@@ -122,14 +126,13 @@ Please find more benchmark examples [here](examples/benchmarks/).
 
 ## Developer Guide
 
-Follow [Installation using Python](#using-python) and
-use [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
+Follow [Installation using Python](#using-python).
 
 ### Set Up
 
 ```sh
-# get dev branch code
-git clone -b dev https://github.com/microsoft/superbenchmark
+# get latest code
+git clone https://github.com/microsoft/superbenchmark
 cd superbenchmark
 
 # install superbench
@@ -157,7 +160,7 @@ Please install `pre-commit` before `git commit` to run all pre-checks.
 pre-commit install
 ```
 
-Pull requests should be submitted to [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
+Open a pull request to main branch on GitHub.
 
 
 ## Contributing
@@ -185,16 +188,16 @@ SuperBenchmark is an open-source project. Your participation and contribution ar
 1. Bug fixes for existing features.
 2. New features for benchmark module (micro-benchmark, model-benchmark, etc.)
 
-   If you would like to contribute a new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull request to origin [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
+   If you would like to contribute a new feature on SuperBenchmark, please submit your proposal first. In [GitHub Issues](https://github.com/microsoft/superbenchmark/issues) module, choose `Enhancement Request` to finish the submission. If the proposal is accepted, you can submit pull requests to origin main branch.
 
 #### Contribution steps
 
 If you would like to contribute to the project, please follow below steps of joint development on GitHub.
 
 1. `Fork` the repo first to your personal GitHub account.
-2. Check out from [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev) for feature development.
+2. Checkout from main branch for feature development.
 3. When you finish the feature, please fetch the latest code from origin repo, merge to your branch and resolve conflict.
-4. Submit pull request to origin [`dev` branch](https://github.com/microsoft/superbenchmark/tree/dev).
+4. Submit pull requests to origin main branch.
 5. Please note that there might be comments or questions from reviewers. It will need your help to update the pull request.
 
 ## Trademarks
