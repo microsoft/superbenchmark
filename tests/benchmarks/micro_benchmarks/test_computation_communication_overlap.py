@@ -3,31 +3,19 @@
 
 """Tests for Computation-Communication-Overlap benchmark."""
 
-from functools import wraps
-import torch
+import unittest
+
 from tests.helper import decorator
 import tests.benchmarks.utils as utils
 from superbench.benchmarks import BenchmarkRegistry, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.micro_benchmarks.computation_communication_overlap \
     import ComputationCommunicationOverlap, ComputationKernelType
-from superbench.common.utils import logger
 
 
-def skip_if_not_multigpu(func):
-    """Multi-GPU tests requires at least 2 GPUS. Skip if this is not met."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if torch.cuda.is_available() and torch.cuda.device_count() >= 2:
-            return func(*args, **kwargs)
-        message = 'Need at least {} CUDA devices'.format(2)
-        logger.error('Device error -  message: {}.'.format(message))
-
-    return wrapper
-
-
+# TODO - replace unittest.skip("no multiple GPUs") to decorator of skipIfNoMultiGPUS
+@unittest.skip('no multiple GPUs')
 @decorator.cuda_test
 @decorator.pytorch_test
-@skip_if_not_multigpu
 def test_pytorch_computation_communication_overlap_normal():
     """Test pytorch-computation-communication-overlap benchmark on distributed normal case."""
     context = BenchmarkRegistry.create_benchmark_context(
@@ -68,7 +56,7 @@ def test_pytorch_computation_communication_overlap_fake_distributed():
         parameters='--num_warmup 5 --num_steps 10 --ratio 5',
         framework=Framework.PYTORCH
     )
-    utils.setup_simulated_ddp_distributed_env()
+    utils.setup_simulated_ddp_distributed_env(1, 0, utils.get_free_port())
     benchmark = BenchmarkRegistry.launch_benchmark(context)
 
     # Check basic information.
