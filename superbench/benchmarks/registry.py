@@ -157,7 +157,7 @@ class BenchmarkRegistry:
 
     @classmethod
     def get_all_benchmark_predefine_settings(cls):
-        """Get all registerred benchmarks' predefine settings.
+        """Get all registered benchmarks' predefine settings.
 
         Return:
             benchmark_params (dict[str, dict]): key is benchmark name,
