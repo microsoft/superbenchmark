@@ -2,8 +2,7 @@
 # Licensed under the MIT license.
 
 trigger:
-  - master
-  - dev
+  - main
 
 pool:
   name: SuperBench CI
