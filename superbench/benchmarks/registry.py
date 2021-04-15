@@ -23,7 +23,7 @@ class BenchmarkRegistry:
     benchmarks: Dict[str, dict] = dict()
 
     @classmethod
-    def register_benchmark(cls, name, class_def, parameters=None, platform=None):
+    def register_benchmark(cls, name, class_def, parameters='', platform=None):
         """Register new benchmark, key is the benchmark name.
 
         Args:
@@ -66,6 +66,18 @@ class BenchmarkRegistry:
                     logger.warning('Duplicate registration - benchmark: {}, platform: {}'.format(name, p))
 
                 cls.benchmarks[name][p] = (class_def, parameters)
+
+        benchmark = class_def(name, parameters)
+        benchmark.add_parser_arguments()
+        ret, args, unknown = benchmark.parse_args()
+        if not ret or len(unknown) >= 1:
+            logger.log_and_raise(
+                TypeError,
+                'Registered benchmark has invalid arguments - benchmark: {}, parameters: {}'.format(name, parameters)
+            )
+        else:
+            cls.benchmarks[name]['predefine_param'] = vars(args)
+            logger.info('Benchmark registration - benchmark: {}, predefine_parameters: {}'.format(name, vars(args)))
 
     @classmethod
     def is_benchmark_context_valid(cls, benchmark_context):
@@ -142,6 +154,19 @@ class BenchmarkRegistry:
             return benchmark.get_configurable_settings()
         else:
             return None
+
+    @classmethod
+    def get_all_benchmark_predefine_settings(cls):
+        """Get all registered benchmarks' predefine settings.
+
+        Return:
+            benchmark_params (dict[str, dict]): key is benchmark name,
+              value is the dict with structure: {'parameter': default_value}.
+        """
+        benchmark_params = dict()
+        for name in cls.benchmarks:
+            benchmark_params[name] = cls.benchmarks[name]['predefine_param']
+        return benchmark_params
 
     @classmethod
     def launch_benchmark(cls, benchmark_context):

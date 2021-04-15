@@ -23,7 +23,7 @@ class Benchmark(ABC):
             parameters (str): benchmark parameters.
         """
         self._name = name
-        self._argv = list(filter(None, parameters.split(' ')))
+        self._argv = list(filter(None, parameters.split(' '))) if parameters is not None else list()
         self._benchmark_type = None
         self._parser = argparse.ArgumentParser(
             add_help=False,
