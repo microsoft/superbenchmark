@@ -5,5 +5,6 @@
 
 from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
 from superbench.benchmarks.model_benchmarks.pytorch_bert import PytorchBERT
+from superbench.benchmarks.model_benchmarks.pytorch_cnn import PytorchCNN
 
-__all__ = ['ModelBenchmark', 'PytorchBERT']
+__all__ = ['ModelBenchmark', 'PytorchBERT', 'PytorchCNN']
