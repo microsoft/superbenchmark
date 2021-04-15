@@ -18,7 +18,7 @@ def test_pytorch_cnn():
         context = BenchmarkRegistry.create_benchmark_context(
             model,
             platform=Platform.CUDA,
-            parameters='--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 4 --num_steps 16',
+            parameters='--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 2 --num_steps 8',
             framework=Framework.PYTORCH
         )
 
@@ -39,8 +39,8 @@ def test_pytorch_cnn():
         assert (benchmark._args.batch_size == 1)
         assert (benchmark._args.image_size == 224)
         assert (benchmark._args.num_classes == 5)
-        assert (benchmark._args.num_warmup == 4)
-        assert (benchmark._args.num_steps == 16)
+        assert (benchmark._args.num_warmup == 2)
+        assert (benchmark._args.num_steps == 8)
 
         # Check Dataset.
         assert (len(benchmark._dataset) == benchmark._args.sample_count * benchmark._world_size)
