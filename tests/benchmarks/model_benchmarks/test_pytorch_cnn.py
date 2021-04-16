@@ -18,7 +18,8 @@ def test_pytorch_cnn():
         context = BenchmarkRegistry.create_benchmark_context(
             model,
             platform=Platform.CUDA,
-            parameters='--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 2 --num_steps 8',
+            parameters='--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 2 --num_steps 4 \
+                --model_action train inference',
             framework=Framework.PYTORCH
         )
 
@@ -40,7 +41,7 @@ def test_pytorch_cnn():
         assert (benchmark._args.image_size == 224)
         assert (benchmark._args.num_classes == 5)
         assert (benchmark._args.num_warmup == 2)
-        assert (benchmark._args.num_steps == 8)
+        assert (benchmark._args.num_steps == 4)
 
         # Check Dataset.
         assert (len(benchmark._dataset) == benchmark._args.sample_count * benchmark._world_size)
@@ -49,7 +50,9 @@ def test_pytorch_cnn():
         assert (benchmark.run_count == 1)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
         for metric in [
-            'steptime_train_float32', 'throughput_train_float32', 'steptime_train_float16', 'throughput_train_float16'
+            'steptime_train_float32', 'throughput_train_float32', 'steptime_train_float16', 'throughput_train_float16',
+            'steptime_inference_float32', 'throughput_inference_float32', 'steptime_inference_float16',
+            'throughput_inference_float16'
         ]:
             assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
             assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)

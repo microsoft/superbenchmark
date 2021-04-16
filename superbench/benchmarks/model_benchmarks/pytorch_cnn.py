@@ -126,7 +126,7 @@ class PytorchCNN(PytorchBase):
             while True:
                 for idx, sample in enumerate(self._dataloader):
                     start = time.time()
-                    sample = getattr(sample, precision.value)
+                    sample = sample.to(dtype=getattr(torch, precision.value))
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
@@ -143,5 +143,14 @@ class PytorchCNN(PytorchBase):
 
 # Register CNN benchmarks.
 # Reference: https://pytorch.org/vision/stable/models.html
-for model in ['resnet50', 'resnet101', 'resnet152', 'densenet169', 'densenet201', 'vgg11', 'vgg13', 'vgg16', 'vgg19']:
+#            https://github.com/pytorch/vision/tree/master/torchvision/models
+MODELS = [
+    'alexnet', 'densenet121', 'densenet169', 'densenet201', 'densenet161', 'googlenet', 'inception_v3', 'mnasnet0_5',
+    'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3', 'mobilenet_v2', 'mobilenet_v3_large', 'mobilenet_v3_small', 'resnet18',
+    'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2',
+    'wide_resnet101_2', 'shufflenet_v2_x0_5', 'shufflenet_v2_x1_0', 'shufflenet_v2_x1_5', 'shufflenet_v2_x2_0',
+    'squeezenet1_0', 'squeezenet1_1', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19_bn', 'vgg19'
+]
+
+for model in MODELS:
     BenchmarkRegistry.register_benchmark('pytorch-' + model, PytorchCNN, parameters='--model_type ' + model)
