@@ -7,6 +7,7 @@ import re
 
 from superbench.benchmarks import Platform, Framework, BenchmarkType, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
+from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMode
 
 
 class AccumulationBenchmark(MicroBenchmark):
@@ -196,3 +197,20 @@ def test_launch_benchmark():
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     assert (benchmark)
     assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+
+
+def test_get_all_benchmark_predefine_settings():
+    """Test interface BenchmarkRegistry.get_all_benchmark_predefine_settings()."""
+    benchmark_params = BenchmarkRegistry.get_all_benchmark_predefine_settings()
+
+    # Choose benchmark 'pytorch-sharding-matmul' for testing.
+    benchmark_name = 'pytorch-sharding-matmul'
+    assert (benchmark_name in benchmark_params)
+    assert (benchmark_params[benchmark_name]['run_count'] == 1)
+    assert (benchmark_params[benchmark_name]['duration'] == 0)
+    assert (benchmark_params[benchmark_name]['n'] == 4096)
+    assert (benchmark_params[benchmark_name]['k'] == 4096)
+    assert (benchmark_params[benchmark_name]['m'] == 4096)
+    assert (benchmark_params[benchmark_name]['mode'] == [ShardingMode.ALLREDUCE, ShardingMode.ALLGATHER])
+    assert (benchmark_params[benchmark_name]['num_warmup'] == 10)
+    assert (benchmark_params[benchmark_name]['num_steps'] == 500)
