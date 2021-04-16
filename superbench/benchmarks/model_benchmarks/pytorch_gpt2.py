@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the Pytorch BERT model."""
+"""Module of the Pytorch GPT2 model."""
 
 import time
 
 import torch
-from transformers import BertModel, BertConfig
+from transformers import GPT2Model, GPT2Config
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Precision
@@ -15,17 +15,17 @@ from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
 
 
-class BertBenchmarkModel(torch.nn.Module):
-    """The BERT model for benchmarking."""
+class GPT2BenchmarkModel(torch.nn.Module):
+    """The GPT2 model for benchmarking."""
     def __init__(self, config, num_class):
         """Constructor.
 
         Args:
-            config (BertConfig): Configurations of BERT model.
+            config (GPT2Config): Configurations of GPT2 model.
             num_class (int): The number of objects for classification.
         """
         super().__init__()
-        self._bert = BertModel(config)
+        self._bert = GPT2Model(config)
         self._linear = torch.nn.Linear(config.hidden_size, num_class)
 
     def forward(self, input):
@@ -40,12 +40,12 @@ class BertBenchmarkModel(torch.nn.Module):
               (classification token) further processed by a Linear layer, shape (batch_size, hidden_size).
         """
         outputs = self._bert(input)
-        result = self._linear(outputs[1])
+        result = self._linear(outputs[0])
         return result
 
 
-class PytorchBERT(PytorchBase):
-    """The BERT benchmark class."""
+class PytorchGPT2(PytorchBase):
+    """The GPT2 benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -60,22 +60,19 @@ class PytorchBERT(PytorchBase):
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
     def add_parser_arguments(self):
-        """Add the BERT-specified arguments.
+        """Add the GPT2-specified arguments.
 
-        BERT model reference: https://huggingface.co/transformers/model_doc/bert.html
+        GPT2 model reference: https://huggingface.co/transformers/model_doc/gpt2.html
         """
         super().add_parser_arguments()
 
         self._parser.add_argument('--num_classes', type=int, default=100, required=False, help='Num of class.')
-        self._parser.add_argument('--hidden_size', type=int, default=1024, required=False, help='Hidden size.')
+        self._parser.add_argument('--hidden_size', type=int, default=1280, required=False, help='Hidden size.')
         self._parser.add_argument(
-            '--num_hidden_layers', type=int, default=24, required=False, help='The number of hidden layers.'
+            '--num_hidden_layers', type=int, default=36, required=False, help='The number of hidden layers.'
         )
         self._parser.add_argument(
-            '--num_attention_heads', type=int, default=16, required=False, help='The number of attention heads.'
-        )
-        self._parser.add_argument(
-            '--intermediate_size', type=int, default=4096, required=False, help='Intermediate size.'
+            '--num_attention_heads', type=int, default=20, required=False, help='The number of attention heads.'
         )
         self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
 
@@ -100,15 +97,12 @@ class PytorchBERT(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-        self._config = BertConfig(
-            hidden_size=self._args.hidden_size,
-            num_hidden_layers=self._args.num_hidden_layers,
-            num_attention_heads=self._args.num_attention_heads,
-            intermediate_size=self._args.intermediate_size
+        self._config = GPT2Config(
+            n_embd=self._args.hidden_size, n_layer=self._args.num_hidden_layers, n_head=self._args.num_attention_heads
         )
 
         try:
-            self._model = BertBenchmarkModel(self._config, self._args.num_classes)
+            self._model = GPT2BenchmarkModel(self._config, self._args.num_classes)
             self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
                 self._model = self._model.cuda()
@@ -144,7 +138,7 @@ class PytorchBERT(PytorchBase):
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
                 output = self._model(sample)
-                loss = self._loss_fn(output, self._target)
+                loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = time.time()
@@ -186,18 +180,26 @@ class PytorchBERT(PytorchBase):
                         return duration
 
 
-# Register BERT Large benchmark.
+# Register GPT2 benchmark with 117M parameters.
 # Reference: https://huggingface.co/transformers/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
-    'pytorch-bert-large',
-    PytorchBERT,
-    parameters='--hidden_size=1024 --num_hidden_layers=24 --num_attention_heads=16 --intermediate_size=4096'
+    'pytorch-gpt2-small', PytorchGPT2, parameters='--hidden_size=768 --num_hidden_layers=12 --num_attention_heads=12'
 )
 
-# Register BERT Base benchmark.
+# Register GPT2 benchmark with 345M parameters.
 # Reference: https://huggingface.co/transformers/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
-    'pytorch-bert-base',
-    PytorchBERT,
-    parameters='--hidden_size=768 --num_hidden_layers=12 --num_attention_heads=12 --intermediate_size=3072'
+    'pytorch-gpt2-medium', PytorchGPT2, parameters='--hidden_size=1024 --num_hidden_layers=24 --num_attention_heads=16'
+)
+
+# Register GPT2 benchmark with 774M parameters.
+# Reference: https://huggingface.co/transformers/pretrained_models.html
+BenchmarkRegistry.register_benchmark(
+    'pytorch-gpt2-large', PytorchGPT2, parameters='--hidden_size=1280 --num_hidden_layers=36 --num_attention_heads=20'
+)
+
+# Register GPT2 benchmark with 1558M parameters.
+# Reference: https://huggingface.co/transformers/pretrained_models.html
+BenchmarkRegistry.register_benchmark(
+    'pytorch-gpt2-xl', PytorchGPT2, parameters='--hidden_size=1600 --num_hidden_layers=48 --num_attention_heads=25'
 )

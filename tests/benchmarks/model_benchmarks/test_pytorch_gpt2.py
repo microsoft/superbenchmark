@@ -1,19 +1,19 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for BERT model benchmarks."""
+"""Tests for GPT2 model benchmarks."""
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
-from superbench.benchmarks.model_benchmarks.pytorch_bert import PytorchBERT
+from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import PytorchGPT2
 
 
 @decorator.cuda_test
 @decorator.pytorch_test
-def test_pytorch_bert_base():
-    """Test pytorch-bert-base benchmark."""
+def test_pytorch_gpt2_small():
+    """Test pytorch-gpt2-small benchmark."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'bert-base',
+        'gpt2-small',
         platform=Platform.CUDA,
         parameters='--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 --num_steps 4 \
             --model_action train inference',
@@ -26,15 +26,14 @@ def test_pytorch_bert_base():
 
     # Check basic information.
     assert (benchmark)
-    assert (isinstance(benchmark, PytorchBERT))
-    assert (benchmark.name == 'pytorch-bert-base')
+    assert (isinstance(benchmark, PytorchGPT2))
+    assert (benchmark.name == 'pytorch-gpt2-small')
     assert (benchmark.type == BenchmarkType.MODEL)
 
-    # Check predefined parameters of resnet101 model.
+    # Check predefined parameters of gpt2-large model.
     assert (benchmark._args.hidden_size == 768)
     assert (benchmark._args.num_hidden_layers == 12)
     assert (benchmark._args.num_attention_heads == 12)
-    assert (benchmark._args.intermediate_size == 3072)
 
     # Check parameters specified in BenchmarkContext.
     assert (benchmark._args.batch_size == 1)
@@ -43,7 +42,7 @@ def test_pytorch_bert_base():
     assert (benchmark._args.num_warmup == 2)
     assert (benchmark._args.num_steps == 4)
 
-    # Check dataset scale.
+    # Test Dataset.
     assert (len(benchmark._dataset) == benchmark._args.sample_count * benchmark._world_size)
 
     # Check results and metrics.
