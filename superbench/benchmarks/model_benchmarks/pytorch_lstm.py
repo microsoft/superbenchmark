@@ -27,7 +27,7 @@ class LSTMBenchmarkModel(torch.nn.Module):
             num_classes (int): The number of objects for classification.
         """
         super().__init__()
-        self._lstm = torch.nn.LSTM(input_size, hidden_size, num_layers, bidirectional=bidirectional)
+        self._lstm = torch.nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=bidirectional)
         self._linear = torch.nn.Linear(hidden_size, num_classes)
 
     def forward(self, input):
