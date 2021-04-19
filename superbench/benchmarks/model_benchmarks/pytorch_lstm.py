@@ -16,7 +16,7 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class LSTMBenchmarkModel(torch.nn.Module):
     """The LSTM model for benchmarking."""
-    def __init__(self, input_size, hidden_size, num_layers, bidirectional, num_class):
+    def __init__(self, input_size, hidden_size, num_layers, bidirectional, num_classes):
         """Constructor.
 
         Args:
@@ -24,11 +24,11 @@ class LSTMBenchmarkModel(torch.nn.Module):
             hidden_size (int):  The number of features in the hidden state.
             num_layers  (int): The number of recurrent layers.
             bidirectional (bool): If True, becomes a bidirectional LSTM.
-            num_class (int): The number of objects for classification.
+            num_classes (int): The number of objects for classification.
         """
         super().__init__()
         self._lstm = torch.nn.LSTM(input_size, hidden_size, num_layers, bidirectional=bidirectional)
-        self._linear = torch.nn.Linear(hidden_size, num_class)
+        self._linear = torch.nn.Linear(hidden_size, num_classes)
 
     def forward(self, input):
         """Forward propagation function.
@@ -39,7 +39,7 @@ class LSTMBenchmarkModel(torch.nn.Module):
 
         Return:
             result (torch.FloatTensor): The output features from the last layer of the LSTM
-              further processed by a Linear layer, shape (batch_size, num_class).
+              further processed by a Linear layer, shape (batch_size, num_classes).
         """
         self._lstm.flatten_parameters()
         outputs = self._lstm(input)

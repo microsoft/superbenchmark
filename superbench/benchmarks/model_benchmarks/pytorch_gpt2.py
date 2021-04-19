@@ -17,16 +17,16 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class GPT2BenchmarkModel(torch.nn.Module):
     """The GPT2 model for benchmarking."""
-    def __init__(self, config, num_class):
+    def __init__(self, config, num_classes):
         """Constructor.
 
         Args:
             config (GPT2Config): Configurations of GPT2 model.
-            num_class (int): The number of objects for classification.
+            num_classes (int): The number of objects for classification.
         """
         super().__init__()
         self._bert = GPT2Model(config)
-        self._linear = torch.nn.Linear(config.hidden_size, num_class)
+        self._linear = torch.nn.Linear(config.hidden_size, num_classes)
 
     def forward(self, input):
         """Forward propagation function.
