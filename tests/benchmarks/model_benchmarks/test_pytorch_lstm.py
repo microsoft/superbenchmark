@@ -23,6 +23,7 @@ def test_pytorch_lstm_with_gpu():
     )
 
 
+@decorator.pytorch_test
 def test_pytorch_lstm_no_gpu():
     """Test pytorch-lstm benchmark with CPU."""
     run_pytorch_lstm(
@@ -35,7 +36,6 @@ def test_pytorch_lstm_no_gpu():
     )
 
 
-@decorator.pytorch_test
 def run_pytorch_lstm(parameters='', check_metrics=[]):
     """Test pytorch-lstm benchmark."""
     context = BenchmarkRegistry.create_benchmark_context(
