@@ -35,7 +35,7 @@ class PytorchCNN(PytorchBase):
 
         self._parser.add_argument('--model_type', type=str, required=True, help='The cnn benchmark to run.')
         self._parser.add_argument('--image_size', type=int, default=224, required=False, help='Image size.')
-        self._parser.add_argument('--num_classes', type=int, default=100, required=False, help='Num of class.')
+        self._parser.add_argument('--num_classes', type=int, default=1000, required=False, help='Num of class.')
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info.
@@ -153,4 +153,7 @@ MODELS = [
 ]
 
 for model in MODELS:
-    BenchmarkRegistry.register_benchmark('pytorch-' + model, PytorchCNN, parameters='--model_type ' + model)
+    if hasattr(models, model):
+        BenchmarkRegistry.register_benchmark('pytorch-' + model, PytorchCNN, parameters='--model_type ' + model)
+    else:
+        logger.warning('model missing in torchvision.models - model: {}'.format(model))
