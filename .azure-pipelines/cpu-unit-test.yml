@@ -4,12 +4,8 @@
 trigger:
   - main
 
-pool:
-  name: SuperBench CI
-  vmImage: ubuntu-latest
-
 container:
-  image: nvcr.io/nvidia/pytorch:20.12-py3
+  image: python:3.7
 
 steps:
   - script: |
@@ -22,8 +18,10 @@ steps:
       python3 setup.py test
     displayName: Run unit tests
     timeoutInMinutes: 10
+    env:
+      SB_TEST_CUDA: '0'
   - script: |
-      bash <(curl -s https://codecov.io/bash) -cF cuda-unit-test
+      bash <(curl -s https://codecov.io/bash) -cF cpu-unit-test
     displayName: Report coverage results
     env:
       CODECOV_TOKEN: $(codecovToken)
