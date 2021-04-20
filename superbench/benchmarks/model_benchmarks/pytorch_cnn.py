@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the Pytorch BERT model."""
+"""Module of the Pytorch CNN models."""
 
 import time
 
 import torch
-from transformers import BertModel, BertConfig
+from torchvision import models
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Precision
@@ -15,37 +15,8 @@ from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
 
 
-class BertBenchmarkModel(torch.nn.Module):
-    """The BERT model for benchmarking."""
-    def __init__(self, config, num_classes):
-        """Constructor.
-
-        Args:
-            config (BertConfig): Configurations of BERT model.
-            num_classes (int): The number of objects for classification.
-        """
-        super().__init__()
-        self._bert = BertModel(config)
-        self._linear = torch.nn.Linear(config.hidden_size, num_classes)
-
-    def forward(self, input):
-        """Forward propagation function.
-
-        Args:
-            input (torch.LongTensor): Indices of input sequence tokens in the vocabulary,
-              shape (batch_size, sequence_length).
-
-        Return:
-            result (torch.FloatTensor): Last layer hidden-state of the first token of the sequence
-              (classification token) further processed by a Linear layer, shape (batch_size, hidden_size).
-        """
-        outputs = self._bert(input)
-        result = self._linear(outputs[1])
-        return result
-
-
-class PytorchBERT(PytorchBase):
-    """The BERT benchmark class."""
+class PytorchCNN(PytorchBase):
+    """The CNN benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -54,30 +25,17 @@ class PytorchBERT(PytorchBase):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-        self._config = None
         self._supported_precision = [Precision.FLOAT32, Precision.FLOAT16]
-        self._optimizer_type = Optimizer.ADAMW
+        self._optimizer_type = Optimizer.SGD
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
     def add_parser_arguments(self):
-        """Add the BERT-specified arguments.
-
-        BERT model reference: https://huggingface.co/transformers/model_doc/bert.html
-        """
+        """Add the CNN-specified arguments."""
         super().add_parser_arguments()
 
-        self._parser.add_argument('--num_classes', type=int, default=100, required=False, help='Num of class.')
-        self._parser.add_argument('--hidden_size', type=int, default=1024, required=False, help='Hidden size.')
-        self._parser.add_argument(
-            '--num_hidden_layers', type=int, default=24, required=False, help='The number of hidden layers.'
-        )
-        self._parser.add_argument(
-            '--num_attention_heads', type=int, default=16, required=False, help='The number of attention heads.'
-        )
-        self._parser.add_argument(
-            '--intermediate_size', type=int, default=4096, required=False, help='Intermediate size.'
-        )
-        self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
+        self._parser.add_argument('--model_type', type=str, required=True, help='The cnn benchmark to run.')
+        self._parser.add_argument('--image_size', type=int, default=224, required=False, help='Image size.')
+        self._parser.add_argument('--num_classes', type=int, default=1000, required=False, help='Num of class.')
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info.
@@ -86,7 +44,9 @@ class PytorchBERT(PytorchBase):
             True if dataset is created successfully.
         """
         self._dataset = TorchRandomDataset(
-            [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
+            [self._args.sample_count, 3, self._args.image_size, self._args.image_size],
+            self._world_size,
+            dtype=torch.long
         )
         if len(self._dataset) == 0:
             logger.error('Generate random dataset failed - model: {}'.format(self._name))
@@ -100,15 +60,8 @@ class PytorchBERT(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-        self._config = BertConfig(
-            hidden_size=self._args.hidden_size,
-            num_hidden_layers=self._args.num_hidden_layers,
-            num_attention_heads=self._args.num_attention_heads,
-            intermediate_size=self._args.intermediate_size
-        )
-
         try:
-            self._model = BertBenchmarkModel(self._config, self._args.num_classes)
+            self._model = getattr(models, self._args.model_type)()
             self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
                 self._model = self._model.cuda()
@@ -140,6 +93,7 @@ class PytorchBERT(PytorchBase):
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = time.time()
+                sample = sample.to(dtype=getattr(torch, precision.value))
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
@@ -172,6 +126,7 @@ class PytorchBERT(PytorchBase):
             while True:
                 for idx, sample in enumerate(self._dataloader):
                     start = time.time()
+                    sample = sample.to(dtype=getattr(torch, precision.value))
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
@@ -186,18 +141,19 @@ class PytorchBERT(PytorchBase):
                         return duration
 
 
-# Register BERT Large benchmark.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
-BenchmarkRegistry.register_benchmark(
-    'pytorch-bert-large',
-    PytorchBERT,
-    parameters='--hidden_size=1024 --num_hidden_layers=24 --num_attention_heads=16 --intermediate_size=4096'
-)
+# Register CNN benchmarks.
+# Reference: https://pytorch.org/vision/stable/models.html
+#            https://github.com/pytorch/vision/tree/master/torchvision/models
+MODELS = [
+    'alexnet', 'densenet121', 'densenet169', 'densenet201', 'densenet161', 'googlenet', 'inception_v3', 'mnasnet0_5',
+    'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3', 'mobilenet_v2', 'mobilenet_v3_large', 'mobilenet_v3_small', 'resnet18',
+    'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2',
+    'wide_resnet101_2', 'shufflenet_v2_x0_5', 'shufflenet_v2_x1_0', 'shufflenet_v2_x1_5', 'shufflenet_v2_x2_0',
+    'squeezenet1_0', 'squeezenet1_1', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19_bn', 'vgg19'
+]
 
-# Register BERT Base benchmark.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
-BenchmarkRegistry.register_benchmark(
-    'pytorch-bert-base',
-    PytorchBERT,
-    parameters='--hidden_size=768 --num_hidden_layers=12 --num_attention_heads=12 --intermediate_size=3072'
-)
+for model in MODELS:
+    if hasattr(models, model):
+        BenchmarkRegistry.register_benchmark('pytorch-' + model, PytorchCNN, parameters='--model_type ' + model)
+    else:
+        logger.warning('model missing in torchvision.models - model: {}'.format(model))

@@ -1,12 +1,11 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the Pytorch BERT model."""
+"""Module of the Pytorch LSTM model."""
 
 import time
 
 import torch
-from transformers import BertModel, BertConfig
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Precision
@@ -15,37 +14,41 @@ from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
 
 
-class BertBenchmarkModel(torch.nn.Module):
-    """The BERT model for benchmarking."""
-    def __init__(self, config, num_classes):
+class LSTMBenchmarkModel(torch.nn.Module):
+    """The LSTM model for benchmarking."""
+    def __init__(self, input_size, hidden_size, num_layers, bidirectional, num_classes):
         """Constructor.
 
         Args:
-            config (BertConfig): Configurations of BERT model.
+            input_size (int): The number of expected features in the input.
+            hidden_size (int):  The number of features in the hidden state.
+            num_layers  (int): The number of recurrent layers.
+            bidirectional (bool): If True, becomes a bidirectional LSTM.
             num_classes (int): The number of objects for classification.
         """
         super().__init__()
-        self._bert = BertModel(config)
-        self._linear = torch.nn.Linear(config.hidden_size, num_classes)
+        self._lstm = torch.nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=bidirectional)
+        self._linear = torch.nn.Linear(hidden_size, num_classes)
 
     def forward(self, input):
         """Forward propagation function.
 
         Args:
-            input (torch.LongTensor): Indices of input sequence tokens in the vocabulary,
-              shape (batch_size, sequence_length).
+            input (torch.FloatTensor): Tensor containing the features of the input sequence,
+              shape (sequence_length, batch_size, input_size).
 
         Return:
-            result (torch.FloatTensor): Last layer hidden-state of the first token of the sequence
-              (classification token) further processed by a Linear layer, shape (batch_size, hidden_size).
+            result (torch.FloatTensor): The output features from the last layer of the LSTM
+              further processed by a Linear layer, shape (batch_size, num_classes).
         """
-        outputs = self._bert(input)
-        result = self._linear(outputs[1])
+        self._lstm.flatten_parameters()
+        outputs = self._lstm(input)
+        result = self._linear(outputs[0][:, -1, :])
         return result
 
 
-class PytorchBERT(PytorchBase):
-    """The BERT benchmark class."""
+class PytorchLSTM(PytorchBase):
+    """The LSTM benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -56,27 +59,30 @@ class PytorchBERT(PytorchBase):
         super().__init__(name, parameters)
         self._config = None
         self._supported_precision = [Precision.FLOAT32, Precision.FLOAT16]
-        self._optimizer_type = Optimizer.ADAMW
+        self._optimizer_type = Optimizer.SGD
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
     def add_parser_arguments(self):
-        """Add the BERT-specified arguments.
+        """Add the LSTM-specified arguments.
 
-        BERT model reference: https://huggingface.co/transformers/model_doc/bert.html
+        LSTM model reference: https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
         """
         super().add_parser_arguments()
 
-        self._parser.add_argument('--num_classes', type=int, default=100, required=False, help='Num of class.')
-        self._parser.add_argument('--hidden_size', type=int, default=1024, required=False, help='Hidden size.')
         self._parser.add_argument(
-            '--num_hidden_layers', type=int, default=24, required=False, help='The number of hidden layers.'
+            '--num_classes', type=int, default=100, required=False, help='The number of objects for classification.'
         )
         self._parser.add_argument(
-            '--num_attention_heads', type=int, default=16, required=False, help='The number of attention heads.'
+            '--input_size', type=int, default=256, required=False, help='The number of expected features in the input.'
         )
         self._parser.add_argument(
-            '--intermediate_size', type=int, default=4096, required=False, help='Intermediate size.'
+            '--hidden_size', type=int, default=1024, required=False, help='The number of features in the hidden state.'
         )
+        self._parser.add_argument(
+            '--num_layers', type=int, default=8, required=False, help='The number of recurrent layers.'
+        )
+
+        self._parser.add_argument('--bidirectional', action='store_true', default=False, help='Bidirectional LSTM.')
         self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
 
     def _generate_dataset(self):
@@ -86,7 +92,7 @@ class PytorchBERT(PytorchBase):
             True if dataset is created successfully.
         """
         self._dataset = TorchRandomDataset(
-            [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
+            [self._args.sample_count, self._args.seq_len, self._args.input_size], self._world_size, dtype=torch.float
         )
         if len(self._dataset) == 0:
             logger.error('Generate random dataset failed - model: {}'.format(self._name))
@@ -100,15 +106,11 @@ class PytorchBERT(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-        self._config = BertConfig(
-            hidden_size=self._args.hidden_size,
-            num_hidden_layers=self._args.num_hidden_layers,
-            num_attention_heads=self._args.num_attention_heads,
-            intermediate_size=self._args.intermediate_size
-        )
-
         try:
-            self._model = BertBenchmarkModel(self._config, self._args.num_classes)
+            self._model = LSTMBenchmarkModel(
+                self._args.input_size, self._args.hidden_size, self._args.num_layers, self._args.bidirectional,
+                self._args.num_classes
+            )
             self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
                 self._model = self._model.cuda()
@@ -140,6 +142,7 @@ class PytorchBERT(PytorchBase):
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = time.time()
+                sample = sample.to(dtype=getattr(torch, precision.value))
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
@@ -172,6 +175,7 @@ class PytorchBERT(PytorchBase):
             while True:
                 for idx, sample in enumerate(self._dataloader):
                     start = time.time()
+                    sample = sample.to(dtype=getattr(torch, precision.value))
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
@@ -186,18 +190,7 @@ class PytorchBERT(PytorchBase):
                         return duration
 
 
-# Register BERT Large benchmark.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
+# Register LSTM benchmark.
 BenchmarkRegistry.register_benchmark(
-    'pytorch-bert-large',
-    PytorchBERT,
-    parameters='--hidden_size=1024 --num_hidden_layers=24 --num_attention_heads=16 --intermediate_size=4096'
-)
-
-# Register BERT Base benchmark.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
-BenchmarkRegistry.register_benchmark(
-    'pytorch-bert-base',
-    PytorchBERT,
-    parameters='--hidden_size=768 --num_hidden_layers=12 --num_attention_heads=12 --intermediate_size=3072'
+    'pytorch-lstm', PytorchLSTM, parameters='--input_size=256 --hidden_size=1024 --num_layers=8'
 )
