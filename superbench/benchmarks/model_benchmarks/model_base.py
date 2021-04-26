@@ -81,7 +81,7 @@ class ModelBenchmark(Benchmark):
         self._parser.add_argument(
             '--sample_count',
             type=int,
-            default=128,
+            default=1024,
             required=False,
             help='The number of data samples in dataset.',
         )
