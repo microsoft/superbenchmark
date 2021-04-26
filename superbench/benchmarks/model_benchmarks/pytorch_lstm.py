@@ -92,7 +92,7 @@ class PytorchLSTM(PytorchBase):
             True if dataset is created successfully.
         """
         self._dataset = TorchRandomDataset(
-            [self._args.sample_count, self._args.seq_len, self._args.input_size], self._world_size, dtype=torch.float
+            [self._args.sample_count, self._args.seq_len, self._args.input_size], self._world_size, dtype=torch.float32
         )
         if len(self._dataset) == 0:
             logger.error('Generate random dataset failed - model: {}'.format(self._name))

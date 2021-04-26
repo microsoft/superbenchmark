@@ -46,7 +46,7 @@ class PytorchCNN(PytorchBase):
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, 3, self._args.image_size, self._args.image_size],
             self._world_size,
-            dtype=torch.long
+            dtype=torch.float32
         )
         if len(self._dataset) == 0:
             logger.error('Generate random dataset failed - model: {}'.format(self._name))
