@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Model benchmark example for resnet101.
+"""Model benchmark example for CNN models.
 
 Commands to run:
-  python3 examples/benchmarks/pytorch_cnn_resnet101.py (Single GPU)
-  python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_cnn_resnet101.py \
+  python3 examples/benchmarks/pytorch_cnn.py (Single GPU)
+  python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_cnn.py \
       --distributed (Distributed)
 """
 
