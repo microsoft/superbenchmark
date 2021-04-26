@@ -22,12 +22,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Specify the model name and benchmark parameters.
+    # For example, resnet50, resnet101, resnet152, densenet169, densenet201, vgg11, vgg13, vgg16, vgg19.
     model_name = 'resnet101'
-    parameters = '--batch_size 1 --image_size 224 --precision float32 --num_warmup 8 --num_steps 64 --run_count 2'
+    parameters = '--batch_size 32 --precision float32 float16 --num_warmup 64 --num_steps 2048 --sample_count 8192'
     if args.distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'
 
-    # Create context for resnet101 benchmark and run it for 64 steps.
+    # Create context for resnet101 benchmark and run it for 2048 steps.
     context = BenchmarkRegistry.create_benchmark_context(
         model_name, platform=Platform.CUDA, parameters=parameters, framework=Framework.PYTORCH
     )
