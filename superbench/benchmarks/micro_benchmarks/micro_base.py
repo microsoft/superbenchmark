@@ -48,14 +48,14 @@ class MicroBenchmark(Benchmark):
         Return:
             True if run benchmark successfully.
         """
-        for command in self._commands:
+        for cmd_idx in range(len(self._commands)):
             logger.info(
                 'Execute command - round: {}, benchmark: {}, command: {}.'.format(
-                    self._curr_run_index, self._name, command
+                    self._curr_run_index, self._name, self._commands[cmd_idx]
                 )
             )
             output = subprocess.run(
-                command,
+                self._commands[cmd_idx],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True,
@@ -71,7 +71,7 @@ class MicroBenchmark(Benchmark):
                 )
                 return False
             else:
-                if not self._process_raw_result(command, output.stdout):
+                if not self._process_raw_result(cmd_idx, output.stdout):
                     self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
                     return False
 
@@ -99,13 +99,13 @@ class MicroBenchmark(Benchmark):
         self._result.add_result(metric, sum(result) / len(result))
         return True
 
-    def _process_raw_result(self, command, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):
         """Function to process raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
 
         Args:
-            command (str): command corresponding with the raw_output.
+            cmd_idx (int): the index of command corresponding with the raw_output.
             raw_output (str): raw output string of the micro-benchmark.
 
         Return:
