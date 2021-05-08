@@ -18,7 +18,7 @@ def create_output_dir():
         str: Output directory name.
     """
     output_name = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    output_path = Path('.', 'outputs', output_name)
+    output_path = Path('.', 'outputs', output_name).resolve()
     output_path.mkdir(mode=0o755, parents=True, exist_ok=True)
     return str(output_path)
 
