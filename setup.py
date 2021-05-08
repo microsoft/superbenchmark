@@ -13,6 +13,8 @@ import pathlib
 from typing import List, Tuple
 
 from setuptools import setup, find_packages, Command
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 
 import superbench
 
@@ -103,6 +105,24 @@ class Tester(Command):
         sys.exit(0 if errno == 0 else 1)
 
 
+class PostDevelop(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        """Override develop.run."""
+        develop.run(self)
+        errno = os.system('ansible-galaxy collection install ansible.utils community.crypto')
+        sys.exit(0 if errno == 0 else 1)
+
+
+class PostInstall(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        """Override install.run."""
+        install.run(self)
+        errno = os.system('ansible-galaxy collection install ansible.utils community.crypto')
+        sys.exit(0 if errno == 0 else 1)
+
+
 setup(
     name='superbench',
     version=superbench.__version__,
@@ -133,6 +153,8 @@ setup(
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
     install_requires=[
+        'ansible_base>=2.10.9;os_name=="posix"',
+        'ansible_runner>=1.4.7',
         'colorlog>=4.7.2',
         'knack>=0.7.2',
         'omegaconf>=2.0.6',
@@ -166,6 +188,8 @@ setup(
         'format': Formatter,
         'lint': Linter,
         'test': Tester,
+        'develop': PostDevelop,
+        'install': PostInstall,
     },
     project_urls={
         'Source': 'https://github.com/microsoft/superbenchmark',
