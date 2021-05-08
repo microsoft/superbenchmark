@@ -14,7 +14,6 @@ from typing import List, Tuple
 
 from setuptools import setup, find_packages, Command
 from setuptools.command.develop import develop
-from setuptools.command.install import install
 
 import superbench
 
@@ -114,15 +113,6 @@ class PostDevelop(develop):
         sys.exit(0 if errno == 0 else 1)
 
 
-class PostInstall(install):
-    """Post-installation for installation mode."""
-    def run(self):
-        """Override install.run."""
-        install.run(self)
-        errno = os.system('ansible-galaxy collection install ansible.utils community.crypto')
-        sys.exit(0 if errno == 0 else 1)
-
-
 setup(
     name='superbench',
     version=superbench.__version__,
@@ -189,7 +179,6 @@ setup(
         'lint': Linter,
         'test': Tester,
         'develop': PostDevelop,
-        'install': PostInstall,
     },
     project_urls={
         'Source': 'https://github.com/microsoft/superbenchmark',
