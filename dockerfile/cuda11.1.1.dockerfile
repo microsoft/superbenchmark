@@ -83,8 +83,8 @@ ENV PATH="${PATH}:/usr/local/cmake/bin:/usr/local/nccl-tests/build" \
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib" \
     SB_HOME="/opt/superbench"
 
-COPY . ${SB_HOME}
+WORKDIR ${SB_HOME}
+ADD . .
+
 RUN cd ${SB_HOME} && \
     python3 -m pip install .[torch]
-
-WORKDIR ${SB_HOME}

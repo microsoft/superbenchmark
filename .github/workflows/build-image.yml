@@ -10,8 +10,16 @@ on:
 
 jobs:
   docker:
+    name: Docker build
     runs-on: ubuntu-latest
     steps:
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get clean
+          sudo docker images
+          df -h
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -26,11 +34,11 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          context: .
+          platforms: linux/amd64
           file: dockerfile/cuda11.1.1.dockerfile
           push: ${{ github.event_name == 'push' }}
           tags: superbench/superbench:latest,superbench/superbench:dev-cuda11.1.1
-          cache-from: type=registry,ref=superbench/superbench:dev-cuda11.1.1
+          cache-from: type=registry,ref=superbench/superbench:latest
           cache-to: type=inline
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
