@@ -46,12 +46,16 @@ def split_docker_domain(name):
         str: Docker registry domain.
         str: Remainder part.
     """
-    i = name.index('/')
-    domain, remainder = name[:i], name[i + 1:]
-    default_domain, legacy_domain = 'docker.io', 'index.docker.io'
-    if i != -1 or (':' not in domain and '.' not in domain and domain != 'localhost'):
+    legacy_default_domain = 'index.docker.io'
+    default_domain = 'docker.io'
+
+    i = name.find('/')
+    domain, remainder = '', ''
+    if i == -1 or ('.' not in name[:i] and ':' not in name[:i] and name[:i] != 'localhost'):
         domain, remainder = default_domain, name
-    if domain == legacy_domain:
+    else:
+        domain, remainder = name[:i], name[i + 1:]
+    if domain == legacy_default_domain:
         domain = default_domain
     if domain == default_domain and '/' not in remainder:
         remainder = 'library/{}'.format(remainder)
@@ -131,15 +135,24 @@ def process_runner_arguments(
     private_key = check_argument_file('private_key', private_key)
 
     # Docker config
-    docker_config = OmegaConf.create()
-    for key in ['image', 'username', 'password']:
-        docker_config[key] = eval('docker_{}'.format(key))
-    docker_config['registry'], _ = split_docker_domain(docker_image)
+    docker_config = OmegaConf.create(
+        {
+            'image': docker_image,
+            'username': docker_username,
+            'password': docker_password,
+            'registry': split_docker_domain(docker_image)[0],
+        }
+    )
     # Ansible config
-    ansible_config = OmegaConf.create()
-    for key in ['file', 'list', 'username', 'password']:
-        ansible_config['host_{}'.format(key)] = eval('host_{}'.format(key))
-    ansible_config['private_key'] = private_key
+    ansible_config = OmegaConf.create(
+        {
+            'host_file': host_file,
+            'host_list': host_list,
+            'host_username': host_username,
+            'host_password': host_password,
+            'private_key': private_key,
+        }
+    )
 
     sb_config, output_dir = process_config_arguments(config_file, config_override)
 
