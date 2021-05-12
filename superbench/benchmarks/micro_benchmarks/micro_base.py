@@ -5,6 +5,8 @@
 
 import os
 import subprocess
+import shutil
+from abc import abstractmethod
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkType, ReturnCode
@@ -22,10 +24,6 @@ class MicroBenchmark(Benchmark):
         """
         super().__init__(name, parameters)
         self._benchmark_type = BenchmarkType.MICRO
-        # Set the binary directory.
-        self._binary_dir = os.getenv('SUPERBENCH_BINARY_DIR', '/usr/local/bin')
-        # Command lines to launch the micro-benchmarks.
-        self._commands = list()
 
     '''
     # If need to add new arguments, super().add_parser_arguments() must be called.
@@ -41,6 +39,124 @@ class MicroBenchmark(Benchmark):
             True if _preprocess() succeed.
         """
         return super()._preprocess()
+
+    @abstractmethod
+    def _benchmark(self):
+        """Implementation for benchmarking.
+
+        Return:
+            True if run benchmark successfully.
+        """
+        pass
+
+    def _process_numeric_result(self, metric, result):
+        """Function to save the numerical results.
+
+        Args:
+            metric (str): metric name which is the key.
+            result (List[numbers.Number]): numerical result.
+
+        Return:
+            True if result list is not empty.
+        """
+        if len(result) == 0:
+            logger.error(
+                'Numerical result of benchmark is empty - round: {}, name: {}.'.format(
+                    self._curr_run_index, self._name
+                )
+            )
+            return False
+
+        self._result.add_raw_data(metric, result)
+        self._result.add_result(metric, sum(result) / len(result))
+        return True
+
+    def print_env_info(self):
+        """Print environments or dependencies information."""
+        # TODO: will implement it when add real benchmarks in the future.
+        pass
+
+
+class MicroBenchmarkWithInvoke(MicroBenchmark):
+    """The base class of micro-benchmarks that need to invoke subprocesses."""
+    def __init__(self, name, parameters=''):
+        """Constructor.
+
+        Args:
+            name (str): benchmark name.
+            parameters (str): benchmark parameters.
+        """
+        super().__init__(name, parameters)
+
+        # Command lines to launch the micro-benchmarks.
+        self._commands = list()
+
+        # Binary name of the current micro-benchmark.
+        self._bin_name = None
+
+    def add_parser_arguments(self):
+        """Add the specified arguments."""
+        super().add_parser_arguments()
+
+        self._parser.add_argument(
+            '--bin_path',
+            type=str,
+            default=None,
+            required=False,
+            help='Specify the binary path of the benchmark.',
+        )
+
+    def _set_binary_path(self):
+        """Search the binary from self._args.bin_path or from system environment path and set the binary path.
+
+        If self._args.bin_path is specified, the binary is only searched inside it. Otherwise, the binary is searched
+        from system environment path.
+
+        Return:
+            True if the binary exists.
+        """
+        if self._bin_name is None:
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_BINARY_NAME_NOT_SET)
+            logger.error('The binary name is not set - benchmark: {}.'.format(self._name))
+            return False
+
+        existed = True
+        if self._args.bin_path is None:
+            self._args.bin_path = shutil.which(self._bin_name)
+            print(shutil.which(self._bin_name))
+            existed = (self._args.bin_path is not None)
+        else:
+            self._args.bin_path = os.path.join(self._args.bin_path, self._bin_name)
+            existed = os.path.isfile(self._args.bin_path)
+
+        if not existed:
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_BINARY_NOT_EXIST)
+            logger.error(
+                'The binary does not exist - benchmark: {}, binary name: {}, binary path: {}.'.format(
+                    self._name, self._bin_name, self._args.bin_path
+                )
+            )
+            return False
+
+        return True
+
+    def _preprocess(self):
+        """Preprocess/preparation operations before the benchmarking.
+
+        Return:
+            True if _preprocess() succeed.
+        """
+        if not super()._preprocess():
+            return False
+
+        # Set the environment path.
+        if 'SB_PATH' in os.environ:
+            os.environ['PATH'] = os.getenv('SB_PATH', '') + os.pathsep + os.getenv('PATH', '')
+
+        if not self._set_binary_path():
+            return False
+
+        return True
 
     def _benchmark(self):
         """Implementation for benchmarking.
@@ -77,28 +193,7 @@ class MicroBenchmark(Benchmark):
 
         return True
 
-    def _process_numeric_result(self, metric, result):
-        """Function to save the numerical results.
-
-        Args:
-            metric (str): metric name which is the key.
-            result (List[numbers.Number]): numerical result.
-
-        Return:
-            True if result list is not empty.
-        """
-        if len(result) == 0:
-            logger.error(
-                'Numerical result of benchmark is empty - round: {}, name: {}.'.format(
-                    self._curr_run_index, self._name
-                )
-            )
-            return False
-
-        self._result.add_raw_data(metric, result)
-        self._result.add_result(metric, sum(result) / len(result))
-        return True
-
+    @abstractmethod
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to process raw results and save the summarized results.
 
@@ -111,10 +206,4 @@ class MicroBenchmark(Benchmark):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        # TODO: will implement it when add real benchmarks in the future.
-        return True
-
-    def print_env_info(self):
-        """Print environments or dependencies information."""
-        # TODO: will implement it when add real benchmarks in the future.
         pass
