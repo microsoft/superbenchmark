@@ -58,27 +58,6 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
-    def __get_mode_command(self, mode, exec_command):
-        """Get runner command for given mode.
-
-        Args:
-            mode (str): Runner mode.
-            exec_command (str): Executor command.
-
-        Return:
-            str: Runner command.
-        """
-        if mode == 'torch.distributed':
-            # TODO: replace with torch.distributed.run in v1.9
-            return (
-                'python3 -m torch.distributed.launch '
-                '--use_env --no_python --nproc_per_node=8 '
-                '--nnodes=$NNODES --node_rank=$NODE_RANK '
-                '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                '{}'
-            ).format(exec_command)
-        return exec_command
-
     def deploy(self):
         """Deploy SuperBench environment."""
         logger.info('Preparing SuperBench environment.')
@@ -109,27 +88,6 @@ class SuperBenchRunner():
         Raises:
             NotImplementedError: Not implemented yet.
         """
-        self.check_env()
-        runner_command = (
-            'docker exec sb-workspace bash -c '
-            '"set -o allexport && source sb.env && set +o allexport && {}"'
-        )
-        for benchmark_name in self._sb_benchmarks:
-            if benchmark_name not in self._sb_enabled:
-                continue
-            benchmark_config = self._sb_benchmarks[benchmark_name]
-            if benchmark_config.mode == 'torch.distributed':
-                logger.info('Runner is going to run %s.', benchmark_name)
-                self._ansible_client.run_shell(
-                    runner_command.format(
-                        self.__get_mode_command(
-                            benchmark_config.mode, (
-                                'sb exec -c sb.config.yaml -C '
-                                'superbench.enable={name} '
-                                'superbench.benchmarks.{name}.parameters.distributed_impl=ddp '
-                                'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
-                            ).format(name=benchmark_name)
-                        )
-                    ),
-                    sudo=True
-                )
+        logger.info(self._sb_config)
+        logger.error('Work in progress, not implemented yet.')
+        pass
