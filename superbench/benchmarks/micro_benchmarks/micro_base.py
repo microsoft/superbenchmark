@@ -99,17 +99,17 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--bin_path',
+            '--bin_dir',
             type=str,
             default=None,
             required=False,
-            help='Specify the path of the benchmark binary.',
+            help='Specify the directory of the benchmark binary.',
         )
 
     def _set_binary_path(self):
-        """Search the binary from self._args.bin_path or from system environment path and set the binary path.
+        """Search the binary from self._args.bin_dir or from system environment path and set the binary directory.
 
-        If self._args.bin_path is specified, the binary is only searched inside it. Otherwise, the binary is searched
+        If self._args.bin_dir is specified, the binary is only searched inside it. Otherwise, the binary is searched
         from system environment path.
 
         Return:
@@ -120,16 +120,18 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
             logger.error('The binary name is not set - benchmark: {}.'.format(self._name))
             return False
 
-        self._args.bin_path = shutil.which(self._bin_name, mode=os.X_OK, path=self._args.bin_path)
+        self._args.bin_dir = shutil.which(self._bin_name, mode=os.X_OK, path=self._args.bin_dir)
 
-        if self._args.bin_path is None:
+        if self._args.bin_dir is None:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_BINARY_NOT_EXIST)
             logger.error(
-                'The binary does not exist - benchmark: {}, binary name: {}, binary path: {}.'.format(
-                    self._name, self._bin_name, self._args.bin_path
+                'The binary does not exist - benchmark: {}, binary name: {}, binary directory: {}.'.format(
+                    self._name, self._bin_name, self._args.bin_dir
                 )
             )
             return False
+
+        self._args.bin_dir = os.path.dirname(self._args.bin_dir)
 
         return True
 
@@ -143,8 +145,8 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
             return False
 
         # Set the environment path.
-        if 'SB_PATH' in os.environ:
-            os.environ['PATH'] = os.getenv('SB_PATH', '') + os.pathsep + os.getenv('PATH', '')
+        if 'SB_MICRO_PATH' in os.environ:
+            os.environ['PATH'] = os.getenv('SB_MICRO_PATH', '') + os.pathsep + os.getenv('PATH', '')
 
         if not self._set_binary_path():
             return False

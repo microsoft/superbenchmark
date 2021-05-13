@@ -3,7 +3,9 @@
 
 """Tests for MicroBenchmark and MicroBenchmarkWithInvoke modules."""
 
+import os
 import re
+import shutil
 
 from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark, MicroBenchmarkWithInvoke
@@ -49,7 +51,7 @@ class FakeMicroBenchmarkWithInvoke(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        command = self._args.bin_path
+        command = os.path.join(self._args.bin_dir, self._bin_name)
         command += " -n 'cost1: 10.2, cost2: 20.2'"
         self._commands.append(command)
 
@@ -114,7 +116,7 @@ def test_micro_benchmark_with_invoke_base():
     benchmark._bin_name = 'echo'
     assert (benchmark.run())
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    assert (benchmark._args.bin_path == '/bin/echo')
+    assert (os.path.join(benchmark._args.bin_dir, benchmark._bin_name) == shutil.which(benchmark._bin_name))
     assert (benchmark._commands[0] == "/bin/echo -n 'cost1: 10.2, cost2: 20.2'")
     assert (benchmark.raw_data['raw_output_0'] == ['cost1: 10.2, cost2: 20.2'])
     assert (benchmark.result['cost1'] == [10.2])
