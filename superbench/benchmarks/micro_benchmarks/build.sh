@@ -1,7 +1,9 @@
+#!/bin/bash
+
+
 # Copyright (c) Microsoft Corporation - All rights reserved
 # Licensed under the MIT License
 
- #!/bin/bash
 
 SB_PATH="${SB_PATH:-/usr/local/bin}"
 SB_LIB="${SB_LIB:-/usr/local/lib}"
