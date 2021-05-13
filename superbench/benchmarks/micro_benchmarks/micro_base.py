@@ -103,7 +103,7 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
             type=str,
             default=None,
             required=False,
-            help='Specify the binary path of the benchmark.',
+            help='Specify the path of the benchmark binary.',
         )
 
     def _set_binary_path(self):
@@ -120,16 +120,9 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
             logger.error('The binary name is not set - benchmark: {}.'.format(self._name))
             return False
 
-        existed = True
-        if self._args.bin_path is None:
-            self._args.bin_path = shutil.which(self._bin_name)
-            print(shutil.which(self._bin_name))
-            existed = (self._args.bin_path is not None)
-        else:
-            self._args.bin_path = os.path.join(self._args.bin_path, self._bin_name)
-            existed = os.path.isfile(self._args.bin_path)
+        self._args.bin_path = shutil.which(self._bin_name, mode=os.X_OK, path=self._args.bin_path)
 
-        if not existed:
+        if self._args.bin_path is None:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_BINARY_NOT_EXIST)
             logger.error(
                 'The binary does not exist - benchmark: {}, binary name: {}, binary path: {}.'.format(
