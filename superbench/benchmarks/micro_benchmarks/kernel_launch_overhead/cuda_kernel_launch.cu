@@ -87,6 +87,7 @@ int main(int argc, char * argv[])
 {
     int num_warmups = 100;
     int num_steps = 2000000;
+    int interval = 2000;
 
     if (char* value = getCmdOption(argv, argv + argc, "-num_warmups"))
     {
@@ -98,12 +99,17 @@ int main(int argc, char * argv[])
         num_steps = std::stoi(value);
     }
 
+    if (char* value = getCmdOption(argv, argv + argc, "-interval"))
+    {
+        interval = std::stoi(value);
+    }
+
     // Test the kernel launch event time.
     double event_total_time = test_cuda_kernel_launch_event_time(num_warmups, num_steps);
     printf("Kernel launch overhead - event time: %3.5f ms \n", event_total_time / num_steps);
 
-    // Sleep for 2 seconds and run the next test.
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // Sleep for interval milliseconds and run the next test.
+    std::this_thread::sleep_for(std::chrono::milliseconds(interval));
 
     // Test the kernel launch wall time.
     double wall_total_time = test_cuda_kernel_launch_wall_time(num_warmups, num_steps);
