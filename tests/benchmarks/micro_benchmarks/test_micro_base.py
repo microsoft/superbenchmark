@@ -117,7 +117,7 @@ def test_micro_benchmark_with_invoke_base():
     assert (benchmark.run())
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     assert (os.path.join(benchmark._args.bin_dir, benchmark._bin_name) == shutil.which(benchmark._bin_name))
-    assert (benchmark._commands[0] == "/bin/echo -n 'cost1: 10.2, cost2: 20.2'")
+    assert (benchmark._commands[0] == (shutil.which(benchmark._bin_name) + " -n 'cost1: 10.2, cost2: 20.2'"))
     assert (benchmark.raw_data['raw_output_0'] == ['cost1: 10.2, cost2: 20.2'])
     assert (benchmark.result['cost1'] == [10.2])
     assert (benchmark.result['cost2'] == [20.2])
