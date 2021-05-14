@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.18)
 project(kernel_launch_overhead LANGUAGES CUDA CXX)
 
-include(../cuda.cmake)
+include(../cuda_common.cmake)
 
 add_executable(kernel_launch_overhead cuda_kernel_launch.cu)
 set_property(TARGET kernel_launch_overhead PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
