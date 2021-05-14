@@ -18,3 +18,13 @@ jobs:
     - name: Check spelling
       run: |
         misspell -error .
+  cpp:
+    name: CPP code lint
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Lint
+      run: |
+        which clang-format
+        make cpplint
