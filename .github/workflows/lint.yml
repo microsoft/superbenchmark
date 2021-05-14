@@ -24,7 +24,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Echo clang-format version
+      run: |
+        clang-format --version
     - name: Lint
       run: |
-        which clang-format
         make cpplint
