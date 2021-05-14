@@ -89,17 +89,17 @@ int main(int argc, char * argv[])
     int num_steps = 2000000;
     int interval = 2000;
 
-    if (char* value = getCmdOption(argv, argv + argc, "-num_warmups"))
+    if (char* value = getCmdOption(argv, argv + argc, "-w"))
     {
         num_warmups = std::stoi(value);
     }
 
-    if (char* value = getCmdOption(argv, argv + argc, "-num_steps"))
+    if (char* value = getCmdOption(argv, argv + argc, "-n"))
     {
         num_steps = std::stoi(value);
     }
 
-    if (char* value = getCmdOption(argv, argv + argc, "-interval"))
+    if (char* value = getCmdOption(argv, argv + argc, "-i"))
     {
         interval = std::stoi(value);
     }
