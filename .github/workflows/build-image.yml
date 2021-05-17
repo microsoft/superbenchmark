@@ -15,10 +15,8 @@ jobs:
     steps:
       - name: Free disk space
         run: |
-          df -h
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
           sudo apt-get clean
-          sudo docker images
           df -h
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -37,9 +35,9 @@ jobs:
           platforms: linux/amd64
           file: dockerfile/cuda11.1.1.dockerfile
           push: ${{ github.event_name == 'push' }}
-          tags: superbench/superbench:latest,superbench/superbench:dev-cuda11.1.1
+          tags: superbench/superbench:latest
           cache-from: type=registry,ref=superbench/superbench:latest
-          cache-to: type=inline
+          cache-to: ''
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ github.event.repository.pushed_at }}
