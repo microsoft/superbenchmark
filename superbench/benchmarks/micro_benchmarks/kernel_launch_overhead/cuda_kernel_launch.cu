@@ -14,10 +14,10 @@
 
 #include "cuda_runtime.h"
 
-__global__ void EmptyKernel() { }
+__global__ void EmptyKernel() {
+}
 
-double test_cuda_kernel_launch_event_time(int num_warmups, int num_steps)
-{
+double test_cuda_kernel_launch_event_time(int num_warmups, int num_steps) {
     float time = 0.f;
     double total_time = 0.0;
 
@@ -25,16 +25,14 @@ double test_cuda_kernel_launch_event_time(int num_warmups, int num_steps)
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    for (int i = 0; i < num_warmups; i++)
-    {
+    for (int i = 0; i < num_warmups; i++) {
         cudaEventRecord(start, 0);
         EmptyKernel<<<1, 1>>>();
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
     }
 
-    for (int i = 0; i < num_steps; i++)
-    {
+    for (int i = 0; i < num_steps; i++) {
         cudaEventRecord(start, 0);
         EmptyKernel<<<1, 1>>>();
         cudaEventRecord(stop, 0);
@@ -49,19 +47,16 @@ double test_cuda_kernel_launch_event_time(int num_warmups, int num_steps)
     return total_time;
 }
 
-double test_cuda_kernel_launch_wall_time(int num_warmups, int num_steps)
-{
+double test_cuda_kernel_launch_wall_time(int num_warmups, int num_steps) {
     double total_time = 0.0;
 
-    for (int i = 0; i < num_warmups; i++)
-    {
+    for (int i = 0; i < num_warmups; i++) {
         EmptyKernel<<<1, 1>>>();
         cudaDeviceSynchronize();
     }
 
     struct timeval begin_tv, end_tv;
-    for (int i = 0; i < num_steps; i++)
-    {
+    for (int i = 0; i < num_steps; i++) {
         gettimeofday(&begin_tv, NULL);
         EmptyKernel<<<1, 1>>>();
         cudaDeviceSynchronize();
@@ -73,34 +68,28 @@ double test_cuda_kernel_launch_wall_time(int num_warmups, int num_steps)
     return total_time;
 }
 
-char* getCmdOption(char ** begin, char ** end, const std::string & option)
-{
+char* getCmdOption(char ** begin, char ** end, const std::string & option) {
     char ** itr = std::find(begin, end, option);
-    if (itr != end && ++itr != end)
-    {
+    if (itr != end && ++itr != end) {
         return *itr;
     }
     return 0;
 }
 
-int main(int argc, char * argv[])
-{
+int main(int argc, char * argv[]) {
     int num_warmups = 100;
     int num_steps = 2000000;
     int interval = 2000;
 
-    if (char* value = getCmdOption(argv, argv + argc, "-w"))
-    {
+    if (char* value = getCmdOption(argv, argv + argc, "-w")) {
         num_warmups = std::stoi(value);
     }
 
-    if (char* value = getCmdOption(argv, argv + argc, "-n"))
-    {
+    if (char* value = getCmdOption(argv, argv + argc, "-n")) {
         num_steps = std::stoi(value);
     }
 
-    if (char* value = getCmdOption(argv, argv + argc, "-i"))
-    {
+    if (char* value = getCmdOption(argv, argv + argc, "-i")) {
         interval = std::stoi(value);
     }
 
