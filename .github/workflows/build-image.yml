@@ -15,9 +15,30 @@ jobs:
     steps:
       - name: Free disk space
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          mkdir /tmp/emptydir
+          for dir in /usr/share/dotnet /usr/local/lib/android /opt/ghc; do
+            sudo rsync -a --delete /tmp/emptydir/ ${dir}
+          done
           sudo apt-get clean
           df -h
+      - name: Prepare metadata
+        id: metadata
+        run: |
+          DOCKER_IMAGE=superbench/superbench
+          IMAGE_TAG=latest
+
+          DOCKERFILE=dockerfile/cuda11.1.1.dockerfile
+          TAGS="${DOCKER_IMAGE}:${IMAGE_TAG}"
+          CACHE_FROM="type=registry,ref=${DOCKER_IMAGE}:${IMAGE_TAG}"
+          CACHE_TO=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            CACHE_TO="type=inline"
+          fi
+
+          echo ::set-output name=dockerfile::${DOCKERFILE}
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=cache_from::${CACHE_FROM}
+          echo ::set-output name=cache_to::${CACHE_TO}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -33,11 +54,11 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           platforms: linux/amd64
-          file: dockerfile/cuda11.1.1.dockerfile
+          file: ${{ steps.metadata.outputs.dockerfile }}
           push: ${{ github.event_name == 'push' }}
-          tags: superbench/superbench:latest
-          cache-from: type=registry,ref=superbench/superbench:latest
-          cache-to: ''
+          tags: ${{ steps.metadata.outputs.tags }}
+          cache-from: ${{ steps.metadata.outputs.cache_from }}
+          cache-to: ${{ steps.metadata.outputs.cache_to }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ github.event.repository.pushed_at }}
