@@ -12,4 +12,4 @@ cppformat:
 	clang-format --verbose -i $(CPPSOURCES)
 
 cppbuild:
-	cd ./superbench/benchmarks/; bash build.sh
+	cd ./superbench/benchmarks/ &&  bash build.sh
