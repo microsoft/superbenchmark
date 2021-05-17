@@ -5,17 +5,16 @@
 //   event mode: using cuda event to record the elapsed time of kernel launch on device.
 //   wall mode: using host timer to record the elapsed time kernel launch on both host and device.
 
+#include <algorithm>
+#include <chrono>
 #include <stdio.h>
+#include <string>
 #include <sys/time.h>
 #include <thread>
-#include <chrono>
-#include <string>
-#include <algorithm>
 
 #include "cuda_runtime.h"
 
-__global__ void EmptyKernel() {
-}
+__global__ void EmptyKernel() {}
 
 double test_cuda_kernel_launch_event_time(int num_warmups, int num_steps) {
     float time = 0.f;
@@ -62,34 +61,34 @@ double test_cuda_kernel_launch_wall_time(int num_warmups, int num_steps) {
         cudaDeviceSynchronize();
         gettimeofday(&end_tv, NULL);
         total_time += (((end_tv.tv_sec) * 1000 + (end_tv.tv_usec) / 1000) -
-                      ((begin_tv.tv_sec) * 1000 + (begin_tv.tv_usec) / 1000));
+                       ((begin_tv.tv_sec) * 1000 + (begin_tv.tv_usec) / 1000));
     }
 
     return total_time;
 }
 
-char* getCmdOption(char ** begin, char ** end, const std::string & option) {
-    char ** itr = std::find(begin, end, option);
+char *getCmdOption(char **begin, char **end, const std::string &option) {
+    char **itr = std::find(begin, end, option);
     if (itr != end && ++itr != end) {
         return *itr;
     }
     return 0;
 }
 
-int main(int argc, char * argv[]) {
+int main(int argc, char *argv[]) {
     int num_warmups = 100;
     int num_steps = 2000000;
     int interval = 2000;
 
-    if (char* value = getCmdOption(argv, argv + argc, "-w")) {
+    if (char *value = getCmdOption(argv, argv + argc, "-w")) {
         num_warmups = std::stoi(value);
     }
 
-    if (char* value = getCmdOption(argv, argv + argc, "-n")) {
+    if (char *value = getCmdOption(argv, argv + argc, "-n")) {
         num_steps = std::stoi(value);
     }
 
-    if (char* value = getCmdOption(argv, argv + argc, "-i")) {
+    if (char *value = getCmdOption(argv, argv + argc, "-i")) {
         interval = std::stoi(value);
     }
 
