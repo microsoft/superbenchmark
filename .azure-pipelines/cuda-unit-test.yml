@@ -16,6 +16,9 @@ steps:
       python3 -m pip install .[test,torch]
     displayName: Install dependencies
   - script: |
+      make cppbuild
+    displayName: Build benchmarks
+  - script: |
       python3 setup.py lint
     displayName: Run code lint
   - script: |

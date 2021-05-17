@@ -86,6 +86,7 @@ ENV PATH="${PATH}:/usr/local/cmake/bin:/usr/local/nccl-tests/build" \
 ARG SB_VERSION="main"
 RUN git clone -b ${SB_VERSION} https://github.com/microsoft/superbenchmark ${SB_HOME} && \
     cd ${SB_HOME} && \
-    python3 -m pip install .[torch]
+    python3 -m pip install .[torch] && \
+    make cppbuild
 
 WORKDIR ${SB_HOME}
