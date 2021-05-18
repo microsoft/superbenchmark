@@ -154,7 +154,7 @@ def process_runner_arguments(
         }
     )
 
-    sb_config, output_dir = process_config_arguments(config_file, config_override)
+    sb_config, output_dir = process_config_arguments(config_file=config_file, config_override=config_override)
 
     return docker_config, ansible_config, sb_config, output_dir
 
@@ -179,7 +179,7 @@ def exec_command_handler(config_file=None, config_override=None):
     Raises:
         CLIError: If input arguments are invalid.
     """
-    sb_config, output_dir = process_config_arguments(**locals())
+    sb_config, output_dir = process_config_arguments(config_file=config_file, config_override=config_override)
 
     executor = SuperBenchExecutor(sb_config, output_dir)
     executor.exec()
@@ -216,9 +216,18 @@ def deploy_command_handler(
     Raises:
         CLIError: If input arguments are invalid.
     """
-    docker_config, ansible_config, sb_config, output_dir = process_runner_arguments(**locals())
+    docker_config, ansible_config, sb_config, output_dir = process_runner_arguments(
+        docker_image=docker_image,
+        docker_username=docker_username,
+        docker_password=docker_password,
+        host_file=host_file,
+        host_list=host_list,
+        host_username=host_username,
+        host_password=host_password,
+        private_key=private_key,
+    )
 
-    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
+    SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
     raise NotImplementedError
 
 
@@ -254,7 +263,18 @@ def run_command_handler(
     Raises:
         CLIError: If input arguments are invalid.
     """
-    docker_config, ansible_config, sb_config, output_dir = process_runner_arguments(**locals())
+    docker_config, ansible_config, sb_config, output_dir = process_runner_arguments(
+        docker_image=docker_image,
+        docker_username=docker_username,
+        docker_password=docker_password,
+        host_file=host_file,
+        host_list=host_list,
+        host_username=host_username,
+        host_password=host_password,
+        private_key=private_key,
+        config_file=config_file,
+        config_override=config_override,
+    )
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
     runner.run()
