@@ -13,16 +13,14 @@ from superbench.common.utils import SuperBenchLogger, logger
 
 class SuperBenchExecutor():
     """SuperBench executor class."""
-    def __init__(self, sb_config, docker_config, output_dir):
+    def __init__(self, sb_config, output_dir):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
-            docker_config (DictConfig): Docker config object.
             output_dir (str): Dir for output.
         """
         self._sb_config = sb_config
-        self._docker_config = docker_config
         self._output_dir = output_dir
 
         self.__set_logger('sb-exec.log')
