@@ -8,7 +8,6 @@ include(../cuda_common.cmake)
 
 SET(SRC "function.cu" CACHE STRING "source file")
 SET(TARGET_NAME "cublas_function" CACHE STRING "target name")
-#SET(CUDA_ARCH "-gencode arch=compute_37,code=sm_37 -gencode arch=compute_52,code=sm_52 -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_75,code=sm_75" CACHE STRING "target architecture")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -51,11 +50,5 @@ target_link_libraries(${TARGET_NAME}
 cuda_add_executable(CublasBenchmark cublas_function_test.cpp)   
 target_link_libraries(CublasBenchmark ${TARGET_NAME}) 
 
-install(TARGETS CublasBenchmark 
-        EXPORT CublasBenchmarkTargets
-        LIBRARY DESTINATION lib  
-        ARCHIVE DESTINATION lib  
-        RUNTIME DESTINATION bin  
-        INCLUDES DESTINATION include 
-        RUNTIME DESTINATION . 
-)
+install(TARGETS ${TARGET_NAME}  LIBRARY DESTINATION /usr/lib)
+install(TARGETS CublasBenchmark EXPORT CublasBenchmarkTargets)
