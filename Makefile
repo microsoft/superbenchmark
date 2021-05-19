@@ -10,3 +10,6 @@ cpplint:
 
 cppformat:
 	clang-format --verbose -i $(CPPSOURCES)
+
+cppbuild:
+	cd ./superbench/benchmarks/ && bash build.sh

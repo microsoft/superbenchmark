@@ -53,13 +53,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_deploy(self):
         """Test sb deploy."""
-        self.cmd('sb deploy --docker-image test:cuda11.1 --host-list localhost', expect_failure=True)
-
-    @capture_system_exit
-    def test_sb_deploy_no_docker_image(self):
-        """Test sb deploy, no --docker-image argument, should fail."""
-        self.cmd('sb deploy', expect_failure=True)
-        self.assertIn('sb deploy: error: the following arguments are required: --docker-image', self.stderr)
+        self.cmd('sb deploy --host-list localhost', expect_failure=True)
 
     def test_sb_exec(self):
         """Test sb exec."""
@@ -67,13 +61,12 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_run(self):
         """Test sb run."""
-        self.cmd('sb run --docker-image test:cuda11.1 --host-list localhost', checks=[NoneCheck()])
+        self.cmd('sb run --host-list localhost', checks=[NoneCheck()])
 
-    @capture_system_exit
-    def test_sb_run_no_docker_image(self):
-        """Test sb run, no --docker-image argument, should fail."""
-        self.cmd('sb run', expect_failure=True)
-        self.assertIn('sb run: error: the following arguments are required: --docker-image', self.stderr)
+    def test_sb_run_no_docker_auth(self):
+        """Test sb run, only --docker-username argument, should fail."""
+        result = self.cmd('sb run --docker-username test-user', expect_failure=True)
+        self.assertEqual(result.exit_code, 1)
 
     def test_sb_run_no_host(self):
         """Test sb run, no --host-file or --host-list, should fail."""
@@ -82,5 +75,5 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_run_nonexist_host_file(self):
         """Test sb run, --host-file does not exist, should fail."""
-        result = self.cmd('sb run --docker-image test:cuda11.1 --host-file ./nonexist.yaml', expect_failure=True)
+        result = self.cmd('sb run --host-file ./nonexist.yaml', expect_failure=True)
         self.assertEqual(result.exit_code, 1)
