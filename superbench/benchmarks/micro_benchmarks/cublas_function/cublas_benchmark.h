@@ -4,44 +4,11 @@
 #pragma once
 
 #include <chrono>
-#include <sstream>
 #include <stdexcept>
 #include <time.h>
 
-#include <cuComplex.h>
-#include <cublas_v2.h>
-#include <cuda.h>
-#include <cuda_fp16.h>
-#include <cuda_runtime.h>
-#include <cudnn.h>
-
 #include "cmd_helper.h"
-
-void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
-    if (result != cudaSuccess) {
-        const char *msg = cudaGetErrorString(result);
-        std::stringstream safe_call_ss;
-        safe_call_ss << "\nerror: " << func << " failed with error"
-                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
-        // Make sure we call CUDA Device Reset before exiting
-        throw std::runtime_error(safe_call_ss.str());
-    }
-}
-#define CUDA_SAFE_CALL(x) check_cuda((x), #x, __FILE__, __LINE__)
-
-void check_cublas(cublasStatus_t result, char const *const func, const char *const file, int const line) {
-    if (result != CUBLAS_STATUS_SUCCESS) {
-
-        std::stringstream safe_call_ss;
-        safe_call_ss << "\nerror: " << func << " failed with error"
-                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << result;
-        // Make sure we call CUDA Device Reset before exiting
-        throw std::runtime_error(safe_call_ss.str());
-    }
-}
-#define CUBLAS_SAFE_CALL(x) check_cublas((x), #x, __FILE__, __LINE__)
-
-cublasHandle_t cublas_handle;
+#include "cublas_helper.h"
 
 enum cublas_function_name_enum {
     e_cublasSgemm = 0,
@@ -61,12 +28,7 @@ static std::unordered_map<std::string, cublas_function_name_enum> const cublas_f
     {"cublasCgemm3mStridedBatched", cublas_function_name_enum::e_cublasCgemm3mStridedBatched},
 };
 
-// Cuda context init
-void cuda_init();
-// Cuda context free
-void cuda_free();
-
-// Class to store params of cublas function and run the benchmark
+// Class to store params of cublas function and run the benchmark of this function
 class CublasFunction {
   private:
     std::string name_;
@@ -112,7 +74,7 @@ class CublasFunction {
             this->e_name_ = it->second;
             return e_name_;
         } else {
-            std::cout << "invalid input function name";
+            std::cout << "Error: invalid input function name";
             exit(0);
         }
     }
@@ -120,26 +82,10 @@ class CublasFunction {
     // The main procedure for cublas function test, including cuda init, warmup, function test, time measurement and
     // cuda free
     template <class T> void benchmark(Options *options);
-
-    // Wrappers of cublas functions
-    template <class T>
-    void gemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const T *a, const T *b, T *c);
-
-    void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *A, const void *B,
-                void *C, std::string type, bool use_tensor_core);
-
-    void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a,
-                              const void *b, void *c, std::string type, bool use_tensor_core, int batchCount);
-
-    void Cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
-                               const cuComplex *b, cuComplex *c, int batchCount);
-
-    void SgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
-                             const float *b, float *c, int batchCount);
 };
 
 template <class T> void CublasFunction::fill_data(T *Parameter_0_0_host, T *Parameter_1_0_host) {
-    std::cout << "invalid type";
+    std::cout << "Error: invalid type";
     exit(0);
 }
 
@@ -225,7 +171,7 @@ template <class T> int CublasFunction::kernel_entry(T *a, T *b, T *c) {
                               reinterpret_cast<cuComplex *>(c), this->batch_count_);
         break;
     default:
-        std::cout << "invalid enum name";
+        std::cout << "Error: invalid enum name";
         exit(0);
     }
     return 0;
@@ -251,9 +197,6 @@ template <class T> void CublasFunction::benchmark(Options *options) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
     // Prepare some varibles for time measurement
-    float ms_max = std::numeric_limits<float>::min();
-    float ms_min = std::numeric_limits<float>::max();
-    float ms_total = 0;
     std::vector<float> iteration_time;
 
     // Benchmark in range of steps
@@ -271,17 +214,10 @@ template <class T> void CublasFunction::benchmark(Options *options) {
         float i =
             static_cast<float>(std::chrono::duration<double, std::micro>(end - start).count() / repeat_in_one_step);
         iteration_time.emplace_back(i);
-        if (i > ms_max)
-            ms_max = i;
-        if (i < ms_min)
-            ms_min = i;
-        ms_total += i;
     }
 
     // Output results
     std::cout << "[function config]: " << this->to_str_ << std::endl;
-    std::cout << "[min, max, mean]: "
-              << "[" << ms_min << " " << ms_max << " " << ms_total / steps << "]" << std::endl;
     std::cout << "[raw_data]: ";
     for (int i = 0; i < iteration_time.size(); i++) {
         std::cout << iteration_time[i] << ",";
@@ -344,7 +280,7 @@ void from_json(const json &j, CublasFunction &fn) {
         break;
     }
     default:
-        std::cout << "invalid function name";
+        std::cout << "Error: invalid function name";
         exit(-1);
     }
 }

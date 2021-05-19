@@ -6,7 +6,7 @@ project(CublasBenchmark)
 
 include(../cuda_common.cmake)
 
-SET(SRC "function.cu" CACHE STRING "source file")
+SET(SRC "cublas_benchmark.cu" CACHE STRING "source file")
 SET(TARGET_NAME "cublas_function" CACHE STRING "target name")
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -47,8 +47,7 @@ target_link_libraries(${TARGET_NAME}
     ${CUDA_CUBLAS_LIBRARIES}
     ${CUDNN_LIBRARY})
 
-cuda_add_executable(CublasBenchmark cublas_function_test.cpp)   
+cuda_add_executable(CublasBenchmark cublas_test.cpp)   
 target_link_libraries(CublasBenchmark ${TARGET_NAME}) 
 
-install(TARGETS ${TARGET_NAME}  LIBRARY DESTINATION /usr/lib)
-install(TARGETS CublasBenchmark EXPORT CublasBenchmarkTargets)
+install(TARGETS CublasBenchmark ${TARGET_NAME} EXPORT CublasBenchmarkTargets)

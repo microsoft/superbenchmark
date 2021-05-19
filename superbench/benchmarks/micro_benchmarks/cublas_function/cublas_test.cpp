@@ -15,15 +15,11 @@
 //     cublasCgemm
 //     cublasCgemm3mStridedBatched
 
-#include <time.h>
 #include <unistd.h>
 
-#include "function.h"
+#include "cublas_benchmark.h"
 
 int main(int argc, const char *argv[]) {
-    clock_t start, end;
-    start = clock();
-
     // parse arguments from cmd
     CommandLine cmdline(argc, argv);
     Options options;
@@ -51,10 +47,7 @@ int main(int argc, const char *argv[]) {
             one_function.benchmark<cuComplex>(&options);
             break;
         default:
-            std::cout << "invalid enum name";
+            std::cout << "Error: invalid enum name";
         }
     }
-
-    end = clock();
-    std::cout << "program total time = " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
 }

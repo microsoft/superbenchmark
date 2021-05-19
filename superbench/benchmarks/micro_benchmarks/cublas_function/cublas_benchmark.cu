@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "function.h"
+#include "cublas_benchmark.h"
 
 // Cuda context init
 void cuda_init() {
@@ -18,18 +18,17 @@ void cuda_free() {
 }
 
 template <>
-void CublasFunction::gemm<float>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
-                                 const float *b, float *c) {
+void gemm<float>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a, const float *b,
+                 float *c) {
     float alpha = 1.0f;
     float beta = 1.0f;
-
     CUBLAS_SAFE_CALL(cublasSgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
                                  n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
 }
 
 template <>
-void CublasFunction::gemm<double>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const double *a,
-                                  const double *b, double *c) {
+void gemm<double>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const double *a, const double *b,
+                  double *c) {
     double alpha = 1.0;
     double beta = 1.0;
     CUBLAS_SAFE_CALL(cublasDgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
@@ -37,8 +36,8 @@ void CublasFunction::gemm<double>(cublasHandle_t handle, int transa, int transb,
 }
 
 template <>
-void CublasFunction::gemm<cuComplex>(cublasHandle_t handle, int transa, int transb, int m, int n, int k,
-                                     const cuComplex *a, const cuComplex *b, cuComplex *c) {
+void gemm<cuComplex>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
+                     const cuComplex *b, cuComplex *c) {
     cuComplex alpha = make_cuComplex(1.0f, 0.0f);
     cuComplex beta = make_cuComplex(0.0f, 0.0f);
     CUBLAS_SAFE_CALL(cublasCgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
@@ -46,16 +45,16 @@ void CublasFunction::gemm<cuComplex>(cublasHandle_t handle, int transa, int tran
 }
 
 template <>
-void CublasFunction::gemm<cuDoubleComplex>(cublasHandle_t handle, int transa, int transb, int m, int n, int k,
-                                           const cuDoubleComplex *a, const cuDoubleComplex *b, cuDoubleComplex *c) {
+void gemm<cuDoubleComplex>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuDoubleComplex *a,
+                           const cuDoubleComplex *b, cuDoubleComplex *c) {
     cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
     cuDoubleComplex beta = make_cuDoubleComplex(1.0, 0.0);
     CUBLAS_SAFE_CALL(cublasZgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
                                  n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
 }
 
-void CublasFunction::gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a,
-                            const void *b, void *c, std::string type, bool use_tensor_core) {
+void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a, const void *b, void *c,
+            std::string type, bool use_tensor_core) {
     float alpha = 1.0f;
     float beta = 0.0f;
     cublasComputeType_t compute_type = CUBLAS_COMPUTE_32F;
@@ -78,9 +77,8 @@ void CublasFunction::gemmEx(cublasHandle_t handle, int transa, int transb, int m
     }
 }
 
-void CublasFunction::gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k,
-                                          const void *a, const void *b, void *c, std::string type, bool use_tensor_core,
-                                          int batchCount) {
+void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a,
+                          const void *b, void *c, std::string type, bool use_tensor_core, int batchCount) {
     float alpha = 1.0f;
     float beta = 1.0f;
     cublasComputeType_t compute_type = CUBLAS_COMPUTE_32F;
@@ -103,8 +101,8 @@ void CublasFunction::gemmStridedBatchedEx(cublasHandle_t handle, int transa, int
     }
 }
 
-void CublasFunction::SgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k,
-                                         const float *a, const float *b, float *c, int batchCount) {
+void SgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
+                         const float *b, float *c, int batchCount) {
     float alpha = 1.0f;
     float beta = 1.0f;
     CUBLAS_SAFE_CALL(cublasSgemmStridedBatched(
@@ -112,8 +110,8 @@ void CublasFunction::SgemmStridedBatched(cublasHandle_t handle, int transa, int 
         (transa ? k : m), m * k, b, (transb ? n : k), n * k, &beta, c, m, m * n, batchCount));
 }
 
-void CublasFunction::Cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k,
-                                           const cuComplex *a, const cuComplex *b, cuComplex *c, int batchCount) {
+void Cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
+                           const cuComplex *b, cuComplex *c, int batchCount) {
     cuComplex alpha = make_cuComplex(1.0f, 0.0f);
     cuComplex beta = make_cuComplex(0.0f, 0.0f);
     CUBLAS_SAFE_CALL(cublasCgemm3mStridedBatched(

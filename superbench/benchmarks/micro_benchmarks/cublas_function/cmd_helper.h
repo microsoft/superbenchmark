@@ -29,7 +29,7 @@ struct Options {
         std::ifstream para_info_fin(para_info_json);
         json config;
         if (!para_info_fin) {
-            std::cout << "Open function param file fail." << std::endl;
+            std::cout << "Error: Open function param file failed." << std::endl;
             exit(1);
         } else {
             para_info_fin >> config;
@@ -40,6 +40,8 @@ struct Options {
 };
 
 // Utility for parsing command line arguments
+// Referenced by NVIDIA/cutlass/tools/util/include/cutlass/util/command_line.h
+// https://github.com/NVIDIA/cutlass/blob/master/tools/util/include/cutlass/util/command_line.h
 struct CommandLine {
     std::vector<std::string> keys;
     std::vector<std::string> values;
