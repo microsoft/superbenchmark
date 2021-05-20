@@ -29,8 +29,7 @@ struct Options {
         std::ifstream para_info_fin(para_info_json);
         json config;
         if (!para_info_fin) {
-            std::cout << "Error: open function param file failed." << std::endl;
-            exit(1);
+            throw "open function param file failed.";
         } else {
             para_info_fin >> config;
             para_info_fin.close();

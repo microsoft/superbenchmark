@@ -89,8 +89,7 @@ class CudnnConfig {
             this->e_name = it->second;
             return e_name;
         } else {
-            std::cout << "ERROR: invalid input function name" << std::endl;
-            exit(-1);
+            throw "ERROR: invalid input function name";
         }
     }
 };
@@ -187,7 +186,7 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::kernel_entry(T1 
                                                          fwd_workspace_size_, &beta_, w_desc_.desc(), filter));
         break;
     default:
-        std::cout << "ERROR: function not supported - " << config_->get_name() << std::endl;
+        throw "ERROR: function not supported - " + config_->get_name();
     }
 }
 

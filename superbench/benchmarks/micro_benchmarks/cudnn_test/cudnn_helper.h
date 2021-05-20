@@ -20,22 +20,23 @@ namespace cudnn_test {
 cudnnHandle_t cudnn_handle_0 = NULL;
 
 // Run cudnn function and check if succeed
-void throw_cudnn_err(cudnnStatus_t status, int line, const char *filename) {
+void throw_cudnn_err(cudnnStatus_t result, const char *func, const char *file, int const line) {
     if (status != CUDNN_STATUS_SUCCESS) {
-        std::stringstream ss;
-        ss << "CUDNN failure: " << cudnnGetErrorString(status) << " in " << filename << " at line: " << line
-           << std::endl;
-        throw std::runtime_error(ss.str());
+        const char *msg = cudnnGetErrorString(result);
+        std::stringstream safe_call_ss;
+        safe_call_ss << func << " failed with error"
+                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
+        throw std::runtime_error(safe_call_ss.str());
     }
 }
-#define CHECK_CUDNN_ERROR(status) throw_cudnn_err(status, __LINE__, __FILE__)
+#define CHECK_CUDNN_ERROR(x) throw_cudnn_err((x), #x, __FILE__, __LINE__)
 
 // Run cuda function and check if succeed
 void check_cuda(cudaError_t result, const char *func, const char *file, int const line) {
     if (result != cudaSuccess) {
         const char *msg = cudaGetErrorString(result);
         std::stringstream safe_call_ss;
-        safe_call_ss << "\nerror: " << func << " failed with error"
+        safe_call_ss << func << " failed with error"
                      << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
         // Make sure we call CUDA Device Reset before exiting
         throw std::runtime_error(safe_call_ss.str());
@@ -50,15 +51,14 @@ void cuda_free();
 // Malloc cuda memory and fill in rand value
 template <typename T> void rand(T **input, std::vector<int> dims_, curandGenerator_t curand_gen);
 // Malloc cuda memory and fill in zero
-template <typename T> void zeros(T **h_input, std::vector<int> dims_) {
+template <typename T> void zeros(T **input, std::vector<int> dims_) {
     int size_ = std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<int>());
-    CUDA_SAFE_CALL(cudaMalloc((void **)h_input, sizeof(T) * size_));
-    CUDA_SAFE_CALL(cudaMemset((void *)*h_input, 0, sizeof(T) * size_));
+    CUDA_SAFE_CALL(cudaMalloc((void **)input, sizeof(T) * size_));
+    CUDA_SAFE_CALL(cudaMemset((void *)*input, 0, sizeof(T) * size_));
 }
 
 // Get cudnn tensor format
 template <typename T> void get_tensor_format(cudnnTensorFormat_t &tensor_format) {
-
     // For int8 inference, the supported format is NHWC
     if (std::is_same<T, uint8_t>::value) {
         tensor_format = CUDNN_TENSOR_NHWC;
@@ -69,19 +69,17 @@ template <typename T> void get_tensor_format(cudnnTensorFormat_t &tensor_format)
 
 // Get cudnn tensor data type
 template <typename T> void get_tensor_type(cudnnDataType_t &type) {
-
     if (std::is_same<T, float>::value) {
         type = CUDNN_DATA_FLOAT;
     } else if (std::is_same<T, half>::value) {
         type = CUDNN_DATA_HALF;
     }
-
 #if CUDNN_MAJOR >= 6
     else if (std::is_same<T, uint8_t>::value)
         type = CUDNN_DATA_INT8;
 #endif
     else
-        throw std::runtime_error("Unknown type in tensorDecriptor");
+        throw("unknown type in tensorDecriptor");
 }
 
 // RAII wrapper for TensorDescriptorNd
@@ -97,16 +95,13 @@ template <typename T> class TensorDescriptorNd {
 
   public:
     TensorDescriptorNd() {}
-    TensorDescriptorNd(const std::vector<int> &dim, const std::vector<int> &stride) {
+    TensorDescriptorNd(const std::vector<int> &dim, const std::vector<int> &stride)
+        : desc_(new cudnnTensorDescriptor_t, TensorDescriptorNdDeleter()) {
         cudnnDataType_t type;
         get_tensor_type<T>(type);
 
-        cudnnTensorDescriptor_t *desc = new cudnnTensorDescriptor_t;
-
-        CHECK_CUDNN_ERROR(cudnnCreateTensorDescriptor(desc));
-        CHECK_CUDNN_ERROR(cudnnSetTensorNdDescriptor(*desc, type, dim.size(), dim.data(), stride.data()));
-
-        desc_.reset(desc, TensorDescriptorNdDeleter());
+        CHECK_CUDNN_ERROR(cudnnCreateTensorDescriptor(desc_.get()));
+        CHECK_CUDNN_ERROR(cudnnSetTensorNdDescriptor(*desc_, type, dim.size(), dim.data(), stride.data()));
     }
 
     cudnnTensorDescriptor_t desc() const { return *desc_; }
@@ -126,17 +121,14 @@ template <typename T> class FilterDescriptorNd {
   public:
     FilterDescriptorNd() {}
 
-    FilterDescriptorNd(const std::vector<int> &dim) {
+    FilterDescriptorNd(const std::vector<int> &dim) : desc_(new cudnnFilterDescriptor_t, FilterDescriptorNdDeleter()) {
         cudnnTensorFormat_t tensor_format;
         get_tensor_format<T>(tensor_format);
         cudnnDataType_t type;
         get_tensor_type<T>(type);
 
-        cudnnFilterDescriptor_t *desc = new cudnnFilterDescriptor_t;
-        CHECK_CUDNN_ERROR(cudnnCreateFilterDescriptor(desc));
-        CHECK_CUDNN_ERROR(cudnnSetFilterNdDescriptor(*desc, type, tensor_format, dim.size(), &dim[0]));
-
-        desc_.reset(desc, FilterDescriptorNdDeleter());
+        CHECK_CUDNN_ERROR(cudnnCreateFilterDescriptor(desc_.get()));
+        CHECK_CUDNN_ERROR(cudnnSetFilterNdDescriptor(*desc_, type, tensor_format, dim.size(), &dim[0]));
     }
 
     cudnnFilterDescriptor_t desc() { return *desc_; }

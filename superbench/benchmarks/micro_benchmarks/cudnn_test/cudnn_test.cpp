@@ -31,24 +31,29 @@ int main(int argc, char *argv[]) {
 
     // benchmark each function defined in 'para_info.json'
     for (auto &function_config_json : config) {
-        // convert function params from json to CudnnConfig class
-        auto function_config = function_config_json.get<cudnn_test::CudnnConfig>();
+        try {
+            // convert function params from json to CudnnConfig class
+            auto function_config = function_config_json.get<cudnn_test::CudnnConfig>();
 
-        if (function_config.get_input_type() == CUDNN_DATA_FLOAT &&
-            function_config.get_conv_type() == CUDNN_DATA_FLOAT) {
-            cudnn_test::CudnnFunction<float, float> one_function(&function_config);
-            one_function.benchmark(&options);
+            if (function_config.get_input_type() == CUDNN_DATA_FLOAT &&
+                function_config.get_conv_type() == CUDNN_DATA_FLOAT) {
+                cudnn_test::CudnnFunction<float, float> one_function(&function_config);
+                one_function.benchmark(&options);
+            }
+            if (function_config.get_input_type() == CUDNN_DATA_HALF &&
+                function_config.get_conv_type() == CUDNN_DATA_FLOAT) {
+                cudnn_test::CudnnFunction<half, float> one_function(&function_config);
+                one_function.benchmark(&options);
+            }
+            if (function_config.get_input_type() == CUDNN_DATA_HALF &&
+                function_config.get_conv_type() == CUDNN_DATA_HALF) {
+                cudnn_test::CudnnFunction<half, half> one_function(&function_config);
+                one_function.benchmark(&options);
+            }
+            throw "invalid input function type";
+        } catch Exception(e) {
+            std::cout << "Error: " + e.what() << std::endl;
         }
-        if (function_config.get_input_type() == CUDNN_DATA_HALF &&
-            function_config.get_conv_type() == CUDNN_DATA_FLOAT) {
-            cudnn_test::CudnnFunction<half, float> one_function(&function_config);
-            one_function.benchmark(&options);
-        }
-        if (function_config.get_input_type() == CUDNN_DATA_HALF && function_config.get_conv_type() == CUDNN_DATA_HALF) {
-            cudnn_test::CudnnFunction<half, half> one_function(&function_config);
-            one_function.benchmark(&options);
-        }
-        std::cout << "ERROR: invalid input function type" << std::endl;
     }
 
     return 0;
