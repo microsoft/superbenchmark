@@ -14,7 +14,7 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     if (result != cudaSuccess) {
         const char *msg = cudaGetErrorString(result);
         std::stringstream safe_call_ss;
-        safe_call_ss << "\nerror: " << func << " failed with error"
+        safe_call_ss << func << " failed with error"
                      << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
         // Make sure we call CUDA Device Reset before exiting
         throw std::runtime_error(safe_call_ss.str());
@@ -26,7 +26,7 @@ void check_cublas(cublasStatus_t result, char const *const func, const char *con
     if (result != CUBLAS_STATUS_SUCCESS) {
 
         std::stringstream safe_call_ss;
-        safe_call_ss << "\nerror: " << func << " failed with error"
+        safe_call_ss << func << " failed with error"
                      << "\nfile: " << file << "\nline: " << line << "\nmsg: " << result;
         // Make sure we call CUDA Device Reset before exiting
         throw std::runtime_error(safe_call_ss.str());
@@ -46,10 +46,10 @@ void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, 
 void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a,
                           const void *b, void *c, std::string type, bool use_tensor_core, int batchCount);
 
-void Cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
+void cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
                            const cuComplex *b, cuComplex *c, int batchCount);
 
-void SgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
+void sgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
                          const float *b, float *c, int batchCount);
 
 // Cuda context init

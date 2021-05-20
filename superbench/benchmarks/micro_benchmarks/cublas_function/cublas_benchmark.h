@@ -74,8 +74,7 @@ class CublasFunction {
             this->e_name_ = it->second;
             return e_name_;
         } else {
-            std::cout << "Error: invalid input function name";
-            exit(0);
+            throw "invalid input function name";
         }
     }
 
@@ -85,8 +84,7 @@ class CublasFunction {
 };
 
 template <class T> void CublasFunction::fill_data(T *Parameter_0_0_host, T *Parameter_1_0_host) {
-    std::cout << "Error: invalid type";
-    exit(0);
+    throw "invalid type";
 }
 
 template <> void CublasFunction::fill_data<float>(float *Parameter_0_0_host, float *Parameter_1_0_host) {
@@ -144,7 +142,6 @@ template <class T> int CublasFunction::kernel_entry(T *a, T *b, T *c) {
         gemm<float>(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
                     reinterpret_cast<const float *>(a), reinterpret_cast<const float *>(b),
                     reinterpret_cast<float *>(c));
-
         break;
     case e_cublasCgemm:
         gemm<cuComplex>(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
@@ -161,18 +158,17 @@ template <class T> int CublasFunction::kernel_entry(T *a, T *b, T *c) {
                              this->datatype_, this->use_tensor_core_, this->batch_count_);
         break;
     case e_cublasSgemmStridedBatched:
-        SgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+        sgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
                             reinterpret_cast<const float *>(a), reinterpret_cast<const float *>(b),
                             reinterpret_cast<float *>(c), this->batch_count_);
         break;
     case e_cublasCgemm3mStridedBatched:
-        Cgemm3mStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+        cgemm3mStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
                               reinterpret_cast<const cuComplex *>(a), reinterpret_cast<const cuComplex *>(b),
                               reinterpret_cast<cuComplex *>(c), this->batch_count_);
         break;
     default:
-        std::cout << "Error: invalid enum name";
-        exit(0);
+        throw "invalid enum name";
     }
     return 0;
 }
@@ -198,7 +194,6 @@ template <class T> void CublasFunction::benchmark(Options *options) {
 
     // Prepare some varibles for time measurement
     std::vector<float> iteration_time;
-
     // Benchmark in range of steps
     int repeat_in_one_step = options->num_in_step;
     for (int i_ = 0; i_ < steps; i_++) {
@@ -224,7 +219,7 @@ template <class T> void CublasFunction::benchmark(Options *options) {
     }
     std::cout << std::endl;
 
-    // Free context
+    // Free contexts
     CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
     CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
     CUDA_SAFE_CALL(cudaFree(Result_3_0));
@@ -280,7 +275,6 @@ void from_json(const json &j, CublasFunction &fn) {
         break;
     }
     default:
-        std::cout << "Error: invalid function name";
-        exit(-1);
+        throw "invalid function name";
     }
 }

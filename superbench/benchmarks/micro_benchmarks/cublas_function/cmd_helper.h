@@ -29,8 +29,7 @@ struct Options {
         std::ifstream para_info_fin(para_info_json);
         json config;
         if (!para_info_fin) {
-            std::cout << "Error: open function param file failed." << std::endl;
-            exit(1);
+            throw "Error: open function param file failed.";
         } else {
             para_info_fin >> config;
             para_info_fin.close();
@@ -40,36 +39,36 @@ struct Options {
 };
 
 // Utility for parsing command line arguments
-// Referenced by NVIDIA/cutlass/tools/util/include/cutlass/util/command_line.h
-// https://github.com/NVIDIA/cutlass/blob/master/tools/util/include/cutlass/util/command_line.h
 struct CommandLine {
     char **begin;
     char **end;
 
+    // Construnctor
     CommandLine(int argc, char *argv[]) {
         begin = argv;
         end = argv + argc;
     }
-    char *getCmdOption(const std::string &option) {
+    // Return value str with "option value"
+    char *get_cmd_option(const std::string &option) {
         char **itr = std::find(begin, end, option);
         if (itr != end && ++itr != end) {
             return *itr;
         }
         return 0;
     }
-
+    // Return value with "option value"
     template <typename T> T get_cmd_line_argument(const std::string &option);
 };
 
 template <> int CommandLine::get_cmd_line_argument<int>(const std::string &option) {
-    if (char *value = getCmdOption(option)) {
+    if (char *value = get_cmd_option(option)) {
         return std::stoi(value);
     }
     return 0;
 }
 
 template <> std::string CommandLine::get_cmd_line_argument<std::string>(const std::string &option) {
-    if (char *value = getCmdOption(option)) {
+    if (char *value = get_cmd_option(option)) {
         return std::string(value);
     }
     return "";

@@ -17,7 +17,7 @@
 
 #include "cublas_benchmark.h"
 
-int main(int argc, const char *argv[]) {
+int main(int argc, char *argv[]) {
     // parse arguments from cmd
     CommandLine cmdline(argc, argv);
     Options options;
@@ -31,20 +31,24 @@ int main(int argc, const char *argv[]) {
 
     // benchmark each function defined in 'para_info.json'
     for (auto &function_config : config) {
-        auto one_function = function_config.get<CublasFunction>();
-        switch (one_function.get_e_name()) {
-        case e_cublasSgemm:
-        case e_cublasGemmEx:
-        case e_cublasSgemmStridedBatched:
-        case e_cublasGemmStridedBatchedEx:
-            one_function.benchmark<float>(&options);
-            break;
-        case e_cublasCgemm:
-        case e_cublasCgemm3mStridedBatched:
-            one_function.benchmark<cuComplex>(&options);
-            break;
-        default:
-            std::cout << "Error: invalid enum name";
+        try {
+            auto one_function = function_config.get<CublasFunction>();
+            switch (one_function.get_e_name()) {
+            case e_cublasSgemm:
+            case e_cublasGemmEx:
+            case e_cublasSgemmStridedBatched:
+            case e_cublasGemmStridedBatchedEx:
+                one_function.benchmark<float>(&options);
+                break;
+            case e_cublasCgemm:
+            case e_cublasCgemm3mStridedBatched:
+                one_function.benchmark<cuComplex>(&options);
+                break;
+            default:
+                throw "invalid function name";
+            }
+        } catch (std::exception &e) {
+            std::cout << "Error: " << e.what() << std::endl;
         }
     }
 }

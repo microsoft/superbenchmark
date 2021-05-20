@@ -101,7 +101,7 @@ void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, 
     }
 }
 
-void SgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
+void sgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
                          const float *b, float *c, int batchCount) {
     float alpha = 1.0f;
     float beta = 1.0f;
@@ -110,7 +110,7 @@ void SgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, i
         (transa ? k : m), m * k, b, (transb ? n : k), n * k, &beta, c, m, m * n, batchCount));
 }
 
-void Cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
+void cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
                            const cuComplex *b, cuComplex *c, int batchCount) {
     cuComplex alpha = make_cuComplex(1.0f, 0.0f);
     cuComplex beta = make_cuComplex(0.0f, 0.0f);
