@@ -15,19 +15,16 @@
 //     cublasCgemm
 //     cublasCgemm3mStridedBatched
 
-#include <unistd.h>
-
 #include "cublas_benchmark.h"
 
 int main(int argc, const char *argv[]) {
     // parse arguments from cmd
     CommandLine cmdline(argc, argv);
     Options options;
-    cmdline.get_cmd_line_argument("num_test", options.num_test, 1);
-    cmdline.get_cmd_line_argument("warm_up", options.warm_up, 1);
-    cmdline.get_cmd_line_argument("num_in_step", options.num_in_step, 1000);
-    cmdline.get_cmd_line_argument("config_path", options.para_info_json,
-                                  get_current_dir_name() + std::string("/../para_info.json"));
+    options.num_test = cmdline.get_cmd_line_argument<int>("--num_test");
+    options.warm_up = cmdline.get_cmd_line_argument<int>("--warm_up");
+    options.num_in_step = cmdline.get_cmd_line_argument<int>("--num_in_step");
+    options.para_info_json = cmdline.get_cmd_line_argument<std::string>("--config_path");
 
     // read list of function params from 'para_info.json'
     auto config = options.read_params();

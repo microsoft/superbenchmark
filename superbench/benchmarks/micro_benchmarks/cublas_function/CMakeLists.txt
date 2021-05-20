@@ -40,12 +40,25 @@ find_library(CUDNN_LIBRARY cudnn
 find_library(CUDA_cuda_LIBRARY cuda ${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs)
 find_library(CUDA_cudart_LIBRARY libcudart.so ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 
+include(FetchContent)
+
+FetchContent_Declare(json
+  GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
+  GIT_TAG v3.7.3)
+
+FetchContent_GetProperties(json)
+if(NOT json_POPULATED)
+  FetchContent_Populate(json)
+  add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
 target_link_libraries(${TARGET_NAME}
     ${CUDA_cuda_LIBRARY}
     ${CUDA_cudart_LIBRARY}
+    ${CUDA_curand_LIBRARY}
     ${CUDA_LIBRARIES}
-    ${CUDA_CUBLAS_LIBRARIES}
-    ${CUDNN_LIBRARY})
+    ${CUDA_cudnn_LIBRARIES}
+    ${CUDNN_LIBRARY} nlohmann_json::nlohmann_json)
 
 cuda_add_executable(CublasBenchmark cublas_test.cpp)   
 target_link_libraries(CublasBenchmark ${TARGET_NAME}) 

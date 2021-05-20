@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "thirdparty/json.hpp"
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
@@ -29,7 +29,7 @@ struct Options {
         std::ifstream para_info_fin(para_info_json);
         json config;
         if (!para_info_fin) {
-            std::cout << "Error: Open function param file failed." << std::endl;
+            std::cout << "Error: open function param file failed." << std::endl;
             exit(1);
         } else {
             para_info_fin >> config;
@@ -43,75 +43,34 @@ struct Options {
 // Referenced by NVIDIA/cutlass/tools/util/include/cutlass/util/command_line.h
 // https://github.com/NVIDIA/cutlass/blob/master/tools/util/include/cutlass/util/command_line.h
 struct CommandLine {
-    std::vector<std::string> keys;
-    std::vector<std::string> values;
-    std::vector<std::string> args;
+    char **begin;
+    char **end;
 
-    // Constructor
-    CommandLine(int argc, const char **argv) {
-        using namespace std;
-
-        for (int i = 1; i < argc; i++) {
-            string arg = argv[i];
-
-            if ((arg[0] != '-') || (arg[1] != '-')) {
-                args.push_back(arg);
-                continue;
-            }
-
-            string::size_type pos;
-            string key, val;
-            if ((pos = arg.find('=')) == string::npos) {
-                key = string(arg, 2, arg.length() - 2);
-                val = "";
-            } else {
-                key = string(arg, 2, pos - 2);
-                val = string(arg, pos + 1, arg.length() - 1);
-            }
-
-            keys.push_back(key);
-            values.push_back(val);
+    CommandLine(int argc, char *argv[]) {
+        begin = argv;
+        end = argv + argc;
+    }
+    char *getCmdOption(const std::string &option) {
+        char **itr = std::find(begin, end, option);
+        if (itr != end && ++itr != end) {
+            return *itr;
         }
+        return 0;
     }
 
-    // Checks whether a flag "--<flag>" is present in the commandline
-    bool check_cmd_line_flag(const char *arg_name) const {
-        using namespace std;
-
-        for (int i = 0; i < int(keys.size()); ++i) {
-            if (keys[i] == string(arg_name))
-                return true;
-        }
-        return false;
-    }
-
-    // Obtains the boolean value specified for a given commandline parameter --<flag>=<bool>
-    void get_cmd_line_argument(const char *arg_name, bool &val, bool _default = true) const {
-        val = _default;
-        if (check_cmd_line_flag(arg_name)) {
-            std::string value;
-            get_cmd_line_argument(arg_name, value);
-
-            val = !(value == "0" || value == "false");
-        }
-    }
-
-    // Obtains the value specified for a given commandline parameter --<flag>=<value>
-    template <typename value_t> void get_cmd_line_argument(const char *arg_name, value_t &val) const {
-
-        get_cmd_line_argument(arg_name, val, val);
-    }
-
-    // Obtains the value specified for a given commandline parameter --<flag>=<value>
-    template <typename value_t>
-    void get_cmd_line_argument(const char *arg_name, value_t &val, value_t const &_default) const {
-        using namespace std;
-        val = _default;
-        for (int i = 0; i < int(keys.size()); ++i) {
-            if (keys[i] == string(arg_name)) {
-                istringstream str_stream(values[i]);
-                str_stream >> val;
-            }
-        }
-    }
+    template <typename T> T get_cmd_line_argument(const std::string &option);
 };
+
+template <> int CommandLine::get_cmd_line_argument<int>(const std::string &option) {
+    if (char *value = getCmdOption(option)) {
+        return std::stoi(value);
+    }
+    return 0;
+}
+
+template <> std::string CommandLine::get_cmd_line_argument<std::string>(const std::string &option) {
+    if (char *value = getCmdOption(option)) {
+        return std::string(value);
+    }
+    return "";
+}
