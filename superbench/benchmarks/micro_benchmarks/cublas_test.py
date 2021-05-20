@@ -14,6 +14,7 @@ class CublasFunction(MicroBenchmarkWithInvoke):
     """The CublasFunction overhead benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
+
         Args:
             name (str): benchmark name.
             parameters (str): benchmark parameters.
@@ -56,6 +57,7 @@ class CublasFunction(MicroBenchmarkWithInvoke):
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
+
         Return:
             True if _preprocess() succeed.
         """
@@ -73,10 +75,13 @@ class CublasFunction(MicroBenchmarkWithInvoke):
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to process raw results and save the summarized results.
+
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
             raw_output (str): raw output string of the micro-benchmark.
+
         Return:
             True if the raw output string is valid and result can be extracted.
         """
@@ -96,7 +101,7 @@ class CublasFunction(MicroBenchmarkWithInvoke):
                     raw_data = [float(item) for item in raw_data]
                     self._result.add_result(metric, sum(raw_data) / len(raw_data))
                     self._result.add_raw_data(metric, raw_data)
-                if 'Error' in line: 
+                if 'Error' in line:
                     raise Exception(line)
         except BaseException as e:
             logger.error(

@@ -10,5 +10,6 @@ from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import Kernel
 from superbench.benchmarks.micro_benchmarks.cublas_functions import CublasFunction
 
 __all__ = [
-    'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch', 'CublasFunction'
+    'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
+    'CublasFunction'
 ]
