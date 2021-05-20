@@ -12,6 +12,7 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 class CublasFunction(MicroBenchmarkWithInvoke):
     """The CublasFunction overhead benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -90,6 +91,7 @@ class CublasFunction(MicroBenchmarkWithInvoke):
         try:
             lines = raw_output.split('\n')
             metric = ''
+            error = False
             raw_data = []
             for line in lines:
                 if '[function config]' in line:
@@ -102,11 +104,17 @@ class CublasFunction(MicroBenchmarkWithInvoke):
                     self._result.add_result(metric, sum(raw_data) / len(raw_data))
                     self._result.add_raw_data(metric, raw_data)
                 if 'Error' in line:
-                    raise Exception(line)
+                    error = True
         except BaseException as e:
             logger.error(
-                'Cannot extract results from cublas functions - round: {}, benchmark: {}, raw data: {}, message: {}'.
+                'Cannot extract results from cudnn functions - round: {}, benchmark: {}, raw data: {}, message: {}'.
                 format(self._curr_run_index, self._name, raw_output, str(e))
+            )
+            return False
+        if error:
+            logger.error(
+                'Error in running cudnn test - round: {}, benchmark: {}, raw data: {}'.
+                format(self._curr_run_index, self._name, raw_output)
             )
             return False
         return True
