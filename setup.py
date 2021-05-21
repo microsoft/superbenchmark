@@ -158,6 +158,7 @@ setup(
             'mypy>=0.800',
             'pydocstyle>=5.1.1',
             'pytest-cov>=2.11.1',
+            'pytest-subtests>=0.4.0',
             'pytest>=6.2.2',
             'vcrpy>=4.1.1',
             'yapf>=0.30.0',
