@@ -58,7 +58,7 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
-    def deploy(self):
+    def deploy(self):    # pragma: no cover
         """Deploy SuperBench environment."""
         logger.info('Preparing SuperBench environment.')
         extravars = {
@@ -76,7 +76,7 @@ class SuperBenchRunner():
             )
         self._ansible_client.run(self._ansible_client.get_playbook_config('deploy.yaml', extravars=extravars))
 
-    def check_env(self):
+    def check_env(self):    # pragma: no cover
         """Check SuperBench environment."""
         logger.info('Checking SuperBench environment.')
         OmegaConf.save(config=self._sb_config, f=str(Path(self._output_dir) / 'sb.config.yaml'))

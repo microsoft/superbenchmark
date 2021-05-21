@@ -52,7 +52,7 @@ class AnsibleClient():
                 self._config['cmdline'] += ' --ask-pass --ask-become-pass'
         logger.info(self._config)
 
-    def run(self, ansible_config, sudo=False):
+    def run(self, ansible_config, sudo=False):    # pragma: no cover
         """Run Ansible runner.
 
         Args:
