@@ -13,7 +13,7 @@ steps:
     displayName: Export path
   - script: |
       python3 -m pip install .[test,torch]
-      ansible-galaxy collection install ansible.utils community.crypto
+      make postinstall
     displayName: Install dependencies
   - script: |
       python3 setup.py lint

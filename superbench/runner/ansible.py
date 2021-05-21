@@ -34,7 +34,7 @@ class AnsibleClient():
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file)
                 host_list = inventory.get_groups_dict()['all']
-                if len(host_list) > 128:
+                if len(host_list) > 0:
                     self._config['cmdline'] = '--forks {}'.format(len(host_list))
             username = getattr(config, 'host_username', None)
             if username:
@@ -55,6 +55,10 @@ class AnsibleClient():
     def run(self, ansible_config, sudo=False):
         """Run Ansible runner.
 
+        Args:
+            ansible_config (dict): Ansible config dict.
+            sudo (bool): Run as sudo or not. Defaults to False.
+
         Returns:
             int: Ansible return code.
         """
@@ -69,22 +73,37 @@ class AnsibleClient():
         logger.info(r.stats)
         return r.rc
 
-    def run_shell(self, cmd, sudo=False):
-        """Run shell module in Ansible."""
+    def get_shell_config(self, cmd):
+        """Get ansible config for shell module.
+
+        Args:
+            cmd (str): Shell command for config.
+
+        Returns:
+            dict: Ansible config dict.
+        """
         logger.info('Run {} on remote ...'.format(cmd))
         ansible_config = {
             **self._config,
             'module': 'shell',
             'module_args': cmd,
         }
-        self.run(ansible_config, sudo)
+        return ansible_config
 
-    def run_playbook(self, playbook, extravars=None):
-        """Run playbook in Ansible."""
+    def get_playbook_config(self, playbook, extravars=None):
+        """Get ansible config for playbook.
+
+        Args:
+            playbook (str): Playbook file name.
+            extravars (dict): Extra variables in playbook. Defaults to None.
+
+        Returns:
+            dict: Ansible config dict.
+        """
         logger.info('Run playbook {} ...'.format(playbook))
         ansible_config = {
             **self._config,
             'extravars': extravars,
             'playbook': str(self._playbook_path / playbook),
         }
-        self.run(ansible_config)
+        return ansible_config

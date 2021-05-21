@@ -34,8 +34,8 @@ class SuperBenchRunner():
         logger.info('Runner writes to: %s.', self._output_dir)
 
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
-        self._sb_enabled = self.__get_enabled_benchmarks()
-        logger.info('Runner will run: %s', self._sb_enabled)
+        self._sb_enabled_benchmarks = self.__get_enabled_benchmarks()
+        logger.info('Runner will run: %s', self._sb_enabled_benchmarks)
 
     def __set_logger(self, filename):
         """Set logger and add file handler.
@@ -74,13 +74,15 @@ class SuperBenchRunner():
                     'docker_password': self._docker_config.password,
                 }
             )
-        self._ansible_client.run_playbook('deploy.yaml', extravars=extravars)
+        self._ansible_client.run(self._ansible_client.get_playbook_config('deploy.yaml', extravars=extravars))
 
     def check_env(self):
         """Check SuperBench environment."""
         logger.info('Checking SuperBench environment.')
         OmegaConf.save(config=self._sb_config, f=str(Path(self._output_dir) / 'sb.config.yaml'))
-        self._ansible_client.run_playbook('check_env.yaml', extravars={'output_dir': self._output_dir})
+        self._ansible_client.run(
+            self._ansible_client.get_playbook_config('check_env.yaml', extravars={'output_dir': self._output_dir})
+        )
 
     def run(self):
         """Run the SuperBench benchmarks distributedly.

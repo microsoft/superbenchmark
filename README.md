@@ -104,7 +104,7 @@ __Install SuperBench__
 
     # install superbench
     python3 -m pip install .
-    ansible-galaxy collection install ansible.utils community.crypto
+    make postinstall
     ```
 
 
