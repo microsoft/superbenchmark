@@ -13,7 +13,11 @@ container:
 
 steps:
   - script: |
+      echo "##vso[task.prependpath]$HOME/.local/bin"
+    displayName: Export path
+  - script: |
       python3 -m pip install .[test,torch]
+      make postinstall
     displayName: Install dependencies
   - script: |
       SB_MICRO_PATH=$PWD/bin make cppbuild
