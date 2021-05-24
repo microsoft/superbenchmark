@@ -115,7 +115,8 @@ class PytorchBase(ModelBenchmark):
             shuffle=False,
             num_workers=8,
             sampler=train_sampler,
-            drop_last=True
+            drop_last=True,
+            pin_memory=self._args.pin_memory
         )
 
         return True

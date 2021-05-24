@@ -104,6 +104,7 @@ __Install SuperBench__
 
     # install superbench
     python3 -m pip install .
+    make postinstall
     ```
 
 
