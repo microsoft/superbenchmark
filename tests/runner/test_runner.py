@@ -32,6 +32,20 @@ class RunnerTestCase(unittest.TestCase):
         expected_log_file = Path(self.runner._output_dir) / 'sb-run.log'
         self.assertTrue(expected_log_file.is_file())
 
+    def test_get_mode_command(self):
+        """Test __get_mode_command."""
+        self.assertEqual(self.runner._SuperBenchRunner__get_mode_command('non_exist', 'sb exec'), 'sb exec')
+        self.assertEqual(
+            self.runner._SuperBenchRunner__get_mode_command('torch.distributed', 'sb exec'), (
+                'python3 -m torch.distributed.launch '
+                '--use_env --no_python --nproc_per_node=8 '
+                '--nnodes=$NNODES --node_rank=$NODE_RANK '
+                '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+                'sb exec'
+            )
+        )
+
     def test_run(self):
         """Test run."""
+        self.runner._sb_enabled_benchmarks = []
         self.runner.run()
