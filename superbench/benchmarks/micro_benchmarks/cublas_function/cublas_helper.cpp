@@ -1,7 +1,32 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
+/**
+ * @copyright Copyright (c) Microsoft Corporation
+ * @file cublas_helper.cpp
+ * @brief  Cpp file for some functions related to cublas
+ */
 
 #include "cublas_benchmark.h"
+
+void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
+    if (result != cudaSuccess) {
+        const char *msg = cudaGetErrorString(result);
+        std::stringstream safe_call_ss;
+        safe_call_ss << func << " failed with error"
+                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
+        // Make sure we call CUDA Device Reset before exiting
+        throw std::runtime_error(safe_call_ss.str());
+    }
+}
+
+void check_cublas(cublasStatus_t result, char const *const func, const char *const file, int const line) {
+    if (result != CUBLAS_STATUS_SUCCESS) {
+
+        std::stringstream safe_call_ss;
+        safe_call_ss << func << " failed with error"
+                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << result;
+        // Make sure we call CUDA Device Reset before exiting
+        throw std::runtime_error(safe_call_ss.str());
+    }
+}
 
 // Cuda context init
 void cuda_init() {
@@ -13,43 +38,23 @@ void cuda_init() {
 
 // Cuda context free
 void cuda_free() {
-    CUDA_SAFE_CALL(cudaSetDevice(0));
     CUBLAS_SAFE_CALL(cublasDestroy(cublas_handle));
+    CUDA_SAFE_CALL(cudaSetDevice(0));
 }
 
-template <>
-void gemm<float>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a, const float *b,
-                 float *c) {
+void sgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a, const float *b,
+           float *c) {
     float alpha = 1.0f;
     float beta = 1.0f;
     CUBLAS_SAFE_CALL(cublasSgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
                                  n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
 }
 
-template <>
-void gemm<double>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const double *a, const double *b,
-                  double *c) {
-    double alpha = 1.0;
-    double beta = 1.0;
-    CUBLAS_SAFE_CALL(cublasDgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
-                                 n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
-}
-
-template <>
-void gemm<cuComplex>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
-                     const cuComplex *b, cuComplex *c) {
+void cgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a, const cuComplex *b,
+           cuComplex *c) {
     cuComplex alpha = make_cuComplex(1.0f, 0.0f);
     cuComplex beta = make_cuComplex(0.0f, 0.0f);
     CUBLAS_SAFE_CALL(cublasCgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
-                                 n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
-}
-
-template <>
-void gemm<cuDoubleComplex>(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuDoubleComplex *a,
-                           const cuDoubleComplex *b, cuDoubleComplex *c) {
-    cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
-    cuDoubleComplex beta = make_cuDoubleComplex(1.0, 0.0);
-    CUBLAS_SAFE_CALL(cublasZgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
                                  n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
 }
 

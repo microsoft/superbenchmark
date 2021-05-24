@@ -6,7 +6,7 @@ project(CublasBenchmark)
 
 include(../cuda_common.cmake)
 
-SET(SRC "cublas_benchmark.cu" CACHE STRING "source file")
+SET(SRC "cublas_helper.cpp" CACHE STRING "source file")
 SET(TARGET_NAME "cublas_function" CACHE STRING "target name")
 
 if(NOT CMAKE_BUILD_TYPE)

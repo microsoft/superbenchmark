@@ -139,14 +139,13 @@ void CublasFunction::prepare_tensor(T **Parameter_0_0, T **Parameter_1_0, T **Re
 template <class T> int CublasFunction::kernel_entry(T *a, T *b, T *c) {
     switch (this->e_name_) {
     case e_cublasSgemm:
-        gemm<float>(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                    reinterpret_cast<const float *>(a), reinterpret_cast<const float *>(b),
-                    reinterpret_cast<float *>(c));
+        sgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+              reinterpret_cast<const float *>(a), reinterpret_cast<const float *>(b), reinterpret_cast<float *>(c));
         break;
     case e_cublasCgemm:
-        gemm<cuComplex>(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                        reinterpret_cast<const cuComplex *>(a), reinterpret_cast<const cuComplex *>(b),
-                        reinterpret_cast<cuComplex *>(c));
+        cgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+              reinterpret_cast<const cuComplex *>(a), reinterpret_cast<const cuComplex *>(b),
+              reinterpret_cast<cuComplex *>(c));
         break;
     case e_cublasGemmEx:
         gemmEx(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_, reinterpret_cast<void *>(a),
