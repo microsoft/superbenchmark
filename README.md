@@ -4,6 +4,11 @@
 [![Lint](https://github.com/microsoft/superbenchmark/workflows/Lint/badge.svg)](https://github.com/microsoft/superbenchmark/actions?query=workflow%3ALint)
 [![Codecov](https://codecov.io/gh/microsoft/superbenchmark/branch/main/graph/badge.svg?token=DDiDLW7pSd)](https://codecov.io/gh/microsoft/superbenchmark)
 
+| Azure Pipelines | Build Status |
+| :---: | :---: |
+| cpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/microsoft.superbenchmark?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=77&branchName=main) |
+| gpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main) |
+
 
 **SuperBench** is a validation and profiling tool for AI infrastructure, which supports:
 
@@ -40,9 +45,11 @@ Benchmarking metrics provided by SuperBench are listed as below.
       </td>
       <td>
         <b>Micro Benchmark</b>
+        <img src="imgs/bar.png"/>
       </td>
       <td>
         <b>Model Benchmark</b>
+        <img src="imgs/bar.png"/>
       </td>
     </tr>
     <tr valign="top">
@@ -82,12 +89,14 @@ Benchmarking metrics provided by SuperBench are listed as below.
           </ul>
           <ul><li><b>NCCL</b></li>
             <ul><li>NCCL_AllReduce</li></ul>
+            <ul><li>NCCL_AllGather</li></ul>
+            <ul><li>NCCL_broadcast</li></ul>
+            <ul><li>NCCL_reduce</li></ul>
+            <ul><li>NCCL_reduce_scatter</li></ul>
           </ul>
         </ul>
         <ul><li><b>Computation-Communication Benchmark</b></li>
-          <ul><li><b>Mul_During_NCCL</b></li>
-            <ul><li>MatMul_During_NCCL</li><li>RDMA_Avg</li></ul>
-          </ul>
+          <ul><li><b>Mul_During_NCCL</b></li><li><b>MatMul_During_NCCL</b></li></ul>
         </ul>
         <ul><li><b>Storage Benchmark</b></li>
           <ul><li><b>Disk</b></li>
@@ -112,6 +121,7 @@ Benchmarking metrics provided by SuperBench are listed as below.
             <li><b>VGG</b></li>
               <ul><li>VGG-11</li><li>VGG-13</li><li>VGG-16</li><li>VGG-19</li></ul>
           </ul>
+          <ul><li><b>Other CNN models</b></li><ul><li>...</li></ul></ul>
         </ul>  
         <ul><li><b>BERT models</b></li>
           <ul><li><b>BERT</b></li><li><b>BERT_LARGE</b></li></ul>
@@ -260,14 +270,6 @@ pre-commit install
 ```
 
 Open a pull request to main branch on GitHub.
-
-
-## Build Status
-
-| Azure Pipelines | Build Status |
-| :---: | :---: |
-| cpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/microsoft.superbenchmark?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=77&branchName=main) |
-| gpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main) |
 
 
 ## Contributing
