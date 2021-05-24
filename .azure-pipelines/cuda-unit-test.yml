@@ -13,13 +13,20 @@ container:
 
 steps:
   - script: |
+      echo "##vso[task.prependpath]$HOME/.local/bin"
+    displayName: Export path
+  - script: |
       python3 -m pip install .[test,torch]
+      make postinstall
     displayName: Install dependencies
+  - script: |
+      SB_MICRO_PATH=$PWD/bin make cppbuild
+    displayName: Build benchmarks
   - script: |
       python3 setup.py lint
     displayName: Run code lint
   - script: |
-      python3 setup.py test
+      SB_MICRO_PATH=$PWD/bin python3 setup.py test
     displayName: Run unit tests
     timeoutInMinutes: 10
   - script: |

@@ -25,7 +25,7 @@ class ExecutorTestCase(unittest.TestCase):
         self.default_config = OmegaConf.load(str(default_config_file))
         self.output_dir = tempfile.mkdtemp()
 
-        self.executor = SuperBenchExecutor(self.default_config, None, self.output_dir)
+        self.executor = SuperBenchExecutor(self.default_config, self.output_dir)
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""

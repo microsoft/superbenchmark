@@ -1,0 +1,41 @@
+- name: Runtime Environment Check
+  hosts: all
+  gather_facts: false
+  max_fail_percentage: 0
+  vars:
+    container: sb-workspace
+  tasks:
+    - name: Checking container status
+      shell: docker inspect --format={{ '{{.State.Running}}' }} {{ container }}
+      register: result
+      ignore_errors: true
+      become: yes
+    - fail:
+        msg: Container {{ container }} is not running.
+      when: result is failed or result.stdout != "true"
+
+- name: Runtime Environment Update
+  hosts: all
+  gather_facts: true
+  vars:
+    workspace: '{{ ansible_user_dir }}/sb-workspace'
+    container: sb-workspace
+    sb_nodes: '{{ hostvars.values() | map(attribute="ansible_hostname") | sort }}'
+    sb_env: |
+      NNODES={{ sb_nodes | length }}
+      NODE_RANK={{ lookup('ansible.utils.index_of', sb_nodes, 'eq', ansible_hostname) }}
+      MASTER_ADDR={{ sb_nodes | first }}
+      MASTER_PORT=29500
+  tasks:
+    - name: Updating Config
+      copy:
+        src: '{{ output_dir }}/sb.config.yaml'
+        dest: '{{ workspace }}/sb.config.yaml'
+        mode: 0644
+      become: yes
+    - name: Updating Env Variables
+      copy:
+        content: '{{ sb_env }}'
+        dest: '{{ workspace }}/sb.env'
+        mode: 0644
+      become: yes

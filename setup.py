@@ -133,6 +133,8 @@ setup(
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
     install_requires=[
+        'ansible_base>=2.10.9;os_name=="posix"',
+        'ansible_runner>=1.4.7',
         'colorlog>=4.7.2',
         'knack>=0.7.2',
         'omegaconf>=2.0.6',
@@ -146,6 +148,7 @@ setup(
             'mypy>=0.800',
             'pydocstyle>=5.1.1',
             'pytest-cov>=2.11.1',
+            'pytest-subtests>=0.4.0',
             'pytest>=6.2.2',
             'vcrpy>=4.1.1',
             'yapf>=0.30.0',
