@@ -160,6 +160,7 @@ def test_arguments_related_interfaces():
   --distributed_backend DistributedBackend
                         Distributed backends. E.g. nccl mpi gloo.
   --no_gpu              Disable GPU training.
+  --pin_memory          Enable option to pin memory in data loader.
   --hidden_size int     Hidden size.
   --seq_len int         Sequence length."""
     )
@@ -192,6 +193,7 @@ def test_preprocess():
   --distributed_backend DistributedBackend
                         Distributed backends. E.g. nccl mpi gloo.
   --no_gpu              Disable GPU training.
+  --pin_memory          Enable option to pin memory in data loader.
   --hidden_size int     Hidden size.
   --seq_len int         Sequence length."""
     )

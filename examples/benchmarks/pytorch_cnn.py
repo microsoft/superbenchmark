@@ -24,7 +24,9 @@ if __name__ == '__main__':
     # Specify the model name and benchmark parameters.
     # For example, resnet50, resnet101, resnet152, densenet169, densenet201, vgg11, vgg13, vgg16, vgg19.
     model_name = 'resnet101'
-    parameters = '--batch_size 32 --precision float32 float16 --num_warmup 64 --num_steps 2048 --sample_count 8192'
+    parameters = '--batch_size 192 --precision float32 float16 --num_warmup 64 --num_steps 512 \
+        --sample_count 8192 --pin_memory'
+
     if args.distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'
 

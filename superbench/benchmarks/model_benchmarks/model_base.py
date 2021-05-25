@@ -131,6 +131,13 @@ class ModelBenchmark(Benchmark):
             help='Disable GPU training.',
         )
 
+        self._parser.add_argument(
+            '--pin_memory',
+            action='store_true',
+            default=False,
+            help='Enable option to pin memory in data loader.',
+        )
+
     @abstractmethod
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
