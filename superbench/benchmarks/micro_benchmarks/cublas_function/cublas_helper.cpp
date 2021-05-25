@@ -6,6 +6,9 @@
 
 #include "cublas_benchmark.h"
 
+/**
+ * @brief check cuda function running status and throw error str
+ */
 void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
     if (result != cudaSuccess) {
         const char *msg = cudaGetErrorString(result);
@@ -17,6 +20,9 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     }
 }
 
+/**
+ * @brief check cublas function running status and throw error str
+ */
 void check_cublas(cublasStatus_t result, char const *const func, const char *const file, int const line) {
     if (result != CUBLAS_STATUS_SUCCESS) {
 
@@ -28,20 +34,36 @@ void check_cublas(cublasStatus_t result, char const *const func, const char *con
     }
 }
 
-// Cuda context init
-void cuda_init() {
+/**
+ * @brief Cuda context init
+ */
+void cuda_init(cublasHandle_t *cublas_handle) {
     CUDA_SAFE_CALL(cudaDeviceReset());
     CUDA_SAFE_CALL(cudaSetDevice(0));
     // create streams/handles
-    CUBLAS_SAFE_CALL(cublasCreate(&cublas_handle));
+    CUBLAS_SAFE_CALL(cublasCreate(cublas_handle));
 }
 
-// Cuda context free
-void cuda_free() {
-    CUBLAS_SAFE_CALL(cublasDestroy(cublas_handle));
+/**
+ * @brief Cuda context free
+ */
+void cuda_free(cublasHandle_t *cublas_handle) {
+    CUBLAS_SAFE_CALL(cublasDestroy(*cublas_handle));
     CUDA_SAFE_CALL(cudaSetDevice(0));
 }
 
+/**
+ * @brief                   cublas function of gemm, wrapper of cublasSgemm
+ * @param  handle           cublas handle
+ * @param  transa           whether matrixA transpose
+ * @param  transb           whether matrixB transpose
+ * @param  m                m of matrix m*n,n*k
+ * @param  n                n of matrix m*n,n*k
+ * @param  k                k of matrix m*n,n*k
+ * @param  a                input matrixA
+ * @param  b                input matrixB
+ * @param  c                output matrix
+ */
 void sgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a, const float *b,
            float *c) {
     float alpha = 1.0f;
@@ -50,6 +72,18 @@ void sgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, c
                                  n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
 }
 
+/**
+ * @brief                   cublas function of gemm, wrapper of cublasCgemm
+ * @param  handle           cublas handle
+ * @param  transa           whether matrixA transpose
+ * @param  transb           whether matrixB transpose
+ * @param  m                m of matrix m*n,n*k
+ * @param  n                n of matrix m*n,n*k
+ * @param  k                k of matrix m*n,n*k
+ * @param  a                input matrixA
+ * @param  b                input matrixB
+ * @param  c                output matrix
+ */
 void cgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a, const cuComplex *b,
            cuComplex *c) {
     cuComplex alpha = make_cuComplex(1.0f, 0.0f);
@@ -58,6 +92,20 @@ void cgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, c
                                  n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
 }
 
+/**
+ * @brief                   cublas function of GemmEx, wrapper of cublasGemmEx
+ * @param  handle           cublas handle
+ * @param  transa           whether matrixA transpose
+ * @param  transb           whether matrixB transpose
+ * @param  m                m of matrix m*n,n*k
+ * @param  n                n of matrix m*n,n*k
+ * @param  k                k of matrix m*n,n*k
+ * @param  a                input matrixA
+ * @param  b                input matrixB
+ * @param  c                output matrix
+ * @param  type             matrix type, 'float' or 'half'
+ * @param  use_tensor_core  whether use tensor core
+ */
 void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a, const void *b, void *c,
             std::string type, bool use_tensor_core) {
     float alpha = 1.0f;
@@ -82,6 +130,21 @@ void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, 
     }
 }
 
+/**
+ * @brief                   cublas function of gemmStridedBatchedEx, wrapper of cublasGemmStridedBatchedEx
+ * @param  handle           cublas handle
+ * @param  transa           whether matrixA transpose
+ * @param  transb           whether matrixB transpose
+ * @param  m                m of matrix m*n,n*k
+ * @param  n                n of matrix m*n,n*k
+ * @param  k                k of matrix m*n,n*k
+ * @param  a                input matrixA
+ * @param  b                input matrixB
+ * @param  c                output matrix
+ * @param  type             matrix type, 'float' or 'half'
+ * @param  use_tensor_core  whether use tensor core
+ * @param  batchCount       My Param doc
+ */
 void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a,
                           const void *b, void *c, std::string type, bool use_tensor_core, int batchCount) {
     float alpha = 1.0f;
@@ -106,6 +169,19 @@ void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, 
     }
 }
 
+/**
+ * @brief                   cublas function of gemmStridedBatchedEx, wrapper of cublasGemmStridedBatchedEx
+ * @param  handle           cublas handle
+ * @param  transa           whether matrixA transpose
+ * @param  transb           whether matrixB transpose
+ * @param  m                m of matrix m*n,n*k
+ * @param  n                n of matrix m*n,n*k
+ * @param  k                k of matrix m*n,n*k
+ * @param  a                input matrixA
+ * @param  b                input matrixB
+ * @param  c                output matrix
+ * @param  batchCount       the count of batch used to compute
+ */
 void sgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
                          const float *b, float *c, int batchCount) {
     float alpha = 1.0f;
@@ -115,6 +191,20 @@ void sgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, i
         (transa ? k : m), m * k, b, (transb ? n : k), n * k, &beta, c, m, m * n, batchCount));
 }
 
+/**
+ * @brief
+ * @brief                   cublas function of sgemmStridedBatched, wrapper of cublasSgemmStridedBatched
+ * @param  handle           cublas handle
+ * @param  transa           whether matrixA transpose
+ * @param  transb           whether matrixB transpose
+ * @param  m                m of matrix m*n,n*k
+ * @param  n                n of matrix m*n,n*k
+ * @param  k                k of matrix m*n,n*k
+ * @param  a                input matrixA
+ * @param  b                input matrixB
+ * @param  c                output matrix
+ * @param  batchCount       the count of batch used to compute
+ */
 void cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
                            const cuComplex *b, cuComplex *c, int batchCount) {
     cuComplex alpha = make_cuComplex(1.0f, 0.0f);
