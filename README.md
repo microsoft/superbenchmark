@@ -18,7 +18,6 @@
     * Build a contract to identify hardware issues
     * Provide infrastructural-oriented criteria as Performance/Quality Gates for hardware and system release
     * Provide detailed performance report and advanced analysis tool  
-  
 * AI workload benchmarking and profiling
     * Provide comprehensive performance comparison between different existing hardware
     * Provide insights for hardware and software co-design
