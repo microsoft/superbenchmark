@@ -52,35 +52,6 @@ class CublasFunction {
     std::string to_str_;
     cublasHandle_t cublas_handle;
 
-  public:
-    void set_num_test(int num_test) { this->num_test = num_test; }
-    void set_warm_up(int warm_up) { this->warm_up = warm_up; }
-    void set_num_in_step(int num_in_step) { this->num_in_step = num_in_step; }
-    void set_str(std::string &str) { this->to_str_ = str; }
-    void set_name(std::string &name) { this->name_ = name; }
-    void set_m(int m) { this->m_ = m; }
-    void set_n(int n) { this->n_ = n; }
-    void set_k(int k) { this->k_ = k; }
-    void set_transa(int transa) { this->transa_ = transa; }
-    void set_transb(int transb) { this->transb_ = transb; }
-    void set_datatype(std::string datatype) { this->datatype_ = datatype; }
-    void set_use_tensor_core(bool use_tensor_core) { this->use_tensor_core_ = use_tensor_core; }
-    void set_batch_count(int batch_count) { this->batch_count_ = batch_count; }
-    cublas_function_name_enum get_e_name() { return e_name_; }
-    std::string get_name() { return this->name_; }
-    /**
-     * @brief   Convert function name to enum type
-     * @return cublas_function_name_enum
-     */
-    cublas_function_name_enum name2enum() {
-        auto it = cublas_function_name_string.find(this->name_);
-        if (it != cublas_function_name_string.end()) {
-            this->e_name_ = it->second;
-            return e_name_;
-        } else {
-            throw "invalid input function name";
-        }
-    }
     /**
      * @brief Fill the random data into the input in float type
      */
@@ -109,7 +80,107 @@ class CublasFunction {
      * @brief The main procedure for cublas function test, including cuda init, warmup, function test, time measurement
      * and cuda free
      */
+  public:
+    /**
+     * @brief Set the num test member
+     * @param  num_test     the number of steps used to test and measure
+     */
+    void set_num_test(int num_test) { this->num_test = num_test; }
+    /**
+     * @brief Set the warm up member
+     * @param  warm_up     the number of steps used to warm up
+     */
+    void set_warm_up(int warm_up) { this->warm_up = warm_up; }
+    /**
+     * @brief Set the num in step member
+     * @param  num_in_step      the number of function invoking in a step
+     */
+    void set_num_in_step(int num_in_step) { this->num_in_step = num_in_step; }
+    /**
+     * @brief Set the params string
+     * @param  str             the str representing the params of the function
+     */
+    void set_str(std::string &str) { this->to_str_ = str; }
+    /**
+     * @brief Set the name member
+     * @param  name             the name of the cublas function
+     */
+    void set_name(std::string &name) { this->name_ = name; }
+    /**
+     * @brief Set the m
+     * @param  m                the m dim of matrix
+     */
+    void set_m(int m) { this->m_ = m; }
+    /**
+     * @brief Set the n
+     * @param  n                the n dim of matrix
+     */
+    void set_n(int n) { this->n_ = n; }
+    /**
+     * @brief Set the k
+     * @param  k                the k dim of matrix
+     */
+    void set_k(int k) { this->k_ = k; }
+    /**
+     * @brief Set the transa
+     * @param  transa           whether the first matrix transpose
+     */
+    void set_transa(int transa) { this->transa_ = transa; }
+    /**
+     * @brief Set the transb
+     * @param  transb           whether the second matrix transpose
+     */
+    void set_transb(int transb) { this->transb_ = transb; }
+    /**
+     * @brief Set the datatype
+     * @param  datatype         data type used in cublasGemmEx and cublasGemmStridedBatchedEx
+     */
+    void set_datatype(std::string datatype) { this->datatype_ = datatype; }
+    /**
+     * @brief Set the use_tensor_core
+     * @param  use_tensor_core  choose the algo used in cublasGemmEx and cublasGemmStridedBatchedEx
+     */
+    void set_use_tensor_core(bool use_tensor_core) { this->use_tensor_core_ = use_tensor_core; }
+    /**
+     * @brief Set the batch count
+     * @param  batch_count      the num of the batch
+     */
+    void set_batch_count(int batch_count) { this->batch_count_ = batch_count; }
+    /**
+     * @brief Get the e name
+     * @return cublas_function_name_enum
+     */
+    cublas_function_name_enum get_e_name() { return e_name_; }
+    /**
+     * @brief Get the name object
+     * @return std::string name of the function
+     */
+    std::string get_name() { return this->name_; }
+    /**
+     * @brief   Convert function name to enum type
+     * @return cublas_function_name_enum
+     */
+    cublas_function_name_enum name2enum() {
+        auto it = cublas_function_name_string.find(this->name_);
+        if (it != cublas_function_name_string.end()) {
+            this->e_name_ = it->second;
+            return e_name_;
+        } else {
+            throw "invalid input function name";
+        }
+    }
+    /**
+     * @brief The main procedure for cublas function test, including cuda init, warmup, function test, time measurement
+     * and cuda free
+     */
     void benchmark();
+    /**
+     * @brief Construct a new Cublas Function object
+     */
+    CublasFunction() {
+        // Init cuda handle and set device
+        cuda_init(&cublas_handle);
+    }
     /**
      * @brief Destroy the Cublas Function object
      */
@@ -214,9 +285,6 @@ void CublasFunction::prepare_tensor_cucomplex(cuComplex **Parameter_0_0, cuCompl
  * and cuda free
  */
 void CublasFunction::benchmark() {
-    // Init cuda handle and set device
-    cuda_init(&cublas_handle);
-
     // Malloc memory for input and output data
     this->prepare_tensor();
 
@@ -252,6 +320,4 @@ void CublasFunction::benchmark() {
         std::cout << iteration_time[i] << ",";
     }
     std::cout << std::endl;
-
-    cuda_free(&cublas_handle);
 }

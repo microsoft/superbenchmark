@@ -46,6 +46,7 @@ class SgemmFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        cuda_free(&cublas_handle);
     }
 };
 
@@ -86,6 +87,7 @@ class CgemmFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        cuda_free(&cublas_handle);
     }
 };
 
@@ -124,6 +126,7 @@ class GemmExFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        cuda_free(&cublas_handle);
     }
 };
 
@@ -163,6 +166,7 @@ class GemmStridedBatchedExFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        cuda_free(&cublas_handle);
     }
 };
 
@@ -202,6 +206,7 @@ class SgemmStridedBatchedFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        cuda_free(&cublas_handle);
     }
 };
 
@@ -243,5 +248,6 @@ class Cgemm3mStridedBatchedFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        cuda_free(&cublas_handle);
     }
 };
