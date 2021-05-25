@@ -64,7 +64,9 @@
       shell: |
         docker rm --force {{ container }} ||: && \
         docker run -itd --name={{ container }} \
-          --privileged --net=host --ipc=host --gpus=all \
+          --privileged --net=host --ipc=host \
+          {{ '--gpus=all' if gpu_vendor == 'nvidia' }} \
+          {{ '--security-opt seccomp=unconfined --group-add video' if gpu_vendor == 'amd' }} \
           -w /root -v {{ workspace }}:/root -v /mnt:/mnt \
           {{ docker_image }} bash && \
         docker exec {{ container }} bash -c \
