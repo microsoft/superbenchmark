@@ -7,6 +7,9 @@
 
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include <cuda.h>
 #include <cuda_fp16.h>
@@ -17,11 +20,9 @@
 
 namespace cudnn_test {
 
-cudnnHandle_t cudnn_handle_0 = NULL;
-
 // Run cudnn function and check if succeed
 void throw_cudnn_err(cudnnStatus_t result, const char *func, const char *file, int const line) {
-    if (status != CUDNN_STATUS_SUCCESS) {
+    if (result != CUDNN_STATUS_SUCCESS) {
         const char *msg = cudnnGetErrorString(result);
         std::stringstream safe_call_ss;
         safe_call_ss << func << " failed with error"
@@ -44,10 +45,15 @@ void check_cuda(cudaError_t result, const char *func, const char *file, int cons
 }
 #define CUDA_SAFE_CALL(x) check_cuda((x), #x, __FILE__, __LINE__)
 
-// Init cuda context
-void cuda_init();
-// Free cuda context
-void cuda_free();
+/**
+ * @brief Cuda context init
+ */
+void cuda_init(cudnnHandle_t *cudnn_handle);
+
+/**
+ * @brief Cuda context free
+ */
+void cuda_free(cudnnHandle_t *cudnn_handle);
 // Malloc cuda memory and fill in rand value
 template <typename T> void rand(T **input, std::vector<int> dims_, curandGenerator_t curand_gen);
 // Malloc cuda memory and fill in zero

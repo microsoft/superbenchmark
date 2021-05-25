@@ -6,7 +6,7 @@ project(cudnnBenchmark)
 
 include(../cuda_common.cmake)
 
-SET(SRC "cudnn_benchmark.cu" CACHE STRING "source file")
+SET(SRC "cudnn_helper.cpp" CACHE STRING "source file")
 SET(TARGET_NAME "cudnn_function" CACHE STRING "target name")
 
 if(NOT CMAKE_BUILD_TYPE)
