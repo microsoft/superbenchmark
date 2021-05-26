@@ -66,20 +66,29 @@ class Options {
     int num_test;
     int warm_up;
     int num_in_step;
+    int random_seed;
     std::string para_info_json;
 
     /**
-     * @brief Construct a new Command Line object
+     * @brief Construct a options object according to cmd or set a default value used to test
      * @param  argc
      * @param  argv
      */
     Options(int argc, char *argv[]) {
         begin = argv;
         end = argv + argc;
+        // TODO DEFUATL VALUE
         num_test = get_cmd_line_argument_int("--num_test");
+        num_test = (num_test == 0 ? 1 : num_test);
         warm_up = get_cmd_line_argument_int("--warm_up");
+        warm_up = (warm_up == 0 ? 1 : warm_up);
         num_in_step = get_cmd_line_argument_int("--num_in_step");
-        para_info_json = get_cmd_line_argument_string("--config_path");
+        num_in_step = (num_in_step == 0 ? 100 : num_in_step);
+        random_seed = get_cmd_line_argument_int("--random_seed");
+        random_seed = (random_seed == 0 ? time(NULL) : random_seed);
+        para_info_json = get_cmd_line_argument_string("--config_json");
+        para_info_json = para_info_json == "" ? R"({"name":"cublasCgemm","m":512,"n":512,"k":32,"transa":1,"transb":0})"
+                                              : para_info_json;
     }
 };
 
@@ -108,7 +117,7 @@ class Options {
  *| cublasCgemm3mStridedBatched | required | required | required | required | required | required   | no       | no |
  *+-----------------------------+----------+----------+----------+----------+----------+------------+----------+-----------------+
  *
- * @param  j    json including the params of a cublas function read from 'config_path'
+ * @param  j    json including the params of a cublas function read from 'config_json'
  * @param  fn   a CublasFunction object
  */
 void from_json(const json &j, CublasFunction &fn) {
@@ -180,26 +189,17 @@ CublasFunction *get_cublas_function_pointer(CublasFunction &function) {
  * @param  options  the cmd arguments of the application
  */
 void run_benchmark(Options &options) {
-
-    std::ifstream para_info_fin(options.para_info_json);
-    json config;
-    if (!para_info_fin) {
-        throw "Error: open function param file failed.";
-    } else {
-        para_info_fin >> config;
-        para_info_fin.close();
-    }
-    for (json &function_config : config) {
-        try {
-            CublasFunction function = function_config.get<CublasFunction>();
-            function.set_num_test(options.num_test);
-            function.set_warm_up(options.warm_up);
-            function.set_num_in_step(options.num_in_step);
-            CublasFunction *p_function = get_cublas_function_pointer(function);
-            p_function->benchmark();
-            delete p_function;
-        } catch (std::exception &e) {
-            std::cout << "Error: " << e.what() << std::endl;
-        }
+    try {
+        json function_config = json::parse(options.para_info_json);
+        CublasFunction function = function_config.get<CublasFunction>();
+        function.set_num_test(options.num_test);
+        function.set_warm_up(options.warm_up);
+        function.set_num_in_step(options.num_in_step);
+        function.set_random_seed(options.random_seed);
+        CublasFunction *p_function = get_cublas_function_pointer(function);
+        p_function->benchmark();
+        delete p_function;
+    } catch (std::exception &e) {
+        std::cout << "Error: " << e.what() << std::endl;
     }
 }

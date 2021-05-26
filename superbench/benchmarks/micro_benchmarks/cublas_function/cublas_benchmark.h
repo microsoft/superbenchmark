@@ -9,6 +9,7 @@
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
+#include <stdlib.h>
 #include <time.h>
 #include <unordered_map>
 #include <vector>
@@ -47,6 +48,7 @@ class CublasFunction {
     int num_test;                      ///< the number of steps used to test and measure
     int warm_up;                       ///< the number of steps used to warm up
     int num_in_step;                   ///< the number of functions invoking in a step
+    int random_seed;                   ///< the number of functions invoking in a step
     std::string name_;                 ///< the name of the cublas function
     int m_;                            ///< the m dim of matrix
     int k_;                            ///< the k dim of matrix
@@ -104,6 +106,11 @@ class CublasFunction {
      * @param  num_in_step      the number of function invoking in a step
      */
     void set_num_in_step(int num_in_step) { this->num_in_step = num_in_step; }
+    /**
+     * @brief Set the random seed
+     * @param  random_seed      random seed
+     */
+    void set_random_seed(int random_seed) { this->random_seed = random_seed; }
     /**
      * @brief Set the params string
      * @param  str             the str representing the params of the function
@@ -199,6 +206,7 @@ class CublasFunction {
  * @brief Fill the random data into the input in cuComplex type
  */
 void CublasFunction::fill_data_float(float *Parameter_0_0_host, float *Parameter_1_0_host) {
+    srand(random_seed);
     for (int i = 0; i < m_ * k_; i++) {
         Parameter_0_0_host[i] = (float)rand() / (float)(RAND_MAX);
     }
@@ -210,6 +218,7 @@ void CublasFunction::fill_data_float(float *Parameter_0_0_host, float *Parameter
  * @brief Fill the random data into the input in cuComplex type
  */
 void CublasFunction::fill_data_cucomplex(cuComplex *Parameter_0_0_host, cuComplex *Parameter_1_0_host) {
+    srand(random_seed);
     for (int i = 0; i < m_ * k_; i++) {
         Parameter_0_0_host[i] =
             make_cuComplex(((float)rand() / (float)(RAND_MAX)), ((float)rand() / (float)(RAND_MAX)));
@@ -289,8 +298,8 @@ void CublasFunction::prepare_tensor_cucomplex(cuComplex **Parameter_0_0, cuCompl
     CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
 }
 /**
- * @brief The main procedure for cublas function test, including cuda init, warmup, function test, time measurement
- * and cuda free
+ * @brief The main procedure for cublas function test, including warmup, function test, time measurement and output raw
+ * data results
  */
 void CublasFunction::benchmark() {
     // Malloc memory for input and output data
