@@ -1,0 +1,33 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+trigger:
+  - main
+
+pool:
+  name: SuperBench CI
+  vmImage: ubuntu-latest
+
+container:
+  image: nvcr.io/nvidia/pytorch:20.12-py3
+
+steps:
+  - task: DownloadSecureFile@1
+    name: vagrantKeyFile
+    displayName: Download key file
+    inputs:
+      secureFile: vagrant.key
+  - script: |
+      echo "##vso[task.prependpath]$HOME/.local/bin"
+    displayName: Export path
+  - script: |
+      python3 -m pip install .[test]
+      make postinstall
+    displayName: Install Ansible dependencies
+  - script: |
+      chmod 400 $(vagrantKeyFile.secureFilePath)
+      sed -i "s\vagrant.key\$(vagrantKeyFile.secureFilePath)\g" tests/ansible/hosts.ini
+      export ANSIBLE_HOST_KEY_CHECKING=False
+      bash tests/ansible/test.sh
+    displayName: Run integration tests for Ansible playbooks
+    timeoutInMinutes: 10
