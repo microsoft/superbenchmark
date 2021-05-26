@@ -4,6 +4,8 @@
 """Module of the cublas functions benchmarks."""
 
 import os
+import json
+from pathlib import Path
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry
@@ -12,7 +14,6 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 class CublasFunction(MicroBenchmarkWithInvoke):
     """The CublasFunction overhead benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -51,7 +52,7 @@ class CublasFunction(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--config_path',
             type=str,
-            default='/opt/superbench/superbench/benchmarks/micro_benchmarks/cublas_function/para_info.json',
+            default=Path(__file__).parent / 'cublas_para_info.json',
             required=False,
             help='The path of functions config json file.',
         )
@@ -65,12 +66,16 @@ class CublasFunction(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        command = os.path.join(self._args.bin_dir, self._bin_name)
-        command += (' --num_test ' + str(self._args.num_steps))
-        command += (' --warm_up ' + str(self._args.num_warmup))
-        command += (' --num_in_step ' + str(self._args.num_in_step))
-        command += (' --config_path ' + str(self._args.config_path))
-        self._commands.append(command)
+        with open(self._args.config_path, 'r') as load_config:
+            config_array = json.load(load_config)
+        for config_json in config_array:
+            command = os.path.join(self._args.bin_dir, self._bin_name)
+            command += (' --num_test ' + str(self._args.num_steps))
+            command += (' --warm_up ' + str(self._args.num_warmup))
+            command += (' --num_in_step ' + str(self._args.num_in_step))
+            config_json_str = "\'" + json.dumps(config_json).replace(' ', '') + "\'"
+            command += (' --config_json ' + str(config_json_str))
+            self._commands.append(command)
 
         return True
 
@@ -113,8 +118,9 @@ class CublasFunction(MicroBenchmarkWithInvoke):
             return False
         if error:
             logger.error(
-                'Error in running cudnn test - round: {}, benchmark: {}, raw data: {}'.
-                format(self._curr_run_index, self._name, raw_output)
+                'Error in running cudnn test - round: {}, benchmark: {}, raw data: {}'.format(
+                    self._curr_run_index, self._name, raw_output
+                )
             )
             return False
         return True

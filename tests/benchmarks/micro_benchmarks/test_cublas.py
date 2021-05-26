@@ -5,6 +5,7 @@
 
 import numbers
 import json
+from pathlib import Path
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
@@ -13,8 +14,9 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 @decorator.cuda_test
 def test_cublas_functions():
     """Test cublas-function benchmark."""
+    config_path = Path(__file__).parent / '../../../superbench/benchmarks/micro_benchmarks/cublas_para_info.json'
     context = BenchmarkRegistry.create_benchmark_context(
-        'cublas-functions', parameters='--num_warmup 10 --num_steps 10 --num_in_step 100'
+        'cublas-test', parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --config_path ' + str(config_path)
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -23,7 +25,7 @@ def test_cublas_functions():
 
     # Check basic information.
     assert (benchmark)
-    assert (benchmark.name == 'cublas-functions')
+    assert (benchmark.name == 'cublas-test')
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.
@@ -37,7 +39,6 @@ def test_cublas_functions():
     assert ('raw_output_0' in benchmark.raw_data)
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
-    config_path = '/opt/superbench/superbench/benchmarks/micro_benchmarks/cublas_function/para_info.json'
     with open(config_path, 'r') as load_f:
         load_json = json.load(load_f)
         assert (len(load_json) == len(benchmark.result))
