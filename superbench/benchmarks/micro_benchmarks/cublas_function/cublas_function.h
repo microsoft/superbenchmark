@@ -12,9 +12,9 @@
  * @brief class of SgemmFunction
  */
 class SgemmFunction : public CublasFunction {
-    float *Parameter_0_0;
-    float *Parameter_1_0;
-    float *Result_3_0;
+    float *Parameter_0_0; ///< the pointer of the first input data
+    float *Parameter_1_0; ///< the pointer of the second input data
+    float *Result_3_0;    ///< the pointer of output data
     /**
      * @brief Execute the kernel/function
      */

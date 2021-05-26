@@ -15,6 +15,9 @@
 
 #include "cublas_helper.h"
 
+/**
+ * @brief Enum of cublas function name
+ */
 enum cublas_function_name_enum {
     e_cublasSgemm = 0,
     e_cublasCgemm,
@@ -24,6 +27,9 @@ enum cublas_function_name_enum {
     e_cublasCgemm3mStridedBatched
 };
 
+/**
+ * @brief Map from cublas function name to cublas function name enum
+ */
 static std::unordered_map<std::string, cublas_function_name_enum> const cublas_function_name_string = {
     {"cublasSgemm", cublas_function_name_enum::e_cublasSgemm},
     {"cublasCgemm", cublas_function_name_enum::e_cublasCgemm},
@@ -33,24 +39,26 @@ static std::unordered_map<std::string, cublas_function_name_enum> const cublas_f
     {"cublasCgemm3mStridedBatched", cublas_function_name_enum::e_cublasCgemm3mStridedBatched},
 };
 
-// Class to store params of cublas function and run the benchmark of this function
+/**
+ * @brief Class to store params of cublas function and run the benchmark of this function
+ */
 class CublasFunction {
   protected:
-    int num_test;
-    int warm_up;
-    int num_in_step;
-    std::string name_;
-    int m_;
-    int k_;
-    int n_;
-    int transa_;
-    int transb_;
-    std::string datatype_;
-    bool use_tensor_core_;
-    int batch_count_ = 1;
-    cublas_function_name_enum e_name_;
-    std::string to_str_;
-    cublasHandle_t cublas_handle;
+    int num_test;                      ///< the number of steps used to test and measure
+    int warm_up;                       ///< the number of steps used to warm up
+    int num_in_step;                   ///< the number of functions invoking in a step
+    std::string name_;                 ///< the name of the cublas function
+    int m_;                            ///< the m dim of matrix
+    int k_;                            ///< the k dim of matrix
+    int n_;                            ///< the n dim of matrix
+    int transa_;                       ///< whether the first matrix transpose
+    int transb_;                       ///< whether the second matrix transpose
+    std::string datatype_;             ///< data type used in cublasGemmEx and cublasGemmStridedBatchedEx
+    bool use_tensor_core_;             ///< choose the algo used in cublasGemmEx and cublasGemmStridedBatchedEx
+    int batch_count_;                  ///< the number of the batch
+    cublas_function_name_enum e_name_; ///< enum cublas functin name
+    std::string to_str_;               ///< the str representing the cublas function with params
+    cublasHandle_t cublas_handle;      ///< the handle of cublas function
 
     /**
      * @brief Fill the random data into the input in float type
@@ -290,26 +298,26 @@ void CublasFunction::benchmark() {
 
     // Warm up
     for (int i_ = 0; i_ < warm_up; i_++) {
-        this->kernel_entry();
+        for (int j = 0; j < num_in_step; j++) {
+            this->kernel_entry();
+        }
     }
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
     // Prepare some varibles for time measurement
     std::vector<float> iteration_time;
     // Benchmark in range of steps
-    int repeat_in_one_step = num_in_step;
     for (int i_ = 0; i_ < num_test; i_++) {
         // Collect time within each step, including #repeat_in_one_step times function invoking
         auto start = std::chrono::high_resolution_clock::now();
-        for (int j = 0; j < repeat_in_one_step; j++) {
+        for (int j = 0; j < num_in_step; j++) {
             this->kernel_entry();
         }
         CUDA_SAFE_CALL(cudaDeviceSynchronize());
         auto end = std::chrono::high_resolution_clock::now();
 
         // Convert step time to single function duration and update min and max duration
-        float i =
-            static_cast<float>(std::chrono::duration<double, std::micro>(end - start).count() / repeat_in_one_step);
+        float i = static_cast<float>(std::chrono::duration<double, std::micro>(end - start).count() / num_in_step);
         iteration_time.emplace_back(i);
     }
 
