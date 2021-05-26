@@ -147,7 +147,8 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
         # Set the environment path.
         if os.getenv('SB_MICRO_PATH'):
             os.environ['PATH'] = os.path.join(os.getenv('SB_MICRO_PATH'), 'bin') + os.pathsep + os.getenv('PATH', '')
-            os.environ['PATH'] = os.path.join(os.getenv('SB_MICRO_PATH'), 'lib') + os.pathsep + os.getenv('PATH', '')
+            os.environ['LD_LIBRARY_PATH'] = os.path.join(os.getenv('SB_MICRO_PATH'),
+                                                         'lib') + os.pathsep + os.getenv('LD_LIBRARY_PATH', '')
 
         if not self._set_binary_path():
             return False
