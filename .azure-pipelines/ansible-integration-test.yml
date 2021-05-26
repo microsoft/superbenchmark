@@ -25,7 +25,9 @@ steps:
       make postinstall
     displayName: Install Ansible dependencies
   - script: |
-      sed -i s/vagrant.key/$(vagrantKeyFile.secureFilePath)/g tests/ansible/hosts.ini
+      chmod 400 $(vagrantKeyFile.secureFilePath)
+      sed -i "s\vagrant.key\$(vagrantKeyFile.secureFilePath)\g" tests/ansible/hosts.ini
+      export ANSIBLE_HOST_KEY_CHECKING=False
       bash tests/ansible/test.sh
     displayName: Run integration tests for Ansible playbooks
     timeoutInMinutes: 10
