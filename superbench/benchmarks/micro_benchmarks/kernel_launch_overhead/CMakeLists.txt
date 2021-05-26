@@ -8,4 +8,4 @@ include(../cuda_common.cmake)
 
 add_executable(kernel_launch_overhead cuda_kernel_launch.cu)
 set_property(TARGET kernel_launch_overhead PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
-install (TARGETS kernel_launch_overhead RUNTIME DESTINATION .)
+install(TARGETS kernel_launch_overhead RUNTIME DESTINATION bin)
