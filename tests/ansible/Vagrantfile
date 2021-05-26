@@ -1,0 +1,23 @@
+# -*- mode: ruby -*-
+
+Vagrant.configure("2") do |config|
+    (0..2).each do |id|
+        config.vm.define "node#{id}" do |node|
+            node.vm.box = "ubuntu/focal64"
+            node.vm.box_check_update = false
+            node.vm.hostname = "node#{id}"
+            node.vm.network "private_network",
+                ip: "192.168.0.#{100+id}"
+            node.vm.network "forwarded_port",
+                id: "ssh", guest: 22, host: 22000+id, host_ip: "127.0.0.1"
+            node.vm.provision "docker",
+                images: ["superbench/superbench"]
+            node.vm.provision "shell",
+                inline: "cat /vagrant/ed25519.pub >> /home/vagrant/.ssh/authorized_keys"
+            node.vm.provider "virtualbox" do |vb|
+                vb.name = "node#{id}"
+                vb.memory = "1024"
+            end
+        end
+    end
+end
