@@ -16,7 +16,8 @@ def test_cublas_functions():
     """Test cublas-function benchmark."""
     config_path = Path(__file__).parent / '../../../superbench/benchmarks/micro_benchmarks/cublas_para_info.json'
     context = BenchmarkRegistry.create_benchmark_context(
-        'cublas-test', parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --config_path ' + str(config_path)
+        'cublas-test',
+        parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --random_seed 1 --config_path ' + str(config_path)
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -32,6 +33,7 @@ def test_cublas_functions():
     assert (benchmark._args.num_warmup == 10)
     assert (benchmark._args.num_steps == 10)
     assert (benchmark._args.num_in_step == 100)
+    assert (benchmark._args.random_seed == 1)
 
     # Check results and metrics.
     assert (benchmark.run_count == 1)

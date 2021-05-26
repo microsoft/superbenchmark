@@ -50,6 +50,13 @@ class CublasFunction(MicroBenchmarkWithInvoke):
             help='The number of functions in one step.',
         )
         self._parser.add_argument(
+            '--random_seed',
+            type=int,
+            default=0,
+            required=False,
+            help='The random seed to fill in the data of the function.',
+        )
+        self._parser.add_argument(
             '--config_path',
             type=str,
             default=Path(__file__).parent / 'cublas_para_info.json',
@@ -73,6 +80,7 @@ class CublasFunction(MicroBenchmarkWithInvoke):
             command += (' --num_test ' + str(self._args.num_steps))
             command += (' --warm_up ' + str(self._args.num_warmup))
             command += (' --num_in_step ' + str(self._args.num_in_step))
+            command += (' --random_seed ' + str(self._args.random_seed))
             config_json_str = "\'" + json.dumps(config_json).replace(' ', '') + "\'"
             command += (' --config_json ' + str(config_json_str))
             self._commands.append(command)
