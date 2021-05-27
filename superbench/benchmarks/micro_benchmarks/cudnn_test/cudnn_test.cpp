@@ -1,22 +1,36 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-// Cudnn function benchmark will read the functions' param fro json file 'para_info.json', and use these params to
-// benchmark the wall time of cudnn functions. params list:
-//     num_test: test step nums
-//     warm_up: warm up step nums
-//     num_in_step: times each step will invoke the function
-//     config path: the path of 'para_info.json'
-// functions supported:
-//     cudnnConvolutionForward
-//     cudnnConvolutionBackwardData
-//     cudnnConvolutionBackwardFilter
+/**
+ * @file cudnn_test.cpp
+ * @brief cudnn function benchmark will read the params from cmd, and use these params
+ * to benchmark the wall time of the cudnn functions.
+ */
 
 #include <limits>
 #include <stdexcept>
 
 #include "cudnn_function_helper.h"
 
+/**
+ * @brief Main function and entry of cudnn benchmark
+
+ * @details
+ * params list:
+ *  num_test: test step nums
+ *  warm_up: warm up step nums
+ *  num_in_step: times each step will invoke the function
+ *  random_seed: the random seed to generate data
+ *  config_json: the json string including the params of the function
+ *  functions supported:
+ *  cudnnConvolutionForward
+ *  cudnnConvolutionBackwardData
+ *  cudnnConvolutionBackwardFilter
+
+ * @param  argc
+ * @param  argv
+ * @return int
+ */
 int main(int argc, char *argv[]) {
     try {
         // parse arguments from cmd

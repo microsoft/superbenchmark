@@ -1,6 +1,11 @@
 // Copyright(c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+/**
+ * @file cudnn_benchmark.h
+ * @brief Unify the base class for cudnn function benchmark
+ */
+
 #pragma once
 
 #include <chrono>
@@ -10,6 +15,9 @@
 
 #include "cudnn_helper.h"
 
+/**
+ * @brief Enum of cudnn function name
+ */
 namespace cudnn_test {
 enum cudnn_function_name_enum {
     e_cudnnConvolutionForward = 0,
@@ -17,6 +25,9 @@ enum cudnn_function_name_enum {
     e_cudnnConvolutionBackwardFilter,
 };
 
+/**
+ * @brief Map from cudnn function name to cudnn function name enum
+ */
 static std::unordered_map<std::string, cudnn_function_name_enum> const cudnn_function_name_string = {
     {"cudnnConvolutionForward", cudnn_function_name_enum::e_cudnnConvolutionForward},
     {"cudnnConvolutionBackwardData", cudnn_function_name_enum::e_cudnnConvolutionBackwardData},
@@ -24,12 +35,15 @@ static std::unordered_map<std::string, cudnn_function_name_enum> const cudnn_fun
 
 };
 
-// Store cudnn functions params configuration
+/**
+ * @brief Class to store the configuration of cudnn function params
+ */
 class CudnnConfig {
   protected:
     int num_test;
     int warm_up;
     int num_in_step;
+    int random_seed;
     std::string name;
     cudnn_function_name_enum e_name;
     std::vector<int> input_dims_;
@@ -46,12 +60,13 @@ class CudnnConfig {
     bool use_tensor_core_;
     cudnnDataType_t input_type_;
     cudnnDataType_t conv_type_;
-    std::string to_str_;
+    std::string function_str_;
 
   public:
     void set_num_test(int num_test) { this->num_test = num_test; }
     void set_warm_up(int warm_up) { this->warm_up = warm_up; }
     void set_num_in_step(int num_in_step) { this->num_in_step = num_in_step; }
+    void set_random_seed(int random_seed) { this->random_seed = random_seed; }
     void set_name(std::string &n) { name = n; }
     void set_input_dims(std::vector<int> &input_dims) { input_dims_ = input_dims; }
     void set_input_stride(std::vector<int> &input_stride) { input_stride_ = input_stride; }
@@ -67,10 +82,8 @@ class CudnnConfig {
     void set_use_tensor_core(bool use_tensor_core) { use_tensor_core_ = use_tensor_core; }
     void set_input_type(cudnnDataType_t &input_type) { input_type_ = input_type; }
     void set_conv_type(cudnnDataType_t &conv_type) { input_type_ = conv_type; }
-    void set_str(std::string &str) { to_str_ = str; }
+    void set_function(std::string &str) { function_str_ = str; }
 
-    std::string &get_name() { return name; }
-    cudnn_function_name_enum &get_e_name() { return e_name; }
     std::vector<int> &get_input_dims() { return input_dims_; }
     std::vector<int> &get_input_stride() { return input_stride_; }
     std::vector<int> &get_filter_dims() { return filter_dims_; }
@@ -85,9 +98,13 @@ class CudnnConfig {
     bool get_use_tensor_core() { return use_tensor_core_; }
     cudnnDataType_t &get_input_type() { return input_type_; }
     cudnnDataType_t &get_conv_type() { return input_type_; }
-    std::string &get_str() { return to_str_; }
-
-    // convert function name to enum type
+    std::string &get_name() { return name; }
+    cudnn_function_name_enum get_e_name() { return e_name; }
+    std::string &get_str() { return function_str_; }
+    /**
+     * @brief Convert name string to enum name
+     * @return cudnn_function_name_enum
+     */
     cudnn_function_name_enum name2enum() {
         auto it = cudnn_function_name_string.find(this->name);
         if (it != cudnn_function_name_string.end()) {
@@ -99,54 +116,71 @@ class CudnnConfig {
     }
 };
 
-// Generation of cudnn functions' params and benchmark
+/**
+ * @brief Generation of cudnn functions' params and run the benchmark of this function
+ *
+ * @tparam T1 the type of TensorDescriptor
+ * @tparam T2 the type of ConvolutionDescriptor
+ */
 template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
   protected:
     cudnnHandle_t cudnn_handle;
-    curandGenerator_t curand_gen;
     TensorDescriptorNd<T1> x_desc_;
     FilterDescriptorNd<T1> w_desc_;
     ConvolutionDescriptor<T2> conv_desc_;
     TensorDescriptorNd<T1> h_desc_;
-
     size_t fwd_workspace_size_;
     float *fwd_workspace_;
-
     T1 *x, *filter, *h;
-
     const float alpha_ = 1.f;
     const float beta_ = 0.f;
 
-    std::vector<int> get_output_dims() { return output_dims_; }
-    // Generate some params used in the cudnn function
+    /**
+     * @brief Malloc cuda memory and fill in value for data params used in the cudnn function
+     */
+    void prepare_input();
+    /**
+     * @brief Generate some params used in the cudnn function
+     */
     void prepare_for_function();
-    // Set convolution algorithm and workspace size used in cudnn convolution functions
+    /**
+     * @brief Get and set convolution algorithm and workspace size used in cudnn convolution functions
+     */
     virtual void get_workspace_size() {}
-    // Run a cudnn function
+    /**
+     * @brief launch the kernel/function
+     */
     virtual void kernel_entry() {}
-    // Malloc cuda memory and fill in value for data params used in the cudnn function
-    void prepare_input(curandGenerator_t curand_gen);
 
   public:
-    CudnnFunction() {}
+    /**
+     * @brief Construct a new Cudnn Function object according to a CudnnConfig object, including initialization for
+     * cudnn handle and curand
+     *
+     * @param config a CudnnConfig object including configuration of the params to the cudnn function
+     */
     CudnnFunction(CudnnConfig &config) : CudnnConfig(config) {
         // Init cudnn handle and device
         cuda_init(&this->cudnn_handle);
-        // Create curandGenerator for cuda data random generation
-        curandCreateGenerator(&curand_gen, CURAND_RNG_PSEUDO_DEFAULT);
-        curandSetPseudoRandomGeneratorSeed(curand_gen, 123ULL);
     }
-    void benchmark();
+    /**
+     * @brief Destroy the Cudnn Function object, including free cuda memory and handle of cudnn and curand
+     */
     virtual ~CudnnFunction() {
         // free context and memory
         CUDA_SAFE_CALL(cudaFree(x));
         CUDA_SAFE_CALL(cudaFree(filter));
         CUDA_SAFE_CALL(cudaFree(h));
-        curandDestroyGenerator(curand_gen);
         cuda_free(&this->cudnn_handle);
     }
+    /**
+     * @brief The main procedure for cudnn function test, including warmup, function test and time measurement
+     */
+    void benchmark();
 };
-
+/**
+ * @brief Generate some params used in the cudnn function
+ */
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_function() {
     // Generate descriptor
     conv_desc_ =
@@ -160,25 +194,29 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_func
     CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), algo));
     // Set convolution algorithm and workspace size
     this->get_workspace_size();
-    zeros<float>(&fwd_workspace_, std::vector<int>{static_cast<int>(fwd_workspace_size_ / sizeof(float)), 1});
+    zeros<float>(&fwd_workspace_, std::vector<int>{static_cast<int>(this->fwd_workspace_size_ / sizeof(float)), 1});
 }
-
-template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_input(curandGenerator_t curand_gen) {
+/**
+ * @brief Malloc cuda memory and fill in value for data params used in the cudnn function
+ *
+ * @param curand_gen  the curand genneration handle
+ */
+template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_input() {
     // Allocate memory for filter data
-    rand<T1>(&filter, get_filter_dims(), curand_gen);
-
+    rand<T1>(&filter, get_filter_dims(), random_seed);
     // Allocate memory for input data
-    rand<T1>(&x, get_input_dims(), curand_gen);
-
+    rand<T1>(&x, get_input_dims(), random_seed);
     // Allocate memory for output data
-    zeros<T1>(&h, get_output_dims());
+    rand<T1>(&h, get_output_dims(), random_seed);
 }
-
+/**
+ * @brief The main procedure for cudnn function test, including warmup, function test and time measurement
+ */
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
     // Prepare some Prerequisites for function running
     prepare_for_function();
     // Allocate memory and fill with data of input and output tensor
-    prepare_input(curand_gen);
+    prepare_input();
 
     // Warm up
     for (int i = 0; i < warm_up; ++i) {

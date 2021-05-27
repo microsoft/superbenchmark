@@ -1,7 +1,10 @@
-// Copyright(c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-// Helper functions of cuda and cudnn related
+/**
+ * @file cudnn_helper.h
+ * @brief  Header file for some functions related to cudnn
+ */
 
 #pragma once
 
@@ -20,31 +23,16 @@
 
 namespace cudnn_test {
 
-// Run cudnn function and check if succeed
-void throw_cudnn_err(cudnnStatus_t result, const char *func, const char *file, int const line) {
-    if (result != CUDNN_STATUS_SUCCESS) {
-        const char *msg = cudnnGetErrorString(result);
-        std::stringstream safe_call_ss;
-        safe_call_ss << func << " failed with error"
-                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
-        throw std::runtime_error(safe_call_ss.str());
-    }
-}
+/**
+ * @brief check cudnn function running status and throw error str
+ */
+void throw_cudnn_err(cudnnStatus_t result, const char *func, const char *file, int const line);
 #define CHECK_CUDNN_ERROR(x) throw_cudnn_err((x), #x, __FILE__, __LINE__)
-
-// Run cuda function and check if succeed
-void check_cuda(cudaError_t result, const char *func, const char *file, int const line) {
-    if (result != cudaSuccess) {
-        const char *msg = cudaGetErrorString(result);
-        std::stringstream safe_call_ss;
-        safe_call_ss << func << " failed with error"
-                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
-        // Make sure we call CUDA Device Reset before exiting
-        throw std::runtime_error(safe_call_ss.str());
-    }
-}
+/**
+ * @brief check cudnn function running status and throw error str
+ */
+void check_cuda(cudaError_t result, const char *func, const char *file, int const line);
 #define CUDA_SAFE_CALL(x) check_cuda((x), #x, __FILE__, __LINE__)
-
 /**
  * @brief Cuda context init
  */
@@ -54,16 +42,30 @@ void cuda_init(cudnnHandle_t *cudnn_handle);
  * @brief Cuda context free
  */
 void cuda_free(cudnnHandle_t *cudnn_handle);
-// Malloc cuda memory and fill in rand value
-template <typename T> void rand(T **input, std::vector<int> dims_, curandGenerator_t curand_gen);
-// Malloc cuda memory and fill in zero
+/**
+ * @brief Malloc cuda memory and fill in rand value
+ * @tparam T
+ * @param  input            the pointer of input
+ * @param  dims_            the shape of input
+ * @param  random_seed      the random seed to generate random data
+ */
+template <typename T> void rand(T **input, std::vector<int> dims_, int random_seed);
+/**
+ * @brief Malloc cuda memory and fill in zero
+ * @tparam T
+ * @param  input            the pointer of input
+ * @param  dims_            the shape of input
+ */
 template <typename T> void zeros(T **input, std::vector<int> dims_) {
-    int size_ = std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<int>());
-    CUDA_SAFE_CALL(cudaMalloc((void **)input, sizeof(T) * size_));
-    CUDA_SAFE_CALL(cudaMemset((void *)*input, 0, sizeof(T) * size_));
+    int size = std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<int>());
+    CUDA_SAFE_CALL(cudaMalloc((void **)input, sizeof(T) * size));
+    CUDA_SAFE_CALL(cudaMemset((void *)*input, 0, sizeof(T) * size));
 }
-
-// Get cudnn tensor format
+/**
+ * @brief Get cudnn tensor format
+ * @tparam T
+ * @param  tensor_format  cudnnTensorFormat_t
+ */
 template <typename T> void get_tensor_format(cudnnTensorFormat_t &tensor_format) {
     // For int8 inference, the supported format is NHWC
     if (std::is_same<T, uint8_t>::value) {
@@ -72,8 +74,11 @@ template <typename T> void get_tensor_format(cudnnTensorFormat_t &tensor_format)
         tensor_format = CUDNN_TENSOR_NCHW;
     }
 }
-
-// Get cudnn tensor data type
+/**
+ * @brief Get cudnn tensor data type
+ * @tparam T
+ * @param  type             cudnnDataType_t
+ */
 template <typename T> void get_tensor_type(cudnnDataType_t &type) {
     if (std::is_same<T, float>::value) {
         type = CUDNN_DATA_FLOAT;
@@ -88,7 +93,10 @@ template <typename T> void get_tensor_type(cudnnDataType_t &type) {
         throw("unknown type in tensorDecriptor");
 }
 
-// RAII wrapper for TensorDescriptorNd
+/**
+ * @brief RAII wrapper for TensorDescriptorNd
+ * @tparam T
+ */
 template <typename T> class TensorDescriptorNd {
     std::shared_ptr<cudnnTensorDescriptor_t> desc_;
 
@@ -113,7 +121,10 @@ template <typename T> class TensorDescriptorNd {
     cudnnTensorDescriptor_t desc() const { return *desc_; }
 };
 
-// RAII wrapper for FilterDescriptorNd
+/**
+ * @brief RAII wrapper for FilterDescriptorNd
+ * @tparam T
+ */
 template <typename T> class FilterDescriptorNd {
     std::shared_ptr<cudnnFilterDescriptor_t> desc_;
 
@@ -140,7 +151,10 @@ template <typename T> class FilterDescriptorNd {
     cudnnFilterDescriptor_t desc() { return *desc_; }
 };
 
-// RAII wrapper for ConvolutionDescriptor
+/**
+ * @brief RAII wrapper for ConvolutionDescriptor
+ * @tparam T
+ */
 template <typename T> class ConvolutionDescriptor {
     std::shared_ptr<cudnnConvolutionDescriptor_t> desc_;
 

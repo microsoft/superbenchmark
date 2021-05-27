@@ -1,5 +1,7 @@
+// Copyright(c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 /**
- * @copyright Copyright (c) Microsoft Corporation
  * @file cudnn_function.h
  * @brief Implementation of specific cudnn function
  */
@@ -9,7 +11,11 @@
 #include "cudnn_benchmark.h"
 
 namespace cudnn_test {
-
+/**
+ * @brief Class of ConvolutionForwardFunction
+ * @tparam T1 input data type
+ * @tparam T2 conv type
+ */
 template <typename T1, typename T2> class ConvolutionForwardFunction : public CudnnFunction<T1, T2> {
     cudnnConvolutionFwdAlgo_t fwd_algo_;
     /**
@@ -21,6 +27,9 @@ template <typename T1, typename T2> class ConvolutionForwardFunction : public Cu
                                                   this->fwd_algo_, this->fwd_workspace_, this->fwd_workspace_size_,
                                                   &this->beta_, this->h_desc_.desc(), this->h));
     }
+    /**
+     * @brief Get and set convolution algorithm and workspace size used in cudnn convolution functions
+     */
     virtual void get_workspace_size() {
         fwd_algo_ = cudnnConvolutionFwdAlgo_t(this->algo_);
         CHECK_CUDNN_ERROR(cudnnGetConvolutionForwardWorkspaceSize(
@@ -30,19 +39,20 @@ template <typename T1, typename T2> class ConvolutionForwardFunction : public Cu
 
   public:
     /**
-     * @brief Construct a new Sgemm Function object
+     * @brief Construct a new Convolution Forward Function object
      */
     ConvolutionForwardFunction() {}
     /**
-     * @brief Construct a new Sgemm Function object
-     * @param  function         base class cudnnFunction object
+     * @brief Construct a new Convolution Forward Function object
+     * @param  conig         base class CudnnConfig object
      */
     ConvolutionForwardFunction(CudnnConfig &config) : CudnnFunction<T1, T2>(config) {}
-    /**
-     * @brief Destroy the Sgemm Function object
-     */
 };
-
+/**
+ * @brief Class of ConvolutionBackwardDataFunction
+ * @tparam T1 input data type
+ * @tparam T2 conv type
+ */
 template <typename T1, typename T2> class ConvolutionBackwardDataFunction : public CudnnFunction<T1, T2> {
 
     cudnnConvolutionBwdDataAlgo_t bwd_data_algo_;
@@ -55,7 +65,9 @@ template <typename T1, typename T2> class ConvolutionBackwardDataFunction : publ
             this->conv_desc_.desc(), this->bwd_data_algo_, this->fwd_workspace_, this->fwd_workspace_size_,
             &this->beta_, this->h_desc_.desc(), this->h));
     }
-
+    /**
+     * @brief Get and set convolution algorithm and workspace size used in cudnn convolution functions
+     */
     virtual void get_workspace_size() {
         bwd_data_algo_ = cudnnConvolutionBwdDataAlgo_t(this->algo_);
         CHECK_CUDNN_ERROR(cudnnGetConvolutionBackwardDataWorkspaceSize(
@@ -65,19 +77,20 @@ template <typename T1, typename T2> class ConvolutionBackwardDataFunction : publ
 
   public:
     /**
-     * @brief Construct a new Sgemm Function object
+     * @brief Construct a new Convolution Backward Data Function object
      */
     ConvolutionBackwardDataFunction() {}
     /**
-     * @brief Construct a new Sgemm Function object
-     * @param  function         base class cudnnFunction object
+     * @brief Construct a new Convolution Backward Data Function object
+     * @param  conig         base class CudnnConfig object
      */
     ConvolutionBackwardDataFunction(CudnnConfig &config) : CudnnFunction<T1, T2>(config) {}
-    /**
-     * @brief Destroy the Sgemm Function object
-     */
 };
-
+/**
+ * @brief Class of ConvolutionBackwardFilterFunction
+ * @tparam T1 input data type
+ * @tparam T2 conv type
+ */
 template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : public CudnnFunction<T1, T2> {
 
     cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo_;
@@ -90,6 +103,9 @@ template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : pu
             this->conv_desc_.desc(), this->bwd_filter_algo_, this->fwd_workspace_, this->fwd_workspace_size_,
             &this->beta_, this->w_desc_.desc(), this->filter));
     }
+    /**
+     * @brief Get and set convolution algorithm and workspace size used in cudnn convolution functions
+     */
     virtual void get_workspace_size() {
         bwd_filter_algo_ = cudnnConvolutionBwdFilterAlgo_t(this->algo_);
         CHECK_CUDNN_ERROR(cudnnGetConvolutionBackwardFilterWorkspaceSize(
@@ -98,8 +114,14 @@ template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : pu
     }
 
   public:
+    /**
+     * @brief Construct a new Convolution Backward Filter Function object
+     */
     ConvolutionBackwardFilterFunction() {}
+    /**
+     * @brief Construct a new Convolution Backward Filter Function object
+     * @param  conig         base class CudnnConfig object
+     */
     ConvolutionBackwardFilterFunction(CudnnConfig &config) : CudnnFunction<T1, T2>(config) {}
 };
-
 } // namespace cudnn_test
