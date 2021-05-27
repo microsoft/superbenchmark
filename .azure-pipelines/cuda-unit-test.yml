@@ -23,6 +23,9 @@ steps:
       python3 setup.py lint
     displayName: Run code lint
   - script: |
+      git submodule update --init --recursive
+    displayName: Pull all third-party submodules
+  - script: |
       SB_MICRO_PATH=$PWD make cppbuild
     displayName: Build benchmarks
   - script: |

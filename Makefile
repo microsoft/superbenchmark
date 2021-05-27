@@ -13,6 +13,7 @@ cppformat:
 
 cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh
+	cd ./third_party/ && bash build.sh
 
 postinstall:
 ifeq ($(shell which ansible-galaxy),)
