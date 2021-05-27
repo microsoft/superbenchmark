@@ -73,18 +73,25 @@ class CublasFunction(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        with open(self._args.config_path, 'r') as load_config:
-            config_array = json.load(load_config)
-        for config_json in config_array:
-            command = os.path.join(self._args.bin_dir, self._bin_name)
-            command += (' --num_test ' + str(self._args.num_steps))
-            command += (' --warm_up ' + str(self._args.num_warmup))
-            command += (' --num_in_step ' + str(self._args.num_in_step))
-            command += (' --random_seed ' + str(self._args.random_seed))
-            config_json_str = "\'" + json.dumps(config_json).replace(' ', '') + "\'"
-            command += (' --config_json ' + str(config_json_str))
-            self._commands.append(command)
-
+        command = os.path.join(self._args.bin_dir, self._bin_name)
+        command += (' --num_test ' + str(self._args.num_steps))
+        command += (' --warm_up ' + str(self._args.num_warmup))
+        command += (' --num_in_step ' + str(self._args.num_in_step))
+        command += (' --random_seed ' + str(self._args.random_seed))
+        try:
+            with open(self._args.config_path, 'r') as load_config:
+                config_array = json.load(load_config)
+            for config_json in config_array:
+                config_json_str = "\'" + json.dumps(config_json).replace(' ', '') + "\'"
+                complete_command = command + (' --config_json ' + str(config_json_str))
+                self._commands.append(complete_command)
+        except BaseException as e:
+            logger.error(
+                'Invalid json file - benchmark: {}, file path: {}, message: {}'.format(
+                    self._name, self._args.config_path, str(e)
+                )
+            )
+            return False
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
@@ -120,14 +127,14 @@ class CublasFunction(MicroBenchmarkWithInvoke):
                     error = True
         except BaseException as e:
             logger.error(
-                'Cannot extract results from cudnn functions - round: {}, benchmark: {}, raw data: {}, message: {}'.
-                format(self._curr_run_index, self._name, raw_output, str(e))
+                'Cannot extract results from cublas functions - round: {}, index of cmd: {], benchmark: {}, raw data: {}, message: {}'
+                .format(self._curr_run_index, cmd_idx, self._name, raw_output, str(e))
             )
             return False
         if error:
             logger.error(
-                'Error in running cudnn test - round: {}, benchmark: {}, raw data: {}'.format(
-                    self._curr_run_index, self._name, raw_output
+                'Error in running cublas test - round: {}, index of cmd: {], benchmark: {}, raw data: {}'.format(
+                    self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
             return False
