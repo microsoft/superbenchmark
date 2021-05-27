@@ -13,6 +13,8 @@ cppformat:
 
 cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh
+
+thirdparty:
 	cd ./third_party/ && bash build.sh
 
 postinstall:
