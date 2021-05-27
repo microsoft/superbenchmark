@@ -10,6 +10,10 @@ superbench:
         num_steps: 2048
     bert_models:
       enable: true
+      modes:
+        - name: torch.distributed
+          proc_num: 8
+          node_num: all
       frameworks:
         - pytorch
       models:

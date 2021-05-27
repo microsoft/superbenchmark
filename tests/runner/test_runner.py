@@ -34,16 +34,68 @@ class RunnerTestCase(unittest.TestCase):
 
     def test_get_mode_command(self):
         """Test __get_mode_command."""
-        self.assertEqual(self.runner._SuperBenchRunner__get_mode_command('non_exist', 'sb exec'), 'sb exec')
-        self.assertEqual(
-            self.runner._SuperBenchRunner__get_mode_command('torch.distributed', 'sb exec'), (
-                'python3 -m torch.distributed.launch '
-                '--use_env --no_python --nproc_per_node=8 '
-                '--nnodes=$NNODES --node_rank=$NODE_RANK '
-                '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                'sb exec'
-            )
-        )
+        test_cases = [
+            {
+                'mode': {
+                    'name': 'non_exist',
+                },
+                'exec_command': 'sb exec',
+                'expected_command': 'sb exec',
+            },
+            {
+                'mode': {
+                    'name': 'torch.distributed',
+                },
+                'exec_command':
+                'sb exec',
+                'expected_command': (
+                    'python3 -m torch.distributed.launch '
+                    '--use_env --no_python --nproc_per_node=8 '
+                    '--nnodes=$NNODES --node_rank=$NODE_RANK '
+                    '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+                    'sb exec'
+                ),
+            },
+            {
+                'mode': {
+                    'name': 'torch.distributed',
+                    'proc_num': 1,
+                    'node_num': 'all',
+                },
+                'exec_command':
+                'sb exec',
+                'expected_command': (
+                    'python3 -m torch.distributed.launch '
+                    '--use_env --no_python --nproc_per_node=1 '
+                    '--nnodes=$NNODES --node_rank=$NODE_RANK '
+                    '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+                    'sb exec'
+                ),
+            },
+            {
+                'mode': {
+                    'name': 'torch.distributed',
+                    'proc_num': 8,
+                    'node_num': 1,
+                },
+                'exec_command':
+                'sb exec',
+                'expected_command': (
+                    'python3 -m torch.distributed.launch '
+                    '--use_env --no_python --nproc_per_node=8 '
+                    '--nnodes=1 --node_rank=$NODE_RANK '
+                    '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+                    'sb exec'
+                ),
+            },
+        ]
+        for test_case in test_cases:
+            with self.subTest(msg='Testing with case', test_case=test_case):
+                self.assertEqual(
+                    self.runner._SuperBenchRunner__get_mode_command(
+                        OmegaConf.create(test_case['mode']), test_case['exec_command']
+                    ), test_case['expected_command']
+                )
 
     def test_run(self):
         """Test run."""
