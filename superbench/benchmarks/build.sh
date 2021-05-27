@@ -4,8 +4,7 @@
 # Licensed under the MIT License
 
 
-SB_MICRO_PATH="${SB_MICRO_PATH:-/usr/local/bin}"
-SB_MICRO_LIB="${SB_MICRO_LIB:-/usr/local/lib}"
+SB_MICRO_PATH="${SB_MICRO_PATH:-/usr/local}"
 
 for dir in micro_benchmarks/*/ ; do
     if [ -f $dir/CMakeLists.txt ]; then

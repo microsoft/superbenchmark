@@ -20,13 +20,13 @@ steps:
       make postinstall
     displayName: Install dependencies
   - script: |
-      SB_MICRO_PATH=$PWD/bin make cppbuild
-    displayName: Build benchmarks
-  - script: |
       python3 setup.py lint
     displayName: Run code lint
   - script: |
-      SB_MICRO_PATH=$PWD/bin python3 setup.py test
+      SB_MICRO_PATH=$PWD make cppbuild
+    displayName: Build benchmarks
+  - script: |
+      SB_MICRO_PATH=$PWD python3 setup.py test
     displayName: Run unit tests
     timeoutInMinutes: 10
   - script: |
