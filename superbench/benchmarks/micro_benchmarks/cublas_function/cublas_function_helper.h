@@ -123,7 +123,7 @@ class Options {
 void from_json(const json &j, CublasFunction &fn) {
     auto str = j.dump();
     std::replace(str.begin(), str.end(), '\"', ' ');
-    fn.set_str(str);
+    fn.set_function(str);
     auto name = j.at("name").get<std::string>();
     fn.set_name(name);
     auto m = j.at("m").get<int>();

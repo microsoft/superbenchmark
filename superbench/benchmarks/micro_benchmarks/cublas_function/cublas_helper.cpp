@@ -116,18 +116,16 @@ void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, 
     algo = (use_tensor_core ? CUBLAS_GEMM_DFALT_TENSOR_OP : CUBLAS_GEMM_DFALT);
     if (type.compare("float")) {
         matrix_type = CUDA_R_32F;
-        CUBLAS_SAFE_CALL(cublasGemmEx(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N),
-                                      (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m, n, k, &alpha, a, matrix_type,
-                                      (transa ? k : m), b, matrix_type, (transb ? n : k), &beta, c, matrix_type, m,
-                                      compute_type, algo));
+    } else {
+        if (type.compare("half")) {
+            matrix_type = CUDA_R_16F;
+        } else {
+            throw "invalid datatype";
+        }
     }
-    if (type.compare("half")) {
-        matrix_type = CUDA_R_16F;
-        CUBLAS_SAFE_CALL(cublasGemmEx(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N),
-                                      (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m, n, k, &alpha, a, matrix_type,
-                                      (transa ? k : m), b, matrix_type, (transb ? n : k), &beta, c, matrix_type, m,
-                                      compute_type, algo));
-    }
+    CUBLAS_SAFE_CALL(cublasGemmEx(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
+                                  n, k, &alpha, a, matrix_type, (transa ? k : m), b, matrix_type, (transb ? n : k),
+                                  &beta, c, matrix_type, m, compute_type, algo));
 }
 
 /**
@@ -155,18 +153,17 @@ void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, 
     algo = (use_tensor_core ? CUBLAS_GEMM_DFALT_TENSOR_OP : CUBLAS_GEMM_DFALT);
     if (type.compare("float")) {
         matrix_type = CUDA_R_32F;
-        CUBLAS_SAFE_CALL(cublasGemmStridedBatchedEx(
-            handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m, n, k, &alpha, a,
-            matrix_type, (transa ? k : m), m * k, b, matrix_type, (transb ? n : k), n * k, &beta, c, matrix_type, m,
-            m * n, batchCount, compute_type, algo));
+    } else {
+        if (type.compare("half")) {
+            matrix_type = CUDA_R_16F;
+        } else {
+            throw "invalid datatype";
+        }
     }
-    if (type.compare("half")) {
-        matrix_type = CUDA_R_16F;
-        CUBLAS_SAFE_CALL(cublasGemmStridedBatchedEx(
-            handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m, n, k, &alpha, a,
-            matrix_type, (transa ? k : m), m * k, b, matrix_type, (transb ? n : k), n * k, &beta, c, matrix_type, m,
-            m * n, batchCount, compute_type, algo));
-    }
+    CUBLAS_SAFE_CALL(cublasGemmStridedBatchedEx(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N),
+                                                (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m, n, k, &alpha, a, matrix_type,
+                                                (transa ? k : m), m * k, b, matrix_type, (transb ? n : k), n * k, &beta,
+                                                c, matrix_type, m, m * n, batchCount, compute_type, algo));
 }
 
 /**

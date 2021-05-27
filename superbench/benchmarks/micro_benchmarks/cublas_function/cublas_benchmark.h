@@ -59,7 +59,7 @@ class CublasFunction {
     bool use_tensor_core_;             ///< choose the algo used in cublasGemmEx and cublasGemmStridedBatchedEx
     int batch_count_;                  ///< the number of the batch
     cublas_function_name_enum e_name_; ///< enum cublas functin name
-    std::string to_str_;               ///< the str representing the cublas function with params
+    std::string function_str;          ///< the str representing the cublas function with params
     cublasHandle_t cublas_handle;      ///< the handle of cublas function
 
     /**
@@ -115,7 +115,7 @@ class CublasFunction {
      * @brief Set the params string
      * @param  str             the str representing the params of the function
      */
-    void set_str(std::string &str) { this->to_str_ = str; }
+    void set_function(std::string &str) { this->function_str = str; }
     /**
      * @brief Set the name member
      * @param  name             the name of the cublas function
@@ -331,7 +331,7 @@ void CublasFunction::benchmark() {
     }
 
     // Output results
-    std::cout << "[function config]: " << this->to_str_ << std::endl;
+    std::cout << "[function config]: " << this->function_str << std::endl;
     std::cout << "[raw_data]: ";
     for (int i = 0; i < iteration_time.size(); i++) {
         std::cout << iteration_time[i] << ",";
