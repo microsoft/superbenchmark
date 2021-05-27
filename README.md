@@ -1,5 +1,6 @@
 # SuperBenchmark
 
+[![MIT licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
 [![Lint](https://github.com/microsoft/superbenchmark/workflows/Lint/badge.svg)](https://github.com/microsoft/superbenchmark/actions?query=workflow%3ALint)
 [![Codecov](https://codecov.io/gh/microsoft/superbenchmark/branch/main/graph/badge.svg?token=DDiDLW7pSd)](https://codecov.io/gh/microsoft/superbenchmark)
 
@@ -9,18 +10,17 @@
 | gpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main) |
 
 
-SuperBench is a benchmarking and diagnosis tool for AI infrastructure,
-which supports:
-* Comprehensive AI infrastructure validation
+**SuperBench** is a validation and profiling tool for AI infrastructure, which supports:
+
+* AI infrastructure validation and diagnosis
     * Distributed validation tools to validate hundreds or thousands of servers automatically
     * Consider both raw hardware and E2E model performance with ML workload patterns
-    * Provide a fast and accurate way to detect and locate hardware problems
-    * Performance/Quality Gates for hardware and system release
-* Benchmarking with typical AI workload patterns
+    * Build a contract to identify hardware issues
+    * Provide infrastructural-oriented criteria as Performance/Quality Gates for hardware and system release
+    * Provide detailed performance report and advanced analysis tool  
+* AI workload benchmarking and profiling
     * Provide comprehensive performance comparison between different existing hardware
-    * Give a better understanding for new DL software & hardware
-* Detailed performance analysis and diagnosis
-    * Provide detailed performance report and advanced analysis tool   
+    * Provide insights for hardware and software co-design
 
 It includes micro-benchmark for primitive computation and communication benchmarking,
 and model-benchmark to measure domain-aware end-to-end deep learning workloads.
@@ -28,6 +28,109 @@ and model-benchmark to measure domain-aware end-to-end deep learning workloads.
 > 🔴 __Note__:
 SuperBench is in the early pre-alpha stage for open source, and not ready for general public yet.
 If you want to jump in early, you can try building latest code yourself.
+
+## SuperBench capabilities, workflow and benchmarking metrics
+
+The following graphic shows the capabilities provide by SuperBench core framework and its extension.
+
+<img src="imgs/superbench_structure.png">
+
+Benchmarking metrics provided by SuperBench are listed as below.
+
+<table>
+  <tbody>
+    <tr align="center" valign="bottom">
+      <td>
+      </td>
+      <td>
+        <b>Micro Benchmark</b>
+        <img src="imgs/bar.png"/>
+      </td>
+      <td>
+        <b>Model Benchmark</b>
+        <img src="imgs/bar.png"/>
+      </td>
+    </tr>
+    <tr valign="top">
+      <td align="center" valign="middle">
+        <b>Metrics</b>
+      </td>
+      <td>
+        <ul><li><b>Computation Benchmark</b></li>
+          <ul><li><b>Kernel Performance</b></li>
+            <ul>
+              <li>GFLOPS</li>
+              <li>TensorCore</li>
+              <li>cuBLAS</li>
+              <li>cuDNN</li>
+            </ul>
+          </ul>
+          <ul><li><b>Kernel Launch Time</b></li>
+            <ul>
+              <li>Kernel_Launch_Event_Time</li>
+              <li>Kernel_Launch_Wall_Time</li>
+            </ul>
+          </ul>
+          <ul><li><b>Operator Performance</b></li>
+            <ul><li>MatMul</li><li>Sharding_MatMul</li></ul>
+          </ul>
+          <ul><li><b>Memory</b></li>
+            <ul><li>H2D_Mem_BW_&lt;GPU ID&gt;</li>
+              <li>H2D_Mem_BW_&lt;GPU ID&gt;</li></ul>
+          </ul>
+        </ul>
+        <ul><li><b>Communication Benchmark</b></li>
+          <ul><li><b>Device P2P Bandwidth</b></li>
+            <ul><li>P2P_BW_Max</li><li>P2P_BW_Min</li><li>P2P_BW_Avg</li></ul>
+          </ul>
+          <ul><li><b>RDMA</b></li>
+            <ul><li>RDMA_Peak</li><li>RDMA_Avg</li></ul>
+          </ul>
+          <ul><li><b>NCCL</b></li>
+            <ul><li>NCCL_AllReduce</li></ul>
+            <ul><li>NCCL_AllGather</li></ul>
+            <ul><li>NCCL_broadcast</li></ul>
+            <ul><li>NCCL_reduce</li></ul>
+            <ul><li>NCCL_reduce_scatter</li></ul>
+          </ul>
+        </ul>
+        <ul><li><b>Computation-Communication Benchmark</b></li>
+          <ul><li><b>Mul_During_NCCL</b></li><li><b>MatMul_During_NCCL</b></li></ul>
+        </ul>
+        <ul><li><b>Storage Benchmark</b></li>
+          <ul><li><b>Disk</b></li>
+            <ul>
+              <li>Read/Write</li><li>Rand_Read/Rand_Write</li>
+              <li>R/W_Read</li><li>R/W_Write</li><li>Rand_R/W_Read</li><li>Rand_R/W_Write</li>
+            </ul>
+          </ul>
+        </ul>   
+      </td>
+      <td>
+        <ul><li><b>CNN models</b></li>
+          <ul>
+            <li><b>ResNet</b></li>
+              <ul><li>ResNet-50</li><li>ResNet-101</li><li>ResNet-152</li></ul>
+          </ul>
+          <ul>
+            <li><b>DenseNet</b></li>
+              <ul><li>DenseNet-169</li><li>DenseNet-201</li></ul>
+          </ul>
+          <ul>
+            <li><b>VGG</b></li>
+              <ul><li>VGG-11</li><li>VGG-13</li><li>VGG-16</li><li>VGG-19</li></ul>
+          </ul>
+          <ul><li><b>Other CNN models</b></li><ul><li>...</li></ul></ul>
+        </ul>  
+        <ul><li><b>BERT models</b></li>
+          <ul><li><b>BERT</b></li><li><b>BERT_LARGE</b></li></ul>
+        </ul>
+        <ul><li><b>LSTM</b></li></ul>
+        <ul><li><b>GPT-2</b></li></ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 
 ## Installation
@@ -104,6 +207,7 @@ __Install SuperBench__
 
     # install superbench
     python3 -m pip install .
+    make postinstall
     ```
 
 
@@ -126,7 +230,11 @@ Please find more benchmark examples [here](examples/benchmarks/).
 
 ## Developer Guide
 
-Follow [Installation using Python](#using-python).
+If you want to develop new feature, please follow below steps to set up development environment.
+
+### Check Environment
+
+Follow __[System Requirements](#using-python)__.
 
 ### Set Up
 
