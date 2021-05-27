@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 /**
- * @copyright Copyright (c) Microsoft Corporation
  * @file cublas_test.cpp
  * @brief Cublas function benchmark will read the params from cmd, and use these params
  * to benchmark the wall time of the cublas functions.

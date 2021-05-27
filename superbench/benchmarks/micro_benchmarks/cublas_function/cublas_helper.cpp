@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 /**
- * @copyright Copyright (c) Microsoft Corporation
  * @file cublas_helper.cpp
  * @brief  Cpp file for some functions related to cublas
  */

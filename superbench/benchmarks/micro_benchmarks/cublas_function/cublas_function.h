@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 /**
- * @copyright Copyright (c) Microsoft Corporation
  * @file cublas_function.h
  * @brief Implementation of specific cublas function
  */
@@ -32,12 +34,18 @@ class SgemmFunction : public CublasFunction {
     /**
      * @brief Construct a new Sgemm Function object
      */
-    SgemmFunction() { this->batch_count_ = 1; }
+    SgemmFunction() {
+        this->batch_count_ = 1;
+        cuda_init(&cublas_handle);
+    }
     /**
      * @brief Construct a new Sgemm Function object
      * @param  function         base class CublasFunction object
      */
-    SgemmFunction(CublasFunction &function) : CublasFunction(function) { this->batch_count_ = 1; }
+    SgemmFunction(CublasFunction &function) : CublasFunction(function) {
+        this->batch_count_ = 1;
+        cuda_init(&cublas_handle);
+    }
     /**
      * @brief Destroy the Sgemm Function object
      */
@@ -76,12 +84,18 @@ class CgemmFunction : public CublasFunction {
     /**
      * @brief Construct a new Cgemm Function object
      */
-    CgemmFunction() { this->batch_count_ = 1; }
+    CgemmFunction() {
+        this->batch_count_ = 1;
+        cuda_init(&cublas_handle);
+    }
     /**
      * @brief Construct a new Cgemm Function object
      * @param  function         base class CublasFunction object
      */
-    CgemmFunction(CublasFunction &function) : CublasFunction(function) { this->batch_count_ = 1; }
+    CgemmFunction(CublasFunction &function) : CublasFunction(function) {
+        this->batch_count_ = 1;
+        cuda_init(&cublas_handle);
+    }
     /**
      * @brief Destroy the Cgemm Function object
      */
@@ -118,12 +132,18 @@ class GemmExFunction : public CublasFunction {
     /**
      * @brief Construct a new Gemm Ex Function object
      */
-    GemmExFunction() { this->batch_count_ = 1; }
+    GemmExFunction() {
+        this->batch_count_ = 1;
+        cuda_init(&cublas_handle);
+    }
     /**
      * @brief Construct a new Gemm Ex Function object
      * @param  function         base class CublasFunction object
      */
-    GemmExFunction(CublasFunction &function) : CublasFunction(function) { this->batch_count_ = 1; }
+    GemmExFunction(CublasFunction &function) : CublasFunction(function) {
+        this->batch_count_ = 1;
+        cuda_init(&cublas_handle);
+    }
     /**
      * @brief Destroy the Gemm Ex Function object
      */
@@ -161,12 +181,12 @@ class GemmStridedBatchedExFunction : public CublasFunction {
     /**
      * @brief Construct a new Gemm Strided Batched Ex Function object
      */
-    GemmStridedBatchedExFunction() {}
+    GemmStridedBatchedExFunction() { cuda_init(&cublas_handle); }
     /**
      * @brief Construct a new Gemm Strided Batched Ex Function object
      * @param  function         base class CublasFunction object
      */
-    GemmStridedBatchedExFunction(CublasFunction &function) : CublasFunction(function) {}
+    GemmStridedBatchedExFunction(CublasFunction &function) : CublasFunction(function) { cuda_init(&cublas_handle); }
     /**
      * @brief Destroy the Gemm Strided Batched Ex Function object
      */
@@ -204,12 +224,12 @@ class SgemmStridedBatchedFunction : public CublasFunction {
     /**
      * @brief Construct a new Sgemm Strided Batched Function object
      */
-    SgemmStridedBatchedFunction() {}
+    SgemmStridedBatchedFunction() { cuda_init(&cublas_handle); }
     /**
      * @brief Construct a new Sgemm Strided Batched Function object
      * @param  function         base class CublasFunction object
      */
-    SgemmStridedBatchedFunction(CublasFunction &function) : CublasFunction(function) {}
+    SgemmStridedBatchedFunction(CublasFunction &function) : CublasFunction(function) { cuda_init(&cublas_handle); }
     /**
      * @brief Destroy the Sgemm Strided Batched Function object
      */
@@ -249,12 +269,12 @@ class Cgemm3mStridedBatchedFunction : public CublasFunction {
     /**
      * @brief Construct a new Cgemm 3m Strided Batched Function object
      */
-    Cgemm3mStridedBatchedFunction() {}
+    Cgemm3mStridedBatchedFunction() { cuda_init(&cublas_handle); }
     /**
      * @brief Construct a new Cgemm 3m Strided Batched Function object according to base class object
      * @param  function         base class CublasFunction object
      */
-    Cgemm3mStridedBatchedFunction(CublasFunction &function) : CublasFunction(function) {}
+    Cgemm3mStridedBatchedFunction(CublasFunction &function) : CublasFunction(function) { cuda_init(&cublas_handle); }
     /**
      * @brief Destroy the Cgemm 3m Strided Batched Function object
      */

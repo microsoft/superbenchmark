@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 /**
- * @copyright Copyright (c) Microsoft Corporation
  * @file cublas_benchmark.h
  * @brief Unify a base class for cublas function benchmark
  */
@@ -187,16 +189,9 @@ class CublasFunction {
      */
     void benchmark();
     /**
-     * @brief Construct a new Cublas Function object
-     */
-    CublasFunction() {
-        // Init cuda handle
-        cuda_init(&cublas_handle);
-    }
-    /**
      * @brief Destroy the Cublas Function object
      */
-    virtual ~CublasFunction() { cuda_free(&cublas_handle); }
+    virtual ~CublasFunction() {}
 };
 
 /**
@@ -233,7 +228,7 @@ void CublasFunction::prepare_tensor_float(float **Parameter_0_0, float **Paramet
     int n = this->n_;
     int k = this->k_;
 
-    float *Parameter_0_0_host, *Parameter_1_0_host, *Result_3_0_host;
+    float *Parameter_0_0_host, *Parameter_1_0_host;
     // input argument
     CUDA_SAFE_CALL(cudaMallocHost((void **)&Parameter_0_0_host, sizeof(float) * m * k * this->batch_count_));
     CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_0_0, sizeof(float) * m * k * this->batch_count_));
@@ -251,13 +246,11 @@ void CublasFunction::prepare_tensor_float(float **Parameter_0_0, float **Paramet
                               cudaMemcpyHostToDevice));
 
     // output arguments
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host, sizeof(float) * m * n * batch_count_));
     CUDA_SAFE_CALL(cudaMalloc((void **)Result_3_0, sizeof(float) * m * n * batch_count_));
     CUDA_SAFE_CALL(cudaMemset((void *)*Result_3_0, 0, sizeof(float) * m * n * batch_count_));
 
     CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
     CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
-    CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
 }
 /**
  * @brief Prepare memory and data of the input and output in cuComplex type
@@ -268,7 +261,7 @@ void CublasFunction::prepare_tensor_cucomplex(cuComplex **Parameter_0_0, cuCompl
     int n = this->n_;
     int k = this->k_;
 
-    cuComplex *Parameter_0_0_host, *Parameter_1_0_host, *Result_3_0_host;
+    cuComplex *Parameter_0_0_host, *Parameter_1_0_host;
     // input argument
     CUDA_SAFE_CALL(cudaMallocHost((void **)&Parameter_0_0_host, sizeof(cuComplex) * m * k * this->batch_count_));
     CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_0_0, sizeof(cuComplex) * m * k * this->batch_count_));
@@ -286,13 +279,11 @@ void CublasFunction::prepare_tensor_cucomplex(cuComplex **Parameter_0_0, cuCompl
                               cudaMemcpyHostToDevice));
 
     // output arguments
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host, sizeof(cuComplex) * m * n * batch_count_));
     CUDA_SAFE_CALL(cudaMalloc((void **)Result_3_0, sizeof(cuComplex) * m * n * batch_count_));
     CUDA_SAFE_CALL(cudaMemset((void *)*Result_3_0, 0, sizeof(cuComplex) * m * n * batch_count_));
 
     CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
     CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
-    CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
 }
 /**
  * @brief The main procedure for cublas function test, including warmup, function test, time measurement and output raw

@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 /**
- * @copyright Copyright (c) Microsoft Corporation
  * @file cublas_function_helper.h
  * @brief  Helper for parsing command line arguments and pass params to cublas function
  */
@@ -197,6 +199,7 @@ void run_benchmark(Options &options) {
         function.set_random_seed(options.random_seed);
         CublasFunction *p_function = get_cublas_function_pointer(function);
         p_function->benchmark();
+        std::cout << "~delete" << std::endl;
         delete p_function;
     } catch (std::exception &e) {
         std::cout << "Error: " << e.what() << std::endl;
