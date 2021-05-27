@@ -1,8 +1,8 @@
 /**
  * @copyright Copyright (c) Microsoft Corporation
  * @file cublas_test.cpp
- * @brief Cublas function benchmark will read the functions' param fro json file 'para_info.json', and use these params
- * to benchmark the wall time of cublas functions.
+ * @brief Cublas function benchmark will read the params from cmd, and use these params
+ * to benchmark the wall time of the cublas functions.
  */
 
 #include "cublas_function_helper.h"

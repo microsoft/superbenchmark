@@ -1,6 +1,6 @@
 /**
  * @copyright Copyright (c) Microsoft Corporation
- * @file cmd_helper.h
+ * @file cublas_function_helper.h
  * @brief  Helper for parsing command line arguments and pass params to cublas function
  */
 
@@ -77,7 +77,6 @@ class Options {
     Options(int argc, char *argv[]) {
         begin = argv;
         end = argv + argc;
-        // TODO DEFUATL VALUE
         num_test = get_cmd_line_argument_int("--num_test");
         num_test = (num_test == 0 ? 1 : num_test);
         warm_up = get_cmd_line_argument_int("--warm_up");
@@ -182,9 +181,9 @@ CublasFunction *get_cublas_function_pointer(CublasFunction &function) {
 /**
  * @brief run the entire process of benchmark according to cmd auguments
  *
- * first, read the para_info_json file in json array format representing multiple cublas functions
- * then for each cublas function, get the pointer of the class object the specific cublas function
- * finally run the benchmark of each funcion
+ * first, read the para_info_json string representing the params for a cublas function
+ * then get the pointer of the class object the specific cublas function
+ * finally run the benchmark of the funcion
  *
  * @param  options  the cmd arguments of the application
  */

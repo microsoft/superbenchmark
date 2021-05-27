@@ -9,7 +9,7 @@
 #include "cublas_benchmark.h"
 
 /**
- * @brief class of SgemmFunction
+ * @brief Class of SgemmFunction
  */
 class SgemmFunction : public CublasFunction {
     float *Parameter_0_0; ///< the pointer of the first input data
@@ -50,6 +50,9 @@ class SgemmFunction : public CublasFunction {
     }
 };
 
+/**
+ * @brief Class of CgemmFunction
+ */
 class CgemmFunction : public CublasFunction {
     cuComplex *Parameter_0_0;
     cuComplex *Parameter_1_0;
@@ -91,6 +94,9 @@ class CgemmFunction : public CublasFunction {
     }
 };
 
+/**
+ * @brief Class of GemmExFunction
+ */
 class GemmExFunction : public CublasFunction {
     float *Parameter_0_0;
     float *Parameter_1_0;
@@ -130,6 +136,9 @@ class GemmExFunction : public CublasFunction {
     }
 };
 
+/**
+ * @brief Class of GemmStridedBatchedExFunction
+ */
 class GemmStridedBatchedExFunction : public CublasFunction {
     float *Parameter_0_0;
     float *Parameter_1_0;
@@ -170,6 +179,9 @@ class GemmStridedBatchedExFunction : public CublasFunction {
     }
 };
 
+/**
+ * @brief Class of SgemmStridedBatchedFunction
+ */
 class SgemmStridedBatchedFunction : public CublasFunction {
     float *Parameter_0_0;
     float *Parameter_1_0;
@@ -210,6 +222,9 @@ class SgemmStridedBatchedFunction : public CublasFunction {
     }
 };
 
+/**
+ * @brief Class of Cgemm3mStridedBatchedFunction
+ */
 class Cgemm3mStridedBatchedFunction : public CublasFunction {
     cuComplex *Parameter_0_0;
     cuComplex *Parameter_1_0;
