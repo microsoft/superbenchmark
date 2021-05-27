@@ -3,6 +3,7 @@
 
 """SuperBench Executor test."""
 
+import json
 import unittest
 import shutil
 import tempfile
@@ -73,6 +74,30 @@ class ExecutorTestCase(unittest.TestCase):
                 self.default_config.superbench.benchmarks.bert_models.parameters
             ), expected_bert_models_args
         )
+
+    def test_get_benchmark_dir(self):
+        """Test __get_benchmark_dir."""
+        foo_path = Path(self.output_dir, 'benchmarks', 'foo')
+        self.assertEqual(self.executor._SuperBenchExecutor__get_benchmark_dir('foo'), str(foo_path))
+        self.assertFalse(foo_path.is_dir())
+
+        bar_path = Path(self.output_dir, 'benchmarks', 'bar')
+        self.assertEqual(self.executor._SuperBenchExecutor__get_benchmark_dir('bar', create=True), str(bar_path))
+        self.assertTrue(bar_path.is_dir())
+
+    def test_write_benchmark_results(self):
+        """Test __write_benchmark_results."""
+        foobar_path = Path(self.output_dir, 'benchmarks', 'foobar')
+        foobar_results_path = foobar_path / 'results.json'
+        self.executor._SuperBenchExecutor__get_benchmark_dir('foobar', create=True)
+        foobar_results = {
+            'sum': 1,
+            'avg': 1.1,
+        }
+        self.executor._SuperBenchExecutor__write_benchmark_results('foobar', foobar_results)
+        self.assertTrue(foobar_results_path.is_file())
+        with foobar_results_path.open(mode='r') as f:
+            self.assertDictEqual(json.load(f), foobar_results)
 
     def test_exec_empty_benchmarks(self):
         """Test execute empty benchmarks, nothing should happen."""
