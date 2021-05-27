@@ -1,0 +1,7 @@
+{% for host in hostvars.values() | map(attribute='ansible_hostname') | sort %}
+Host node{{ loop.index0 }}
+    HostName {{ host }}
+    Port {{ ssh_port }}
+    IdentityFile /root/.ssh/key
+    StrictHostKeyChecking no
+{% endfor %}
