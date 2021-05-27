@@ -127,13 +127,15 @@ class CublasFunction(MicroBenchmarkWithInvoke):
                     error = True
         except BaseException as e:
             logger.error(
-                'Cannot extract results from cublas functions - round: {}, index of cmd: {], benchmark: {}, raw data: {}, message: {}'
-                .format(self._curr_run_index, cmd_idx, self._name, raw_output, str(e))
+                'Cannot extract results from cublas functions - round: {}, index of cmd: {}, \
+                benchmark: {}, raw data: {}, message: {}'.format(
+                    self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
+                )
             )
             return False
         if error:
             logger.error(
-                'Error in running cublas test - round: {}, index of cmd: {], benchmark: {}, raw data: {}'.format(
+                'Error in running cublas test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
                     self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
