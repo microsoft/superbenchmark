@@ -32,12 +32,12 @@ class SgemmFunction : public CublasFunction {
     /**
      * @brief Construct a new Sgemm Function object
      */
-    SgemmFunction() {}
+    SgemmFunction() { this->batch_count_ = 1; }
     /**
      * @brief Construct a new Sgemm Function object
      * @param  function         base class CublasFunction object
      */
-    SgemmFunction(CublasFunction &function) : CublasFunction(function) {}
+    SgemmFunction(CublasFunction &function) : CublasFunction(function) { this->batch_count_ = 1; }
     /**
      * @brief Destroy the Sgemm Function object
      */
@@ -73,12 +73,12 @@ class CgemmFunction : public CublasFunction {
     /**
      * @brief Construct a new Cgemm Function object
      */
-    CgemmFunction() {}
+    CgemmFunction() { this->batch_count_ = 1; }
     /**
      * @brief Construct a new Cgemm Function object
      * @param  function         base class CublasFunction object
      */
-    CgemmFunction(CublasFunction &function) : CublasFunction(function) {}
+    CgemmFunction(CublasFunction &function) : CublasFunction(function) { this->batch_count_ = 1; }
     /**
      * @brief Destroy the Cgemm Function object
      */
@@ -112,12 +112,12 @@ class GemmExFunction : public CublasFunction {
     /**
      * @brief Construct a new Gemm Ex Function object
      */
-    GemmExFunction() {}
+    GemmExFunction() { this->batch_count_ = 1; }
     /**
      * @brief Construct a new Gemm Ex Function object
      * @param  function         base class CublasFunction object
      */
-    GemmExFunction(CublasFunction &function) : CublasFunction(function) {}
+    GemmExFunction(CublasFunction &function) : CublasFunction(function) { this->batch_count_ = 1; }
     /**
      * @brief Destroy the Gemm Ex Function object
      */
