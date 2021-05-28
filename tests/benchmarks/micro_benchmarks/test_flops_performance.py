@@ -3,7 +3,11 @@
 
 """Tests for flops-perf benchmark."""
 
-from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
+import os
+import stat
+from pathlib import Path
+
+from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType
 
 
 def test_flops_performance_cuda():
@@ -17,9 +21,14 @@ def test_flops_performance_cuda():
         benchmark_name, parameters='--num_warmup 200 --n 1024 --k 512 --m 2048 --precision FP32 TF32_TC FP16_TC'
     )
 
-    # Binary does not exist.
-    assert (benchmark._preprocess() is False)
-    assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_BINARY_NOT_EXIST)
+    # Create fake binary file just for testing.
+    binary_path = os.path.join(os.getenv('SB_MICRO_PATH', '/usr/local'), 'bin')
+    binary_path = os.path.join(binary_path, 'cutlass_profiler')
+    Path(binary_path).touch(exist_ok=True)
+    st = os.stat(binary_path)
+    os.chmod(binary_path, st.st_mode | stat.S_IEXEC)
+
+    assert (benchmark._preprocess())
 
     # Check basic information.
     assert (benchmark.name == 'flops-perf')
@@ -33,9 +42,7 @@ def test_flops_performance_cuda():
     assert (benchmark._args.m == 2048)
     assert (benchmark._args.precision == ['FP32', 'TF32_TC', 'FP16_TC'])
 
-    # Can't check commands since when binary does not exist, command will not be generated.
-
-    """
+    # Check the command list.
     for i in range(len(benchmark._args.precision)):
         command = '{} --warmup-iterations={} --operation=gemm --n={} --k={} --m={} --kernels={}'.format(
             benchmark._bin_name, benchmark._args.num_warmup, benchmark._args.n, benchmark._args.k, benchmark._args.m,
@@ -43,7 +50,6 @@ def test_flops_performance_cuda():
         )
         expected_cmd = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
         assert (command == expected_cmd)
-    """
 
     # Check results and metrics.
     raw_output_FP32 = """
