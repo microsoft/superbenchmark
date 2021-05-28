@@ -12,7 +12,6 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 @decorator.cuda_test
 def test_cublas_functions():
     """Test cublas-function benchmark."""
-
     # Test for default configuration
     context = BenchmarkRegistry.create_benchmark_context(
         'cublas-test', parameters='--num_warmup 10 --num_steps 10 --num_in_step 100'
