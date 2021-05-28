@@ -12,8 +12,8 @@ from superbench.benchmarks import BenchmarkRegistry
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class CublasFunction(MicroBenchmarkWithInvoke):
-    """The CublasFunction overhead benchmark class."""
+class CublasBenchmark(MicroBenchmarkWithInvoke):
+    """The CublasBenchmark overhead benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -52,14 +52,14 @@ class CublasFunction(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--random_seed',
             type=int,
-            default=0,
+            default=33931,
             required=False,
             help='The random seed to fill in the data of the function.',
         )
         self._parser.add_argument(
             '--config_path',
             type=str,
-            default=Path(__file__).parent / 'cublas_para_info.json',
+            default=str(Path(__file__).parent / 'cublas_para_info.json'),
             required=False,
             help='The path of functions config json file.',
         )
@@ -83,7 +83,7 @@ class CublasFunction(MicroBenchmarkWithInvoke):
                 config_array = json.load(load_config)
             for config_json in config_array:
                 config_json_str = "\'" + json.dumps(config_json).replace(' ', '') + "\'"
-                complete_command = command + (' --config_json ' + str(config_json_str))
+                complete_command = command + (' --config_json ') + config_json_str
                 self._commands.append(complete_command)
         except BaseException as e:
             logger.error(
@@ -143,4 +143,4 @@ class CublasFunction(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('cublas-test', CublasFunction)
+BenchmarkRegistry.register_benchmark('cublas-test', CublasBenchmark)
