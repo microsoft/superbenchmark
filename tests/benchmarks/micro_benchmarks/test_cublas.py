@@ -4,8 +4,6 @@
 """Tests for cublas-functions benchmark."""
 
 import numbers
-import json
-from pathlib import Path
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
@@ -14,10 +12,10 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 @decorator.cuda_test
 def test_cublas_functions():
     """Test cublas-function benchmark."""
-    config_path = Path(__file__).parent / '../../../superbench/benchmarks/micro_benchmarks/cublas_para_info.json'
+
+    # Test for default configuration
     context = BenchmarkRegistry.create_benchmark_context(
-        'cublas-test',
-        parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --random_seed 1 --config_path ' + str(config_path)
+        'cublas-test', parameters='--num_warmup 10 --num_steps 10 --num_in_step 100'
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -33,7 +31,6 @@ def test_cublas_functions():
     assert (benchmark._args.num_warmup == 10)
     assert (benchmark._args.num_steps == 10)
     assert (benchmark._args.num_in_step == 100)
-    assert (benchmark._args.random_seed == 1)
 
     # Check results and metrics.
     assert (benchmark.run_count == 1)
@@ -41,9 +38,42 @@ def test_cublas_functions():
     assert ('raw_output_0' in benchmark.raw_data)
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
-    with open(config_path, 'r') as load_f:
-        load_json = json.load(load_f)
-        assert (len(load_json) == len(benchmark.result))
+
+    assert (19 <= len(benchmark.result))
+    for metric in list(benchmark.result.keys()):
+        assert (len(benchmark.result[metric]) == 1)
+        assert (isinstance(benchmark.result[metric][0], numbers.Number))
+        assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
+
+    # Test for custom configuration
+    custom_config_str = '{"name":"cublasCgemm","m":512,"n":512,"k":32,"transa":1,"transb":0}'
+    context = BenchmarkRegistry.create_benchmark_context(
+        'cublas-test',
+        parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --config_json_str ' + custom_config_str
+    )
+
+    assert (BenchmarkRegistry.is_benchmark_context_valid(context))
+
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+
+    # Check basic information.
+    assert (benchmark)
+    assert (benchmark.name == 'cublas-test')
+    assert (benchmark.type == BenchmarkType.MICRO)
+
+    # Check parameters specified in BenchmarkContext.
+    assert (benchmark._args.num_warmup == 10)
+    assert (benchmark._args.num_steps == 10)
+    assert (benchmark._args.num_in_step == 100)
+
+    # Check results and metrics.
+    assert (benchmark.run_count == 1)
+    assert (benchmark.return_code == ReturnCode.SUCCESS)
+    assert ('raw_output_0' in benchmark.raw_data)
+    assert (len(benchmark.raw_data['raw_output_0']) == 1)
+    assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
+
+    assert (1 == len(benchmark.result))
     for metric in list(benchmark.result.keys()):
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))

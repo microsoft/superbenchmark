@@ -5,7 +5,7 @@
 
 import os
 import json
-from pathlib import Path
+import yaml
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry
@@ -22,6 +22,164 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
+
+        self.default_params_dict_list = [
+            {
+                'name': 'cublasCgemm',
+                'm': 512,
+                'n': 512,
+                'k': 32,
+                'transa': 1,
+                'transb': 0
+            }, {
+                'name': 'cublasCgemm',
+                'm': 2048,
+                'n': 512,
+                'k': 32,
+                'transa': 1,
+                'transb': 0
+            }, {
+                'name': 'cublasCgemm',
+                'm': 512,
+                'n': 2048,
+                'k': 32,
+                'transa': 1,
+                'transb': 0
+            }, {
+                'name': 'cublasCgemm',
+                'm': 640,
+                'n': 1280,
+                'k': 32,
+                'transa': 1,
+                'transb': 0
+            }, {
+                'name': 'cublasCgemm',
+                'm': 896,
+                'n': 1792,
+                'k': 32,
+                'transa': 1,
+                'transb': 0
+            }, {
+                'name': 'cublasCgemm3mStridedBatched',
+                'm': 64,
+                'n': 32,
+                'k': 3,
+                'transa': 0,
+                'transb': 1,
+                'batchCount': 544
+            }, {
+                'name': 'cublasCgemm3mStridedBatched',
+                'm': 64,
+                'n': 32,
+                'k': 64,
+                'transa': 1,
+                'transb': 0,
+                'batchCount': 544
+            }, {
+                'name': 'cublasCgemm3mStridedBatched',
+                'm': 128,
+                'n': 32,
+                'k': 128,
+                'transa': 0,
+                'transb': 1,
+                'batchCount': 544
+            }, {
+                'name': 'cublasCgemm3mStridedBatched',
+                'm': 128,
+                'n': 32,
+                'k': 64,
+                'transa': 0,
+                'transb': 1,
+                'batchCount': 544
+            }, {
+                'name': 'cublasCgemm3mStridedBatched',
+                'm': 64,
+                'n': 32,
+                'k': 128,
+                'transa': 0,
+                'transb': 1,
+                'batchCount': 544
+            }, {
+                'name': 'cublasGemmStridedBatchedEx',
+                'm': 224,
+                'n': 224,
+                'k': 64,
+                'transa': 0,
+                'transb': 0,
+                'datatype': 'half',
+                'use_tensor_core': True,
+                'batchCount': 160
+            }, {
+                'name': 'cublasGemmStridedBatchedEx',
+                'm': 64,
+                'n': 224,
+                'k': 224,
+                'transa': 0,
+                'transb': 0,
+                'datatype': 'half',
+                'use_tensor_core': True,
+                'batchCount': 160
+            }, {
+                'name': 'cublasGemmEx',
+                'm': 4000,
+                'n': 224,
+                'k': 1000,
+                'transa': 0,
+                'transb': 0,
+                'datatype': 'float',
+                'use_tensor_core': False
+            }, {
+                'name': 'cublasGemmEx',
+                'm': 4000,
+                'n': 224,
+                'k': 1000,
+                'transa': 1,
+                'transb': 0,
+                'datatype': 'half',
+                'use_tensor_core': True
+            }, {
+                'name': 'cublasGemmEx',
+                'm': 1000,
+                'n': 224,
+                'k': 4000,
+                'transa': 0,
+                'transb': 0,
+                'datatype': 'half',
+                'use_tensor_core': False
+            }, {
+                'name': 'cublasGemmEx',
+                'm': 1000,
+                'n': 224,
+                'k': 4000,
+                'transa': 0,
+                'transb': 0,
+                'datatype': 'float',
+                'use_tensor_core': False
+            }, {
+                'name': 'cublasSgemm',
+                'm': 1024,
+                'n': 7168,
+                'k': 1024,
+                'transa': 1,
+                'transb': 0
+            }, {
+                'name': 'cublasSgemmStridedBatched',
+                'm': 64,
+                'n': 224,
+                'k': 224,
+                'transa': 0,
+                'transb': 0,
+                'batchCount': 512
+            }, {
+                'name': 'cublasSgemmStridedBatched',
+                'm': 64,
+                'n': 224,
+                'k': 224,
+                'transa': 0,
+                'transb': 0,
+                'batchCount': 160
+            }
+        ]
 
         self._bin_name = 'CublasBenchmark'
 
@@ -57,9 +215,9 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             help='The random seed to fill in the data of the function.',
         )
         self._parser.add_argument(
-            '--config_path',
+            '--config_json_str',
             type=str,
-            default=str(Path(__file__).parent / 'cublas_para_info.json'),
+            default=None,
             required=False,
             help='The path of functions config json file.',
         )
@@ -78,19 +236,22 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         command += (' --warm_up ' + str(self._args.num_warmup))
         command += (' --num_in_step ' + str(self._args.num_in_step))
         command += (' --random_seed ' + str(self._args.random_seed))
+
         try:
-            with open(self._args.config_path, 'r') as load_config:
-                config_array = json.load(load_config)
-            for config_json in config_array:
-                config_json_str = "\'" + json.dumps(config_json).replace(' ', '') + "\'"
+            if not self._args.config_json_str:
+                for config_dict in self.default_params_dict_list:
+                    config_json_str = "\'" + json.dumps(config_dict).replace(' ', '') + "\'"
+                    print(config_json_str)
+                    complete_command = command + (' --config_json ') + config_json_str
+                    self._commands.append(complete_command)
+
+            else:
+                custom_config_str = yaml.safe_load(self._args.config_json_str)
+                config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
                 complete_command = command + (' --config_json ') + config_json_str
                 self._commands.append(complete_command)
         except BaseException as e:
-            logger.error(
-                'Invalid json file - benchmark: {}, file path: {}, message: {}'.format(
-                    self._name, self._args.config_path, str(e)
-                )
-            )
+            logger.error('Invalid input params - benchmark: {},  message: {}'.format(self._name, str(e)))
             return False
         return True
 
