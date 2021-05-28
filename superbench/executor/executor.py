@@ -4,6 +4,7 @@
 """SuperBench Executor."""
 
 import json
+import itertools
 from pathlib import Path
 
 from omegaconf import ListConfig
@@ -110,7 +111,7 @@ class SuperBenchExecutor():
                     logger.info('Executor succeeded in %s.', log_suffix)
                 else:
                     logger.error('Executor failed in %s.', log_suffix)
-                return benchmark.result
+                return json.loads(benchmark.serialized_result)
             else:
                 logger.error('Executor failed in %s, invalid context.', log_suffix)
         except Exception as e:
@@ -118,20 +119,21 @@ class SuperBenchExecutor():
             logger.error('Executor failed in %s.', log_suffix)
         return None
 
-    def __get_benchmark_dir(self, benchmark_name, create=False):
-        """Get output directory for benchmark.
+    def __create_benchmark_dir(self, benchmark_name):
+        """Create output directory for benchmark.
 
         Args:
             benchmark_name (str): Benchmark name.
-            create (bool): Create the directory or not.
-
-        Return:
-            str: Benchmark output directory.
         """
         benchmark_output_dir = Path(self._output_dir, 'benchmarks', benchmark_name)
-        if create:
-            benchmark_output_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
-        return str(benchmark_output_dir)
+        if benchmark_output_dir.is_dir() and any(benchmark_output_dir.iterdir()):
+            logger.warn('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
+            for i in itertools.count(start=1):
+                backup_dir = benchmark_output_dir.with_name('{}.{}'.format(benchmark_name, i))
+                if not backup_dir.is_dir():
+                    benchmark_output_dir.rename(backup_dir)
+                    break
+        benchmark_output_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
 
     def __write_benchmark_results(self, benchmark_name, benchmark_results):
         """Write benchmark results.
@@ -140,7 +142,7 @@ class SuperBenchExecutor():
             benchmark_name (str): Benchmark name.
             benchmark_results (dict): Benchmark results.
         """
-        with Path(self.__get_benchmark_dir(benchmark_name), 'results.json').open(mode='w') as f:
+        with Path(self._output_dir, 'benchmarks', benchmark_name, 'results.json').open(mode='w') as f:
             json.dump(benchmark_results, f, indent=2)
 
     def exec(self):
@@ -150,7 +152,7 @@ class SuperBenchExecutor():
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
             benchmark_results = {}
-            self.__get_benchmark_dir(benchmark_name, create=True)
+            self.__create_benchmark_dir(benchmark_name)
             for framework in benchmark_config.frameworks or [Framework.NONE]:
                 if benchmark_name.endswith('_models'):
                     for model in benchmark_config.models:

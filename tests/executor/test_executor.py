@@ -75,21 +75,34 @@ class ExecutorTestCase(unittest.TestCase):
             ), expected_bert_models_args
         )
 
-    def test_get_benchmark_dir(self):
-        """Test __get_benchmark_dir."""
+    def test_create_benchmark_dir(self):
+        """Test __create_benchmark_dir."""
         foo_path = Path(self.output_dir, 'benchmarks', 'foo')
-        self.assertEqual(self.executor._SuperBenchExecutor__get_benchmark_dir('foo'), str(foo_path))
-        self.assertFalse(foo_path.is_dir())
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
+        self.assertTrue(foo_path.is_dir())
+        self.assertFalse(any(foo_path.iterdir()))
 
-        bar_path = Path(self.output_dir, 'benchmarks', 'bar')
-        self.assertEqual(self.executor._SuperBenchExecutor__get_benchmark_dir('bar', create=True), str(bar_path))
-        self.assertTrue(bar_path.is_dir())
+        (foo_path / 'bar.txt').touch()
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
+        self.assertTrue(foo_path.is_dir())
+        self.assertFalse(any(foo_path.iterdir()))
+        self.assertFalse((foo_path / 'bar.txt').is_file())
+        self.assertTrue(foo_path.with_name('foo.1').is_dir())
+        self.assertTrue((foo_path.with_name('foo.1') / 'bar.txt').is_file())
+
+        (foo_path / 'bar.json').touch()
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
+        self.assertTrue(foo_path.is_dir())
+        self.assertFalse(any(foo_path.iterdir()))
+        self.assertFalse((foo_path / 'bar.json').is_file())
+        self.assertTrue(foo_path.with_name('foo.2').is_dir())
+        self.assertTrue((foo_path.with_name('foo.2') / 'bar.json').is_file())
 
     def test_write_benchmark_results(self):
         """Test __write_benchmark_results."""
         foobar_path = Path(self.output_dir, 'benchmarks', 'foobar')
         foobar_results_path = foobar_path / 'results.json'
-        self.executor._SuperBenchExecutor__get_benchmark_dir('foobar', create=True)
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foobar')
         foobar_results = {
             'sum': 1,
             'avg': 1.1,
