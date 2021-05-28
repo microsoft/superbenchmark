@@ -3,7 +3,7 @@
 
 CPPSOURCES := $(shell find $(CURDIR) -regextype posix-extended -regex '.*\.(c|cpp|h|hpp|cc|cxx|cu)')
 
-.PHONY: cpplint cppformat postinstall
+.PHONY: cpplint cppformat cppbuild thirdparty postinstall
 
 cpplint:
 	clang-format --verbose --dry-run --Werror $(CPPSOURCES)
@@ -15,7 +15,7 @@ cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh
 
 thirdparty:
-	cd ./third_party/ && bash build.sh
+	cd ./third_party/ && make all
 
 postinstall:
 ifeq ($(shell which ansible-galaxy),)

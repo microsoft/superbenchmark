@@ -82,7 +82,7 @@ RUN git clone https://github.com/nvidia/nccl-tests /usr/local/nccl-tests && \
 ENV PATH="${PATH}:/usr/local/cmake/bin:/usr/local/nccl-tests/build" \
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib" \
     SB_HOME="/opt/superbench" \
-    SB_MICRO_PATH="${SB_HOME}"
+    SB_MICRO_PATH="/opt/superbench"
 
 WORKDIR ${SB_HOME}
 ADD . .
