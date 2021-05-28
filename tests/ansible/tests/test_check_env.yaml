@@ -1,0 +1,14 @@
+- name: Context Preparation
+  hosts: localhost
+  connection: localhost
+  gather_facts: false
+  tasks:
+    - name: Creating Config File
+      copy:
+        src: ../../../superbench/config/default.yaml
+        dest: /tmp/test_ansible/sb.config.yaml
+
+- name: Test Playbook check_env.yaml
+  import_playbook: ../../../superbench/runner/playbooks/check_env.yaml
+  vars:
+    output_dir: /tmp/test_ansible
