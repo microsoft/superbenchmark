@@ -3,7 +3,7 @@
 
 """Tests for flops-perf benchmark."""
 
-from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType
+from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 
 
 def test_flops_performance_cuda():
@@ -16,7 +16,10 @@ def test_flops_performance_cuda():
     benchmark = benchmark_class(
         benchmark_name, parameters='--num_warmup 200 --n 1024 --k 512 --m 2048 --precision FP32 TF32_TC FP16_TC'
     )
-    assert (benchmark._preprocess())
+
+    # Binary does not exist.
+    assert (benchmark._preprocess() is False)
+    assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_BINARY_NOT_EXIST)
 
     # Check basic information.
     assert (benchmark.name == 'flops-perf')
