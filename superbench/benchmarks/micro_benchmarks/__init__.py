@@ -8,8 +8,9 @@ from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmu
 from superbench.benchmarks.micro_benchmarks.computation_communication_overlap import ComputationCommunicationOverlap
 from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import KernelLaunch
 from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchmark
-
+from superbench.benchmarks.micro_benchmarks.flops_performance import FlopsPerformanceCuda
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
-    'CublasBenchmark'
+    'CublasBenchmark', 'FlopsPerformanceCuda'
 ]
+
