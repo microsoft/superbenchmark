@@ -1,5 +1,4 @@
 include LICENSE README.md
-recursive-include superbench *.json
 recursive-include superbench *.py
 recursive-include superbench *.yaml
 global-exclude *.pyc
