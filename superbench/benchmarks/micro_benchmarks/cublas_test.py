@@ -8,12 +8,12 @@ import json
 import yaml
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry
+from superbench.benchmarks import Platform, BenchmarkRegistry
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
 class CublasBenchmark(MicroBenchmarkWithInvoke):
-    """The CublasBenchmark overhead benchmark class."""
+    """The Cublas performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -23,7 +23,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self.default_params_dict_list = [
+        self.__default_params_dict_list = [
             {
                 'name': 'cublasCgemm',
                 'm': 512,
@@ -239,7 +239,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
 
         try:
             if not self._args.config_json_str:
-                for config_dict in self.default_params_dict_list:
+                for config_dict in self.__default_params_dict_list:
                     config_json_str = "\'" + json.dumps(config_dict).replace(' ', '') + "\'"
                     print(config_json_str)
                     complete_command = command + (' --config_json ') + config_json_str
@@ -270,7 +270,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         try:
-            lines = raw_output.split('\n')
+            lines = raw_output.splitlines()
             metric = ''
             error = False
             raw_data = []
@@ -304,4 +304,4 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('cublas-test', CublasBenchmark)
+BenchmarkRegistry.register_benchmark('cublas-test', CublasBenchmark, platform=Platform.CUDA)
