@@ -8,6 +8,7 @@ import unittest
 import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 from omegaconf import OmegaConf
 
@@ -116,3 +117,18 @@ class ExecutorTestCase(unittest.TestCase):
         """Test execute empty benchmarks, nothing should happen."""
         self.executor._sb_enabled = []
         self.executor.exec()
+
+    @mock.patch('superbench.executor.SuperBenchExecutor._SuperBenchExecutor__exec_benchmark')
+    def test_exec_default_benchmarks(self, mock_exec_benchmark):
+        """Test execute default benchmarks, mock exec function.
+
+        Args:
+            mock_exec_benchmark (function): Mocked __exec_benchmark function.
+        """
+        mock_exec_benchmark.return_value = {}
+        self.executor.exec()
+
+        self.assertTrue(Path(self.output_dir, 'benchmarks').is_dir())
+        for benchmark_name in self.executor._sb_benchmarks:
+            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name).is_dir())
+            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name, 'results.json').is_file())
