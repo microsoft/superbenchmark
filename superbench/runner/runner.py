@@ -4,6 +4,7 @@
 """SuperBench Runner."""
 
 import random
+import multiprocessing
 from pathlib import Path
 
 from omegaconf import ListConfig, OmegaConf
@@ -68,7 +69,12 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
-        if mode.name == 'torch.distributed':
+        if mode.name == 'local':
+            return '{prefix} {command}'.format(
+                prefix=(mode.prefix or '').format(proc_rank=mode.proc_rank, proc_num=mode.proc_num or 1),
+                command=exec_command
+            ).strip()
+        elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
             return (
@@ -121,7 +127,35 @@ class SuperBenchRunner():
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
             for mode in benchmark_config.modes or []:
-                if mode.name == 'torch.distributed':
+                if mode.name == 'local':
+                    logger.info('Runner is going to run %s.', benchmark_name)
+
+                    def run_proc(vars, rets):
+                        mode.update(vars)
+                        rc = self._ansible_client.run(
+                            self._ansible_client.get_shell_config(
+                                runner_command.format(
+                                    self.__get_mode_command(
+                                        mode, ('sb exec -c sb.config.yaml -C '
+                                               'superbench.enable={name}').format(name=benchmark_name)
+                                    )
+                                ),
+                                sudo=True
+                            )
+                        )
+                        rets[vars['proc_rank']] = rc
+
+                    jobs = []
+                    rets = multiprocessing.Manager().dict()
+                    for proc_rank in range(mode.proc_num or 1):
+                        proc = multiprocessing.Process(target=run_proc, args=({'proc_rank': proc_rank}, rets))
+                        jobs.append(proc)
+                    for proc in jobs:
+                        proc.start()
+                    for proc in jobs:
+                        proc.join()
+
+                elif mode.name == 'torch.distributed':
                     logger.info('Runner is going to run %s.', benchmark_name)
                     self._ansible_client.run(
                         self._ansible_client.get_shell_config(

@@ -44,6 +44,23 @@ class RunnerTestCase(unittest.TestCase):
             },
             {
                 'mode': {
+                    'name': 'local',
+                },
+                'exec_command': 'sb exec',
+                'expected_command': 'sb exec',
+            },
+            {
+                'mode': {
+                    'name': 'local',
+                    'proc_num': 8,
+                    'proc_rank': 6,
+                    'prefix': 'NVIDIA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
+                },
+                'exec_command': 'sb exec',
+                'expected_command': 'NVIDIA_VISIBLE_DEVICES=6 numactl -c $((6/2)) sb exec',
+            },
+            {
+                'mode': {
                     'name': 'torch.distributed',
                 },
                 'exec_command':
