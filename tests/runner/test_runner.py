@@ -61,6 +61,16 @@ class RunnerTestCase(unittest.TestCase):
             },
             {
                 'mode': {
+                    'name': 'local',
+                    'proc_num': 16,
+                    'proc_rank': 1,
+                    'prefix': 'RANK={proc_rank} NUM={proc_num}'
+                },
+                'exec_command': 'sb exec',
+                'expected_command': 'RANK=1 NUM=16 sb exec',
+            },
+            {
+                'mode': {
                     'name': 'torch.distributed',
                 },
                 'exec_command':

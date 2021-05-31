@@ -69,15 +69,16 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
+        mode_command = exec_command
         if mode.name == 'local':
-            return '{prefix} {command}'.format(
+            mode_command = '{prefix} {command}'.format(
                 prefix=(mode.prefix or '').format(proc_rank=mode.proc_rank, proc_num=mode.proc_num or 1),
                 command=exec_command
-            ).strip()
+            )
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
-            return (
+            mode_command = (
                 'python3 -m torch.distributed.launch '
                 '--use_env --no_python --nproc_per_node={proc_num} '
                 '--nnodes={node_num} --node_rank=$NODE_RANK '
@@ -86,7 +87,7 @@ class SuperBenchRunner():
             ).format(
                 proc_num=mode.proc_num or 8, node_num=1 if mode.node_num == 1 else '$NNODES', command=exec_command
             )
-        return exec_command
+        return mode_command.strip()
 
     def deploy(self):    # pragma: no cover
         """Deploy SuperBench environment."""
