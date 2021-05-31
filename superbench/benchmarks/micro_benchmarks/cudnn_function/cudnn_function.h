@@ -72,6 +72,7 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
      */
     void benchmark();
 };
+
 /**
  * @brief Generate some params used in the cudnn function
  */
@@ -92,8 +93,6 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_func
 }
 /**
  * @brief Malloc cuda memory and fill in value for data params used in the cudnn function
- *
- * @param curand_gen  the curand genneration handle
  */
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_input() {
     // Allocate memory for filter data

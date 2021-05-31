@@ -39,7 +39,7 @@ template <typename T1, typename T2> class ConvolutionForwardFunction : public Cu
     ConvolutionForwardFunction() {}
     /**
      * @brief Construct a new Convolution Forward Function object
-     * @param  conig         base class CudnnConfig object
+     * @param  config         base class CudnnConfig object
      */
     ConvolutionForwardFunction(CudnnConfig &config) : CudnnFunction<T1, T2>(config) {}
 };

@@ -5,8 +5,8 @@
  * @brief  Cpp file for some functions related to cudnn
  */
 
-#include <numeric>
 #include <cstdlib>
+#include <numeric>
 
 #include "cudnn_function.h"
 
@@ -45,7 +45,6 @@ void cudnn_handle_init(cudnnHandle_t *cudnn_handle) {
     // create streams/handles
     CHECK_CUDNN_ERROR(cudnnCreate(cudnn_handle));
 }
-
 /**
  * @brief Cuda context free
  */

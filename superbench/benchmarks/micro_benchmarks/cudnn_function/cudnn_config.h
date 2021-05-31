@@ -7,10 +7,10 @@
 
 #include "cudnn_helper.h"
 
+namespace cudnn_test {
 /**
  * @brief Enum of cudnn function name
  */
-namespace cudnn_test {
 enum cudnn_function_name_enum {
     e_cudnnConvolutionForward,
     e_cudnnConvolutionBackwardData,
@@ -24,7 +24,6 @@ static std::unordered_map<std::string, cudnn_function_name_enum> const cudnn_fun
     {"cudnnConvolutionForward", cudnn_function_name_enum::e_cudnnConvolutionForward},
     {"cudnnConvolutionBackwardData", cudnn_function_name_enum::e_cudnnConvolutionBackwardData},
     {"cudnnConvolutionBackwardFilter", cudnn_function_name_enum::e_cudnnConvolutionBackwardFilter},
-
 };
 
 /**

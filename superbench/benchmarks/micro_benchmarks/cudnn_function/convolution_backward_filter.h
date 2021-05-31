@@ -12,7 +12,6 @@ namespace cudnn_test {
  * @tparam T2 conv type
  */
 template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : public CudnnFunction<T1, T2> {
-
     cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo_;
     /**
      * @brief Execute the kernel/function
@@ -40,7 +39,7 @@ template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : pu
     ConvolutionBackwardFilterFunction() {}
     /**
      * @brief Construct a new Convolution Backward Filter Function object
-     * @param  conig         base class CudnnConfig object
+     * @param  config         base class CudnnConfig object
      */
     ConvolutionBackwardFilterFunction(CudnnConfig &config) : CudnnFunction<T1, T2>(config) {}
 };

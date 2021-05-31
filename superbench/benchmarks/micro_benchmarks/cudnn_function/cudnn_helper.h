@@ -21,7 +21,6 @@
 #include <curand_kernel.h>
 
 namespace cudnn_test {
-
 /**
  * @brief check cudnn function running status and throw error str
  */
@@ -36,7 +35,6 @@ void check_cuda(cudaError_t result, const char *func, const char *file, int cons
  * @brief Cuda context init
  */
 void cudnn_handle_init(cudnnHandle_t *cudnn_handle);
-
 /**
  * @brief Cuda context free
  */

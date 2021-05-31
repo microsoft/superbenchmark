@@ -12,7 +12,6 @@ namespace cudnn_test {
  * @tparam T2 conv type
  */
 template <typename T1, typename T2> class ConvolutionBackwardDataFunction : public CudnnFunction<T1, T2> {
-
     cudnnConvolutionBwdDataAlgo_t bwd_data_algo_;
     /**
      * @brief Execute the kernel/function
@@ -40,7 +39,7 @@ template <typename T1, typename T2> class ConvolutionBackwardDataFunction : publ
     ConvolutionBackwardDataFunction() {}
     /**
      * @brief Construct a new Convolution Backward Data Function object
-     * @param  conig         base class CudnnConfig object
+     * @param  config         base class CudnnConfig object
      */
     ConvolutionBackwardDataFunction(CudnnConfig &config) : CudnnFunction<T1, T2>(config) {}
 };
