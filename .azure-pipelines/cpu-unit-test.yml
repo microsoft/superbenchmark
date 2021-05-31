@@ -19,7 +19,7 @@ steps:
       python3 setup.py lint
     displayName: Run code lint
   - script: |
-      SB_MICRO_PATH=$PWD python3 setup.py test
+      python3 setup.py test
     displayName: Run unit tests
     timeoutInMinutes: 10
     env:
