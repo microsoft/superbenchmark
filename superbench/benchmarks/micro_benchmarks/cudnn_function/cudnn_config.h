@@ -1,11 +1,6 @@
 // Copyright(c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-/**
- * @file cudnn_config.h
- * @brief Unify the base class for cudnn function benchmark
- */
-
 #pragma once
 
 #include <unordered_map>

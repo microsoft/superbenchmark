@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 /**
- * @file cudnn_function_helper.h
- * @brief  Helper for parsing command line arguments and pass params to cudnn function
+ * @brief  Helper for parsing command line arguments and pass params to CudnnConfig
  */
 
 #pragma once

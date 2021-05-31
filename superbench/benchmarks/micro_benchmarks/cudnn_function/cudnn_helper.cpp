@@ -2,14 +2,13 @@
 // Licensed under the MIT License.
 
 /**
- * @file cudnn_helper.cpp
  * @brief  Cpp file for some functions related to cudnn
  */
 
 #include <numeric>
-#include <stdlib.h>
+#include <cstdlib>
 
-#include "cudnn_benchmark.h"
+#include "cudnn_function.h"
 
 namespace cudnn_test {
 /**
@@ -40,7 +39,7 @@ void check_cuda(cudaError_t result, const char *func, const char *file, int cons
 /**
  * @brief Cuda context init
  */
-void cuda_init(cudnnHandle_t *cudnn_handle) {
+void cudnn_handle_init(cudnnHandle_t *cudnn_handle) {
     CUDA_SAFE_CALL(cudaDeviceReset());
     CUDA_SAFE_CALL(cudaSetDevice(0));
     // create streams/handles
@@ -50,7 +49,7 @@ void cuda_init(cudnnHandle_t *cudnn_handle) {
 /**
  * @brief Cuda context free
  */
-void cuda_free(cudnnHandle_t *cudnn_handle) { CHECK_CUDNN_ERROR(cudnnDestroy(*cudnn_handle)); }
+void cudnn_handle_free(cudnnHandle_t *cudnn_handle) { CHECK_CUDNN_ERROR(cudnnDestroy(*cudnn_handle)); }
 /**
  * @brief Malloc cuda memory and fill in rand value
  * @tparam T

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 /**
- * @file cudnn_helper.h
  * @brief  Header file for some functions related to cudnn
  */
 
@@ -36,12 +35,12 @@ void check_cuda(cudaError_t result, const char *func, const char *file, int cons
 /**
  * @brief Cuda context init
  */
-void cuda_init(cudnnHandle_t *cudnn_handle);
+void cudnn_handle_init(cudnnHandle_t *cudnn_handle);
 
 /**
  * @brief Cuda context free
  */
-void cuda_free(cudnnHandle_t *cudnn_handle);
+void cudnn_handle_free(cudnnHandle_t *cudnn_handle);
 /**
  * @brief Malloc cuda memory and fill in rand value
  * @tparam T

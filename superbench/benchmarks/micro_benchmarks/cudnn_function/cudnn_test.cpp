@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 /**
- * @file cudnn_test.cpp
- * @brief cudnn function benchmark will read the params from cmd, and use these params
+ * @brief Cudnn function benchmark will read the params from cmd, and use these params
  * to benchmark the wall time of the cudnn functions.
  */
 
@@ -35,7 +34,7 @@ int main(int argc, char *argv[]) {
     try {
         // parse arguments from cmd
         cudnn_test::Options options(argc, argv);
-        // benchmark the function'
+        // benchmark the function
         cudnn_test::run_benchmark(options);
     } catch (std::exception &e) {
         std::cout << "Error: " << e.what() << std::endl;

@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <tuple>
 
+#include "cudnn_config.h"
+
 namespace cudnn_test {
 /**
  * @brief Generation of cudnn functions' params and run the benchmark of this function
@@ -53,7 +55,7 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
      */
     CudnnFunction(CudnnConfig &config) : CudnnConfig(config) {
         // Init cudnn handle and device
-        cuda_init(&this->cudnn_handle);
+        cudnn_handle_init(&this->cudnn_handle);
     }
     /**
      * @brief Destroy the Cudnn Function object, including free cuda memory and handle of cudnn and curand
@@ -63,7 +65,7 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
         CUDA_SAFE_CALL(cudaFree(x));
         CUDA_SAFE_CALL(cudaFree(filter));
         CUDA_SAFE_CALL(cudaFree(h));
-        cuda_free(&this->cudnn_handle);
+        cudnn_handle_free(&this->cudnn_handle);
     }
     /**
      * @brief The main procedure for cudnn function test, including warmup, function test and time measurement
