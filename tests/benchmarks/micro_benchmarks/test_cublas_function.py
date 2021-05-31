@@ -14,7 +14,7 @@ def test_cublas_functions():
     """Test cublas-function benchmark."""
     # Test for default configuration
     context = BenchmarkRegistry.create_benchmark_context(
-        'cublas-test', platform=Platform.CUDA, parameters='--num_warmup 10 --num_steps 10 --num_in_step 100'
+        'cublas-function', platform=Platform.CUDA, parameters='--num_warmup 10 --num_steps 10 --num_in_step 100'
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -23,7 +23,7 @@ def test_cublas_functions():
 
     # Check basic information.
     assert (benchmark)
-    assert (benchmark.name == 'cublas-test')
+    assert (benchmark.name == 'cublas-function')
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.
@@ -47,7 +47,7 @@ def test_cublas_functions():
     # Test for custom configuration
     custom_config_str = '{"name":"cublasCgemm","m":512,"n":512,"k":32,"transa":1,"transb":0}'
     context = BenchmarkRegistry.create_benchmark_context(
-        'cublas-test',
+        'cublas-function',
         platform=Platform.CUDA,
         parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --config_json_str ' + custom_config_str
     )
@@ -58,7 +58,7 @@ def test_cublas_functions():
 
     # Check basic information.
     assert (benchmark)
-    assert (benchmark.name == 'cublas-test')
+    assert (benchmark.name == 'cublas-function')
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.

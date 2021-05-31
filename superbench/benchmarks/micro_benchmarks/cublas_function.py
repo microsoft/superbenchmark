@@ -219,7 +219,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             type=str,
             default=None,
             required=False,
-            help='The path of functions config json file.',
+            help='The custom json string defining the params in a cublas function.',
         )
 
     def _preprocess(self):
@@ -304,4 +304,4 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('cublas-test', CublasBenchmark, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('cublas-function', CublasBenchmark, platform=Platform.CUDA)
