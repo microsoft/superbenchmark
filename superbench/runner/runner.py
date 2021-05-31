@@ -58,6 +58,30 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
+    def __get_mode_command(self, mode, exec_command):
+        """Get runner command for given mode.
+
+        Args:
+            mode (DictConfig): Runner mode.
+            exec_command (str): Executor command.
+
+        Return:
+            str: Runner command.
+        """
+        if mode.name == 'torch.distributed':
+            # TODO: replace with torch.distributed.run in v1.9
+            # TODO: only supports node_num=1 and node_num=all currently
+            return (
+                'python3 -m torch.distributed.launch '
+                '--use_env --no_python --nproc_per_node={proc_num} '
+                '--nnodes={node_num} --node_rank=$NODE_RANK '
+                '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+                '{command}'
+            ).format(
+                proc_num=mode.proc_num or 8, node_num=1 if mode.node_num == 1 else '$NNODES', command=exec_command
+            )
+        return exec_command
+
     def deploy(self):    # pragma: no cover
         """Deploy SuperBench environment."""
         logger.info('Preparing SuperBench environment.')
@@ -86,11 +110,31 @@ class SuperBenchRunner():
         )
 
     def run(self):
-        """Run the SuperBench benchmarks distributedly.
-
-        Raises:
-            NotImplementedError: Not implemented yet.
-        """
-        logger.info(self._sb_config)
-        logger.error('Work in progress, not implemented yet.')
-        pass
+        """Run the SuperBench benchmarks distributedly."""
+        self.check_env()
+        runner_command = (
+            'docker exec sb-workspace bash -c '
+            '"set -o allexport && source sb.env && set +o allexport && {}"'
+        )
+        for benchmark_name in self._sb_benchmarks:
+            if benchmark_name not in self._sb_enabled_benchmarks:
+                continue
+            benchmark_config = self._sb_benchmarks[benchmark_name]
+            for mode in benchmark_config.modes or []:
+                if mode.name == 'torch.distributed':
+                    logger.info('Runner is going to run %s.', benchmark_name)
+                    self._ansible_client.run(
+                        self._ansible_client.get_shell_config(
+                            runner_command.format(
+                                self.__get_mode_command(
+                                    mode, (
+                                        'sb exec -c sb.config.yaml -C '
+                                        'superbench.enable={name} '
+                                        'superbench.benchmarks.{name}.parameters.distributed_impl=ddp '
+                                        'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
+                                    ).format(name=benchmark_name)
+                                )
+                            ),
+                            sudo=True
+                        )
+                    )
