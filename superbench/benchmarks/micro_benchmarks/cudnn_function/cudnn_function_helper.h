@@ -138,7 +138,6 @@ void from_json(const json &j, cudnn_test::CudnnConfig &fn) {
     fn.set_mode(mode);
     auto use_tensor_core = j.at("use_tensor_core").get<bool>();
     fn.set_use_tensor_core(use_tensor_core);
-
     fn.name2enum();
 }
 

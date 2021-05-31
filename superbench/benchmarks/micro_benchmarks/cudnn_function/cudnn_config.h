@@ -31,27 +31,32 @@ static std::unordered_map<std::string, cudnn_function_name_enum> const cudnn_fun
  */
 class CudnnConfig {
   protected:
-    int num_test;
-    int warm_up;
-    int num_in_step;
-    int random_seed;
-    std::string name;
-    cudnn_function_name_enum e_name;
-    std::vector<int> input_dims_;
-    std::vector<int> input_stride_;
-    std::vector<int> filter_dims_;
-    std::vector<int> output_dims_;
-    std::vector<int> output_stride_;
-    int algo_;
-    int arrayLength_;
-    std::vector<int> padA_;
-    std::vector<int> filterStrideA_;
-    std::vector<int> dilationA_;
-    cudnnConvolutionMode_t mode_;
-    bool use_tensor_core_;
-    cudnnDataType_t input_type_;
-    cudnnDataType_t conv_type_;
-    std::string function_str_;
+    int num_test;                    ///< the number of steps used to test and measure
+    int warm_up;                     ///< the number of steps used to warm up
+    int num_in_step;                 ///< the number of functions invoking in a step
+    int random_seed;                 ///< the random seed used to generate random data
+    std::string name;                ///< the name of the cudnn function
+    cudnn_function_name_enum e_name; ///< enum cudnn functin name
+    std::vector<int> input_dims_; ///< array of input dimension that contain the size of the tensor for every dimension
+    std::vector<int>
+        input_stride_; ///< array of input dimension that contain the stride of the tensor for every dimension
+    std::vector<int>
+        filter_dims_; ///< array of filter dimension that contain the size of the tensor for every dimension
+    std::vector<int>
+        output_dims_; ///< array of outpur dimension that contain the size of the tensor for every dimension
+    std::vector<int>
+        output_stride_; ///< array of output dimension that contain the stride of the tensor for every dimension
+    int algo_;          ///< enumerant that specifies which convolution algorithm should be used to compute the results
+    int arrayLength_;   ///< dimension of the convolution
+    std::vector<int> padA_; ///< array of convolution dimension containing the zero-padding size for each dimension.
+    std::vector<int> filterStrideA_; ///< array of convolution dimension containing the filter stride for each dimension
+    std::vector<int> dilationA_;  ///< array of dimension arrayLength containing the dilation factor for each dimension
+    cudnnConvolutionMode_t mode_; ///< selects between CUDNN_CONVOLUTION and CUDNN_CROSS_CORRELATION
+    bool use_tensor_core_;        ///< specify whether or not the use of tensor op is permitted in the library routines
+                                  ///< associated with a given convolution descriptor
+    cudnnDataType_t input_type_;  ///< selects the data type in which the computation will be done
+    cudnnDataType_t conv_type_;   ///< selects the data type in which the convolution will be done
+    std::string function_str_;    ///< the str representing the cudnn function with params
 
   public:
     void set_num_test(int num_test) { this->num_test = num_test; }
@@ -91,7 +96,7 @@ class CudnnConfig {
     cudnnDataType_t &get_conv_type() { return input_type_; }
     std::string &get_name() { return name; }
     cudnn_function_name_enum get_e_name() { return e_name; }
-    std::string &get_str() { return function_str_; }
+    std::string &get_function_str() { return function_str_; }
     /**
      * @brief Convert name string to enum name
      * @return cudnn_function_name_enum

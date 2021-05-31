@@ -123,7 +123,7 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
     std::vector<float> iteration_time;
     // Benchmark in range of steps
     for (int i_ = 0; i_ < num_test; i_++) {
-        // Collect time within each step, including #repeat_in_one_step times function invoking
+        // Collect time within each step, including #num_in_step times function invoking
         auto start = std::chrono::high_resolution_clock::now();
         for (int j = 0; j < num_in_step; j++) {
             kernel_entry();
@@ -137,7 +137,7 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
     }
 
     // Output results
-    std::cout << "[function config]: " << this->get_str() << std::endl;
+    std::cout << "[function config]: " << this->get_function_str() << std::endl;
     std::cout << "[raw_data]: ";
     for (int i = 0; i < iteration_time.size(); i++) {
         std::cout << iteration_time[i] << ",";
