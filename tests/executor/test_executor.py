@@ -3,10 +3,12 @@
 
 """SuperBench Executor test."""
 
+import json
 import unittest
 import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 from omegaconf import OmegaConf
 
@@ -74,7 +76,59 @@ class ExecutorTestCase(unittest.TestCase):
             ), expected_bert_models_args
         )
 
+    def test_create_benchmark_dir(self):
+        """Test __create_benchmark_dir."""
+        foo_path = Path(self.output_dir, 'benchmarks', 'foo')
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
+        self.assertTrue(foo_path.is_dir())
+        self.assertFalse(any(foo_path.iterdir()))
+
+        (foo_path / 'bar.txt').touch()
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
+        self.assertTrue(foo_path.is_dir())
+        self.assertFalse(any(foo_path.iterdir()))
+        self.assertFalse((foo_path / 'bar.txt').is_file())
+        self.assertTrue(foo_path.with_name('foo.1').is_dir())
+        self.assertTrue((foo_path.with_name('foo.1') / 'bar.txt').is_file())
+
+        (foo_path / 'bar.json').touch()
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
+        self.assertTrue(foo_path.is_dir())
+        self.assertFalse(any(foo_path.iterdir()))
+        self.assertFalse((foo_path / 'bar.json').is_file())
+        self.assertTrue(foo_path.with_name('foo.2').is_dir())
+        self.assertTrue((foo_path.with_name('foo.2') / 'bar.json').is_file())
+
+    def test_write_benchmark_results(self):
+        """Test __write_benchmark_results."""
+        foobar_path = Path(self.output_dir, 'benchmarks', 'foobar')
+        foobar_results_path = foobar_path / 'results.json'
+        self.executor._SuperBenchExecutor__create_benchmark_dir('foobar')
+        foobar_results = {
+            'sum': 1,
+            'avg': 1.1,
+        }
+        self.executor._SuperBenchExecutor__write_benchmark_results('foobar', foobar_results)
+        self.assertTrue(foobar_results_path.is_file())
+        with foobar_results_path.open(mode='r') as f:
+            self.assertDictEqual(json.load(f), foobar_results)
+
     def test_exec_empty_benchmarks(self):
         """Test execute empty benchmarks, nothing should happen."""
         self.executor._sb_enabled = []
         self.executor.exec()
+
+    @mock.patch('superbench.executor.SuperBenchExecutor._SuperBenchExecutor__exec_benchmark')
+    def test_exec_default_benchmarks(self, mock_exec_benchmark):
+        """Test execute default benchmarks, mock exec function.
+
+        Args:
+            mock_exec_benchmark (function): Mocked __exec_benchmark function.
+        """
+        mock_exec_benchmark.return_value = {}
+        self.executor.exec()
+
+        self.assertTrue(Path(self.output_dir, 'benchmarks').is_dir())
+        for benchmark_name in self.executor._sb_benchmarks:
+            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name).is_dir())
+            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name, 'results.json').is_file())
