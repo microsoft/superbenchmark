@@ -38,17 +38,17 @@ def test_cudnn_functions():
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
-    assert (19 <= len(benchmark.result))
+    assert (18 <= len(benchmark.result))
     for metric in list(benchmark.result.keys()):
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
 
     # Test for custom configuration
-    custom_config_str = '{"algo":0,"arrayLength":2,"conv_type":0,"dilationA":[1,1],"filterStrideA":[1,1], \
-        "filter_dims":[32,128,3,3],"input_dims":[32,128,14,14],"input_stride":[25088,196,14,1],"input_type":0, \
-        "mode":1,"name":"cudnnConvolutionBackwardFilter","output_dims":[32,32,14,14],"output_stride":[6272,196,14,1], \
-        "padA":[1,1],"use_tensor_core":False}'
+    custom_config_str = '{"algo":0,"arrayLength":2,"conv_type":0,"dilationA":[1,1],"filterStrideA":[1,1],' \
+        + '"filter_dims":[32,128,3,3],"input_dims":[32,128,14,14],"input_stride":[25088,196,14,1],"input_type":0,'\
+        + '"mode":1,"name":"cudnnConvolutionBackwardFilter","output_dims":[32,32,14,14],'\
+        + '"output_stride":[6272,196,14,1],"padA":[1,1],"use_tensor_core":false}'
 
     context = BenchmarkRegistry.create_benchmark_context(
         'cudnn-function',
