@@ -85,20 +85,6 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        # TODO - To support more architecutres, currently only support compute capability = 7.0 or 8.0
-        capability = nv_helper.get_device_compute_capability()
-        if capability == 7.0:
-            self.__kernel_map['FP16_TC'] = 'cutlass_tensorop_h884gemm_256x128_32x2_*'
-
-        if capability not in [7.0, 8.0]:
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
-            logger.error(
-                'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.0 or 8.0'.format(
-                    self._name, capability
-                )
-            )
-            return False
-
         self._args.precision = [p.upper() for p in self._args.precision]
         for p in self._args.precision:
             if p not in list(self.__kernel_map.keys()):
@@ -118,6 +104,20 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
                 command += (' --m=' + str(self._args.m))
                 command += (' --kernels=' + self.__kernel_map[p])
                 self._commands.append(command)
+
+        # TODO - To support more architecutres, currently only support compute capability = 7.0 or 8.0
+        capability = nv_helper.get_device_compute_capability()
+        if capability == 7.0:
+            self.__kernel_map['FP16_TC'] = 'cutlass_tensorop_h884gemm_256x128_32x2_*'
+
+        if capability not in [7.0, 8.0]:
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
+            logger.error(
+                'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.0 or 8.0'.format(
+                    self._name, capability
+                )
+            )
+            return False
 
         return True
 
