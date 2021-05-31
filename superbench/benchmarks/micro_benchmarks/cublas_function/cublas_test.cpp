@@ -17,7 +17,8 @@
  *  num_test: test step nums
  *  warm_up: warm up step nums
  *  num_in_step: times each step will invoke the function
- *   config path: the path of 'para_info.json'
+ *  random_seed: the random seed to generate data
+ *  config_json: the json string including the params of the function
  * functions supported:
  *   cublasSgemm
  *   cublasGemmEx
