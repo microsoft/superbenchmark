@@ -6,7 +6,7 @@
  * @brief  Cpp file for some functions related to cudnn
  */
 
-#include <bits/stdc++.h>
+#include <numeric>
 #include <stdlib.h>
 
 #include "cudnn_benchmark.h"
@@ -50,10 +50,7 @@ void cuda_init(cudnnHandle_t *cudnn_handle) {
 /**
  * @brief Cuda context free
  */
-void cuda_free(cudnnHandle_t *cudnn_handle) {
-    CHECK_CUDNN_ERROR(cudnnDestroy(*cudnn_handle));
-    CUDA_SAFE_CALL(cudaSetDevice(0));
-}
+void cuda_free(cudnnHandle_t *cudnn_handle) { CHECK_CUDNN_ERROR(cudnnDestroy(*cudnn_handle)); }
 /**
  * @brief Malloc cuda memory and fill in rand value
  * @tparam T

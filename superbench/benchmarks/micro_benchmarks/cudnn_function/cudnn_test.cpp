@@ -34,8 +34,8 @@
 int main(int argc, char *argv[]) {
     try {
         // parse arguments from cmd
-        Options options(argc, argv);
-        // benchmark each function defined in 'para_info.json'
+        cudnn_test::Options options(argc, argv);
+        // benchmark the function'
         cudnn_test::run_benchmark(options);
     } catch (std::exception &e) {
         std::cout << "Error: " << e.what() << std::endl;

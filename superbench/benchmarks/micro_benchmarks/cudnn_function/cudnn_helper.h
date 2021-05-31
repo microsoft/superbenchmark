@@ -90,7 +90,7 @@ template <typename T> void get_tensor_type(cudnnDataType_t &type) {
         type = CUDNN_DATA_INT8;
 #endif
     else
-        throw("unknown type in tensorDecriptor");
+        throw("unknown type in tensorDescriptor");
 }
 
 /**

@@ -17,11 +17,13 @@
 
 #include <nlohmann/json.hpp>
 
-#include "cudnn_benchmark.h"
-#include "cudnn_function.h"
+#include "convolution_backward_data.h"
+#include "convolution_backward_filter.h"
+#include "convolution_forward.h"
 
 using json = nlohmann::json;
 
+namespace cudnn_test {
 /**
  * @brief Utility for storing command line arguments
  */
@@ -97,7 +99,6 @@ class Options {
     }
 };
 
-namespace cudnn_test {
 /**
  * @brief  Helper function to convert from json to CudnnConfig
  *
@@ -183,16 +184,20 @@ void run_benchmark(Options &options) {
             auto p_function = get_cudnn_function_pointer<float, float>(function);
             p_function->benchmark();
             delete p_function;
-        }
-        if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_FLOAT) {
-            auto p_function = get_cudnn_function_pointer<half, float>(function);
-            p_function->benchmark();
-            delete p_function;
-        }
-        if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_HALF) {
-            auto p_function = get_cudnn_function_pointer<half, half>(function);
-            p_function->benchmark();
-            delete p_function;
+        } else {
+            if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_FLOAT) {
+                auto p_function = get_cudnn_function_pointer<half, float>(function);
+                p_function->benchmark();
+                delete p_function;
+            } else {
+                if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_HALF) {
+                    auto p_function = get_cudnn_function_pointer<half, half>(function);
+                    p_function->benchmark();
+                    delete p_function;
+                } else {
+                    throw "invalid input and conv type";
+                }
+            }
         }
     } catch (std::exception &e) {
         std::cout << "Error: " << e.what() << std::endl;
