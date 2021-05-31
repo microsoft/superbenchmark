@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from tests.helper import decorator
+from superbench.common.utils import nv_helper
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, BenchmarkType
 
 
@@ -41,16 +42,22 @@ class GemmFlopsCudaTest(unittest.TestCase):
         )
 
         benchmark._GemmFlopsCuda__capability = 6.0
-        assert (benchmark._preprocess() is False)
-        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
-
-        # Positive case.
-        benchmark = benchmark_class(
-            benchmark_name,
-            parameters='--num_warmup 200 --n 1024 --k 512 --m 2048 --precision FP32 TF32_TC FP16_TC INT8_TC'
-        )
-        benchmark._GemmFlopsCuda__capability = 8.0
-        assert (benchmark._preprocess())
+        ret = benchmark._preprocess()
+        assert (benchmark._GemmFlopsCuda__capability == nv_helper.get_device_compute_capability())
+        if nv_helper.get_device_compute_capability() not in [7.0, 8.0]:
+            assert (ret is False)
+            assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
+        else:
+            assert (ret is True)
+            assert (benchmark.return_code == ReturnCode.SUCCESS)
+            # Check the command list.
+            for i in range(len(benchmark._args.precision)):
+                command = '{} --warmup-iterations={} --operation=gemm --n={} --k={} --m={} --kernels={}'.format(
+                    benchmark._bin_name, benchmark._args.num_warmup, benchmark._args.n, benchmark._args.k,
+                    benchmark._args.m, benchmark._GemmFlopsCuda__kernel_map[benchmark._args.precision[i]]
+                )
+                expected_cmd = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
+                assert (command == expected_cmd)
 
         # Check basic information.
         assert (benchmark.name == 'gemm-flops')
@@ -63,15 +70,6 @@ class GemmFlopsCudaTest(unittest.TestCase):
         assert (benchmark._args.k == 512)
         assert (benchmark._args.m == 2048)
         assert (benchmark._args.precision == ['FP32', 'TF32_TC', 'FP16_TC', 'INT8_TC'])
-
-        # Check the command list.
-        for i in range(len(benchmark._args.precision)):
-            command = '{} --warmup-iterations={} --operation=gemm --n={} --k={} --m={} --kernels={}'.format(
-                benchmark._bin_name, benchmark._args.num_warmup, benchmark._args.n, benchmark._args.k,
-                benchmark._args.m, benchmark._GemmFlopsCuda__kernel_map[benchmark._args.precision[i]]
-            )
-            expected_cmd = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
-            assert (command == expected_cmd)
 
         # Check results and metrics.
         raw_output_FP32 = """
