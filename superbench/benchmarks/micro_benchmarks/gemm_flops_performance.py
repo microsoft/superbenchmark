@@ -6,6 +6,7 @@
 import os
 
 from superbench.common.utils import logger
+from superbench.common.utils import nv_helper
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
@@ -35,7 +36,6 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
             'INT4_TC': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
         }
 
-        from superbench.common.utils import nv_helper
         self.__capability = nv_helper.get_device_compute_capability()
         # TODO - To support more architecutres, currently only support compute capability = 7.0 or 8.0
         if self.__capability == 7.0:
