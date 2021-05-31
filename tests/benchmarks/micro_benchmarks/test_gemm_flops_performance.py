@@ -42,7 +42,6 @@ class GemmFlopsCudaTest(unittest.TestCase):
         )
 
         ret = benchmark._preprocess()
-        assert (benchmark._GemmFlopsCuda__capability == nv_helper.get_device_compute_capability())
         if nv_helper.get_device_compute_capability() not in [7.0, 8.0]:
             assert (ret is False)
             assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
