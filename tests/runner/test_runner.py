@@ -54,10 +54,10 @@ class RunnerTestCase(unittest.TestCase):
                     'name': 'local',
                     'proc_num': 8,
                     'proc_rank': 6,
-                    'prefix': 'NVIDIA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
+                    'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
                 },
                 'exec_command': 'sb exec',
-                'expected_command': 'NVIDIA_VISIBLE_DEVICES=6 numactl -c $((6/2)) sb exec',
+                'expected_command': 'CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) sb exec',
             },
             {
                 'mode': {

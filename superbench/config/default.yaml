@@ -7,7 +7,7 @@ superbench:
       modes:
         - name: local
           proc_num: 8
-          prefix: NVIDIA_VISIBLE_DEVICES={proc_rank}
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
       frameworks:
         - pytorch
       parameters:
