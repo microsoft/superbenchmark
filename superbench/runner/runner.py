@@ -140,9 +140,9 @@ class SuperBenchRunner():
                                         mode, ('sb exec -c sb.config.yaml -C '
                                                'superbench.enable={name}').format(name=benchmark_name)
                                     )
-                                ),
-                                sudo=True
-                            )
+                                )
+                            ),
+                            sudo=True
                         )
                         rets[vars['proc_rank']] = rc
 
@@ -169,7 +169,7 @@ class SuperBenchRunner():
                                         'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
                                     ).format(name=benchmark_name)
                                 )
-                            ),
-                            sudo=True
-                        )
+                            )
+                        ),
+                        sudo=True
                     )

@@ -7,6 +7,7 @@ import unittest
 import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 from omegaconf import OmegaConf
 
@@ -124,7 +125,17 @@ class RunnerTestCase(unittest.TestCase):
                     ), test_case['expected_command']
                 )
 
-    def test_run(self):
-        """Test run."""
+    def test_run_empty_benchmarks(self):
+        """Test run empty benchmarks, nothing should happen."""
         self.runner._sb_enabled_benchmarks = []
+        self.runner.run()
+
+    @mock.patch('superbench.runner.ansible.AnsibleClient.run')
+    def test_run_default_benchmarks(self, mock_ansible_client_run):
+        """Test run default benchmarks, mock AnsibleClient.run function.
+
+        Args:
+            mock_ansible_client_run (function): Mocked AnsibleClient.run function.
+        """
+        mock_ansible_client_run.return_value = 0
         self.runner.run()
