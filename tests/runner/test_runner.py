@@ -47,6 +47,8 @@ class RunnerTestCase(unittest.TestCase):
                 'benchmark_name': 'foo',
                 'mode': {
                     'name': 'local',
+                    'proc_num': 1,
+                    'prefix': '',
                 },
                 'expected_command': 'sb exec -c sb.config.yaml -C superbench.enable=foo',
             },
@@ -72,22 +74,6 @@ class RunnerTestCase(unittest.TestCase):
                     'prefix': 'RANK={proc_rank} NUM={proc_num}'
                 },
                 'expected_command': 'RANK=1 NUM=16 sb exec -c sb.config.yaml -C superbench.enable=foo',
-            },
-            {
-                'benchmark_name':
-                'foo',
-                'mode': {
-                    'name': 'torch.distributed',
-                },
-                'expected_command': (
-                    'python3 -m torch.distributed.launch '
-                    '--use_env --no_python --nproc_per_node=8 '
-                    '--nnodes=$NNODES --node_rank=$NODE_RANK '
-                    '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec -c sb.config.yaml -C superbench.enable=foo '
-                    'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
-                    'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
-                ),
             },
             {
                 'benchmark_name':

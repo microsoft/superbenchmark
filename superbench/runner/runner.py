@@ -35,6 +35,7 @@ class SuperBenchRunner():
         logger.info('Runner writes to: %s.', self._output_dir)
 
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
+        self.__validate_sb_config()
         self._sb_enabled_benchmarks = self.__get_enabled_benchmarks()
         logger.info('Runner will run: %s', self._sb_enabled_benchmarks)
 
@@ -45,6 +46,26 @@ class SuperBenchRunner():
             filename (str): Log file name.
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / filename))
+
+    def __validate_sb_config(self):
+        """Validate SuperBench config object.
+
+        Raise:
+            InvalidConfigError: If input config is invalid.
+        """
+        # TODO: add validation and defaulting
+        for name in self._sb_benchmarks:
+            if not self._sb_benchmarks[name].modes:
+                self._sb_benchmarks[name].modes = []
+            for idx, mode in enumerate(self._sb_benchmarks[name].modes):
+                if mode.name == 'local':
+                    if not mode.proc_num:
+                        self._sb_benchmarks[name].modes[idx].proc_num = 1
+                    if not mode.prefix:
+                        self._sb_benchmarks[name].modes[idx].prefix = ''
+                elif mode.name == 'torch.distributed':
+                    if not mode.proc_num:
+                        self._sb_benchmarks[name].modes[idx].proc_num = 8
 
     def __get_enabled_benchmarks(self):
         """Get enabled benchmarks list.
@@ -73,7 +94,7 @@ class SuperBenchRunner():
         mode_command = exec_command
         if mode.name == 'local':
             mode_command = '{prefix} {command}'.format(
-                prefix=(mode.prefix or '').format(proc_rank=mode.proc_rank, proc_num=mode.proc_num or 1),
+                prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
                 command=exec_command,
             )
         elif mode.name == 'torch.distributed':
@@ -86,7 +107,7 @@ class SuperBenchRunner():
                 '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
                 '{command} {torch_distributed_suffix}'
             ).format(
-                proc_num=mode.proc_num or 8,
+                proc_num=mode.proc_num,
                 node_num=1 if mode.node_num == 1 else '$NNODES',
                 command=exec_command,
                 torch_distributed_suffix=(
@@ -135,6 +156,7 @@ class SuperBenchRunner():
             int: Process return code.
         """
         mode.update(vars)
+        logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
         rc = self._ansible_client.run(
             self._ansible_client.get_shell_config(
                 (
@@ -153,14 +175,12 @@ class SuperBenchRunner():
             if benchmark_name not in self._sb_enabled_benchmarks:
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
-            for mode in benchmark_config.modes or []:
+            for mode in benchmark_config.modes:
                 if mode.name == 'local':
-                    logger.info('Runner is going to run %s in %s mode.', benchmark_name, mode.name)
                     Parallel(n_jobs=mode.proc_num if mode.parallel else 1)(
                         delayed(self._run_proc)(benchmark_name, mode, {
                             'proc_rank': proc_rank
-                        }) for proc_rank in range(mode.proc_num or 1)
+                        }) for proc_rank in range(mode.proc_num)
                     )
                 elif mode.name == 'torch.distributed':
-                    logger.info('Runner is going to run %s in %s mode.', benchmark_name, mode.name)
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
