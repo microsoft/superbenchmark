@@ -87,5 +87,5 @@ WORKDIR ${SB_HOME}
 ADD . .
 
 RUN cd ${SB_HOME} && \
-    python3 -m pip install .[torch] && \
+    python3 -m pip install .[nvidia,torch] && \
     make cppbuild
