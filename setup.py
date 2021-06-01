@@ -158,7 +158,6 @@ setup(
             'torchvision>=0.8.0',
             'transformers>=4.3.3',
         ],
-        'nvidia': ['py3nvml>=0.2.6']
     },
     include_package_data=True,
     entry_points={
