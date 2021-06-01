@@ -136,6 +136,7 @@ setup(
         'ansible_base>=2.10.9;os_name=="posix"',
         'ansible_runner>=1.4.7',
         'colorlog>=4.7.2',
+        'joblib>=1.0.1',
         'knack>=0.7.2',
         'omegaconf>=2.0.6',
     ],

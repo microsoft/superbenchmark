@@ -8,6 +8,7 @@ superbench:
         - name: local
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+          parallel: no
       frameworks:
         - pytorch
       parameters:

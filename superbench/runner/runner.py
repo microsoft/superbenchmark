@@ -4,9 +4,9 @@
 """SuperBench Runner."""
 
 import random
-import multiprocessing
 from pathlib import Path
 
+from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
 from superbench.common.utils import SuperBenchLogger, logger
@@ -59,21 +59,22 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
-    def __get_mode_command(self, mode, exec_command):
+    def __get_mode_command(self, benchmark_name, mode):
         """Get runner command for given mode.
 
         Args:
+            benchmark_name (str): Benchmark name.
             mode (DictConfig): Runner mode.
-            exec_command (str): Executor command.
 
         Return:
             str: Runner command.
         """
+        exec_command = ('sb exec -c sb.config.yaml -C superbench.enable={name}').format(name=benchmark_name)
         mode_command = exec_command
         if mode.name == 'local':
             mode_command = '{prefix} {command}'.format(
                 prefix=(mode.prefix or '').format(proc_rank=mode.proc_rank, proc_num=mode.proc_num or 1),
-                command=exec_command
+                command=exec_command,
             )
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
@@ -83,9 +84,15 @@ class SuperBenchRunner():
                 '--use_env --no_python --nproc_per_node={proc_num} '
                 '--nnodes={node_num} --node_rank=$NODE_RANK '
                 '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                '{command}'
+                '{command} {torch_distributed_suffix}'
             ).format(
-                proc_num=mode.proc_num or 8, node_num=1 if mode.node_num == 1 else '$NNODES', command=exec_command
+                proc_num=mode.proc_num or 8,
+                node_num=1 if mode.node_num == 1 else '$NNODES',
+                command=exec_command,
+                torch_distributed_suffix=(
+                    'superbench.benchmarks.{name}.parameters.distributed_impl=ddp '
+                    'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
+                ).format(name=benchmark_name),
             )
         return mode_command.strip()
 
@@ -116,60 +123,44 @@ class SuperBenchRunner():
             self._ansible_client.get_playbook_config('check_env.yaml', extravars={'output_dir': self._output_dir})
         )
 
+    def _run_proc(self, benchmark_name, mode, vars):
+        """Run the process.
+
+        Args:
+            benchmark_name (str): Benchmark name.
+            mode (DictConfig): Runner mode.
+            vars (dict): Process variables.
+
+        Returns:
+            int: Process return code.
+        """
+        mode.update(vars)
+        rc = self._ansible_client.run(
+            self._ansible_client.get_shell_config(
+                (
+                    'docker exec sb-workspace bash -c '
+                    '"set -o allexport && source sb.env && set +o allexport && {command}"'
+                ).format(command=self.__get_mode_command(benchmark_name, mode), )
+            ),
+            sudo=True
+        )
+        return rc
+
     def run(self):
         """Run the SuperBench benchmarks distributedly."""
         self.check_env()
-        runner_command = (
-            'docker exec sb-workspace bash -c '
-            '"set -o allexport && source sb.env && set +o allexport && {}"'
-        )
         for benchmark_name in self._sb_benchmarks:
             if benchmark_name not in self._sb_enabled_benchmarks:
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
             for mode in benchmark_config.modes or []:
                 if mode.name == 'local':
-                    logger.info('Runner is going to run %s.', benchmark_name)
-
-                    def run_proc(vars, rets):
-                        mode.update(vars)
-                        rc = self._ansible_client.run(
-                            self._ansible_client.get_shell_config(
-                                runner_command.format(
-                                    self.__get_mode_command(
-                                        mode, ('sb exec -c sb.config.yaml -C '
-                                               'superbench.enable={name}').format(name=benchmark_name)
-                                    )
-                                )
-                            ),
-                            sudo=True
-                        )
-                        rets[vars['proc_rank']] = rc
-
-                    jobs = []
-                    rets = multiprocessing.Manager().dict()
-                    for proc_rank in range(mode.proc_num or 1):
-                        proc = multiprocessing.Process(target=run_proc, args=({'proc_rank': proc_rank}, rets))
-                        jobs.append(proc)
-                    for proc in jobs:
-                        proc.start()
-                    for proc in jobs:
-                        proc.join()
-
-                elif mode.name == 'torch.distributed':
-                    logger.info('Runner is going to run %s.', benchmark_name)
-                    self._ansible_client.run(
-                        self._ansible_client.get_shell_config(
-                            runner_command.format(
-                                self.__get_mode_command(
-                                    mode, (
-                                        'sb exec -c sb.config.yaml -C '
-                                        'superbench.enable={name} '
-                                        'superbench.benchmarks.{name}.parameters.distributed_impl=ddp '
-                                        'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
-                                    ).format(name=benchmark_name)
-                                )
-                            )
-                        ),
-                        sudo=True
+                    logger.info('Runner is going to run %s in %s mode.', benchmark_name, mode.name)
+                    Parallel(n_jobs=mode.proc_num if mode.parallel else 1)(
+                        delayed(self._run_proc)(benchmark_name, mode, {
+                            'proc_rank': proc_rank
+                        }) for proc_rank in range(mode.proc_num or 1)
                     )
+                elif mode.name == 'torch.distributed':
+                    logger.info('Runner is going to run %s in %s mode.', benchmark_name, mode.name)
+                    self._run_proc(benchmark_name, mode, {'proc_rank': 0})
