@@ -427,7 +427,6 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
                 )
             )
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             return False
         if error:
             logger.error(
@@ -435,7 +434,6 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
         return True
 
