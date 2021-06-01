@@ -16,7 +16,7 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      python3 -m pip install .[test,torch]
+      python3 -m pip install .[test,nvidia,torch]
       make postinstall
     displayName: Install dependencies
   - script: |
