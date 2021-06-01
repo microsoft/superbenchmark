@@ -51,21 +51,21 @@ class ShardingMatmul(MicroBenchmark):
         self._parser.add_argument(
             '--n',
             type=int,
-            default=2048,
+            default=12288,
             required=False,
             help='The N dim of matmul (N, K) * (K, M).',
         )
         self._parser.add_argument(
             '--k',
             type=int,
-            default=49152,
+            default=12288,
             required=False,
             help='The K dim of matmul (N, K) * (K, M).',
         )
         self._parser.add_argument(
             '--m',
             type=int,
-            default=12288,
+            default=16000,
             required=False,
             help='The M dim of matmul (N, K) * (K, M).',
         )
