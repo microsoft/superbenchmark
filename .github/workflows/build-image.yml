@@ -21,6 +21,7 @@ jobs:
           done
           sudo apt-get clean
           df -h
+          echo 'nproc: '$(nproc)
       - name: Prepare metadata
         id: metadata
         run: |

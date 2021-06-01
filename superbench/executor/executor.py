@@ -3,6 +3,8 @@
 
 """SuperBench Executor."""
 
+import json
+import itertools
 from pathlib import Path
 
 from omegaconf import ListConfig
@@ -94,6 +96,9 @@ class SuperBenchExecutor():
         Args:
             context (BenchmarkContext): Benchmark context to launch.
             log_suffix (str): Log string suffix.
+
+        Return:
+            dict: Benchmark results.
         """
         try:
             benchmark = BenchmarkRegistry.launch_benchmark(context)
@@ -106,10 +111,39 @@ class SuperBenchExecutor():
                     logger.info('Executor succeeded in %s.', log_suffix)
                 else:
                     logger.error('Executor failed in %s.', log_suffix)
+                return json.loads(benchmark.serialized_result)
             else:
                 logger.error('Executor failed in %s, invalid context.', log_suffix)
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             logger.error('Executor failed in %s.', log_suffix)
+        return None
+
+    def __create_benchmark_dir(self, benchmark_name):
+        """Create output directory for benchmark.
+
+        Args:
+            benchmark_name (str): Benchmark name.
+        """
+        benchmark_output_dir = Path(self._output_dir, 'benchmarks', benchmark_name)
+        if benchmark_output_dir.is_dir() and any(benchmark_output_dir.iterdir()):
+            logger.warn('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
+            for i in itertools.count(start=1):
+                backup_dir = benchmark_output_dir.with_name('{}.{}'.format(benchmark_name, i))
+                if not backup_dir.is_dir():
+                    benchmark_output_dir.rename(backup_dir)
+                    break
+        benchmark_output_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
+
+    def __write_benchmark_results(self, benchmark_name, benchmark_results):
+        """Write benchmark results.
+
+        Args:
+            benchmark_name (str): Benchmark name.
+            benchmark_results (dict): Benchmark results.
+        """
+        with Path(self._output_dir, 'benchmarks', benchmark_name, 'results.json').open(mode='w') as f:
+            json.dump(benchmark_results, f, indent=2)
 
     def exec(self):
         """Run the SuperBench benchmarks locally."""
@@ -117,6 +151,8 @@ class SuperBenchExecutor():
             if benchmark_name not in self._sb_enabled:
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
+            benchmark_results = {}
+            self.__create_benchmark_dir(benchmark_name)
             for framework in benchmark_config.frameworks or [Framework.NONE]:
                 if benchmark_name.endswith('_models'):
                     for model in benchmark_config.models:
@@ -128,7 +164,11 @@ class SuperBenchExecutor():
                             framework=Framework(framework.lower()),
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )
-                        self.__exec_benchmark(context, log_suffix)
+                        result = self.__exec_benchmark(context, log_suffix)
+                        if framework != Framework.NONE:
+                            benchmark_results['{}/{}'.format(framework, model)] = result
+                        else:
+                            benchmark_results[model] = result
                 else:
                     log_suffix = 'micro-benchmark {}'.format(benchmark_name)
                     logger.info('Executor is going to execute %s.', log_suffix)
@@ -138,4 +178,9 @@ class SuperBenchExecutor():
                         framework=Framework(framework.lower()),
                         parameters=self.__get_arguments(benchmark_config.parameters)
                     )
-                    self.__exec_benchmark(context, log_suffix)
+                    result = self.__exec_benchmark(context, log_suffix)
+                    if framework != Framework.NONE:
+                        benchmark_results[framework] = result
+                    else:
+                        benchmark_results = result
+            self.__write_benchmark_results(benchmark_name, benchmark_results)
