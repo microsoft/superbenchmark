@@ -8,7 +8,7 @@ import json
 import yaml
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Platform, BenchmarkRegistry
+from superbench.benchmarks import Platform, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
@@ -241,7 +241,6 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             if not self._args.config_json_str:
                 for config_dict in self.__default_params_dict_list:
                     config_json_str = "\'" + json.dumps(config_dict).replace(' ', '') + "\'"
-                    print(config_json_str)
                     complete_command = command + (' --config_json ') + config_json_str
                     self._commands.append(complete_command)
 
@@ -252,6 +251,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                 self._commands.append(complete_command)
         except BaseException as e:
             logger.error('Invalid input params - benchmark: {},  message: {}'.format(self._name, str(e)))
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
         return True
 
@@ -293,6 +293,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
                 )
             )
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             return False
         if error:
             logger.error(
@@ -300,6 +301,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
         return True
 
