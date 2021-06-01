@@ -2,15 +2,17 @@
 // Licensed under the MIT License.
 
 /**
- * @file cublas_test.cpp
- * @brief Cublas function benchmark will read the params from cmd, and use these params
- * to benchmark the wall time of the cublas functions.
+ * @brief Cudnn function benchmark will read the params from cmd, and use these params
+ * to benchmark the wall time of the cudnn functions.
  */
 
-#include "cublas_function_helper.h"
+#include <limits>
+#include <stdexcept>
+
+#include "cudnn_function_helper.h"
 
 /**
- * @brief Main function and entry of cublas benchmark
+ * @brief Main function and entry of cudnn benchmark
 
  * @details
  * params list:
@@ -19,13 +21,10 @@
  *  num_in_step: times each step will invoke the function
  *  random_seed: the random seed to generate data
  *  config_json: the json string including the params of the function
- * functions supported:
- *   cublasSgemm
- *   cublasGemmEx
- *   cublasSgemmStridedBatched
- *   cublasGemmStridedBatchedEx
- *   cublasCgemm
- *   cublasCgemm3mStridedBatched
+ *  functions supported:
+ *  cudnnConvolutionForward
+ *  cudnnConvolutionBackwardData
+ *  cudnnConvolutionBackwardFilter
 
  * @param  argc
  * @param  argv
@@ -34,11 +33,12 @@
 int main(int argc, char *argv[]) {
     try {
         // parse arguments from cmd
-        Options options(argc, argv);
-        // benchmark each function defined in 'para_info.json'
-        run_benchmark(options);
+        cudnn_test::Options options(argc, argv);
+        // benchmark the function
+        cudnn_test::run_benchmark(options);
     } catch (std::exception &e) {
         std::cout << "Error: " << e.what() << std::endl;
         exit(-1);
     }
+    return 0;
 }
