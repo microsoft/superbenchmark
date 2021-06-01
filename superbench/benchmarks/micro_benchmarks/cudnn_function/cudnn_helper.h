@@ -164,14 +164,14 @@ template <typename T> class ConvolutionDescriptor {
 
   public:
     ConvolutionDescriptor() {}
-    ConvolutionDescriptor(int arrayLength, const std::vector<int> &padA, const std::vector<int> &filterStrideA,
+    ConvolutionDescriptor(int array_length, const std::vector<int> &padA, const std::vector<int> &filter_strideA,
                           const std::vector<int> &dilationA, cudnnConvolutionMode_t mode)
         : desc_(new cudnnConvolutionDescriptor_t, ConvolutionDescriptorDeleter()) {
         cudnnDataType_t type;
         get_tensor_type<T>(type);
 
         CHECK_CUDNN_ERROR(cudnnCreateConvolutionDescriptor(desc_.get()));
-        CHECK_CUDNN_ERROR(cudnnSetConvolutionNdDescriptor(*desc_, arrayLength, padA.data(), filterStrideA.data(),
+        CHECK_CUDNN_ERROR(cudnnSetConvolutionNdDescriptor(*desc_, array_length, padA.data(), filter_strideA.data(),
                                                           dilationA.data(), mode, type));
     }
 

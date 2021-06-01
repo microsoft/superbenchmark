@@ -93,7 +93,7 @@ class Options {
         para_info_json = get_cmd_line_argument_string("--config_json");
         para_info_json =
             para_info_json == ""
-                ? R"({"algo":0,"arrayLength":2,"conv_type":0,"dilationA":[1,1],"filterStrideA":[1,1],"filter_dims":[32,128,3,3],"input_dims":[32,128,14,14],"input_stride":[25088,196,14,1],"input_type":0,"mode":1, "name":"cudnnConvolutionBackwardFilter","output_dims":[32,32,14,14],"output_stride":[6272,196,14,1],"padA":[1,1],"use_tensor_core":false})"
+                ? R"({"algo":0,"arrayLength":2,"convType":0,"dilationA":[1,1],"filterStrideA":[1,1],"filterDims":[32,128,3,3],"inputDims":[32,128,14,14],"inputStride":[25088,196,14,1],"inputType":0,"mode":1, "name":"cudnnConvolutionBackwardFilter","outputDims":[32,32,14,14],"outputStride":[6272,196,14,1],"padA":[1,1],"tensorOp":false})"
                 : para_info_json;
     }
 };
@@ -110,34 +110,34 @@ void from_json(const json &j, cudnn_test::CudnnConfig &fn) {
     fn.set_function(str);
     auto name = j.at("name").get<std::string>();
     fn.set_name(name);
-    auto input_dims = j.at("input_dims").get<std::vector<int>>();
+    auto input_dims = j.at("inputDims").get<std::vector<int>>();
     fn.set_input_dims(input_dims);
-    auto output_dims = j.at("output_dims").get<std::vector<int>>();
+    auto output_dims = j.at("outputDims").get<std::vector<int>>();
     fn.set_output_dims(output_dims);
-    auto filter_dims = j.at("filter_dims").get<std::vector<int>>();
+    auto filter_dims = j.at("filterDims").get<std::vector<int>>();
     fn.set_filter_dims(filter_dims);
-    auto input_type = j.at("input_type").get<cudnnDataType_t>();
+    auto input_type = j.at("inputType").get<cudnnDataType_t>();
     fn.set_input_type(input_type);
-    auto conv_type = j.at("conv_type").get<cudnnDataType_t>();
+    auto conv_type = j.at("convType").get<cudnnDataType_t>();
     fn.set_conv_type(conv_type);
-    auto arrayLength = j.at("arrayLength").get<int>();
-    fn.set_arrayLength(arrayLength);
-    auto input_stride = j.at("input_stride").get<std::vector<int>>();
+    auto array_length = j.at("arrayLength").get<int>();
+    fn.set_array_length(array_length);
+    auto input_stride = j.at("inputStride").get<std::vector<int>>();
     fn.set_input_stride(input_stride);
-    auto output_stride = j.at("output_stride").get<std::vector<int>>();
+    auto output_stride = j.at("outputStride").get<std::vector<int>>();
     fn.set_output_stride(output_stride);
     auto algo = j.at("algo").get<int>();
     fn.set_algo(algo);
     auto padA = j.at("padA").get<std::vector<int>>();
     fn.set_padA(padA);
-    auto filterStrideA = j.at("filterStrideA").get<std::vector<int>>();
-    fn.set_filterStrideA(filterStrideA);
+    auto filter_strideA = j.at("filterStrideA").get<std::vector<int>>();
+    fn.set_filter_strideA(filter_strideA);
     auto dilationA = j.at("dilationA").get<std::vector<int>>();
     fn.set_dilationA(dilationA);
     auto mode = j.at("mode").get<cudnnConvolutionMode_t>();
     fn.set_mode(mode);
-    auto use_tensor_core = j.at("use_tensor_core").get<bool>();
-    fn.set_use_tensor_core(use_tensor_core);
+    auto use_tensor_op = j.at("tensorOp").get<bool>();
+    fn.set_use_tensor_op(use_tensor_op);
     fn.name2enum();
 }
 

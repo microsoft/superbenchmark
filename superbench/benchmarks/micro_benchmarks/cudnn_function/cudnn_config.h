@@ -47,12 +47,12 @@ class CudnnConfig {
     std::vector<int>
         output_stride_; ///< array of output dimension that contain the stride of the tensor for every dimension
     int algo_;          ///< enumerant that specifies which convolution algorithm should be used to compute the results
-    int arrayLength_;   ///< dimension of the convolution
+    int array_length_;   ///< dimension of the convolution
     std::vector<int> padA_; ///< array of convolution dimension containing the zero-padding size for each dimension.
-    std::vector<int> filterStrideA_; ///< array of convolution dimension containing the filter stride for each dimension
-    std::vector<int> dilationA_;  ///< array of dimension arrayLength containing the dilation factor for each dimension
+    std::vector<int> filter_strideA_; ///< array of convolution dimension containing the filter stride for each dimension
+    std::vector<int> dilationA_;  ///< array of dimension array_length containing the dilation factor for each dimension
     cudnnConvolutionMode_t mode_; ///< selects between CUDNN_CONVOLUTION and CUDNN_CROSS_CORRELATION
-    bool use_tensor_core_;        ///< specify whether or not the use of tensor op is permitted in the library routines
+    bool use_tensor_op_;        ///< specify whether or not the use of tensor op is permitted in the library routines
                                   ///< associated with a given convolution descriptor
     cudnnDataType_t input_type_;  ///< selects the data type in which the computation will be done
     cudnnDataType_t conv_type_;   ///< selects the data type in which the convolution will be done
@@ -70,12 +70,12 @@ class CudnnConfig {
     void set_output_dims(const std::vector<int> &output_dims) { output_dims_ = output_dims; }
     void set_output_stride(const std::vector<int> &output_stride) { output_stride_ = output_stride; }
     void set_algo(int algo) { algo_ = algo; }
-    void set_arrayLength(int arrayLength) { arrayLength_ = arrayLength; }
+    void set_array_length(int array_length) { array_length_ = array_length; }
     void set_padA(const std::vector<int> &padA) { padA_ = padA; }
-    void set_filterStrideA(const std::vector<int> &filterStrideA) { filterStrideA_ = filterStrideA; }
+    void set_filter_strideA(const std::vector<int> &filter_strideA) { filter_strideA_ = filter_strideA; }
     void set_dilationA(const std::vector<int> &dilationA) { dilationA_ = dilationA; }
     void set_mode(const cudnnConvolutionMode_t &mode) { mode_ = mode; }
-    void set_use_tensor_core(bool use_tensor_core) { use_tensor_core_ = use_tensor_core; }
+    void set_use_tensor_op(bool use_tensor_op) { use_tensor_op_ = use_tensor_op; }
     void set_input_type(const cudnnDataType_t &input_type) { input_type_ = input_type; }
     void set_conv_type(const cudnnDataType_t &conv_type) { input_type_ = conv_type; }
     void set_function(const std::string &str) { function_str_ = str; }
@@ -86,12 +86,12 @@ class CudnnConfig {
     std::vector<int> &get_output_dims() { return output_dims_; }
     std::vector<int> &get_output_stride() { return output_stride_; }
     int get_algo() { return algo_; }
-    int get_arrayLength() { return arrayLength_; }
+    int get_array_length() { return array_length_; }
     std::vector<int> &get_padA() { return padA_; }
-    std::vector<int> &get_filterStrideA() { return filterStrideA_; }
+    std::vector<int> &get_filter_strideA() { return filter_strideA_; }
     std::vector<int> &get_dilationA() { return dilationA_; }
     cudnnConvolutionMode_t &get_mode() { return mode_; }
-    bool get_use_tensor_core() { return use_tensor_core_; }
+    bool get_use_tensor_op() { return use_tensor_op_; }
     cudnnDataType_t &get_input_type() { return input_type_; }
     cudnnDataType_t &get_conv_type() { return input_type_; }
     std::string &get_name() { return name; }

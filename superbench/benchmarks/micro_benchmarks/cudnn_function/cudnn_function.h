@@ -79,13 +79,13 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_function() {
     // Generate descriptor
     conv_desc_ =
-        ConvolutionDescriptor<T2>(get_arrayLength(), get_padA(), get_filterStrideA(), get_dilationA(), get_mode());
+        ConvolutionDescriptor<T2>(get_array_length(), get_padA(), get_filter_strideA(), get_dilationA(), get_mode());
     x_desc_ = TensorDescriptorNd<T1>(get_input_dims(), get_input_stride());
     w_desc_ = FilterDescriptorNd<T1>(get_filter_dims());
     h_desc_ = TensorDescriptorNd<T1>(get_output_dims(), get_output_stride());
 
     // Set Convolution MathType
-    cudnnMathType_t algo = get_use_tensor_core() ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
+    cudnnMathType_t algo = get_use_tensor_op() ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
     CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), algo));
     // Set convolution algorithm and workspace size
     this->get_workspace_size();
