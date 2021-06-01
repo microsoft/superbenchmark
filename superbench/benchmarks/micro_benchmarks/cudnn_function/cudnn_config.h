@@ -47,12 +47,13 @@ class CudnnConfig {
     std::vector<int>
         output_stride_; ///< array of output dimension that contain the stride of the tensor for every dimension
     int algo_;          ///< enumerant that specifies which convolution algorithm should be used to compute the results
-    int array_length_;   ///< dimension of the convolution
+    int array_length_;  ///< dimension of the convolution
     std::vector<int> padA_; ///< array of convolution dimension containing the zero-padding size for each dimension.
-    std::vector<int> filter_strideA_; ///< array of convolution dimension containing the filter stride for each dimension
+    std::vector<int>
+        filter_strideA_;          ///< array of convolution dimension containing the filter stride for each dimension
     std::vector<int> dilationA_;  ///< array of dimension array_length containing the dilation factor for each dimension
     cudnnConvolutionMode_t mode_; ///< selects between CUDNN_CONVOLUTION and CUDNN_CROSS_CORRELATION
-    bool use_tensor_op_;        ///< specify whether or not the use of tensor op is permitted in the library routines
+    bool use_tensor_op_;          ///< specify whether or not the use of tensor op is permitted in the library routines
                                   ///< associated with a given convolution descriptor
     cudnnDataType_t input_type_;  ///< selects the data type in which the computation will be done
     cudnnDataType_t conv_type_;   ///< selects the data type in which the convolution will be done
