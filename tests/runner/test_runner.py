@@ -7,6 +7,7 @@ import unittest
 import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 from omegaconf import OmegaConf
 
@@ -36,56 +37,78 @@ class RunnerTestCase(unittest.TestCase):
         """Test __get_mode_command."""
         test_cases = [
             {
+                'benchmark_name': 'foo',
                 'mode': {
                     'name': 'non_exist',
                 },
-                'exec_command': 'sb exec',
-                'expected_command': 'sb exec',
+                'expected_command': 'sb exec -c sb.config.yaml -C superbench.enable=foo',
             },
             {
+                'benchmark_name': 'foo',
                 'mode': {
-                    'name': 'torch.distributed',
+                    'name': 'local',
+                    'proc_num': 1,
+                    'prefix': '',
                 },
-                'exec_command':
-                'sb exec',
-                'expected_command': (
-                    'python3 -m torch.distributed.launch '
-                    '--use_env --no_python --nproc_per_node=8 '
-                    '--nnodes=$NNODES --node_rank=$NODE_RANK '
-                    '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec'
-                ),
+                'expected_command': 'sb exec -c sb.config.yaml -C superbench.enable=foo',
             },
             {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'local',
+                    'proc_num': 8,
+                    'proc_rank': 6,
+                    'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
+                },
+                'expected_command':
+                ('CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
+                 'sb exec -c sb.config.yaml -C superbench.enable=foo'),
+            },
+            {
+                'benchmark_name': 'foo',
+                'mode': {
+                    'name': 'local',
+                    'proc_num': 16,
+                    'proc_rank': 1,
+                    'prefix': 'RANK={proc_rank} NUM={proc_num}'
+                },
+                'expected_command': 'RANK=1 NUM=16 sb exec -c sb.config.yaml -C superbench.enable=foo',
+            },
+            {
+                'benchmark_name':
+                'foo',
                 'mode': {
                     'name': 'torch.distributed',
                     'proc_num': 1,
                     'node_num': 'all',
                 },
-                'exec_command':
-                'sb exec',
                 'expected_command': (
                     'python3 -m torch.distributed.launch '
                     '--use_env --no_python --nproc_per_node=1 '
                     '--nnodes=$NNODES --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec'
+                    'sb exec -c sb.config.yaml -C superbench.enable=foo '
+                    'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
+                    'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
                 ),
             },
             {
+                'benchmark_name':
+                'foo',
                 'mode': {
                     'name': 'torch.distributed',
                     'proc_num': 8,
                     'node_num': 1,
                 },
-                'exec_command':
-                'sb exec',
                 'expected_command': (
                     'python3 -m torch.distributed.launch '
                     '--use_env --no_python --nproc_per_node=8 '
                     '--nnodes=1 --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec'
+                    'sb exec -c sb.config.yaml -C superbench.enable=foo '
+                    'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
+                    'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
                 ),
             },
         ]
@@ -93,11 +116,21 @@ class RunnerTestCase(unittest.TestCase):
             with self.subTest(msg='Testing with case', test_case=test_case):
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        OmegaConf.create(test_case['mode']), test_case['exec_command']
+                        test_case['benchmark_name'], OmegaConf.create(test_case['mode'])
                     ), test_case['expected_command']
                 )
 
-    def test_run(self):
-        """Test run."""
+    def test_run_empty_benchmarks(self):
+        """Test run empty benchmarks, nothing should happen."""
         self.runner._sb_enabled_benchmarks = []
+        self.runner.run()
+
+    @mock.patch('superbench.runner.ansible.AnsibleClient.run')
+    def test_run_default_benchmarks(self, mock_ansible_client_run):
+        """Test run default benchmarks, mock AnsibleClient.run function.
+
+        Args:
+            mock_ansible_client_run (function): Mocked AnsibleClient.run function.
+        """
+        mock_ansible_client_run.return_value = 0
         self.runner.run()
