@@ -13,6 +13,7 @@ class ReturnCode(Enum):
     INVALID_ARGUMENT = 1
     INVALID_BENCHMARK_TYPE = 2
     INVALID_BENCHMARK_RESULT = 3
+    RUNTIME_EXCEPTION_ERROR = 4
     # Return codes related with model benchmarks.
     NO_SUPPORTED_PRECISION = 10
     MODEL_TRAIN_FAILURE = 11
