@@ -237,6 +237,7 @@ class ModelBenchmark(Benchmark):
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
         if not self.__process_model_result(ModelAction.TRAIN, precision, step_times):
+            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
             return False
 
         logger.info(
@@ -261,6 +262,7 @@ class ModelBenchmark(Benchmark):
         # The unit of step time should be millisecond.
         step_times = self._inference_step(precision)
         if not self.__process_model_result(ModelAction.INFERENCE, precision, step_times):
+            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
             return False
 
         logger.info(
@@ -323,11 +325,9 @@ class ModelBenchmark(Benchmark):
                 self._sub_benchmark_start_time = time.time()
                 if model_action == ModelAction.TRAIN:
                     if not self.__train(precision):
-                        self._result.set_return_code(ReturnCode.MODEL_TRAIN_FAILURE)
                         return False
                 elif model_action == ModelAction.INFERENCE:
                     if not self.__inference(precision):
-                        self._result.set_return_code(ReturnCode.MODEL_INFERENCE_FAILURE)
                         return False
                 else:
                     logger.warning(

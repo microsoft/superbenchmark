@@ -228,7 +228,7 @@ def test_train():
     # Step time list is empty (simulate training failure).
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
-        '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
+        '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
         '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
     )
     assert (benchmark._preprocess())
@@ -252,7 +252,7 @@ def test_inference():
     # Step time list is empty (simulate inference failure).
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
-        '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
+        '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
         '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
     )
     assert (benchmark._preprocess())
@@ -306,13 +306,13 @@ def test_benchmark():
     benchmark = create_benchmark('--num_steps 0')
     assert (benchmark._preprocess())
     assert (benchmark._benchmark() is False)
-    assert (benchmark.return_code == ReturnCode.MODEL_TRAIN_FAILURE)
+    assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT)
 
     # Negative case for _benchmark() - model inference failure, step time list is empty.
     benchmark = create_benchmark('--model_action inference --num_steps 0')
     assert (benchmark._preprocess())
     assert (benchmark._benchmark() is False)
-    assert (benchmark.return_code == ReturnCode.MODEL_INFERENCE_FAILURE)
+    assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT)
 
 
 def test_check_result_format():
