@@ -177,13 +177,11 @@ def test_pytorch_base():
     BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
 
     # Launch benchmark with --no_gpu for testing.
-    context = BenchmarkRegistry.create_benchmark_context(
-        'pytorch-mnist',
-        parameters='--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu'
-    )
-
-    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu'
+    benchmark = PytorchMNIST('pytorch-mnist', parameters=parameters)
     assert (benchmark)
+    assert (benchmark._preprocess())
+    assert (benchmark._benchmark())
     assert (benchmark.name == 'pytorch-mnist')
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
@@ -232,6 +230,9 @@ def test_pytorch_base():
     benchmark._optimizer_type = None
     assert (benchmark._create_optimizer() is False)
 
+    # Test _postprocess().
+    assert (benchmark._postprocess())
+
 
 @decorator.cuda_test
 @decorator.pytorch_test
@@ -243,7 +244,7 @@ def test_pytorch_empty_cache():
     # Test cache empty by manually calling torch.cuda.empty_cache().
     parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train'
     benchmark = PytorchMNIST('pytorch-mnist', parameters=parameters)
-
+    assert (benchmark)
     assert (benchmark._preprocess())
     assert (benchmark._benchmark())
     del benchmark
@@ -253,8 +254,7 @@ def test_pytorch_empty_cache():
 
     # Test automatic cache empty.
     context = BenchmarkRegistry.create_benchmark_context(
-        'pytorch-mnist',
-        parameters='--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu'
+        'pytorch-mnist', parameters='--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
