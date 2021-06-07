@@ -173,17 +173,15 @@ class PytorchMNIST(PytorchBase):
 @decorator.pytorch_test
 def test_pytorch_base():
     """Test PytorchBase class."""
-    # Register BERT Base benchmark.
+    # Register mnist benchmark.
     BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
 
     # Launch benchmark with --no_gpu for testing.
-    context = BenchmarkRegistry.create_benchmark_context(
-        'pytorch-mnist',
-        parameters='--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu'
-    )
-
-    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu'
+    benchmark = PytorchMNIST('pytorch-mnist', parameters=parameters)
     assert (benchmark)
+    assert (benchmark._preprocess())
+    assert (benchmark._benchmark())
     assert (benchmark.name == 'pytorch-mnist')
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
@@ -231,3 +229,34 @@ def test_pytorch_base():
     assert (isinstance(benchmark._optimizer, torch.optim.SGD))
     benchmark._optimizer_type = None
     assert (benchmark._create_optimizer() is False)
+
+    # Test _postprocess().
+    assert (benchmark._postprocess())
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_empty_cache():
+    """Test PytorchBase class."""
+    # Register mnist benchmark.
+    BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
+
+    # Test cache empty by manually calling torch.cuda.empty_cache().
+    parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train'
+    benchmark = PytorchMNIST('pytorch-mnist', parameters=parameters)
+    assert (benchmark)
+    assert (benchmark._preprocess())
+    assert (benchmark._benchmark())
+    del benchmark
+    assert (torch.cuda.memory_stats()['reserved_bytes.all.current'] > 0)
+    torch.cuda.empty_cache()
+    assert (torch.cuda.memory_stats()['reserved_bytes.all.current'] == 0)
+
+    # Test automatic cache empty.
+    context = BenchmarkRegistry.create_benchmark_context(
+        'pytorch-mnist', parameters='--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train'
+    )
+
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert (benchmark)
+    assert (torch.cuda.memory_stats()['reserved_bytes.all.current'] == 0)

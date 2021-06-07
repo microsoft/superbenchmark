@@ -183,6 +183,12 @@ class PytorchBase(ModelBenchmark):
             )
             return False
 
+        del self._model
+        del self._optimizer
+        del self._target
+
+        torch.cuda.empty_cache()
+
         return True
 
     def _cal_params_count(self):
