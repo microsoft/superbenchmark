@@ -13,6 +13,10 @@ jobs:
     name: Docker build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Free disk space
         run: |
           mkdir /tmp/emptydir
@@ -33,7 +37,7 @@ jobs:
           CACHE_FROM="type=registry,ref=${DOCKER_IMAGE}:${IMAGE_TAG}"
           CACHE_TO=""
           if [ "${{ github.event_name }}" = "push" ]; then
-            CACHE_TO="type=inline"
+            CACHE_TO="type=inline,mode=max"
           fi
 
           echo ::set-output name=dockerfile::${DOCKERFILE}
@@ -55,6 +59,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           platforms: linux/amd64
+          context: .
           file: ${{ steps.metadata.outputs.dockerfile }}
           push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.metadata.outputs.tags }}
