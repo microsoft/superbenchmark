@@ -25,7 +25,10 @@ RUN apt-get update && \
     libaio-dev \
     libcap2 \
     libtinfo5 \
-    && rm -rf /opt/cmake-3.14.6-Linux-x86_64 /tmp/*
+    && \
+    apt-get autoremove && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
 
 # Configure SSH
 RUN mkdir -p /root/.ssh && \
@@ -52,22 +55,24 @@ RUN cd /opt && \
 
 # Install NCCL RDMA SHARP plugins
 RUN cd /tmp && \
-    mkdir -p /usr/local/nccl-rdma-sharp-plugins && \
     git clone https://github.com/Mellanox/nccl-rdma-sharp-plugins.git && \
     cd nccl-rdma-sharp-plugins && \
     git reset --hard 7cccbc1 && \
     ./autogen.sh && \
-    ./configure --prefix=/usr/local/nccl-rdma-sharp-plugins --with-cuda=/usr/local/cuda && \
+    ./configure --prefix=/usr/local --with-cuda=/usr/local/cuda && \
     make -j && \
     make install && \
     cd /tmp && \
     rm -rf nccl-rdma-sharp-plugins
 
 # Install NCCL patch
-RUN git clone -b bootstrap_tag https://github.com/NVIDIA/nccl.git /usr/local/nccl && \
-    cd /usr/local/nccl && \
+RUN cd /tmp && \
+    git clone -b bootstrap_tag https://github.com/NVIDIA/nccl.git && \
+    cd nccl && \
     make -j src.build && \
-    make install
+    make install && \
+    cd /tmp && \
+    rm -rf nccl
 
 # TODO: move to gitmodules
 RUN git clone -b v4.5-0.2 https://github.com/linux-rdma/perftest.git /usr/local/perftest && \
@@ -80,8 +85,8 @@ RUN git clone https://github.com/nvidia/nccl-tests /usr/local/nccl-tests && \
     cd /usr/local/nccl-tests && \
     make MPI=1 MPI_HOME=/usr/local/mpi/ -j
 
-ENV PATH="${PATH}:/usr/local/cmake/bin:/usr/local/nccl-tests/build" \
-    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib" \
+ENV PATH="/usr/local/nccl-tests/build:${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
     SB_MICRO_PATH="/opt/superbench"
 
