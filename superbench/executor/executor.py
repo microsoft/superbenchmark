@@ -79,6 +79,8 @@ class SuperBenchExecutor():
             str: Command line arguments.
         """
         argv = []
+        if not parameters:
+            return ''
         for name, val in parameters.items():
             if val is None:
                 continue
