@@ -155,7 +155,7 @@ class SuperBenchExecutor():
             benchmark_config = self._sb_benchmarks[benchmark_name]
             benchmark_results = {}
             self.__create_benchmark_dir(benchmark_name)
-            for framework in benchmark_config.frameworks or ['none']:
+            for framework in benchmark_config.frameworks or [Framework.NONE.value]:
                 if benchmark_name.endswith('_models'):
                     for model in benchmark_config.models:
                         log_suffix = 'model-benchmark {}: {}/{}'.format(benchmark_name, framework, model)
@@ -167,7 +167,7 @@ class SuperBenchExecutor():
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )
                         result = self.__exec_benchmark(context, log_suffix)
-                        if framework != 'none':
+                        if framework != Framework.NONE.value:
                             benchmark_results['{}/{}'.format(framework, model)] = result
                         else:
                             benchmark_results[model] = result
@@ -181,7 +181,7 @@ class SuperBenchExecutor():
                         parameters=self.__get_arguments(benchmark_config.parameters)
                     )
                     result = self.__exec_benchmark(context, log_suffix)
-                    if framework != 'none':
+                    if framework != Framework.NONE.value:
                         benchmark_results[framework] = result
                     else:
                         benchmark_results = result
