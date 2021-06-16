@@ -138,7 +138,7 @@ setup(
         'colorlog>=4.7.2',
         'joblib>=1.0.1',
         'knack>=0.7.2',
-        'omegaconf>=2.0.6',
+        'omegaconf==2.0.6',
     ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
@@ -151,6 +151,7 @@ setup(
             'pytest-cov>=2.11.1',
             'pytest-subtests>=0.4.0',
             'pytest>=6.2.2',
+            'types-pyyaml',
             'vcrpy>=4.1.1',
             'yapf>=0.30.0',
         ],

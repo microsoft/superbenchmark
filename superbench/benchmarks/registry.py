@@ -77,7 +77,7 @@ class BenchmarkRegistry:
             )
         else:
             cls.benchmarks[name]['predefine_param'] = vars(args)
-            logger.info('Benchmark registration - benchmark: {}, predefine_parameters: {}'.format(name, vars(args)))
+            logger.debug('Benchmark registration - benchmark: {}, predefine_parameters: {}'.format(name, vars(args)))
 
     @classmethod
     def is_benchmark_context_valid(cls, benchmark_context):
