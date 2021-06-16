@@ -129,7 +129,7 @@ class SuperBenchExecutor():
         """
         benchmark_output_dir = Path(self._output_dir, 'benchmarks', benchmark_name)
         if benchmark_output_dir.is_dir() and any(benchmark_output_dir.iterdir()):
-            logger.warn('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
+            logger.warning('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
             for i in itertools.count(start=1):
                 backup_dir = benchmark_output_dir.with_name('{}.{}'.format(benchmark_name, i))
                 if not backup_dir.is_dir():
