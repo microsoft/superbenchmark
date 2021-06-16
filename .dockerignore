@@ -1,13 +1,16 @@
 # SuperBench
-outputs
+outputs/
 *.tar.gz
 
 # Python
-__pycache__
+**/__pycache__
 *.pyc
 *.pyo
 *.pyd
 
 # Git
-.git
-.github
+**/.git
+**/.gitmodules
+**/.dockerignore
+.github/
+.azure-pipelines/

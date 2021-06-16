@@ -1,38 +1,45 @@
 FROM nvcr.io/nvidia/pytorch:20.12-py3
 
+# OS:
+#   - Ubuntu: 20.04
+# NVIDIA:
+#   - CUDA: 11.1.1
+#   - cuDNN: 8.0.5
+#   - NCCL: bootstrap_tag
+# Mellanox:
+#   - OFED: 5.2-2.2.3.0
+#   - HPC-X: v2.8.3
+#   - NCCL RDMA SHARP plugins: 7cccbc1
+
 LABEL maintainer="SuperBench"
 
-ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    build-essential \
-    jq \
-    vim \
-    git \
-    curl \
-    wget \
-    lshw \
-    dmidecode \
-    util-linux \
-    automake \
     autoconf \
+    automake \
+    build-essential \
+    curl \
+    dmidecode \
+    git \
+    jq \
+    libaio-dev \
+    libcap2 \
+    libpci-dev \
+    libtinfo5 \
     libtool \
+    lshw \
     net-tools \
     openssh-client \
     openssh-server \
     pciutils \
-    libpci-dev \
-    libaio-dev \
-    libcap2 \
-    libtinfo5
-
-# Install CMake
-RUN wget -q https://github.com/Kitware/CMake/releases/download/v3.17.1/cmake-3.17.1-Linux-x86_64.sh \
-    -O /tmp/cmake-install.sh && \
-    chmod +x /tmp/cmake-install.sh && \
-    mkdir /usr/local/cmake && \
-    /tmp/cmake-install.sh --skip-license --prefix=/usr/local/cmake && \
-    rm /tmp/cmake-install.sh
+    util-linux \
+    vim \
+    wget \
+    && \
+    apt-get autoremove && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
 
 # Configure SSH
 RUN mkdir -p /root/.ssh && \
@@ -42,52 +49,63 @@ RUN mkdir -p /root/.ssh && \
     sed -i "s/[# ]*Port.*/Port 22/" /etc/ssh/sshd_config && \
     echo "PermitUserEnvironment yes" >> /etc/ssh/sshd_config
 
-# Install OpenMPI
-ARG OMPI_VERSION=4.0.5
-RUN cd /tmp && \
-    wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OMPI_VERSION}.tar.gz && \
-    tar xzf openmpi-${OMPI_VERSION}.tar.gz && \
-    cd openmpi-${OMPI_VERSION} && \
-    ./configure --enable-orterun-prefix-by-default && \
-    make -j all && \
-    make install && \
-    ldconfig && \
-    rm -rf /tmp/openmpi-${OMPI_VERSION}*
-
 # Install OFED
-ARG OFED_VERSION=5.2-1.0.4.0
+ENV OFED_VERSION=5.2-2.2.3.0
 RUN cd /tmp && \
     wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
-# Install OFED perftest
+# Install HPC-X
+RUN cd /opt && \
+    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
+    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
+    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64 hpcx && \
+    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz
+
+# Install NCCL RDMA SHARP plugins
+RUN cd /tmp && \
+    git clone https://github.com/Mellanox/nccl-rdma-sharp-plugins.git && \
+    cd nccl-rdma-sharp-plugins && \
+    git reset --hard 7cccbc1 && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr/local --with-cuda=/usr/local/cuda && \
+    make -j && \
+    make install && \
+    cd /tmp && \
+    rm -rf nccl-rdma-sharp-plugins
+
+# Install NCCL patch
+RUN cd /tmp && \
+    git clone -b bootstrap_tag https://github.com/NVIDIA/nccl.git && \
+    cd nccl && \
+    make -j src.build && \
+    make install && \
+    cd /tmp && \
+    rm -rf nccl
+
+# TODO: move to gitmodules
 RUN git clone -b v4.5-0.2 https://github.com/linux-rdma/perftest.git /usr/local/perftest && \
     cd /usr/local/perftest && \
     ./autogen.sh && \
     ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h && \
     make -j && \
     make install
-
-# Install NCCL
-RUN git clone -b v2.8.4-1 https://github.com/NVIDIA/nccl /usr/local/nccl && \
-    cd /usr/local/nccl && \
-    make -j src.build && \
-    make install
 RUN git clone https://github.com/nvidia/nccl-tests /usr/local/nccl-tests && \
     cd /usr/local/nccl-tests && \
     make MPI=1 MPI_HOME=/usr/local/mpi/ -j
 
-ENV PATH="${PATH}:/usr/local/cmake/bin:/usr/local/nccl-tests/build" \
-    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib" \
+ENV PATH="/usr/local/nccl-tests/build:${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
     SB_MICRO_PATH="/opt/superbench"
 
 WORKDIR ${SB_HOME}
-ADD . .
 
-RUN cd ${SB_HOME} && \
-    python3 -m pip install .[nvidia,torch] && \
-    make cppbuild && \
-    make thirdparty
+ADD third_party third_party
+RUN make -j -C third_party
+
+ADD . .
+RUN python3 -m pip install .[nvidia,torch] && \
+    make cppbuild
