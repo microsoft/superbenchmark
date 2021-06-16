@@ -1,5 +1,16 @@
 FROM nvcr.io/nvidia/pytorch:20.12-py3
 
+# OS:
+#   - Ubuntu: 20.04
+# NVIDIA:
+#   - CUDA: 11.1.1
+#   - cuDNN: 8.0.5
+#   - NCCL: bootstrap_tag
+# Mellanox:
+#   - OFED: 5.2-2.2.3.0
+#   - HPC-X: v2.8.3
+#   - NCCL RDMA SHARP plugins: 7cccbc1
+
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
