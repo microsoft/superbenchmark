@@ -16,26 +16,26 @@ LABEL maintainer="SuperBench"
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    build-essential \
-    jq \
-    vim \
-    git \
-    curl \
-    wget \
-    lshw \
-    dmidecode \
-    util-linux \
-    automake \
     autoconf \
+    automake \
+    build-essential \
+    curl \
+    dmidecode \
+    git \
+    jq \
+    libaio-dev \
+    libcap2 \
+    libpci-dev \
+    libtinfo5 \
     libtool \
+    lshw \
     net-tools \
     openssh-client \
     openssh-server \
     pciutils \
-    libpci-dev \
-    libaio-dev \
-    libcap2 \
-    libtinfo5 \
+    util-linux \
+    vim \
+    wget \
     && \
     apt-get autoremove && \
     apt-get clean && \
