@@ -68,8 +68,8 @@ class ExecutorTestCase(unittest.TestCase):
             ), expected_matmul_args
         )
         expected_bert_models_args = \
-            '--duration 0 --num_warmup 16 --num_steps 128 --batch_size 16 ' \
-            '--precision float32 float16 --model_action train inference'
+            '--duration 0 --num_warmup 16 --num_steps 128 --batch_size 8 ' \
+            '--precision float32 float16 --model_action train'
         self.assertEqual(
             self.executor._SuperBenchExecutor__get_arguments(
                 self.default_config.superbench.benchmarks.bert_models.parameters
