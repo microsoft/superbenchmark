@@ -22,10 +22,14 @@
     container: sb-workspace
     sb_nodes: '{{ hostvars.values() | map(attribute="ansible_hostname") | sort }}'
     sb_env: |
+      # pytorch env
       NNODES={{ sb_nodes | length }}
       NODE_RANK={{ lookup('ansible.utils.index_of', sb_nodes, 'eq', ansible_hostname) }}
       MASTER_ADDR={{ sb_nodes | first }}
       MASTER_PORT=29500
+      OMP_NUM_THREADS=1
+      # config env
+      {{ env }}
   tasks:
     - name: Updating Config
       copy:

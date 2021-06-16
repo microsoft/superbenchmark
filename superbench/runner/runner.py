@@ -54,6 +54,8 @@ class SuperBenchRunner():
             InvalidConfigError: If input config is invalid.
         """
         # TODO: add validation and defaulting
+        if not self._sb_config.superbench.env:
+            self._sb_config.superbench.env = []
         for name in self._sb_benchmarks:
             if not self._sb_benchmarks[name].modes:
                 self._sb_benchmarks[name].modes = []
@@ -141,7 +143,13 @@ class SuperBenchRunner():
         logger.info('Checking SuperBench environment.')
         OmegaConf.save(config=self._sb_config, f=str(Path(self._output_dir) / 'sb.config.yaml'))
         self._ansible_client.run(
-            self._ansible_client.get_playbook_config('check_env.yaml', extravars={'output_dir': self._output_dir})
+            self._ansible_client.get_playbook_config(
+                'check_env.yaml',
+                extravars={
+                    'output_dir': self._output_dir,
+                    'env': '\n'.join(self._sb_config.superbench.env),
+                }
+            )
         )
 
     def _run_proc(self, benchmark_name, mode, vars):
