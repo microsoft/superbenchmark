@@ -115,7 +115,7 @@ class SuperBenchRunner():
                 torch_distributed_suffix=(
                     'superbench.benchmarks.{name}.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
-                ).format(name=benchmark_name),
+                ).format(name=benchmark_name) if benchmark_name.endswith('_models') else '',
             )
         return mode_command.strip()
 
