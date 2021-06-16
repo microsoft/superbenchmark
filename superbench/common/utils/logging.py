@@ -36,10 +36,12 @@ class SuperBenchLogger:
             filename (str, optional): The filename that file handler should use. Defaults to None.
             color (bool, optional): Colored format or not. Defaults to False.
         """
-        formatter = logging.Formatter('[%(asctime)s %(hostname)s][%(filename)s:%(lineno)s][%(levelname)s] %(message)s')
+        formatter = logging.Formatter(
+            '[%(asctime)s %(hostname)s:%(process)d][%(filename)s:%(lineno)s][%(levelname)s] %(message)s'
+        )
         if color:
             formatter = colorlog.ColoredFormatter(
-                '[%(cyan)s%(asctime)s %(hostname)s%(reset)s]'
+                '[%(cyan)s%(asctime)s %(hostname)s:%(process)d%(reset)s]'
                 '[%(blue)s%(filename)s:%(lineno)s%(reset)s]'
                 '[%(log_color)s%(levelname)s%(reset)s] %(message)s'
             )

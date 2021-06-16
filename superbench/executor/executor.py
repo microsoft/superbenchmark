@@ -79,6 +79,8 @@ class SuperBenchExecutor():
             str: Command line arguments.
         """
         argv = []
+        if not parameters:
+            return ''
         for name, val in parameters.items():
             if val is None:
                 continue
@@ -127,7 +129,7 @@ class SuperBenchExecutor():
         """
         benchmark_output_dir = Path(self._output_dir, 'benchmarks', benchmark_name)
         if benchmark_output_dir.is_dir() and any(benchmark_output_dir.iterdir()):
-            logger.warn('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
+            logger.warning('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
             for i in itertools.count(start=1):
                 backup_dir = benchmark_output_dir.with_name('{}.{}'.format(benchmark_name, i))
                 if not backup_dir.is_dir():
@@ -153,7 +155,7 @@ class SuperBenchExecutor():
             benchmark_config = self._sb_benchmarks[benchmark_name]
             benchmark_results = {}
             self.__create_benchmark_dir(benchmark_name)
-            for framework in benchmark_config.frameworks or [Framework.NONE]:
+            for framework in benchmark_config.frameworks or [Framework.NONE.value]:
                 if benchmark_name.endswith('_models'):
                     for model in benchmark_config.models:
                         log_suffix = 'model-benchmark {}: {}/{}'.format(benchmark_name, framework, model)
@@ -165,7 +167,7 @@ class SuperBenchExecutor():
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )
                         result = self.__exec_benchmark(context, log_suffix)
-                        if framework != Framework.NONE:
+                        if framework != Framework.NONE.value:
                             benchmark_results['{}/{}'.format(framework, model)] = result
                         else:
                             benchmark_results[model] = result
@@ -179,7 +181,7 @@ class SuperBenchExecutor():
                         parameters=self.__get_arguments(benchmark_config.parameters)
                     )
                     result = self.__exec_benchmark(context, log_suffix)
-                    if framework != Framework.NONE:
+                    if framework != Framework.NONE.value:
                         benchmark_results[framework] = result
                     else:
                         benchmark_results = result
