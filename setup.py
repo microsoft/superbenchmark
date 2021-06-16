@@ -138,7 +138,7 @@ setup(
         'colorlog>=4.7.2',
         'joblib>=1.0.1',
         'knack>=0.7.2',
-        'omegaconf>=2.0.6',
+        'omegaconf==2.0.6',
     ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
