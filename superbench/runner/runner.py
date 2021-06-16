@@ -161,7 +161,7 @@ class SuperBenchRunner():
             self._ansible_client.get_shell_config(
                 (
                     'docker exec sb-workspace bash -c '
-                    '"set -o allexport && source sb.env && set +o allexport && {command}"'
+                    "'set -o allexport && source sb.env && set +o allexport && {command}'"
                 ).format(command=self.__get_mode_command(benchmark_name, mode), )
             ),
             sudo=True
