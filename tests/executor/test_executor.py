@@ -61,14 +61,14 @@ class ExecutorTestCase(unittest.TestCase):
 
     def test_get_arguments(self):
         """Test benchmarks arguments."""
-        expected_matmul_args = '--num_steps 2048'
+        expected_matmul_args = ''
         self.assertEqual(
             self.executor._SuperBenchExecutor__get_arguments(
                 self.default_config.superbench.benchmarks.matmul.parameters
             ), expected_matmul_args
         )
         expected_bert_models_args = \
-            '--duration 0 --num_warmup 64 --num_steps 2048 --batch_size 16 ' \
+            '--duration 0 --num_warmup 16 --num_steps 128 --batch_size 16 ' \
             '--precision float32 float16 --model_action train inference'
         self.assertEqual(
             self.executor._SuperBenchExecutor__get_arguments(
