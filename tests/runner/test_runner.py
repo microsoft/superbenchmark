@@ -88,14 +88,12 @@ class RunnerTestCase(unittest.TestCase):
                     '--use_env --no_python --nproc_per_node=1 '
                     '--nnodes=$NNODES --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec -c sb.config.yaml -C superbench.enable=foo '
-                    'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
-                    'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
+                    'sb exec -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
             {
                 'benchmark_name':
-                'foo',
+                'foo_models',
                 'mode': {
                     'name': 'torch.distributed',
                     'proc_num': 8,
@@ -106,9 +104,9 @@ class RunnerTestCase(unittest.TestCase):
                     '--use_env --no_python --nproc_per_node=8 '
                     '--nnodes=1 --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec -c sb.config.yaml -C superbench.enable=foo '
-                    'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
-                    'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
+                    'sb exec -c sb.config.yaml -C superbench.enable=foo_models '
+                    'superbench.benchmarks.foo_models.parameters.distributed_impl=ddp '
+                    'superbench.benchmarks.foo_models.parameters.distributed_backend=nccl'
                 ),
             },
         ]
