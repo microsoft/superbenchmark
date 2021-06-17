@@ -414,7 +414,6 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     metric_json_str = line[line.index('[function config]: ') +
                                            len('[function config]: '):].replace(' ', '').replace(':', '_')[1:-1]
                     metric_list = metric_json_str.split(',')
-                    print(metric_list)
                     for key in metric_list:
                         if 'name' in key:
                             metric = key + metric
