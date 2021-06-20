@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 cmake_minimum_required(VERSION 3.18)
-project(CudnnBenchmark LANGUAGES CUDA CXX)
+project(cudnn_benchmark LANGUAGES CUDA CXX)
 
 include(../cuda_common.cmake)
 
@@ -28,6 +28,6 @@ if(NOT json_POPULATED)
   add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-add_executable(CudnnBenchmark cudnn_test.cpp)   
-target_link_libraries(CudnnBenchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart ${CUDNN_LIBRARY}) 
-install(TARGETS CudnnBenchmark ${TARGET_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
+add_executable(cudnn_benchmark cudnn_test.cpp)   
+target_link_libraries(cudnn_benchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart ${CUDNN_LIBRARY}) 
+install(TARGETS cudnn_benchmark ${TARGET_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
