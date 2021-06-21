@@ -181,7 +181,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             }
         ]
 
-        self._bin_name = 'CublasBenchmark'
+        self._bin_name = 'cublas_benchmark'
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -276,7 +276,15 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             raw_data = []
             for line in lines:
                 if '[function config]' in line:
-                    metric = line[line.index('[function config]: ') + len('[function config]: '):]
+                    metric = ''
+                    metric_json_str = line[line.index('[function config]: ') +
+                                           len('[function config]: '):].replace(' ', '').replace(':', '_')[1:-1]
+                    metric_list = metric_json_str.split(',')
+                    for key in metric_list:
+                        if 'name' in key:
+                            metric = key + metric
+                        else:
+                            metric = metric + '_' + key
                 if '[raw_data]' in line:
                     raw_data = line[line.index('[raw_data]: ') + len('[raw_data]: '):]
                     raw_data = raw_data.split(',')
