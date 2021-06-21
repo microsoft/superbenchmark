@@ -55,7 +55,7 @@ class SuperBenchRunner():
         """
         # TODO: add validation and defaulting
         if not self._sb_config.superbench.env:
-            self._sb_config.superbench.env = []
+            self._sb_config.superbench.env = {}
         for name in self._sb_benchmarks:
             if not self._sb_benchmarks[name].modes:
                 self._sb_benchmarks[name].modes = []
@@ -147,7 +147,7 @@ class SuperBenchRunner():
                 'check_env.yaml',
                 extravars={
                     'output_dir': self._output_dir,
-                    'env': '\n'.join(self._sb_config.superbench.env),
+                    'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
                 }
             )
         )

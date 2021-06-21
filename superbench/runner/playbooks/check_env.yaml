@@ -29,7 +29,7 @@
       MASTER_PORT=29500
       OMP_NUM_THREADS=1
       # config env
-      {{ env }}
+      {{ env | default('') }}
   tasks:
     - name: Updating Config
       copy:
