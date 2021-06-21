@@ -6,7 +6,8 @@
 import importlib
 
 from superbench.benchmarks.return_code import ReturnCode
-from superbench.benchmarks.context import Platform, Framework, Precision, ModelAction, BenchmarkType, BenchmarkContext
+from superbench.benchmarks.context import Platform, Framework, Precision, ModelAction, \
+    DistributedImpl, DistributedBackend, BenchmarkType, BenchmarkContext
 from superbench.common.utils import LazyImport
 
 BenchmarkRegistry = LazyImport(
@@ -21,6 +22,6 @@ BenchmarkRegistry = LazyImport(
 )
 
 __all__ = [
-    'ReturnCode', 'Platform', 'Framework', 'BenchmarkType', 'Precision', 'ModelAction', 'BenchmarkContext',
-    'BenchmarkRegistry'
+    'ReturnCode', 'Platform', 'Framework', 'BenchmarkType', 'Precision', 'ModelAction', 'DistributedImpl',
+    'DistributedBackend', 'BenchmarkContext', 'BenchmarkRegistry'
 ]
