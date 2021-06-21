@@ -140,6 +140,7 @@ setup(
         'joblib>=1.0.1',
         'knack>=0.7.2',
         'omegaconf==2.0.6',
+        'pyyaml>=5.3',
     ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],

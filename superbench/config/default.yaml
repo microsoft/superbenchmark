@@ -1,99 +1,73 @@
 # SuperBench Config
 superbench:
   enable: null
-  benchmarks:
-    kernel-launch:
+  var:
+    default_local_mode: &default_local_mode
       enable: true
-      modes: &local_mode_config
+      modes:
         - name: local
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank}
           parallel: yes
-    gemm-flops:
+    default_pytorch_mode: &default_pytorch_mode
       enable: true
-      modes: *local_mode_config
-    cudnn-function:
-      enable: true
-      modes: *local_mode_config
-    cublas-function:
-      enable: true
-      modes: *local_mode_config
-    matmul:
-      enable: true
-      modes: *local_mode_config
-      frameworks:
-        - pytorch
-    sharding-matmul:
-      enable: true
-      modes: &pytorch_mode_config
+      modes:
         - name: torch.distributed
           proc_num: 8
           node_num: 1
       frameworks:
         - pytorch
+    common_model_config: &common_model_config
+      duration: 0
+      num_warmup: 16
+      num_steps: 128
+      precision:
+        - float32
+        - float16
+      model_action:
+        - train
+  benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
+    cudnn-function:
+      <<: *default_local_mode
+    cublas-function:
+      <<: *default_local_mode
+    matmul:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+    sharding-matmul:
+      <<: *default_pytorch_mode
     computation-communication-overlap:
-      enable: true
-      modes: *pytorch_mode_config
-      frameworks:
-        - pytorch
+      <<: *default_pytorch_mode
     gpt_models:
-      enable: true
-      modes: *pytorch_mode_config
-      frameworks:
-        - pytorch
+      <<: *default_pytorch_mode
       models:
         - gpt2-small
         - gpt2-large
       parameters:
-        duration: 0
-        num_warmup: 16
-        num_steps: 128
+        <<: *common_model_config
         batch_size: 4
-        precision:
-          - float32
-          - float16
-        model_action:
-          - train
     bert_models:
-      enable: true
-      modes: *pytorch_mode_config
-      frameworks:
-        - pytorch
+      <<: *default_pytorch_mode
       models:
         - bert-base
         - bert-large
       parameters:
-        duration: 0
-        num_warmup: 16
-        num_steps: 128
+        <<: *common_model_config
         batch_size: 8
-        precision:
-          - float32
-          - float16
-        model_action:
-          - train
     lstm_models:
-      enable: true
-      modes: *pytorch_mode_config
-      frameworks:
-        - pytorch
+      <<: *default_pytorch_mode
       models:
         - lstm
       parameters:
-        duration: 0
-        num_warmup: 16
-        num_steps: 128
+        <<: *common_model_config
         batch_size: 128
-        precision:
-          - float32
-          - float16
-        model_action:
-          - train
     cnn_models:
-      enable: true
-      modes: *pytorch_mode_config
-      frameworks:
-        - pytorch
+      <<: *default_pytorch_mode
       models:
         - resnet50
         - resnet101
@@ -105,12 +79,5 @@ superbench:
         - vgg16
         - vgg19
       parameters:
-        duration: 0
-        num_warmup: 16
-        num_steps: 128
+        <<: *common_model_config
         batch_size: 128
-        precision:
-          - float32
-          - float16
-        model_action:
-          - train
