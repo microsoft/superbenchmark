@@ -8,7 +8,7 @@ import time
 from abc import abstractmethod
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Precision, ModelAction, BenchmarkType, ReturnCode
+from superbench.benchmarks import Precision, ModelAction, DistributedImpl, DistributedBackend, BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 from superbench.benchmarks.context import Enum
 
@@ -18,22 +18,6 @@ class Optimizer(Enum):
     SGD = 'sgd'
     ADAM = 'adam'
     ADAMW = 'adamw'
-
-
-class DistributedImpl(Enum):
-    """The Enum class representing different distributed implementations."""
-    DDP = 'ddp'
-    MIRRORED = 'mirrored'
-    MW_MIRRORED = 'multiworkermirrored'
-    PS = 'parameterserver'
-    HOROVOD = 'horovod'
-
-
-class DistributedBackend(Enum):
-    """The Enum class representing different distributed backends."""
-    NCCL = 'nccl'
-    MPI = 'mpi'
-    GLOO = 'gloo'
 
 
 class ModelBenchmark(Benchmark):
