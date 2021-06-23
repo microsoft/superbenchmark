@@ -227,8 +227,8 @@ def deploy_command_handler(
         private_key=private_key,
     )
 
-    SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
-    raise NotImplementedError
+    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
+    runner.deploy()
 
 
 def run_command_handler(

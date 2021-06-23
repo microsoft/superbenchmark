@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+import yaml
 from omegaconf import OmegaConf
 
 from superbench.runner import SuperBenchRunner
@@ -19,7 +20,8 @@ class RunnerTestCase(unittest.TestCase):
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
         default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
-        self.default_config = OmegaConf.load(str(default_config_file))
+        with default_config_file.open() as fp:
+            self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
         self.output_dir = tempfile.mkdtemp()
 
         self.runner = SuperBenchRunner(self.default_config, None, None, self.output_dir)

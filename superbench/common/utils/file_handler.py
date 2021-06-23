@@ -6,6 +6,7 @@
 from pathlib import Path
 from datetime import datetime
 
+import yaml
 from omegaconf import OmegaConf
 
 
@@ -38,4 +39,5 @@ def get_sb_config(config_file):
     p = Path(config_file) if config_file else default_config_file
     if not p.is_file():
         return None
-    return OmegaConf.load(str(p))
+    with p.open() as fp:
+        return OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
