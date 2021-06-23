@@ -51,6 +51,12 @@ sb deploy [--docker-image]
 | `--host-username` | `None` | Host username if needed. |
 | `--private-key` | `None` | Path to private key if needed. |
 
+#### Global arguments
+
+| Name | Default | Description |
+| --- | --- | --- |
+| `--help` `-h` | N/A | Show help message. |
+
 #### Examples
 
 Deploy image `superbench/cuda:11.1` to all nodes in `./host.yaml`:
@@ -72,6 +78,12 @@ sb exec [--config-file]
 | --- | --- | --- |
 | `--config-file` `-c` | `None` | Path to SuperBench config file. |
 | `--config-override` `-C` | `None` | Extra arguments to override config_file. |
+
+#### Global arguments
+
+| Name | Default | Description |
+| --- | --- | --- |
+| `--help` `-h` | N/A | Show help message. |
 
 #### Examples
 
@@ -111,6 +123,12 @@ sb run [--config-file]
 | `--host-username` | `None` | Host username if needed. |
 | `--private-key` | `None` | Path to private key if needed. |
 
+#### Global arguments
+
+| Name | Default | Description |
+| --- | --- | --- |
+| `--help` `-h` | N/A | Show help message. |
+
 #### Examples
 
 Run all benchmarks on all managed nodes in `./host.yaml` using image `superbench/cuda:11.1`
@@ -125,6 +143,12 @@ Print the current SuperBench CLI version.
 ```bash title="SB CLI"
 sb version
 ```
+
+#### Global arguments
+
+| Name | Default | Description |
+| --- | --- | --- |
+| `--help` `-h` | N/A | Show help message. |
 
 #### Examples
 
