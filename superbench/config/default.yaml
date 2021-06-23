@@ -66,14 +66,26 @@ superbench:
       parameters:
         <<: *common_model_config
         batch_size: 128
-    cnn_models:
+    resnet_models:
       <<: *default_pytorch_mode
       models:
         - resnet50
         - resnet101
         - resnet152
+      parameters:
+        <<: *common_model_config
+        batch_size: 128
+    densenet_models:
+      <<: *default_pytorch_mode
+      models:
         - densenet169
         - densenet201
+      parameters:
+        <<: *common_model_config
+        batch_size: 128
+    vgg_models:
+      <<: *default_pytorch_mode
+      models:
         - vgg11
         - vgg13
         - vgg16
