@@ -41,6 +41,7 @@ class SuperBenchLogger:
         )
         if color:
             formatter = colorlog.ColoredFormatter(
+                '%(reset)s'
                 '[%(cyan)s%(asctime)s %(hostname)s:%(process)d%(reset)s]'
                 '[%(blue)s%(filename)s:%(lineno)s%(reset)s]'
                 '[%(log_color)s%(levelname)s%(reset)s] %(message)s'

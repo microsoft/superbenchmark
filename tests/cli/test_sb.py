@@ -53,7 +53,11 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_deploy(self):
         """Test sb deploy."""
-        self.cmd('sb deploy --host-list localhost', expect_failure=True)
+        self.cmd('sb deploy --host-list localhost', checks=[NoneCheck()])
+
+    def test_sb_deploy_no_host(self):
+        """Test sb deploy, no host_file or host_list provided, should fail."""
+        self.cmd('sb deploy', expect_failure=True)
 
     def test_sb_exec(self):
         """Test sb exec."""

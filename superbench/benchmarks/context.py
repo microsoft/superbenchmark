@@ -61,6 +61,22 @@ class ModelAction(Enum):
     INFERENCE = 'inference'
 
 
+class DistributedImpl(Enum):
+    """The Enum class representing different distributed implementations."""
+    DDP = 'ddp'
+    MIRRORED = 'mirrored'
+    MW_MIRRORED = 'multiworkermirrored'
+    PS = 'parameterserver'
+    HOROVOD = 'horovod'
+
+
+class DistributedBackend(Enum):
+    """The Enum class representing different distributed backends."""
+    NCCL = 'nccl'
+    MPI = 'mpi'
+    GLOO = 'gloo'
+
+
 class BenchmarkContext():
     """Context class of all benchmarks.
 
