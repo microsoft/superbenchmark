@@ -97,7 +97,7 @@ superbench:
         batch_size: 128
 ```
 
-By default, all benchmarks specified in above config will be run if no custom config provided.
+By default, all benchmarks in default configuration will be run if you don't specify customized configuration.
 
 If you want to have a quick try, you can modify this config a little bit. For example, only run resnet models.
 1. copy the default config to a file named `resnet.yaml` in current path.
@@ -130,7 +130,7 @@ SuperBench leverages [Ansible](https://docs.ansible.com/ansible/latest/) to run 
 you need to provide an [inventory](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html) file
 to configure host list for managed nodes.
 
-Here're some basic examples you can start from.
+Here're some basic examples as your starting point.
 * One managed node, same node as control node.
   ```ini title="local.ini"
   [all]

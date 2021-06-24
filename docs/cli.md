@@ -22,7 +22,7 @@ Welcome to the SB CLI!
 
 ## SuperBench CLI commands
 
-Below is the full list of SuperBench CLI commands and their usages:
+The following lists `sb` commands usages and examples:
 
 ### `sb deploy`
 
@@ -87,7 +87,7 @@ sb exec [--config-file]
 
 #### Examples
 
-Execute GPT2 model benchmark only in default benchmarking configuration:
+Execute GPT2 model benchmark in default configuration:
 ```bash title="SB CLI"
 sb exec --config-override superbench.enable="['gpt2_models']"
 ```

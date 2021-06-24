@@ -12,7 +12,7 @@ Usually __managed nodes__ are GPU nodes with high speed inter-connection, while 
 
 :::tip Tips
 It is fine if you have only one GPU node and want to try SuperBench on it.
-Control node could also be one of the managed nodes.
+Control node and managed node can co-locate on the same machine.
 :::
 
 ## Managed nodes

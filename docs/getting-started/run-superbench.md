@@ -9,8 +9,8 @@ it will be easy to run SuperBench over all managed nodes.
 
 ## Deploy
 
-We need to deploy SuperBench environments to all managed nodes first,
-it will access all nodes, pull container image and prepare container.
+Leveraging `sb deploy` command, we can easily deploy SuperBench environment to all managed nodes.
+After running the following command, SuperBench will automatically access all nodes, pull container image and prepare container.
 
 ```bash
 sb deploy -f local.ini
@@ -26,7 +26,7 @@ sb deploy -f remote.ini --host-password [password]
 
 ## Run
 
-After deployment, you can start to run the SuperBench benchmarks on all managed nodes.
+After deployment, you can start to run the SuperBench benchmarks on all managed nodes using `sb run` command.
 
 ```bash
 sb run -f local.ini -c resnet.yaml
