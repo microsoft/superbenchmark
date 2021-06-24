@@ -5,7 +5,7 @@ id: run-superbench
 # Run SuperBench
 
 Having prepared benchmark configuration and inventory files,
-it will be easy to run SuperBench over all managed nodes.
+you can start to run SuperBench over all managed nodes.
 
 ## Deploy
 

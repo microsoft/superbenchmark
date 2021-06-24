@@ -11,12 +11,7 @@
 
 __SuperBench__ is a validation and profiling tool for AI infrastructure.
 
-Check SuperBench website for more details.
-
-## Documentation
-
-* Introduction
-* Getting Started
+_Check SuperBench website for more details._
 
 ## Trademarks
 

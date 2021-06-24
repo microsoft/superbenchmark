@@ -5,29 +5,15 @@ id: installation
 # Installation
 
 SuperBench is used to run validations for AI infrastructure,
-thus you need to prepare one or multiple __managed nodes__ which are going to be validated,
-and one __control node__ which is used to run SuperBench commands.
+thus you need to prepare one __control node__ which is used to run SuperBench commands,
+and one or multiple __managed nodes__ which are going to be validated.
 
-Usually __managed nodes__ are GPU nodes with high speed inter-connection, while __control node__ could be a CPU node.
+Usually __control node__ could be a CPU node, while __managed nodes__ are GPU nodes with high speed inter-connection.
 
 :::tip Tips
 It is fine if you have only one GPU node and want to try SuperBench on it.
 Control node and managed node can co-locate on the same machine.
 :::
-
-## Managed nodes
-
-Here're the system requirements for all managed GPU nodes.
-
-### Requirements
-
-* Latest version of Linux, you're highly encouraged to use Ubuntu 18.04 or later.
-* Compatible GPU drivers should be install correctly.
-  * For NVIDIA GPUs, driver version can be checked by running `nvidia-smi`.
-* [Docker CE](https://docs.docker.com/engine/install/) version 19.03 or later (which can be checked by running `docker --version`).
-* GPU support in Docker.
-  * For NVIDIA GPUs, install
-  [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#setting-up-nvidia-container-toolkit).
 
 ## Control node
 
@@ -81,3 +67,17 @@ After installation, you should be able to run SB CLI.
 ```bash
 sb
 ```
+
+## Managed nodes
+
+Here're the system requirements for all managed GPU nodes.
+
+### Requirements
+
+* Latest version of Linux, you're highly encouraged to use Ubuntu 18.04 or later.
+* Compatible GPU drivers should be install correctly.
+  * For NVIDIA GPUs, driver version can be checked by running `nvidia-smi`.
+* [Docker CE](https://docs.docker.com/engine/install/) version 19.03 or later (which can be checked by running `docker --version`).
+* GPU support in Docker.
+  * For NVIDIA GPUs, install
+  [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#setting-up-nvidia-container-toolkit).
