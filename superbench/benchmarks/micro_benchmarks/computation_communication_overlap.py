@@ -21,7 +21,7 @@ import time
 import torch
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, ReturnCode
+from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
 
@@ -114,6 +114,21 @@ class ComputationCommunicationOverlap(MicroBenchmark):
             required=False,
             help='The number of test step.',
         )
+        self._parser.add_argument(
+            '--distributed_impl',
+            type=DistributedImpl,
+            default=DistributedImpl.DDP,
+            required=False,
+            help='Distributed implementations. E.g. {}.'.format(' '.join(DistributedImpl.get_values())),
+        )
+
+        self._parser.add_argument(
+            '--distributed_backend',
+            type=DistributedBackend,
+            default=DistributedBackend.NCCL,
+            required=False,
+            help='Distributed backends. E.g. {}.'.format(' '.join(DistributedBackend.get_values())),
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -124,8 +139,17 @@ class ComputationCommunicationOverlap(MicroBenchmark):
         if not super()._preprocess():
             return False
 
+        if self._args.distributed_impl != DistributedImpl.DDP:
+            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
+            logger.error(
+                'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
+                    self._name, self._args.distributed_impl
+                )
+            )
+            return False
+
         try:
-            torch.distributed.init_process_group(backend='nccl')
+            torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
             self.__world_size = int(os.environ['WORLD_SIZE'])
             self.__local_rank = int(os.environ['LOCAL_RANK'])
             # if self.__world_size < 2:

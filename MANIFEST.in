@@ -1,5 +1,3 @@
 include LICENSE README.md
-recursive-include superbench *.py
-recursive-include superbench *.yaml
-global-exclude *.pyc
-global-exclude __pycache__
+recursive-include superbench *.py *.j2 *.yaml
+global-exclude *.py[cod] __pycache__

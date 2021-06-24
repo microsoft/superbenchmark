@@ -10,6 +10,7 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+import yaml
 from omegaconf import OmegaConf
 
 from superbench.executor import SuperBenchExecutor
@@ -24,7 +25,8 @@ class ExecutorTestCase(unittest.TestCase):
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
         default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
-        self.default_config = OmegaConf.load(str(default_config_file))
+        with default_config_file.open() as fp:
+            self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
         self.output_dir = tempfile.mkdtemp()
 
         self.executor = SuperBenchExecutor(self.default_config, self.output_dir)
@@ -61,20 +63,32 @@ class ExecutorTestCase(unittest.TestCase):
 
     def test_get_arguments(self):
         """Test benchmarks arguments."""
-        expected_matmul_args = ''
-        self.assertEqual(
-            self.executor._SuperBenchExecutor__get_arguments(
-                self.default_config.superbench.benchmarks.matmul.parameters
-            ), expected_matmul_args
-        )
-        expected_bert_models_args = \
-            '--duration 0 --num_warmup 16 --num_steps 128 --batch_size 16 ' \
-            '--precision float32 float16 --model_action train inference'
-        self.assertEqual(
-            self.executor._SuperBenchExecutor__get_arguments(
-                self.default_config.superbench.benchmarks.bert_models.parameters
-            ), expected_bert_models_args
-        )
+        test_cases = [
+            {
+                'parameters': None,
+                'expected_args': '',
+            },
+            {
+                'parameters': {
+                    'duration': 0,
+                    'num_warmup': 16,
+                    'num_steps': 128,
+                    'batch_size': 16,
+                    'precision': ['float32', 'float16'],
+                    'model_action': ['train', 'inference'],
+                },
+                'expected_args': (
+                    '--duration 0 --num_warmup 16 --num_steps 128 --batch_size 16 '
+                    '--precision float32 float16 --model_action train inference'
+                ),
+            },
+        ]
+        for test_case in test_cases:
+            with self.subTest(msg='Testing with case', test_case=test_case):
+                self.assertEqual(
+                    self.executor._SuperBenchExecutor__get_arguments(test_case['parameters']),
+                    test_case['expected_args']
+                )
 
     def test_create_benchmark_dir(self):
         """Test __create_benchmark_dir."""

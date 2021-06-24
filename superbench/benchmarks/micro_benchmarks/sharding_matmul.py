@@ -18,7 +18,7 @@ import time
 import torch
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, ReturnCode
+from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
 
@@ -91,6 +91,21 @@ class ShardingMatmul(MicroBenchmark):
             required=False,
             help='The number of test step.',
         )
+        self._parser.add_argument(
+            '--distributed_impl',
+            type=DistributedImpl,
+            default=DistributedImpl.DDP,
+            required=False,
+            help='Distributed implementations. E.g. {}.'.format(' '.join(DistributedImpl.get_values())),
+        )
+
+        self._parser.add_argument(
+            '--distributed_backend',
+            type=DistributedBackend,
+            default=DistributedBackend.NCCL,
+            required=False,
+            help='Distributed backends. E.g. {}.'.format(' '.join(DistributedBackend.get_values())),
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -99,6 +114,15 @@ class ShardingMatmul(MicroBenchmark):
             True if _preprocess() succeed.
         """
         if not super()._preprocess():
+            return False
+
+        if self._args.distributed_impl != DistributedImpl.DDP:
+            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
+            logger.error(
+                'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
+                    self._name, self._args.distributed_impl
+                )
+            )
             return False
 
         if ShardingMode.ALLGATHER in self._args.mode or ShardingMode.ALLREDUCE in self._args.mode:
