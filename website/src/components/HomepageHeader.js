@@ -19,7 +19,7 @@ export default function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/getting-started/installation">
-            Getting Started - 3min ⏱️
+            Getting Started - 3 mins ⏱️
           </Link>
         </div>
       </div>

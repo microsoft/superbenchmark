@@ -1,7 +1,7 @@
 ---
 slug: intro-sb
 title: Introduce SuperBench
-author: Tingting Qing
+author: Tingting Qin
 author_title: SuperBench Team
 author_url: https://github.com/TobeyQin
 # author_image_url: https://avatars.githubusercontent.com/u/6807041?v=4
