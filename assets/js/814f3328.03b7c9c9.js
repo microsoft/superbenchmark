@@ -1,0 +1,1 @@
+(self.webpackChunksuperbench_website=self.webpackChunksuperbench_website||[]).push([[535],{6353:function(e){"use strict";e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Introduce SuperBench","permalink":"/superbenchmark/blog/intro-sb"}]}')}}]);
