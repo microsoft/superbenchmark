@@ -164,7 +164,11 @@ class ModelBenchmark(Benchmark):
             return False
 
         self._judge_gpu_availability()
-        logger.info('GPU availablility - model: {}, availablility: {}.'.format(self._name, self._gpu_available))
+        logger.info(
+            'Model placement - model: {}, GPU availablility: {}, pin memory: {}.'.format(
+                self._name, self._gpu_available, self._args.pin_memory
+            )
+        )
 
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)

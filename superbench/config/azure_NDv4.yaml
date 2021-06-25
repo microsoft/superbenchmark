@@ -1,0 +1,102 @@
+# SuperBench Config
+superbench:
+  enable: null
+  var:
+    default_local_mode: &default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+          parallel: yes
+    default_pytorch_mode: &default_pytorch_mode
+      enable: true
+      modes:
+        - name: torch.distributed
+          proc_num: 8
+          node_num: 1
+      frameworks:
+        - pytorch
+    common_model_config: &common_model_config
+      duration: 0
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 32
+      precision:
+        - float32
+        - float16
+      model_action:
+        - train
+      distributed_backend: nccl
+      distributed_impl: ddp
+  benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
+    cudnn-function:
+      <<: *default_local_mode
+    cublas-function:
+      <<: *default_local_mode
+    matmul:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+    sharding-matmul:
+      <<: *default_pytorch_mode
+    computation-communication-overlap:
+      <<: *default_pytorch_mode
+    gpt_models:
+      <<: *default_pytorch_mode
+      models:
+        - gpt2-large
+      parameters:
+        <<: *common_model_config
+        batch_size: 8
+        seq_len: 224
+    bert_models:
+      <<: *default_pytorch_mode
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        <<: *common_model_config
+        seq_len: 224
+    lstm_models:
+      <<: *default_pytorch_mode
+      models:
+        - lstm
+      parameters:
+        <<: *common_model_config
+        batch_size: 224
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+    resnet_models:
+      <<: *default_pytorch_mode
+      models:
+        - resnet50
+        - resnet101
+        - resnet152
+      parameters:
+        <<: *common_model_config
+        batch_size: 192
+        num_steps: 512
+        pin_memory: on
+    densenet_models:
+      <<: *default_pytorch_mode
+      models:
+        - densenet169
+        - densenet201
+      parameters:
+        <<: *common_model_config
+    vgg_models:
+      <<: *default_pytorch_mode
+      models:
+        - vgg11
+        - vgg13
+        - vgg16
+        - vgg19
+      parameters:
+        <<: *common_model_config
