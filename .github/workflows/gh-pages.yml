@@ -10,11 +10,12 @@ on:
 
 jobs:
   docs-build:
-    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup nodejs
+        uses: actions/setup-node@v2
         with:
           node-version: '14'
       - name: Test docs build
@@ -22,25 +23,18 @@ jobs:
           cd website
           npm ci
           npm run build
-  docs-publish:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: Prepare ssh key
+        uses: webfactory/ssh-agent@v0.5.0
+        if: ${{ github.event_name == 'push' }}
         with:
-          node-version: '14'
-      - uses: webfactory/ssh-agent@v0.5.0
-        with:
-          ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY }}
+          ssh-private-key: ${{ secrets.GH_PAGES_KEY }}
       - name: Publish to GitHub Pages
+        if: ${{ github.event_name == 'push' }}
         env:
+          GIT_USER: ${{ secrets.GH_PAGES_USERNAME }}
           USE_SSH: true
-          GIT_USER: abuccts
-          CURRENT_BRANCH: main
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           cd website
-          npm ci
           npm run deploy
