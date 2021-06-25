@@ -28,8 +28,6 @@ superbench:
         - float16
       model_action:
         - train
-      distributed_backend: nccl
-      distributed_impl: ddp
   benchmarks:
     kernel-launch:
       <<: *default_local_mode
