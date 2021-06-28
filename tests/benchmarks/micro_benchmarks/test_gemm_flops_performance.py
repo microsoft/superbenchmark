@@ -60,6 +60,7 @@ class GemmFlopsCudaTest(unittest.TestCase):
         assert (benchmark._args.k == 512)
         assert (benchmark._args.m == 2048)
         assert (benchmark._args.precision == ['FP32', 'TF32_TC', 'FP16_TC', 'INT8_TC'])
+        benchmark._GemmFlopsCuda__precision_need_to_run = ['FP32', 'TF32_TC', 'FP16_TC', 'INT8_TC']
 
         # Check results and metrics.
         raw_output_FP32 = """
