@@ -84,12 +84,12 @@ class SuperBenchExecutor():
         for name, val in parameters.items():
             if val is None:
                 continue
-            if isinstance(val, (str, int, float)):
+            if isinstance(val, bool) and val:
+                argv.append('--{}'.format(name))
+            elif isinstance(val, (str, int, float)):
                 argv.append('--{} {}'.format(name, val))
             elif isinstance(val, (list, ListConfig)):
                 argv.append('--{} {}'.format(name, ' '.join(val)))
-            elif isinstance(val, bool) and val:
-                argv.append('--{}'.format(name))
         return ' '.join(argv)
 
     def __exec_benchmark(self, context, log_suffix):
