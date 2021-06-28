@@ -28,6 +28,7 @@ superbench:
         - float16
       model_action:
         - train
+      pin_memory: yes
   benchmarks:
     kernel-launch:
       <<: *default_local_mode
@@ -71,6 +72,7 @@ superbench:
         input_size: 224
         hidden_size: 1000
         seq_len: 32
+        pin_memory: no
     resnet_models:
       <<: *default_pytorch_mode
       models:
@@ -81,7 +83,6 @@ superbench:
         <<: *common_model_config
         batch_size: 192
         num_steps: 512
-        pin_memory: on
     densenet_models:
       <<: *default_pytorch_mode
       models:
@@ -89,6 +90,7 @@ superbench:
         - densenet201
       parameters:
         <<: *common_model_config
+        pin_memory: no
     vgg_models:
       <<: *default_pytorch_mode
       models:
@@ -98,3 +100,4 @@ superbench:
         - vgg19
       parameters:
         <<: *common_model_config
+        pin_memory: no
