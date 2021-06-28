@@ -106,9 +106,9 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
             return False
 
         arch = int(capability)
-        precision_need_to_run = list()
+        self.__precision_need_to_run = list()
         if len(self._args.precision) == 0:
-            precision_need_to_run = list(self.__kernel_map[arch].keys())
+            self.__precision_need_to_run = list(self.__kernel_map[arch].keys())
         else:
             self._args.precision = [p.upper() for p in self._args.precision]
             for p in self._args.precision:
@@ -120,13 +120,13 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
                         )
                     )
                 else:
-                    precision_need_to_run.append(p)
+                    self.__precision_need_to_run.append(p)
 
-        if len(precision_need_to_run) == 0:
+        if len(self.__precision_need_to_run) == 0:
             self._result.set_return_code(ReturnCode.NO_SUPPORTED_PRECISION)
             return False
 
-        for p in precision_need_to_run:
+        for p in self.__precision_need_to_run:
             command = os.path.join(self._args.bin_dir, self._bin_name)
             command += (' --warmup-iterations=' + str(self._args.num_warmup))
             command += (' --operation=gemm')
@@ -150,7 +150,7 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        precision = self._args.precision[cmd_idx]
+        precision = self.__precision_need_to_run[cmd_idx]
         self._result.add_raw_data('raw_output_' + precision, raw_output)
 
         valid = True
