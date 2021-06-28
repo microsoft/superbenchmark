@@ -26,10 +26,6 @@ id: micro-benchmarks
         <b>Micro Benchmark</b>
         <img src={require('../assets/bar.png').default}/>
       </td>
-      <td>
-        <b>Model Benchmark</b>
-        <img src={require('../assets/bar.png').default}/>
-      </td>
     </tr>
     <tr valign="top">
       <td align="center" valign="middle">
@@ -37,7 +33,7 @@ id: micro-benchmarks
       </td>
       <td>
         <ul><li><b>Computation Benchmark</b></li>
-          <ul><li><b>Kernel Performance</b></li>
+          <ul><li><b>GEMM FLOPS</b></li>
             <ul>
               <li>GFLOPS</li>
               <li>TensorCore</li>
@@ -85,28 +81,6 @@ id: micro-benchmarks
             </ul>
           </ul>
         </ul>
-      </td>
-      <td>
-        <ul><li><b>CNN models</b></li>
-          <ul>
-            <li><b>ResNet</b></li>
-              <ul><li>ResNet-50</li><li>ResNet-101</li><li>ResNet-152</li></ul>
-          </ul>
-          <ul>
-            <li><b>DenseNet</b></li>
-              <ul><li>DenseNet-169</li><li>DenseNet-201</li></ul>
-          </ul>
-          <ul>
-            <li><b>VGG</b></li>
-              <ul><li>VGG-11</li><li>VGG-13</li><li>VGG-16</li><li>VGG-19</li></ul>
-          </ul>
-          <ul><li><b>Other CNN models</b></li><ul><li>...</li></ul></ul>
-        </ul>
-        <ul><li><b>BERT models</b></li>
-          <ul><li><b>BERT</b></li><li><b>BERT_LARGE</b></li></ul>
-        </ul>
-        <ul><li><b>LSTM</b></li></ul>
-        <ul><li><b>GPT-2</b></li></ul>
       </td>
     </tr>
   </tbody>

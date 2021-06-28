@@ -15,12 +15,6 @@ We designed and developed SuperBench as a avalidation and profiling tool for AI 
 We try our best to create a modular, easy-to-use, standardized, and extensible tool. 
 Help users to complete and accurate assessment of AI infrastructure, and bring good user experience.
 
-**SuperBench 0.2.0 Announcement**
-
-We are very happy to announce that **SuperBench 0.2.0 version** is officially released today! 
-
-You can try it by following [Getting Started Tutorial](https://microsoft.github.io/superbenchmark/docs/getting-started/installation)
-
 
 ## The Advantages of SuperBench
 
