@@ -77,7 +77,7 @@ SuperBench supports a set of benchmarks listed as below.
   * Computation benchmarks
     * GEMM Flops
     * Kernel Launch Time
-    * Operator Performence
+    * Operator Performance
     * Memory
   * Communication benchmarks
     * Device P2P
