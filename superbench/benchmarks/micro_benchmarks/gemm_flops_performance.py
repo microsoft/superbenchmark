@@ -24,16 +24,25 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
 
         self._bin_name = 'cutlass_profiler'
 
+        # TODO - To support more architecutres, currently only support compute capability = 7.x or 8.x
         self.__kernel_map = {
-            'FP64': 'cutlass_simt_dgemm_128x128_8x2_*',
-            'FP32': 'cutlass_simt_sgemm_128x128_8x2_*',
-            'FP16': 'cutlass_simt_hgemm_256x128_8x2_*',
-            'FP64_TC': 'cutlass_tensorop_d884gemm_128x128_16x3_*',
-            'TF32_TC': 'cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*',
-            'BF16_TC': 'cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*',
-            'FP16_TC': 'cutlass_tensorop_h16816gemm_256x128_32x3_*',
-            'INT8_TC': 'cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*',
-            'INT4_TC': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
+            7: {
+                'FP64': 'cutlass_simt_dgemm_128x128_8x2_*',
+                'FP32': 'cutlass_simt_sgemm_128x128_8x2_*',
+                'FP16': 'cutlass_simt_hgemm_256x128_8x2_*',
+                'FP16_TC': 'cutlass_tensorop_h884gemm_256x128_32x2_*',
+            },
+            8: {
+                'FP64': 'cutlass_simt_dgemm_128x128_8x2_*',
+                'FP32': 'cutlass_simt_sgemm_128x128_8x2_*',
+                'FP16': 'cutlass_simt_hgemm_256x128_8x2_*',
+                'FP64_TC': 'cutlass_tensorop_d884gemm_128x128_16x3_*',
+                'TF32_TC': 'cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*',
+                'BF16_TC': 'cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*',
+                'FP16_TC': 'cutlass_tensorop_h16816gemm_256x128_32x3_*',
+                'INT8_TC': 'cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*',
+                'INT4_TC': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
+            }
         }
 
     def add_parser_arguments(self):
@@ -72,8 +81,8 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
             '--precision',
             type=str,
             nargs='+',
-            default=list(self.__kernel_map.keys()),
-            help='Precision for benchmarking. E.g. {}.'.format(' '.join(list(self.__kernel_map.keys()))),
+            default=list(),
+            help='Precision for benchmarking. E.g. {}.'.format(' '.join(list(self.__kernel_map[8].keys()))),
         )
 
     def _preprocess(self):
@@ -87,38 +96,45 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
 
         # Reset kernels according to compute capability.
         capability = nv_helper.get_device_compute_capability()
-        if capability == 7.0:
-            self.__kernel_map['FP16_TC'] = 'cutlass_tensorop_h884gemm_256x128_32x2_*'
-
-        self._args.precision = [p.upper() for p in self._args.precision]
-        for p in self._args.precision:
-            if p not in list(self.__kernel_map.keys()):
-                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                logger.error(
-                    'Unsupported precision - benchmark: {}, precision: {}, expected: {}.'.format(
-                        self._name, p, list(self.__kernel_map.keys())
-                    )
-                )
-                return False
-            else:
-                command = os.path.join(self._args.bin_dir, self._bin_name)
-                command += (' --warmup-iterations=' + str(self._args.num_warmup))
-                command += (' --operation=gemm')
-                command += (' --n=' + str(self._args.n))
-                command += (' --k=' + str(self._args.k))
-                command += (' --m=' + str(self._args.m))
-                command += (' --kernels=' + self.__kernel_map[p])
-                self._commands.append(command)
-
-        # TODO - To support more architecutres, currently only support compute capability = 7.0 or 8.0
-        if capability not in [7.0, 8.0]:
+        if capability is None or int(capability) not in self.__kernel_map:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
             logger.error(
-                'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.0 or 8.0'.format(
+                'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.x or 8.x'.format(
                     self._name, capability
                 )
             )
             return False
+
+        arch = int(capability)
+        precision_need_to_run = list()
+        if len(self._args.precision) == 0:
+            precision_need_to_run = list(self.__kernel_map[arch].keys())
+        else:
+            self._args.precision = [p.upper() for p in self._args.precision]
+            for p in self._args.precision:
+                if p not in list(self.__kernel_map.keys()):
+                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                    logger.warning(
+                        'Unsupported precision - benchmark: {}, precision: {}, expected: {}.'.format(
+                            self._name, p, list(self.__kernel_map[arch].keys())
+                        )
+                    )
+                else:
+                    precision_need_to_run.append(p)
+
+        if len(precision_need_to_run) == 0:
+            self._result.set_return_code(ReturnCode.NO_SUPPORTED_PRECISION)
+            return False
+
+        for p in precision_need_to_run:
+            command = os.path.join(self._args.bin_dir, self._bin_name)
+            command += (' --warmup-iterations=' + str(self._args.num_warmup))
+            command += (' --operation=gemm')
+            command += (' --n=' + str(self._args.n))
+            command += (' --k=' + str(self._args.k))
+            command += (' --m=' + str(self._args.m))
+            command += (' --kernels=' + self.__kernel_map[arch][p])
+            self._commands.append(command)
 
         return True
 
