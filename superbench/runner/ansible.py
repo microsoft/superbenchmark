@@ -29,13 +29,16 @@ class AnsibleClient():
         }
         if config:
             inventory_file = getattr(config, 'host_file', None)
-            if inventory_file:
-                self._config['inventory'] = inventory_file
+            inventory_list = getattr(config, 'host_list', '').strip(',')
+            if inventory_file or inventory_list:
+                self._config['inventory'] = inventory_file or inventory_list
                 self._config['host_pattern'] = 'all'
-                inventory = InventoryManager(loader=DataLoader(), sources=inventory_file)
+                inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
                 host_list = inventory.get_groups_dict()['all']
                 if len(host_list) > 0:
                     self._config['cmdline'] = '--forks {}'.format(len(host_list))
+                if inventory_list in ['localhost', '127.0.0.1']:
+                    self._config['cmdline'] += ' --connection local'
             username = getattr(config, 'host_username', None)
             if username:
                 self._config['cmdline'] += ' --user {}'.format(username)

@@ -59,6 +59,11 @@ sb deploy [--docker-image]
 
 #### Examples
 
+Deploy default image on current GPU node:
+```bash title="SB CLI"
+sb deploy --host-list localhost
+```
+
 Deploy image `superbench/cuda:11.1` to all nodes in `./host.yaml`:
 ```bash title="SB CLI"
 sb deploy --docker-image superbench/cuda:11.1 --host-file ./host.yaml
@@ -130,6 +135,11 @@ sb run [--config-file]
 | `--help` `-h` | N/A | Show help message. |
 
 #### Examples
+
+Run all benchmarks on current GPU node:
+```bash title="SB CLI"
+sb run --host-list localhost
+```
 
 Run all benchmarks on all managed nodes in `./host.yaml` using image `superbench/cuda:11.1`
 and default benchmarking configuration:
