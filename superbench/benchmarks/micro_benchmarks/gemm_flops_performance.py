@@ -82,7 +82,7 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
             type=str,
             nargs='+',
             default=list(),
-            help='Precision for benchmarking. E.g. {}.'.format(' '.join(list(self.__kernel_map[8].keys()))),
+            help='Precision for benchmarking. E.g. {}.'.format(' '.join(list(self.__kernel_map[8.0].keys()))),
         )
 
     def _preprocess(self):
@@ -96,7 +96,7 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
 
         # Reset kernels according to compute capability.
         capability = nv_helper.get_device_compute_capability()
-        if capability is None or capability not in self.__kernel_map:
+        if capability not in self.__kernel_map:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
             logger.error(
                 'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.0 or 8.0'.format(
