@@ -19,14 +19,6 @@ id: model-benchmarks
 
 <table>
   <tbody>
-    <tr align="center" valign="bottom">
-      <td>
-      </td>
-      <td>
-        <b>Model Benchmark</b>
-        <img src={require('../assets/bar.png').default}/>
-      </td>
-    </tr>
     <tr valign="top">
       <td align="center" valign="middle">
         <b>Metrics</b>
@@ -48,7 +40,7 @@ id: model-benchmarks
           <ul><li><b>Other CNN models</b></li><ul><li>...</li></ul></ul>
         </ul>
         <ul><li><b>BERT models</b></li>
-          <ul><li><b>BERT</b></li><li><b>BERT large</b></li></ul>
+          <ul><li><b>BERT-Base</b></li><li><b>BERT-Large</b></li></ul>
         </ul>
         <ul><li><b>LSTM</b></li></ul>
         <ul><li><b>GPT-2</b></li></ul>

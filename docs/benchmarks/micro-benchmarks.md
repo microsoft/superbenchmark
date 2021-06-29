@@ -19,14 +19,6 @@ id: micro-benchmarks
 
 <table>
   <tbody>
-    <tr align="center" valign="bottom">
-      <td>
-      </td>
-      <td>
-        <b>Micro Benchmark</b>
-        <img src={require('../assets/bar.png').default}/>
-      </td>
-    </tr>
     <tr valign="top">
       <td align="center" valign="middle">
         <b>Metrics</b>
@@ -50,12 +42,12 @@ id: micro-benchmarks
           <ul><li><b>Operator Performance</b></li>
             <ul><li>MatMul</li><li>Sharding_MatMul</li></ul>
           </ul>
-          <ul><li><b>Memory</b></li>
-            <ul><li>H2D_Mem_BW_&lt;GPU ID&gt;</li>
-              <li>H2D_Mem_BW_&lt;GPU ID&gt;</li></ul>
-          </ul>
         </ul>
         <ul><li><b>Communication Benchmark</b></li>
+          <ul><li><b>Memory</b></li>
+            <ul><li>H2D_Mem_BW_&lt;GPU ID&gt;</li>
+              <li>D2H_Mem_BW_&lt;GPU ID&gt;</li></ul>
+          </ul>
           <ul><li><b>Device P2P Bandwidth</b></li>
             <ul><li>P2P_BW_Max</li><li>P2P_BW_Min</li><li>P2P_BW_Avg</li></ul>
           </ul>
@@ -76,7 +68,7 @@ id: micro-benchmarks
         <ul><li><b>Storage Benchmark</b></li>
           <ul><li><b>Disk</b></li>
             <ul>
-              <li>Read/Write</li><li>Rand_Read/Rand_Write</li>
+              <li>Seq Read/Seq Write</li><li>Rand_Read/Rand_Write</li>
               <li>R/W_Read</li><li>R/W_Write</li><li>Rand_R/W_Read</li><li>Rand_R/W_Write</li>
             </ul>
           </ul>
