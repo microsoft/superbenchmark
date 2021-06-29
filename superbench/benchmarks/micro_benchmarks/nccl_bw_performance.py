@@ -36,12 +36,17 @@ class NcclBw(MicroBenchmarkWithInvoke):
             default=self.__bin_list,
             help='Precision for benchmarking. E.g. {}.'.format(' '.join(self.__bin_list)),
         )
-
         self._parser.add_argument(
             '--gpu_count',
             type=int,
             default=8,
             help='GPU num for benchmarking.',
+        )
+        self._parser.add_argument(
+            '--size',
+            type=str,
+            default='8192M',
+            help='Max size in bytes to run the nccl test.  E.g. 8192M.',
         )
 
     def _preprocess(self):
@@ -53,13 +58,16 @@ class NcclBw(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
+        if not isinstance(self._args.bin_list, list):
+            self._args.bin_list = [self._args.bin_list]
         self._args.bin_list = [p.lower() for p in self._args.bin_list]
         for bin_name in self._args.bin_list:
             if bin_name not in self.__bin_list:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
                     'Unsupported bin of NCCL test - benchmark: {}, bin name: {}, expected: {}.'.format(
-                        self._name, bin_name, self.__bin_list)
+                        self._name, bin_name, ' '.join(self.__bin_list)
+                    )
                 )
                 return False
             else:
@@ -69,9 +77,9 @@ class NcclBw(MicroBenchmarkWithInvoke):
 
                 command = 'NCCL_DEBUG=INFO NCCL_IB_DISABLE=1 '
                 command += os.path.join(self._args.bin_dir, self._bin_name)
-                command += '-b 1 -e 8192M -f 2 -g {} -c 0 '.format(self._args.gpu_count)
+                command += ' -b 1 -e {} -f 2 -g {} -c 0 '.format(self._args.size, self._args.gpu_count)
                 self._commands.append(command)
-    
+
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
@@ -88,29 +96,33 @@ class NcclBw(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data('raw_output_' + self._args.bin_list[cmd_idx], raw_output)
 
-        #algbw_out = 0
-        busbw_out = 0
+        busbw_out = -1
         content = raw_output.splitlines()
+        out_of_place_index = -1
+        out_of_bounds_values = -1
+        for index, line in enumerate(content):
+            if 'out-of-place' in line:
+                out_of_place_index = index
+            if 'Out of bounds values' in line:
+                out_of_bounds_values = index
+
+        content = content[out_of_place_index + 4:out_of_bounds_values]
         try:
-            for line in content:          
+            for line in content:
                 line = line.strip(' ')
                 line = re.sub(r' +', ' ', line).split(' ')
                 if len(line) <= 10:
                     break
-                #algbw_out = max(algbw_out, float(line[-7]))
                 busbw_out = max(busbw_out, float(line[-6]))
         except BaseException:
-            valid = False
-        finally:
-            if valid is False or busbw_out == 0:
-                logger.error(
-                    'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
-                        self._curr_run_index, self._name, raw_output
-                    )
+            logger.error(
+                'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
+                    self._curr_run_index, self._name, raw_output
                 )
-                return False
+            )
+            return False
 
-        self._result.add_resultself._args.bin_list[cmd_idx], busbw_out)
+        self._result.add_result(self._args.bin_list[cmd_idx], busbw_out)
 
         return True
 

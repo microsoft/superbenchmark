@@ -14,7 +14,7 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, 
 @decorator.cuda_test
 def test_kernel_launch_overhead():
     """Test nccl-bw benchmark."""
-    context = BenchmarkRegistry.create_benchmark_context('nccl-bw', platform=Platform.CUDA, parameters='--gpu_count 8')
+    context = BenchmarkRegistry.create_benchmark_context('nccl-bw', platform=Platform.CUDA, parameters='--gpu_count 1')
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
 
@@ -31,7 +31,7 @@ def test_kernel_launch_overhead():
             'all_reduce_perf', 'all_gather_perf', 'broadcast_perf', 'reduce_perf', 'reduce_scatter_perf'
         ]
     )
-    assert (benchmark._args.gpu_count == 8)
+    assert (benchmark._args.gpu_count == 1)
 
     # Check results and metrics.
     assert (benchmark.run_count == 1)
