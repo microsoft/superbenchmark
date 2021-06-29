@@ -24,15 +24,15 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
 
         self._bin_name = 'cutlass_profiler'
 
-        # TODO - To support more architecutres, currently only support compute capability = 7.x or 8.x
+        # TODO - To support more architecutres, currently only support compute capability = 7.0 and 8.0
         self.__kernel_map = {
-            7: {
+            7.0: {
                 'FP64': 'cutlass_simt_dgemm_128x128_8x2_*',
                 'FP32': 'cutlass_simt_sgemm_128x128_8x2_*',
                 'FP16': 'cutlass_simt_hgemm_256x128_8x2_*',
                 'FP16_TC': 'cutlass_tensorop_h884gemm_256x128_32x2_*',
             },
-            8: {
+            8.0: {
                 'FP64': 'cutlass_simt_dgemm_128x128_8x2_*',
                 'FP32': 'cutlass_simt_sgemm_128x128_8x2_*',
                 'FP16': 'cutlass_simt_hgemm_256x128_8x2_*',
@@ -96,19 +96,18 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
 
         # Reset kernels according to compute capability.
         capability = nv_helper.get_device_compute_capability()
-        if capability is None or int(capability) not in self.__kernel_map:
+        if capability is None or capability not in self.__kernel_map:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
             logger.error(
-                'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.x or 8.x'.format(
+                'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.0 or 8.0'.format(
                     self._name, capability
                 )
             )
             return False
 
-        arch = int(capability)
         self.__precision_need_to_run = list()
         if len(self._args.precision) == 0:
-            self.__precision_need_to_run = list(self.__kernel_map[arch].keys())
+            self.__precision_need_to_run = list(self.__kernel_map[capability].keys())
         else:
             self._args.precision = [p.upper() for p in self._args.precision]
             for p in self._args.precision:
@@ -116,7 +115,7 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
                     self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                     logger.warning(
                         'Unsupported precision - benchmark: {}, precision: {}, expected: {}.'.format(
-                            self._name, p, list(self.__kernel_map[arch].keys())
+                            self._name, p, list(self.__kernel_map[capability].keys())
                         )
                     )
                 else:
@@ -133,7 +132,7 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
             command += (' --n=' + str(self._args.n))
             command += (' --k=' + str(self._args.k))
             command += (' --m=' + str(self._args.m))
-            command += (' --kernels=' + self.__kernel_map[arch][p])
+            command += (' --kernels=' + self.__kernel_map[capability][p])
             self._commands.append(command)
 
         return True
