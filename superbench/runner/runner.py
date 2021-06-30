@@ -15,24 +15,25 @@ from superbench.runner.ansible import AnsibleClient
 
 class SuperBenchRunner():
     """SuperBench runner class."""
-    def __init__(self, sb_config, docker_config, ansible_config, output_dir):
+    def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
             docker_config (DictConfig): Docker config object.
             ansible_config (DictConfig): Ansible config object.
-            output_dir (str): Dir for output.
+            sb_output_dir (str): SuperBench output directory.
         """
         self._sb_config = sb_config
         self._docker_config = docker_config
         self._ansible_config = ansible_config
-        self._output_dir = output_dir
+        self._sb_output_dir = sb_output_dir
+        self._output_path = Path(sb_output_dir).expanduser().resolve()
         self._ansible_client = AnsibleClient(ansible_config)
 
         self.__set_logger('sb-run.log')
         logger.info('Runner uses config: %s.', self._sb_config)
-        logger.info('Runner writes to: %s.', self._output_dir)
+        logger.info('Runner writes to: %s.', str(self._output_path))
 
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
         self.__validate_sb_config()
@@ -45,7 +46,7 @@ class SuperBenchRunner():
         Args:
             filename (str): Log file name.
         """
-        SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / filename))
+        SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
     def __validate_sb_config(self):
         """Validate SuperBench config object.
@@ -92,7 +93,10 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
-        exec_command = ('sb exec -c sb.config.yaml -C superbench.enable={name}').format(name=benchmark_name)
+        exec_command = ('sb exec -c sb.config.yaml -C superbench.enable={name} --output-dir {output_dir}').format(
+            name=benchmark_name,
+            output_dir=self._sb_output_dir,
+        )
         mode_command = exec_command
         if mode.name == 'local':
             mode_command = '{prefix} {command}'.format(
@@ -124,7 +128,7 @@ class SuperBenchRunner():
         logger.info('Preparing SuperBench environment.')
         extravars = {
             'ssh_port': random.randint(1 << 14, (1 << 15) - 1),
-            'output_dir': self._output_dir,
+            'output_dir': str(self._output_path),
             'docker_image': self._docker_config.image,
             'gpu_vendor': 'nvidia',
         }
@@ -141,12 +145,12 @@ class SuperBenchRunner():
     def check_env(self):    # pragma: no cover
         """Check SuperBench environment."""
         logger.info('Checking SuperBench environment.')
-        OmegaConf.save(config=self._sb_config, f=str(Path(self._output_dir) / 'sb.config.yaml'))
+        OmegaConf.save(config=self._sb_config, f=str(self._output_path / 'sb.config.yaml'))
         self._ansible_client.run(
             self._ansible_client.get_playbook_config(
                 'check_env.yaml',
                 extravars={
-                    'output_dir': self._output_dir,
+                    'output_dir': str(self._output_path),
                     'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
                 }
             )

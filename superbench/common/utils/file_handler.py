@@ -10,18 +10,22 @@ import yaml
 from omegaconf import OmegaConf
 
 
-def create_output_dir():
-    """Create a new output directory.
+def create_sb_output_dir(output_dir=None):
+    """Create output directory.
 
-    Generate a new output directory name based on current time and create it on filesystem.
+    Create output directory on filesystem, generate a new name based on current time if not provided.
+
+    Args:
+        output_dir (str): Output directory. Defaults to None.
 
     Returns:
-        str: Output directory name.
+        str: Given or generated output directory.
     """
-    output_name = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    output_path = Path('.', 'outputs', output_name).resolve()
+    if not output_dir:
+        output_dir = str(Path('outputs', datetime.now().strftime('%Y-%m-%d_%H-%M-%S')))
+    output_path = Path(output_dir).expanduser().resolve()
     output_path.mkdir(mode=0o755, parents=True, exist_ok=True)
-    return str(output_path)
+    return output_dir
 
 
 def get_sb_config(config_file):
