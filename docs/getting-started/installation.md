@@ -54,6 +54,12 @@ deactivate
 
 You can clone the source from GitHub and build it.
 
+:::note Note
+You should checkout corresponding tag to use release version, for example,
+
+`git clone -b v0.2.0 https://github.com/microsoft/superbenchmark`
+:::
+
 ```bash
 git clone https://github.com/microsoft/superbenchmark
 cd superbenchmark

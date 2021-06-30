@@ -80,14 +80,26 @@ superbench:
       parameters:
         <<: *common_model_config
         batch_size: 128
-    cnn_models:
+    resnet_models:
       <<: *default_pytorch_mode
       models:
         - resnet50
         - resnet101
         - resnet152
+      parameters:
+        <<: *common_model_config
+        batch_size: 128
+    densenet_models:
+      <<: *default_pytorch_mode
+      models:
         - densenet169
         - densenet201
+      parameters:
+        <<: *common_model_config
+        batch_size: 128
+    vgg_models:
+      <<: *default_pytorch_mode
+      models:
         - vgg11
         - vgg13
         - vgg16
@@ -99,13 +111,13 @@ superbench:
 
 By default, all benchmarks in default configuration will be run if you don't specify customized configuration.
 
-If you want to have a quick try, you can modify this config a little bit. For example, only run resnet models.
+If you want to have a quick try, you can modify this config a little bit. For example, only run resnet101 model.
 1. copy the default config to a file named `resnet.yaml` in current path.
   ```bash
   cp superbench/config/default.yaml resnet.yaml
   ```
-2. enable only `cnn_models` in the config and remove other models except resnet under `benchmarks.cnn_models.models`.
-  ```yaml {3,10-13} title="resnet.yaml"
+2. enable only `cnn_models` in the config and remove other models except resnet101 under `benchmarks.cnn_models.models`.
+  ```yaml {3,11} title="resnet.yaml"
   # SuperBench Config
   superbench:
     enable: ['cnn_models']
@@ -113,12 +125,10 @@ If you want to have a quick try, you can modify this config a little bit. For ex
   # ...
   # omit the middle part
   # ...
-      cnn_models:
+      resnet_models:
         <<: *default_pytorch_mode
         models:
-          - resnet50
           - resnet101
-          - resnet152
         parameters:
           <<: *common_model_config
           batch_size: 128
