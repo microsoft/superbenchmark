@@ -34,19 +34,19 @@ class NcclBw(MicroBenchmarkWithInvoke):
             type=str,
             nargs='+',
             default=self.__bin_list,
-            help='Precision for benchmarking. E.g. {}.'.format(' '.join(self.__bin_list)),
+            help='Nccl algorithms to benchmark. E.g. {}.'.format(' '.join(self.__bin_list)),
         )
         self._parser.add_argument(
             '--gpu_count',
             type=int,
             default=8,
-            help='GPU num for benchmarking.',
+            help='The count of GPUs used for benchmarking.',
         )
         self._parser.add_argument(
             '--size',
             type=str,
             default='8192M',
-            help='Max size in bytes to run the nccl test.  E.g. 8192M.',
+            help='Max size in bytes to run the nccl test. E.g. 8192M.',
         )
 
     def _preprocess(self):
@@ -58,9 +58,12 @@ class NcclBw(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
+        # Format the arguments
         if not isinstance(self._args.bin_list, list):
             self._args.bin_list = [self._args.bin_list]
         self._args.bin_list = [p.lower() for p in self._args.bin_list]
+
+        # Check the arguments and generate the commands
         for bin_name in self._args.bin_list:
             if bin_name not in self.__bin_list:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
@@ -75,8 +78,7 @@ class NcclBw(MicroBenchmarkWithInvoke):
                 if not self._set_binary_path():
                     return False
 
-                command = 'NCCL_DEBUG=INFO NCCL_IB_DISABLE=1 '
-                command += os.path.join(self._args.bin_dir, self._bin_name)
+                command = os.path.join(self._args.bin_dir, self._bin_name)
                 command += ' -b 1 -e {} -f 2 -g {} -c 0 '.format(self._args.size, self._args.gpu_count)
                 self._commands.append(command)
 
@@ -96,18 +98,20 @@ class NcclBw(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data('raw_output_' + self._args.bin_list[cmd_idx], raw_output)
 
-        busbw_out = -1
         content = raw_output.splitlines()
-        out_of_place_index = -1
-        out_of_bounds_values = -1
-        for index, line in enumerate(content):
-            if 'out-of-place' in line:
-                out_of_place_index = index
-            if 'Out of bounds values' in line:
-                out_of_bounds_values = index
 
-        content = content[out_of_place_index + 4:out_of_bounds_values]
         try:
+            # Filter useless output
+            out_of_place_index = -1
+            out_of_bounds_values = -1
+            for index, line in enumerate(content):
+                if 'out-of-place' in line:
+                    out_of_place_index = index
+                if 'Out of bounds values' in line:
+                    out_of_bounds_values = index
+            content = content[out_of_place_index + 4:out_of_bounds_values]
+            # Parse max out of bound bus bw as the result
+            busbw_out = -1
             for line in content:
                 line = line.strip(' ')
                 line = re.sub(r' +', ' ', line).split(' ')

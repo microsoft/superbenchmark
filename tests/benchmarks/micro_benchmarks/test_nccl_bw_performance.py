@@ -9,15 +9,11 @@ from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-# TODO - replace unittest.skip("no multiple GPUs") to decorator of skipIfNoMultiGPUS
-# @unittest.skip('no multiple GPUs')
 @decorator.cuda_test
 def test_kernel_launch_overhead():
     """Test nccl-bw benchmark."""
     context = BenchmarkRegistry.create_benchmark_context('nccl-bw', platform=Platform.CUDA, parameters='--gpu_count 1')
-
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
-
     benchmark = BenchmarkRegistry.launch_benchmark(context)
 
     # Check basic information.
