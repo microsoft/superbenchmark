@@ -111,7 +111,7 @@ class GemmFlopsCuda(MicroBenchmarkWithInvoke):
         else:
             self._args.precision = [p.upper() for p in self._args.precision]
             for p in self._args.precision:
-                if p not in list(self.__kernel_map.keys()):
+                if p not in self.__kernel_map[capability]:
                     self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                     logger.warning(
                         'Unsupported precision - benchmark: {}, precision: {}, expected: {}.'.format(
