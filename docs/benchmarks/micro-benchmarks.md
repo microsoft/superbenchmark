@@ -68,8 +68,8 @@ id: micro-benchmarks
         <ul><li><b>Storage Benchmark</b></li>
           <ul><li><b>Disk</b></li>
             <ul>
-              <li>Seq Read/Seq Write</li><li>Rand_Read/Rand_Write</li>
-              <li>R/W_Read</li><li>R/W_Write</li><li>Rand_R/W_Read</li><li>Rand_R/W_Write</li>
+              <li>Seq_Read/Seq_Write</li><li>Rand_Read/Rand_Write</li>
+              <li>Seq_R/W_Read</li><li>Seq_R/W_Write</li><li>Rand_R/W_Read</li><li>Rand_R/W_Write</li>
             </ul>
           </ul>
         </ul>
