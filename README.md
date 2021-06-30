@@ -1,17 +1,20 @@
 # SuperBench
 
-[![MIT licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
-[![Lint](https://github.com/microsoft/superbenchmark/workflows/Lint/badge.svg)](https://github.com/microsoft/superbenchmark/actions?query=workflow%3ALint)
+[![Build Image](https://github.com/microsoft/superbenchmark/workflows/Build%20Image/badge.svg)](https://github.com/microsoft/superbenchmark/actions/workflows/build-image.yml)
 [![Codecov](https://codecov.io/gh/microsoft/superbenchmark/branch/main/graph/badge.svg?token=DDiDLW7pSd)](https://codecov.io/gh/microsoft/superbenchmark)
+[![Latest Release](https://img.shields.io/github/release/microsoft/superbench.svg)](https://github.com/microsoft/superbench/releases/latest)
+[![Docker Pulls](https://img.shields.io/docker/pulls/superbench/superbench.svg)](https://hub.docker.com/r/superbench/superbench/tags)
+[![License](https://img.shields.io/github/license/microsoft/superbenchmark.svg)](LICENSE)
 
 | Azure Pipelines | Build Status |
 | :---: | :---: |
-| cpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/microsoft.superbenchmark?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=77&branchName=main) |
-| gpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main) |
+| cpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cpu-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=77&branchName=main) |
+| cuda-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main) |
+| ansible-integration-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/ansible-integration-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=82&branchName=main) |
 
 __SuperBench__ is a validation and profiling tool for AI infrastructure.
 
-_Check SuperBench website for more details._
+## _Check [aka.ms/superbench](https://aka.ms/superbench) for more details._
 
 ## Trademarks
 
