@@ -29,7 +29,9 @@ class AnsibleClient():
         }
         if config:
             inventory_file = getattr(config, 'host_file', None)
-            inventory_list = getattr(config, 'host_list', '').strip(',')
+            inventory_list = getattr(config, 'host_list', None)
+            if inventory_list:
+                inventory_list = inventory_list.strip(',')
             if inventory_file or inventory_list:
                 self._config['inventory'] = inventory_file or inventory_list
                 self._config['host_pattern'] = 'all'
