@@ -44,7 +44,7 @@ class RunnerTestCase(unittest.TestCase):
                     'name': 'non_exist',
                 },
                 'expected_command':
-                f'sb exec -c sb.config.yaml -C superbench.enable=foo --output-dir {self.sb_output_dir}',
+                f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
                 'benchmark_name': 'foo',
@@ -54,7 +54,7 @@ class RunnerTestCase(unittest.TestCase):
                     'prefix': '',
                 },
                 'expected_command':
-                f'sb exec -c sb.config.yaml -C superbench.enable=foo --output-dir {self.sb_output_dir}',
+                f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
                 'benchmark_name':
@@ -67,7 +67,7 @@ class RunnerTestCase(unittest.TestCase):
                 },
                 'expected_command': (
                     'CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
-                    f'sb exec -c sb.config.yaml -C superbench.enable=foo --output-dir {self.sb_output_dir}'
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
             {
@@ -80,7 +80,7 @@ class RunnerTestCase(unittest.TestCase):
                     'prefix': 'RANK={proc_rank} NUM={proc_num}'
                 },
                 'expected_command':
-                f'RANK=1 NUM=16 sb exec -c sb.config.yaml -C superbench.enable=foo --output-dir {self.sb_output_dir}',
+                f'RANK=1 NUM=16 sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
                 'benchmark_name':
@@ -95,7 +95,7 @@ class RunnerTestCase(unittest.TestCase):
                     '--use_env --no_python --nproc_per_node=1 '
                     '--nnodes=$NNODES --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    f'sb exec -c sb.config.yaml -C superbench.enable=foo --output-dir {self.sb_output_dir} '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo '
                     'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
                 ),
@@ -113,7 +113,7 @@ class RunnerTestCase(unittest.TestCase):
                     '--use_env --no_python --nproc_per_node=8 '
                     '--nnodes=1 --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    f'sb exec -c sb.config.yaml -C superbench.enable=foo --output-dir {self.sb_output_dir} '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo '
                     'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
                 ),

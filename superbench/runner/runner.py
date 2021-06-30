@@ -93,7 +93,7 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
-        exec_command = ('sb exec -c sb.config.yaml -C superbench.enable={name} --output-dir {output_dir}').format(
+        exec_command = ('sb exec --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name}').format(
             name=benchmark_name,
             output_dir=self._sb_output_dir,
         )
