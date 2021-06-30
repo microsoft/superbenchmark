@@ -6,7 +6,7 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
@@ -58,31 +58,21 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
-        mb_type = -1
         mem_bw = -1
         metric = ''
         valid = True
         content = raw_output.splitlines()
         try:
-            for index, line in enumerate(content):
+            for line in content:
                 if 'Host to Device Bandwidth' in line:
-                    mb_type = 1
+                    metric = 'H2D_Mem_BW'
                 elif 'Device to Host Bandwidth' in line:
-                    mb_type = 2
+                    metric = 'D2H_Mem_BW'
                 elif 'Device to Device Bandwidth' in line:
-                    mb_type = 0
-                elif '32000000' in line and mb_type != -1:
+                    metric = 'D2D_Mem_BW'
+                elif '32000000' in line and metric != '':
                     values = list(filter(None, line.split()))
-                    if mb_type == 1:
-                        metric = 'H2D_Mem_BW'
-                        mem_bw = float(values[1])
-                    elif mb_type == 2:
-                        metric = 'D2H_Mem_BW'
-                        mem_bw = float(values[1])
-                    elif mb_type == 0:
-                        metric = 'D2D_Mem_BW'
-                        mem_bw = float(values[1])
-
+                    mem_bw = float(values[1])
         except BaseException:
             valid = False
         finally:
