@@ -22,7 +22,7 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'bandwidthTest'
-        self.__mem_types = ['--htod', '--dtoh', '--dtod']
+        self.__mem_types = ['htod', 'dtoh', 'dtod']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -39,7 +39,7 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
 
         for case in self.__mem_types:
             command = os.path.join(self._args.bin_dir, self._bin_name)
-            command += ' ' + case
+            command += ' --' + case
             self._commands.append(command)
 
         return True
@@ -56,7 +56,7 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + self._args.bin_list[cmd_idx], raw_output)
+        self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         mb_type = -1
         mem_bw = -1
@@ -99,4 +99,4 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('mem-bw', MemBwCuda, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('mem-copy-bw', MemBwCuda, platform=Platform.CUDA)
