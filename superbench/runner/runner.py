@@ -99,7 +99,8 @@ class SuperBenchRunner():
         )
         mode_command = exec_command
         if mode.name == 'local':
-            mode_command = '{prefix} {command}'.format(
+            mode_command = 'PROC_RANK={proc_rank} {prefix} {command}'.format(
+                proc_rank=mode.proc_rank,
                 prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
                 command=exec_command,
             )
@@ -156,6 +157,19 @@ class SuperBenchRunner():
             )
         )
 
+    def fetch_results(self):    # pragma: no cover
+        """Fetch benchmark results on all nodes."""
+        (self._output_path / 'nodes').mkdir(mode=0o755, parents=True, exist_ok=True)
+        self._ansible_client.run(
+            self._ansible_client.get_playbook_config(
+                'fetch_results.yaml',
+                extravars={
+                    'sb_output_dir': self._sb_output_dir,
+                    'absolute_output_dir': str(self._output_path),
+                }
+            )
+        )
+
     def _run_proc(self, benchmark_name, mode, vars):
         """Run the process.
 
@@ -196,3 +210,4 @@ class SuperBenchRunner():
                     )
                 elif mode.name == 'torch.distributed':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+            self.fetch_results()
