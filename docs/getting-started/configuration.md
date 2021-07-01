@@ -116,11 +116,11 @@ If you want to have a quick try, you can modify this config a little bit. For ex
   ```bash
   cp superbench/config/default.yaml resnet.yaml
   ```
-2. enable only `cnn_models` in the config and remove other models except resnet101 under `benchmarks.cnn_models.models`.
+2. enable only `resnet_models` in the config and remove other models except resnet101 under `benchmarks.resnet_models.models`.
   ```yaml {3,11} title="resnet.yaml"
   # SuperBench Config
   superbench:
-    enable: ['cnn_models']
+    enable: ['resnet_models']
     var:
   # ...
   # omit the middle part
