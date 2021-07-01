@@ -27,17 +27,17 @@ class ExecutorTestCase(unittest.TestCase):
         default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
         with default_config_file.open() as fp:
             self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
-        self.output_dir = tempfile.mkdtemp()
+        self.sb_output_dir = tempfile.mkdtemp()
 
-        self.executor = SuperBenchExecutor(self.default_config, self.output_dir)
+        self.executor = SuperBenchExecutor(self.default_config, self.sb_output_dir)
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""
-        shutil.rmtree(self.output_dir)
+        shutil.rmtree(self.sb_output_dir)
 
     def test_set_logger(self):
         """Test log file exists."""
-        expected_log_file = Path(self.executor._output_dir) / 'sb-exec.log'
+        expected_log_file = Path(self.executor._sb_output_dir) / 'sb-exec.log'
         self.assertTrue(expected_log_file.is_file())
 
     def test_get_enabled_benchmarks_enable_none(self):
@@ -92,7 +92,7 @@ class ExecutorTestCase(unittest.TestCase):
 
     def test_create_benchmark_dir(self):
         """Test __create_benchmark_dir."""
-        foo_path = Path(self.output_dir, 'benchmarks', 'foo')
+        foo_path = Path(self.sb_output_dir, 'benchmarks', 'foo')
         self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
         self.assertTrue(foo_path.is_dir())
         self.assertFalse(any(foo_path.iterdir()))
@@ -115,7 +115,7 @@ class ExecutorTestCase(unittest.TestCase):
 
     def test_write_benchmark_results(self):
         """Test __write_benchmark_results."""
-        foobar_path = Path(self.output_dir, 'benchmarks', 'foobar')
+        foobar_path = Path(self.sb_output_dir, 'benchmarks', 'foobar')
         foobar_results_path = foobar_path / 'results.json'
         self.executor._SuperBenchExecutor__create_benchmark_dir('foobar')
         foobar_results = {
@@ -142,7 +142,7 @@ class ExecutorTestCase(unittest.TestCase):
         mock_exec_benchmark.return_value = {}
         self.executor.exec()
 
-        self.assertTrue(Path(self.output_dir, 'benchmarks').is_dir())
+        self.assertTrue(Path(self.sb_output_dir, 'benchmarks').is_dir())
         for benchmark_name in self.executor._sb_benchmarks:
-            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name).is_dir())
-            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name, 'results.json').is_file())
+            self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name).is_dir())
+            self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'results.json').is_file())

@@ -22,17 +22,17 @@ class RunnerTestCase(unittest.TestCase):
         default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
         with default_config_file.open() as fp:
             self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
-        self.output_dir = tempfile.mkdtemp()
+        self.sb_output_dir = tempfile.mkdtemp()
 
-        self.runner = SuperBenchRunner(self.default_config, None, None, self.output_dir)
+        self.runner = SuperBenchRunner(self.default_config, None, None, self.sb_output_dir)
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""
-        shutil.rmtree(self.output_dir)
+        shutil.rmtree(self.sb_output_dir)
 
     def test_set_logger(self):
         """Test log file exists."""
-        expected_log_file = Path(self.runner._output_dir) / 'sb-run.log'
+        expected_log_file = Path(self.runner._sb_output_dir) / 'sb-run.log'
         self.assertTrue(expected_log_file.is_file())
 
     def test_get_mode_command(self):
@@ -43,7 +43,8 @@ class RunnerTestCase(unittest.TestCase):
                 'mode': {
                     'name': 'non_exist',
                 },
-                'expected_command': 'sb exec -c sb.config.yaml -C superbench.enable=foo',
+                'expected_command':
+                f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
                 'benchmark_name': 'foo',
@@ -52,7 +53,8 @@ class RunnerTestCase(unittest.TestCase):
                     'proc_num': 1,
                     'prefix': '',
                 },
-                'expected_command': 'sb exec -c sb.config.yaml -C superbench.enable=foo',
+                'expected_command':
+                f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
                 'benchmark_name':
@@ -63,19 +65,22 @@ class RunnerTestCase(unittest.TestCase):
                     'proc_rank': 6,
                     'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
                 },
-                'expected_command':
-                ('CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
-                 'sb exec -c sb.config.yaml -C superbench.enable=foo'),
+                'expected_command': (
+                    'CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
             },
             {
-                'benchmark_name': 'foo',
+                'benchmark_name':
+                'foo',
                 'mode': {
                     'name': 'local',
                     'proc_num': 16,
                     'proc_rank': 1,
                     'prefix': 'RANK={proc_rank} NUM={proc_num}'
                 },
-                'expected_command': 'RANK=1 NUM=16 sb exec -c sb.config.yaml -C superbench.enable=foo',
+                'expected_command':
+                f'RANK=1 NUM=16 sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
                 'benchmark_name':
@@ -90,7 +95,7 @@ class RunnerTestCase(unittest.TestCase):
                     '--use_env --no_python --nproc_per_node=1 '
                     '--nnodes=$NNODES --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec -c sb.config.yaml -C superbench.enable=foo '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo '
                     'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
                 ),
@@ -108,7 +113,7 @@ class RunnerTestCase(unittest.TestCase):
                     '--use_env --no_python --nproc_per_node=8 '
                     '--nnodes=1 --node_rank=$NODE_RANK '
                     '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                    'sb exec -c sb.config.yaml -C superbench.enable=foo '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo '
                     'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
                 ),
