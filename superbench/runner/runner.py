@@ -99,11 +99,11 @@ class SuperBenchRunner():
         )
         mode_command = exec_command
         if mode.name == 'local':
-            mode_command = 'PROC_RANK={proc_rank} {prefix} {command}'.format(
-                proc_rank=mode.proc_rank,
+            mode_command = '{prefix} {command}'.format(
                 prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
                 command=exec_command,
             )
+            mode_command = f'PROC_RANK={mode.proc_rank} {mode_command.strip()}'
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
