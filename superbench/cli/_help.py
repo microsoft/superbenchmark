@@ -32,7 +32,7 @@ helps['deploy'] = """
     type: command
     short-summary: Deploy the SuperBench environments to all given nodes.
     examples:
-        - name: deploy default image on current GPU node
+        - name: deploy default image on local GPU node
           text: {cli_name} deploy --host-list localhost
         - name: deploy image "superbench/cuda:11.1" to all nodes in ./host.yaml
           text: {cli_name} deploy --docker-image superbench/cuda:11.1 --host-file ./host.yaml
@@ -54,7 +54,7 @@ helps['run'] = """
     type: command
     short-summary: Run the SuperBench benchmarks distributedly.
     examples:
-        - name: run all benchmarks on current GPU node
+        - name: run all benchmarks on local GPU node
           text: {cli_name} run --host-list localhost
         - name: run all benchmarks on all nodes in ./host.yaml using image "superbench/cuda:11.1"
             and default benchmarking configuration

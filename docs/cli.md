@@ -59,7 +59,7 @@ sb deploy [--docker-image]
 
 #### Examples
 
-Deploy default image on current GPU node:
+Deploy default image on local GPU node:
 ```bash title="SB CLI"
 sb deploy --host-list localhost
 ```
@@ -136,7 +136,7 @@ sb run [--config-file]
 
 #### Examples
 
-Run all benchmarks on current GPU node:
+Run all benchmarks on local GPU node:
 ```bash title="SB CLI"
 sb run --host-list localhost
 ```
