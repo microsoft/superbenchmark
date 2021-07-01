@@ -64,9 +64,9 @@ Deploy default image on local GPU node:
 sb deploy --host-list localhost
 ```
 
-Deploy image `superbench/cuda:11.1` to all nodes in `./host.yaml`:
+Deploy image `superbench/cuda:11.1` to all nodes in `./host.ini`:
 ```bash title="SB CLI"
-sb deploy --docker-image superbench/cuda:11.1 --host-file ./host.yaml
+sb deploy --docker-image superbench/cuda:11.1 --host-file ./host.ini
 ```
 
 ### `sb exec`
@@ -141,10 +141,10 @@ Run all benchmarks on local GPU node:
 sb run --host-list localhost
 ```
 
-Run all benchmarks on all managed nodes in `./host.yaml` using image `superbench/cuda:11.1`
+Run all benchmarks on all managed nodes in `./host.ini` using image `superbench/cuda:11.1`
 and default benchmarking configuration:
 ```bash title="SB CLI"
-sb run --docker-image superbench/cuda:11.1 --host-file ./host.yaml
+sb run --docker-image superbench/cuda:11.1 --host-file ./host.ini
 ```
 
 ### `sb version`

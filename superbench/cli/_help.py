@@ -34,8 +34,8 @@ helps['deploy'] = """
     examples:
         - name: deploy default image on local GPU node
           text: {cli_name} deploy --host-list localhost
-        - name: deploy image "superbench/cuda:11.1" to all nodes in ./host.yaml
-          text: {cli_name} deploy --docker-image superbench/cuda:11.1 --host-file ./host.yaml
+        - name: deploy image "superbench/cuda:11.1" to all nodes in ./host.ini
+          text: {cli_name} deploy --docker-image superbench/cuda:11.1 --host-file ./host.ini
         - name: deploy image "superbench/rocm:4.0" to node-0 and node-2, using key file id_rsa for ssh
           text: {cli_name} deploy --docker-image superbench/rocm:4.0 --host-list node-0,node-2 --private-key id_rsa
 """.format(cli_name=CLI_NAME)
@@ -56,9 +56,9 @@ helps['run'] = """
     examples:
         - name: run all benchmarks on local GPU node
           text: {cli_name} run --host-list localhost
-        - name: run all benchmarks on all nodes in ./host.yaml using image "superbench/cuda:11.1"
+        - name: run all benchmarks on all nodes in ./host.ini using image "superbench/cuda:11.1"
             and default benchmarking configuration
-          text: {cli_name} run --docker-image superbench/cuda:11.1 --host-file ./host.yaml
+          text: {cli_name} run --docker-image superbench/cuda:11.1 --host-file ./host.ini
 """.format(cli_name=CLI_NAME)
 
 
