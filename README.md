@@ -2,6 +2,7 @@
 
 [![Build Image](https://github.com/microsoft/superbenchmark/workflows/Build%20Image/badge.svg)](https://github.com/microsoft/superbenchmark/actions/workflows/build-image.yml)
 [![Codecov](https://codecov.io/gh/microsoft/superbenchmark/branch/main/graph/badge.svg?token=DDiDLW7pSd)](https://codecov.io/gh/microsoft/superbenchmark)
+[![Website](https://img.shields.io/website?down_color=lightgrey&url=https%3A%2F%2Faka.ms%2Fsuperbench)](https://aka.ms/superbench)
 [![Latest Release](https://img.shields.io/github/release/microsoft/superbenchmark.svg)](https://github.com/microsoft/superbenchmark/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/superbench/superbench.svg)](https://hub.docker.com/r/superbench/superbench/tags)
 [![License](https://img.shields.io/github/license/microsoft/superbenchmark.svg)](LICENSE)
