@@ -15,19 +15,20 @@ from superbench.common.utils import SuperBenchLogger, logger
 
 class SuperBenchExecutor():
     """SuperBench executor class."""
-    def __init__(self, sb_config, output_dir):
+    def __init__(self, sb_config, sb_output_dir):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
-            output_dir (str): Dir for output.
+            sb_output_dir (str): SuperBench output directory.
         """
         self._sb_config = sb_config
-        self._output_dir = output_dir
+        self._sb_output_dir = sb_output_dir
+        self._output_path = Path(sb_output_dir).expanduser().resolve()
 
         self.__set_logger('sb-exec.log')
         logger.info('Executor uses config: %s.', self._sb_config)
-        logger.info('Executor writes to: %s.', self._output_dir)
+        logger.info('Executor writes to: %s.', str(self._output_path))
 
         self.__validate_sb_config()
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
@@ -40,7 +41,7 @@ class SuperBenchExecutor():
         Args:
             filename (str): Log file name.
         """
-        SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / filename))
+        SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
     def __validate_sb_config(self):
         """Validate SuperBench config object.
@@ -127,7 +128,7 @@ class SuperBenchExecutor():
         Args:
             benchmark_name (str): Benchmark name.
         """
-        benchmark_output_dir = Path(self._output_dir, 'benchmarks', benchmark_name)
+        benchmark_output_dir = self._output_path / 'benchmarks' / benchmark_name
         if benchmark_output_dir.is_dir() and any(benchmark_output_dir.iterdir()):
             logger.warning('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
             for i in itertools.count(start=1):
@@ -144,7 +145,7 @@ class SuperBenchExecutor():
             benchmark_name (str): Benchmark name.
             benchmark_results (dict): Benchmark results.
         """
-        with Path(self._output_dir, 'benchmarks', benchmark_name, 'results.json').open(mode='w') as f:
+        with (self._output_path / 'benchmarks' / benchmark_name / 'results.json').open(mode='w') as f:
             json.dump(benchmark_results, f, indent=2)
 
     def exec(self):

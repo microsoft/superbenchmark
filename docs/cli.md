@@ -35,6 +35,7 @@ sb deploy [--docker-image]
           [--host-list]
           [--host-password]
           [--host-username]
+          [--output-dir]
           [--private-key]
 ```
 
@@ -49,6 +50,7 @@ sb deploy [--docker-image]
 | `--host-list` `-l` | `None` | Comma separated host list. |
 | `--host-password` | `None` | Host password or key passphase if needed. |
 | `--host-username` | `None` | Host username if needed. |
+| `--output-dir` | `None` | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--private-key` | `None` | Path to private key if needed. |
 
 #### Global arguments
@@ -75,6 +77,7 @@ Execute the SuperBench benchmarks locally.
 ```bash title="SB CLI"
 sb exec [--config-file]
         [--config-override]
+        [--output-dir]
 ```
 
 #### Optional arguments
@@ -83,6 +86,7 @@ sb exec [--config-file]
 | --- | --- | --- |
 | `--config-file` `-c` | `None` | Path to SuperBench config file. |
 | `--config-override` `-C` | `None` | Extra arguments to override config_file. |
+| `--output-dir` | `None` | Path to output directory, outputs/{datetime} will be used if not specified. |
 
 #### Global arguments
 
@@ -110,6 +114,7 @@ sb run [--config-file]
        [--host-list]
        [--host-password]
        [--host-username]
+       [--output-dir]
        [--private-key]
 ```
 
@@ -126,6 +131,7 @@ sb run [--config-file]
 | `--host-list` `-l` | `None` | Comma separated host list. |
 | `--host-password` | `None` | Host password or key passphase if needed. |
 | `--host-username` | `None` | Host username if needed. |
+| `--output-dir` | `None` | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--private-key` | `None` | Path to private key if needed. |
 
 #### Global arguments
