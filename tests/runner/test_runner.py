@@ -47,14 +47,16 @@ class RunnerTestCase(unittest.TestCase):
                 f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
-                'benchmark_name': 'foo',
+                'benchmark_name':
+                'foo',
                 'mode': {
                     'name': 'local',
                     'proc_num': 1,
+                    'proc_rank': 0,
                     'prefix': '',
                 },
                 'expected_command':
-                f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
+                f'PROC_RANK=0 sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
             },
             {
                 'benchmark_name':
@@ -66,7 +68,7 @@ class RunnerTestCase(unittest.TestCase):
                     'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
                 },
                 'expected_command': (
-                    'CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
+                    'PROC_RANK=6 CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
@@ -79,8 +81,10 @@ class RunnerTestCase(unittest.TestCase):
                     'proc_rank': 1,
                     'prefix': 'RANK={proc_rank} NUM={proc_num}'
                 },
-                'expected_command':
-                f'RANK=1 NUM=16 sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo',
+                'expected_command': (
+                    'PROC_RANK=1 RANK=1 NUM=16 '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
             },
             {
                 'benchmark_name':

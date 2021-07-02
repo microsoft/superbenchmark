@@ -103,6 +103,7 @@ class SuperBenchRunner():
                 prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
                 command=exec_command,
             )
+            mode_command = f'PROC_RANK={mode.proc_rank} {mode_command.strip()}'
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
@@ -156,6 +157,23 @@ class SuperBenchRunner():
             )
         )
 
+    def fetch_results(self):    # pragma: no cover
+        """Fetch benchmark results on all nodes."""
+        try:
+            (self._output_path / 'nodes').mkdir(mode=0o755, parents=True, exist_ok=True)
+        except Exception:
+            logger.exception('Failed to create directory %s.', str(self._output_path / 'nodes'))
+            raise
+        self._ansible_client.run(
+            self._ansible_client.get_playbook_config(
+                'fetch_results.yaml',
+                extravars={
+                    'sb_output_dir': self._sb_output_dir,
+                    'absolute_output_dir': str(self._output_path),
+                }
+            )
+        )
+
     def _run_proc(self, benchmark_name, mode, vars):
         """Run the process.
 
@@ -196,3 +214,4 @@ class SuperBenchRunner():
                     )
                 elif mode.name == 'torch.distributed':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+            self.fetch_results()

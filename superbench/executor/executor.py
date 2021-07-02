@@ -3,14 +3,14 @@
 
 """SuperBench Executor."""
 
+import os
 import json
-import itertools
 from pathlib import Path
 
 from omegaconf import ListConfig
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
-from superbench.common.utils import SuperBenchLogger, logger
+from superbench.common.utils import SuperBenchLogger, logger, rotate_dir
 
 
 class SuperBenchExecutor():
@@ -122,21 +122,31 @@ class SuperBenchExecutor():
             logger.error('Executor failed in %s.', log_suffix)
         return None
 
+    def __get_benchmark_dir(self, benchmark_name):
+        """Get output directory for benchmark's current rank.
+
+        Args:
+            benchmark_name (str): Benchmark name.
+        """
+        benchmark_output_dir = self._output_path / 'benchmarks' / benchmark_name
+        for rank_env in ['PROC_RANK', 'LOCAL_RANK']:
+            if os.getenv(rank_env):
+                benchmark_output_dir /= 'rank{}'.format(os.getenv(rank_env))
+                break
+        return benchmark_output_dir
+
     def __create_benchmark_dir(self, benchmark_name):
         """Create output directory for benchmark.
 
         Args:
             benchmark_name (str): Benchmark name.
         """
-        benchmark_output_dir = self._output_path / 'benchmarks' / benchmark_name
-        if benchmark_output_dir.is_dir() and any(benchmark_output_dir.iterdir()):
-            logger.warning('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
-            for i in itertools.count(start=1):
-                backup_dir = benchmark_output_dir.with_name('{}.{}'.format(benchmark_name, i))
-                if not backup_dir.is_dir():
-                    benchmark_output_dir.rename(backup_dir)
-                    break
-        benchmark_output_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
+        rotate_dir(self._output_path / 'benchmarks' / benchmark_name)
+        try:
+            self.__get_benchmark_dir(benchmark_name).mkdir(mode=0o755, parents=True, exist_ok=True)
+        except Exception:
+            logger.exception('Failed to create output directory for benchmark %s.', benchmark_name)
+            raise
 
     def __write_benchmark_results(self, benchmark_name, benchmark_results):
         """Write benchmark results.
@@ -145,7 +155,7 @@ class SuperBenchExecutor():
             benchmark_name (str): Benchmark name.
             benchmark_results (dict): Benchmark results.
         """
-        with (self._output_path / 'benchmarks' / benchmark_name / 'results.json').open(mode='w') as f:
+        with (self.__get_benchmark_dir(benchmark_name) / 'results.json').open(mode='w') as f:
             json.dump(benchmark_results, f, indent=2)
 
     def exec(self):
