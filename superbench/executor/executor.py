@@ -131,9 +131,8 @@ class SuperBenchExecutor():
         benchmark_output_dir = self._output_path / 'benchmarks' / benchmark_name
         for rank_env in ['PROC_RANK', 'LOCAL_RANK']:
             if os.getenv(rank_env):
-                benchmark_output_dir /= 'rank{}'.format(os.getenv(rank_env))
-                break
-        return benchmark_output_dir
+                return benchmark_output_dir / 'rank{}'.format(os.getenv(rank_env))
+        return benchmark_output_dir / 'rank0'
 
     def __create_benchmark_dir(self, benchmark_name):
         """Create output directory for benchmark.
@@ -141,7 +140,7 @@ class SuperBenchExecutor():
         Args:
             benchmark_name (str): Benchmark name.
         """
-        rotate_dir(self._output_path / 'benchmarks' / benchmark_name)
+        rotate_dir(self.__get_benchmark_dir(benchmark_name))
         try:
             self.__get_benchmark_dir(benchmark_name).mkdir(mode=0o755, parents=True, exist_ok=True)
         except Exception:
