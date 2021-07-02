@@ -15,11 +15,11 @@ This blog is to introduce [SuperBench](https://github.com/microsoft/superbenchma
 
 ### Easy-to-use CLI
 
-In order to provide good user experience, SuperBench provides a command line interface to help users deploy and run benchmarks. 
-Empowered by SuperBench CLI, user can deploy and run their benchmarks with only one command, which greatly shorten the learning curve of using tools, 
+In order to provide good user experience, SuperBench provides a command line interface to help users deploy and run benchmarks.
+Empowered by SuperBench CLI, user can deploy and run their benchmarks with only one command, which greatly shorten the learning curve of using tools,
 to help user easily evaluate the performance of AI workload.
 
-Below is a simple example to show how to deploy and run benchmarks locally. For more information, 
+Below is a simple example to show how to deploy and run benchmarks locally. For more information,
 please view [CLI Document](https://microsoft.github.io/superbenchmark/docs/cli)
 
 1. Deploy
@@ -48,9 +48,9 @@ For more information, please view [configuration](https://microsoft.github.io/su
 
 1. Executor Framework
 
-  In order to facilitate the benchmarking and validation on large-scale clusters, we designed and implemented a modular and extensible framework. 
-  SuperBench framework includes a runner as control node, as well as multiple executors as worker nodes. 
-  A runner received commands from CLI and distribute to all nodes (worker nodes) in the cluster, collect data, and summarize the results. 
+  In order to facilitate the benchmarking and validation on large-scale clusters, we designed and implemented a modular and extensible framework.
+  SuperBench framework includes a runner as control node, as well as multiple executors as worker nodes.
+  A runner received commands from CLI and distribute to all nodes (worker nodes) in the cluster, collect data, and summarize the results.
   Each worker will run executor to execute the specified benchmark tasks.
 
   ![SuperBench Executor Workflow](../../docs/assets/executor_workflow.png)
@@ -88,7 +88,7 @@ SuperBench supports a set of benchmarks listed as below.
   * BERT models
   * GPT-2 models
 
-For the details of each benchmark, please view [micro-benchmarks](https://microsoft.github.io/superbenchmark/docs/benchmarks/micro-benchmarks.md) 
+For the details of each benchmark, please view [micro-benchmarks](https://microsoft.github.io/superbenchmark/docs/benchmarks/micro-benchmarks.md)
 and [model-benchmarks](https://microsoft.github.io/superbenchmark/docs/benchmarks/model-benchmarks.md).
 
 
@@ -96,7 +96,7 @@ and [model-benchmarks](https://microsoft.github.io/superbenchmark/docs/benchmark
 
 We want to extend SuperBench capability to distributed validation and auto-diagnosis, to build a benchmarking eco-system.
 The following figure shows the whole picture.
-![SuperBench Capabilities and Extension](../../docs/assets/architecture.png)
+![SuperBench Capabilities and Extension](../../docs/assets/architecture.svg)
 
 With SuperBench and its extensions, we can support:
 
@@ -111,4 +111,4 @@ With SuperBench and its extensions, we can support:
 
 ## Call for Contributor
 
-This project welcomes contributions and suggestions. 
+This project welcomes contributions and suggestions.
