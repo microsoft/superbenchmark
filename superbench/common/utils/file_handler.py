@@ -9,6 +9,8 @@ from datetime import datetime
 import yaml
 from omegaconf import OmegaConf
 
+from superbench.common.utils import logger
+
 
 def create_sb_output_dir(output_dir=None):
     """Create output directory.
@@ -24,7 +26,11 @@ def create_sb_output_dir(output_dir=None):
     if not output_dir:
         output_dir = str(Path('outputs', datetime.now().strftime('%Y-%m-%d_%H-%M-%S')))
     output_path = Path(output_dir).expanduser().resolve()
-    output_path.mkdir(mode=0o755, parents=True, exist_ok=True)
+    try:
+        output_path.mkdir(mode=0o755, parents=True, exist_ok=True)
+    except Exception:
+        logger.exception('Failed to create directory %s.', str(output_path))
+        raise
     return output_dir
 
 

@@ -159,7 +159,11 @@ class SuperBenchRunner():
 
     def fetch_results(self):    # pragma: no cover
         """Fetch benchmark results on all nodes."""
-        (self._output_path / 'nodes').mkdir(mode=0o755, parents=True, exist_ok=True)
+        try:
+            (self._output_path / 'nodes').mkdir(mode=0o755, parents=True, exist_ok=True)
+        except Exception:
+            logger.exception('Failed to create directory %s.', str(self._output_path / 'nodes'))
+            raise
         self._ansible_client.run(
             self._ansible_client.get_playbook_config(
                 'fetch_results.yaml',
