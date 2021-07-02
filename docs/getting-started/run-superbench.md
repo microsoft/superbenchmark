@@ -24,6 +24,12 @@ or your private key requires a passphase before use, you can do
 sb deploy -f remote.ini --host-password [password]
 ```
 
+:::note Note
+You should deploy corresponding Docker image to use release version, for example,
+
+`sb deploy -f local.ini -i superbench/superbench:v0.2.0-cuda11.1.1`
+:::
+
 ## Run
 
 After deployment, you can start to run the SuperBench benchmarks on all managed nodes using `sb run` command.
