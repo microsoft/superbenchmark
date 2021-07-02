@@ -5,13 +5,12 @@
 
 import os
 import json
-import itertools
 from pathlib import Path
 
 from omegaconf import ListConfig
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
-from superbench.common.utils import SuperBenchLogger, logger
+from superbench.common.utils import SuperBenchLogger, logger, rotate_dir
 
 
 class SuperBenchExecutor():
@@ -142,15 +141,8 @@ class SuperBenchExecutor():
         Args:
             benchmark_name (str): Benchmark name.
         """
-        benchmark_output_root_dir = self._output_path / 'benchmarks' / benchmark_name
+        rotate_dir(self._output_path / 'benchmarks' / benchmark_name)
         try:
-            if benchmark_output_root_dir.is_dir() and any(benchmark_output_root_dir.iterdir()):
-                logger.warning('Benchmark output root directory %s is not empty.', str(benchmark_output_root_dir))
-                for i in itertools.count(start=1):
-                    backup_dir = benchmark_output_root_dir.with_name('{}.{}'.format(benchmark_name, i))
-                    if not backup_dir.is_dir():
-                        benchmark_output_root_dir.rename(backup_dir)
-                        break
             self.__get_benchmark_dir(benchmark_name).mkdir(mode=0o755, parents=True, exist_ok=True)
         except Exception:
             logger.exception('Failed to create output directory for benchmark %s.', benchmark_name)
