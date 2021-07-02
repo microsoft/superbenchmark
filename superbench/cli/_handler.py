@@ -11,7 +11,7 @@ from omegaconf import OmegaConf
 import superbench
 from superbench.runner import SuperBenchRunner
 from superbench.executor import SuperBenchExecutor
-from superbench.common.utils import create_output_dir, get_sb_config
+from superbench.common.utils import create_sb_output_dir, get_sb_config
 
 
 def check_argument_file(name, file):
@@ -62,13 +62,14 @@ def split_docker_domain(name):
     return domain, remainder
 
 
-def process_config_arguments(config_file=None, config_override=None):
+def process_config_arguments(config_file=None, config_override=None, output_dir=None):
     """Process configuration arguments.
 
     Args:
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
+        output_dir (str, optional): Path to output directory. Defaults to None.
 
     Returns:
         DictConfig: SuperBench config object.
@@ -86,9 +87,9 @@ def process_config_arguments(config_file=None, config_override=None):
         sb_config = OmegaConf.merge(sb_config, sb_config_from_override)
 
     # Create output directory
-    output_dir = create_output_dir()
+    sb_output_dir = create_sb_output_dir(output_dir)
 
-    return sb_config, output_dir
+    return sb_config, sb_output_dir
 
 
 def process_runner_arguments(
@@ -100,6 +101,7 @@ def process_runner_arguments(
     host_username=None,
     host_password=None,
     private_key=None,
+    output_dir=None,
     config_file=None,
     config_override=None
 ):
@@ -114,6 +116,7 @@ def process_runner_arguments(
         host_username (str, optional): Host username if needed. Defaults to None.
         host_password (str, optional): Host password or key passphase if needed. Defaults to None.
         private_key (str, optional): Path to private key if needed. Defaults to None.
+        output_dir (str, optional): Path to output directory. Defaults to None.
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
@@ -154,9 +157,13 @@ def process_runner_arguments(
         }
     )
 
-    sb_config, output_dir = process_config_arguments(config_file=config_file, config_override=config_override)
+    sb_config, sb_output_dir = process_config_arguments(
+        config_file=config_file,
+        config_override=config_override,
+        output_dir=output_dir,
+    )
 
-    return docker_config, ansible_config, sb_config, output_dir
+    return docker_config, ansible_config, sb_config, sb_output_dir
 
 
 def version_command_handler():
@@ -168,20 +175,25 @@ def version_command_handler():
     return superbench.__version__
 
 
-def exec_command_handler(config_file=None, config_override=None):
+def exec_command_handler(config_file=None, config_override=None, output_dir=None):
     """Run the SuperBench benchmarks locally.
 
     Args:
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
+        output_dir (str, optional): Path to output directory. Defaults to None.
 
     Raises:
         CLIError: If input arguments are invalid.
     """
-    sb_config, output_dir = process_config_arguments(config_file=config_file, config_override=config_override)
+    sb_config, sb_output_dir = process_config_arguments(
+        config_file=config_file,
+        config_override=config_override,
+        output_dir=output_dir,
+    )
 
-    executor = SuperBenchExecutor(sb_config, output_dir)
+    executor = SuperBenchExecutor(sb_config, sb_output_dir)
     executor.exec()
 
 
@@ -193,6 +205,7 @@ def deploy_command_handler(
     host_list=None,
     host_username=None,
     host_password=None,
+    output_dir=None,
     private_key=None
 ):
     """Deploy the SuperBench environments to all given nodes.
@@ -211,12 +224,13 @@ def deploy_command_handler(
         host_list (str, optional): Comma separated host list. Defaults to None.
         host_username (str, optional): Host username if needed. Defaults to None.
         host_password (str, optional): Host password or key passphase if needed. Defaults to None.
+        output_dir (str, optional): Path to output directory. Defaults to None.
         private_key (str, optional): Path to private key if needed. Defaults to None.
 
     Raises:
         CLIError: If input arguments are invalid.
     """
-    docker_config, ansible_config, sb_config, output_dir = process_runner_arguments(
+    docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
         docker_image=docker_image,
         docker_username=docker_username,
         docker_password=docker_password,
@@ -224,10 +238,11 @@ def deploy_command_handler(
         host_list=host_list,
         host_username=host_username,
         host_password=host_password,
+        output_dir=output_dir,
         private_key=private_key,
     )
 
-    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
+    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
     runner.deploy()
 
 
@@ -239,6 +254,7 @@ def run_command_handler(
     host_list=None,
     host_username=None,
     host_password=None,
+    output_dir=None,
     private_key=None,
     config_file=None,
     config_override=None
@@ -255,6 +271,7 @@ def run_command_handler(
         host_list (str, optional): Comma separated host list. Defaults to None.
         host_username (str, optional): Host username if needed. Defaults to None.
         host_password (str, optional): Host password or key passphase if needed. Defaults to None.
+        output_dir (str, optional): Path to output directory. Defaults to None.
         private_key (str, optional): Path to private key if needed. Defaults to None.
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
@@ -263,7 +280,7 @@ def run_command_handler(
     Raises:
         CLIError: If input arguments are invalid.
     """
-    docker_config, ansible_config, sb_config, output_dir = process_runner_arguments(
+    docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
         docker_image=docker_image,
         docker_username=docker_username,
         docker_password=docker_password,
@@ -271,10 +288,11 @@ def run_command_handler(
         host_list=host_list,
         host_username=host_username,
         host_password=host_password,
+        output_dir=output_dir,
         private_key=private_key,
         config_file=config_file,
         config_override=config_override,
     )
 
-    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, output_dir)
+    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
     runner.run()

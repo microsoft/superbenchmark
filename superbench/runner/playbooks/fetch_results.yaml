@@ -1,0 +1,11 @@
+- name: Fetch Results
+  hosts: all
+  gather_facts: true
+  vars:
+    workspace: '{{ ansible_user_dir }}/sb-workspace'
+  tasks:
+    - name: Synchronize Output Directory
+      ansible.posix.synchronize:
+        mode: pull
+        src: '{{ workspace }}/{{ sb_output_dir }}/'
+        dest: '{{ absolute_output_dir }}/nodes/{{ ansible_hostname }}'
