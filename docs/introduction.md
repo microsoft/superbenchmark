@@ -26,4 +26,4 @@ as well as model-benchmark to measure domain-aware end-to-end deep learning work
 
 The following figure shows the capabilities provided by SuperBench core framework and its extension.
 
-![SuperBench Structure](./assets/architecture.png)
+![SuperBench Structure](./assets/architecture.svg)
