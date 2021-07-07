@@ -25,16 +25,26 @@
   tasks:
     - name: Checking NVIDIA GPU
       stat:
-        path: /dev/nvidiactl
+        path: '{{ item }}'
+      with_items:
+        - /dev/nvidiactl
+        - /dev/nvidia-uvm
       register: nvidia_dev
     - name: Checking AMD GPU
       stat:
-        path: /dev/kfd
+        path: '{{ item }}'
+      with_items:
+        - /dev/kfd
+        - /dev/dri
       register: amd_dev
     - name: Set GPU Facts
       set_fact:
-        nvidia_gpu_exist: "{{ nvidia_dev.stat.ischr is defined and nvidia_dev.stat.ischr }}"
-        amd_gpu_exist: "{{ amd_dev.stat.ischr is defined and amd_dev.stat.ischr }}"
+        nvidia_gpu_exist: >-
+          {{ nvidia_dev.results[0].stat.ischr is defined and nvidia_dev.results[0].stat.ischr and
+          nvidia_dev.results[1].stat.ischr is defined and nvidia_dev.results[1].stat.ischr }}
+        amd_gpu_exist: >-
+          {{ amd_dev.results[0].stat.ischr is defined and amd_dev.results[0].stat.ischr and
+          amd_dev.results[1].stat.isdir is defined and amd_dev.results[1].stat.isdir }}
     - name: Print GPU Checking Result
       debug:
         msg:
