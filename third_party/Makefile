@@ -4,11 +4,15 @@
 
 SB_MICRO_PATH ?= "/usr/local"
 
-.PHONY: all cutlass cuda-samples
+.PHONY: all cutlass bandwidthTest
 
 # Build all targets.
-all: cutlass cuda-samples
+all: cutlass bandwidthTest
 
+# Create $(SB_MICRO_PATH)/bin and  $(SB_MICRO_PATH)/lib if not exist.
+sb_micro_path:
+	if [ ! -d  $(SB_MICRO_PATH)/bin ]; then mkdir -p $(SB_MICRO_PATH)/bin; fi
+	if [ ! -d $(SB_MICRO_PATH)/lib ]; then mkdir -p $(SB_MICRO_PATH)/lib; fi
 # Build cutlass.
 cutlass:
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
@@ -16,7 +20,7 @@ ifneq (,$(wildcard cutlass/CMakeLists.txt))
 		-DCUTLASS_NVCC_ARCHS='70;80' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
 	cmake --build ./cutlass/build -j 8 --target install
 endif
-cuda-samples:
+bandwidthTest: sb_micro_path
 ifneq (,$(wildcard cuda-samples/Samples/bandwidthTest/Makefile))
 	make -C ./cuda-samples/Samples/bandwidthTest TARGET_ARCH=x86_64 SMS="70 75 80 86" 
 	cp ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
