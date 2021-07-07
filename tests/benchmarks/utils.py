@@ -4,12 +4,11 @@
 """Utilities for benchmark tests."""
 
 import os
-import socket
-from contextlib import closing
 import multiprocessing as multiprocessing
 from multiprocessing import Process
 
 from superbench.benchmarks import BenchmarkRegistry
+from superbench.common.utils import network
 
 
 def clean_simulated_ddp_distributed_env():
@@ -19,18 +18,6 @@ def clean_simulated_ddp_distributed_env():
     os.environ.pop('LOCAL_RANK')
     os.environ.pop('MASTER_ADDR')
     os.environ.pop('MASTER_PORT')
-
-
-def get_free_port():
-    """Get a free port in current system.
-
-    Return:
-        port (int): a free port in current system.
-    """
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 def setup_simulated_ddp_distributed_env(world_size, local_rank, port):
@@ -58,7 +45,7 @@ def simulated_ddp_distributed_benchmark(context, world_size):
     Return:
         results (list): list of benchmark results from #world_size number of processes.
     """
-    port = get_free_port()
+    port = network.get_free_port()
     process_list = []
     multiprocessing.set_start_method('spawn')
 
