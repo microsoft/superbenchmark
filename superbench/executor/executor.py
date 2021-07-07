@@ -9,8 +9,9 @@ from pathlib import Path
 
 from omegaconf import ListConfig
 
-from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
+from superbench.benchmarks import Framework, BenchmarkRegistry
 from superbench.common.utils import SuperBenchLogger, logger, rotate_dir
+from superbench.common.devices import GPU
 
 
 class SuperBenchExecutor():
@@ -67,8 +68,7 @@ class SuperBenchExecutor():
 
     def __get_platform(self):
         """Detect runninng platform by environment."""
-        # TODO: check devices and env vars
-        return Platform.CUDA
+        return GPU().platform
 
     def __get_arguments(self, parameters):
         """Get command line arguments for argparse.
