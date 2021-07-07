@@ -36,7 +36,6 @@ class NcclBwTest(unittest.TestCase):
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        # Negative case - MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE.
         benchmark = benchmark_class(benchmark_name)
 
         ret = benchmark._preprocess()
@@ -49,25 +48,22 @@ class NcclBwTest(unittest.TestCase):
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check parameters specified in BenchmarkContext.
-        assert (
-            benchmark._args.bin_list == [
-                'all_reduce_perf', 'all_gather_perf', 'broadcast_perf', 'reduce_perf', 'reduce_scatter_perf'
-            ]
-        )
+        assert (benchmark._args.algo == ['allreduce', 'allgather', 'broadcast', 'reduce', 'reducescatter'])
         assert (benchmark._args.gpu_count == 8)
 
         # Check command list
-        for i in range(len(benchmark._args.bin_list)):
-            commnad = benchmark._args.bin_list[i] + benchmark._commands[i].split(benchmark._args.bin_list[i])[1]
-            expected_command = '{} -b 1 -e {} -f 2 -g {} -c 0 '.format(
-                benchmark._args.bin_list[i], benchmark._args.size, benchmark._args.gpu_count
+        bin_names = ['all_reduce_perf', 'all_gather_perf', 'broadcast_perf', 'reduce_perf', 'reduce_scatter_perf']
+        print(benchmark._commands)
+        for i in range(len(benchmark._args.algo)):
+            commnad = bin_names[i] + benchmark._commands[i].split(bin_names[i])[1]
+            expected_command = '{} -b 1 -e {} -f 2 -g {} -c 0'.format(
+                bin_names[i], benchmark._args.max_size, benchmark._args.gpu_count
             )
             assert (commnad == expected_command)
-            print('true')
 
         # Check results and metrics.
         raw_output = {}
-        raw_output['all_gather_perf'] = """
+        raw_output['allgather'] = """
 # nThread 1 nGpus 8 minBytes 1 maxBytes 8589934592 step: 2(factor) warmup iters: 5 iters: 20 validation: 0
 #
 # Using devices
@@ -121,7 +117,7 @@ class NcclBwTest(unittest.TestCase):
 # Avg bus bandwidth    : 58.2651
 #
 """
-        raw_output['all_reduce_perf'] = """
+        raw_output['allreduce'] = """
 # nThread 1 nGpus 8 minBytes 1 maxBytes 8589934592 step: 2(factor) warmup iters: 5 iters: 20 validation: 0
 #
 # Using devices
@@ -175,7 +171,7 @@ class NcclBwTest(unittest.TestCase):
 # Avg bus bandwidth    : 68.4048
 #
 """
-        raw_output['reduce_perf'] = """
+        raw_output['reduce'] = """
 # nThread 1 nGpus 8 minBytes 1 maxBytes 8589934592 step: 2(factor) warmup iters: 5 iters: 20 validation: 0
 #
 # Using devices
@@ -229,7 +225,7 @@ class NcclBwTest(unittest.TestCase):
 # Avg bus bandwidth    : 65.018
 #
 """
-        raw_output['broadcast_perf'] = """
+        raw_output['broadcast'] = """
 # nThread 1 nGpus 8 minBytes 1 maxBytes 8589934592 step: 2(factor) warmup iters: 5 iters: 20 validation: 0
 #
 # Using devices
@@ -283,7 +279,7 @@ class NcclBwTest(unittest.TestCase):
 # Avg bus bandwidth    : 64.8653
 #
 """
-        raw_output['reduce_scatter_perf'] = """
+        raw_output['reducescatter'] = """
 # nThread 1 nGpus 8 minBytes 1 maxBytes 8589934592 step: 2(factor) warmup iters: 5 iters: 20 validation: 0
 #
 # Using devices
@@ -338,7 +334,7 @@ class NcclBwTest(unittest.TestCase):
 #
 """
 
-        for i, bin_name in enumerate(benchmark._args.bin_list):
+        for i, bin_name in enumerate(benchmark._args.algo):
             assert (benchmark._process_raw_result(i, raw_output[bin_name]))
             assert (bin_name in benchmark.result)
             assert (len(benchmark.result[bin_name]) == 1)

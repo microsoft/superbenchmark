@@ -23,18 +23,24 @@ class NcclBw(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'all_reduce_perf'
-        self.__bin_list = ['all_reduce_perf', 'all_gather_perf', 'broadcast_perf', 'reduce_perf', 'reduce_scatter_perf']
+        self.__algorithms = {
+            'allreduce': 'all_reduce_perf',
+            'allgather': 'all_gather_perf',
+            'broadcast': 'broadcast_perf',
+            'reduce': 'reduce_perf',
+            'reducescatter': 'reduce_scatter_perf'
+        }
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--bin_list',
+            '--algo',
             type=str,
             nargs='+',
-            default=self.__bin_list,
-            help='Nccl algorithms to benchmark. E.g. {}.'.format(' '.join(self.__bin_list)),
+            default=list(self.__algorithms.keys()),
+            help='Nccl algorithms to benchmark. E.g. {}.'.format(' '.join(list(self.__algorithms.keys()))),
         )
         self._parser.add_argument(
             '--gpu_count',
@@ -43,7 +49,7 @@ class NcclBw(MicroBenchmarkWithInvoke):
             help='The count of GPUs used for benchmarking.',
         )
         self._parser.add_argument(
-            '--size',
+            '--max_size',
             type=str,
             default='8192M',
             help='Max size in bytes to run the nccl test. E.g. 8192M.',
@@ -59,27 +65,27 @@ class NcclBw(MicroBenchmarkWithInvoke):
             return False
 
         # Format the arguments
-        if not isinstance(self._args.bin_list, list):
-            self._args.bin_list = [self._args.bin_list]
-        self._args.bin_list = [p.lower() for p in self._args.bin_list]
+        if not isinstance(self._args.algo, list):
+            self._args.algo = [self._args.algo]
+        self._args.algo = [p.lower() for p in self._args.algo]
 
         # Check the arguments and generate the commands
-        for bin_name in self._args.bin_list:
-            if bin_name not in self.__bin_list:
+        for algo in self._args.algo:
+            if algo not in self.__algorithms:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
-                    'Unsupported bin of NCCL test - benchmark: {}, bin name: {}, expected: {}.'.format(
-                        self._name, bin_name, ' '.join(self.__bin_list)
+                    'Unsupported algorithm of NCCL test - benchmark: {}, algorithm: {}, expected: {}.'.format(
+                        self._name, algo, ' '.join(list(self.__algorithms.keys()))
                     )
                 )
                 return False
             else:
-                self._bin_name = bin_name
+                self._bin_name = self.__algorithms[algo]
                 if not self._set_binary_path():
                     return False
 
                 command = os.path.join(self._args.bin_dir, self._bin_name)
-                command += ' -b 1 -e {} -f 2 -g {} -c 0 '.format(self._args.size, self._args.gpu_count)
+                command += ' -b 1 -e {} -f 2 -g {} -c 0'.format(self._args.max_size, self._args.gpu_count)
                 self._commands.append(command)
 
         return True
@@ -96,7 +102,7 @@ class NcclBw(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + self._args.bin_list[cmd_idx], raw_output)
+        self._result.add_raw_data('raw_output_' + self._args.algo[cmd_idx], raw_output)
 
         content = raw_output.splitlines()
 
@@ -126,7 +132,7 @@ class NcclBw(MicroBenchmarkWithInvoke):
             )
             return False
 
-        self._result.add_result(self._args.bin_list[cmd_idx], busbw_out)
+        self._result.add_result(self._args.algo[cmd_idx], busbw_out)
 
         return True
 
