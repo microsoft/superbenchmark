@@ -57,8 +57,10 @@ class ExecutorTestCase(unittest.TestCase):
         expected_enabled_benchmarks = ['benchmark_alpha', 'benchmark_beta']
         self.assertListEqual(self.executor._SuperBenchExecutor__get_enabled_benchmarks(), expected_enabled_benchmarks)
 
-    def test_get_platform(self):
+    @mock.patch('pathlib.Path.is_char_device')
+    def test_get_platform(self, mock_is_char_device):
         """Test get platform."""
+        mock_is_char_device.return_value = True
         self.assertEqual(self.executor._SuperBenchExecutor__get_platform().value, 'CUDA')
 
     def test_get_arguments(self):

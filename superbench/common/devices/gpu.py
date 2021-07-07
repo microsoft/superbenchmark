@@ -14,7 +14,7 @@ class GPU():
     def __init__(self):
         """Initilize."""
         self.vendor = self.get_vendor()
-        # TODO: check CUDA or ROCm availablity accordingly
+        # TODO: check CUDA or ROCm availability accordingly
         if self.vendor == 'nvidia':
             self.platform = Platform.CUDA
         elif self.vendor == 'amd':
