@@ -3,6 +3,7 @@
 
 trigger:
   - main
+  - release/*
 
 container:
   image: python:3.7
