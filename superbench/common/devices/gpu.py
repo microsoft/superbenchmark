@@ -5,7 +5,6 @@
 
 from pathlib import Path
 
-from superbench.benchmarks import Platform
 from superbench.common.utils import logger
 
 
@@ -15,12 +14,6 @@ class GPU():
         """Initilize."""
         self.vendor = self.get_vendor()
         # TODO: check CUDA or ROCm availability accordingly
-        if self.vendor == 'nvidia':
-            self.platform = Platform.CUDA
-        elif self.vendor == 'amd':
-            self.platform == Platform.ROCM
-        else:
-            self.platform = Platform.CPU
 
     def get_vendor(self):
         """Get GPU vendor.
@@ -33,7 +26,7 @@ class GPU():
                 logger.warning('Cannot find NVIDIA GPU device.')
             return 'nvidia'
         if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
-            if not list(Path('/dev/dri')).glob('card*'):
+            if not list(Path('/dev/dri').glob('card*')):
                 logger.warning('Cannot find AMD GPU device.')
             return 'amd'
         return None
