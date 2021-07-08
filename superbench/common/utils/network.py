@@ -5,7 +5,6 @@
 
 import socket
 import subprocess
-from contextlib import closing
 
 
 def get_free_port():
@@ -14,10 +13,15 @@ def get_free_port():
     Return:
         port (int): a free port in current system.
     """
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
         s.bind(('', 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+    except OSError:
+        return None
+    finally:
+        s.close()
 
 
 def get_ib_devices():
@@ -26,16 +30,42 @@ def get_ib_devices():
     Return:
         ib_devices (list): IB devices in current system.
     """
-    # Filter 'InfiniBand' devices by link_layer
-    command = "ibv_devinfo | awk '$1 ~ /hca_id/||/link_layer:/ {print $1,$2}'"
+    command_get_devices = 'ls /sys/class/infiniband/'
     output = subprocess.run(
-        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
+        command_get_devices,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        shell=True,
+        check=False,
+        universal_newlines=True
     )
-    lines = list(filter(None, output.stdout.replace('\n', ' ').split('hca_id:')))
+    devices = output.stdout.split()
+    devices.sort()
+    # Filter 'InfiniBand' devices by link_layer
     ib_devices = []
-    for line in lines:
-        if 'InfiniBand' in line:
-            ib_devices.append(line.split()[0])
-    ib_devices.sort()
+    for device in devices:
+        command_get_ports = command_get_devices + device + '/ports/'
+        output = subprocess.run(
+            command_get_ports,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True,
+            check=False,
+            universal_newlines=True
+        )
+        ports = output.stdout.split()
+        for port in ports:
+            command_get_link_layer = 'cat' + command_get_ports.split('ls')[1] + port + '/link_layer'
+            output = subprocess.run(
+                command_get_link_layer,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                check=False,
+                universal_newlines=True
+            )
+            if 'InfiniBand' in output.stdout:
+                ib_devices.append(device)
+                break
 
     return ib_devices

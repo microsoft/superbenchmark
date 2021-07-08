@@ -46,6 +46,8 @@ def simulated_ddp_distributed_benchmark(context, world_size):
         results (list): list of benchmark results from #world_size number of processes.
     """
     port = network.get_free_port()
+    if not port:
+        return None
     process_list = []
     multiprocessing.set_start_method('spawn')
 
