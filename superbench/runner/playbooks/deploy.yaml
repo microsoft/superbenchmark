@@ -19,18 +19,18 @@
         comment: superbench
         force: no
 
-- name: Check GPU Envrionment
+- name: Check GPU Environment
   hosts: all
   gather_facts: false
   tasks:
-    - name: Checking NVIDIA GPU Envrionment
+    - name: Checking NVIDIA GPU Environment
       stat:
         path: '{{ item }}'
       with_items:
         - /dev/nvidiactl
         - /dev/nvidia-uvm
       register: nvidia_dev
-    - name: Checking AMD GPU Envrionment
+    - name: Checking AMD GPU Environment
       stat:
         path: '{{ item }}'
       with_items:
