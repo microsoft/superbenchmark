@@ -12,7 +12,7 @@ class GPU():
     """GPU device helper class."""
     def __init__(self):
         """Initilize."""
-        self.vendor = self.get_vendor()
+        self._vendor = self.get_vendor()
         # TODO: check CUDA or ROCm availability accordingly
 
     def get_vendor(self):
@@ -30,3 +30,8 @@ class GPU():
                 logger.warning('Cannot find AMD GPU device.')
             return 'amd'
         return None
+
+    @property
+    def vendor(self):
+        """Get the GPU vendor."""
+        return self._vendor
