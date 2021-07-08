@@ -15,4 +15,3 @@
     ssh_port: 12345
     output_dir: /tmp/test_ansible
     docker_image: superbench/superbench
-    gpu_vendor: none
