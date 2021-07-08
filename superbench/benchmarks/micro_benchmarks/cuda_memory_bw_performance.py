@@ -10,7 +10,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class MemBwCuda(MicroBenchmarkWithInvoke):
+class CudaMemBwBenchmark(MicroBenchmarkWithInvoke):
     """The Cuda memory bus bandwidth performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -63,15 +63,15 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         valid = True
         content = raw_output.splitlines()
         try:
-            for line in content:
+            for index, line in enumerate(content):
                 if 'Host to Device Bandwidth' in line:
                     metric = 'H2D_Mem_BW'
                 elif 'Device to Host Bandwidth' in line:
                     metric = 'D2H_Mem_BW'
                 elif 'Device to Device Bandwidth' in line:
                     metric = 'D2D_Mem_BW'
-                elif '32000000' in line and metric != '':
-                    values = list(filter(None, line.split()))
+                elif 'Transfer Size' in line and 'Bandwidth' in line and metric != '':
+                    values = list(filter(None, content[index + 1].split()))
                     mem_bw = float(values[1])
         except BaseException:
             valid = False
@@ -89,4 +89,4 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('mem-copy-bw', MemBwCuda, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('mem-copy-bw', CudaMemBwBenchmark, platform=Platform.CUDA)

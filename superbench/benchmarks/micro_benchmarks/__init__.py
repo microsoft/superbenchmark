@@ -10,9 +10,9 @@ from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import Kernel
 from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchmark
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.gemm_flops_performance import GemmFlopsCuda
-from superbench.benchmarks.micro_benchmarks.memory_copy_bw_cuda_performance import MemBwCuda
+from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import CudaMemBwBenchmark
 
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
-    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'MemBwCuda'
+    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'CudaMemBwBenchmark'
 ]

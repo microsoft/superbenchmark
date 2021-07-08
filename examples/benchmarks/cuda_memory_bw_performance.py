@@ -4,7 +4,7 @@
 """Micro benchmark example for memory copy bandwidth performance.
 
 Commands to run:
-  python3 examples/benchmarks/memory_copy_bw_cuda_performance.py
+  python3 examples/benchmarks/cuda_memory_bw_performance.py
 """
 
 from superbench.benchmarks import BenchmarkRegistry, Platform
