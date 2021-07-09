@@ -4,7 +4,8 @@
 """Network Utility."""
 
 import socket
-import subprocess
+import re
+from pathlib import Path
 
 
 def get_free_port():
@@ -25,47 +26,27 @@ def get_free_port():
 
 
 def get_ib_devices():
-    """Get available IB devices in the system and filter ethernet devices.
+    """Get available IB devices with available ports in the system and filter ethernet devices.
 
     Return:
-        ib_devices (list): IB devices in current system.
+        ib_devices (list): IB devices with available ports in current system.
     """
-    command_get_devices = 'ls /sys/class/infiniband/'
-    output = subprocess.run(
-        command_get_devices,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        shell=True,
-        check=False,
-        universal_newlines=True
-    )
-    devices = output.stdout.split()
-    devices.sort()
-    # Filter 'InfiniBand' devices by link_layer
-    ib_devices = []
+    devices = list(p.name for p in Path('/sys/class/infiniband').glob('*'))
+    ib_devices_port_dict = {}
     for device in devices:
-        command_get_ports = command_get_devices + device + '/ports/'
-        output = subprocess.run(
-            command_get_ports,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True,
-            check=False,
-            universal_newlines=True
-        )
-        ports = output.stdout.split()
+        ports = list(p.name for p in (Path('/sys/class/infiniband') / device / 'ports').glob('*'))
+        ports.sort(key=lambda s: [int(ch) if ch.isdigit() else ch for ch in re.split(r'(\d+)', s)])
         for port in ports:
-            command_get_link_layer = 'cat' + command_get_ports.split('ls')[1] + port + '/link_layer'
-            output = subprocess.run(
-                command_get_link_layer,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                shell=True,
-                check=False,
-                universal_newlines=True
-            )
-            if 'InfiniBand' in output.stdout:
-                ib_devices.append(device)
-                break
-
-    return ib_devices
+            with (Path('/sys/class/infiniband') / device / 'ports' / port / 'link_layer').open('r') as f:
+                # Filter 'InfiniBand' devices by link_layer
+                if f.read().strip() == 'InfiniBand':
+                    if device not in ib_devices_port_dict:
+                        ib_devices_port_dict[device] = [port]
+                    else:
+                        ib_devices_port_dict[device].append(port)
+    ib_devices = list(ib_devices_port_dict.keys())
+    ib_devices.sort(key=lambda s: [int(ch) if ch.isdigit() else ch for ch in re.split(r'(\d+)', s)])
+    ib_devices_port = []
+    for device in ib_devices:
+        ib_devices_port.append(device + ':' + ','.join(ib_devices_port_dict[device]))
+    return ib_devices_port
