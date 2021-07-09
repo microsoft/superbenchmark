@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for mem-copy-bw benchmark."""
+"""Tests for mem-bw benchmark."""
 
 import numbers
 from pathlib import Path
@@ -26,14 +26,14 @@ class MemBwTest(unittest.TestCase):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
 
-    def test_memory_copy_bw_performance(self):
-        """Test mem-copy-bw benchmark."""
-        benchmark_name = 'mem-copy-bw'
+    def test_memory_bw_performance(self):
+        """Test mem-bw benchmark."""
+        benchmark_name = 'mem-bw'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        benchmark = benchmark_class(benchmark_name)
+        benchmark = benchmark_class(benchmark_name, parameters='--mode=shmoo --memory=pinned')
 
         ret = benchmark._preprocess()
         assert (ret is True)
@@ -41,11 +41,14 @@ class MemBwTest(unittest.TestCase):
 
         # Check basic information.
         assert (benchmark)
-        assert (benchmark.name == 'mem-copy-bw')
+        assert (benchmark.name == 'mem-bw')
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check command list
-        expected_command = ['bandwidthTest --htod', 'bandwidthTest --dtoh', 'bandwidthTest --dtod']
+        expected_command = [
+            'bandwidthTest --htod mode=shmoo memory=pinned', 'bandwidthTest --dtoh mode=shmoo memory=pinned',
+            'bandwidthTest --dtod mode=shmoo memory=pinned'
+        ]
         for i in range(len(expected_command)):
             commnad = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
             assert (commnad == expected_command[i])

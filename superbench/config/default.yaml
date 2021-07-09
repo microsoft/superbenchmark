@@ -27,7 +27,7 @@ superbench:
       model_action:
         - train
   benchmarks:
-    mem-copy-bw:
+    mem-bw:
       enable: true
       modes:
         - name: local
