@@ -11,7 +11,7 @@ all: cutlass bandwidthTest
 
 # Create $(SB_MICRO_PATH)/bin and  $(SB_MICRO_PATH)/lib if not exist.
 sb_micro_path:
-	if [ ! -d  $(SB_MICRO_PATH)/bin ]; then mkdir -p $(SB_MICRO_PATH)/bin; fi
+	if [ ! -d $(SB_MICRO_PATH)/bin ]; then mkdir -p $(SB_MICRO_PATH)/bin; fi
 	if [ ! -d $(SB_MICRO_PATH)/lib ]; then mkdir -p $(SB_MICRO_PATH)/lib; fi
 # Build cutlass.
 cutlass:
@@ -22,6 +22,7 @@ ifneq (,$(wildcard cutlass/CMakeLists.txt))
 endif
 bandwidthTest: sb_micro_path
 ifneq (,$(wildcard cuda-samples/Samples/bandwidthTest/Makefile))
+	cd cuda-samples && git checkout -b v$(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 	make -C ./cuda-samples/Samples/bandwidthTest TARGET_ARCH=x86_64 SMS="70 75 80 86" 
 	cp ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
 endif
