@@ -11,6 +11,7 @@ from omegaconf import ListConfig
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
 from superbench.common.utils import SuperBenchLogger, logger, rotate_dir
+from superbench.common.devices import GPU
 
 
 class SuperBenchExecutor():
@@ -67,8 +68,15 @@ class SuperBenchExecutor():
 
     def __get_platform(self):
         """Detect runninng platform by environment."""
-        # TODO: check devices and env vars
-        return Platform.CUDA
+        try:
+            gpu = GPU()
+            if gpu.vendor == 'nvidia':
+                return Platform.CUDA
+            elif gpu.vendor == 'amd':
+                return Platform.ROCM
+        except Exception as e:
+            logger.error(e)
+        return Platform.CPU
 
     def __get_arguments(self, parameters):
         """Get command line arguments for argparse.
