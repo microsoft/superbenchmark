@@ -4,6 +4,7 @@
 """Module of the Cuda memory performance benchmarks."""
 
 import os
+import re
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -23,7 +24,6 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
 
         self._bin_name = 'bandwidthTest'
         self.__mem_types = ['htod', 'dtoh', 'dtod']
-        self.__mode = ['shmoo', 'range']
         self.__memory = ['pageable', 'pinned']
 
     def add_parser_arguments(self):
@@ -37,10 +37,10 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
             help='Memory types to benchmark. E.g. {}.'.format(' '.join(self.__mem_types)),
         )
         self._parser.add_argument(
-            '--mode',
-            type=str,
-            default=None,
-            help='Mode argument for bandwidthtest. E.g. {}.'.format(' '.join(self.__mode)),
+            '--shmoo_mode',
+            action='store_true',
+            default=False,
+            help='Enable shmoo mode for bandwidthtest.',
         )
         self._parser.add_argument(
             '--memory',
@@ -76,16 +76,8 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
             else:
                 command = os.path.join(self._args.bin_dir, self._bin_name)
                 command += ' --' + mem_type
-                if self._args.mode:
-                    if self._args.mode in self.__mode:
-                        command += ' mode=' + self._args.mode
-                    else:
-                        self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                        logger.error(
-                            'Unsupported mode argument of bandwidth test - benchmark: {}, mode: {}, expected: {}.'.
-                            format(self._name, self._args.mode, ' '.join(self.__mode))
-                        )
-                        return False
+                if self._args.shmoo_mode:
+                    command += ' mode=shmoo'
                 if self._args.memory:
                     if self._args.memory in self.__memory:
                         command += ' memory=' + self._args.memory
@@ -96,6 +88,7 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
                             format(self._name, self._args.memory, ' '.join(self.__memory))
                         )
                         return False
+                command += ' --csv'
                 self._commands.append(command)
 
         return True
@@ -120,15 +113,19 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         content = raw_output.splitlines()
         try:
             for index, line in enumerate(content):
-                if 'Host to Device Bandwidth' in line:
+                if 'H2D' in line:
                     metric = 'H2D_Mem_BW'
-                elif 'Device to Host Bandwidth' in line:
+                elif 'D2H' in line:
                     metric = 'D2H_Mem_BW'
-                elif 'Device to Device Bandwidth' in line:
+                elif 'D2D' in line:
                     metric = 'D2D_Mem_BW'
-                elif 'Transfer Size' in line and 'Bandwidth' in line and metric != '':
-                    values = list(filter(None, content[index + 1].split()))
-                    mem_bw = float(values[1])
+                else:
+                    continue
+                line = line.split(',')[1]
+                value = re.search(r'(\d+.\d+)', line)
+                if value:
+                    mem_bw = max(mem_bw, float(value.group(0)))
+
         except BaseException:
             valid = False
         finally:
