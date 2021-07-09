@@ -131,7 +131,6 @@ class SuperBenchRunner():
             'ssh_port': random.randint(1 << 14, (1 << 15) - 1),
             'output_dir': str(self._output_path),
             'docker_image': self._docker_config.image,
-            'gpu_vendor': 'nvidia',
         }
         if bool(self._docker_config.username) and bool(self._docker_config.password):
             extravars.update(

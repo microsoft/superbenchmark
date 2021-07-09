@@ -23,7 +23,7 @@ def rotate_dir(target_dir):
         if target_dir.is_dir() and any(target_dir.iterdir()):
             logger.warning('Directory %s is not empty.', str(target_dir))
             for i in itertools.count(start=1):
-                backup_dir = target_dir.with_name(f'{target_dir.name}.{i}')
+                backup_dir = target_dir.with_name(f'{target_dir.name}.bak{i}')
                 if not backup_dir.is_dir():
                     target_dir.rename(backup_dir)
                     break
