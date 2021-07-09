@@ -18,6 +18,7 @@ coverage:
           - cuda-unit-test
         branches:
           - main
+          - release/*
     patch:
       default:
         target: 80%
@@ -27,3 +28,4 @@ coverage:
           - cuda-unit-test
         branches:
           - main
+          - release/*
