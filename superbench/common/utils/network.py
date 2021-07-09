@@ -29,7 +29,7 @@ def get_ib_devices():
     """Get available IB devices with available ports in the system and filter ethernet devices.
 
     Return:
-        ib_devices (list): IB devices with available ports in current system.
+        ib_devices_port (list): IB devices with available ports in current system.
     """
     devices = list(p.name for p in Path('/sys/class/infiniband').glob('*'))
     ib_devices_port_dict = {}
