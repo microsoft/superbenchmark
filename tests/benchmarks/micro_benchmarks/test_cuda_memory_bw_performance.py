@@ -11,8 +11,8 @@ import unittest
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-class MemBwTest(unittest.TestCase):
-    """Tests for MemBw benchmark."""
+class CudaMemBwTest(unittest.TestCase):
+    """Test class for cuda mem-bw benchmark."""
     def setUp(self):
         """Method called to prepare the test fixture."""
         # Create fake binary file just for testing.
@@ -26,8 +26,8 @@ class MemBwTest(unittest.TestCase):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
 
-    def test_memory_bw_performance(self):
-        """Test mem-bw benchmark."""
+    def test_cuda_memory_bw_performance(self):
+        """Test cuda mem-bw benchmark."""
         benchmark_name = 'mem-bw'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)

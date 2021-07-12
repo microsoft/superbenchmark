@@ -11,8 +11,8 @@ from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class MemBwCuda(MicroBenchmarkWithInvoke):
-    """The Cuda memory bus bandwidth performance benchmark class."""
+class CudaMemBwBenchmark(MicroBenchmarkWithInvoke):
+    """The Cuda memory performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -142,4 +142,4 @@ class MemBwCuda(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('mem-bw', MemBwCuda, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('mem-bw', CudaMemBwBenchmark, platform=Platform.CUDA)
