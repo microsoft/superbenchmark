@@ -11,8 +11,8 @@ all: cutlass bandwidthTest
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
-	mkdir -p $(SB_MICRO_PATH)/bin; fi
-	mkdir -p $(SB_MICRO_PATH)/lib; fi
+	mkdir -p $(SB_MICRO_PATH)/bin
+	mkdir -p $(SB_MICRO_PATH)/lib
 # Build cutlass.
 cutlass:
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
