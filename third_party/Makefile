@@ -36,3 +36,4 @@ nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd nccl-tests && make MPI=1 MPI_HOME=/usr/local/mpi/ -j
 	cp nccl-tests/build/* $(SB_MICRO_PATH)/bin/
+endif
