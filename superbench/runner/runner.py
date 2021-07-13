@@ -15,24 +15,25 @@ from superbench.runner.ansible import AnsibleClient
 
 class SuperBenchRunner():
     """SuperBench runner class."""
-    def __init__(self, sb_config, docker_config, ansible_config, output_dir):
+    def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
             docker_config (DictConfig): Docker config object.
             ansible_config (DictConfig): Ansible config object.
-            output_dir (str): Dir for output.
+            sb_output_dir (str): SuperBench output directory.
         """
         self._sb_config = sb_config
         self._docker_config = docker_config
         self._ansible_config = ansible_config
-        self._output_dir = output_dir
+        self._sb_output_dir = sb_output_dir
+        self._output_path = Path(sb_output_dir).expanduser().resolve()
         self._ansible_client = AnsibleClient(ansible_config)
 
         self.__set_logger('sb-run.log')
         logger.info('Runner uses config: %s.', self._sb_config)
-        logger.info('Runner writes to: %s.', self._output_dir)
+        logger.info('Runner writes to: %s.', str(self._output_path))
 
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
         self.__validate_sb_config()
@@ -45,7 +46,7 @@ class SuperBenchRunner():
         Args:
             filename (str): Log file name.
         """
-        SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / filename))
+        SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
     def __validate_sb_config(self):
         """Validate SuperBench config object.
@@ -92,13 +93,17 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
-        exec_command = ('sb exec -c sb.config.yaml -C superbench.enable={name}').format(name=benchmark_name)
+        exec_command = ('sb exec --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name}').format(
+            name=benchmark_name,
+            output_dir=self._sb_output_dir,
+        )
         mode_command = exec_command
         if mode.name == 'local':
             mode_command = '{prefix} {command}'.format(
                 prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
                 command=exec_command,
             )
+            mode_command = f'PROC_RANK={mode.proc_rank} {mode_command.strip()}'
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
@@ -124,9 +129,8 @@ class SuperBenchRunner():
         logger.info('Preparing SuperBench environment.')
         extravars = {
             'ssh_port': random.randint(1 << 14, (1 << 15) - 1),
-            'output_dir': self._output_dir,
+            'output_dir': str(self._output_path),
             'docker_image': self._docker_config.image,
-            'gpu_vendor': 'nvidia',
         }
         if bool(self._docker_config.username) and bool(self._docker_config.password):
             extravars.update(
@@ -141,13 +145,30 @@ class SuperBenchRunner():
     def check_env(self):    # pragma: no cover
         """Check SuperBench environment."""
         logger.info('Checking SuperBench environment.')
-        OmegaConf.save(config=self._sb_config, f=str(Path(self._output_dir) / 'sb.config.yaml'))
+        OmegaConf.save(config=self._sb_config, f=str(self._output_path / 'sb.config.yaml'))
         self._ansible_client.run(
             self._ansible_client.get_playbook_config(
                 'check_env.yaml',
                 extravars={
-                    'output_dir': self._output_dir,
+                    'output_dir': str(self._output_path),
                     'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
+                }
+            )
+        )
+
+    def fetch_results(self):    # pragma: no cover
+        """Fetch benchmark results on all nodes."""
+        try:
+            (self._output_path / 'nodes').mkdir(mode=0o755, parents=True, exist_ok=True)
+        except Exception:
+            logger.exception('Failed to create directory %s.', str(self._output_path / 'nodes'))
+            raise
+        self._ansible_client.run(
+            self._ansible_client.get_playbook_config(
+                'fetch_results.yaml',
+                extravars={
+                    'sb_output_dir': self._sb_output_dir,
+                    'absolute_output_dir': str(self._output_path),
                 }
             )
         )
@@ -192,3 +213,4 @@ class SuperBenchRunner():
                     )
                 elif mode.name == 'torch.distributed':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+            self.fetch_results()

@@ -1,4 +1,5 @@
 # SuperBench Config
+version: v0.2
 superbench:
   enable: null
   var:
@@ -32,6 +33,13 @@ superbench:
       modes:
         - name: local
           prefix: NCCL_DEBUG=INFO NCCL_IB_DISABLE=1
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
+          parallel: yes
     kernel-launch:
       <<: *default_local_mode
     gemm-flops:

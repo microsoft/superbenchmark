@@ -7,6 +7,7 @@ import tests.benchmarks.utils as utils
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul, ShardingMode
+from superbench.common.utils import network
 
 
 @decorator.cuda_test
@@ -22,7 +23,9 @@ def test_pytorch_sharding_matmul():
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
 
-    utils.setup_simulated_ddp_distributed_env(1, 0, utils.get_free_port())
+    port = network.get_free_port()
+    assert (port)
+    utils.setup_simulated_ddp_distributed_env(1, 0, port)
     benchmark = BenchmarkRegistry.launch_benchmark(context)
 
     # Check basic information.

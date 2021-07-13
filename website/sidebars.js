@@ -15,14 +15,14 @@ module.exports = {
         'getting-started/run-superbench',
       ],
     },
-    // {
-    //   type: 'category',
-    //   label: 'Benchmarks',
-    //   items: [
-    //     'benchmarks/micro-benchmarks',
-    //     'benchmarks/model-benchmarks',
-    //   ],
-    // },
+    {
+      type: 'category',
+      label: 'Benchmarks',
+      items: [
+        'benchmarks/micro-benchmarks',
+        'benchmarks/model-benchmarks',
+      ],
+    },
     {
       type: 'category',
       label: 'Developer Guides',

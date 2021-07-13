@@ -1,4 +1,9 @@
 # SuperBench Config
+#
+# Server:
+#   - Product: G482-Z53
+#   - Link: https://www.gigabyte.cn/FileUpload/Global/MicroSite/553/G482-Z53.html
+
 version: v0.2
 superbench:
   enable: null
@@ -31,22 +36,6 @@ superbench:
         - train
       pin_memory: yes
   benchmarks:
-    kernel-launch:
-      <<: *default_local_mode
-    gemm-flops:
-      <<: *default_local_mode
-    cudnn-function:
-      <<: *default_local_mode
-    cublas-function:
-      <<: *default_local_mode
-    matmul:
-      <<: *default_local_mode
-      frameworks:
-        - pytorch
-    sharding-matmul:
-      <<: *default_pytorch_mode
-    computation-communication-overlap:
-      <<: *default_pytorch_mode
     gpt_models:
       <<: *default_pytorch_mode
       models:
@@ -82,8 +71,7 @@ superbench:
         - resnet152
       parameters:
         <<: *common_model_config
-        batch_size: 192
-        num_steps: 512
+        pin_memory: no
     densenet_models:
       <<: *default_pytorch_mode
       models:

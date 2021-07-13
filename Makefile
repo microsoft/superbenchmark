@@ -21,5 +21,5 @@ postinstall:
 ifeq ($(shell which ansible-galaxy),)
 	$(error 'Cannot find ansible-galaxy')
 else
-	ansible-galaxy collection install ansible.utils community.crypto
+	ansible-galaxy collection install ansible.posix ansible.utils community.crypto
 endif

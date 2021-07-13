@@ -4,15 +4,15 @@
 
 SB_MICRO_PATH ?= "/usr/local"
 
-.PHONY: all cutlass nccl_tests
+.PHONY: all cutlass bandwidthTest nccl_tests
 
 # Build all targets.
-all: cutlass nccl_tests
+all: cutlass bandwidthTest nccl_tests
 
-# Create $(SB_MICRO_PATH)/bin and  $(SB_MICRO_PATH)/lib if not exist.
+# Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
-	if [ ! -d  $(SB_MICRO_PATH)/bin ]; then mkdir -p $(SB_MICRO_PATH)/bin; fi
-	if [ ! -d $(SB_MICRO_PATH)/lib ]; then mkdir -p $(SB_MICRO_PATH)/lib; fi
+	mkdir -p $(SB_MICRO_PATH)/bin
+	mkdir -p $(SB_MICRO_PATH)/lib
 # Build cutlass.
 cutlass: 
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
@@ -20,9 +20,19 @@ ifneq (,$(wildcard cutlass/CMakeLists.txt))
 		-DCUTLASS_NVCC_ARCHS='70;80' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
 	cmake --build ./cutlass/build -j 8 --target install
 endif
+# Build cuda-samples/Samples/bandwidthTest.
+# cuda-samples is released together with CUDA, they have the exact same version. Like v10.0, v11.1 and so on.
+# The version we use is the released tag of cuda-samples which is consistent with the cuda version in the environment or docker.
+# The Makefile of bandwidthTest does not have 'install' target, so need to copy bin to $(SB_MICRO_PATH)/bin/ and create $(SB_MICRO_PATH)/bin/ if not existing.
+bandwidthTest: sb_micro_path
+ifneq (,$(wildcard cuda-samples/Samples/bandwidthTest/Makefile))
+	cd cuda-samples && git checkout v$(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
+	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
+	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
+endif
 # Build nccl-tests.
+# The version we use is just the master branch, due to it didn't update for long time.
 nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd nccl-tests && make MPI=1 MPI_HOME=/usr/local/mpi/ -j
 	cp nccl-tests/build/* $(SB_MICRO_PATH)/bin/
-endif
