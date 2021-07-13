@@ -28,6 +28,13 @@ superbench:
       model_action:
         - train
   benchmarks:
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
+          parallel: yes
     kernel-launch:
       <<: *default_local_mode
     gemm-flops:
