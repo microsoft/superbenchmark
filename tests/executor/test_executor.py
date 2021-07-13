@@ -27,17 +27,17 @@ class ExecutorTestCase(unittest.TestCase):
         default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
         with default_config_file.open() as fp:
             self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
-        self.output_dir = tempfile.mkdtemp()
+        self.sb_output_dir = tempfile.mkdtemp()
 
-        self.executor = SuperBenchExecutor(self.default_config, self.output_dir)
+        self.executor = SuperBenchExecutor(self.default_config, self.sb_output_dir)
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""
-        shutil.rmtree(self.output_dir)
+        shutil.rmtree(self.sb_output_dir)
 
     def test_set_logger(self):
         """Test log file exists."""
-        expected_log_file = Path(self.executor._output_dir) / 'sb-exec.log'
+        expected_log_file = Path(self.executor._sb_output_dir) / 'sb-exec.log'
         self.assertTrue(expected_log_file.is_file())
 
     def test_get_enabled_benchmarks_enable_none(self):
@@ -57,8 +57,10 @@ class ExecutorTestCase(unittest.TestCase):
         expected_enabled_benchmarks = ['benchmark_alpha', 'benchmark_beta']
         self.assertListEqual(self.executor._SuperBenchExecutor__get_enabled_benchmarks(), expected_enabled_benchmarks)
 
-    def test_get_platform(self):
+    @mock.patch('pathlib.Path.is_char_device')
+    def test_get_platform(self, mock_is_char_device):
         """Test get platform."""
+        mock_is_char_device.return_value = True
         self.assertEqual(self.executor._SuperBenchExecutor__get_platform().value, 'CUDA')
 
     def test_get_arguments(self):
@@ -92,7 +94,7 @@ class ExecutorTestCase(unittest.TestCase):
 
     def test_create_benchmark_dir(self):
         """Test __create_benchmark_dir."""
-        foo_path = Path(self.output_dir, 'benchmarks', 'foo')
+        foo_path = Path(self.sb_output_dir, 'benchmarks', 'foo', 'rank0')
         self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
         self.assertTrue(foo_path.is_dir())
         self.assertFalse(any(foo_path.iterdir()))
@@ -102,20 +104,20 @@ class ExecutorTestCase(unittest.TestCase):
         self.assertTrue(foo_path.is_dir())
         self.assertFalse(any(foo_path.iterdir()))
         self.assertFalse((foo_path / 'bar.txt').is_file())
-        self.assertTrue(foo_path.with_name('foo.1').is_dir())
-        self.assertTrue((foo_path.with_name('foo.1') / 'bar.txt').is_file())
+        self.assertTrue(foo_path.with_name('rank0.bak1').is_dir())
+        self.assertTrue((foo_path.with_name('rank0.bak1') / 'bar.txt').is_file())
 
         (foo_path / 'bar.json').touch()
         self.executor._SuperBenchExecutor__create_benchmark_dir('foo')
         self.assertTrue(foo_path.is_dir())
         self.assertFalse(any(foo_path.iterdir()))
         self.assertFalse((foo_path / 'bar.json').is_file())
-        self.assertTrue(foo_path.with_name('foo.2').is_dir())
-        self.assertTrue((foo_path.with_name('foo.2') / 'bar.json').is_file())
+        self.assertTrue(foo_path.with_name('rank0.bak2').is_dir())
+        self.assertTrue((foo_path.with_name('rank0.bak2') / 'bar.json').is_file())
 
     def test_write_benchmark_results(self):
         """Test __write_benchmark_results."""
-        foobar_path = Path(self.output_dir, 'benchmarks', 'foobar')
+        foobar_path = Path(self.sb_output_dir, 'benchmarks', 'foobar', 'rank0')
         foobar_results_path = foobar_path / 'results.json'
         self.executor._SuperBenchExecutor__create_benchmark_dir('foobar')
         foobar_results = {
@@ -142,7 +144,7 @@ class ExecutorTestCase(unittest.TestCase):
         mock_exec_benchmark.return_value = {}
         self.executor.exec()
 
-        self.assertTrue(Path(self.output_dir, 'benchmarks').is_dir())
+        self.assertTrue(Path(self.sb_output_dir, 'benchmarks').is_dir())
         for benchmark_name in self.executor._sb_benchmarks:
-            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name).is_dir())
-            self.assertTrue(Path(self.output_dir, 'benchmarks', benchmark_name, 'results.json').is_file())
+            self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'rank0').is_dir())
+            self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'rank0', 'results.json').is_file())

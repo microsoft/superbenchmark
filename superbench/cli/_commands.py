@@ -41,6 +41,11 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             ac.argument('host_list', options_list=('--host-list', '-l'), type=str, help='Comma separated host list.')
             ac.argument('host_username', type=str, help='Host username if needed.')
             ac.argument('host_password', type=str, help='Host password or key passphase if needed.')
+            ac.argument(
+                'output_dir',
+                type=str,
+                help='Path to output directory, outputs/{datetime} will be used if not specified.'
+            )
             ac.argument('private_key', type=str, help='Path to private key if needed.')
             ac.argument(
                 'config_file', options_list=('--config-file', '-c'), type=str, help='Path to SuperBench config file.'

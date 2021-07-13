@@ -3,31 +3,33 @@
 
 """SuperBench Executor."""
 
+import os
 import json
-import itertools
 from pathlib import Path
 
 from omegaconf import ListConfig
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
-from superbench.common.utils import SuperBenchLogger, logger
+from superbench.common.utils import SuperBenchLogger, logger, rotate_dir
+from superbench.common.devices import GPU
 
 
 class SuperBenchExecutor():
     """SuperBench executor class."""
-    def __init__(self, sb_config, output_dir):
+    def __init__(self, sb_config, sb_output_dir):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
-            output_dir (str): Dir for output.
+            sb_output_dir (str): SuperBench output directory.
         """
         self._sb_config = sb_config
-        self._output_dir = output_dir
+        self._sb_output_dir = sb_output_dir
+        self._output_path = Path(sb_output_dir).expanduser().resolve()
 
         self.__set_logger('sb-exec.log')
         logger.info('Executor uses config: %s.', self._sb_config)
-        logger.info('Executor writes to: %s.', self._output_dir)
+        logger.info('Executor writes to: %s.', str(self._output_path))
 
         self.__validate_sb_config()
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
@@ -40,7 +42,7 @@ class SuperBenchExecutor():
         Args:
             filename (str): Log file name.
         """
-        SuperBenchLogger.add_handler(logger.logger, filename=str(Path(self._output_dir) / filename))
+        SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
     def __validate_sb_config(self):
         """Validate SuperBench config object.
@@ -66,8 +68,15 @@ class SuperBenchExecutor():
 
     def __get_platform(self):
         """Detect runninng platform by environment."""
-        # TODO: check devices and env vars
-        return Platform.CUDA
+        try:
+            gpu = GPU()
+            if gpu.vendor == 'nvidia':
+                return Platform.CUDA
+            elif gpu.vendor == 'amd':
+                return Platform.ROCM
+        except Exception as e:
+            logger.error(e)
+        return Platform.CPU
 
     def __get_arguments(self, parameters):
         """Get command line arguments for argparse.
@@ -84,8 +93,9 @@ class SuperBenchExecutor():
         for name, val in parameters.items():
             if val is None:
                 continue
-            if isinstance(val, bool) and val:
-                argv.append('--{}'.format(name))
+            if isinstance(val, bool):
+                if val:
+                    argv.append('--{}'.format(name))
             elif isinstance(val, (str, int, float)):
                 argv.append('--{} {}'.format(name, val))
             elif isinstance(val, (list, ListConfig)):
@@ -121,21 +131,30 @@ class SuperBenchExecutor():
             logger.error('Executor failed in %s.', log_suffix)
         return None
 
+    def __get_benchmark_dir(self, benchmark_name):
+        """Get output directory for benchmark's current rank.
+
+        Args:
+            benchmark_name (str): Benchmark name.
+        """
+        benchmark_output_dir = self._output_path / 'benchmarks' / benchmark_name
+        for rank_env in ['PROC_RANK', 'LOCAL_RANK']:
+            if os.getenv(rank_env):
+                return benchmark_output_dir / 'rank{}'.format(os.getenv(rank_env))
+        return benchmark_output_dir / 'rank0'
+
     def __create_benchmark_dir(self, benchmark_name):
         """Create output directory for benchmark.
 
         Args:
             benchmark_name (str): Benchmark name.
         """
-        benchmark_output_dir = Path(self._output_dir, 'benchmarks', benchmark_name)
-        if benchmark_output_dir.is_dir() and any(benchmark_output_dir.iterdir()):
-            logger.warning('Benchmark output directory %s is not empty.', str(benchmark_output_dir))
-            for i in itertools.count(start=1):
-                backup_dir = benchmark_output_dir.with_name('{}.{}'.format(benchmark_name, i))
-                if not backup_dir.is_dir():
-                    benchmark_output_dir.rename(backup_dir)
-                    break
-        benchmark_output_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
+        rotate_dir(self.__get_benchmark_dir(benchmark_name))
+        try:
+            self.__get_benchmark_dir(benchmark_name).mkdir(mode=0o755, parents=True, exist_ok=True)
+        except Exception:
+            logger.exception('Failed to create output directory for benchmark %s.', benchmark_name)
+            raise
 
     def __write_benchmark_results(self, benchmark_name, benchmark_results):
         """Write benchmark results.
@@ -144,7 +163,7 @@ class SuperBenchExecutor():
             benchmark_name (str): Benchmark name.
             benchmark_results (dict): Benchmark results.
         """
-        with Path(self._output_dir, 'benchmarks', benchmark_name, 'results.json').open(mode='w') as f:
+        with (self.__get_benchmark_dir(benchmark_name) / 'results.json').open(mode='w') as f:
             json.dump(benchmark_results, f, indent=2)
 
     def exec(self):

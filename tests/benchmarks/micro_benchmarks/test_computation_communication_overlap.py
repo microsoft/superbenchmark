@@ -10,6 +10,7 @@ import tests.benchmarks.utils as utils
 from superbench.benchmarks import BenchmarkRegistry, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.micro_benchmarks.computation_communication_overlap \
     import ComputationCommunicationOverlap, ComputationKernelType
+from superbench.common.utils import network
 
 
 # TODO - replace unittest.skip("no multiple GPUs") to decorator of skipIfNoMultiGPUS
@@ -26,6 +27,7 @@ def test_pytorch_computation_communication_overlap_normal():
     world_size = 2
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
     results = utils.simulated_ddp_distributed_benchmark(context, world_size)
+    assert (results)
     for benchmark in results:
         # Check basic information.
         assert (benchmark)
@@ -56,7 +58,9 @@ def test_pytorch_computation_communication_overlap_fake_distributed():
         parameters='--num_warmup 5 --num_steps 10 --ratio 5',
         framework=Framework.PYTORCH
     )
-    utils.setup_simulated_ddp_distributed_env(1, 0, utils.get_free_port())
+    port = network.get_free_port()
+    assert (port)
+    utils.setup_simulated_ddp_distributed_env(1, 0, port)
     benchmark = BenchmarkRegistry.launch_benchmark(context)
 
     # Check basic information.

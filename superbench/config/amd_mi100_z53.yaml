@@ -1,4 +1,9 @@
 # SuperBench Config
+#
+# Server:
+#   - Product: G482-Z53
+#   - Link: https://www.gigabyte.cn/FileUpload/Global/MicroSite/553/G482-Z53.html
+
 version: v0.2
 superbench:
   enable: null
@@ -20,45 +25,25 @@ superbench:
         - pytorch
     common_model_config: &common_model_config
       duration: 0
-      num_warmup: 16
-      num_steps: 128
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 32
       precision:
         - float32
         - float16
       model_action:
         - train
+      pin_memory: yes
   benchmarks:
-    mem-bw:
-      enable: true
-      modes:
-        - name: local
-          proc_num: 8
-          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
-          parallel: yes
-    kernel-launch:
-      <<: *default_local_mode
-    gemm-flops:
-      <<: *default_local_mode
-    cudnn-function:
-      <<: *default_local_mode
-    cublas-function:
-      <<: *default_local_mode
-    matmul:
-      <<: *default_local_mode
-      frameworks:
-        - pytorch
-    sharding-matmul:
-      <<: *default_pytorch_mode
-    computation-communication-overlap:
-      <<: *default_pytorch_mode
     gpt_models:
       <<: *default_pytorch_mode
       models:
-        - gpt2-small
         - gpt2-large
       parameters:
         <<: *common_model_config
-        batch_size: 4
+        batch_size: 8
+        seq_len: 224
     bert_models:
       <<: *default_pytorch_mode
       models:
@@ -66,14 +51,18 @@ superbench:
         - bert-large
       parameters:
         <<: *common_model_config
-        batch_size: 8
+        seq_len: 224
     lstm_models:
       <<: *default_pytorch_mode
       models:
         - lstm
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        batch_size: 224
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
     resnet_models:
       <<: *default_pytorch_mode
       models:
@@ -82,7 +71,7 @@ superbench:
         - resnet152
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        pin_memory: no
     densenet_models:
       <<: *default_pytorch_mode
       models:
@@ -90,7 +79,7 @@ superbench:
         - densenet201
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        pin_memory: no
     vgg_models:
       <<: *default_pytorch_mode
       models:
@@ -100,4 +89,4 @@ superbench:
         - vgg19
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        pin_memory: no

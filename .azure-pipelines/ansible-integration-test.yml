@@ -3,6 +3,7 @@
 
 trigger:
   - main
+  - release/*
 
 pool:
   name: SuperBench CI
