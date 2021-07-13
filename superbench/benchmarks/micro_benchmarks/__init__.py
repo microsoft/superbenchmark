@@ -11,9 +11,9 @@ from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchma
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.gemm_flops_performance import GemmFlopsCuda
 from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import CudaMemBwBenchmark
-from superbench.benchmarks.micro_benchmarks.nccl_bw_performance import NcclBw
+from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
-    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'CudaMemBwBenchmark', 'NcclBw'
+    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'CudaMemBwBenchmark', 'CudaNcclBwBenchmark'
 ]

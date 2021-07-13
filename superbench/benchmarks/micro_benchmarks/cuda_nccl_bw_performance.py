@@ -11,7 +11,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class NcclBw(MicroBenchmarkWithInvoke):
+class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
     """The NCCL bus bandwidth performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -137,4 +137,4 @@ class NcclBw(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('nccl-bw', NcclBw, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('nccl-bw', CudaNcclBwBenchmark, platform=Platform.CUDA)

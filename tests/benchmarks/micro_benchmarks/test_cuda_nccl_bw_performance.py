@@ -11,8 +11,8 @@ from pathlib import Path
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-class NcclBwTest(unittest.TestCase):
-    """Tests for NcclBw benchmark."""
+class CudaNcclBwBenchmarkTest(unittest.TestCase):
+    """Tests for CudaNcclBwBenchmark benchmark."""
     def setUp(self):
         """Method called to prepare the test fixture."""
         # Create fake binary file just for testing.
