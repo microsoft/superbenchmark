@@ -1,5 +1,6 @@
 # <!-- omit in toc -->Superbench Executor Design
 
+## <!-- omit in toc -->Table of Content
 - [Goals](#goals)
 - [Design Principle](#design-principle)
 - [Architecture](#architecture)

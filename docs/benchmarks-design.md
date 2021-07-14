@@ -1,5 +1,6 @@
 # <!-- omit in toc --> Superbenchmark Benchmarks Abstraction
 
+## <!-- omit in toc -->Table of Content
 - [Introduction](#introduction)
   - [Overview](#overview)
   - [Goals](#goals)
