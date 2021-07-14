@@ -15,6 +15,7 @@ __all__ = [
     'create_sb_output_dir',
     'get_sb_config',
     'logger',
+    'network',
     'nv_helper',
     'rotate_dir',
 ]
