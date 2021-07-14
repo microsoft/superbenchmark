@@ -1,4 +1,25 @@
-# Superbenchmark Benchmarks Abstraction
+# <!-- omit in toc --> Superbenchmark Benchmarks Abstraction
+
+- [Introduction](#introduction)
+  - [Overview](#overview)
+  - [Goals](#goals)
+- [High-level Technical Design](#high-level-technical-design)
+- [Detailed Technical Design](#detailed-technical-design)
+  - [ModelBase Benchmarks](#modelbase-benchmarks)
+    - [Training](#training)
+    - [Inference](#inference)
+  - [Micro Benchmarks](#micro-benchmarks)
+  - [DockerBase Benchmarks](#dockerbase-benchmarks)
+  - [Benchmark Registry](#benchmark-registry)
+    - [Design](#design)
+    - [Examples](#examples)
+- [Interfaces](#interfaces)
+  - [Inputs](#inputs)
+  - [Invoke](#invoke)
+  - [Outputs](#outputs)
+    - [Design](#design-1)
+    - [Example](#example)
+- [Appendix](#appendix)
 
 ## Introduction
 

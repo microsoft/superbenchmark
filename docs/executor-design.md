@@ -1,4 +1,31 @@
-# Superbench Executor Design
+# <!-- omit in toc -->Superbench Executor Design
+
+- [Goals](#goals)
+- [Design Principle](#design-principle)
+- [Architecture](#architecture)
+- [Pipeline](#pipeline)
+- [Components](#components)
+  - [SB CLI](#sb-cli)
+  - [SB Runner](#sb-runner)
+  - [SB Executor](#sb-executor)
+  - [Benchmarks](#benchmarks)
+- [Interfaces](#interfaces)
+  - [User Config File](#user-config-file)
+    - [Config YAML](#config-yaml)
+  - [User Host File](#user-host-file)
+    - [host.ini](#hostini)
+    - [host.yaml](#hostyaml)
+  - [SB CLI](#sb-cli-1)
+    - [SB Version](#sb-version)
+    - [SB Deploy](#sb-deploy)
+    - [SB Run](#sb-run)
+    - [SB Exec](#sb-exec)
+- [Implementation Choices and Preference](#implementation-choices-and-preference)
+  - [Provisioning and deployment](#provisioning-and-deployment)
+  - [Configuration Framework](#configuration-framework)
+  - [Command Line Interface Framework](#command-line-interface-framework)
+- [Reference](#reference)
+- [Revision History](#revision-history)
 
 ## Goals
 
