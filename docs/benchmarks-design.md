@@ -43,7 +43,7 @@ However the current structure of all the benchmarks are very loose. The pain poi
 7.	Some benchmarks have big variance, it’s hard to do the confirmation and investigation manually.
 8.	Hard to detect the interruption of running, especially for microbenchmarks which is launched by system call.
 
-This document will present a new design for the benchamrks to avoid the above pain points. 
+This document will present a new design for the benchmarks to avoid the above pain points. 
 
 ### Goals
 
@@ -66,7 +66,7 @@ The structure of Benchmarks package can be divided into three layers from the bo
 a)	ModelBase is the base class for all the public E2E models. It defines the abstract interfaces that need to be implemented by the subclasses. It has three subclasses, including PytorchModel, TFModel and ONNXModel. Each subclass will realize part of the abstract interfaces that is common for all models, such as “create_optimizer()”, “init_dataloader()”.
 b)	MicrobenchmarkBase is the base class for all the micro benchmarks. It defines the abstract interfaces that need to be implemented by the subclasses, such as “benchmarking()”, “format_output()” and so on.
 c)	DockerBase is the base class for real workloads based on docker. It also defines the abstract interfaces that need to be implemented by the subclasses, such as “prepare_image()”, “benchmarking()” and so on.
-2.	Derived classes for all implemented benchmarks, realized all the abstract interfaces. The benchmarks will be registed into Benchmark Registry.
+2.	Derived classes for all implemented benchmarks, realized all the abstract interfaces. The benchmarks will be registered into Benchmark Registry.
 3.	Benchmark Registry: provides a way of benchmark registration, maintains all the registered benchmarks and supports benchmark selection by tag, which can be used to select desired benchmark, e.g., use the type of accelerator as the tag.
 The Executor on the uppermost layer is the entrance for all the benchmarks, it fetches the benchmark by name from Benchmark Registry, instantiates the benchmark with user configs and launches the benchmark. 
 Util provides some utility functions or classes such as RandomDataset generator, accelerator detector.
