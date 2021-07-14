@@ -72,6 +72,7 @@ The Executor on the uppermost layer is the entrance for all the benchmarks, it f
 Util provides some utility functions or classes such as RandomDataset generator, accelerator detector.
 
 ![Structure of Benchmark Package](./assets/benchmark_package.png)
+*Figure 1 Structure of Benchmarks package*
 
 ## Detailed Technical Design
 
@@ -90,6 +91,7 @@ Init_distributed_setting -> create_dataset -> create_dataloader -> create_model 
 The responsibility for function implementation of every layer is as Figure2. The “train” function of ModelBase will execute these functions according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
 
 ![Training process and the responsibility for function implementation of every layer](./assets/training-process.png)
+*Figure 2 Training process and the responsibility for function implementation of every layer*
 
 #### Inference
 
@@ -100,18 +102,21 @@ Init_distributed_setting -> create_dataset -> create_dataloader -> create_model 
 Compared with training, it just gets rid of “add_optimizer()” operation. And the responsibility for function implementation of every layer is as Figure 3. The “inference” function of ModelBase will execute these functions according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
 
 ![Inference process and the responsibility for function implementation of every layer](./assets/inference-process.png)
+*Figure 3 Inference process and the responsibility for function implementation of every layer*
 
 ### Micro Benchmarks
 
 The micro-benchmarks have 2-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 4. The functions that exist in derived class and not in base class are abstract functions.
 
 ![micro-benchmarks benchmarking process and the responsibility for function implementation of every layer](./assets/micro-benchmark-process.png)
+*Figure 4 micro-benchmarks benchmarking process and the responsibility for function implementation of every layer*
 
 ### DockerBase Benchmarks
 
 The DockerBase benchmarks have 2-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 5. The DockerBase benchmarks need docker env ready.
 
 ![docker-benchmarks benchmarking process and the responsibility for function implementation of every layer](./assets/docker-benchmark-process.png)
+*Figure 5 docker-benchmarks benchmarking process and the responsibility for function implementation of every layer*
 
 ### Benchmark Registry
 
