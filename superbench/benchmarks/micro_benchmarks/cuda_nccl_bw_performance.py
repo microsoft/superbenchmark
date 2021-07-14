@@ -105,7 +105,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + self._args.algo[cmd_idx], raw_output)
 
         content = raw_output.splitlines()
-
+        busbw_out = -1
         try:
             # Filter useless output
             out_of_place_index = -1
@@ -115,14 +115,13 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     out_of_place_index = index
                 if 'Out of bounds values' in line:
                     out_of_bounds_values = index
-            content = content[out_of_place_index + 4:out_of_bounds_values]
+            content = content[out_of_place_index + 3:out_of_bounds_values]
             # Parse max out of bound bus bw as the result
-            busbw_out = -1
             for line in content:
                 line = line.strip(' ')
                 line = re.sub(r' +', ' ', line).split(' ')
-                if len(line) <= 10:
-                    break
+                if not re.match(r'\d+', line[0]):
+                    continue
                 busbw_out = max(busbw_out, float(line[-6]))
         except BaseException:
             logger.error(
@@ -131,8 +130,8 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                 )
             )
             return False
-
-        self._result.add_result(self._args.algo[cmd_idx], busbw_out)
+        if busbw_out != -1:
+            self._result.add_result(self._args.algo[cmd_idx], busbw_out)
 
         return True
 

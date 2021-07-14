@@ -21,8 +21,8 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
         Path(binary_path).mkdir(parents=True, exist_ok=True)
         self.__binary_files = []
         for bin_name in ['all_reduce_perf', 'all_gather_perf', 'broadcast_perf', 'reduce_perf', 'reduce_scatter_perf']:
-            self.__binary_files.append(Path(os.path.join(binary_path, bin_name)))
-            Path(os.path.join(binary_path, bin_name)).touch(mode=0o755, exist_ok=True)
+            self.__binary_files.append(Path(binary_path, bin_name))
+            Path(binary_path, bin_name).touch(mode=0o755, exist_ok=True)
 
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
@@ -79,6 +79,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 #                                             out-of-place                       in-place
 #       size         count    type     time   algbw   busbw  error     time   algbw   busbw  error
 #        (B)    (elements)             (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)
+hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
            0             0   float    34.27    0.00    0.00    N/A    33.57    0.00    0.00    N/A
            0             0   float    33.41    0.00    0.00    N/A    33.62    0.00    0.00    N/A
            0             0   float    33.94    0.00    0.00    N/A    33.48    0.00    0.00    N/A
@@ -133,6 +134,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 #                                                     out-of-place                       in-place
 #       size         count    type   redop     time   algbw   busbw  error     time   algbw   busbw  error
 #        (B)    (elements)                     (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)
+hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
            0             0   float     sum    35.20    0.00    0.00    N/A    34.05    0.00    0.00    N/A
            0             0   float     sum    34.18    0.00    0.00    N/A    33.50    0.00    0.00    N/A
            4             1   float     sum    34.73    0.00    0.00    N/A    35.30    0.00    0.00    N/A
@@ -187,6 +189,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 #                                                     out-of-place                       in-place
 #       size         count    type   redop    root     time   algbw   busbw  error     time   algbw   busbw  error
 #        (B)    (elements)                             (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)
+hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
            0             0   float     sum       0    36.90    0.00    0.00    N/A    36.47    0.00    0.00    N/A
            0             0   float     sum       0    34.18    0.00    0.00    N/A    35.70    0.00    0.00    N/A
            4             1   float     sum       0    35.40    0.00    0.00    N/A    35.59    0.00    0.00    N/A
@@ -241,6 +244,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 #                                                     out-of-place                       in-place
 #       size         count    type    root     time   algbw   busbw  error     time   algbw   busbw  error
 #        (B)    (elements)                     (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)
+hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
            0             0   float       0    34.61    0.00    0.00    N/A    34.33    0.00    0.00    N/A
            0             0   float       0    34.43    0.00    0.00    N/A    35.06    0.00    0.00    N/A
            4             1   float       0    33.96    0.00    0.00    N/A    33.80    0.00    0.00    N/A
@@ -295,6 +299,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 #                                                     out-of-place                       in-place
 #       size         count    type   redop     time   algbw   busbw  error     time   algbw   busbw  error
 #        (B)    (elements)                     (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)
+hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
            0             0   float     sum    34.88    0.00    0.00    N/A    33.65    0.00    0.00    N/A
            0             0   float     sum    33.54    0.00    0.00    N/A    33.72    0.00    0.00    N/A
            0             0   float     sum    33.45    0.00    0.00    N/A    33.44    0.00    0.00    N/A
