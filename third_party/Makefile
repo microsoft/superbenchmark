@@ -27,7 +27,5 @@ endif
 bandwidthTest: sb_micro_path
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
 	git clone -b v$(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2) https://github.com/NVIDIA/cuda-samples.git ./cuda-samples
-ifneq (,$(wildcard cuda-samples/Samples/bandwidthTest/Makefile))
 	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
 	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
-endif
