@@ -86,12 +86,6 @@ RUN cd /tmp && \
     rm -rf nccl
 
 # TODO: move to gitmodules
-RUN git clone -b v4.5-0.2 https://github.com/linux-rdma/perftest.git /usr/local/perftest && \
-    cd /usr/local/perftest && \
-    ./autogen.sh && \
-    ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h && \
-    make -j && \
-    make install
 RUN git clone https://github.com/nvidia/nccl-tests /usr/local/nccl-tests && \
     cd /usr/local/nccl-tests && \
     make MPI=1 MPI_HOME=/usr/local/mpi/ -j
