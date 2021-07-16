@@ -36,6 +36,7 @@ RUN apt-get update && \
     util-linux \
     vim \
     wget \
+    numactl \
     && \
     apt-get autoremove && \
     apt-get clean && \
