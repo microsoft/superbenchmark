@@ -14,6 +14,7 @@ all: cutlass bandwidthTest nccl_tests
 sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/bin
 	mkdir -p $(SB_MICRO_PATH)/lib
+
 # Build cutlass.
 cutlass: 
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
@@ -21,6 +22,7 @@ ifneq (,$(wildcard cutlass/CMakeLists.txt))
 		-DCUTLASS_NVCC_ARCHS='70;80' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
 	cmake --build ./cutlass/build -j 8 --target install
 endif
+
 # Build cuda-samples/Samples/bandwidthTest.
 # cuda-samples is released together with CUDA, they have the exact same version. Like v10.0, v11.1 and so on.
 # The version we use is the released tag of cuda-samples which is consistent with the cuda version in the environment or docker.
@@ -30,10 +32,11 @@ bandwidthTest: sb_micro_path
 	git clone -b v$(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2) https://github.com/NVIDIA/cuda-samples.git ./cuda-samples
 	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
 	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
+
 # Build nccl-tests.
 # The version we use is commit 44df0bf from master branch, due to it didn't update release tag for long time.
 nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
-	cd nccl-tests && make MPI=1 MPI_HOME=/usr/local/mpi/ -j
-	cp nccl-tests/build/* $(SB_MICRO_PATH)/bin/
+	cd ./nccl-tests && make MPI=1 MPI_HOME=$(whereis mpi | grep 'mpi' | awk '{print $$2}') -j
+	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
