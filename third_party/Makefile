@@ -6,10 +6,10 @@
 SB_MICRO_PATH ?= "/usr/local"
 MPI_HOME_PATH ?= "/usr/local/mpi"
 
-.PHONY: all cutlass bandwidthTest nccl_tests fio
+.PHONY: all cutlass bandwidthTest nccl_tests perftest fio
 
 # Build all targets.
-all: cutlass bandwidthTest nccl_tests fio
+all: cutlass bandwidthTest nccl_tests perftest fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -40,6 +40,13 @@ nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME_PATH) -j
 	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
+endif
+
+# Build perftest.
+# The version we use is the tag v4.5-0.2.
+perftest: sb_micro_path
+ifneq (,$(wildcard perftest/autogen.sh))
+	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
 # Build FIO from commit 0313e9 (fio-3.27 tag).
