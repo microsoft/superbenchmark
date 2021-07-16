@@ -31,7 +31,7 @@ bandwidthTest: sb_micro_path
 	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
 	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
 # Build nccl-tests.
-# The version we use is just the master branch, due to it didn't update for long time.
+# The version we use is commit 44df0bf from master branch, due to it didn't update release tag for long time.
 nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd nccl-tests && make MPI=1 MPI_HOME=/usr/local/mpi/ -j
