@@ -93,7 +93,7 @@ RUN git clone -b v4.5-0.2 https://github.com/linux-rdma/perftest.git /usr/local/
     make -j && \
     make install
 
-ENV PATH="/usr/local/nccl-tests/build:${PATH}" \
+ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
     SB_MICRO_PATH="/opt/superbench"
