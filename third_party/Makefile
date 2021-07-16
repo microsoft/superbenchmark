@@ -4,10 +4,10 @@
 
 SB_MICRO_PATH ?= "/usr/local"
 
-.PHONY: all cutlass bandwidthTest
+.PHONY: all cutlass bandwidthTest fio
 
 # Build all targets.
-all: cutlass bandwidthTest
+all: cutlass bandwidthTest fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -29,3 +29,11 @@ bandwidthTest: sb_micro_path
 	git clone -b v$(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2) https://github.com/NVIDIA/cuda-samples.git ./cuda-samples
 	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
 	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
+# Build FIO (3.27).
+fio: sb_micro_path
+ifneq (,$(wildcard fio/Makefile))
+	cd ./fio
+	./configure --prefix=$(SB_MICRO_PATH)
+	make -j
+	make install
+endif

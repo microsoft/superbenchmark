@@ -2,3 +2,6 @@
 	path = third_party/cutlass
 	url = https://github.com/NVIDIA/cutlass.git
 	branch = v2.4.0
+[submodule "third_party/fio"]
+	path = third_party/fio
+	url = https://github.com/axboe/fio.git
