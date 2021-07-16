@@ -16,6 +16,7 @@ class IBLoopback(MicroBenchmarkWithInvoke):
     """The IB loopback performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
+
         Args:
             name (str): benchmark name.
             parameters (str): benchmark parameters.
@@ -74,8 +75,10 @@ class IBLoopback(MicroBenchmarkWithInvoke):
 
     def __get_numa_cores(self, numa_index):
         """Get the last two cores from different physical cpu core of NUMA<numa_index>.
+
         Args:
             numa_index (int): the index of numa node.
+
         Return:
             The last two cores from different physical cpu core of NUMA<numa_index>.
         """
@@ -87,6 +90,7 @@ class IBLoopback(MicroBenchmarkWithInvoke):
 
     def __get_arguments_from_env(self):
         """Read environment variables from runner used for parallel and fill in ib_index and numa_node_index.
+
         Get 'PROC_RANK'(rank of current process) 'IB_DEVICES' 'NUMA_NODES' environment variables
         Get ib_index and numa_node_index according to 'NUMA_NODES'['PROC_RANK'] and 'IB_DEVICES'['PROC_RANK']
         """
@@ -99,6 +103,7 @@ class IBLoopback(MicroBenchmarkWithInvoke):
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
+
         Return:
             True if _preprocess() succeed.
         """
@@ -166,10 +171,13 @@ class IBLoopback(MicroBenchmarkWithInvoke):
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
+
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
             raw_output (str): raw output string of the micro-benchmark.
+
         Return:
             True if the raw output string is valid and result can be extracted.
         """
