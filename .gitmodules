@@ -2,3 +2,6 @@
 	path = third_party/cutlass
 	url = https://github.com/NVIDIA/cutlass.git
 	branch = v2.4.0
+[submodule "third_party/perftest"]
+	path = third_party/perftest
+	url = https://github.com/linux-rdma/perftest.git
