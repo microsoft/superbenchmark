@@ -1,13 +1,15 @@
+
 # Copyright (c) Microsoft Corporation - All rights reserved
 # Licensed under the MIT License
 
 
 SB_MICRO_PATH ?= "/usr/local"
+MPI_HOME_PATH ?= "/usr/local/mpi"
 
-.PHONY: all cutlass bandwidthTest fio
+.PHONY: all cutlass bandwidthTest nccl_tests fio
 
 # Build all targets.
-all: cutlass bandwidthTest fio
+all: cutlass bandwidthTest nccl_tests fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -32,8 +34,15 @@ bandwidthTest: sb_micro_path
 	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
 	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
 
-# Build FIO (3.27).
+# The version we use is commit 44df0bf from master branch, since it didn't update release tag for long time.
+nccl_tests: sb_micro_path
+ifneq (,$(wildcard nccl-tests/Makefile))
+	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME_PATH) -j
+	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
+endif
+
+# Build FIO from commit 0313e9 (fio-3.27 tag).
 fio: sb_micro_path
 ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
-endif
+# Build nccl-tests.
