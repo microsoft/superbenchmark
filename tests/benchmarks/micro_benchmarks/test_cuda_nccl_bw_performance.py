@@ -62,6 +62,10 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
             assert (commnad == expected_command)
 
         # Check results and metrics.
+        # Case with no raw_output
+        assert (benchmark._process_raw_result(0, ''))
+        assert (len(benchmark.result) == 0)
+        # Case with valid raw_output
         raw_output = {}
         raw_output['allgather'] = """
 # nThread 1 nGpus 8 minBytes 1 maxBytes 8589934592 step: 2(factor) warmup iters: 5 iters: 20 validation: 0
@@ -341,6 +345,11 @@ hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
 
         for i, bin_name in enumerate(benchmark._args.algo):
             assert (benchmark._process_raw_result(i, raw_output[bin_name]))
-            assert (bin_name in benchmark.result)
-            assert (len(benchmark.result[bin_name]) == 1)
-            assert (isinstance(benchmark.result[bin_name][0], numbers.Number))
+            metric = 'NCCL_' + bin_name + '_busbw'
+            assert (metric in benchmark.result)
+            assert (len(benchmark.result[metric]) == 1)
+            assert (isinstance(benchmark.result[metric][0], numbers.Number))
+            metric = 'NCCL_' + bin_name + '_time'
+            assert (metric in benchmark.result)
+            assert (len(benchmark.result[metric]) == 1)
+            assert (isinstance(benchmark.result[metric][0], numbers.Number))

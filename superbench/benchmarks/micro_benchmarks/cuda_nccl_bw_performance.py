@@ -106,6 +106,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
 
         content = raw_output.splitlines()
         busbw_out = -1
+        time_out = -1
         try:
             # Filter useless output
             out_of_place_index = -1
@@ -123,6 +124,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                 if not re.match(r'\d+', line[0]):
                     continue
                 busbw_out = max(busbw_out, float(line[-6]))
+                time_out = max(time_out, float(line[-8]))
         except BaseException:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
@@ -131,7 +133,8 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             )
             return False
         if busbw_out != -1:
-            self._result.add_result(self._args.algo[cmd_idx], busbw_out)
+            self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_busbw', busbw_out)
+            self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_time', time_out)
 
         return True
 
