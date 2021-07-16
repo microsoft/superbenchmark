@@ -2,3 +2,6 @@
 	path = third_party/cutlass
 	url = https://github.com/NVIDIA/cutlass.git
 	branch = v2.4.0
+[submodule "third_party/nccl-tests"]
+	path = third_party/nccl-tests
+	url = https://github.com/NVIDIA/nccl-tests.git
