@@ -4,6 +4,7 @@
 
 
 SB_MICRO_PATH ?= "/usr/local"
+MPI_HOME_PATH ?= "/usr/local/mpi"
 
 .PHONY: all cutlass bandwidthTest nccl_tests
 
@@ -34,9 +35,9 @@ bandwidthTest: sb_micro_path
 	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
 
 # Build nccl-tests.
-# The version we use is commit 44df0bf from master branch, due to it didn't update release tag for long time.
+# The version we use is commit 44df0bf from master branch, since it didn't update release tag for long time.
 nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
-	cd ./nccl-tests && make MPI=1 MPI_HOME=$(shell whereis mpi | grep 'mpi' | awk '{print $$2}') -j
+	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME_PATH) -j
 	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
