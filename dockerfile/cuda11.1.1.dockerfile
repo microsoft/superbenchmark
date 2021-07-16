@@ -85,12 +85,7 @@ RUN cd /tmp && \
     cd /tmp && \
     rm -rf nccl
 
-# TODO: move to gitmodules
-RUN git clone https://github.com/nvidia/nccl-tests /usr/local/nccl-tests && \
-    cd /usr/local/nccl-tests && \
-    make MPI=1 MPI_HOME=/usr/local/mpi/ -j
-
-ENV PATH="/usr/local/nccl-tests/build:${PATH}" \
+ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
     SB_MICRO_PATH="/opt/superbench"
