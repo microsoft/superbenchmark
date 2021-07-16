@@ -19,7 +19,7 @@ cutlass: sb_micro_path
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
 	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
 		-DCUTLASS_NVCC_ARCHS='70;80' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
-	cmake --build ./cutlass/build -j --target install
+	cmake --build ./cutlass/build -j 8 --target install
 endif
 
 # Build cuda-samples/Samples/bandwidthTest.
