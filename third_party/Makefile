@@ -46,3 +46,4 @@ endif
 fio: sb_micro_path
 ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
