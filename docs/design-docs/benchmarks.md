@@ -1,26 +1,8 @@
-# <!-- omit in toc --> Superbenchmark Benchmarks Abstraction
+---
+id: benchmarks
+---
 
-## <!-- omit in toc -->Table of Content
-- [Introduction](#introduction)
-  - [Overview](#overview)
-  - [Goals](#goals)
-- [High-level Technical Design](#high-level-technical-design)
-- [Detailed Technical Design](#detailed-technical-design)
-  - [ModelBase Benchmarks](#modelbase-benchmarks)
-    - [Training](#training)
-    - [Inference](#inference)
-  - [Micro Benchmarks](#micro-benchmarks)
-  - [DockerBase Benchmarks](#dockerbase-benchmarks)
-  - [Benchmark Registry](#benchmark-registry)
-    - [Design](#design)
-    - [Examples](#examples)
-- [Interfaces](#interfaces)
-  - [Inputs](#inputs)
-  - [Invoke](#invoke)
-  - [Outputs](#outputs)
-    - [Design](#design-1)
-    - [Example](#example)
-- [Appendix](#appendix)
+# Superbenchmark Benchmarks Abstraction
 
 ## Introduction
 
@@ -34,8 +16,8 @@ E2E-benchmark: 32-CNN models, LSTM, BERT, Seq2Seq, DeepSpeech2, NASNet, GraphSag
 
 However the current structure of all the benchmarks are very loose. The pain points we have met are as follows:
 
-1.	Every benchmark has an independent python file and there exist a lot of redundant/dead code. 
-2.	To launch one benchmark, we must specify the file path of the benchmark which is hard coded and pieced together with the test name string from config file. 
+1.	Every benchmark has an independent python file and there exist a lot of redundant/dead code.
+2.	To launch one benchmark, we must specify the file path of the benchmark which is hard coded and pieced together with the test name string from config file.
 3.	To add new micro-benchmarks for new accelerators, we must modify the related source code and add IF statement to distinguish different platforms.
 4.	To modify some common logic of E2E-benchmarks like Dataset, DataLoader and distributed related code, we need change all the E2E benchmark files.
 5.	It’s hard to extended new features, such as running benchmark for N times.
@@ -43,7 +25,7 @@ However the current structure of all the benchmarks are very loose. The pain poi
 7.	Some benchmarks have big variance, it’s hard to do the confirmation and investigation manually.
 8.	Hard to detect the interruption of running, especially for microbenchmarks which is launched by system call.
 
-This document will present a new design for the benchmarks to avoid the above pain points. 
+This document will present a new design for the benchmarks to avoid the above pain points.
 
 ### Goals
 
@@ -68,10 +50,10 @@ b)	MicrobenchmarkBase is the base class for all the micro benchmarks. It defines
 c)	DockerBase is the base class for real workloads based on docker. It also defines the abstract interfaces that need to be implemented by the subclasses, such as “prepare_image()”, “benchmarking()” and so on.
 2.	Derived classes for all implemented benchmarks, realized all the abstract interfaces. The benchmarks will be registered into Benchmark Registry.
 3.	Benchmark Registry: provides a way of benchmark registration, maintains all the registered benchmarks and supports benchmark selection by tag, which can be used to select desired benchmark, e.g., use the type of accelerator as the tag.
-The Executor on the uppermost layer is the entrance for all the benchmarks, it fetches the benchmark by name from Benchmark Registry, instantiates the benchmark with user configs and launches the benchmark. 
+The Executor on the uppermost layer is the entrance for all the benchmarks, it fetches the benchmark by name from Benchmark Registry, instantiates the benchmark with user configs and launches the benchmark.
 Util provides some utility functions or classes such as RandomDataset generator, accelerator detector.
 
-![Structure of Benchmark Package](./assets/benchmark_package.png)
+![Structure of Benchmark Package](../assets/benchmark_package.png)
 *Figure 1 Structure of Benchmarks package*
 
 ## Detailed Technical Design
@@ -80,7 +62,7 @@ This chapter will describe the design details of all the components in Benchmark
 
 ### ModelBase Benchmarks
 
-The ModelBase benchmarks have 3-layers Inheritance Relationship. 
+The ModelBase benchmarks have 3-layers Inheritance Relationship.
 
 #### Training
 
@@ -90,7 +72,7 @@ Init_distributed_setting -> create_dataset -> create_dataloader -> create_model 
 
 The responsibility for function implementation of every layer is as Figure2. The “train” function of ModelBase will execute these functions according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
 
-![Training process and the responsibility for function implementation of every layer](./assets/training-process.png)
+![Training process and the responsibility for function implementation of every layer](../assets/training-process.png)
 *Figure 2 Training process and the responsibility for function implementation of every layer*
 
 #### Inference
@@ -101,26 +83,26 @@ Init_distributed_setting -> create_dataset -> create_dataloader -> create_model 
 
 Compared with training, it just gets rid of “add_optimizer()” operation. And the responsibility for function implementation of every layer is as Figure 3. The “inference” function of ModelBase will execute these functions according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
 
-![Inference process and the responsibility for function implementation of every layer](./assets/inference-process.png)
+![Inference process and the responsibility for function implementation of every layer](../assets/inference-process.png)
 *Figure 3 Inference process and the responsibility for function implementation of every layer*
 
 ### Micro Benchmarks
 
 The micro-benchmarks have 2-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 4. The functions that exist in derived class and not in base class are abstract functions.
 
-![micro-benchmarks benchmarking process and the responsibility for function implementation of every layer](./assets/micro-benchmark-process.png)
+![micro-benchmarks benchmarking process and the responsibility for function implementation of every layer](../assets/micro-benchmark-process.png)
 *Figure 4 micro-benchmarks benchmarking process and the responsibility for function implementation of every layer*
 
 ### DockerBase Benchmarks
 
 The DockerBase benchmarks have 2-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 5. The DockerBase benchmarks need docker env ready.
 
-![docker-benchmarks benchmarking process and the responsibility for function implementation of every layer](./assets/docker-benchmark-process.png)
+![docker-benchmarks benchmarking process and the responsibility for function implementation of every layer](../assets/docker-benchmark-process.png)
 *Figure 5 docker-benchmarks benchmarking process and the responsibility for function implementation of every layer*
 
 ### Benchmark Registry
 
-Benchmark Registry is designed to 
+Benchmark Registry is designed to
 1.	Provide a way of benchmark registration.
 2.	Avoid modifying existing code when add new benchmarks.
 3.	For models that only have different configs, maximize the reuse of code.
@@ -196,11 +178,11 @@ class BenchmarkRegistry:
 The structure of the BenchmarkRegistry.benchmarks is designed as:
 
 ```
-dictionary = {   
+dictionary = {
   'benhmark1': {
     'tag1': (benchmark1_tag1_class, arguments),
     'tag2': (benchmark1_tag2_class, arguments),
-  }  
+  }
   'benhmark2': {
     'tag1': (benchmark2_tag1_class, arguments),
     'tag2': (benchmark2_tag2_class, arguments),
@@ -255,7 +237,7 @@ result = {
 'run_count': N,
 'start_time': date,
 'end_time': date,
-    'raw_data': { 
+    'raw_data': {
         'metrics1': [[]], # Array for N runs
         ...
         'metricsM' [[]],
@@ -312,13 +294,3 @@ result = {
         'latency': [],
     },
 ```
-
-## Appendix
-
-Document history
-
-|Version|Description|Changer|
-|---|---|---|
-|Benchmarks package design – v0.1|Draft for review|Guoshuai Zhao|
-|Benchmarks package design – v0.2|Modify according to comments. Add more interfaces.|Guoshuai Zhao|
-||||
