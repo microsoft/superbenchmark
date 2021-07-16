@@ -4,17 +4,17 @@
 
 SB_MICRO_PATH ?= "/usr/local"
 
-.PHONY: all cutlass bandwidthTest
+.PHONY: all cutlass bandwidthTest perftest
 
 # Build all targets.
-all: cutlass bandwidthTest
+all: cutlass bandwidthTest perftest
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/bin
 	mkdir -p $(SB_MICRO_PATH)/lib
 # Build cutlass.
-cutlass:
+cutlass: 
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
 	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
 		-DCUTLASS_NVCC_ARCHS='70;80' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
@@ -29,3 +29,9 @@ bandwidthTest: sb_micro_path
 	git clone -b v$(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2) https://github.com/NVIDIA/cuda-samples.git ./cuda-samples
 	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
 	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
+# Build perftest.
+# The version we use is v4.5-0.2, which is the latest release tag of perftest
+perftest: 
+ifneq (,$(wildcard perftest/autogen.sh))
+	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
