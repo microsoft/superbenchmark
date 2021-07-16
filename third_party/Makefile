@@ -6,10 +6,10 @@
 SB_MICRO_PATH ?= "/usr/local"
 MPI_HOME_PATH ?= "/usr/local/mpi"
 
-.PHONY: all cutlass bandwidthTest nccl_tests
+.PHONY: all cutlass bandwidthTest nccl_tests perftest
 
 # Build all targets.
-all: cutlass bandwidthTest nccl_tests
+all: cutlass bandwidthTest nccl_tests perftest
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -41,3 +41,11 @@ ifneq (,$(wildcard nccl-tests/Makefile))
 	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME_PATH) -j
 	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
+
+# Build perftest.
+# The version we use is the tag v4.5-0.2.
+perftest: 
+ifneq (,$(wildcard perftest/autogen.sh))
+	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
+

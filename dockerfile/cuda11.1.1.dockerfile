@@ -85,14 +85,6 @@ RUN cd /tmp && \
     cd /tmp && \
     rm -rf nccl
 
-# TODO: move to gitmodules
-RUN git clone -b v4.5-0.2 https://github.com/linux-rdma/perftest.git /usr/local/perftest && \
-    cd /usr/local/perftest && \
-    ./autogen.sh && \
-    ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h && \
-    make -j && \
-    make install
-
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
