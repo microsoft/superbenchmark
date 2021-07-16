@@ -32,8 +32,5 @@ bandwidthTest: sb_micro_path
 # Build FIO (3.27).
 fio: sb_micro_path
 ifneq (,$(wildcard fio/Makefile))
-	cd ./fio
-	./configure --prefix=$(SB_MICRO_PATH)
-	make -j
-	make install
+	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j8 && make install
 endif
