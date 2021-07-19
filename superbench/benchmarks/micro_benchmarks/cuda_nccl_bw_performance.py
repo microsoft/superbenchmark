@@ -54,6 +54,24 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             default='8192M',
             help='Max size in bytes to run the nccl test. E.g. 8192M.',
         )
+        self._parser.add_argument(
+            '--min_size',
+            type=str,
+            default='1',
+            help='Min size in bytes to run the nccl test. E.g. 1.',
+        )
+        self._parser.add_argument(
+            '-f',
+            type=int,
+            default=2,
+            help='Increment factor, multiplication factor between sizes. E.g. 2.',
+        )
+        self._parser.add_argument(
+            '-c',
+            type=int,
+            default=0,
+            help='Check correctness of results. This can be quite slow on large numbers of GPUs. E.g. 0 or 1.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -85,7 +103,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     return False
 
                 command = os.path.join(self._args.bin_dir, self._bin_name)
-                command += ' -b 1 -e {} -f 2 -g {} -c 0'.format(self._args.max_size, self._args.gpu_count)
+                command += ' -b {} -e {} -f {} -g {} -c {}'.format(
+                    self._args.min_size, self._args.max_size, str(self._args.f), str(self._args.gpu_count),
+                    str(self._args.c)
+                )
                 self._commands.append(command)
 
         return True
@@ -107,33 +128,50 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         content = raw_output.splitlines()
         busbw_out = -1
         time_out = -1
+        algbw_out = -1
         try:
             # Filter useless output
             out_of_place_index = -1
-            out_of_bounds_values = -1
+            out_of_bound_index = -1
             for index, line in enumerate(content):
                 if 'out-of-place' in line:
                     out_of_place_index = index
                 if 'Out of bounds values' in line:
-                    out_of_bounds_values = index
-            content = content[out_of_place_index + 3:out_of_bounds_values]
+                    out_of_bound_index = index
+            content = content[out_of_place_index + 1:out_of_bound_index]
             # Parse max out of bound bus bw as the result
+            time_index = -1
+            busbw_index = -1
+            algbw_index = -1
             for line in content:
-                line = line.strip(' ')
-                line = re.sub(r' +', ' ', line).split(' ')
-                if not re.match(r'\d+', line[0]):
-                    continue
-                busbw_out = max(busbw_out, float(line[-6]))
-                time_out = max(time_out, float(line[-8]))
-        except BaseException:
+                if 'time' in line and 'busbw' in line:
+                    # Get index of selected column
+                    line = line[1:].strip(' ')
+                    line = re.sub(r' +', ' ', line).split(' ')
+                    # Get first index of condition or default value in list
+                    time_index = next((i for i, x in enumerate(line) if x == 'time'), -1)
+                    busbw_index = next((i for i, x in enumerate(line) if x == 'busbw'), -1)
+                    algbw_index = next((i for i, x in enumerate(line) if x == 'algbw'), -1)
+                else:
+                    line = line.strip(' ')
+                    line = re.sub(r' +', ' ', line).split(' ')
+                    # Filter line not started with number
+                    if not re.match(r'\d+', line[0]):
+                        continue
+                    if busbw_index != -1 and time_index != -1 and algbw_index != -1:
+                        busbw_out = float(line[busbw_index])
+                        time_out = float(line[time_index])
+                        algbw_out = float(line[algbw_index])
+        except BaseException as e:
             logger.error(
-                'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
-                    self._curr_run_index, self._name, raw_output
+                'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
+                    self._curr_run_index, self._name, raw_output, str(e)
                 )
             )
             return False
         if busbw_out != -1:
             self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_busbw', busbw_out)
+            self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_algbw', algbw_out)
             self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_time', time_out)
 
         return True

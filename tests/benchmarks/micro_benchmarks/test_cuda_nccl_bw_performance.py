@@ -343,13 +343,10 @@ hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
 #
 """
 
-        for i, bin_name in enumerate(benchmark._args.algo):
-            assert (benchmark._process_raw_result(i, raw_output[bin_name]))
-            metric = 'NCCL_' + bin_name + '_busbw'
-            assert (metric in benchmark.result)
-            assert (len(benchmark.result[metric]) == 1)
-            assert (isinstance(benchmark.result[metric][0], numbers.Number))
-            metric = 'NCCL_' + bin_name + '_time'
-            assert (metric in benchmark.result)
-            assert (len(benchmark.result[metric]) == 1)
-            assert (isinstance(benchmark.result[metric][0], numbers.Number))
+        for i, algo in enumerate(benchmark._args.algo):
+            assert (benchmark._process_raw_result(i, raw_output[algo]))
+            for name in ['time', 'busbw', 'algbw']:
+                metric = 'NCCL_' + algo + '_' + name
+                assert (metric in benchmark.result)
+                assert (len(benchmark.result[metric]) == 1)
+                assert (isinstance(benchmark.result[metric][0], numbers.Number))
