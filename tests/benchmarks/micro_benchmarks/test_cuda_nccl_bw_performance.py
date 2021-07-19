@@ -63,8 +63,8 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 
         # Check results and metrics.
         # Case with no raw_output
-        assert (benchmark._process_raw_result(0, ''))
-        assert (len(benchmark.result) == 0)
+        assert (benchmark._process_raw_result(0, '') is False)
+
         # Case with valid raw_output
         raw_output = {}
         raw_output['allgather'] = """
@@ -346,7 +346,8 @@ hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
         for i, algo in enumerate(benchmark._args.algo):
             assert (benchmark._process_raw_result(i, raw_output[algo]))
             for name in ['time', 'busbw', 'algbw']:
-                metric = 'NCCL_' + algo + '_' + name
-                assert (metric in benchmark.result)
-                assert (len(benchmark.result[metric]) == 1)
-                assert (isinstance(benchmark.result[metric][0], numbers.Number))
+                for size in ['8589934592', '4294967296', '2147483648', '1073741824', '536870912', '32']:
+                    metric = 'NCCL_' + algo + '_' + size + '_' + name
+                    assert (metric in benchmark.result)
+                    assert (len(benchmark.result[metric]) == 1)
+                    assert (isinstance(benchmark.result[metric][0], numbers.Number))

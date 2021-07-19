@@ -123,9 +123,15 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
+        if os.getenv('OMPI_COMM_WORLD_RANK'):
+            rank = int(os.getenv('OMPI_COMM_WORLD_RANK'))
+            if rank > 0:
+                return True
+
         self._result.add_raw_data('raw_output_' + self._args.algo[cmd_idx], raw_output)
 
         content = raw_output.splitlines()
+        size = -1
         busbw_out = -1
         time_out = -1
         algbw_out = -1
@@ -140,6 +146,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     out_of_bound_index = index
             content = content[out_of_place_index + 1:out_of_bound_index]
             # Parse max out of bound bus bw as the result
+            size_index = -1
             time_index = -1
             busbw_index = -1
             algbw_index = -1
@@ -149,20 +156,32 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     line = line[1:].strip(' ')
                     line = re.sub(r' +', ' ', line).split(' ')
                     # Get first index of condition or default value in list
+                    size_index = next((i for i, x in enumerate(line) if x == 'size'), -1)
                     time_index = next((i for i, x in enumerate(line) if x == 'time'), -1)
                     busbw_index = next((i for i, x in enumerate(line) if x == 'busbw'), -1)
                     algbw_index = next((i for i, x in enumerate(line) if x == 'algbw'), -1)
                     break
-            for line in content:
-                line = line.strip(' ')
-                line = re.sub(r' +', ' ', line).split(' ')
-                # Filter line not started with number
-                if not re.match(r'\d+', line[0]):
-                    continue
-                if busbw_index != -1 and time_index != -1 and algbw_index != -1:
-                    busbw_out = float(line[busbw_index])
-                    time_out = float(line[time_index])
-                    algbw_out = float(line[algbw_index])
+            if size_index != -1 and busbw_index != -1 and time_index != -1 and algbw_index != -1:
+                for line in content:
+                    line = line.strip(' ')
+                    line = re.sub(r' +', ' ', line).split(' ')
+                    # Filter line not started with number
+                    if not re.match(r'\d+', line[0]):
+                        continue
+                    size = int(line[size_index])
+                    if size != 0:
+                        busbw_out = float(line[busbw_index])
+                        time_out = float(line[time_index])
+                        algbw_out = float(line[algbw_index])
+                        self._result.add_result(
+                            'NCCL_' + self._args.algo[cmd_idx] + '_' + str(size) + '_busbw', busbw_out
+                        )
+                        self._result.add_result(
+                            'NCCL_' + self._args.algo[cmd_idx] + '_' + str(size) + '_algbw', algbw_out
+                        )
+                        self._result.add_result(
+                            'NCCL_' + self._args.algo[cmd_idx] + '_' + str(size) + '_time', time_out
+                        )
         except BaseException as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
@@ -170,10 +189,13 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                 )
             )
             return False
-        if busbw_out != -1:
-            self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_busbw', busbw_out)
-            self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_algbw', algbw_out)
-            self._result.add_result('NCCL_' + self._args.algo[cmd_idx] + '_time', time_out)
+        if out_of_place_index == -1 or out_of_bound_index == -1 or busbw_out == -1:
+            logger.error(
+                'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
+                    self._curr_run_index, self._name, raw_output
+                )
+            )
+            return False
 
         return True
 
