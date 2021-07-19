@@ -111,7 +111,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
 
         return True
 
-    def _process_raw_result(self, cmd_idx, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to parse raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
@@ -152,16 +152,17 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     time_index = next((i for i, x in enumerate(line) if x == 'time'), -1)
                     busbw_index = next((i for i, x in enumerate(line) if x == 'busbw'), -1)
                     algbw_index = next((i for i, x in enumerate(line) if x == 'algbw'), -1)
-                else:
-                    line = line.strip(' ')
-                    line = re.sub(r' +', ' ', line).split(' ')
-                    # Filter line not started with number
-                    if not re.match(r'\d+', line[0]):
-                        continue
-                    if busbw_index != -1 and time_index != -1 and algbw_index != -1:
-                        busbw_out = float(line[busbw_index])
-                        time_out = float(line[time_index])
-                        algbw_out = float(line[algbw_index])
+                    break
+            for line in content:
+                line = line.strip(' ')
+                line = re.sub(r' +', ' ', line).split(' ')
+                # Filter line not started with number
+                if not re.match(r'\d+', line[0]):
+                    continue
+                if busbw_index != -1 and time_index != -1 and algbw_index != -1:
+                    busbw_out = float(line[busbw_index])
+                    time_out = float(line[time_index])
+                    algbw_out = float(line[algbw_index])
         except BaseException as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
