@@ -12,7 +12,7 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class IBLoopback(MicroBenchmarkWithInvoke):
+class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
     """The IB loopback performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -24,8 +24,7 @@ class IBLoopback(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'run_perftest_loopback'
-        self.__support_ib_commands = ['ib_write_bw', 'ib_read_bw', 'ib_send_bw']
-        self.__message_sizes = ['8388608', '4194304', '2097152', '1048576']
+        self.__support_ib_commands = {'write': 'ib_write_bw', 'read': 'ib_read_bw', 'send': 'ib_send_bw'}
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -50,14 +49,14 @@ class IBLoopback(MicroBenchmarkWithInvoke):
             type=int,
             default=8388608,
             required=False,
-            help='The message size of running ib command. E.g. {}.'.format(' '.join(self.__message_sizes)),
+            help='The message size of running ib command. E.g. 8388608.',
         )
         self._parser.add_argument(
             '--commands',
             type=str,
             nargs='+',
-            default='ib_write_bw',
-            help='The ib command used to run. E.g. {}.'.format(' '.join(self.__support_ib_commands)),
+            default='write',
+            help='The ib command used to run. E.g. {}.'.format(' '.join(list(self.__support_ib_commands.keys()))),
         )
         self._parser.add_argument(
             '--mode',
@@ -71,6 +70,13 @@ class IBLoopback(MicroBenchmarkWithInvoke):
             default=0,
             required=False,
             help='The index of numa node.',
+        )
+        self._parser.add_argument(
+            '--x',
+            type=int,
+            default=0,
+            required=False,
+            help='Test uses GID with GID index taken from command.',
         )
 
     def __get_numa_cores(self, numa_index):
@@ -119,14 +125,6 @@ class IBLoopback(MicroBenchmarkWithInvoke):
         self._args.mode = self._args.mode.upper()
 
         # Check whether arguments are valid
-        if str(self._args.size) not in self.__message_sizes:
-            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error(
-                'Unsupported message size - benchmark: {}, size: {}, expect: {}.'.format(
-                    self._name, self._args.size, self.__message_sizes
-                )
-            )
-            return False
         command_mode = ''
         if self._args.mode == 'AF':
             command_mode = ' -a'
@@ -146,7 +144,7 @@ class IBLoopback(MicroBenchmarkWithInvoke):
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
                     'Unsupported ib command - benchmark: {}, command: {}, expected: {}.'.format(
-                        self._name, ib_command, self.__support_ib_commands
+                        self._name, ib_command, ' '.join(list(self.__support_ib_commands.keys()))
                     )
                 )
                 return False
@@ -157,11 +155,12 @@ class IBLoopback(MicroBenchmarkWithInvoke):
                     server_core = int(numa_cores[-1])
                     client_core = int(numa_cores[-3])
                     command += ' ' + str(server_core) + ' ' + str(client_core)
-                    command += ' ' + ib_command
+                    command += ' ' + self.__support_ib_commands[ib_command]
                     command += command_mode + ' -F'
                     command += ' --iters=' + str(self._args.n)
                     command += ' -d ' + network.get_ib_devices()[self._args.ib_index]
                     command += ' -p ' + str(network.get_free_port())
+                    command += ' -x ' + str(self._args.x)
                     self._commands.append(command)
                 except BaseException as e:
                     self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
@@ -181,22 +180,24 @@ class IBLoopback(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + str(cmd_idx) + '_IB' + str(self._args.ib_index), raw_output)
+        self._result.add_raw_data(
+            'raw_output_' + self._args.commands[cmd_idx] + '_IB' + str(self._args.ib_index), raw_output
+        )
 
         valid = False
         content = raw_output.splitlines()
         try:
             metric_set = set()
             for line in content:
-                for i in range(len(self.__message_sizes)):
-                    if self.__message_sizes[i] in line:
-                        values = list(filter(None, line.split(' ')))
-                        avg_bw = float(values[-2])
-                        metric = 'IB_Avg_{}'.format(str(self._args.ib_index))
-                        if metric not in metric_set:
-                            metric_set.add(metric)
-                            self._result.add_result(metric, avg_bw)
-                            valid = True
+                if str(self._args.size) in line:
+                    values = list(filter(None, line.split(' ')))
+                    avg_bw = float(values[-2])
+                    metric = 'IB_{}_Avg_{}'.format(self._args.commands[cmd_idx], str(self._args.ib_index))
+                    # Filter useless value
+                    if metric not in metric_set:
+                        metric_set.add(metric)
+                        self._result.add_result(metric, avg_bw)
+                        valid = True
         except BaseException:
             valid = False
         finally:
@@ -211,4 +212,4 @@ class IBLoopback(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('ib-loopback', IBLoopback)
+BenchmarkRegistry.register_benchmark('ib-loopback', IBLoopbackBenchmark)

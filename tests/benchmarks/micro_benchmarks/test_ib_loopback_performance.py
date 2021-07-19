@@ -12,8 +12,8 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, Bench
 from superbench.common.utils import network
 
 
-class IBLoopbackTest(unittest.TestCase):
-    """Tests for IBLoopback benchmark."""
+class IBLoopbackBenchmarkTest(unittest.TestCase):
+    """Tests for IBLoopbackBenchmark benchmark."""
     def setUp(self):
         """Method called to prepare the test fixture."""
         if (len(network.get_ib_devices()) < 1):
@@ -182,15 +182,9 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
             # Check function process_raw_data.
             # Positive case - valid raw output.
             metric_list = []
-            message_sizes = []
-            if mode == 'AF':
-                message_sizes = ['8388608', '4194304', '2097152', '1048576']
-            elif mode == 'S':
-                message_sizes = [benchmark._args.size]
             for ib_command in benchmark._args.commands:
-                for size in message_sizes:
-                    metric = 'IB_Avg_{}'.format(str(benchmark._args.ib_index))
-                    metric_list.append(metric)
+                metric = 'IB_{}_Avg_{}'.format(ib_command, str(benchmark._args.ib_index))
+                metric_list.append(metric)
             for metric in metric_list:
                 assert (metric in benchmark.result)
                 assert (len(benchmark.result[metric]) == 1)
@@ -209,5 +203,5 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
             assert (benchmark._args.numa == 0)
             assert (benchmark._args.n == 2000)
             assert (benchmark._args.size == 8388608)
-            assert (benchmark._args.commands == ['ib_write_bw'])
+            assert (benchmark._args.commands == ['write'])
             assert (benchmark._args.mode == mode)
