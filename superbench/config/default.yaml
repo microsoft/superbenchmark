@@ -27,7 +27,32 @@ superbench:
         - float16
       model_action:
         - train
+    default_disk_precondition_config: &default_disk_precondition_config
+      <<: *default_local_mode
+      parameters:
+        filenames:
+          - /dev/nvme0n1
+        enable_seq_precond: 1
+        rand_precond_time: 7200
+        seq_read_runtime: 0
+        rand_read_runtime: 0
+    default_disk_performance_config: &default_disk_performance_config
+      <<: *default_disk_precondition_config
+      modes:
+        - proc_num: 1
+          parallel: no
+      parameters:
+        enable_seq_precond: 0
+        rand_precond_time: 0
+        seq_write_runtime: 60
+        rand_write_runtime: 60
   benchmarks:
+    disk-precondition:
+      <<: *default_disk_precondition_config
+      enable: false
+    disk-performance:
+      <<: *default_disk_performance_config
+      enable: false
     mem-bw:
       enable: true
       modes:
