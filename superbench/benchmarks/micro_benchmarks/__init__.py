@@ -15,5 +15,5 @@ from superbench.benchmarks.micro_benchmarks.disk_performance import DiskPerforma
 
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
-    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'CudaMemBwBenchmark', 'DiskPerf'
+    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'CudaMemBwBenchmark', 'DiskPerformance'
 ]
