@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 """Micro benchmark example for disk performance.
+
 Commands to run:
   python3 examples/benchmarks/disk_performance.py
 """

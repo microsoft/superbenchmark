@@ -3,7 +3,6 @@
 
 """Tests for disk-performance benchmark."""
 
-import numbers
 from pathlib import Path
 import os
 import unittest
