@@ -123,6 +123,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
+        # If it's invoked by MPI and rank is not 0, empty content is expected
         if os.getenv('OMPI_COMM_WORLD_RANK'):
             rank = int(os.getenv('OMPI_COMM_WORLD_RANK'))
             if rank > 0:
