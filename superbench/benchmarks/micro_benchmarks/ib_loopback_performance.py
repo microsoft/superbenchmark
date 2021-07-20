@@ -5,6 +5,7 @@
 
 import os
 import subprocess
+import re
 
 from superbench.common.utils import logger
 from superbench.common.utils import network
@@ -189,15 +190,17 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         try:
             metric_set = set()
             for line in content:
-                if str(self._args.size) in line:
-                    values = list(filter(None, line.split(' ')))
-                    avg_bw = float(values[-2])
-                    metric = 'IB_{}_Avg_{}'.format(self._args.commands[cmd_idx], str(self._args.ib_index))
-                    # Filter useless value
-                    if metric not in metric_set:
-                        metric_set.add(metric)
-                        self._result.add_result(metric, avg_bw)
-                        valid = True
+                values = list(filter(None, line.split(' ')))
+                if len(values) != 5 or not re.match(r'\d+', values[0]) or not re.match(r'\d+', values[4]):
+                    continue
+                size = int(values[0])
+                avg_bw = float(values[-2])
+                metric = 'IB_{}_{}_Avg_{}'.format(self._args.commands[cmd_idx], size, str(self._args.ib_index))
+                # Filter useless value
+                if metric not in metric_set:
+                    metric_set.add(metric)
+                    self._result.add_result(metric, avg_bw)
+                    valid = True
         except BaseException:
             valid = False
         finally:
