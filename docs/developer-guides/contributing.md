@@ -51,7 +51,6 @@ If you want to contribute benchmark results run by specified SuperBench version,
 All the results are stored under `results` folder. The directory structure is as follows. Please create `<your-benchmark-folder>` to submit results.
 
 ```
-.
 └── results
     ├── v0.2
     │   └── your-benchmark-foldername
@@ -85,5 +84,5 @@ All the results are stored under `results` folder. The directory structure is as
 
 Besides `README` and `LICENSE` file, you should provide at least three benchmarking related files.
 * `system.json`: This file lists all the system configurations in json format.
-* `config.yaml`: This file is the config file to run benchmarks. Click [here](https://microsoft.github.io/superbenchmark/docs/getting-started/configuration) to learn the details.
+* `config.yaml`: This file is the config file to run benchmarks. Click [here](../getting-started/configuration) to learn the details.
 * `result.json`: This file contains the results run by SuperBench with system configuations listed in `system.json` file.
