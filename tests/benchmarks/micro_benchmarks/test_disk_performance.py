@@ -16,23 +16,22 @@ class DiskPerformanceTest(unittest.TestCase):
         """Method called to prepare the test fixture."""
         # Create fake binary file just for testing.
         os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
-        binary_path = os.path.join(os.getenv('SB_MICRO_PATH'), 'bin')
-        Path(binary_path).mkdir(parents=True, exist_ok=True)
-        self.__binary_file = Path(binary_path, 'fio')
+        binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
+        binary_path.mkdir(parents=True, exist_ok=True)
+        self.__binary_file = binary_path / 'fio'
         self.__binary_file.touch(mode=0o755, exist_ok=True)
 
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
 
-    def test_disk_performance_command_generation(self):
-        """Test disk-performance benchmark command generation."""
+    def test_disk_performance_empty_param(self):
+        """Test disk-performance benchmark command generation with empty parameter."""
         benchmark_name = 'disk-performance'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
-        # Test case 1: empty parameter
         benchmark = benchmark_class(benchmark_name, parameters='')
 
         # Check basic information
@@ -46,11 +45,17 @@ class DiskPerformanceTest(unittest.TestCase):
         # Command list should be empty
         assert (0 == len(benchmark._commands))
 
-        filenames = ['/dev/nvme0n1', '/dev/nvme1n1']
-        filename_option = '--filenames ' + ' '.join(filenames)
+    def test_disk_performance_benchmark_disabled(self):
+        """Test disk-performance benchmark command generation with all benchmarks disabled."""
+        benchmark_name = 'disk-performance'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
 
-        # Test case 2: turn off all tests
-        param_str = filename_option
+        block_devices = ['/dev/nvme0n1', '/dev/nvme1n1']
+        block_device_option = '--block_devices ' + ' '.join(block_devices)
+
+        param_str = block_device_option
         param_str += ' --enable_seq_precond=0'
         param_str += ' --rand_precond_time=0'
         param_str += ' --seq_read_runtime=0'
@@ -70,10 +75,19 @@ class DiskPerformanceTest(unittest.TestCase):
         # Command list should be empty
         assert (0 == len(benchmark._commands))
 
-        # Test case 3: turn on all tests
+    def test_disk_performance_benchmark_enabled(self):
+        """Test disk-performance benchmark command generation with all benchmarks enabled."""
+        benchmark_name = 'disk-performance'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        block_devices = ['/dev/nvme0n1', '/dev/nvme1n1']
+        block_device_option = '--block_devices ' + ' '.join(block_devices)
+
         init_test_magic = 45
         curr_test_magic = init_test_magic
-        param_str = filename_option
+        param_str = block_device_option
         # Sequential precondition
         param_str += ' --enable_seq_precond=1'
         # Random precondition
@@ -108,21 +122,21 @@ class DiskPerformanceTest(unittest.TestCase):
         # Check parameter assignments
         command_idx = 0
 
-        for filename in filenames:
+        for block_device in block_devices:
             curr_test_magic = init_test_magic
 
             # Sequential precondition
-            assert ('--filename=%s' % filename in benchmark._commands[command_idx])
+            assert ('--filename=%s' % block_device in benchmark._commands[command_idx])
             command_idx += 1
             # Random precondition
-            assert ('--filename=%s' % filename in benchmark._commands[command_idx])
+            assert ('--filename=%s' % block_device in benchmark._commands[command_idx])
             assert ('--runtime=%d' % curr_test_magic in benchmark._commands[command_idx])
             curr_test_magic += 1
             command_idx += 1
             # Seq/rand read/write
             for io_pattern in ['seq', 'rand']:
                 for io_type in ['read', 'write']:
-                    assert ('--filename=%s' % filename in benchmark._commands[command_idx])
+                    assert ('--filename=%s' % block_device in benchmark._commands[command_idx])
                     fio_rw = '%s%s' % (io_pattern if io_pattern == 'rand' else '', io_type)
                     assert ('--rw=%s' % fio_rw in benchmark._commands[command_idx])
                     assert ('--ramp_time=%d' % curr_test_magic in benchmark._commands[command_idx])

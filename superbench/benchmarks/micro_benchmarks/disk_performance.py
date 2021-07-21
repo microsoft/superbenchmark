@@ -63,7 +63,7 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--filenames',
+            '--block_devices',
             type=str,
             nargs='*',
             default=[],
@@ -133,16 +133,16 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
 
         fio_path = os.path.join(self._args.bin_dir, self._bin_name)
 
-        for filename in self._args.filenames:
+        for block_device in self._args.block_devices:
             if self._args.enable_seq_precond:
                 command = fio_path +\
-                    ' --filename=%s' % filename +\
+                    ' --filename=%s' % block_device +\
                     self._fio_args['seq_precond']
                 self._commands.append(command)
 
             if self._args.rand_precond_time > 0:
                 command = fio_path +\
-                    ' --filename=%s' % filename +\
+                    ' --filename=%s' % block_device +\
                     ' --runtime=%ds' % self._args.rand_precond_time +\
                     self._fio_args['rand_precond']
                 self._commands.append(command)
@@ -153,7 +153,7 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
                     runtime = getattr(self._args, '%s_runtime' % io_str)
                     if runtime > 0:
                         command = fio_path +\
-                            ' --filename=%s' % filename +\
+                            ' --filename=%s' % block_device +\
                             ' --ramp_time=%ds' % getattr(self._args, '%s_ramp_time' % io_str) +\
                             ' --runtime=%ds' % runtime +\
                             ' --iodepth=%d' % getattr(self._args, '%s_iodepth' % io_str) +\
@@ -188,8 +188,8 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
             return False
 
         jobname = fio_output['jobs'][0]['jobname']
-        filename = fio_output['global options']['filename']
-        jobname_prefix = 'disk_performance:%s:%s' % (filename, jobname)
+        block_device = fio_output['global options']['filename']
+        jobname_prefix = 'disk_performance:%s:%s' % (block_device, jobname)
         lat_units = ['lat_ns', 'lat_us', 'lat_ms']
 
         bs = fio_output['jobs'][0]['job options']['bs']

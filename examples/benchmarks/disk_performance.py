@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'disk-performance', platform=Platform.CPU, parameters='--filenames /dev/nvme0n1'
+        'disk-performance', platform=Platform.CPU, parameters='--block_devices /dev/nvme0n1'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

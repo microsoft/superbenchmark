@@ -29,13 +29,12 @@ superbench:
         - train
   benchmarks:
     disk-performance:
-      <<: *default_local_mode
       enable: false
       modes:
         - proc_num: 1
           parallel: no
       parameters:
-        filenames:
+        block_devices:
           - /dev/nvme0n1
     mem-bw:
       enable: true
