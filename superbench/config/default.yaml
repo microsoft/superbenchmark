@@ -38,6 +38,7 @@ superbench:
         - name: local
           proc_num: 4
           prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=1,0,3,2
+          parallel: yes
     mem-bw:
       enable: true
       modes:
