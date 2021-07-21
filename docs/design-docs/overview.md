@@ -38,7 +38,7 @@ Therefore, SuperBench would like to provide a more simple and convenient way to:
 6. SuperBench Executor parses the config object, start benchmarks inside Docker container one by one.
 7. SuperBench Executor gets return code and results of each benchmark once the benchmark finished.
 8. SuperBench Executor sends the return code and results back to sb runner. SuperBench Runner Schecks return code and moves to the next execution.
-9. Once finished, SuperBench Runner reduces results on all compute nodes, save log and results files, then summarize running results to SuperBench CLI.
+9. Once all benchmarks finished, SuperBench Runner reduces results on all compute nodes, save log and results files, then summarize running results to SuperBench CLI.
 10. SuperBench CLI returns the results to the user.
 
 ## Components
@@ -101,7 +101,8 @@ The `/root` directory is mounted from `$HOME/sb-workspace` on the host path.
 
 ### [Benchmarks](benchmarks.md)
 
-Benchmarks are a set of tests that actually run on compute node to measure the hardware performance. Here’re the related concepts, nccl benchmark is used as an example.
+Benchmarks are a set of tests that actually run on node to measure the hardware performance.
+Here're the related concepts, nccl benchmark is used as an example.
 
 1. Module
 
@@ -117,4 +118,4 @@ Benchmarks are a set of tests that actually run on compute node to measure the h
 
 4. Task
 
-    One task group may contain several tasks to run, there’s no barrier needed among these tasks inside one task group.
+    One task group may contain several tasks to run, there's no barrier needed among these tasks inside one task group.
