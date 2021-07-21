@@ -147,41 +147,22 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
 """
         for mode in ['A', 'S']:
             # Test without ib devices
-            if (len(network.get_ib_devices()) < 1):
-                # Check registry.
-                benchmark_name = 'ib-loopback'
-                (benchmark_class, predefine_params
-                 ) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
-                assert (benchmark_class)
+            # Check registry.
+            benchmark_name = 'ib-loopback'
+            (benchmark_class,
+             predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+            assert (benchmark_class)
 
-                # Check preprocess
-                parameters = '--ib_index 0 --numa 0 --iters 2000'
-                if mode == 'S':
-                    parameters += ' --size 8388608'
-                benchmark = benchmark_class(benchmark_name, parameters=parameters)
-                ret = benchmark._preprocess()
-                assert (ret is False)
-                assert (benchmark.return_code is ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+            # Check preprocess
+            parameters = '--ib_index 0 --numa 0 --iters 2000'
+            if mode == 'S':
+                parameters += ' --size 8388608'
+            benchmark = benchmark_class(benchmark_name, parameters=parameters)
+            ret = benchmark._preprocess()
+            assert (ret is False)
+            assert (benchmark.return_code is ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
 
-                assert (benchmark._process_raw_result(0, raw_output[mode]))
-
-            # Test with ib devices
-            else:
-                # Check registry, preprocess and run.
-                parameters = '--ib_index 0 --numa 0 --iters 2000'
-                if mode == 'S':
-                    parameters += ' --size 8388608'
-                context = BenchmarkRegistry.create_benchmark_context('ib-loopback', parameters=parameters)
-
-                assert (BenchmarkRegistry.is_benchmark_context_valid(context))
-                benchmark = BenchmarkRegistry.launch_benchmark(context)
-
-                # Check raw_data.
-                assert (benchmark.run_count == 1)
-                assert (benchmark.return_code == ReturnCode.SUCCESS)
-                assert ('raw_output_0_IB0' in benchmark.raw_data)
-                assert (len(benchmark.raw_data['raw_output_0_IB0']) == 1)
-                assert (isinstance(benchmark.raw_data['raw_output_0_IB0'][0], str))
+            assert (benchmark._process_raw_result(0, raw_output[mode]))
 
             # Check function process_raw_data.
             # Positive case - valid raw output.
