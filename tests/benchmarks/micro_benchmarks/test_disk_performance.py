@@ -45,6 +45,26 @@ class DiskPerformanceTest(unittest.TestCase):
         # Command list should be empty
         assert (0 == len(benchmark._commands))
 
+    def test_disk_performance_invalid_block_device(self):
+        """Test disk-performance benchmark command generation with invalid block device."""
+        benchmark_name = 'disk-performance'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        block_devices = ['/dev/null']
+        block_device_option = '--block_devices ' + ' '.join(block_devices)
+
+        benchmark = benchmark_class(benchmark_name, parameters=block_device_option)
+
+        # Check basic information
+        assert (benchmark)
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+        assert (benchmark.name == 'disk-performance')
+        assert (benchmark.type == BenchmarkType.MICRO)
+
     def test_disk_performance_benchmark_disabled(self):
         """Test disk-performance benchmark command generation with all benchmarks disabled."""
         benchmark_name = 'disk-performance'
@@ -477,6 +497,7 @@ class DiskPerformanceTest(unittest.TestCase):
 """
         jobname_prefix = 'disk_performance:/dev/nvme0n1:rand_read_write'
         assert (benchmark._process_raw_result(0, test_raw_output))
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
 
         # bs + <read, write> x <iops, 95th, 99th, 99.9th>
         assert (9 == len(benchmark.result.keys()))
@@ -505,3 +526,4 @@ class DiskPerformanceTest(unittest.TestCase):
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
+        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

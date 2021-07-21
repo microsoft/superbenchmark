@@ -3,11 +3,12 @@
 
 """Module of the Disk Performance benchmarks."""
 
+from pathlib import Path
 import json
 import os
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry
+from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
@@ -134,6 +135,11 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
         fio_path = os.path.join(self._args.bin_dir, self._bin_name)
 
         for block_device in self._args.block_devices:
+            if not Path(block_device).is_block_device():
+                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                logger.error('Invalid block device: {}.'.format(block_device))
+                return False
+
             if self._args.enable_seq_precond:
                 command = fio_path +\
                     ' --filename=%s' % block_device +\
@@ -180,6 +186,7 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
         try:
             fio_output = json.loads(raw_output)
         except BaseException as e:
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
                     self._curr_run_index, self._name, raw_output, str(e)
