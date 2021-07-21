@@ -42,7 +42,8 @@ class ExecutorTestCase(unittest.TestCase):
 
     def test_get_enabled_benchmarks_enable_none(self):
         """Test enabled benchmarks when superbench.enable is none."""
-        expected_enabled_benchmarks = list(self.default_config.superbench.benchmarks.keys())
+        benchmarks = self.default_config.superbench.benchmarks
+        expected_enabled_benchmarks = [x for x in benchmarks if benchmarks[x]['enable']]
         self.assertListEqual(self.executor._sb_enabled, expected_enabled_benchmarks)
 
     def test_get_enabled_benchmarks_enable_str(self):
@@ -145,6 +146,6 @@ class ExecutorTestCase(unittest.TestCase):
         self.executor.exec()
 
         self.assertTrue(Path(self.sb_output_dir, 'benchmarks').is_dir())
-        for benchmark_name in self.executor._sb_benchmarks:
+        for benchmark_name in self.executor._sb_enabled:
             self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'rank0').is_dir())
             self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'rank0', 'results.json').is_file())
