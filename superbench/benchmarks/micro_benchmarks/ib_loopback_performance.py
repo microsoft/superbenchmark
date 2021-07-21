@@ -4,8 +4,8 @@
 """Module of the IB loopback benchmarks."""
 
 import os
-import subprocess
 import re
+from pathlib import Path
 
 from superbench.common.utils import logger
 from superbench.common.utils import network
@@ -39,7 +39,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             help='The index of ib device.',
         )
         self._parser.add_argument(
-            '--n',
+            '--iters',
             type=int,
             default=20000,
             required=False,
@@ -48,22 +48,16 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--size',
             type=int,
-            default=8388608,
+            default=None,
             required=False,
-            help='The message size of running ib command. E.g. 8388608.',
+            help='The message size of running ib command, e.g. 8388608.',
         )
         self._parser.add_argument(
             '--commands',
             type=str,
             nargs='+',
             default='write',
-            help='The ib command used to run. E.g. {}.'.format(' '.join(list(self.__support_ib_commands.keys()))),
-        )
-        self._parser.add_argument(
-            '--mode',
-            type=str,
-            default='AF',
-            help='The mode used to run ib command. Eg, AF(all message size) or S(single message size)',
+            help='The ib command used to run, e.g. {}.'.format(' '.join(list(self.__support_ib_commands.keys()))),
         )
         self._parser.add_argument(
             '--numa',
@@ -73,7 +67,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             help='The index of numa node.',
         )
         self._parser.add_argument(
-            '--x',
+            '--gid_index',
             type=int,
             default=0,
             required=False,
@@ -81,19 +75,26 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         )
 
     def __get_numa_cores(self, numa_index):
-        """Get the last two cores from different physical cpu core of NUMA<numa_index>.
+        """Get the available cores from different physical cpu core of NUMA<numa_index>.
 
         Args:
             numa_index (int): the index of numa node.
 
         Return:
-            The last two cores from different physical cpu core of NUMA<numa_index>.
+            list: The available cores from different physical cpu core of NUMA<numa_index>.
+            None if no available cores or numa index.
         """
-        command = 'numactl --hardware | grep "node {} cpus:"'.format(numa_index)
-        output = subprocess.run(
-            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
-        )
-        return output.stdout.splitlines()[0].split(' ')
+        try:
+            with Path(f'/sys/devices/system/node/node{numa_index}/cpulist').open('r') as f:
+                cores = []
+                core_ranges = f.read().strip().split(',')
+                for core_range in core_ranges:
+                    start, end = core_range.split('-')
+                    for core in range(int(start), int(end) + 1):
+                        cores.append(core)
+            return cores
+        except IOError:
+            return None
 
     def __get_arguments_from_env(self):
         """Read environment variables from runner used for parallel and fill in ib_index and numa_node_index.
@@ -123,22 +124,13 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         if not isinstance(self._args.commands, list):
             self._args.commands = [self._args.commands]
         self._args.commands = [command.lower() for command in self._args.commands]
-        self._args.mode = self._args.mode.upper()
 
         # Check whether arguments are valid
         command_mode = ''
-        if self._args.mode == 'AF':
+        if self._args.size is None:
             command_mode = ' -a'
-        elif self._args.mode == 'S':
-            command_mode = ' -s ' + str(self._args.size)
         else:
-            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error(
-                'Unsupported args mode - benchmark: {}, mode: {}, expect: {}.'.format(
-                    self._name, self._args.mode, 'AF or S'
-                )
-            )
-            return False
+            command_mode = ' -s ' + str(self._args.size)
 
         for ib_command in self._args.commands:
             if ib_command not in self.__support_ib_commands:
@@ -153,19 +145,23 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
                 try:
                     command = os.path.join(self._args.bin_dir, self._bin_name)
                     numa_cores = self.__get_numa_cores(self._args.numa)
+                    if len(numa_cores < 4):
+                        self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+                        logger.error('Getting numa core devices failure - benchmark: {}.'.format(self._name))
+                        return False
                     server_core = int(numa_cores[-1])
                     client_core = int(numa_cores[-3])
                     command += ' ' + str(server_core) + ' ' + str(client_core)
                     command += ' ' + self.__support_ib_commands[ib_command]
                     command += command_mode + ' -F'
-                    command += ' --iters=' + str(self._args.n)
+                    command += ' --iters=' + str(self._args.iters)
                     command += ' -d ' + network.get_ib_devices()[self._args.ib_index]
                     command += ' -p ' + str(network.get_free_port())
-                    command += ' -x ' + str(self._args.x)
+                    command += ' -x ' + str(self._args.gid_index)
                     self._commands.append(command)
                 except BaseException as e:
                     self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
-                    logger.error('Getting devices failure - benchmark: {}, message: {}.'.format(self._name, str(e)))
+                    logger.error('Getting ib devices failure - benchmark: {}, message: {}.'.format(self._name, str(e)))
                     return False
         return True
 
@@ -191,7 +187,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             metric_set = set()
             for line in content:
                 values = list(filter(None, line.split(' ')))
-                if len(values) != 5 or not re.match(r'\d+', values[0]) or not re.match(r'\d+', values[4]):
+                if len(values) != 5 or not re.match(r'\d+', values[0]) or not re.match(r'\d+.\d+', values[-2]):
                     continue
                 size = int(values[0])
                 avg_bw = float(values[-2])

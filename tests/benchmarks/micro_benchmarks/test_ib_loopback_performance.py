@@ -18,10 +18,10 @@ class IBLoopbackBenchmarkTest(unittest.TestCase):
         """Method called to prepare the test fixture."""
         if (len(network.get_ib_devices()) < 1):
             # Create fake binary file just for testing.
-            os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
-            binary_path = os.path.join(os.getenv('SB_MICRO_PATH'), 'bin')
-            Path(binary_path).mkdir(parents=True, exist_ok=True)
-            self.__binary_file = Path(os.path.join(binary_path, 'run_perftest_loopback'))
+            os.environ['SB_MICRO_PATH'] = '/tmp/superbench'
+            binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
+            binary_path.mkdir(parents=True, exist_ok=True)
+            self.__binary_file = Path(binary_path, 'run_perftest_loopback')
             self.__binary_file.touch(mode=0o755, exist_ok=True)
 
     def tearDown(self):
@@ -29,10 +29,10 @@ class IBLoopbackBenchmarkTest(unittest.TestCase):
         if (len(network.get_ib_devices()) < 1):
             self.__binary_file.unlink()
 
-    def test_ib_loopback_performance(self):
+    def test_ib_loopback_performance(self):    # noqa: C901
         """Test ib-loopback benchmark."""
         raw_output = {}
-        raw_output['AF'] = """
+        raw_output['A'] = """
 ************************************
 * Waiting for client to connect... *
 ************************************
@@ -145,7 +145,7 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
 ---------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------
 """
-        for mode in ['AF', 'S']:
+        for mode in ['A', 'S']:
             # Test without ib devices
             if (len(network.get_ib_devices()) < 1):
                 # Check registry.
@@ -155,7 +155,9 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
                 assert (benchmark_class)
 
                 # Check preprocess
-                parameters = '--ib_index 0 --numa 0 --n 2000 --mode ' + mode
+                parameters = '--ib_index 0 --numa 0 --iters 2000'
+                if mode == 'S':
+                    parameters += ' --size 8388608'
                 benchmark = benchmark_class(benchmark_name, parameters=parameters)
                 ret = benchmark._preprocess()
                 assert (ret is False)
@@ -166,7 +168,9 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
             # Test with ib devices
             else:
                 # Check registry, preprocess and run.
-                parameters = '--ib_index 0 --numa 0 --n 2000 --mode ' + mode
+                parameters = '--ib_index 0 --numa 0 --iters 2000'
+                if mode == 'S':
+                    parameters += ' --size 8388608'
                 context = BenchmarkRegistry.create_benchmark_context('ib-loopback', parameters=parameters)
 
                 assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -186,7 +190,7 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
                 for ib_command in benchmark._args.commands:
                     metric = 'IB_{}_8388608_Avg_{}'.format(ib_command, str(benchmark._args.ib_index))
                     metric_list.append(metric)
-            elif mode == 'AF':
+            elif mode == 'A':
                 for ib_command in benchmark._args.commands:
                     for size in ['8388608', '4194304', '1024', '2']:
                         metric = 'IB_{}_{}_Avg_{}'.format(ib_command, size, str(benchmark._args.ib_index))
@@ -207,7 +211,7 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
             # Check parameters specified in BenchmarkContext.
             assert (benchmark._args.ib_index == 0)
             assert (benchmark._args.numa == 0)
-            assert (benchmark._args.n == 2000)
-            assert (benchmark._args.size == 8388608)
+            assert (benchmark._args.iters == 2000)
+            if mode == 'S':
+                assert (benchmark._args.size == 8388608)
             assert (benchmark._args.commands == ['write'])
-            assert (benchmark._args.mode == mode)
