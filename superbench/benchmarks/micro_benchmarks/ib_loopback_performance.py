@@ -50,14 +50,14 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             type=int,
             default=None,
             required=False,
-            help='The message size of running ib command, e.g. 8388608.',
+            help='The message size of running ib command, e.g., 8388608.',
         )
         self._parser.add_argument(
             '--commands',
             type=str,
             nargs='+',
             default='write',
-            help='The ib command used to run, e.g. {}.'.format(' '.join(list(self.__support_ib_commands.keys()))),
+            help='The ib command used to run, e.g., {}.'.format(' '.join(list(self.__support_ib_commands.keys()))),
         )
         self._parser.add_argument(
             '--numa',
