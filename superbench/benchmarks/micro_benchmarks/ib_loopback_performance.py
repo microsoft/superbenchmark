@@ -4,7 +4,6 @@
 """Module of the IB loopback benchmarks."""
 
 import os
-import re
 from pathlib import Path
 
 from superbench.common.utils import logger
@@ -181,13 +180,11 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
 
         valid = False
         content = raw_output.splitlines()
-        try:
-            metric_set = set()
-            for line in content:
+
+        metric_set = set()
+        for line in content:
+            try:
                 values = list(filter(None, line.split(' ')))
-                # Filter useless line
-                if len(values) != 5 or not re.match(r'\d+', values[0]) or not re.match(r'\d+.\d+', values[-2]):
-                    continue
                 # Extract value from the line
                 size = int(values[0])
                 avg_bw = float(values[-2])
@@ -197,16 +194,15 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
                     metric_set.add(metric)
                     self._result.add_result(metric, avg_bw)
                     valid = True
-        except BaseException:
-            valid = False
-        finally:
-            if valid is False:
-                logger.error(
-                    'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
-                        self._curr_run_index, self._name, raw_output
-                    )
+            except BaseException:
+                pass
+        if valid is False:
+            logger.error(
+                'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
+                    self._curr_run_index, self._name, raw_output
                 )
-                return False
+            )
+            return False
 
         return True
 
