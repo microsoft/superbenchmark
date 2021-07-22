@@ -28,7 +28,7 @@ superbench:
       model_action:
         - train
   benchmarks:
-    disk-performance:
+    disk-benchmark:
       enable: false
       modes:
         - proc_num: 1

@@ -12,7 +12,7 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class DiskPerformance(MicroBenchmarkWithInvoke):
+class DiskBenchmark(MicroBenchmarkWithInvoke):
     """The disk performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -217,4 +217,4 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('disk-performance', DiskPerformance)
+BenchmarkRegistry.register_benchmark('disk-benchmark', DiskBenchmark)

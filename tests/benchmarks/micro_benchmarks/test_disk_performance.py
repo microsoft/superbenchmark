@@ -11,7 +11,7 @@ import unittest
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-class DiskPerformanceTest(unittest.TestCase):
+class DiskBenchmarkTest(unittest.TestCase):
     """Test class for disk-performance benchmark."""
     def setUp(self):
         """Method called to prepare the test fixture."""
@@ -28,7 +28,7 @@ class DiskPerformanceTest(unittest.TestCase):
 
     def test_disk_performance_empty_param(self):
         """Test disk-performance benchmark command generation with empty parameter."""
-        benchmark_name = 'disk-performance'
+        benchmark_name = 'disk-benchmark'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
@@ -40,7 +40,7 @@ class DiskPerformanceTest(unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.name == 'disk-performance')
+        assert (benchmark.name == 'disk-benchmark')
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Command list should be empty
@@ -51,7 +51,7 @@ class DiskPerformanceTest(unittest.TestCase):
         """Test disk-performance benchmark command generation with invalid block device."""
         mock_is_block_device.return_value = False
 
-        benchmark_name = 'disk-performance'
+        benchmark_name = 'disk-benchmark'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
@@ -66,7 +66,7 @@ class DiskPerformanceTest(unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret is False)
         assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
-        assert (benchmark.name == 'disk-performance')
+        assert (benchmark.name == 'disk-benchmark')
         assert (benchmark.type == BenchmarkType.MICRO)
 
     @mock.patch('pathlib.Path.is_block_device')
@@ -74,7 +74,7 @@ class DiskPerformanceTest(unittest.TestCase):
         """Test disk-performance benchmark command generation with all benchmarks disabled."""
         mock_is_block_device.return_value = True
 
-        benchmark_name = 'disk-performance'
+        benchmark_name = 'disk-benchmark'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
@@ -95,7 +95,7 @@ class DiskPerformanceTest(unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.name == 'disk-performance')
+        assert (benchmark.name == 'disk-benchmark')
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Command list should be empty
@@ -106,7 +106,7 @@ class DiskPerformanceTest(unittest.TestCase):
         """Test disk-performance benchmark command generation with all benchmarks enabled."""
         mock_is_block_device.return_value = True
 
-        benchmark_name = 'disk-performance'
+        benchmark_name = 'disk-benchmark'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
@@ -141,7 +141,7 @@ class DiskPerformanceTest(unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.name == 'disk-performance')
+        assert (benchmark.name == 'disk-benchmark')
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check command list
@@ -180,7 +180,7 @@ class DiskPerformanceTest(unittest.TestCase):
 
     def test_disk_performance_result_parsing(self):
         """Test disk-performance benchmark result parsing."""
-        benchmark_name = 'disk-performance'
+        benchmark_name = 'disk-benchmark'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
@@ -189,7 +189,7 @@ class DiskPerformanceTest(unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.name == 'disk-performance')
+        assert (benchmark.name == 'disk-benchmark')
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Positive case - valid raw output.
