@@ -56,7 +56,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             '--commands',
             type=str,
             nargs='+',
-            default='write',
+            default=['write'],
             help='The ib command used to run, e.g., {}.'.format(' '.join(list(self.__support_ib_commands.keys()))),
         )
         self._parser.add_argument(
@@ -121,8 +121,6 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         self.__get_arguments_from_env()
 
         # Format the arguments
-        if not isinstance(self._args.commands, list):
-            self._args.commands = [self._args.commands]
         self._args.commands = [command.lower() for command in self._args.commands]
 
         # Check whether arguments are valid
