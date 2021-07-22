@@ -186,6 +186,8 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         for line in content:
             try:
                 values = list(filter(None, line.split(' ')))
+                if len(values) != 5:
+                    continue
                 # Extract value from the line
                 size = int(values[0])
                 avg_bw = float(values[-2])
