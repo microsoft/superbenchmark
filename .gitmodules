@@ -8,3 +8,7 @@
 [submodule "third_party/nccl-tests"]
 	path = third_party/nccl-tests
 	url = https://github.com/NVIDIA/nccl-tests.git
+[submodule "third_party/fio"]
+	path = third_party/fio
+	url = https://github.com/axboe/fio.git
+	branch = master

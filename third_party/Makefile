@@ -6,10 +6,10 @@
 SB_MICRO_PATH ?= "/usr/local"
 MPI_HOME_PATH ?= "/usr/local/mpi"
 
-.PHONY: all cutlass bandwidthTest nccl_tests perftest
+.PHONY: all cutlass bandwidthTest nccl_tests perftest fio
 
 # Build all targets.
-all: cutlass bandwidthTest nccl_tests perftest
+all: cutlass bandwidthTest nccl_tests perftest fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -17,7 +17,7 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-cutlass: 
+cutlass:
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
 	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
 		-DCUTLASS_NVCC_ARCHS='70;80' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
@@ -44,8 +44,13 @@ endif
 
 # Build perftest.
 # The version we use is the tag v4.5-0.2.
-perftest: 
+perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
+# Build FIO from commit 0313e9 (fio-3.27 tag).
+fio:
+ifneq (,$(wildcard fio/Makefile))
+	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
