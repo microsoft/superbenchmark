@@ -23,12 +23,13 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'all_reduce_perf'
-        self.__algorithms = {
+        self.__operations = {
             'allreduce': 'all_reduce_perf',
             'allgather': 'all_gather_perf',
             'broadcast': 'broadcast_perf',
             'reduce': 'reduce_perf',
-            'reducescatter': 'reduce_scatter_perf'
+            'reducescatter': 'reduce_scatter_perf',
+            'alltoall': 'alltoall_perf'
         }
 
     def add_parser_arguments(self):
@@ -36,26 +37,26 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--algo',
+            '--operations',
             type=str,
             nargs='+',
-            default=list(self.__algorithms.keys()),
-            help='Nccl algorithms to benchmark. E.g. {}.'.format(' '.join(list(self.__algorithms.keys()))),
+            default=list(self.__operations.keys()),
+            help='Nccl operations to benchmark. E.g. {}.'.format(' '.join(list(self.__operations.keys()))),
         )
         self._parser.add_argument(
-            '--gpu_count',
+            '-g',
             type=int,
             default=8,
-            help='The count of GPUs used for benchmarking.',
+            help='Number of gpus per thread to run the nccl test.',
         )
         self._parser.add_argument(
-            '--max_size',
+            '-e',
             type=str,
             default='8192M',
             help='Max size in bytes to run the nccl test. E.g. 8192M.',
         )
         self._parser.add_argument(
-            '--min_size',
+            '-b',
             type=str,
             default='1',
             help='Min size in bytes to run the nccl test. E.g. 1.',
@@ -83,27 +84,26 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # Format the arguments
-        self._args.algo = [p.lower() for p in self._args.algo]
+        self._args.operations = [p.lower() for p in self._args.operations]
 
         # Check the arguments and generate the commands
-        for algo in self._args.algo:
-            if algo not in self.__algorithms:
+        for op in self._args.operations:
+            if op not in self.__operations:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
-                    'Unsupported algorithm of NCCL test - benchmark: {}, algorithm: {}, expected: {}.'.format(
-                        self._name, algo, ' '.join(list(self.__algorithms.keys()))
+                    'Unsupported operation of NCCL test - benchmark: {}, operation: {}, expected: {}.'.format(
+                        self._name, op, ' '.join(list(self.__operations.keys()))
                     )
                 )
                 return False
             else:
-                self._bin_name = self.__algorithms[algo]
+                self._bin_name = self.__operations[op]
                 if not self._set_binary_path():
                     return False
 
                 command = os.path.join(self._args.bin_dir, self._bin_name)
                 command += ' -b {} -e {} -f {} -g {} -c {}'.format(
-                    self._args.min_size, self._args.max_size, str(self._args.f), str(self._args.gpu_count),
-                    str(self._args.c)
+                    self._args.b, self._args.e, str(self._args.f), str(self._args.g), str(self._args.c)
                 )
                 self._commands.append(command)
 
@@ -127,7 +127,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             if rank > 0:
                 return True
 
-        self._result.add_raw_data('raw_output_' + self._args.algo[cmd_idx], raw_output)
+        self._result.add_raw_data('raw_output_' + self._args.operations[cmd_idx], raw_output)
 
         content = raw_output.splitlines()
         size = -1
@@ -173,13 +173,13 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                         time_out = float(line[time_index])
                         algbw_out = float(line[algbw_index])
                         self._result.add_result(
-                            'NCCL_' + self._args.algo[cmd_idx] + '_' + str(size) + '_busbw', busbw_out
+                            'NCCL_' + self._args.operations[cmd_idx] + '_' + str(size) + '_busbw', busbw_out
                         )
                         self._result.add_result(
-                            'NCCL_' + self._args.algo[cmd_idx] + '_' + str(size) + '_algbw', algbw_out
+                            'NCCL_' + self._args.operations[cmd_idx] + '_' + str(size) + '_algbw', algbw_out
                         )
                         self._result.add_result(
-                            'NCCL_' + self._args.algo[cmd_idx] + '_' + str(size) + '_time', time_out
+                            'NCCL_' + self._args.operations[cmd_idx] + '_' + str(size) + '_time', time_out
                         )
         except BaseException as e:
             logger.error(
