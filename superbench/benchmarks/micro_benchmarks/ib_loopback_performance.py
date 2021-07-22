@@ -12,6 +12,29 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
+def get_numa_cores(numa_index):
+    """Get the available cores from different physical cpu core of NUMA<numa_index>.
+
+    Args:
+        numa_index (int): the index of numa node.
+
+    Return:
+        list: The available cores from different physical cpu core of NUMA<numa_index>.
+        None if no available cores or numa index.
+    """
+    try:
+        with Path(f'/sys/devices/system/node/node{numa_index}/cpulist').open('r') as f:
+            cores = []
+            core_ranges = f.read().strip().split(',')
+            for core_range in core_ranges:
+                start, end = core_range.split('-')
+                for core in range(int(start), int(end) + 1):
+                    cores.append(core)
+        return cores
+    except IOError:
+        return None
+
+
 class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
     """The IB loopback performance benchmark class."""
     def __init__(self, name, parameters=''):
@@ -73,28 +96,6 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             help='Test uses GID with GID index taken from command.',
         )
 
-    def __get_numa_cores(self, numa_index):
-        """Get the available cores from different physical cpu core of NUMA<numa_index>.
-
-        Args:
-            numa_index (int): the index of numa node.
-
-        Return:
-            list: The available cores from different physical cpu core of NUMA<numa_index>.
-            None if no available cores or numa index.
-        """
-        try:
-            with Path(f'/sys/devices/system/node/node{numa_index}/cpulist').open('r') as f:
-                cores = []
-                core_ranges = f.read().strip().split(',')
-                for core_range in core_ranges:
-                    start, end = core_range.split('-')
-                    for core in range(int(start), int(end) + 1):
-                        cores.append(core)
-            return cores
-        except IOError:
-            return None
-
     def __get_arguments_from_env(self):
         """Read environment variables from runner used for parallel and fill in ib_index and numa_node_index.
 
@@ -141,8 +142,8 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             else:
                 try:
                     command = os.path.join(self._args.bin_dir, self._bin_name)
-                    numa_cores = self.__get_numa_cores(self._args.numa)
-                    if len(numa_cores < 4):
+                    numa_cores = get_numa_cores(self._args.numa)
+                    if len(numa_cores) < 4:
                         self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
                         logger.error('Getting numa core devices failure - benchmark: {}.'.format(self._name))
                         return False

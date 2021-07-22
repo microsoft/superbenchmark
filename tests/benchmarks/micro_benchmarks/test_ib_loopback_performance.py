@@ -7,8 +7,9 @@ import os
 import numbers
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, BenchmarkType
+from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType
 from superbench.common.utils import network
 
 
@@ -29,7 +30,10 @@ class IBLoopbackBenchmarkTest(unittest.TestCase):
         if (len(network.get_ib_devices()) < 1):
             self.__binary_file.unlink()
 
-    def test_ib_loopback_all_sizes(self):
+    @mock.patch('superbench.common.utils.network.get_free_port')
+    @mock.patch('superbench.benchmarks.micro_benchmarks.ib_loopback_performance.get_numa_cores')
+    @mock.patch('superbench.common.utils.network.get_ib_devices')
+    def test_ib_loopback_all_sizes(self, mock_ib_devices, mock_numa_cores, mock_port):
         """Test ib-loopback benchmark for all sizes."""
         raw_output = """
 ************************************
@@ -109,9 +113,16 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         # Check preprocess
         parameters = '--ib_index 0 --numa 0 --iters 2000'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
+
+        mock_ib_devices.return_value = ['mlx5_0']
+        mock_numa_cores.return_value = [0, 1, 2, 3]
+        mock_port.return_value = 10000
         ret = benchmark._preprocess()
-        assert (ret is False)
-        assert (benchmark.return_code is ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        assert (ret)
+
+        expect_command = 'run_perftest_loopback 3 1 ib_write_bw -a -F --iters=2000 -d mlx5_0 -p 10000 -x 0'
+        command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
+        assert (command == expect_command)
 
         assert (benchmark._process_raw_result(0, raw_output))
 
@@ -141,7 +152,10 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         assert (benchmark._args.iters == 2000)
         assert (benchmark._args.commands == ['write'])
 
-    def test_ib_loopback_8M_size(self):
+    @mock.patch('superbench.common.utils.network.get_free_port')
+    @mock.patch('superbench.benchmarks.micro_benchmarks.ib_loopback_performance.get_numa_cores')
+    @mock.patch('superbench.common.utils.network.get_ib_devices')
+    def test_ib_loopback_8M_size(self, mock_ib_devices, mock_numa_cores, mock_port):
         """Test ib-loopback benchmark for 8M size."""
         raw_output = """
                         RDMA_Write BW Test
@@ -196,11 +210,18 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         assert (benchmark_class)
 
         # Check preprocess
-        parameters = '--ib_index 0 --numa 0 --iters 2000  --size 8388608'
+        parameters = '--ib_index 0 --numa 0 --iters 2000 --size 8388608'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
+
+        mock_ib_devices.return_value = ['mlx5_0']
+        mock_numa_cores.return_value = [0, 1, 2, 3]
+        mock_port.return_value = 10000
         ret = benchmark._preprocess()
-        assert (ret is False)
-        assert (benchmark.return_code is ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        assert (ret)
+
+        expect_command = 'run_perftest_loopback 3 1 ib_write_bw -s 8388608 -F --iters=2000 -d mlx5_0 -p 10000 -x 0'
+        command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
+        assert (command == expect_command)
 
         assert (benchmark._process_raw_result(0, raw_output))
 
