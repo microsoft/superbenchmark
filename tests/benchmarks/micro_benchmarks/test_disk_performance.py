@@ -4,6 +4,7 @@
 """Tests for disk-performance benchmark."""
 
 from pathlib import Path
+from unittest import mock
 import os
 import unittest
 
@@ -45,14 +46,17 @@ class DiskPerformanceTest(unittest.TestCase):
         # Command list should be empty
         assert (0 == len(benchmark._commands))
 
-    def test_disk_performance_invalid_block_device(self):
+    @mock.patch('pathlib.Path.is_block_device')
+    def test_disk_performance_invalid_block_device(self, mock_is_block_device):
         """Test disk-performance benchmark command generation with invalid block device."""
+        mock_is_block_device.return_value = False
+
         benchmark_name = 'disk-performance'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
-        block_devices = ['/dev/null']
+        block_devices = ['mock_block_device_0']
         block_device_option = '--block_devices ' + ' '.join(block_devices)
 
         benchmark = benchmark_class(benchmark_name, parameters=block_device_option)
@@ -65,8 +69,11 @@ class DiskPerformanceTest(unittest.TestCase):
         assert (benchmark.name == 'disk-performance')
         assert (benchmark.type == BenchmarkType.MICRO)
 
-    def test_disk_performance_benchmark_disabled(self):
+    @mock.patch('pathlib.Path.is_block_device')
+    def test_disk_performance_benchmark_disabled(self, mock_is_block_device):
         """Test disk-performance benchmark command generation with all benchmarks disabled."""
+        mock_is_block_device.return_value = True
+
         benchmark_name = 'disk-performance'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
@@ -95,14 +102,17 @@ class DiskPerformanceTest(unittest.TestCase):
         # Command list should be empty
         assert (0 == len(benchmark._commands))
 
-    def test_disk_performance_benchmark_enabled(self):
+    @mock.patch('pathlib.Path.is_block_device')
+    def test_disk_performance_benchmark_enabled(self, mock_is_block_device):
         """Test disk-performance benchmark command generation with all benchmarks enabled."""
+        mock_is_block_device.return_value = True
+
         benchmark_name = 'disk-performance'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
-        block_devices = ['/dev/nvme0n1', '/dev/nvme1n1']
+        block_devices = ['mock_block_device_0', 'mock_block_device_1']
         block_device_option = '--block_devices ' + ' '.join(block_devices)
 
         init_test_magic = 45
