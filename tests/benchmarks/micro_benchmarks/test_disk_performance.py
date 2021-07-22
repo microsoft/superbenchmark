@@ -83,7 +83,6 @@ class DiskPerformanceTest(unittest.TestCase):
         block_device_option = '--block_devices ' + ' '.join(block_devices)
 
         param_str = block_device_option
-        param_str += ' --enable_seq_precond=0'
         param_str += ' --rand_precond_time=0'
         param_str += ' --seq_read_runtime=0'
         param_str += ' --seq_write_runtime=0'
@@ -119,7 +118,7 @@ class DiskPerformanceTest(unittest.TestCase):
         curr_test_magic = init_test_magic
         param_str = block_device_option
         # Sequential precondition
-        param_str += ' --enable_seq_precond=1'
+        param_str += ' --enable_seq_precond'
         # Random precondition
         param_str += ' --rand_precond_time=%d' % curr_test_magic
         curr_test_magic += 1

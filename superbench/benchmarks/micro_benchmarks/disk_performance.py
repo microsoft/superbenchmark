@@ -75,9 +75,7 @@ class DiskPerformance(MicroBenchmarkWithInvoke):
         # Disable precondition by default
         self._parser.add_argument(
             '--enable_seq_precond',
-            type=int,
-            default=0,
-            required=False,
+            action='store_true',
             help='Enable seq write precondition.',
         )
         self._parser.add_argument(
