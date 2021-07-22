@@ -29,10 +29,9 @@ class IBLoopbackBenchmarkTest(unittest.TestCase):
         if (len(network.get_ib_devices()) < 1):
             self.__binary_file.unlink()
 
-    def test_ib_loopback_performance(self):    # noqa: C901
-        """Test ib-loopback benchmark."""
-        raw_output = {}
-        raw_output['A'] = """
+    def test_ib_loopback_all_sizes(self):
+        """Test ib-loopback benchmark for all sizes."""
+        raw_output = """
 ************************************
 * Waiting for client to connect... *
 ************************************
@@ -100,7 +99,51 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
 8388608    2000             23240.68            23240.68                  0.002905
 ---------------------------------------------------------------------------------------
     """
-        raw_output['S'] = """
+        # Test without ib devices
+        # Check registry.
+        benchmark_name = 'ib-loopback'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        # Check preprocess
+        parameters = '--ib_index 0 --numa 0 --iters 2000'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code is ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+
+        assert (benchmark._process_raw_result(0, raw_output))
+
+        # Check function process_raw_data.
+        # Positive case - valid raw output.
+        metric_list = []
+        for ib_command in benchmark._args.commands:
+            for size in ['8388608', '4194304', '1024', '2']:
+                metric = 'IB_{}_{}_Avg_{}'.format(ib_command, size, str(benchmark._args.ib_index))
+                metric_list.append(metric)
+        for metric in metric_list:
+            assert (metric in benchmark.result)
+            assert (len(benchmark.result[metric]) == 1)
+            assert (isinstance(benchmark.result[metric][0], numbers.Number))
+
+        # Negative case - Add invalid raw output.
+        assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
+
+        # Check basic information.
+        assert (benchmark.name == 'ib-loopback')
+        assert (benchmark.type == BenchmarkType.MICRO)
+        assert (benchmark._bin_name == 'run_perftest_loopback')
+
+        # Check parameters specified in BenchmarkContext.
+        assert (benchmark._args.ib_index == 0)
+        assert (benchmark._args.numa == 0)
+        assert (benchmark._args.iters == 2000)
+        assert (benchmark._args.commands == ['write'])
+
+    def test_ib_loopback_8M_size(self):
+        """Test ib-loopback benchmark for 8M size."""
+        raw_output = """
                         RDMA_Write BW Test
  Dual-port       : OFF		Device         : ibP257p0s0
  Number of qps   : 1		Transport type : IB
@@ -145,54 +188,44 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
 ---------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------
 """
-        for mode in ['A', 'S']:
-            # Test without ib devices
-            # Check registry.
-            benchmark_name = 'ib-loopback'
-            (benchmark_class,
-             predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
-            assert (benchmark_class)
+        # Test without ib devices
+        # Check registry.
+        benchmark_name = 'ib-loopback'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
 
-            # Check preprocess
-            parameters = '--ib_index 0 --numa 0 --iters 2000'
-            if mode == 'S':
-                parameters += ' --size 8388608'
-            benchmark = benchmark_class(benchmark_name, parameters=parameters)
-            ret = benchmark._preprocess()
-            assert (ret is False)
-            assert (benchmark.return_code is ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        # Check preprocess
+        parameters = '--ib_index 0 --numa 0 --iters 2000  --size 8388608'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code is ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
 
-            assert (benchmark._process_raw_result(0, raw_output[mode]))
+        assert (benchmark._process_raw_result(0, raw_output))
 
-            # Check function process_raw_data.
-            # Positive case - valid raw output.
-            metric_list = []
-            if mode == 'S':
-                for ib_command in benchmark._args.commands:
-                    metric = 'IB_{}_8388608_Avg_{}'.format(ib_command, str(benchmark._args.ib_index))
-                    metric_list.append(metric)
-            elif mode == 'A':
-                for ib_command in benchmark._args.commands:
-                    for size in ['8388608', '4194304', '1024', '2']:
-                        metric = 'IB_{}_{}_Avg_{}'.format(ib_command, size, str(benchmark._args.ib_index))
-                        metric_list.append(metric)
-            for metric in metric_list:
-                assert (metric in benchmark.result)
-                assert (len(benchmark.result[metric]) == 1)
-                assert (isinstance(benchmark.result[metric][0], numbers.Number))
+        # Check function process_raw_data.
+        # Positive case - valid raw output.
+        metric_list = []
+        for ib_command in benchmark._args.commands:
+            metric = 'IB_{}_8388608_Avg_{}'.format(ib_command, str(benchmark._args.ib_index))
+            metric_list.append(metric)
+        for metric in metric_list:
+            assert (metric in benchmark.result)
+            assert (len(benchmark.result[metric]) == 1)
+            assert (isinstance(benchmark.result[metric][0], numbers.Number))
 
-            # Negative case - Add invalid raw output.
-            assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
+        # Negative case - Add invalid raw output.
+        assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
 
-            # Check basic information.
-            assert (benchmark.name == 'ib-loopback')
-            assert (benchmark.type == BenchmarkType.MICRO)
-            assert (benchmark._bin_name == 'run_perftest_loopback')
+        # Check basic information.
+        assert (benchmark.name == 'ib-loopback')
+        assert (benchmark.type == BenchmarkType.MICRO)
+        assert (benchmark._bin_name == 'run_perftest_loopback')
 
-            # Check parameters specified in BenchmarkContext.
-            assert (benchmark._args.ib_index == 0)
-            assert (benchmark._args.numa == 0)
-            assert (benchmark._args.iters == 2000)
-            if mode == 'S':
-                assert (benchmark._args.size == 8388608)
-            assert (benchmark._args.commands == ['write'])
+        # Check parameters specified in BenchmarkContext.
+        assert (benchmark._args.ib_index == 0)
+        assert (benchmark._args.numa == 0)
+        assert (benchmark._args.iters == 2000)
+        assert (benchmark._args.size == 8388608)
+        assert (benchmark._args.commands == ['write'])

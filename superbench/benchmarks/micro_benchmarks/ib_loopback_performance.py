@@ -187,12 +187,14 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             metric_set = set()
             for line in content:
                 values = list(filter(None, line.split(' ')))
+                # Filter useless line
                 if len(values) != 5 or not re.match(r'\d+', values[0]) or not re.match(r'\d+.\d+', values[-2]):
                     continue
+                # Extract value from the line
                 size = int(values[0])
                 avg_bw = float(values[-2])
                 metric = 'IB_{}_{}_Avg_{}'.format(self._args.commands[cmd_idx], size, str(self._args.ib_index))
-                # Filter useless value
+                # Filter useless value in client output
                 if metric not in metric_set:
                     metric_set.add(metric)
                     self._result.add_result(metric, avg_bw)
