@@ -83,8 +83,6 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # Format the arguments
-        if not isinstance(self._args.algo, list):
-            self._args.algo = [self._args.algo]
         self._args.algo = [p.lower() for p in self._args.algo]
 
         # Check the arguments and generate the commands
