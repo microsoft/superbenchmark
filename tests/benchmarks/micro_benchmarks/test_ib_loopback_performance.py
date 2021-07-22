@@ -210,7 +210,7 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         assert (benchmark_class)
 
         # Check preprocess
-        parameters = '--ib_index 0 --numa 0 --iters 2000 --size 8388608'
+        parameters = '--ib_index 0 --numa 0 --iters 2000 --msg_size 8388608'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         mock_ib_devices.return_value = ['mlx5_0']
@@ -248,5 +248,5 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         assert (benchmark._args.ib_index == 0)
         assert (benchmark._args.numa == 0)
         assert (benchmark._args.iters == 2000)
-        assert (benchmark._args.size == 8388608)
+        assert (benchmark._args.msg_size == 8388608)
         assert (benchmark._args.commands == ['write'])

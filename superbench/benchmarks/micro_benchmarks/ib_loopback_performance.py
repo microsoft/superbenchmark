@@ -68,7 +68,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             help='The iterations of running ib command',
         )
         self._parser.add_argument(
-            '--size',
+            '--msg_size',
             type=int,
             default=None,
             required=False,
@@ -101,13 +101,19 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
 
         Get 'PROC_RANK'(rank of current process) 'IB_DEVICES' 'NUMA_NODES' environment variables
         Get ib_index and numa_node_index according to 'NUMA_NODES'['PROC_RANK'] and 'IB_DEVICES'['PROC_RANK']
+        Note: The config from env variables will overwrite the configs defined in the command line
         """
-        if os.getenv('PROC_RANK'):
-            rank = int(os.getenv('PROC_RANK'))
-            if os.getenv('IB_DEVICES'):
-                self._args.ib_index = int(os.getenv('IB_DEVICES').split(',')[rank])
-            if os.getenv('NUMA_NODES'):
-                self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
+        try:
+            if os.getenv('PROC_RANK'):
+                rank = int(os.getenv('PROC_RANK'))
+                if os.getenv('IB_DEVICES'):
+                    self._args.ib_index = int(os.getenv('IB_DEVICES').split(',')[rank])
+                if os.getenv('NUMA_NODES'):
+                    self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
+            return True
+        except BaseException:
+            logger.error('The proc_rank is out of index of devices - benchmark: {}.'.format(self._name))
+            return False
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -118,17 +124,18 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        self.__get_arguments_from_env()
+        if not self.__get_arguments_from_env():
+            return False
 
         # Format the arguments
         self._args.commands = [command.lower() for command in self._args.commands]
 
         # Check whether arguments are valid
         command_mode = ''
-        if self._args.size is None:
+        if self._args.msg_size is None:
             command_mode = ' -a'
         else:
-            command_mode = ' -s ' + str(self._args.size)
+            command_mode = ' -s ' + str(self._args.msg_size)
 
         for ib_command in self._args.commands:
             if ib_command not in self.__support_ib_commands:
