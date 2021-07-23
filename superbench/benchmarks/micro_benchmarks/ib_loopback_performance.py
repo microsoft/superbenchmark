@@ -150,12 +150,16 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
                 try:
                     command = os.path.join(self._args.bin_dir, self._bin_name)
                     numa_cores = get_numa_cores(self._args.numa)
-                    if len(numa_cores) < 4:
+                    if len(numa_cores) < 2:
                         self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
                         logger.error('Getting numa core devices failure - benchmark: {}.'.format(self._name))
                         return False
-                    server_core = int(numa_cores[-1])
-                    client_core = int(numa_cores[-3])
+                    if len(numa_cores) >= 4:
+                        server_core = int(numa_cores[-1])
+                        client_core = int(numa_cores[-3])
+                    else:
+                        server_core = int(numa_cores[-1])
+                        client_core = int(numa_cores[-2])
                     command += ' ' + str(server_core) + ' ' + str(client_core)
                     command += ' ' + self.__support_ib_commands[ib_command]
                     command += command_mode + ' -F'
