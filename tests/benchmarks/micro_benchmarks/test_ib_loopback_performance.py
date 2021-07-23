@@ -11,6 +11,7 @@ from unittest import mock
 
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType
 from superbench.common.utils import network
+from superbench.benchmarks.micro_benchmarks import ib_loopback_performance
 
 
 class IBLoopbackBenchmarkTest(unittest.TestCase):
@@ -29,6 +30,15 @@ class IBLoopbackBenchmarkTest(unittest.TestCase):
         """Method called after the test method has been called and the result recorded."""
         if (len(network.get_ib_devices()) < 1):
             self.__binary_file.unlink()
+
+    def test_ib_loopback_util(self):
+        """Test util functions 'get_numa_cores' and 'get_free_port' used in ib-loopback benchmark."""
+        port = network.get_free_port()
+        assert (isinstance(port, numbers.Number))
+        numa_cores = ib_loopback_performance.get_numa_cores(0)
+        assert (len(numa_cores) >= 4)
+        for i in range(len(numa_cores)):
+            assert (isinstance(numa_cores[i], numbers.Number))
 
     @mock.patch('superbench.common.utils.network.get_free_port')
     @mock.patch('superbench.benchmarks.micro_benchmarks.ib_loopback_performance.get_numa_cores')
