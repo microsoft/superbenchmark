@@ -56,7 +56,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
                 'allreduce', 'allgather', 'broadcast', 'reduce', 'reducescatter', 'alltoall'
             ]
         )
-        assert (benchmark._args.g == 8)
+        assert (benchmark._args.nccl_tests_args == '-b 8 -e 8G -f 2 -g 8 -c 0')
 
         # Check command list
         bin_names = [
@@ -66,9 +66,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 
         for i in range(len(benchmark._args.operations)):
             commnad = bin_names[i] + benchmark._commands[i].split(bin_names[i])[1]
-            expected_command = '{} -b {} -e {} -f 2 -g {} -c 0'.format(
-                bin_names[i], benchmark._args.b, benchmark._args.e, benchmark._args.g
-            )
+            expected_command = '{} -b 8 -e 8G -f 2 -g 8 -c 0'.format(bin_names[i])
             assert (commnad == expected_command)
 
         # Check results and metrics.

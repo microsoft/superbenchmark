@@ -41,37 +41,13 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             type=str,
             nargs='+',
             default=list(self.__operations.keys()),
-            help='Nccl operations to benchmark. E.g. {}.'.format(' '.join(list(self.__operations.keys()))),
+            help='Nccl operations to benchmark, e.g., {}.'.format(' '.join(list(self.__operations.keys()))),
         )
         self._parser.add_argument(
-            '-g',
-            type=int,
-            default=8,
-            help='Number of gpus per thread to run the nccl test.',
-        )
-        self._parser.add_argument(
-            '-e',
+            '--nccl_tests_args',
             type=str,
-            default='8192M',
-            help='Max size in bytes to run the nccl test. E.g. 8192M.',
-        )
-        self._parser.add_argument(
-            '-b',
-            type=str,
-            default='1',
-            help='Min size in bytes to run the nccl test. E.g. 1.',
-        )
-        self._parser.add_argument(
-            '-f',
-            type=int,
-            default=2,
-            help='Increment factor, multiplication factor between sizes. E.g. 2.',
-        )
-        self._parser.add_argument(
-            '-c',
-            type=int,
-            default=0,
-            help='Check correctness of results. This can be quite slow on large numbers of GPUs. E.g. 0 or 1.',
+            default='-b 8 -e 8G -f 2 -g 8 -c 0',
+            help='The arguments for nccl-tests, e.g., -b 8 -e 8G -f 2 -g 8 -c 0.',
         )
 
     def _preprocess(self):
@@ -102,9 +78,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     return False
 
                 command = os.path.join(self._args.bin_dir, self._bin_name)
-                command += ' -b {} -e {} -f {} -g {} -c {}'.format(
-                    self._args.b, self._args.e, str(self._args.f), str(self._args.g), str(self._args.c)
-                )
+                command += ' ' + self._args.nccl_tests_args
                 self._commands.append(command)
 
         return True
@@ -154,18 +128,18 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     # Get index of selected column
                     line = line[1:].strip(' ')
                     line = re.sub(r' +', ' ', line).split(' ')
-                    # Get first index of condition or default value in list
-                    size_index = next((i for i, x in enumerate(line) if x == 'size'), -1)
-                    time_index = next((i for i, x in enumerate(line) if x == 'time'), -1)
-                    busbw_index = next((i for i, x in enumerate(line) if x == 'busbw'), -1)
-                    algbw_index = next((i for i, x in enumerate(line) if x == 'algbw'), -1)
+                    # Get first index of condition in list, if it not existing, raise exception
+                    size_index = line.index('size') - len(line)
+                    time_index = line.index('time') - len(line)
+                    busbw_index = line.index('busbw') - len(line)
+                    algbw_index = line.index('algbw') - len(line)
                     break
             if size_index != -1 and busbw_index != -1 and time_index != -1 and algbw_index != -1:
                 for line in content:
                     line = line.strip(' ')
                     line = re.sub(r' +', ' ', line).split(' ')
                     # Filter line not started with number
-                    if not re.match(r'\d+', line[0]):
+                    if len(line) == 0 or not re.match(r'\d+', line[0]):
                         continue
                     size = int(line[size_index])
                     if size != 0:
