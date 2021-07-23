@@ -28,6 +28,14 @@ superbench:
       model_action:
         - train
   benchmarks:
+    disk-benchmark:
+      enable: false
+      modes:
+        - proc_num: 1
+          parallel: no
+      parameters:
+        block_devices:
+          - /dev/nvme0n1
     mem-bw:
       enable: true
       modes:
