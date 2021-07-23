@@ -127,6 +127,9 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         mock_ib_devices.return_value = ['mlx5_0']
         mock_numa_cores.return_value = [0, 1, 2, 3]
         mock_port.return_value = 10000
+        os.environ['PROC_RANK'] = '0'
+        os.environ['IB_DEVICES'] = '0,2,4,6'
+        os.environ['NUMA_NODES'] = '1,0,3,2'
         ret = benchmark._preprocess()
         assert (ret)
 
@@ -158,7 +161,7 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
 
         # Check parameters specified in BenchmarkContext.
         assert (benchmark._args.ib_index == 0)
-        assert (benchmark._args.numa == 0)
+        assert (benchmark._args.numa == 1)
         assert (benchmark._args.iters == 2000)
         assert (benchmark._args.commands == ['write'])
 
