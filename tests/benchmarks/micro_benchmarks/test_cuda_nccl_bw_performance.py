@@ -413,7 +413,7 @@ hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
 
         for i, op in enumerate(benchmark._args.operations):
             assert (benchmark._process_raw_result(i, raw_output[op]))
-            for name in ['time', 'algbw', 'algbw']:
+            for name in ['time', 'algbw', 'busbw']:
                 for size in ['8589934592', '4294967296', '2147483648', '1073741824', '536870912', '32']:
                     metric = 'NCCL_' + op + '_' + size + '_' + name
                     assert (metric in benchmark.result)
