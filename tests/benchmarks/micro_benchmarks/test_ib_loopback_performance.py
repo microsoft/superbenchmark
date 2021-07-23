@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType
+from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 from superbench.common.utils import network
 from superbench.benchmarks.micro_benchmarks import ib_loopback_performance
 
@@ -121,6 +121,20 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         assert (benchmark_class)
 
         # Check preprocess
+        # Negative case
+        parameters = '--ib_index 0 --numa 0 --iters 2000'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        mock_ib_devices.return_value = None
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        parameters = '--ib_index 0 --numa 0 --iters 2000'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        mock_numa_cores.return_value = None
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        # Positive case
         parameters = '--ib_index 0 --numa 0 --iters 2000'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
@@ -223,6 +237,20 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         assert (benchmark_class)
 
         # Check preprocess
+        # Negative case
+        parameters = '--ib_index 0 --numa 0 --iters 2000'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        mock_ib_devices.return_value = None
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        parameters = '--ib_index 0 --numa 0 --iters 2000'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        mock_numa_cores.return_value = None
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        # Positive case
         parameters = '--ib_index 0 --numa 0 --iters 2000 --msg_size 8388608'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
