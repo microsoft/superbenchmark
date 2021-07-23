@@ -44,10 +44,46 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             help='Nccl operations to benchmark, e.g., {}.'.format(' '.join(list(self.__operations.keys()))),
         )
         self._parser.add_argument(
-            '--nccl_tests_args',
+            '--ngpus',
+            type=int,
+            default=8,
+            help='Number of gpus per thread to run the nccl test.',
+        )
+        self._parser.add_argument(
+            '--maxbytes',
             type=str,
-            default='-b 8 -e 8G -f 2 -g 8 -c 0',
-            help='The arguments for nccl-tests, e.g., -b 8 -e 8G -f 2 -g 8 -c 0.',
+            default='8G',
+            help='Max size in bytes to run the nccl test. E.g. 8G.',
+        )
+        self._parser.add_argument(
+            '--minbytes',
+            type=str,
+            default='8',
+            help='Min size in bytes to run the nccl test. E.g. 1.',
+        )
+        self._parser.add_argument(
+            '--stepfactor',
+            type=int,
+            default=2,
+            help='Increment factor, multiplication factor between sizes. E.g. 2.',
+        )
+        self._parser.add_argument(
+            '--check',
+            type=int,
+            default=0,
+            help='Check correctness of results. This can be quite slow on large numbers of GPUs. E.g. 0 or 1.',
+        )
+        self._parser.add_argument(
+            '--iters',
+            type=int,
+            default=20,
+            help='Number of iterations. Default: 20.',
+        )
+        self._parser.add_argument(
+            '--warmup_iters',
+            type=int,
+            default=5,
+            help='Number of warmup iterations. Default: 5.',
         )
 
     def _preprocess(self):
@@ -78,7 +114,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     return False
 
                 command = os.path.join(self._args.bin_dir, self._bin_name)
-                command += ' ' + self._args.nccl_tests_args
+                command += ' -b {} -e {} -f {} -g {} -c {} -n {} -w {}'.format(
+                    self._args.minbytes, self._args.maxbytes, str(self._args.stepfactor), str(self._args.ngpus),
+                    str(self._args.check), str(self._args.iters), str(self._args.warmup_iters)
+                )
                 self._commands.append(command)
 
         return True
@@ -129,7 +168,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     line = line[1:].strip(' ')
                     line = re.sub(r' +', ' ', line).split(' ')
                     # Get first index of condition in list, if it not existing, raise exception
-                    size_index = line.index('size') - len(line)
+                    size_index = line.index('size')
                     time_index = line.index('time') - len(line)
                     busbw_index = line.index('busbw') - len(line)
                     algbw_index = line.index('algbw') - len(line)

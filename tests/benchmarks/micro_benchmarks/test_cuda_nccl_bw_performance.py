@@ -56,7 +56,13 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
                 'allreduce', 'allgather', 'broadcast', 'reduce', 'reducescatter', 'alltoall'
             ]
         )
-        assert (benchmark._args.nccl_tests_args == '-b 8 -e 8G -f 2 -g 8 -c 0')
+        assert (benchmark._args.ngpus == 8)
+        assert (benchmark._args.minbytes == '8')
+        assert (benchmark._args.maxbytes == '8G')
+        assert (benchmark._args.stepfactor == 2)
+        assert (benchmark._args.check == 0)
+        assert (benchmark._args.iters == 20)
+        assert (benchmark._args.warmup_iters == 5)
 
         # Check command list
         bin_names = [
@@ -66,7 +72,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
 
         for i in range(len(benchmark._args.operations)):
             commnad = bin_names[i] + benchmark._commands[i].split(bin_names[i])[1]
-            expected_command = '{} -b 8 -e 8G -f 2 -g 8 -c 0'.format(bin_names[i])
+            expected_command = '{} -b 8 -e 8G -f 2 -g 8 -c 0 -n 20 -w 5'.format(bin_names[i])
             assert (commnad == expected_command)
 
         # Check results and metrics.
@@ -354,61 +360,69 @@ hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
 # nThread 1 nGpus 8 minBytes 1 maxBytes 8589934592 step: 2(factor) warmup iters: 5 iters: 20 validation: 0
 #
 # Using devices
-#   Rank  0 Pid  80143 on localhost device  0 [0x00] A100-SXM4-40GB
-#   Rank  1 Pid  80143 on localhost device  1 [0x00] A100-SXM4-40GB
-#   Rank  2 Pid  80143 on localhost device  2 [0x00] A100-SXM4-40GB
-#   Rank  3 Pid  80143 on localhost device  3 [0x00] A100-SXM4-40GB
-#   Rank  4 Pid  80143 on localhost device  4 [0x00] A100-SXM4-40GB
-#   Rank  5 Pid  80143 on localhost device  5 [0x00] A100-SXM4-40GB
-#   Rank  6 Pid  80143 on localhost device  6 [0x00] A100-SXM4-40GB
-#   Rank  7 Pid  80143 on localhost device  7 [0x00] A100-SXM4-40GB
+#   Rank  0 Pid 167261 on localhost device  0 [0x00] A100-SXM4-40GB
+#   Rank  1 Pid 167261 on localhost device  1 [0x00] A100-SXM4-40GB
+#   Rank  2 Pid 167261 on localhost device  2 [0x00] A100-SXM4-40GB
+#   Rank  3 Pid 167261 on localhost device  3 [0x00] A100-SXM4-40GB
+#   Rank  4 Pid 167261 on localhost device  4 [0x00] A100-SXM4-40GB
+#   Rank  5 Pid 167261 on localhost device  5 [0x00] A100-SXM4-40GB
+#   Rank  6 Pid 167261 on localhost device  6 [0x00] A100-SXM4-40GB
+#   Rank  7 Pid 167261 on localhost device  7 [0x00] A100-SXM4-40GB
 #
 #                                                     out-of-place                       in-place
 #       size         count    type   redop     time   algbw   busbw  error     time   algbw   busbw  error
 #        (B)    (elements)                     (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)
-           0             0   float     sum    34.52    0.00    0.00    N/A    33.62    0.00    0.00    N/A
-           0             0   float     sum    33.32    0.00    0.00    N/A    33.89    0.00    0.00    N/A
-           4             1   float     sum    34.42    0.00    0.00    N/A    34.41    0.00    0.00    N/A
-           8             2   float     sum    34.08    0.00    0.00    N/A    34.70    0.00    0.00    N/A
-          16             4   float     sum    34.66    0.00    0.00    N/A    34.59    0.00    0.00    N/A
-          32             8   float     sum    35.76    0.00    0.00    N/A    34.43    0.00    0.00    N/A
-          64            16   float     sum    34.14    0.00    0.00    N/A    34.42    0.00    0.00    N/A
-         128            32   float     sum    34.15    0.00    0.01    N/A    34.71    0.00    0.01    N/A
-         256            64   float     sum    34.62    0.01    0.01    N/A    34.81    0.01    0.01    N/A
-         512           128   float     sum    35.04    0.01    0.03    N/A    34.61    0.01    0.03    N/A
-        1024           256   float     sum    35.38    0.03    0.05    N/A    34.83    0.03    0.05    N/A
-        2048           512   float     sum    34.96    0.06    0.10    N/A    35.15    0.06    0.10    N/A
-        4096          1024   float     sum    35.07    0.12    0.20    N/A    35.93    0.11    0.20    N/A
-        8192          2048   float     sum    34.99    0.23    0.41    N/A    35.20    0.23    0.41    N/A
-       16384          4096   float     sum    35.43    0.46    0.81    N/A    35.20    0.47    0.81    N/A
-       32768          8192   float     sum    34.47    0.95    1.66    N/A    35.09    0.93    1.63    N/A
-       65536         16384   float     sum    36.81    1.78    3.12    N/A    35.98    1.82    3.19    N/A
-      131072         32768   float     sum    39.97    3.28    5.74    N/A    40.07    3.27    5.72    N/A
-      262144         65536   float     sum    47.17    5.56    9.73    N/A    45.42    5.77   10.10    N/A
-      524288        131072   float     sum    58.74    8.92   15.62    N/A    59.89    8.75   15.32    N/A
-     1048576        262144   float     sum    74.40   14.09   24.66    N/A    75.40   13.91   24.34    N/A
-     2097152        524288   float     sum    95.03   22.07   38.62    N/A    94.54   22.18   38.82    N/A
-     4194304       1048576   float     sum    107.9   38.86   68.01    N/A    109.7   38.23   66.91    N/A
-     8388608       2097152   float     sum    162.4   51.66   90.40    N/A    159.8   52.49   91.86    N/A
-    16777216       4194304   float     sum    264.9   63.32  110.82    N/A    261.0   64.28  112.49    N/A
-    33554432       8388608   float     sum    379.7   88.37  154.64    N/A    379.3   88.47  154.82    N/A
-    67108864      16777216   float     sum    586.4  114.44  200.27    N/A    585.5  114.62  200.59    N/A
-   134217728      33554432   float     sum   1168.5  114.87  201.02    N/A   1162.1  115.49  202.12    N/A
-   268435456      67108864   float     sum   2112.0  127.10  222.43    N/A   2111.5  127.13  222.48    N/A
-   536870912     134217728   float     sum   4189.7  128.14  224.25    N/A   4186.5  128.24  224.42    N/A
-  1073741824     268435456   float     sum   8171.6  131.40  229.95    N/A   8169.0  131.44  230.02    N/A
-  2147483648     536870912   float     sum    16250  132.15  231.27    N/A    16240  132.23  231.41    N/A
-  4294967296    1073741824   float     sum    32101  133.80  234.14    N/A    32104  133.78  234.12    N/A
-  8589934592    2147483648   float     sum    63976  134.27  234.97    N/A    63964  134.29  235.01    N/A
+           0             0   float             1.63    0.00    0.00    N/A     1.38    0.00    0.00    N/A
+           0             0   float             1.35    0.00    0.00    N/A     1.34    0.00    0.00    N/A
+           0             0   float             1.35    0.00    0.00    N/A     1.77    0.00    0.00    N/A
+           0             0   float             1.37    0.00    0.00    N/A     1.39    0.00    0.00    N/A
+           0             0   float             1.34    0.00    0.00    N/A     1.33    0.00    0.00    N/A
+          32             1   float            89.00    0.00    0.00    N/A    85.13    0.00    0.00    N/A
+          64             2   float            86.83    0.00    0.00    N/A    85.77    0.00    0.00    N/A
+         128             4   float            86.02    0.00    0.00    N/A    85.30    0.00    0.00    N/A
+         256             8   float            87.20    0.00    0.00    N/A    86.21    0.00    0.00    N/A
+         512            16   float            87.33    0.01    0.01    N/A    88.47    0.01    0.01    N/A
+        1024            32   float            88.17    0.01    0.01    N/A    88.98    0.01    0.01    N/A
+        2048            64   float            86.44    0.02    0.02    N/A    86.65    0.02    0.02    N/A
+        4096           128   float            86.75    0.05    0.04    N/A    86.68    0.05    0.04    N/A
+        8192           256   float            88.78    0.09    0.08    N/A    87.05    0.09    0.08    N/A
+       16384           512   float            87.71    0.19    0.16    N/A    86.76    0.19    0.17    N/A
+       32768          1024   float            86.26    0.38    0.33    N/A    88.92    0.37    0.32    N/A
+       65536          2048   float            87.67    0.75    0.65    N/A    89.16    0.74    0.64    N/A
+      131072          4096   float            87.35    1.50    1.31    N/A    86.76    1.51    1.32    N/A
+      262144          8192   float            87.02    3.01    2.64    N/A    87.98    2.98    2.61    N/A
+      524288         16384   float            86.58    6.06    5.30    N/A    89.33    5.87    5.14    N/A
+     1048576         32768   float            87.42   11.99   10.50    N/A    88.90   11.79   10.32    N/A
+     2097152         65536   float            89.61   23.40   20.48    N/A    90.10   23.27   20.37    N/A
+     4194304        131072   float            96.44   43.49   38.05    N/A    99.62   42.10   36.84    N/A
+     8388608        262144   float            121.1   69.28   60.62    N/A    120.6   69.56   60.87    N/A
+    16777216        524288   float            160.4  104.62   91.55    N/A    158.8  105.64   92.43    N/A
+    33554432       1048576   float            237.5  141.30  123.64    N/A    234.5  143.11  125.22    N/A
+    67108864       2097152   float            396.8  169.13  147.99    N/A    387.0  173.41  151.73    N/A
+   134217728       4194304   float            633.6  211.83  185.35    N/A    620.9  216.17  189.15    N/A
+   268435456       8388608   float           1189.1  225.75  197.53    N/A   1167.8  229.86  201.13    N/A
+   536870912      16777216   float           2236.6  240.04  210.03    N/A   2197.4  244.32  213.78    N/A
+  1073741824      33554432   float           4335.5  247.66  216.71    N/A   4274.2  251.22  219.81    N/A
+  2147483648      67108864   float           8510.4  252.34  220.79    N/A   8405.3  255.49  223.56    N/A
+  4294967296     134217728   float            16860  254.74  222.90    N/A    16678  257.53  225.34    N/A
+  8589934592     268435456   float            33508  256.36  224.31    N/A    33234  258.47  226.16    N/A
 # Out of bounds values : 0 OK
-# Avg bus bandwidth    : 67.793
-#
+# Avg bus bandwidth    : 58.6481
+
 """
+
         for i, op in enumerate(benchmark._args.operations):
             assert (benchmark._process_raw_result(i, raw_output[op]))
-            for name in ['time', 'busbw', 'algbw']:
+            for name in ['time', 'algbw', 'algbw']:
                 for size in ['8589934592', '4294967296', '2147483648', '1073741824', '536870912', '32']:
                     metric = 'NCCL_' + op + '_' + size + '_' + name
                     assert (metric in benchmark.result)
                     assert (len(benchmark.result[metric]) == 1)
                     assert (isinstance(benchmark.result[metric][0], numbers.Number))
+
+        assert (benchmark.result['NCCL_allreduce_8589934592_time'][0] == 63896.0)
+        assert (benchmark.result['NCCL_allreduce_8589934592_algbw'][0] == 134.44)
+        assert (benchmark.result['NCCL_allreduce_8589934592_busbw'][0] == 235.26)
+        assert (benchmark.result['NCCL_alltoall_8589934592_time'][0] == 33508.0)
+        assert (benchmark.result['NCCL_alltoall_8589934592_algbw'][0] == 256.36)
+        assert (benchmark.result['NCCL_alltoall_8589934592_busbw'][0] == 224.31)
