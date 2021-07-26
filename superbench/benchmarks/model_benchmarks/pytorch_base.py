@@ -184,11 +184,13 @@ class PytorchBase(ModelBenchmark):
             )
             return False
 
-        del self._model
-        del self._optimizer
+        if self._gpu_available:
+            torch.cuda.synchronize()
         del self._target
-
-        torch.cuda.empty_cache()
+        del self._optimizer
+        del self._model
+        if self._gpu_available:
+            torch.cuda.empty_cache()
 
         return True
 
