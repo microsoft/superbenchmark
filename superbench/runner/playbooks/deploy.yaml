@@ -4,7 +4,7 @@
 
 - name: Context Preparation
   hosts: localhost
-  connection: localhost
+  connection: local
   gather_facts: false
   tasks:
     - name: Generating SSH Config
