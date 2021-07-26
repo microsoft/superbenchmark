@@ -28,6 +28,11 @@ superbench:
       model_action:
         - train
   benchmarks:
+    nccl-bw:
+      enable: true
+      modes:
+        - name: local
+          prefix: NCCL_DEBUG=INFO NCCL_IB_DISABLE=1
     ib-loopback:
       enable: true
       modes:
