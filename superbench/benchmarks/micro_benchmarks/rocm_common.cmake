@@ -3,16 +3,16 @@
 
 # Set ROCM_PATH
 if(NOT DEFINED ENV{ROCM_PATH})
-set(ROCM_PATH /opt/rocm)
+    set(ROCM_PATH /opt/rocm)
 else()
-set(ROCM_PATH $ENV{ROCM_PATH})
+    set(ROCM_PATH $ENV{ROCM_PATH})
 endif()
 
 # Set HIP_PATH
 if(NOT DEFINED ENV{HIP_PATH})
-set(HIP_PATH ${ROCM_PATH}/hip)
+    set(HIP_PATH ${ROCM_PATH}/hip)
 else()
-set(HIP_PATH $ENV{HIP_PATH})
+    set(HIP_PATH $ENV{HIP_PATH})
 endif()
 
 if(EXISTS ${HIP_PATH})
