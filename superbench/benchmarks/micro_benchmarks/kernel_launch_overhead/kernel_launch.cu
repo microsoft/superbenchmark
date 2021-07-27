@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 // Kernel launch benchmark which will launch one empty kernel and record the cost in event mode and wall mode.
-//   event mode: using cuda event to record the elapsed time of kernel launch on device.
+//   event mode: using cuda/hip event to record the elapsed time of kernel launch on device.
 //   wall mode: using host timer to record the elapsed time kernel launch on both host and device.
 
 #include <algorithm>
