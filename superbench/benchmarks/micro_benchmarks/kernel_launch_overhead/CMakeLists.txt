@@ -23,7 +23,7 @@ if(CUDAToolkit_FOUND)
 elseif(HIP_FOUND)
     message(STATUS "Found HIP: " ${HIP_VERSION})
 
-    execute_process ( COMMAND hipify-perl -inplace -print-stats kernel_launch.cu
+    execute_process(COMMAND hipify-perl -inplace -print-stats kernel_launch.cu
                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 
     # Add HIP targets
