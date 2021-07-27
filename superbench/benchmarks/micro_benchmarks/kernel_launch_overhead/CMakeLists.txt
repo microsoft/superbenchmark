@@ -15,7 +15,7 @@ if(CUDAToolkit_FOUND)
     message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
     enable_language(CUDA)
 
-    add_executable(kernel_launch_overhead cuda_kernel_launch.cu)
+    add_executable(kernel_launch_overhead kernel_launch.cu)
     set_property(TARGET kernel_launch_overhead PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
     install(TARGETS kernel_launch_overhead RUNTIME DESTINATION bin)
 
@@ -23,10 +23,13 @@ if(CUDAToolkit_FOUND)
 elseif(HIP_FOUND)
     message(STATUS "Found HIP: " ${HIP_VERSION})
 
+    execute_process ( COMMAND hipify-perl -inplace -print-stats kernel_launch.cu
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+
     # Add HIP targets
-    set_source_files_properties(rocm_kernel_launch.cc PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
+    set_source_files_properties(kernel_launch.cu PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
     # Link with HIP
-    hip_add_executable(kernel_launch_overhead rocm_kernel_launch.cc)
+    hip_add_executable(kernel_launch_overhead kernel_launch.cu)
     # Install tergets
     install(TARGETS kernel_launch_overhead RUNTIME DESTINATION bin)
 
