@@ -22,7 +22,8 @@ if(CUDAToolkit_FOUND)
 # ROCm environment
 elseif(HIP_FOUND)
     message(STATUS "Found HIP: " ${HIP_VERSION})
-
+    
+    # Convert cuda code to hip code inplace
     execute_process(COMMAND hipify-perl -inplace -print-stats kernel_launch.cu
                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 
