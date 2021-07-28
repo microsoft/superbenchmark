@@ -12,7 +12,7 @@ USE_ROCM ?= "0"
 
 .PHONY: all common cuda rocm cutlass bandwidthTest nccl_tests perftest fio rccl_tests
 
-# Build all targets for cuda.
+# Build all targets.
 all: cuda rocm
 cuda: common cutlass bandwidthTest nccl_tests
 rocm: common rccl_tests
