@@ -5,11 +5,18 @@
 
 SB_MICRO_PATH ?= "/usr/local"
 MPI_HOME_PATH ?= "/usr/local/mpi"
+HIP_HOME ?= "/opt/rocm/hip"
+RCCL_HOME ?= "/opt/rocm/rccl"
+USE_CUDA ?= "1"
+USE_ROCM ?= "0"
 
-.PHONY: all cutlass bandwidthTest nccl_tests perftest fio
+.PHONY: all common cuda rocm cutlass bandwidthTest nccl_tests perftest fio rccl_tests
 
-# Build all targets.
-all: cutlass bandwidthTest nccl_tests perftest fio
+# Build all targets for cuda.
+all: cuda rocm
+cuda: common cutlass bandwidthTest nccl_tests
+rocm: common rccl_tests
+common: perftest fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -46,11 +53,24 @@ endif
 # The version we use is the tag v4.5-0.2.
 perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
+ifeq (1,$(USE_CUDA))
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
+else ifeq (1,$(USE_ROCM))
+	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=/opt/rocm --prefix=$(SB_MICRO_PATH) && make -j && make install
+else
+	cd perftest && ./autogen.sh && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
 endif
 
 # Build FIO from commit 0313e9 (fio-3.27 tag).
 fio:
 ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
+
+# Build rccl-tests from commit cc34c5 of develop branch (default branch).
+rccl_tests: sb_micro_path
+ifneq (, $(wildcard rccl-tests/Makefile))
+	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME_PATH) HIP_HOME=$(HIP_HOME) RCCL_HOME=$(RCCL_HOME) -j
+	cp -v ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
