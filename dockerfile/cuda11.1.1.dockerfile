@@ -93,7 +93,7 @@ ENV PATH="${PATH}" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -j -C third_party cuda
+RUN make -j -C third_party
 
 ADD . .
 RUN python3 -m pip install .[nvidia,torch] && \

@@ -8,13 +8,10 @@ MPI_HOME_PATH ?= "/usr/local/mpi"
 HIP_HOME ?= "/opt/rocm/hip"
 RCCL_HOME ?= "/opt/rocm/rccl"
 
-.PHONY: all common cuda rocm cutlass bandwidthTest nccl_tests perftest fio rccl_tests
+.PHONY: all cutlass bandwidthTest nccl_tests perftest fio
 
 # Build all targets.
-all: cuda rocm
-cuda: common cutlass bandwidthTest nccl_tests perftest_cuda
-rocm: common rccl_tests perftest_rocm
-common: fio
+all: cutlass bandwidthTest nccl_tests perftest fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -49,13 +46,9 @@ endif
 
 # Build perftest.
 # The version we use is the tag v4.5-0.2.
-perftest_cuda:
+perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
-endif
-perftest_rocm:
-ifneq (,$(wildcard perftest/autogen.sh))
-	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=/opt/rocm --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
 # Build FIO from commit 0313e9 (fio-3.27 tag).
