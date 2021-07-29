@@ -9,9 +9,9 @@ MPI_HOME_PATH ?= "/usr/local/mpi"
 .PHONY: all cuda rocm common cutlass bandwidthTest nccl_tests perftest_cuda perftest_rocm fio
 
 # Build all targets.
-all: cuda rocm common
-cuda: cutlass bandwidthTest nccl_tests perftest_cuda
-rocm: perftest_rocm
+all: cuda rocm
+cuda: common cutlass bandwidthTest nccl_tests perftest_cuda
+rocm: common perftest_rocm
 common: fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
