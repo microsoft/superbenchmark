@@ -3,17 +3,17 @@
 # Licensed under the MIT License
 
 
-SB_MICRO_PATH ?= "/usr/local"
-MPI_HOME_PATH ?= "/usr/local/mpi"
-HIP_HOME ?= "/opt/rocm/hip"
-RCCL_HOME ?= "/opt/rocm/rccl"
+SB_MICRO_PATH ?= /usr/local
+MPI_HOME ?= /usr/local/mpi
+HIP_HOME ?= /opt/rocm/hip
+RCCL_HOME ?= /opt/rocm/rccl
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest
-rocm: common rocm_perftest
+rocm: common rocm_perftest rocm_rccl_tests
 common: fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
@@ -43,7 +43,7 @@ cuda_bandwidthTest: sb_micro_path
 # The version we use is commit 44df0bf from master branch, since it didn't update release tag for long time.
 cuda_nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
-	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME_PATH) -j
+	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
 	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
@@ -65,8 +65,8 @@ ifneq (,$(wildcard fio/Makefile))
 endif
 
 # Build rccl-tests from commit cc34c5 of develop branch (default branch).
-rccl_tests: sb_micro_path
+rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
-	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME_PATH) HIP_HOME=$(HIP_HOME) RCCL_HOME=$(RCCL_HOME) -j
+	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=$(HIP_HOME) RCCL_HOME=$(RCCL_HOME) -j
 	cp -v ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
