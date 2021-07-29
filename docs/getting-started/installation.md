@@ -57,7 +57,7 @@ You can clone the source from GitHub and build it.
 :::note Note
 You should checkout corresponding tag to use release version, for example,
 
-`git clone -b v0.2.0 https://github.com/microsoft/superbenchmark`
+`git clone -b v0.2.1 https://github.com/microsoft/superbenchmark`
 :::
 
 ```bash
