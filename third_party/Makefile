@@ -8,12 +8,12 @@ MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest
-rocm: common rocm_perftest rocm_rccl_tests
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas
 common: fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
@@ -70,3 +70,14 @@ ifneq (, $(wildcard rccl-tests/Makefile))
 	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=$(HIP_HOME) RCCL_HOME=$(RCCL_HOME) -j
 	cp -v ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
+
+# Build rocblas-bench.
+# RocBLAS is released with rocm, like rocm-4.2.0 and so on.
+# The version we use is the released tag which is consistent with the rocm version in the environment or docker.
+# Since it takes several hours to build, avoid to build again if rocblas-bench exsists.
+rocm_rocblas: sb_micro_path
+ifeq (,$(wildcard ./rocBLAS/build/release/clients/staging/rocblas-bench))
+	git clone -b rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3) https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
+	cd ./rocBLAS && ./install.sh -dc 
+endif
+	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
