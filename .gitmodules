@@ -12,3 +12,6 @@
 	path = third_party/fio
 	url = https://github.com/axboe/fio.git
 	branch = master
+[submodule "third_party/rccl-tests"]
+	path = third_party/rccl-tests
+	url = https://github.com/ROCmSoftwarePlatform/rccl-tests.git
