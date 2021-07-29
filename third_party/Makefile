@@ -47,9 +47,13 @@ endif
 
 # Build perftest.
 # The version we use is the tag v4.5-0.2.
-perftest:
+perftest_cuda:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
+perftest_rocm:
+ifneq (,$(wildcard perftest/autogen.sh))
+	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=/opt/rocm --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
 # Build FIO from commit 0313e9 (fio-3.27 tag).
