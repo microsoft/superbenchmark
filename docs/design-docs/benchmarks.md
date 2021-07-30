@@ -55,6 +55,7 @@ init_distributed_setting -> generate_dataset -> init_dataloader -> create_model 
 The responsibility for function implementation of every layer is as Figure2. These functions will be executed according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
 
 ![Training process and the responsibility for function implementation of every layer](../assets/model-training-process.png)
+
 *Figure 2 Training process and the responsibility for function implementation of every layer*
 
 #### Inference
@@ -66,6 +67,7 @@ Init_distributed_setting -> generate_dataset -> init_dataloader -> create_model 
 Compared with training, it just gets rid of create_optimizer operation. And the responsibility for function implementation of every layer is as Figure 3.
 
 ![Inference process and the responsibility for function implementation of every layer](../assets/model-inference-process.png)
+
 *Figure 3 Inference process and the responsibility for function implementation of every layer*
 
 ### Micro Benchmarks
@@ -75,9 +77,11 @@ One is for pure-python benchmarks named MicroBenchmark. The responsibility for f
 Another is for benchmarks depending on third-party executable program named MicroBenchmarkWithInvoke. The responsibility for function implementation of every layer is as Figure 5.
 
 ![micro-benchmarks benchmarking process for MicroBenchmark and the responsibility for function implementation of every layer](../assets/micro-benchmark-process-python.png)
+
 *Figure 4 micro-benchmarks benchmarking process for MicroBenchmark and the responsibility for function implementation of every layer*
 
 ![micro-benchmarks benchmarking process for MicroBenchmarkWithInvoke and the responsibility for function implementation of every layer](../assets/micro-benchmark-process-native.png)
+
 *Figure 5 micro-benchmarks benchmarking process for MicroBenchmarkWithInvoke and the responsibility for function implementation of every layer*
 
 ### Docker Benchmarks
@@ -85,6 +89,7 @@ Another is for benchmarks depending on third-party executable program named Micr
 The Docker benchmarks have 3-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 6. The DockerBase benchmarks need docker env ready.
 
 ![docker-benchmarks benchmarking process and the responsibility for function implementation of every layer](../assets/docker-benchmark-process.png)
+
 *Figure 6 docker-benchmarks benchmarking process and the responsibility for function implementation of every layer*
 
 ### Benchmark Registry
