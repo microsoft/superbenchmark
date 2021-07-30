@@ -1,7 +1,11 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the NCCL performance benchmarks."""
+"""Module of the NCCL/RCCL performance benchmarks.
+
+We assume NCCL-tests and RCCL-tests have the same interface and output in the test scope so far.
+So the arguments and result parsing are the same.
+"""
 
 import os
 import re
@@ -213,3 +217,4 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
 
 
 BenchmarkRegistry.register_benchmark('nccl-bw', CudaNcclBwBenchmark, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('rccl-bw', CudaNcclBwBenchmark, platform=Platform.ROCM)
