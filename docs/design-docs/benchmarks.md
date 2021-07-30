@@ -2,103 +2,90 @@
 id: benchmarks
 ---
 
-# Superbenchmark Benchmarks Abstraction
+# Benchmarks Design
 
-## Introduction
+## Goals
 
-### Overview
-
-Superbenchark is a benchmark framework that contains lots of useful micro-benchmarks and E2E-benchmarks targeting for hardware/software validation,  performance measurement and offering advice for better resource utilization. For now, Superbenchmark suppert:
-
-Micro-benchmark: FIO, P2P_Bandwidth, TensorCore_Performance, GPU_FLOPS, TCP_Performance, RDMA_Performance, MPI_Performance, NCCL_Performance, Stress_Test.
-
-E2E-benchmark: 32-CNN models, LSTM, BERT, Seq2Seq, DeepSpeech2, NASNet, GraphSage
-
-However the current structure of all the benchmarks are very loose. The pain points we have met are as follows:
-
-1.	Every benchmark has an independent python file and there exist a lot of redundant/dead code.
-2.	To launch one benchmark, we must specify the file path of the benchmark which is hard coded and pieced together with the test name string from config file.
-3.	To add new micro-benchmarks for new accelerators, we must modify the related source code and add IF statement to distinguish different platforms.
-4.	To modify some common logic of E2E-benchmarks like Dataset, DataLoader and distributed related code, we need change all the E2E benchmark files.
-5.	It’s hard to extended new features, such as running benchmark for N times.
-6.	The output of each benchmark is disorganized and unstructured.
-7.	Some benchmarks have big variance, it’s hard to do the confirmation and investigation manually.
-8.	Hard to detect the interruption of running, especially for microbenchmarks which is launched by system call.
-
-This document will present a new design for the benchmarks to avoid the above pain points.
-
-### Goals
-
-The new design have the following goals to achieve:
+The design of benchmarks has the following goals to achieve:
 
 **High Code Quality**
-•	Extract the common code into the base class, reduce the workload to maintain all benchmarks.
-•	Provide a unified entrance to avoid specifying benchmarks in hard-code way.
+* Extract the common code into the base class, reduce the workload to maintain all benchmarks.
+* Provide a unified entrance to launch benchmarks.
+
 **Good Extensibility**
-•	Avoid modifying existing code when add new benchmarks by using registration mechanism.
-•	Support benchmark-specific configuration, further support models with (same structure and different configs).
+* Avoid modifying existing code when add new benchmarks by using registration mechanism.
+* Support benchmark-specific configuration, further support models with (same structure and different configs).
+
 **Good Usability**
-•	Unify the output format for all the micro-benchmarks and E2E-benchmarks, contains status (success or False), raw-output, error message and structured result.
-•	Can specify the run times for user to check the variance of one benchmark.
+* Unify the output format for all the micro-benchmarks and E2E-benchmarks, contains return_code, metrics, raw-output, etc.
+* Can specify the run times for user to check the variance of one benchmark.
 
 ## High-level Technical Design
 
-The structure of Benchmarks package can be divided into three layers from the bottom up:
-1.	Abstract base classes for all kind of benchmarks, including ModelBase, MicrobenchmarkBase and DockerBase.
-a)	ModelBase is the base class for all the public E2E models. It defines the abstract interfaces that need to be implemented by the subclasses. It has three subclasses, including PytorchModel, TFModel and ONNXModel. Each subclass will realize part of the abstract interfaces that is common for all models, such as “create_optimizer()”, “init_dataloader()”.
-b)	MicrobenchmarkBase is the base class for all the micro benchmarks. It defines the abstract interfaces that need to be implemented by the subclasses, such as “benchmarking()”, “format_output()” and so on.
-c)	DockerBase is the base class for real workloads based on docker. It also defines the abstract interfaces that need to be implemented by the subclasses, such as “prepare_image()”, “benchmarking()” and so on.
-2.	Derived classes for all implemented benchmarks, realized all the abstract interfaces. The benchmarks will be registered into Benchmark Registry.
-3.	Benchmark Registry: provides a way of benchmark registration, maintains all the registered benchmarks and supports benchmark selection by tag, which can be used to select desired benchmark, e.g., use the type of accelerator as the tag.
-The Executor on the uppermost layer is the entrance for all the benchmarks, it fetches the benchmark by name from Benchmark Registry, instantiates the benchmark with user configs and launches the benchmark.
-Util provides some utility functions or classes such as RandomDataset generator, accelerator detector.
-
-![Structure of Benchmark Package](../assets/benchmark_package.png)
+![Structure of Benchmark Package](../assets/benchmark-structure.png)
 *Figure 1 Structure of Benchmarks package*
+
+The structure of Benchmarks package can be divided into layers from the bottom up:
+1. Abstract base classes for all kind of benchmarks, including Benchmark, ModelBenchmark, Microbenchmark and DockerBenchmark.
+   1. Benchmark is the base class for all benchmarks. It defines common interfaces such as run(), _preprocess(), _postprocess(), _benchmark(), add_parser_arguments() and so on.
+   2. ModelBenchmark is the base class for all E2E models. It defines the abstract interfaces that need to be implemented by the subclasses using different frameworks, such as PytorchBase, TFBase and ONNXBase. Each subclass will realize part of the abstract interfaces that is common for models, such as _init_distributed_setting(), _init_dataloader(), _create_optimizer().
+   3. Microbenchmark is the base class for all micro benchmarks. It defines the abstract interfaces that need to be implemented by the subclasses, such as _process_raw_result(), _process_numeric_result().
+   4. DockerBenchmark is the base class for real workloads based on docker. It also defines the abstract interfaces that need to be implemented by the subclasses.
+2. Derived classes for all implemented benchmarks, realized all the abstract interfaces. The benchmarks will be registered into Benchmark Registry.
+3. BenchmarkRegistry: provides a way of benchmark registration, maintains all the registered benchmarks and supports benchmark launching by BenchmarkContext.
+4. BenchmarkContext: provides the context to launch one benchmark, including name, parameters, platform(CPU, GPU), framework(Pytorch, TF, ONNX).
+5. BenchmarkResult: define the structured result for each benchmark in json format, including name, return_code, start_time, end_time, raw_data, summarized metrics, etc.
+
+The Executor on the uppermost layer is the entrance for all the benchmarks, it launches the benchmark by BenchmarkRegistry and fetch the BenchmarkResult.
 
 ## Detailed Technical Design
 
 This chapter will describe the design details of all the components in Benchmarks package.
 
-### ModelBase Benchmarks
+### E2E Model Benchmarks
 
-The ModelBase benchmarks have 3-layers Inheritance Relationship.
+The E2E model benchmarks have 4-layers inheritance relationship.
 
-#### Training
+#### Training 
 
-A complete process of the general training is:
+The general process of model training is:
 
-Init_distributed_setting -> create_dataset -> create_dataloader -> create_model -> add_optimizer -> train
+init_distributed_setting -> generate_dataset -> init_dataloader -> create_model -> create_optimizer -> train
 
-The responsibility for function implementation of every layer is as Figure2. The “train” function of ModelBase will execute these functions according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
+The responsibility for function implementation of every layer is as Figure2. These functions will be executed according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
 
-![Training process and the responsibility for function implementation of every layer](../assets/training-process.png)
+![Training process and the responsibility for function implementation of every layer](../assets/model-training-process.png)
 *Figure 2 Training process and the responsibility for function implementation of every layer*
 
 #### Inference
 
-A complete process of the general inference is:
+The general process of the model inference is:
 
-Init_distributed_setting -> create_dataset -> create_dataloader -> create_model -> inference
+Init_distributed_setting -> generate_dataset -> init_dataloader -> create_model -> inference
 
-Compared with training, it just gets rid of “add_optimizer()” operation. And the responsibility for function implementation of every layer is as Figure 3. The “inference” function of ModelBase will execute these functions according to the sequence in the figure. The functions that exist in derived class and not in base class are abstract functions.
+Compared with training, it just gets rid of create_optimizer operation. And the responsibility for function implementation of every layer is as Figure 3.
 
-![Inference process and the responsibility for function implementation of every layer](../assets/inference-process.png)
+![Inference process and the responsibility for function implementation of every layer](../assets/model-inference-process.png)
 *Figure 3 Inference process and the responsibility for function implementation of every layer*
 
 ### Micro Benchmarks
 
-The micro-benchmarks have 2-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 4. The functions that exist in derived class and not in base class are abstract functions.
+The micro-benchmarks have 3-layers Inheritance Relationship. There have two base class for micro-benchmark: 
+One is for pure-python benchmarks named MicroBenchmark. The responsibility for function implementation of every layer is as Figure 4.
+Another is for benchmarks depending on third-party executable program named MicroBenchmarkWithInvoke. The responsibility for function implementation of every layer is as Figure 5.
 
-![micro-benchmarks benchmarking process and the responsibility for function implementation of every layer](../assets/micro-benchmark-process.png)
-*Figure 4 micro-benchmarks benchmarking process and the responsibility for function implementation of every layer*
+![micro-benchmarks benchmarking process for MicroBenchmark and the responsibility for function implementation of every layer](../assets/micro-benchmark-process-python.png)
+*Figure 4 micro-benchmarks benchmarking process for MicroBenchmark and the responsibility for function implementation of every layer*
 
-### DockerBase Benchmarks
+![micro-benchmarks benchmarking process for MicroBenchmarkWithInvoke and the responsibility for function implementation of every layer](../assets/micro-benchmark-process-native.png)
+*Figure 5 micro-benchmarks benchmarking process for MicroBenchmarkWithInvoke and the responsibility for function implementation of every layer*
 
-The DockerBase benchmarks have 2-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 5. The DockerBase benchmarks need docker env ready.
+### Docker Benchmarks
+
+The Docker benchmarks have 3-layers Inheritance Relationship. And the responsibility for function implementation of every layer is as Figure 6. The DockerBase benchmarks need docker env ready.
 
 ![docker-benchmarks benchmarking process and the responsibility for function implementation of every layer](../assets/docker-benchmark-process.png)
-*Figure 5 docker-benchmarks benchmarking process and the responsibility for function implementation of every layer*
+*Figure 6 docker-benchmarks benchmarking process and the responsibility for function implementation of every layer*
 
 ### Benchmark Registry
 
@@ -106,7 +93,7 @@ Benchmark Registry is designed to
 1.	Provide a way of benchmark registration.
 2.	Avoid modifying existing code when add new benchmarks.
 3.	For models that only have different configs, maximize the reuse of code.
-4.	Supports benchmark selection by tag, which can be used to select desired benchmark automatically, e.g., use the type of accelerator as the tag.
+4.	Supports benchmark selection by platform and framework, which can be used to select desired benchmark automatically.
 
 #### Design
 
@@ -116,61 +103,48 @@ Intefaces are designed as:
 class BenchmarkRegistry:
     benchmarks = dict()
 
-    @staticmethod
-    def register_benchmark(name, class_def, parameters=None, tag=None):
-        """
+    @classmethod
+    def register_benchmark(cls, name, class_def, parameters='', platform=None):
+        """Register new benchmark, key is the benchmark name.
         Args:
-            name (str): name of benchmark.
-            class_def (Benchmark): class of benchmark.
-            parameters (str): parameters of benchmark.
-            tag (Platform): Platform types like cuda, rocm.
+            name (str): internal name of benchmark.
+            class_def (Benchmark): class object of benchmark.
+            parameters (str): predefined parameters of benchmark.
+            platform (Platform): Platform types like CUDA, ROCM.
         """
         pass
 
-    @staticmethod
-    def get_benchmark_name_and_parameters(config):
-        """
+    @classmethod
+    def create_benchmark_context(cls, name, platform=Platform.CPU, parameters='', framework=Framework.NONE):
+        """Create the benchmark context.
         Args:
-            config (object): the benchmark config want to launch.
-
-        Returns:
-            name (str): internal benchmark name.
-            parameters (str): customized benchmark parameters.
+            name (str): name of benchmark in config file.
+            platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM.
+            parameters (str): predefined parameters of benchmark.
+            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNX.
+        Return:
+            benchmark_context (BenchmarkContext): the benchmark context.
         """
         pass
 
-    @staticmethod
-    def check_benchmark_parameters(name, parameters):
-        """
-        Args:
-            name (str): internal benchmark name.
-            parameters (str): customized benchmark parameters.
-
-        Returns:
-            return true if the customized parameters is valid.
+    @classmethod
+    def get_all_benchmark_predefine_settings(cls):
+        """Get all registered benchmarks' predefine settings.
+        Return:
+            benchmark_params (dict[str, dict]): key is benchmark name,
+              value is the dict with structure: {'parameter': default_value}.
         """
         pass
 
 
-    @staticmethod
-    def launch_benchmark(name, parameters):
-        """
+    @classmethod
+    def launch_benchmark(cls, benchmark_context):
+        """Select and Launch benchmark.
         Args:
-            name (str): internal benchmark name.
-            parameters (str): customized benchmark parameters.
-
-        Returns:
-            result object with json format.
-        """
-
-    @staticmethod
-    def get_benchmark_configurable_settings(name):
-        """
-        Args:
-            name (str): internal benchmark name.
-
-        Returns:
-            settings (str): all configurable settings in raw string.
+            benchmark_context (BenchmarkContext): the benchmark context.
+        Return:
+            benchmark (Benchmark): the benchmark instance contains all results,
+              None means context is invalid or no benchmark is found.
         """
         pass
 ```
@@ -180,12 +154,12 @@ The structure of the BenchmarkRegistry.benchmarks is designed as:
 ```
 dictionary = {
   'benhmark1': {
-    'tag1': (benchmark1_tag1_class, arguments),
-    'tag2': (benchmark1_tag2_class, arguments),
+    'tag1': (benchmark1_tag1_class, predefined_arguments),
+    'tag2': (benchmark1_tag2_class, predefined_arguments),
   }
   'benhmark2': {
-    'tag1': (benchmark2_tag1_class, arguments),
-    'tag2': (benchmark2_tag2_class, arguments),
+    'tag1': (benchmark2_tag1_class, predefined_arguments),
+    'tag2': (benchmark2_tag2_class, predefined_arguments),
   }
   ...
 }
@@ -193,7 +167,7 @@ dictionary = {
 
 #### Examples
 
-For ModelBase benchmarks:
+For E2E model benchmarks:
 
 ```
 BenchmarkRegistry.register_benchmark('bert-large', PytorchBERT, args='--hidden_size=1024 --num_hidden_layers=24 --num_attention_heads=16 --intermediate_size=4096')
@@ -203,9 +177,7 @@ BenchmarkRegistry.register_benchmark('bert-base', PytorchBERT, args='--hidden_si
 For Microbenchmark:
 
 ```
-BenchmarkRegistry.register_benchmark('kernel_launch', KernelLaunchCUDA, tag=Accelerator.cuda)
-
-BenchmarkRegistry.register_benchmark('kernel_launch', KernelLaunchROCm, tag=Accelerator.rocm)
+BenchmarkRegistry.register_benchmark('kernel-launch', KernelLaunch)
 ```
 
 ## Interfaces
@@ -219,11 +191,17 @@ The inputs needed by the benchmarks package is simple, just the config object of
 ### Invoke
 
 ```
-name, parameters = BenchmarkRegistry.get_benchmark_name_and_parameters(config)
-if name:
-    valid = BenchmarkRegistry.check_benchmark_parameters(name, parameters)
-    if valid:
-        result = BenchmarkRegistry.launch_benchmark(name, parameters)
+    context = BenchmarkRegistry.create_benchmark_context(
+        benchmark_name, parameters=xxx, framework=xxx, platform=xxx
+    )
+
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    if benchmark:
+        logger.info(
+            'benchmark: {}, return code: {}, result: {}'.format(
+                benchmark.name, benchmark.return_code, benchmark.result
+            )
+        )
 ```
 
 ### Outputs
@@ -233,19 +211,20 @@ if name:
 ```
 result = {
     'name': 'benchmark_name',
-    'errcode: error_code,
-'run_count': N,
-'start_time': date,
-'end_time': date,
-    'raw_data': {
-        'metrics1': [[]], # Array for N runs
+    'type: BenchmarkType,
+    'run_count': N,
+    'return_code': ReturnCode,
+    'start_time': date,
+    'end_time': date,
+    'raw_data': { # Key is metrics, Array for N runs.
+        'metrics1': List[List[Number]] or List[str],
         ...
-        'metricsM' [[]],
+        'metricsM' List[List[Number]] or List[str],
     },
     'result': { # Key is metrics, Array for N runs,
-        'metrics1': [],
+        'metrics1': List[Number],
              ...
-'metricsM': [],
+        'metricsM': List[Number],
     },
 ```
 
@@ -256,27 +235,20 @@ Model Benchmarks:
 ```
 result = {
     'name': 'bert-large',
-    'errcode': 0,
+    'type': 'model'
     'run_count': N,
+    'return_code': 0,
     'raw_data': {
-        'latency-train-float': [[step1_time, step2_time, ...stepM_time], […]],
-        'latency-train-half': [[step1_time, step2_time, ...stepM_time], […]],
-        'latency-inference-float': [[step1_time, step2_time, ...stepM_time], […]],
-        'latency-inference-half': [[step1_time, step2_time, ...stepM_time], […]],
-        'throughput-train-float': [[step1_time, step2_time, ...stepM_time], […]],
-        'throughput-train-half': [[step1_time, step2_time, ...stepM_time], […]],
-        'throughput-inference-float': [[step1_time, step2_time, ...stepM_time], […]],
-        'throughput-inference-half': [[step1_time, step2_time, ...stepM_time], […]],
+        'throughput-train-float32': [[step1_time, ..., stepK_time], ..., […]],
+        'throughput-train-float16': [[step1_time, ..., stepK_time], ..., […]],
+        'throughput-inference-float32': [[step1_time, ..., stepK_time], ..., […]],
+        'throughput-inference-float16': [[step1_time, ..., stepK_time], ..., […]]
     },
-    'result': { # Key is metrics, Array for N runs,
-            'latency-train-float': [],
-            'latency-train-half': [],
-            'latency-inference-float': [],
-            'latency-inference-half': [],
-            'throughput-train-float': [],
-            'throughput-train-half': [],
-            'throughput-inference-float': [],
-            'throughput-inference-half': [],
+    'result': {
+            'throughput-train-float32': [avg_throughput1, ..., avg_throughputN],
+            'throughput-train-float16': [avg_throughput1, ..., avg_throughputN],
+            'throughput-inference-float32': [avg_throughput1, ..., avg_throughputN],
+            'throughput-inference-float16': [avg_throughput1, ..., avg_throughputN]
     },
 ```
 
@@ -285,12 +257,13 @@ Micro Benchmarks:
 ```
 result = {
     'name': 'kernel_launch',
-    'status': True,
+    'type': 'micro'
     'run_count': N,
+    'return_code': 0,
     'raw_data': {
-        'raw_output': ['', ''],
+        'raw_output': [raw_output1, ..., raw_outputN],
     },
     'result': { # Key is metrics
-        'latency': [],
+        'overhead': [overhead1, ..., overheadN],
     },
 ```
