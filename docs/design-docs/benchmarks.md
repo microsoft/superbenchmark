@@ -9,7 +9,7 @@ id: benchmarks
 The design of `benchmarks` has the following goals to achieve:
 
 **High Code Quality**
-* Extract the common code into the base class, reduce the efforts to maintain different benchmarks.
+* Extract the common code into the base class, and reduce the efforts to maintain different benchmarks.
 
 **Good Extensibility**
 * Avoid modifying existing code when adding new benchmarks by using registration mechanism.
@@ -21,7 +21,7 @@ The design of `benchmarks` has the following goals to achieve:
 
 ## Overall System Design
 
-![Structure of Benchmark Package](../assets/benchmark-structure.png)
+![Structure of `benchmarks` Package](../assets/benchmark-structure.png)
 
 The structure of `benchmarks` package can be divided into layers from the bottom up:
 1. Abstract base classes for all kind of benchmarks, including `Benchmark`, `ModelBenchmark`, `Microbenchmark` and `DockerBenchmark`.
@@ -29,7 +29,7 @@ The structure of `benchmarks` package can be divided into layers from the bottom
    2. `ModelBenchmark` is the base class for all E2E models. It defines the abstract interfaces that need to be implemented by the subclasses using different frameworks, such as `PytorchBase`, `TFBase` and `ONNXBase`. Each subclass will realize part of the abstract interfaces that is common for models, such as `_init_distributed_setting()`, `_init_dataloader()`, `_create_optimizer()`.
    3. `Microbenchmark` is the base class for all micro benchmarks. It defines the abstract interfaces that need to be implemented by the subclasses, such as `_process_raw_result()`, `_process_numeric_result()`.
    4. `DockerBenchmark` is the base class for real workloads based on docker. It also defines the abstract interfaces that need to be implemented by the subclasses.
-2. Derived classes for all implemented benchmarks, realized all the abstract interfaces. The benchmarks will be registered into `BenchmarkRegistry`.
+2. Derived classes for all implemented benchmarks, which need to realize all the abstract interfaces. The benchmarks will be registered into `BenchmarkRegistry`.
 3. `BenchmarkRegistry` provides a way of benchmark registration, maintains all the registered benchmarks, and supports benchmark launching by `BenchmarkContext`.
 4. `BenchmarkContext` provides the context to launch one benchmark, including name, parameters, platform(CPU, GPU, etc.), and framework(Pytorch, TF, ONNX, etc.).
 5. `BenchmarkResult` defines the structured results for each benchmark in json format, including name, return_code, start_time, end_time, raw_data, summarized metrics, etc.
@@ -48,21 +48,21 @@ The E2E model benchmarks have 4-layer inheritance relationship.
 
 The general process of model training is:
 
-init_distributed_setting -> generate_dataset -> init_dataloader -> create_model -> create_optimizer -> train
+> init_distributed_setting -> generate_dataset -> init_dataloader -> create_model -> create_optimizer -> train
 
 These functions will be executed according to the order in the following figure. The functions that exist in derived class but not in base class are abstract functions.
 
-![Training process and the responsibility for function implementation of every layer](../assets/model-training-process.png)
+![Function Execution Order in Training Process](../assets/model-training-process.svg)
 
 #### Inference
 
 The general process of the model inference is:
 
-Init_distributed_setting -> generate_dataset -> init_dataloader -> create_model -> inference
+> Init_distributed_setting -> generate_dataset -> init_dataloader -> create_model -> inference
 
 Compared with training, it just gets rid of create_optimizer operation.
 
-![Inference process and the responsibility for function implementation of every layer](../assets/model-inference-process.png)
+![Function Execution Order in Inference Process](../assets/model-inference-process.svg)
 
 ### Micro Benchmarks
 
@@ -70,22 +70,22 @@ The micro-benchmarks have 3-layer Inheritance Relationship. There have two base 
 One is for pure-python benchmarks named `MicroBenchmark`.
 Another is for benchmarks depending on third-party executable program named `MicroBenchmarkWithInvoke`.
 
-![micro-benchmarks benchmarking process for MicroBenchmark and the responsibility for function implementation of every layer](../assets/micro-benchmark-process-python.png)
+![Function Execution Order in `MicroBenchmark`](../assets/micro-benchmark-process-python.svg)
 
-![micro-benchmarks benchmarking process for MicroBenchmarkWithInvoke and the responsibility for function implementation of every layer](../assets/micro-benchmark-process-native.png)
+![Function Execution Order in `MicroBenchmarkWithInvoke`](../assets/micro-benchmark-process-native.svg)
 
 ### Docker Benchmarks
 
 The Docker benchmarks have 3-layer Inheritance Relationship. The Docker benchmarks need docker env ready.
 
-![docker-benchmarks benchmarking process and the responsibility for function implementation of every layer](../assets/docker-benchmark-process.png)
+![Function Execution Order in DockerBenchmark Process](../assets/docker-benchmark-process.svg)
 
 ### BenchmarkRegistry
 
 `BenchmarkRegistry` is designed to
-1.	Provide a way of benchmark registration.
+1.	Provide a way to register the benchmark.
 2.	Avoid modifying existing code when adding new benchmarks.
-3.	Reduce the redundant code for benchmarks with only different configurations, such as models with different scale of parameters.
+3.	Reduce the redundant code for benchmarks with different configurations.
 4.	Support benchmark selection by platform and framework, which can be used to select desired benchmark automatically.
 
 #### Design
