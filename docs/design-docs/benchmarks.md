@@ -13,7 +13,7 @@ The design of `benchmarks` has the following goals to achieve:
 
 **Good Extensibility**
 * Avoid modifying existing code when adding new benchmarks by using registration mechanism.
-* Support pre-definition of benchmarks' settings, and support benchmark registration with different settings.
+* Support pre-definition of benchmarks' settings, and benchmark registration with different settings.
 
 **Good Usability**
 * Provide a unified entrance to launch benchmarks.
@@ -66,9 +66,9 @@ Compared with training, it just gets rid of create_optimizer operation.
 
 ### Micro Benchmarks
 
-The micro-benchmarks have 3-layer Inheritance Relationship. There have two base class for micro-benchmark: 
-One is for pure-python benchmarks named `MicroBenchmark`.
-Another is for benchmarks depending on third-party executable program named `MicroBenchmarkWithInvoke`.
+The micro-benchmarks have 3-layer Inheritance Relationship. There are two base classes for micro-benchmark: 
+`MicroBenchmark` is pure-python benchmark.
+`MicroBenchmarkWithInvoke` is benchmark depending on third-party executable program.
 
 ![Function Execution Order in `MicroBenchmark`](../assets/micro-benchmark-process-python.svg)
 
