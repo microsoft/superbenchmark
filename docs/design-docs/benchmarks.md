@@ -22,7 +22,6 @@ The design of `benchmarks` has the following goals to achieve:
 ## Overall System Design
 
 ![Structure of Benchmark Package](../assets/benchmark-structure.png)
-*Figure 1 Structure of `benchmarks` package*
 
 The structure of `benchmarks` package can be divided into layers from the bottom up:
 1. Abstract base classes for all kind of benchmarks, including `Benchmark`, `ModelBenchmark`, `Microbenchmark` and `DockerBenchmark`.
