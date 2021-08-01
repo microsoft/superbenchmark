@@ -43,3 +43,9 @@
         dest: '{{ workspace }}/sb.env'
         mode: 0644
       become: yes
+    - name: Updating Hostfile
+      copy:
+        content: '{{ sb_nodes }}'
+        dest: '{{ workspace }}/hostfile'
+        mode: 0644
+      become: yes
