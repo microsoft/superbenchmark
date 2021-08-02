@@ -63,7 +63,7 @@ For more information, please view [configuration](https://microsoft.github.io/su
   It also provides a unified interface and result format for all benchmarks.
   Developers can easily add new benchmarks.
 
-  ![SuperBench Benchmark Package](../../docs/assets/benchmark_package.png)
+  ![SuperBench Benchmark Package](../../docs/assets/benchmark-structure.png)
 
 ### Conprehensive and Strandardized Benchmarks
 
