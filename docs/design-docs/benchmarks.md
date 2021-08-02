@@ -149,11 +149,11 @@ dictionary = {
   'benhmark1': {
     'tag1': (benchmark1_tag1_class, predefined_arguments),
     'tag2': (benchmark1_tag2_class, predefined_arguments),
-  }
+  },
   'benhmark2': {
     'tag1': (benchmark2_tag1_class, predefined_arguments),
     'tag2': (benchmark2_tag2_class, predefined_arguments),
-  }
+  },
   ...
 }
 ```
@@ -219,6 +219,7 @@ result = {
              ...
         'metricsM': List[Number],
     },
+}
 ```
 
 #### Example
@@ -228,21 +229,22 @@ Model Benchmarks:
 ```py
 result = {
     'name': 'bert-large',
-    'type': 'model'
+    'type': 'model',
     'run_count': N,
     'return_code': 0,
     'raw_data': {
         'throughput-train-float32': [[step1_time, ..., stepK_time], ..., […]],
         'throughput-train-float16': [[step1_time, ..., stepK_time], ..., […]],
         'throughput-inference-float32': [[step1_time, ..., stepK_time], ..., […]],
-        'throughput-inference-float16': [[step1_time, ..., stepK_time], ..., […]]
+        'throughput-inference-float16': [[step1_time, ..., stepK_time], ..., […]],
     },
     'result': {
             'throughput-train-float32': [avg_throughput1, ..., avg_throughputN],
             'throughput-train-float16': [avg_throughput1, ..., avg_throughputN],
             'throughput-inference-float32': [avg_throughput1, ..., avg_throughputN],
-            'throughput-inference-float16': [avg_throughput1, ..., avg_throughputN]
+            'throughput-inference-float16': [avg_throughput1, ..., avg_throughputN],
     },
+}
 ```
 
 Micro Benchmarks:
@@ -250,7 +252,7 @@ Micro Benchmarks:
 ```py
 result = {
     'name': 'kernel_launch',
-    'type': 'micro'
+    'type': 'micro',
     'run_count': N,
     'return_code': 0,
     'raw_data': {
@@ -259,4 +261,5 @@ result = {
     'result': { # Key is metrics
         'overhead': [overhead1, ..., overheadN],
     },
+}
 ```
