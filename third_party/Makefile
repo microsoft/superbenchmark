@@ -76,8 +76,7 @@ endif
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 # Since it takes several hours to build, avoid to build again if rocblas-bench exsists.
 rocm_rocblas: sb_micro_path
-ifeq (,$(wildcard ./rocBLAS/build/release/clients/staging/rocblas-bench))
+	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
 	git clone -b rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3) https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
 	cd ./rocBLAS && ./install.sh -dc 
-endif
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
