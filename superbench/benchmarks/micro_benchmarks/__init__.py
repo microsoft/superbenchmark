@@ -11,8 +11,12 @@ from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchma
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.gemm_flops_performance import GemmFlopsCuda
 from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import CudaMemBwBenchmark
+from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmark
+from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoopbackBenchmark
+from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
-    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'CudaMemBwBenchmark'
+    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsCuda', 'CudaMemBwBenchmark', 'DiskBenchmark', 'IBLoopbackBenchmark',
+    'CudaNcclBwBenchmark'
 ]
