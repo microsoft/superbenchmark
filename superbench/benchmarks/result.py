@@ -68,7 +68,7 @@ class BenchmarkResult():
 
         return True
 
-    def add_result(self, metric, reduce_type=None):
+    def add_result(self, metric, value, reduce_type=None):
         """Add summarized data into result.
 
         Args:
@@ -76,6 +76,7 @@ class BenchmarkResult():
             value (float): summarized data.
               For e2e model benchmarks, the value is step-time or throughput.
               For micro-benchmarks, the value is FLOPS, bandwidth and etc.
+            reduce_type (ReduceType): type of reduce function.
 
         Return:
             True if succeed to add the result.

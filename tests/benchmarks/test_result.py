@@ -3,7 +3,7 @@
 
 """Tests for BenchmarkResult module."""
 
-from superbench.benchmarks import BenchmarkType, ReturnCode
+from superbench.benchmarks import BenchmarkType, ReturnCode, ReduceType
 from superbench.benchmarks.result import BenchmarkResult
 
 
@@ -67,9 +67,9 @@ def test_serialize_deserialize():
     """Test serialization/deserialization and compare the results."""
     # Result with one metric.
     result = BenchmarkResult('pytorch-bert-base1', BenchmarkType.MICRO.value, ReturnCode.SUCCESS.value, run_count=2)
-    result.add_result('metric1', 300)
-    result.add_result('metric1', 200)
-    result.add_result('metric2', 100)
+    result.add_result('metric1', 300, ReduceType.MAX)
+    result.add_result('metric1', 200, ReduceType.MAX)
+    result.add_result('metric2', 100, ReduceType.AVG)
     result.add_raw_data('metric1', [1, 2, 3])
     result.add_raw_data('metric1', [4, 5, 6])
     result.add_raw_data('metric1', [7, 8, 9])
@@ -82,6 +82,7 @@ def test_serialize_deserialize():
         '{"name": "pytorch-bert-base1", "type": "micro", "run_count": 2, "return_code": 0, '
         '"start_time": "2021-02-03 16:59:49", "end_time": "2021-02-03 17:00:08", '
         '"raw_data": {"metric1": [[1, 2, 3], [4, 5, 6], [7, 8, 9]]}, '
-        '"result": {"metric1": [300, 200], "metric2": [100]}}'
+        '"result": {"metric1": [300, 200], "metric2": [100]}, '
+        '"reduce": {"metric1": "max", "metric2": "avg"}}'
     )
     assert (result.to_string() == expected)

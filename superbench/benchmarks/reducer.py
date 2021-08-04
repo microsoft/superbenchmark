@@ -8,6 +8,7 @@ from statistics import mean
 
 from superbench.benchmarks.context import Enum
 
+
 class ReduceType(Enum):
     """The Enum class representing different reducer."""
     AVG = 'avg'
@@ -33,6 +34,7 @@ class Reducer:
         def decorator(func):
             cls.functions[reduce_type] = func
             return func
+
         return decorator
 
     @classmethod
