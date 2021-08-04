@@ -136,8 +136,11 @@ class SuperBenchRunner():
             )
         elif mode.name == 'mpi':
             mode_command = (
-                'mpirun '
-                '-allow-run-as-root -hostfile hostfile -map-by ppr:{proc_num}:node -bind-to numa '
+                'mpirun '    # use default OpenMPI in image
+                '-allow-run-as-root '    # allow mpirun to run when executed by root user
+                '-hostfile hostfile '    # use prepared hostfile
+                '-map-by ppr:{proc_num}:node '    # launch {proc_num} processes on each node
+                '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
                 proc_num=mode.proc_num,
@@ -145,6 +148,8 @@ class SuperBenchRunner():
                 env_list=' '.join(f'-x {k}={v}' if v else f'-x {k}' for k, v in mode.env.items()),
                 command=exec_command,
             )
+        else:
+            logger.warning('Unknown mode %s.', mode.name)
         return mode_command.strip()
 
     def deploy(self):    # pragma: no cover
@@ -236,4 +241,6 @@ class SuperBenchRunner():
                     )
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                else:
+                    logger.warning('Unknown mode %s.', mode.name)
             self.fetch_results()
