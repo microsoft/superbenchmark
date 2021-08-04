@@ -31,6 +31,14 @@ module.exports = {
         'developer-guides/contributing',
       ],
     },
+    {
+      type: 'category',
+      label: 'Design Docs',
+      items: [
+        'design-docs/overview',
+        'design-docs/benchmarks',
+      ],
+    },
   ],
   api: [
     'cli',
