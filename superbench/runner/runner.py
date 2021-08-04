@@ -137,7 +137,7 @@ class SuperBenchRunner():
         elif mode.name == 'mpi':
             mode_command = (
                 'mpirun '
-                '--allow-run-as-root -hostfile hostfile -map-by ppr:{proc_num}:numa '
+                '-allow-run-as-root -hostfile hostfile -map-by ppr:{proc_num}:node -bind-to numa '
                 '{mca_list} {env_list} {command}'
             ).format(
                 proc_num=mode.proc_num,

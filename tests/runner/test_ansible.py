@@ -58,6 +58,15 @@ class AnsibleClientTestCase(unittest.TestCase):
             }
         )
 
+    def test_update_mpi_config(self):
+        """Test update_mpi_config of client."""
+        self.assertDictEqual(
+            self.ansible_client.update_mpi_config(self.ansible_client._config), {
+                **self.ansible_client._config,
+                'host_pattern': 'all[0]',
+            }
+        )
+
     def test_get_shell_config(self):
         """Test get_shell_config of client."""
         cmd = 'ls -la'
