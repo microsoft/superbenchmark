@@ -223,7 +223,6 @@ def test_train():
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32))
-    print(benchmark.serialized_result)
     assert (benchmark.serialized_result == expected_result)
 
     # Step time list is empty (simulate training failure).
