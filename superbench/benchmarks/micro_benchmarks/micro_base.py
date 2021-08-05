@@ -55,6 +55,7 @@ class MicroBenchmark(Benchmark):
         Args:
             metric (str): metric name which is the key.
             result (List[numbers.Number]): numerical result.
+            reduce_type (ReduceType): The type of reduce function.
 
         Return:
             True if result list is not empty.
