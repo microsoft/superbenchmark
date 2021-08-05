@@ -13,6 +13,7 @@ ShardingMatmul benchmark is used to test the performance of large scale matmul o
 
 import os
 import time
+import statistics
 
 # TODO - add mechanism to import torch as needed according to docker.
 import torch
@@ -260,8 +261,7 @@ class ShardingMatmul(MicroBenchmark):
 
             logger.info(
                 'Matmul sharding - round: {0}, name: {1}, shape: ({2}, {3}) * ({3}, {4}), mode: {5}, cost: {6} ms'.
-                format(self._curr_run_index, self._name, M, K, N, mode,
-                       sum(elapse_times) / len(elapse_times))
+                format(self._curr_run_index, self._name, M, K, N, mode, statistics.mean(elapse_times))
             )
 
         return True

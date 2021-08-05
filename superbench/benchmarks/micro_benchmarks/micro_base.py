@@ -6,6 +6,7 @@
 import os
 import subprocess
 import shutil
+import statistics
 from abc import abstractmethod
 
 from superbench.common.utils import logger
@@ -68,7 +69,7 @@ class MicroBenchmark(Benchmark):
             return False
 
         self._result.add_raw_data(metric, result)
-        self._result.add_result(metric, sum(result) / len(result))
+        self._result.add_result(metric, statistics.mean(result))
         return True
 
     def print_env_info(self):
