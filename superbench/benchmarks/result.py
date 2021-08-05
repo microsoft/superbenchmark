@@ -31,6 +31,7 @@ class BenchmarkResult():
         self.__end_time = None
         self.__raw_data = dict()
         self.__result = dict()
+        self.__reduce = dict()
 
     def __eq__(self, rhs):
         """Override equal function for deep comparison.
@@ -67,7 +68,7 @@ class BenchmarkResult():
 
         return True
 
-    def add_result(self, metric, value):
+    def add_result(self, metric, value, reduce_type=None):
         """Add summarized data into result.
 
         Args:
@@ -75,6 +76,7 @@ class BenchmarkResult():
             value (float): summarized data.
               For e2e model benchmarks, the value is step-time or throughput.
               For micro-benchmarks, the value is FLOPS, bandwidth and etc.
+            reduce_type (ReduceType): type of reduce function.
 
         Return:
             True if succeed to add the result.
@@ -87,6 +89,7 @@ class BenchmarkResult():
 
         if metric not in self.__result:
             self.__result[metric] = list()
+            self.__reduce[metric] = reduce_type.value if isinstance(reduce_type, Enum) else None
         self.__result[metric].append(value)
 
         return True
