@@ -11,6 +11,7 @@ from superbench.common.utils import logger
 from superbench.benchmarks import Precision, ModelAction, DistributedImpl, DistributedBackend, BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 from superbench.benchmarks.context import Enum
+from superbench.benchmarks.reducer import ReduceType
 
 
 class Optimizer(Enum):
@@ -359,7 +360,7 @@ class ModelBenchmark(Benchmark):
         metric = 'steptime_{}_{}'.format(model_action, precision)
         self._result.add_raw_data(metric, step_times)
         avg = sum(step_times) / len(step_times)
-        self._result.add_result(metric, avg)
+        self._result.add_result(metric, avg, reduce_type=ReduceType.MAX if model_action is ModelAction.TRAIN else None)
 
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
@@ -367,7 +368,7 @@ class ModelBenchmark(Benchmark):
         metric = 'throughput_{}_{}'.format(model_action, precision)
         self._result.add_raw_data(metric, throughput)
         avg = sum(throughput) / len(throughput)
-        self._result.add_result(metric, avg)
+        self._result.add_result(metric, avg, reduce_type=ReduceType.MIN if model_action is ModelAction.TRAIN else None)
 
         return True
 
