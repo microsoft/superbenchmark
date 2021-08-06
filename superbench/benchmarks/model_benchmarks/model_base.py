@@ -5,6 +5,7 @@
 
 import math
 import time
+import statistics
 from abc import abstractmethod
 
 from superbench.common.utils import logger
@@ -230,8 +231,7 @@ class ModelBenchmark(Benchmark):
 
         logger.info(
             'Average train time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
-                self._curr_run_index, self._name, precision,
-                sum(step_times) / len(step_times)
+                self._curr_run_index, self._name, precision, statistics.mean(step_times)
             )
         )
 
@@ -255,8 +255,7 @@ class ModelBenchmark(Benchmark):
 
         logger.info(
             'Average inference time - round: {}, model: {}, precision: {}, step time: {:.6f} ms.'.format(
-                self._curr_run_index, self._name, precision,
-                sum(step_times) / len(step_times)
+                self._curr_run_index, self._name, precision, statistics.mean(step_times)
             )
         )
 
@@ -358,7 +357,7 @@ class ModelBenchmark(Benchmark):
 
         metric = 'steptime_{}_{}'.format(model_action, precision)
         self._result.add_raw_data(metric, step_times)
-        avg = sum(step_times) / len(step_times)
+        avg = statistics.mean(step_times)
         self._result.add_result(metric, avg)
 
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
@@ -366,7 +365,7 @@ class ModelBenchmark(Benchmark):
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
         metric = 'throughput_{}_{}'.format(model_action, precision)
         self._result.add_raw_data(metric, throughput)
-        avg = sum(throughput) / len(throughput)
+        avg = statistics.mean(throughput)
         self._result.add_result(metric, avg)
 
         return True

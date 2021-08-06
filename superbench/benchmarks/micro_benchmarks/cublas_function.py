@@ -6,6 +6,7 @@
 import os
 import json
 import yaml
+import statistics
 
 from superbench.common.utils import logger
 from superbench.benchmarks import Platform, BenchmarkRegistry, ReturnCode
@@ -290,7 +291,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     raw_data = raw_data.split(',')
                     raw_data.pop()
                     raw_data = [float(item) for item in raw_data]
-                    self._result.add_result(metric, sum(raw_data) / len(raw_data))
+                    self._result.add_result(metric, statistics.mean(raw_data))
                     self._result.add_raw_data(metric, raw_data)
                 if 'Error' in line:
                     error = True
