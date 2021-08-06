@@ -50,12 +50,13 @@ class MicroBenchmark(Benchmark):
         """
         pass
 
-    def _process_numeric_result(self, metric, result):
+    def _process_numeric_result(self, metric, result, reduce_type=None):
         """Function to save the numerical results.
 
         Args:
             metric (str): metric name which is the key.
             result (List[numbers.Number]): numerical result.
+            reduce_type (ReduceType): The type of reduce function.
 
         Return:
             True if result list is not empty.
@@ -69,7 +70,8 @@ class MicroBenchmark(Benchmark):
             return False
 
         self._result.add_raw_data(metric, result)
-        self._result.add_result(metric, statistics.mean(result))
+        self._result.add_result(metric, statistics.mean(result), reduce_type)
+
         return True
 
     def print_env_info(self):

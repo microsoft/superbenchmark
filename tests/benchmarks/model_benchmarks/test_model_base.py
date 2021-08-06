@@ -219,7 +219,8 @@ def test_train():
         '"start_time": null, "end_time": null, "raw_data": {'
         '"steptime_train_float32": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"throughput_train_float32": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
-        '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0]}}'
+        '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0]}, '
+        '"reduce": {"steptime_train_float32": null, "throughput_train_float32": null}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32))
@@ -229,7 +230,7 @@ def test_train():
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
-        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}, "reduce": {}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32) is False)
@@ -244,7 +245,8 @@ def test_inference():
         '"start_time": null, "end_time": null, "raw_data": {'
         '"steptime_inference_float16": [[4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]], '
         '"throughput_inference_float16": [[8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0]]}, '
-        '"result": {"steptime_inference_float16": [4.0], "throughput_inference_float16": [8000.0]}}'
+        '"result": {"steptime_inference_float16": [4.0], "throughput_inference_float16": [8000.0]}, '
+        '"reduce": {"steptime_inference_float16": null, "throughput_inference_float16": null}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16))
@@ -254,7 +256,7 @@ def test_inference():
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
-        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}}'
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}, "reduce": {}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16) is False)
@@ -293,7 +295,9 @@ def test_benchmark():
         '"steptime_train_float16": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"throughput_train_float16": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
         '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0], '
-        '"steptime_train_float16": [2.0], "throughput_train_float16": [16000.0]}}'
+        '"steptime_train_float16": [2.0], "throughput_train_float16": [16000.0]}, '
+        '"reduce": {"steptime_train_float32": null, "throughput_train_float32": null, '
+        '"steptime_train_float16": null, "throughput_train_float16": null}}'
     )
     assert (benchmark.serialized_result == expected_serialized_result)
 
