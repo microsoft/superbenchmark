@@ -22,6 +22,7 @@ from superbench.common.utils import logger
 from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
+from superbench.benchmarks.reducer import ReduceType
 
 
 class ShardingMode(Enum):
@@ -256,7 +257,7 @@ class ShardingMatmul(MicroBenchmark):
                 return False
 
             metric = '{}'.format(mode)
-            if not self._process_numeric_result(metric, elapse_times):
+            if not self._process_numeric_result(metric, elapse_times, reduce_type=ReduceType.MAX):
                 return False
 
             logger.info(

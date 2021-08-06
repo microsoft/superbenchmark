@@ -220,7 +220,7 @@ def test_train():
         '"steptime_train_float32": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"throughput_train_float32": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
         '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0]}, '
-        '"reduce": {"steptime_train_float32": null, "throughput_train_float32": null}}'
+        '"reduce": {"steptime_train_float32": "max", "throughput_train_float32": "min"}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32))
@@ -296,8 +296,8 @@ def test_benchmark():
         '"throughput_train_float16": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
         '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0], '
         '"steptime_train_float16": [2.0], "throughput_train_float16": [16000.0]}, '
-        '"reduce": {"steptime_train_float32": null, "throughput_train_float32": null, '
-        '"steptime_train_float16": null, "throughput_train_float16": null}}'
+        '"reduce": {"steptime_train_float32": "max", "throughput_train_float32": "min", '
+        '"steptime_train_float16": "max", "throughput_train_float16": "min"}}'
     )
     assert (benchmark.serialized_result == expected_serialized_result)
 
