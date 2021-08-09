@@ -13,6 +13,7 @@ ShardingMatmul benchmark is used to test the performance of large scale matmul o
 
 import os
 import time
+import statistics
 
 # TODO - add mechanism to import torch as needed according to docker.
 import torch
@@ -21,6 +22,7 @@ from superbench.common.utils import logger
 from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
+from superbench.benchmarks.reducer import ReduceType
 
 
 class ShardingMode(Enum):
@@ -255,13 +257,12 @@ class ShardingMatmul(MicroBenchmark):
                 return False
 
             metric = '{}'.format(mode)
-            if not self._process_numeric_result(metric, elapse_times):
+            if not self._process_numeric_result(metric, elapse_times, reduce_type=ReduceType.MAX):
                 return False
 
             logger.info(
                 'Matmul sharding - round: {0}, name: {1}, shape: ({2}, {3}) * ({3}, {4}), mode: {5}, cost: {6} ms'.
-                format(self._curr_run_index, self._name, M, K, N, mode,
-                       sum(elapse_times) / len(elapse_times))
+                format(self._curr_run_index, self._name, M, K, N, mode, statistics.mean(elapse_times))
             )
 
         return True
