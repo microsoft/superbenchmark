@@ -31,7 +31,7 @@ class BenchmarkResult():
         self.__end_time = None
         self.__raw_data = dict()
         self.__result = dict()
-        self.__reduce = dict()
+        self.__reduce_op = dict()
 
     def __eq__(self, rhs):
         """Override equal function for deep comparison.
@@ -89,7 +89,7 @@ class BenchmarkResult():
 
         if metric not in self.__result:
             self.__result[metric] = list()
-            self.__reduce[metric] = reduce_type.value if isinstance(reduce_type, Enum) else None
+            self.__reduce_op[metric] = reduce_type.value if isinstance(reduce_type, Enum) else None
         self.__result[metric].append(value)
 
         return True
@@ -177,3 +177,8 @@ class BenchmarkResult():
     def result(self):
         """Decoration function to access __result."""
         return self.__result
+
+    @property
+    def reduce_op(self):
+        """Decoration function to access __reduce_op."""
+        return self.__reduce_op
