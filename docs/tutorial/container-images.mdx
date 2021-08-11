@@ -1,0 +1,41 @@
+---
+id: container-images
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+# Container Images
+
+SuperBench provides a set of OCI-compliant container images,
+which are hosted on both [Docker Hub](https://hub.docker.com/r/superbench/superbench/tags)
+and [GitHub Container Registry](https://github.com/microsoft/superbenchmark/pkgs/container/superbenchmark%2Fsuperbench).
+
+You can use SuperBench image by `superbench/superbench:${tag}` or `ghcr.io/microsoft/superbenchmark/superbench:${tag}`,
+possible tags are listed below for all stable versions.
+
+## Stable tagged versions
+
+<Tabs
+  groupId='gpu-platform'
+  defaultValue='cuda'
+  values={[
+    {label: 'CUDA', value: 'cuda'},
+    {label: 'ROCm', value: 'rocm'},
+  ]
+}>
+<TabItem value='cuda'>
+
+| Tag               | Description                        |
+| ----------------- | ---------------------------------- |
+| v0.2.1-cuda11.1.1 | SuperBench v0.2.1 with CUDA 11.1.1 |
+| v0.2.0-cuda11.1.1 | SuperBench v0.2.0 with CUDA 11.1.1 |
+
+</TabItem>
+<TabItem value='rocm'>
+
+  Coming soon.
+
+</TabItem>
+</Tabs>
