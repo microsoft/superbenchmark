@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Unit Tests",
+      "type": "python",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "setup.py",
+      "args": [
+        "test"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Build Website",
+      "type": "node",
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "cwd": "${workspaceFolder}/website",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run-script",
+        "start"
+      ],
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Docusaurus website is running at \"(.*?)\"",
+        "uriFormat": "%s"
+      }
+    }
+  ]
+}

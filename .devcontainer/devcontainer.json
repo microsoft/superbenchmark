@@ -22,8 +22,7 @@
     "files.watcherExclude": {
       "**/target/**": true
     },
-    "workbench.iconTheme": "material-icon-theme",
-    "material-icon-theme.activeIconPack": "react"
+    "workbench.iconTheme": "vscode-icons"
   },
   "remoteUser": "codespace",
   "overrideCommand": false,
@@ -43,8 +42,8 @@
     "ms-python.python",
     "ms-python.vscode-pylance",
     "njpwerner.autodocstring",
-    "pkief.material-icon-theme",
-    "eamodio.gitlens"
+    "eamodio.gitlens",
+    "vscode-icons-team.vscode-icons"
   ],
   "forwardPorts": [
     3000
