@@ -3,14 +3,19 @@
 
 """SuperBench Runner."""
 
+import json
 import random
+import statistics
 from pathlib import Path
+from collections import defaultdict
 
+from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
 from superbench.common.utils import SuperBenchLogger, logger
 from superbench.runner.ansible import AnsibleClient
+from superbench.benchmarks import ReduceType, Reducer
 
 
 class SuperBenchRunner():
@@ -173,6 +178,72 @@ class SuperBenchRunner():
             )
         )
 
+    def __create_results_summary(self):    # pragma: no cover
+        """Create the result summary files."""
+        all_results = list()
+        for node_path in (self._output_path / 'nodes').glob('*'):
+            if not node_path.is_dir():
+                continue
+            results_summary = dict()
+            reduce_ops = dict()
+            file_list = natsorted([str(f) for f in Path('.').glob('**/results.json')])
+            file_list = [Path(f) for f in file_list]
+            for results_file in file_list:
+                with results_file.open() as f:
+                    results = json.load(f)
+                    for result in results:
+                        if result['name'] not in results_summary:
+                            results_summary[result['name']] = defaultdict(list)
+                        for metric in result['result']:
+                            results_summary[result['name']][metric].append(result['result'][metric])
+                            reduce_ops[metric] = result['reduce_op'][metric]
+
+            results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
+
+            with (node_path / 'results-summary.json').open(mode='w') as f:
+                json.dump(results_summary, f, indent=2)
+
+            results_summary['node'] = node_path.name
+            all_results.append(results_summary)
+
+        with (self._output_path / 'results-summary.jsonl').open(mode='w') as f:
+            for result in all_results:
+                json.dump(result, f)
+                f.write('\n')
+
+    def __merge_all_metrics(results_summary, reduce_ops):    # pragma: no cover
+        """Merge metrics of all benchmarks in one node.
+
+        Args:
+            results_summary (dict): Summarized result of one node.
+            reduce_ops (dict): The reduce type of each metric.
+
+        Returns:
+            dict: Flattened result with metric as key.
+        """
+        metrics_summary = dict()
+        for benchmark in results_summary:
+            for metric in results_summary[benchmark]:
+                if metric not in reduce_ops:
+                    logger.error('Unknown reduce type for metric: {}'.format(metric))
+                    continue
+                if reduce_ops[metric] is not None:
+                    reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric]))
+                    if reduce_func is None:
+                        logger.error('Undefined reduce function {} for metric {}'.format(reduce_ops[metric], metric))
+                        continue
+                    value = statistics.mean(
+                        [reduce_func(list(result)) for result in zip(*results_summary[benchmark][metric])]
+                    )
+                    metric_name = '{}-{}'.format(benchmark, metric)
+                    metrics_summary[metric_name] = value
+                else:
+                    for rank in range(len(results_summary[benchmark][metric])):
+                        metric_name = '{}-{}-{}'.format(benchmark, metric, str(rank))
+                        metrics_summary[metric_name] = statistics.mean(results_summary[benchmark][metric][rank])
+
+        return metrics_summary
+
     def _run_proc(self, benchmark_name, mode, vars):
         """Run the process.
 
@@ -214,3 +285,5 @@ class SuperBenchRunner():
                 elif mode.name == 'torch.distributed':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
             self.fetch_results()
+
+        self.__create_results_summary()
