@@ -186,7 +186,7 @@ class SuperBenchRunner():
                 continue
             results_summary = dict()
             reduce_ops = dict()
-            file_list = natsorted([str(f) for f in Path('.').glob('**/results.json')])
+            file_list = natsorted([str(f) for f in node_path.glob('**/results.json')])
             file_list = [Path(f) for f in file_list]
             for results_file in file_list:
                 with results_file.open() as f:
@@ -211,7 +211,7 @@ class SuperBenchRunner():
                 json.dump(result, f)
                 f.write('\n')
 
-    def __merge_all_metrics(results_summary, reduce_ops):    # pragma: no cover
+    def __merge_all_metrics(self, results_summary, reduce_ops):    # pragma: no cover
         """Merge metrics of all benchmarks in one node.
 
         Args:
