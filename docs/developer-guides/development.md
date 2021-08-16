@@ -16,7 +16,7 @@ Follow [System Requirements](../getting-started/installation.md).
 ## Set Up
 
 ```bash
-git clone https://github.com/microsoft/superbenchmark
+git clone --recurse-submodules -j8 https://github.com/microsoft/superbenchmark
 cd superbenchmark
 
 python3 -m pip install -e .[dev,test]
