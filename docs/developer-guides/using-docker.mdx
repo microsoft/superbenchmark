@@ -1,0 +1,79 @@
+---
+id: using-docker
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+# Using Docker
+
+SuperBench runs benchmarks inside Docker container,
+here are the guides on how to build images and start containers during development.
+
+## Build image
+
+You need to [clone the code](./development#set-up) first before building the image.
+
+<Tabs
+  groupId='gpu-platform'
+  defaultValue='cuda'
+  values={[
+    {label: 'CUDA', value: 'cuda'},
+    {label: 'ROCm', value: 'rocm'},
+  ]
+}>
+<TabItem value='cuda'>
+
+```bash
+export DOCKER_BUILDKIT=1
+docker buildx build \
+  --platform linux/amd64 --cache-to type=inline,mode=max \
+  --tag superbench-dev --file dockerfile/cuda11.1.1.dockerfile .
+```
+
+</TabItem>
+<TabItem value='rocm'>
+
+```bash
+# coming soon
+```
+
+</TabItem>
+</Tabs>
+
+## Run container
+
+<Tabs
+  groupId='gpu-platform'
+  defaultValue='cuda'
+  values={[
+    {label: 'CUDA', value: 'cuda'},
+    {label: 'ROCm', value: 'rocm'},
+  ]
+}>
+<TabItem value='cuda'>
+
+```bash
+docker run \
+  -itd --name=sb-dev \
+  --privileged --net=host --ipc=host \
+  --gpus=all \
+  -w /root -v /mnt:/mnt \
+  superbench-dev bash
+```
+
+</TabItem>
+<TabItem value='rocm'>
+
+```bash
+docker run \
+  -itd --name=sb-dev \
+  --privileged --net=host --ipc=host \
+  --security-opt seccomp=unconfined --group-add video \
+  -w /root -v /mnt:/mnt \
+  superbench-dev bash
+```
+
+</TabItem>
+</Tabs>

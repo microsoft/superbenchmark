@@ -148,7 +148,8 @@ def test_launch_benchmark():
         '{"name": "accumulation", "type": "micro", "run_count": 1, '
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
-        '"result": {"accumulation_result": [10]}}'
+        '"result": {"accumulation_result": [10]}, '
+        '"reduce_op": {"accumulation_result": null}}'
     )
     assert (result == expected)
 
@@ -171,7 +172,8 @@ def test_launch_benchmark():
         '{"name": "accumulation", "type": "micro", "run_count": 1, '
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6"]}, '
-        '"result": {"accumulation_result": [6]}}'
+        '"result": {"accumulation_result": [6]}, '
+        '"reduce_op": {"accumulation_result": null}}'
     )
     assert (result == expected)
 

@@ -32,7 +32,7 @@ The structure of `benchmarks` package can be divided into layers from the bottom
 2. Derived classes for all implemented benchmarks, which need to realize all the abstract interfaces. The benchmarks will be registered into `BenchmarkRegistry`.
 3. `BenchmarkRegistry` provides a way of benchmark registration, maintains all the registered benchmarks, and supports benchmark launching by `BenchmarkContext`.
 4. `BenchmarkContext` provides the context to launch one benchmark, including name, parameters, platform(CPU, GPU, etc.), and framework(Pytorch, TF, ONNX, etc.).
-5. `BenchmarkResult` defines the structured results for each benchmark in json format, including name, return_code, start_time, end_time, raw_data, summarized metrics, etc.
+5. `BenchmarkResult` defines the structured results for each benchmark in json format, including name, return_code, start_time, end_time, raw_data, summarized metrics, reduce type, etc.
 
 The `Executor` on the uppermost layer is the entrance for all the benchmarks. It launches the benchmark by `BenchmarkRegistry` and fetch `BenchmarkResult`.
 
@@ -44,7 +44,7 @@ This chapter will describe the design details of all the components in `benchmar
 
 The E2E model benchmarks have 4-layer inheritance relationship.
 
-#### Training 
+#### Training
 
 The general process of model training is:
 
@@ -66,7 +66,7 @@ Compared with training, it just gets rid of create_optimizer operation.
 
 ### Micro Benchmarks
 
-The micro-benchmarks have 3-layer Inheritance Relationship. There are two base classes for micro-benchmark: 
+The micro-benchmarks have 3-layer Inheritance Relationship. There are two base classes for micro-benchmark:
 `MicroBenchmark` is pure-python benchmark.
 `MicroBenchmarkWithInvoke` is benchmark depending on third-party executable program.
 
@@ -181,7 +181,7 @@ This chapter will describe the interfaces with the caller (Superbench executor),
 
 The inputs needed by the `benchmarks` package is simple, just the context object of the benchmark want to run:
 
-### Invoke
+#### Invoke
 
 ```py
     context = BenchmarkRegistry.create_benchmark_context(
@@ -219,6 +219,11 @@ result = {
              ...
         'metricsM': List[Number],
     },
+    'reduce_op': {
+        'metrics1': ReduceType,
+             ...
+        'metricsM': ReduceType,
+    },
 }
 ```
 
@@ -244,6 +249,12 @@ result = {
             'throughput-inference-float32': [avg_throughput1, ..., avg_throughputN],
             'throughput-inference-float16': [avg_throughput1, ..., avg_throughputN],
     },
+    'reduce_op': {
+        'throughput-train-float32': 'min',
+        'throughput-train-float16': 'min',
+        'throughput-inference-float32': None,
+        'throughput-inference-float16': None,
+    },
 }
 ```
 
@@ -260,6 +271,9 @@ result = {
     },
     'result': { # Key is metrics
         'overhead': [overhead1, ..., overheadN],
+    },
+    'reduce_op': {
+        'overhead': None,
     },
 }
 ```
