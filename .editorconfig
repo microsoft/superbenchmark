@@ -14,12 +14,8 @@ max_line_length = 120
 [*.{js,jsx,ts,tsx,md,mdx,css}]
 indent_size = 2
 
-[*.{yml,yaml}]
+[*.{yml,yaml,json}]
 indent_size = 2
-
-[*.json]
-indent_size = 2
-insert_final_newline = false
 
 [{*.mk,Makefile}]
 indent_style = tab

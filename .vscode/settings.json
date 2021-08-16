@@ -1,0 +1,9 @@
+{
+  "editor.formatOnSave": true,
+  "editor.wordWrap": "on",
+  "python.autoComplete.addBrackets": true,
+  "python.formatting.provider": "yapf",
+  "python.linting.flake8Enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.analysis.completeFunctionParens": true
+}

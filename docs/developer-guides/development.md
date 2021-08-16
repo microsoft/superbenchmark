@@ -6,6 +6,9 @@ id: development
 
 If you want to develop new feature, please follow below steps to set up development environment.
 
+We suggest you to use [Visual Studio Code](https://vscode.github.com/) and install the recommended extensions for this project.
+You can also develop online with [GitHub Codespaces](https://github.com/codespaces).
+
 ## Check Environment
 
 Follow [System Requirements](../getting-started/installation.md).
@@ -41,7 +44,7 @@ python3 setup.py test
 Please install `pre-commit` before `git commit` to run all pre-checks.
 
 ```bash
-pre-commit install
+pre-commit install --install-hooks
 ```
 
 Open a pull request to main branch on GitHub.
