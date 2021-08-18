@@ -190,21 +190,21 @@ class SuperBenchRunner():
             file_list = [Path(f) for f in file_list]
             for results_file in file_list:
                 with results_file.open() as f:
+                    benchmark_name = results_file.parts[-3]
                     results = json.load(f)
                     for result in results:
-                        if result['name'] not in results_summary:
-                            results_summary[result['name']] = defaultdict(list)
+                        if benchmark_name.endswith('_models'):
+                            benchmark_name = '{}-{}'.format(results_file.parts[-3], result['name'])
+                        if benchmark_name not in results_summary:
+                            results_summary[benchmark_name] = defaultdict(list)
                         for metric in result['result']:
-                            if metric not in reduce_ops:
-                                reduce_ops[metric] = result['reduce_op'][metric]
-                            else:
-                                if reduce_ops[metric] != result['reduce_op'][metric]:
-                                    logger.error('Inconsistent reduce type for metric: {}'.format(metric))
-                                    continue
-                            results_summary[result['name']][metric].append(result['result'][metric])
+                            metric_name = '{}-{}'.format(benchmark_name, metric)
+                            if metric_name not in reduce_ops:
+                                reduce_ops[metric_name] = result['reduce_op'][metric]
+
+                            results_summary[benchmark_name][metric].append(result['result'][metric])
 
             results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
-
             with (node_path / 'results-summary.json').open(mode='w') as f:
                 json.dump(results_summary, f, indent=2)
 
@@ -227,25 +227,27 @@ class SuperBenchRunner():
             dict: Flattened result with metric as key.
         """
         metrics_summary = dict()
-        for benchmark in results_summary:
-            for metric in results_summary[benchmark]:
-                if metric not in reduce_ops:
-                    logger.error('Unknown reduce type for metric: {}'.format(metric))
+        for benchmark_name in results_summary:
+            for metric in results_summary[benchmark_name]:
+                metric_name = '{}-{}'.format(benchmark_name, metric)
+                if metric_name not in reduce_ops:
+                    logger.error('Unknown reduce type for metric: {}'.format(metric_name))
                     continue
-                if reduce_ops[metric] is not None:
-                    reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric]))
+                if reduce_ops[metric_name] is not None:
+                    reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
                     if reduce_func is None:
-                        logger.error('Undefined reduce function {} for metric {}'.format(reduce_ops[metric], metric))
+                        logger.error(
+                            'Undefined reduce function {} for metric {}'.format(reduce_ops[metric_name], metric_name)
+                        )
                         continue
                     value = statistics.mean(
-                        [reduce_func(list(result)) for result in zip(*results_summary[benchmark][metric])]
+                        [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
                     )
-                    metric_name = '{}-{}'.format(benchmark, metric)
                     metrics_summary[metric_name] = value
                 else:
-                    for rank in range(len(results_summary[benchmark][metric])):
-                        metric_name = '{}-{}-{}'.format(benchmark, metric, str(rank))
-                        metrics_summary[metric_name] = statistics.mean(results_summary[benchmark][metric][rank])
+                    for rank in range(len(results_summary[benchmark_name][metric])):
+                        metric_name = '{}-{}-{}'.format(benchmark_name, metric, str(rank))
+                        metrics_summary[metric_name] = statistics.mean(results_summary[benchmark_name][metric][rank])
 
         return metrics_summary
 
