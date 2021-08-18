@@ -190,10 +190,10 @@ class SuperBenchRunner():
             file_list = [Path(f) for f in file_list]
             for results_file in file_list:
                 with results_file.open() as f:
-                    benchmark_name = results_file.parts[-3]
                     results = json.load(f)
                     for result in results:
-                        if benchmark_name.endswith('_models'):
+                        benchmark_name = result['name']
+                        if results_file.parts[-3].endswith('_models'):
                             benchmark_name = '{}-{}'.format(results_file.parts[-3], result['name'])
                         if benchmark_name not in results_summary:
                             results_summary[benchmark_name] = defaultdict(list)
