@@ -195,8 +195,13 @@ class SuperBenchRunner():
                         if result['name'] not in results_summary:
                             results_summary[result['name']] = defaultdict(list)
                         for metric in result['result']:
+                            if metric not in reduce_ops:
+                                reduce_ops[metric] = result['reduce_op'][metric]
+                            else:
+                                if reduce_ops[metric] != result['reduce_op'][metric]:
+                                    logger.error('Inconsistent reduce type for metric: {}'.format(metric))
+                                    continue
                             results_summary[result['name']][metric].append(result['result'][metric])
-                            reduce_ops[metric] = result['reduce_op'][metric]
 
             results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
 
