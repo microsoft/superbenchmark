@@ -45,7 +45,7 @@
       become: yes
     - name: Updating Hostfile
       copy:
-        content: '{{ sb_nodes }}'
+        content: "{{ sb_nodes | join('\n') }}\n"
         dest: '{{ workspace }}/hostfile'
         mode: 0644
       become: yes
