@@ -216,7 +216,7 @@ class SuperBenchRunner():
                 json.dump(result, f)
                 f.write('\n')
 
-    def __merge_all_metrics(self, results_summary, reduce_ops):    # pragma: no cover
+    def __merge_all_metrics(self, results_summary, reduce_ops):
         """Merge metrics of all benchmarks in one node.
 
         Args:
