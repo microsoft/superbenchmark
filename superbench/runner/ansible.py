@@ -79,7 +79,7 @@ class AnsibleClient():
         return r.rc
 
     def update_mpi_config(self, ansible_config):
-        """Update ansible config for mpi.
+        """Update ansible config for mpi, run on the first host of inventory group.
 
         Args:
             ansible_config (dict): Ansible config dict.
@@ -87,9 +87,7 @@ class AnsibleClient():
         Returns:
             dict: Updated Ansible config dict.
         """
-        if ansible_config['host_pattern'] != 'localhost':
-            head_node = '{}[0]'.format(ansible_config['host_pattern'])
-            ansible_config['host_pattern'] = head_node
+        ansible_config['host_pattern'] += '[0]'
         return ansible_config
 
     def get_shell_config(self, cmd):
