@@ -5,7 +5,6 @@
 
 import json
 import random
-import statistics
 from pathlib import Path
 from collections import defaultdict
 
@@ -179,35 +178,12 @@ class SuperBenchRunner():
         )
 
     def __create_results_summary(self):    # pragma: no cover
-        """Create the result summary files."""
+        """Create the result summary file of all nodes."""
         all_results = list()
         for node_path in (self._output_path / 'nodes').glob('*'):
             if not node_path.is_dir():
                 continue
-            results_summary = dict()
-            reduce_ops = dict()
-            file_list = natsorted([str(f) for f in node_path.glob('**/results.json')])
-            file_list = [Path(f) for f in file_list]
-            for results_file in file_list:
-                with results_file.open() as f:
-                    results = json.load(f)
-                    for result in results:
-                        benchmark_name = result['name']
-                        if results_file.parts[-3].endswith('_models'):
-                            benchmark_name = '{}-{}'.format(results_file.parts[-3], result['name'])
-                        if benchmark_name not in results_summary:
-                            results_summary[benchmark_name] = defaultdict(list)
-                        for metric in result['result']:
-                            metric_name = '{}-{}'.format(benchmark_name, metric)
-                            if metric_name not in reduce_ops:
-                                reduce_ops[metric_name] = result['reduce_op'][metric]
-
-                            results_summary[benchmark_name][metric].append(result['result'][metric])
-
-            results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
-            with (node_path / 'results-summary.json').open(mode='w') as f:
-                json.dump(results_summary, f, indent=2)
-
+            results_summary = self.__create_single_node_summary(node_path)
             results_summary['node'] = node_path.name
             all_results.append(results_summary)
 
@@ -215,6 +191,43 @@ class SuperBenchRunner():
             for result in all_results:
                 json.dump(result, f)
                 f.write('\n')
+
+    def __create_single_node_summary(self, node_path):    # pragma: no cover
+        """Create the result summary file of single node.
+
+        Args:
+            node_path (Path): The Path instance of node directory.
+
+        Returns:
+            dict: Result summary of single node.
+        """
+        results_summary = dict()
+        reduce_ops = dict()
+        file_list = [Path(f) for f in natsorted([str(f) for f in node_path.glob('**/results.json')])]
+        for results_file in file_list:
+            with results_file.open() as f:
+                results = json.load(f)
+                for result in results:
+                    benchmark_name = result['name']
+                    if results_file.parts[-3].endswith('_models'):
+                        benchmark_name = '{}/{}'.format(results_file.parts[-3], result['name'])
+                    if benchmark_name not in results_summary:
+                        results_summary[benchmark_name] = defaultdict(list)
+                    for metric in result['result']:
+                        metric_name = '{}/{}'.format(benchmark_name, metric)
+                        if metric_name not in reduce_ops:
+                            reduce_ops[metric_name] = result['reduce_op'][metric]
+                        elif reduce_ops[metric_name] != result['reduce_op'][metric]:
+                            logger.error('Inconsistent reduce type for metric: {}'.format(metric_name))
+                            continue
+
+                        results_summary[benchmark_name][metric].append(result['result'][metric])
+
+        results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
+        with (node_path / 'results-summary.json').open(mode='w') as f:
+            json.dump(results_summary, f, indent=2)
+
+        return results_summary
 
     def __merge_all_metrics(self, results_summary, reduce_ops):
         """Merge metrics of all benchmarks in one node.
@@ -229,7 +242,7 @@ class SuperBenchRunner():
         metrics_summary = dict()
         for benchmark_name in results_summary:
             for metric in results_summary[benchmark_name]:
-                metric_name = '{}-{}'.format(benchmark_name, metric)
+                metric_name = '{}/{}'.format(benchmark_name, metric)
                 if metric_name not in reduce_ops:
                     logger.error('Unknown reduce type for metric: {}'.format(metric_name))
                     continue
@@ -240,14 +253,15 @@ class SuperBenchRunner():
                             'Undefined reduce function {} for metric {}'.format(reduce_ops[metric_name], metric_name)
                         )
                         continue
-                    value = statistics.mean(
-                        [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
-                    )
-                    metrics_summary[metric_name] = value
+                    values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
+                    for run_count in range(len(values)):
+                        metric_name = '{}/{}/{}'.format(benchmark_name, metric, str(run_count))
+                        metrics_summary[metric_name] = values[run_count]
                 else:
                     for rank in range(len(results_summary[benchmark_name][metric])):
-                        metric_name = '{}-{}-{}'.format(benchmark_name, metric, str(rank))
-                        metrics_summary[metric_name] = statistics.mean(results_summary[benchmark_name][metric][rank])
+                        for run_count in range(len(results_summary[benchmark_name][metric][rank])):
+                            metric_name = '{}/{}_{}/{}'.format(benchmark_name, metric, str(rank), str(run_count))
+                            metrics_summary[metric_name] = results_summary[benchmark_name][metric][rank][run_count]
 
         return metrics_summary
 
