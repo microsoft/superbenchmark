@@ -1,0 +1,376 @@
+---
+id: superbench-config
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+# SuperBench Config File
+
+Taking full advantage of SuperBench requires configuring what benchmarks to run and how to benchmarks
+according to corresponding hardware using a configuration file.
+The configuration file uses [YAML](https://yaml.org/spec/1.2/spec.html) format.
+You can put it in any place and specify the path to config file through `-c /path/to/config.yaml` in `sb` CLI.
+
+This document covers schema of SuperBench configuration YAML file.
+To learn the basics of YAML, see [Learn YAML in Y minutes](https://learnxinyminutes.com/docs/yaml/).
+SuperBench configuration supports most of the YAML features, including anchors and aliases, merge key, etc.
+
+## Conventions
+
+Here lists syntax convertions used in this document:
+
+* The schema and example are in YAML format.
+
+* In YAML mappings which use a colon `:` to mark `key: value` pair.
+
+  To left of colon is a literal keyword defined in configuration,
+  if it is surrounded by `${}`, like `${name}`, then the key is a string that can be defined by user.
+
+  To right of colon is a data type, which may be a Python built-in types (like `string`, `dict`),
+  or a rich structure defined in this document (first character capitalized).
+
+* The notation `[ datatype ]` indicates a YAML sequence of the mentioned data type.
+  For example, `[ string ]` is a list of strings.
+
+* The notation `|` indicates there are multiple optional data types.
+  For example, `string | [ string ]` means either a string or a list of strings is allowed.
+
+## Configuration Schema
+
+The configuration file describes all benchmarks running by SuperBench.
+There will be one or more benchmarks, each benchmark has its own settings and parameters.
+One benchmark may have one or more modes, which indicates how to run benchmarks in all given machines.
+
+Here is an overview of SuperBench configuration structure:
+
+<Tabs
+  defaultValue='schema'
+  values={[
+    {label: 'Schema', value: 'schema'},
+    {label: 'Example', value: 'example'},
+  ]
+}>
+<TabItem value='schema'>
+
+```yaml
+version: string
+superbench:
+  enable: string | [ string ]
+  var:
+    ${var_name}: dict
+  benchmarks:
+    ${benchmark_name}: Benchmark
+```
+
+</TabItem>
+<TabItem value='example'>
+
+```yaml
+version: v0.2
+superbench:
+  enable: benchmark_1
+  var:
+    var_1: value
+  benchmarks:
+    benchmark_1:
+      enable: true
+      modes:
+      - name: local
+```
+
+</TabItem>
+</Tabs>
+
+### `version`
+
+Version of the configuration file.
+Lower version `sb` CLI may not understand higher version config.
+
+### `superbench`
+
+SuperBench configuration for all benchmarks.
+
+### `superbench.enable`
+
+Enable which benchmark to run, could be one or multiple benchmarks' name.
+If not specified, will use [`${benchmark_name}.enable`](#enable) in each benchmark to determine.
+
+* value from: benchmark names defined in `superbench.benchmarks`
+* default value: `null`
+
+### `superbench.var`
+
+User-defined variables to be used in the configuration.
+Leveraging YAML [anchors and aliases](https://yaml.org/spec/1.2/spec.html#id2765878),
+common settings can be defined here to avoid repeating.
+
+Here is an example usage:
+
+```yaml {3-6,11,15}
+superbench:
+  var:
+    common_param: &param
+      num_warmup: 16
+      num_steps: 128
+      batch_size: 128
+  benchmarks:
+    foo_models:
+      models:
+        - resnet50
+      parameters: *param
+    bar_models:
+      models:
+        - vgg19
+      parameters: *param
+```
+
+The above configuration equals to the following:
+```yaml {6-9,13-16}
+superbench:
+  benchmarks:
+    foo_models:
+      models:
+        - resnet50
+      parameters:
+        num_warmup: 16
+        num_steps: 128
+        batch_size: 128
+    bar_models:
+      models:
+        - vgg19
+      parameters:
+        num_warmup: 16
+        num_steps: 128
+        batch_size: 128
+```
+
+### `superbench.benchmarks`
+
+Mappings of `${benchmark_name}: Benchmark`.
+
+There are two types of benchmarks, micro-benchmark and model-benchmark.
+For micro-benchmark, `${benchmark_name}` should be the exact same as provided micro-benchmarks' name.
+For model-benchmark, `${benchmark_name}` should be in `${name}_models` format,
+each model-benchmark could have a customized name while ending with `_models`.
+
+See [`Benchmark` Schema](#benchmark-schema) for benchmark definition.
+
+## `Benchmark` Schema
+
+Definition for each benchmark, here is an overview of `Benchmark` configuration structure:
+
+<Tabs
+  defaultValue='schema'
+  values={[
+    {label: 'Schema', value: 'schema'},
+    {label: 'Example', value: 'example'},
+  ]
+}>
+<TabItem value='schema'>
+
+#### Micro-Benchmark
+
+```yaml
+${benchmark_name}:
+  enable: bool
+  modes: [ Mode ]
+  frameworks: [ enum ]
+  parameters:
+    run_count: int
+    duration: int
+    ${argument}: bool | str | int | float | list
+```
+
+#### Model-Benchmark
+
+```yaml
+${name}_models:
+  enable: bool
+  modes: [ Mode ]
+  frameworks: [ enum ]
+  models: [ enum ]
+  parameters:
+    run_count: int
+    duration: int
+    num_warmup: int
+    num_steps: int
+    sample_count: int
+    batch_size: int
+    precision: [ enum ]
+    model_action: [ enum ]
+    pin_memory: bool
+    ${argument}: bool | str | int | float | list
+```
+
+</TabItem>
+<TabItem value='example'>
+
+#### Micro-Benchmark
+
+```yaml
+kernel-launch:
+  enable: true
+  modes:
+    - name: local
+      proc_num: 8
+      prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+      parallel: yes
+  parameters:
+    num_warmup: 100
+    num_steps: 2000000
+    interval: 2000
+```
+
+#### Model-Benchmark
+
+```yaml
+resnet_models:
+  enable: true
+  modes:
+    - name: torch.distributed
+      proc_num: 8
+      node_num: 1
+  frameworks:
+    - pytorch
+  models:
+    - resnet50
+    - resnet101
+    - resnet152
+  parameters:
+    duration: 0
+    num_warmup: 16
+    num_steps: 128
+    batch_size: 128
+    precision:
+      - float32
+      - float16
+    model_action:
+      - train
+```
+
+</TabItem>
+</Tabs>
+
+### `enable`
+
+Enable current benchmark or not, can be overwritten by [`superbench.enable`](#superbenchenable).
+
+* default value: `true`
+
+### `modes`
+
+A list of mode in which the benchmark runs.
+
+See [`Mode` Schema](#mode-schema) for mode definition.
+
+### `frameworks`
+
+A list of framework in which the benchmark runs.
+Some benchmarks can support multiple frameworks while others only support one.
+
+* accepted values: `[ onnx | pytorch | tf1 | tf2 | none ]`
+* default value: `[ none ]`
+
+### `models`
+
+A list of models to run, only supported in model-benchmark.
+
+* accepted values:
+  ```yaml
+  # pytorch framework
+  [ alexnet | densenet121 | densenet169 | densenet201 | densenet161 | googlenet | inception_v3 |
+    mnasnet0_5 | mnasnet0_75 | mnasnet1_0 | mnasnet1_3 | mobilenet_v2 |
+    resnet18 | resnet34 | resnet50 | resnet101 | resnet152 |
+    resnext50_32x4d | resnext101_32x8d | wide_resnet50_2 | wide_resnet101_2 |
+    shufflenet_v2_x0_5 | shufflenet_v2_x1_0 | shufflenet_v2_x1_5 | shufflenet_v2_x2_0 |
+    squeezenet1_0 | squeezenet1_1 |
+    vgg11 | vgg11_bn | vgg13 | vgg13_bn | vgg16 | vgg16_bn | vgg19_bn | vgg19 |
+    bert-base | bert-large | gpt2-small | gpt2-medium | gpt2-large | gpt2-xl ]
+  ```
+* default value: `[ ]`
+
+### `parameters`
+
+Parameters for benchmark to use, varies for different benchmarks.
+
+## `Mode` Schema
+
+Definition for each benchmark mode, here is an overview of `Mode` configuration structure:
+
+<Tabs
+  defaultValue='schema'
+  values={[
+    {label: 'Schema', value: 'schema'},
+    {label: 'Example', value: 'example'},
+  ]
+}>
+<TabItem value='schema'>
+
+```yaml
+name: enum
+proc_num: int
+node_num: int
+env: dict
+mca: dict
+prefix: str
+parallel: bool
+```
+
+</TabItem>
+<TabItem value='example'>
+
+```yaml
+name: local
+proc_num: 8
+prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+parallel: yes
+```
+
+</TabItem>
+</Tabs>
+
+### `name`
+
+Mode name to use.
+
+* accepted values: `local | torch.distributed | mpi`
+* default value: `local`
+
+### `proc_num`
+
+Process number to run.
+
+* default value: `1`
+
+### `node_num`
+
+Node number to run.
+
+* default value: `1`
+
+### `prefix`
+
+Command prefix to use in the mode, in Python formatted string.
+
+Available variables in formatted string includes:
+* `proc_rank`
+* `proc_num`
+
+So `prefix: CUDA_VISIBLE_DEVICES={proc_rank}` will be expressed as `CUDA_VISIBLE_DEVICES=0`, `CUDA_VISIBLE_DEVICES=1`, etc.
+
+### `env`
+
+Environment variables to use in the mode.
+
+### `mca`
+
+MCA (Modular Component Architecture) frameworks, components, or modules to use in MPI.
+Only available for `mpi` mode.
+
+### `parallel`
+
+Whether run benchmarks in parallel (all ranks at the same time) or in sequence (one rank at a time).
+
+* default value: `yes`
