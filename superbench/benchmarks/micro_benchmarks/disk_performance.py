@@ -100,7 +100,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                     help='Time in seconds to warm up %s test.' % io_str,
                 )
                 # Disable write tests by default
-                default_runtime = 0 if io_type == 'write' else self.__default_runtime
+                default_runtime = 0 if io_type in ['write', 'rw'] else self.__default_runtime
                 self._parser.add_argument(
                     '--%s_runtime' % io_str,
                     type=int,
