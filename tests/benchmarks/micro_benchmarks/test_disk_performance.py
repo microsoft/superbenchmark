@@ -85,9 +85,7 @@ class DiskBenchmarkTest(unittest.TestCase):
         param_str = block_device_option
         param_str += ' --rand_precond_time=0'
         param_str += ' --seq_read_runtime=0'
-        param_str += ' --seq_write_runtime=0'
         param_str += ' --rand_read_runtime=0'
-        param_str += ' --rand_write_runtime=0'
         benchmark = benchmark_class(benchmark_name, parameters=param_str)
 
         # Check basic information
