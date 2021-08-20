@@ -122,6 +122,46 @@ class RunnerTestCase(unittest.TestCase):
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
                 ),
             },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
+                    'proc_num': 8,
+                    'proc_rank': 1,
+                    'mca': {},
+                    'env': {
+                        'PATH': None,
+                        'LD_LIBRARY_PATH': None,
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to numa '
+                    ' -x PATH -x LD_LIBRARY_PATH '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
+                    'proc_num': 8,
+                    'proc_rank': 2,
+                    'mca': {
+                        'coll_hcoll_enable': 0,
+                    },
+                    'env': {
+                        'SB_MICRO_PATH': '/sb',
+                        'FOO': 'BAR',
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to numa '
+                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
         ]
         for test_case in test_cases:
             with self.subTest(msg='Testing with case', test_case=test_case):

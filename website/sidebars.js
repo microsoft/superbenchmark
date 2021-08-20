@@ -17,6 +17,14 @@ module.exports = {
     },
     {
       type: 'category',
+      label: 'Tutorial',
+      collapsed: false,
+      items: [
+        'tutorial/container-images',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Benchmarks',
       items: [
         'benchmarks/micro-benchmarks',
@@ -28,6 +36,7 @@ module.exports = {
       label: 'Developer Guides',
       items: [
         'developer-guides/development',
+        'developer-guides/using-docker',
         'developer-guides/contributing',
       ],
     },
