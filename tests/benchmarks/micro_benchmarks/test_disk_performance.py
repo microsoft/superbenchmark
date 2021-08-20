@@ -150,7 +150,7 @@ class DiskBenchmarkTest(unittest.TestCase):
 
         # Check parameter assignments
         command_idx = 0
-
+        default_rwmixread = 80
         for block_device in block_devices:
             curr_test_magic = init_test_magic
 
@@ -177,7 +177,7 @@ class DiskBenchmarkTest(unittest.TestCase):
                     assert ('--numjobs=%d' % curr_test_magic in benchmark._commands[command_idx])
                     curr_test_magic += 1
                     if io_type == 'rw':
-                        assert ('--rwmixread=%d' % benchmark.__default_rwmixread in benchmark._commands[command_idx])
+                        assert ('--rwmixread=%d' % default_rwmixread in benchmark._commands[command_idx])
                     command_idx += 1
 
     def test_disk_performance_result_parsing(self):
