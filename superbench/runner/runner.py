@@ -206,7 +206,12 @@ class SuperBenchRunner():
         file_list = [Path(f) for f in natsorted([str(f) for f in node_path.glob('**/results.json')])]
         for results_file in file_list:
             with results_file.open() as f:
-                results = json.load(f)
+                try:
+                    results = json.load(f)
+                except ValueError:
+                    logger.error('Invalid JSON file: {}'.format(results_file))
+                    continue
+
                 for result in results:
                     benchmark_name = result['name']
                     if results_file.parts[-3].endswith('_models'):
@@ -243,24 +248,28 @@ class SuperBenchRunner():
         for benchmark_name in results_summary:
             for metric in results_summary[benchmark_name]:
                 metric_name = '{}/{}'.format(benchmark_name, metric)
-                if metric_name not in reduce_ops:
+                if metric_name not in reduce_ops or (
+                    reduce_ops[metric_name] is not None and reduce_ops[metric_name] not in ReduceType.get_values()
+                ):
                     logger.error('Unknown reduce type for metric: {}'.format(metric_name))
                     continue
+
                 if reduce_ops[metric_name] is not None:
                     reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
-                    if reduce_func is None:
-                        logger.error(
-                            'Undefined reduce function {} for metric {}'.format(reduce_ops[metric_name], metric_name)
-                        )
-                        continue
                     values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
                     for run_count in range(len(values)):
-                        metric_name = '{}/{}/{}'.format(benchmark_name, metric, str(run_count))
+                        if len(values) > 1:
+                            metric_name = '{}/{}/{}'.format(benchmark_name, run_count, metric)
+                        else:
+                            metric_name = '{}/{}'.format(benchmark_name, metric)
                         metrics_summary[metric_name] = values[run_count]
                 else:
                     for rank in range(len(results_summary[benchmark_name][metric])):
                         for run_count in range(len(results_summary[benchmark_name][metric][rank])):
-                            metric_name = '{}/{}_{}/{}'.format(benchmark_name, metric, str(rank), str(run_count))
+                            if len(results_summary[benchmark_name][metric][rank]) > 1:
+                                metric_name = '{}/{}/{}:{}'.format(benchmark_name, run_count, metric, rank)
+                            else:
+                                metric_name = '{}/{}:{}'.format(benchmark_name, metric, rank)
                             metrics_summary[metric_name] = results_summary[benchmark_name][metric][rank][run_count]
 
         return metrics_summary
