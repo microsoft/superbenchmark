@@ -8,9 +8,7 @@ import TabItem from '@theme/TabItem';
 
 # SuperBench Config File
 
-Taking full advantage of SuperBench requires configuring what benchmarks to run and how to benchmarks
-according to corresponding hardware using a configuration file.
-The configuration file uses [YAML](https://yaml.org/spec/1.2/spec.html) format.
+[YAML](https://yaml.org/spec/1.2/spec.html) format configuration file is an efficient method to take full advantage of SuperBench.
 You can put it in any place and specify the path to config file through `-c /path/to/config.yaml` in `sb` CLI.
 
 This document covers schema of SuperBench configuration YAML file.
@@ -25,10 +23,10 @@ Here lists syntax convertions used in this document:
 
 * In YAML mappings which use a colon `:` to mark `key: value` pair.
 
-  To left of colon is a literal keyword defined in configuration,
+  The left side of colon is a literal keyword defined in configuration,
   if it is surrounded by `${}`, like `${name}`, then the key is a string that can be defined by user.
 
-  To right of colon is a data type, which may be a Python built-in types (like `string`, `dict`),
+  The right side of colon is a data type, which may be a Python built-in types (like `string`, `dict`),
   or a rich structure defined in this document (first character capitalized).
 
 * The notation `[ datatype ]` indicates a YAML sequence of the mentioned data type.
@@ -95,7 +93,7 @@ SuperBench configuration for all benchmarks.
 ### `superbench.enable`
 
 Enable which benchmark to run, could be one or multiple benchmarks' name.
-If not specified, will use [`${benchmark_name}.enable`](#enable) in each benchmark to determine.
+If not specified, will use [`${benchmark_name}.enable`](#enable) in each benchmark as default.
 
 * value from: benchmark names defined in `superbench.benchmarks`
 * default value: `null`
@@ -104,9 +102,9 @@ If not specified, will use [`${benchmark_name}.enable`](#enable) in each benchma
 
 User-defined variables to be used in the configuration.
 Leveraging YAML [anchors and aliases](https://yaml.org/spec/1.2/spec.html#id2765878),
-common settings can be defined here to avoid repeating.
+common settings can be defined here to avoid config duplication.
 
-Here is an example usage:
+Here is a usage example:
 
 ```yaml {3-6,11,15}
 superbench:
@@ -153,7 +151,7 @@ Mappings of `${benchmark_name}: Benchmark`.
 There are two types of benchmarks, micro-benchmark and model-benchmark.
 For micro-benchmark, `${benchmark_name}` should be the exact same as provided micro-benchmarks' name.
 For model-benchmark, `${benchmark_name}` should be in `${name}_models` format,
-each model-benchmark could have a customized name while ending with `_models`.
+each model-benchmark can have a customized name while ending with `_models`.
 
 See [`Benchmark` Schema](#benchmark-schema) for benchmark definition.
 
@@ -294,7 +292,7 @@ A list of models to run, only supported in model-benchmark.
 
 ### `parameters`
 
-Parameters for benchmark to use, varies for different benchmarks.
+Parameters for benchmark to use, varying for different benchmarks.
 
 ## `Mode` Schema
 
