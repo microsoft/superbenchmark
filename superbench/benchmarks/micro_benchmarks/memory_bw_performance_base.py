@@ -19,8 +19,8 @@ class MemBwBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._mem_types = ['htod', 'dtoh']
-        self._metrics = ['H2D_Mem_BW', 'D2H_Mem_BW']
+        self._mem_types = ['htod', 'dtoh', 'dtod']
+        self._metrics = ['H2D_Mem_BW', 'D2H_Mem_BW', 'D2D_Mem_BW']
         self._memory = ['pinned', 'unpinned']
 
     def add_parser_arguments(self):
