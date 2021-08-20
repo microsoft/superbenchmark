@@ -145,8 +145,8 @@ class DiskBenchmarkTest(unittest.TestCase):
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check command list
-        # 2 files * (2 preconditions + 2 io_patterns * 2 io_types) = 12 commands
-        assert (12 == len(benchmark._commands))
+        # 2 files * (2 preconditions + 3 io_patterns * 2 io_types) = 16 commands
+        assert (16 == len(benchmark._commands))
 
         # Check parameter assignments
         command_idx = 0
