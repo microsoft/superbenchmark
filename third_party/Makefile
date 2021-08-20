@@ -85,7 +85,8 @@ rocm_rocblas: sb_micro_path
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 rocm_bandwidthTest:
-	if [ -d hip ]; then rm -rf hip; fi
-	git clone -b rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3) https://github.com/ROCm-Developer-Tools/HIP.git ./hip
+	cp -r -v $(shell hipconfig -p) ./
+ifneq (, $(wildcard hip/samples/1_Utils/hipBusBandwidth/CMakeLists.txt))
 	cd ./hip/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./hip/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
+endif
