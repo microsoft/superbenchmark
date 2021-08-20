@@ -141,6 +141,7 @@ setup(
         'knack>=0.7.2',
         'omegaconf==2.0.6',
         'pyyaml>=5.3',
+        'xmltodict',
     ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
