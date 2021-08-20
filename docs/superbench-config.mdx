@@ -262,6 +262,7 @@ Enable current benchmark or not, can be overwritten by [`superbench.enable`](#su
 ### `modes`
 
 A list of mode in which the benchmark runs.
+Currently only one mode is supported for each benchmark.
 
 See [`Mode` Schema](#mode-schema) for mode definition.
 
@@ -333,44 +334,58 @@ parallel: yes
 
 ### `name`
 
-Mode name to use.
+Mode name to use. Here lists available modes:
++ `local`: run benchmark as local process.
++ `torch.distributed`: launch benchmark through [PyTorch DDP](https://pytorch.org/docs/stable/distributed.html#launch-utility), each process will run on one GPU.
++ `mpi`: launch benchmark through MPI, the benchmark implementation could leverage MPI interface.
+
+Some attributes may only be suitable for specific mode.
 
 * accepted values: `local | torch.distributed | mpi`
 * default value: `local`
 
 ### `proc_num`
 
-Process number to run.
+Process number to run per node.
+Each process will run an individual benchmark, how processes communicate depends on the mode.
 
 * default value: `1`
 
 ### `node_num`
 
-Node number to run.
+Node number to run in the mode. Defaults to all nodes in the run.
+Will be ignored in `local` mode.
 
-* default value: `1`
+For example, assuming you are running model benchmark on 4 nodes,
+`proc_num: 8, node_num: 1` will run 8-GPU distributed training on each node,
+while `proc_num: 8, node_num: null` will run 32-GPU distributed training on all nodes.
+
+* default value: `null`
 
 ### `prefix`
 
 Command prefix to use in the mode, in Python formatted string.
 
 Available variables in formatted string includes:
-* `proc_rank`
-* `proc_num`
++ `proc_rank`
++ `proc_num`
 
 So `prefix: CUDA_VISIBLE_DEVICES={proc_rank}` will be expressed as `CUDA_VISIBLE_DEVICES=0`, `CUDA_VISIBLE_DEVICES=1`, etc.
 
 ### `env`
 
-Environment variables to use in the mode.
+Environment variables to use in the mode,
+in a flatten key-value dictionary.
 
 ### `mca`
 
-MCA (Modular Component Architecture) frameworks, components, or modules to use in MPI.
+MCA (Modular Component Architecture) frameworks, components, or modules to use in MPI,
+in a flatten key-value dictionary.
 Only available for `mpi` mode.
 
 ### `parallel`
 
 Whether run benchmarks in parallel (all ranks at the same time) or in sequence (one rank at a time).
+Only available for `local` mode.
 
 * default value: `yes`
