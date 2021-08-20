@@ -52,7 +52,7 @@ class SuperBenchRunner():
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
-    def __validate_sb_config(self):
+    def __validate_sb_config(self):    # noqa: C901
         """Validate SuperBench config object.
 
         Raise:
@@ -73,6 +73,18 @@ class SuperBenchRunner():
                 elif mode.name == 'torch.distributed':
                     if not mode.proc_num:
                         self._sb_benchmarks[name].modes[idx].proc_num = 8
+                elif mode.name == 'mpi':
+                    if not mode.mca:
+                        self._sb_benchmarks[name].modes[idx].mca = {
+                            'pml': 'ob1',
+                            'btl': '^openib',
+                            'btl_tcp_if_exclude': 'lo,docker0',
+                            'coll_hcoll_enable': 0,
+                        }
+                    if not mode.env:
+                        self._sb_benchmarks[name].modes[idx].env = {}
+                    for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH']:
+                        self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
 
     def __get_enabled_benchmarks(self):
         """Get enabled benchmarks list.
@@ -126,6 +138,23 @@ class SuperBenchRunner():
                     'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
                 ).format(name=benchmark_name),
             )
+        elif mode.name == 'mpi':
+            mode_command = (
+                'mpirun '    # use default OpenMPI in image
+                '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
+                '-allow-run-as-root '    # allow mpirun to run when executed by root user
+                '-hostfile hostfile '    # use prepared hostfile
+                '-map-by ppr:{proc_num}:node '    # launch {proc_num} processes on each node
+                '-bind-to numa '    # bind processes to numa
+                '{mca_list} {env_list} {command}'
+            ).format(
+                proc_num=mode.proc_num,
+                mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
+                env_list=' '.join(f'-x {k}={v}' if v else f'-x {k}' for k, v in mode.env.items()),
+                command=exec_command,
+            )
+        else:
+            logger.warning('Unknown mode %s.', mode.name)
         return mode_command.strip()
 
     def deploy(self):    # pragma: no cover
@@ -287,15 +316,15 @@ class SuperBenchRunner():
         """
         mode.update(vars)
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
-        rc = self._ansible_client.run(
-            self._ansible_client.get_shell_config(
-                (
-                    'docker exec sb-workspace bash -c '
-                    "'set -o allexport && source sb.env && set +o allexport && {command}'"
-                ).format(command=self.__get_mode_command(benchmark_name, mode), )
-            ),
-            sudo=True
+        ansible_runner_config = self._ansible_client.get_shell_config(
+            (
+                'docker exec sb-workspace bash -c '
+                "'set -o allexport && source sb.env && set +o allexport && {command}'"
+            ).format(command=self.__get_mode_command(benchmark_name, mode))
         )
+        if mode.name == 'mpi':
+            ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
+        rc = self._ansible_client.run(ansible_runner_config, sudo=True)
         return rc
 
     def run(self):
@@ -312,8 +341,10 @@ class SuperBenchRunner():
                             'proc_rank': proc_rank
                         }) for proc_rank in range(mode.proc_num)
                     )
-                elif mode.name == 'torch.distributed':
+                elif mode.name == 'torch.distributed' or mode.name == 'mpi':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                else:
+                    logger.warning('Unknown mode %s.', mode.name)
             self.fetch_results()
 
         self.__create_results_summary()

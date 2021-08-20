@@ -44,7 +44,7 @@ This chapter will describe the design details of all the components in `benchmar
 
 The E2E model benchmarks have 4-layer inheritance relationship.
 
-#### Training 
+#### Training
 
 The general process of model training is:
 
@@ -66,7 +66,7 @@ Compared with training, it just gets rid of create_optimizer operation.
 
 ### Micro Benchmarks
 
-The micro-benchmarks have 3-layer Inheritance Relationship. There are two base classes for micro-benchmark: 
+The micro-benchmarks have 3-layer Inheritance Relationship. There are two base classes for micro-benchmark:
 `MicroBenchmark` is pure-python benchmark.
 `MicroBenchmarkWithInvoke` is benchmark depending on third-party executable program.
 
@@ -219,7 +219,7 @@ result = {
              ...
         'metricsM': List[Number],
     },
-    'reduce': {
+    'reduce_op': {
         'metrics1': ReduceType,
              ...
         'metricsM': ReduceType,
@@ -249,7 +249,7 @@ result = {
             'throughput-inference-float32': [avg_throughput1, ..., avg_throughputN],
             'throughput-inference-float16': [avg_throughput1, ..., avg_throughputN],
     },
-    'reduce': {
+    'reduce_op': {
         'throughput-train-float32': 'min',
         'throughput-train-float16': 'min',
         'throughput-inference-float32': None,
@@ -272,7 +272,7 @@ result = {
     'result': { # Key is metrics
         'overhead': [overhead1, ..., overheadN],
     },
-    'reduce': {
+    'reduce_op': {
         'overhead': None,
     },
 }

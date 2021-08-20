@@ -78,6 +78,18 @@ class AnsibleClient():
         logger.info(r.stats)
         return r.rc
 
+    def update_mpi_config(self, ansible_config):
+        """Update ansible config for mpi, run on the first host of inventory group.
+
+        Args:
+            ansible_config (dict): Ansible config dict.
+
+        Returns:
+            dict: Updated Ansible config dict.
+        """
+        ansible_config['host_pattern'] += '[0]'
+        return ansible_config
+
     def get_shell_config(self, cmd):
         """Get ansible config for shell module.
 
