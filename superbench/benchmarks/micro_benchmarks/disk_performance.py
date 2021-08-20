@@ -26,13 +26,14 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
         self._bin_name = 'fio'
 
         self.__io_patterns = ['seq', 'rand']
-        self.__io_types = ['read', 'write']
+        self.__io_types = ['read', 'write', 'rw']
         self.__rand_block_size = 4 * 1024    # 4KiB
         self.__seq_block_size = 128 * 1024    # 128KiB
         self.__default_iodepth = 64
         self.__default_ramp_time = 10
         self.__default_runtime = 60
         self.__default_numjobs_for_rand = 4
+        self.__default_rwmixread = 80
 
         self.__common_fio_args =\
             ' --randrepeat=1 --thread=1 --ioengine=libaio --direct=1'\
@@ -58,6 +59,8 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                 fio_bs = self.__seq_block_size if io_pattern == 'seq' else self.__rand_block_size
                 self.__fio_args[io_str] = self.__common_fio_args +\
                     ' --name=%s --rw=%s --bs=%d --time_based=1' % (io_str, fio_rw, fio_bs)
+                if io_type == 'rw':
+                    self.__fio_args[io_str] += ' --rwmixread=%d' % self.__default_rwmixread
 
     def add_parser_arguments(self):
         """Add the specified arguments."""

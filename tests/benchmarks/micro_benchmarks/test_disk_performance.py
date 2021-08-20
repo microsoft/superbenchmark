@@ -124,7 +124,7 @@ class DiskBenchmarkTest(unittest.TestCase):
         curr_test_magic += 1
         # Seq/rand read/write
         for io_pattern in ['seq', 'rand']:
-            for io_type in ['read', 'write']:
+            for io_type in ['read', 'write', 'rw']:
                 io_str = '%s_%s' % (io_pattern, io_type)
                 param_str += ' --%s_ramp_time=%d' % (io_str, curr_test_magic)
                 curr_test_magic += 1
@@ -164,7 +164,7 @@ class DiskBenchmarkTest(unittest.TestCase):
             command_idx += 1
             # Seq/rand read/write
             for io_pattern in ['seq', 'rand']:
-                for io_type in ['read', 'write']:
+                for io_type in ['read', 'write', 'rw']:
                     assert ('--filename=%s' % block_device in benchmark._commands[command_idx])
                     fio_rw = '%s%s' % (io_pattern if io_pattern == 'rand' else '', io_type)
                     assert ('--rw=%s' % fio_rw in benchmark._commands[command_idx])
@@ -176,6 +176,8 @@ class DiskBenchmarkTest(unittest.TestCase):
                     curr_test_magic += 1
                     assert ('--numjobs=%d' % curr_test_magic in benchmark._commands[command_idx])
                     curr_test_magic += 1
+                    if io_type == 'rw':
+                        assert ('--rwmixread=%d' % benchmark.__default_rwmixread in benchmark._commands[command_idx])
                     command_idx += 1
 
     def test_disk_performance_result_parsing(self):
