@@ -26,7 +26,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
         self._bin_name = 'fio'
 
         self.__io_patterns = ['seq', 'rand']
-        self.__io_types = ['read', 'write', 'rw']
+        self.__io_types = ['read', 'write', 'readwrite']
         self.__rand_block_size = 4 * 1024    # 4KiB
         self.__seq_block_size = 128 * 1024    # 128KiB
         self.__default_iodepth = 64
@@ -55,11 +55,13 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
         for io_pattern in self.__io_patterns:
             for io_type in self.__io_types:
                 io_str = '%s_%s' % (io_pattern, io_type)
-                fio_rw = io_type if io_pattern == 'seq' else io_pattern + io_type
+                # Convert readwrite to rw for FIO
+                fio_io_type = 'rw' if io_type == 'readwrite' else io_type
+                fio_rw = fio_io_type if io_pattern == 'seq' else io_pattern + fio_io_type
                 fio_bs = self.__seq_block_size if io_pattern == 'seq' else self.__rand_block_size
                 self.__fio_args[io_str] = self.__common_fio_args +\
                     ' --name=%s --rw=%s --bs=%d --time_based=1' % (io_str, fio_rw, fio_bs)
-                if io_type == 'rw':
+                if fio_io_type == 'rw':
                     self.__fio_args[io_str] += ' --rwmixread=%d' % self.__default_rwmixread
 
     def add_parser_arguments(self):
@@ -100,7 +102,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                     help='Time in seconds to warm up %s test.' % io_str,
                 )
                 # Disable write tests by default
-                default_runtime = 0 if io_type in ['write', 'rw'] else self.__default_runtime
+                default_runtime = 0 if 'write' in io_type else self.__default_runtime
                 self._parser.add_argument(
                     '--%s_runtime' % io_str,
                     type=int,

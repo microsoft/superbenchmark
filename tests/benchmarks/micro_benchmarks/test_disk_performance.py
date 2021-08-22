@@ -122,7 +122,7 @@ class DiskBenchmarkTest(unittest.TestCase):
         curr_test_magic += 1
         # Seq/rand read/write
         for io_pattern in ['seq', 'rand']:
-            for io_type in ['read', 'write', 'rw']:
+            for io_type in ['read', 'write', 'readwrite']:
                 io_str = '%s_%s' % (io_pattern, io_type)
                 param_str += ' --%s_ramp_time=%d' % (io_str, curr_test_magic)
                 curr_test_magic += 1
