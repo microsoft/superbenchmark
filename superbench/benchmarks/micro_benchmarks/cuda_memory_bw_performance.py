@@ -75,8 +75,9 @@ class CudaMemBwBenchmark(MemBwBenchmark):
         content = raw_output.splitlines()
         try:
             metric = self._metrics[self._mem_types.index(self._args.mem_type[cmd_idx])]
+            parse_logline = self._parse_logline_map[self._args.mem_type[cmd_idx]]
             for line in content:
-                if 'D2H' in line or 'H2D' in line or 'D2D' in line:
+                if parse_logline in line:
                     line = line.split(',')[1]
                     value = re.search(r'(\d+.\d+)', line)
                     if value:

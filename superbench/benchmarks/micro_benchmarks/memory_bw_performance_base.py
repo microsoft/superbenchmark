@@ -22,6 +22,7 @@ class MemBwBenchmark(MicroBenchmarkWithInvoke):
         self._mem_types = ['htod', 'dtoh', 'dtod']
         self._metrics = ['H2D_Mem_BW', 'D2H_Mem_BW', 'D2D_Mem_BW']
         self._memory = ['pinned', 'unpinned']
+        self._parse_logline_map = {'htod': 'H2D', 'dtoh': 'D2H', 'dtod': 'D2D'}
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -50,6 +51,8 @@ class MemBwBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # Format the arguments
+        if not isinstance(self._args.mem_type, list):
+            self._args.mem_type = [self._args.mem_type]
         self._args.mem_type = [p.lower() for p in self._args.mem_type]
 
         # Check the arguments and generate the commands
