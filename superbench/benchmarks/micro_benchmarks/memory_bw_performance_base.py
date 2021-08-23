@@ -51,8 +51,6 @@ class MemBwBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # Format the arguments
-        if not isinstance(self._args.mem_type, list):
-            self._args.mem_type = [self._args.mem_type]
         self._args.mem_type = [p.lower() for p in self._args.mem_type]
 
         # Check the arguments and generate the commands
