@@ -172,7 +172,7 @@ class SuperBenchExecutor():
             if benchmark_name not in self._sb_enabled:
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
-            benchmark_results = {}
+            benchmark_results = list()
             self.__create_benchmark_dir(benchmark_name)
             for framework in benchmark_config.frameworks or [Framework.NONE.value]:
                 if benchmark_name.endswith('_models'):
@@ -186,10 +186,7 @@ class SuperBenchExecutor():
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )
                         result = self.__exec_benchmark(context, log_suffix)
-                        if framework != Framework.NONE.value:
-                            benchmark_results['{}/{}'.format(framework, model)] = result
-                        else:
-                            benchmark_results[model] = result
+                        benchmark_results.append(result)
                 else:
                     log_suffix = 'micro-benchmark {}'.format(benchmark_name)
                     logger.info('Executor is going to execute %s.', log_suffix)
@@ -200,8 +197,6 @@ class SuperBenchExecutor():
                         parameters=self.__get_arguments(benchmark_config.parameters)
                     )
                     result = self.__exec_benchmark(context, log_suffix)
-                    if framework != Framework.NONE.value:
-                        benchmark_results[framework] = result
-                    else:
-                        benchmark_results = result
+                    benchmark_results.append(result)
+
             self.__write_benchmark_results(benchmark_name, benchmark_results)

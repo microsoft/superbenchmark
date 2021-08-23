@@ -8,12 +8,12 @@ MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest
-rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
 common: fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
@@ -80,3 +80,13 @@ rocm_rocblas: sb_micro_path
 	git clone -b rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3) https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
 	cd ./rocBLAS && ./install.sh -dc 
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
+
+# Build hipBusBandwidth.
+# HIP is released with rocm, like rocm-4.2.0 and so on.
+# The version we use is the released tag which is consistent with the rocm version in the environment or docker.
+rocm_bandwidthTest:
+	cp -r -v $(shell hipconfig -p) ./
+ifneq (, $(wildcard hip/samples/1_Utils/hipBusBandwidth/CMakeLists.txt))
+	cd ./hip/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
+	cp -v ./hip/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
+endif
