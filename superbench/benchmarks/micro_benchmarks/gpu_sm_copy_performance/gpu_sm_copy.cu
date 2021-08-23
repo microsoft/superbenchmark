@@ -75,7 +75,7 @@ int PrepareBuf() {
     fprintf(stderr, "PrepareBuf::cudaHostRegister error: %d\n", cuda_err);
     return -1;
   }
-  cuda_err = cudaHostGetDevicePointer(&g_host_buf_dev_ptr, g_host_buf, 0);
+  cuda_err = cudaHostGetDevicePointer((void**)&g_host_buf_dev_ptr, g_host_buf, 0);
   if (cuda_err != cudaSuccess) {
     fprintf(stderr, "PrepareBuf::cudaHostGetDevicePointer error: %d\n", cuda_err);
     return -1;
@@ -162,19 +162,29 @@ int DestroyBuf() {
 }
 
 // Unroll depth in SM copy kernel
-#define NUM_LOOP_UNROLL 64
+#define NUM_LOOP_UNROLL 2
 
 // Thread block size
-#define NUM_THREADS_IN_BLOCK 64
+#define NUM_THREADS_IN_BLOCK 128
 
 // Fetch a ulong2 from source memory and write to register
 inline __device__ void FetchULong2(ulong2& v, const ulong2* p) {
+#if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
+  v.x = p->x;
+  v.y = p->y;
+#else
   asm volatile("ld.volatile.global.v2.u64 {%0,%1}, [%2];" : "=l"(v.x), "=l"(v.y) : "l"(p) : "memory");
+#endif
 }
 
 // Store a ulong2 from register and write to target memory
 inline __device__ void StoreULong2(ulong2* p, ulong2& v) {
+#if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
+  p->x = v.x;
+  p->y = v.y;
+#else
   asm volatile("st.volatile.global.v2.u64 [%0], {%1,%2};" :: "l"(p), "l"(v.x), "l"(v.y) : "memory");
+#endif
 }
 
 // Fetch data from source memory into register first, and then write them to target memory
