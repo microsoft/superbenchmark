@@ -69,5 +69,5 @@ RUN make -j -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install . \
-    transformers && \
+    transformers==4.3.3 && \
     make cppbuild
