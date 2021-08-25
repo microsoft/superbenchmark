@@ -3,14 +3,18 @@
 
 """SuperBench Runner."""
 
+import json
 import random
 from pathlib import Path
+from collections import defaultdict
 
+from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
 from superbench.common.utils import SuperBenchLogger, logger
 from superbench.runner.ansible import AnsibleClient
+from superbench.benchmarks import ReduceType, Reducer
 
 
 class SuperBenchRunner():
@@ -202,6 +206,103 @@ class SuperBenchRunner():
             )
         )
 
+    def __create_results_summary(self):    # pragma: no cover
+        """Create the result summary file of all nodes."""
+        all_results = list()
+        for node_path in (self._output_path / 'nodes').glob('*'):
+            if not node_path.is_dir():
+                continue
+            results_summary = self.__create_single_node_summary(node_path)
+            results_summary['node'] = node_path.name
+            all_results.append(results_summary)
+
+        with (self._output_path / 'results-summary.jsonl').open(mode='w') as f:
+            for result in all_results:
+                json.dump(result, f)
+                f.write('\n')
+
+    def __create_single_node_summary(self, node_path):    # pragma: no cover
+        """Create the result summary file of single node.
+
+        Args:
+            node_path (Path): The Path instance of node directory.
+
+        Returns:
+            dict: Result summary of single node.
+        """
+        results_summary = dict()
+        reduce_ops = dict()
+        file_list = [Path(f) for f in natsorted([str(f) for f in node_path.glob('**/results.json')])]
+        for results_file in file_list:
+            with results_file.open() as f:
+                try:
+                    results = json.load(f)
+                except ValueError:
+                    logger.error('Invalid JSON file: {}'.format(results_file))
+                    continue
+
+                for result in results:
+                    benchmark_name = result['name']
+                    if results_file.parts[-3].endswith('_models'):
+                        benchmark_name = '{}/{}'.format(results_file.parts[-3], result['name'])
+                    if benchmark_name not in results_summary:
+                        results_summary[benchmark_name] = defaultdict(list)
+                    for metric in result['result']:
+                        metric_name = '{}/{}'.format(benchmark_name, metric)
+                        if metric_name not in reduce_ops:
+                            reduce_ops[metric_name] = result['reduce_op'][metric]
+                        elif reduce_ops[metric_name] != result['reduce_op'][metric]:
+                            logger.error('Inconsistent reduce type for metric: {}'.format(metric_name))
+                            continue
+
+                        results_summary[benchmark_name][metric].append(result['result'][metric])
+
+        results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
+        with (node_path / 'results-summary.json').open(mode='w') as f:
+            json.dump(results_summary, f, indent=2)
+
+        return results_summary
+
+    def __merge_all_metrics(self, results_summary, reduce_ops):
+        """Merge metrics of all benchmarks in one node.
+
+        Args:
+            results_summary (dict): Summarized result of one node.
+            reduce_ops (dict): The reduce type of each metric.
+
+        Returns:
+            dict: Flattened result with metric as key.
+        """
+        metrics_summary = dict()
+        for benchmark_name in results_summary:
+            for metric in results_summary[benchmark_name]:
+                metric_name = '{}/{}'.format(benchmark_name, metric)
+                if metric_name not in reduce_ops or (
+                    reduce_ops[metric_name] is not None and reduce_ops[metric_name] not in ReduceType.get_values()
+                ):
+                    logger.error('Unknown reduce type for metric: {}'.format(metric_name))
+                    continue
+
+                if reduce_ops[metric_name] is not None:
+                    reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
+                    values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
+                    for run_count in range(len(values)):
+                        if len(values) > 1:
+                            metric_name = '{}/{}/{}'.format(benchmark_name, run_count, metric)
+                        else:
+                            metric_name = '{}/{}'.format(benchmark_name, metric)
+                        metrics_summary[metric_name] = values[run_count]
+                else:
+                    for rank in range(len(results_summary[benchmark_name][metric])):
+                        for run_count in range(len(results_summary[benchmark_name][metric][rank])):
+                            if len(results_summary[benchmark_name][metric][rank]) > 1:
+                                metric_name = '{}/{}/{}:{}'.format(benchmark_name, run_count, metric, rank)
+                            else:
+                                metric_name = '{}/{}:{}'.format(benchmark_name, metric, rank)
+                            metrics_summary[metric_name] = results_summary[benchmark_name][metric][rank][run_count]
+
+        return metrics_summary
+
     def _run_proc(self, benchmark_name, mode, vars):
         """Run the process.
 
@@ -245,3 +346,5 @@ class SuperBenchRunner():
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
             self.fetch_results()
+
+        self.__create_results_summary()
