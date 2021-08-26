@@ -46,6 +46,7 @@ module.exports = {
       items: [
         'design-docs/overview',
         'design-docs/benchmarks',
+        'design-docs/system-config'
       ],
     },
   ],
