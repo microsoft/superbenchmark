@@ -1,0 +1,685 @@
+---
+id: system-config
+---
+
+# System Configuration Information
+
+## Category
+
+- [System](#system)
+- [Memory](#memory)
+- [CPU](#cpu)
+- [Disk](#disk)
+- [Networking](#networking)
+- [Accelerator](#accelerator)
+- [PCIe](#pcie)
+
+## Parameter amd Details
+
+### System
+
+<table>
+  <tbody>
+    <tr align="centor" valign="bottom">
+      <td>
+        <b>SubCategory</b>
+      </td>
+      <td>
+        <b>Key</b>
+      </td>
+      <td>
+        <b>Command</b>
+      </td>
+      <td>
+        <b>Description</b>
+      </td>
+      <td>
+        <b>Example(NVIDIA)</b>
+      </td>
+      <td>
+        <b>Example(AMD)</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="4">
+        <b>OS</b>
+      </td>
+      <td>system-manufacturer</td>
+      <td>dmidecode -s system-manufacturer</td>
+      <td>manufacturer of the system</td>
+      <td>Microsoft Corporation</td>
+      <td>HPE</td>
+    </tr>
+      <td>system-product name(virtual machine)</td>
+      <td>dmidecode -s system-product-name</td>
+      <td>product name or virtual machine</td>
+      <td>Virtual Machine</td>
+      <td>ProLiant XL675d Gen10 Plus</td>
+    <tr>
+      <td>operating_system</td>
+      <td>cat /proc/version</td>
+      <td>version of current running os</td>
+      <td>Ubuntu 18.04.1 LTS</td>
+      <td>Linux version 5.4.0-81-generic (buildd@lgw01-amd64-052) (gcc version 9.3.0 (Ubuntu 9.3.0-17ubuntu1~20.04)) #91-Ubuntu SMP Thu Jul 15 19:09:17 UTC 2021</td>
+    </tr>
+    <tr>
+      <td>uname</td>
+      <td>uname</td>
+      <td>short for system information</td>
+      <td></td>
+      <td>Linux 5.4.0-81-generic #91-Ubuntu SMP Thu Jul 15 19:09:17 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux</td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="2">
+        <b>Docker</b>
+      </td>
+      <td>docker_server_version</td>
+      <td>docker version</td>
+      <td>server version of docker engine</td>
+      <td>20.10.3</td>
+      <td>20.10.6+azure</td>
+    </tr>
+    <tr>
+      <td>docker_client_version</td>
+      <td>docker version</td>
+      <td>client version of docker engine</td>
+      <td>20.10.3</td>
+      <td>20.10.6+azure</td>
+    </tr>
+    <tr>
+      <td align="center"><b>VM</b></td>
+      <td>vmbus</td>
+      <td>lsvmbus</td>
+      <td>devices attached to the Hyper-V VMBus</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="2">
+        <b>Kernel</b>
+      </td>
+      <td>kernel_modules</td>
+      <td>sysctl</td>
+      <td>list of active kernel modules</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>kernel_parameters</td>
+      <td>lsmod</td>
+      <td>kernel parameters</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td align="center"><b>DMI</b></td>
+      <td>dmidecode</td>
+      <td>dmidecode</td>
+      <td>DMI table dump (info on hardware components)</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+  </tbody>
+</table>
+
+### Memory
+
+<table>
+  <tbody>
+    <tr align="centor" valign="bottom">
+      <td>
+        <b>SubCategory</b>
+      </td>
+      <td>
+        <b>Key</b>
+      </td>
+      <td>
+        <b>Command</b>
+      </td>
+      <td>
+        <b>Description</b>
+      </td>
+      <td>
+        <b>Example(NVIDIA)</b>
+      </td>
+      <td>
+        <b>Example(AMD)</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="6">
+        <b>General</b>
+      </td>
+      <td>model</td>
+      <td>dmidecode -t memory</td>
+      <td>distinct model name of the memory</td>
+      <td>Microsoft None</td>
+      <td>Samsung M393A4K40DB3-CWE</td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>dmidecode -t memory</td>
+      <td>distinct type of memory</td>
+      <td>Unknown-Unknown</td>
+      <td> DDR4-3200</td>
+    </tr>
+    <tr>
+      <td>clock frequency</td>
+      <td>dmidecode -t memory</td>
+      <td>distinct clock frequency of memory</td>
+      <td>&nbsp;</td>
+      <td>3200 MT/s</td>
+    </tr>
+    <tr>
+      <td>channels</td>
+      <td>dmidecode -t memory</td>
+      <td>the number of memory chips</td>
+      <td>6</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <td>capacity</td>
+      <td>lsmem</td>
+      <td>the total capacity of memory</td>
+      <td>901G</td>
+      <td>511.9G</td>
+    </tr>
+    <tr>
+      <td>block_size</td>
+      <td>lsmem</td>
+      <td>the block size of memory</td>
+      <td></td>
+      <td>128M</td>
+    </tr>
+  </tbody>
+</table>
+
+### CPU
+
+<table>
+  <tbody>
+    <tr align="centor" valign="bottom">
+      <td>
+        <b>SubCategory</b>
+      </td>
+      <td>
+        <b>Key</b>
+      </td>
+      <td>
+        <b>Command</b>
+      </td>
+      <td>
+        <b>Description</b>
+      </td>
+      <td>
+        <b>Example(NVIDIA)</b>
+      </td>
+      <td>
+        <b>Example(AMD)</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="16">
+        <b>General</b>
+      </td>
+      <td>archeticture</td>
+      <td>lscpu</td>
+      <td>architecture of cpu</td>
+      <td>x86_64</td>
+      <td>x86_64</td>
+    </tr>
+    <tr>
+      <td>model name</td>
+      <td>lscpu</td>
+      <td>model name of cpu</td>
+      <td>AMD EPYC 7V12 64-Core Processor</td>
+      <td>AMD EPYC 7662 64-Core Processor</td>
+    </tr>
+    <tr>
+      <td>cpu op-mode</td>
+      <td>lscpu</td>
+      <td>cpu mode: 32bit/64bit</td>
+      <td>&nbsp;</td>
+      <td>32-bit, 64-bit</td>
+    </tr>
+    <tr>
+      <td>byte order</td>
+      <td>lscpu</td>
+      <td>byte order</td>
+      <td>&nbsp;</td>
+      <td>Little Endian</td>
+    </tr>
+    <tr>
+      <td>address size</td>
+      <td>lscpu</td>
+      <td>size of address</td>
+      <td>&nbsp;</td>
+      <td>48 bits physical, 48 bits virtual</td>
+    </tr>
+    <tr>
+      <td>cpus</td>
+      <td>lscpu</td>
+      <td>logical cpu cores count</td>
+      <td>&nbsp;</td>
+      <td>256</td>
+    </tr>
+    <tr>
+      <td>On-line CPU(s) list</td>
+      <td>lscpu</td>
+      <td>on-line logical cpu cores</td>
+      <td>&nbsp;</td>
+      <td>0-255</td>
+    </tr>
+    <tr>
+      <td>Thread(s) per core</td>
+      <td>lscpu</td>
+      <td>thread per core</td>
+      <td>&nbsp;</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Core(s) per socket</td>
+      <td>lscpu</td>
+      <td>core per socket</td>
+      <td>&nbsp;</td>
+      <td>64</td>
+    </tr>
+    <tr>
+      <td>Socket(s)</td>
+      <td>lscpu</td>
+      <td>socket count</td>
+      <td>&nbsp;</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>NUMA node(s)</td>
+      <td>lscpu</td>
+      <td>numa node count</td>
+      <td>&nbsp;</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>L&ltx&gt caches</td>
+      <td>lscpu</td>
+      <td>cache size</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>NUMA node&ltx&gt CPU(s)</td>
+      <td>lscpu</td>
+      <td>cpu core list of the numa node</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Flags</td>
+      <td>lscpu</td>
+      <td>cpu flags</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>max_speed</td>
+      <td>sudo dmidecode -t processor | grep "Speed"</td>
+      <td>distinct cpu max frequency</td>
+      <td>&nbsp;</td>
+      <td>3700 MHz</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>sudo dmidecode -t processor | grep "Speed"</td>
+      <td>distinct cpu current frequency</td>
+      <td>&nbsp;</td>
+      <td>2000 MHz</td>
+    </tr>
+  </tbody>
+</table>
+
+### Disk
+
+<table>
+  <tbody>
+    <tr align="centor" valign="bottom">
+      <td>
+        <b>SubCategory</b>
+      </td>
+      <td>
+        <b>Key</b>
+      </td>
+      <td>
+        <b>Command</b>
+      </td>
+      <td>
+        <b>Description</b>
+      </td>
+      <td>
+        <b>Example(NVIDIA)</b>
+      </td>
+      <td>
+        <b>Example(AMD)</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="6">
+        <b>FileSystem</b>
+      </td>
+      <td>filesystem</td>
+      <td>df -Th</td>
+      <td>the name/path of the filesystem</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>avail</td>
+      <td>df -Th</td>
+      <td>avail size of the filesystem</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>size</td>
+      <td>df -Th</td>
+      <td>total size of the filesystem</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>df -Th</td>
+      <td>the type of the filesystem</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>block_size</td>
+      <td>blockdev --getbsz /dev/<device></td>
+      <td>the block size of the filesytem</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>4k_alignment</td>
+      <td>4kDEVICE=/dev/sdb1 do parted $DEVICE align-check opt 1; done_alignment</td>
+      <td>whether the file system is 4k alignment</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="6">
+        <b>BlockDevice</b>
+      </td>
+      <td>name</td>
+      <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
+      <td>the name of the block device</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>model</td>
+      <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
+      <td>the model name of the block device</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>rotational</td>
+      <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
+      <td>whether rotational, thai is HDD or SSD</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>size</td>
+      <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
+      <td>the total size of the block device</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>block_size</td>
+      <td>fdisk -l -u /dev/{} | grep "Sector size"</td>
+      <td>the sector size of the block device</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>usage</td>
+      <td>nvme list(need to install nvme-cli)</td>
+      <td>used size of the block device(nvme only)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td align="center"><b>General</b></td>
+      <td>mapping</td>
+      <td>mount</td>
+      <td>mount relationship between filesystem and block device</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+### Networking
+
+<table>
+  <tbody>
+    <tr align="centor" valign="bottom">
+      <td>
+        <b>SubCategory</b>
+      </td>
+      <td>
+        <b>Key</b>
+      </td>
+      <td>
+        <b>Command</b>
+      </td>
+      <td>
+        <b>Description</b>
+      </td>
+      <td>
+        <b>Example(NVIDIA)</b>
+      </td>
+      <td>
+        <b>Example(AMD)</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="6">
+        <b>NIC</b>
+      </td>
+      <td>nic_logical_name</td>
+      <td>lshw -c network</td>
+      <td>logical name of the nic</td>
+      <td></td>
+      <td> Mellanox Technologies MT28908 Family [ConnectX-6]</td>
+    </tr>
+    <tr>
+      <td>nic_model</td>
+      <td>lshw -c network</td>
+      <td>model name of the nic</td>
+      <td></td>
+      <td> 20.30.1004 (MT_0000000594)</td>
+    </tr>
+    <tr>
+      <td>nic_firmware</td>
+      <td>lshw -c network</td>
+      <td>fw version</td>
+      <td></td>
+      <td>mlx5_core[ib_ipoib] 5.3-1.0.0</td>
+    </tr>
+    <tr>
+      <td>nic_driver</td>
+      <td>lshw -c network</td>
+      <td>driver version</td>
+      <td></td>
+      <td>200 Gbit/s</td>
+    </tr>
+    <tr>
+      <td>nic_speed</td>
+      <td>lshw -c network</td>
+      <td>speed spec of the nic</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>nic_disabled</td>
+      <td>lshw -c network</td>
+      <td>whether diabled</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="2">
+        <b>IB</b>
+      </td>
+      <td>device_info</td>
+      <td>ibv_devinfo -v</td>
+      <td>list of device information for each ib device</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>device_status</td>
+      <td>ibstat</td>
+      <td>list of device status for each ib device</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td align="center"><b>General</b></td>
+      <td>ofed_version</td>
+      <td>ofed_info  -s</td>
+      <td>the version of ofed</td>
+      <td></td>
+      <td>MLNX_OFED_LINUX-5.3-1.0.5.0:</td>
+    </tr>
+  </tbody>
+</table>
+
+### Accelerator
+
+<table>
+  <tbody>
+    <tr align="centor" valign="bottom">
+      <td>
+        <b>SubCategory</b>
+      </td>
+      <td>
+        <b>Key</b>
+      </td>
+      <td>
+        <b>Command</b>
+      </td>
+      <td>
+        <b>Description</b>
+      </td>
+      <td>
+        <b>Example(NVIDIA)</b>
+      </td>
+      <td>
+        <b>Example(AMD)</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="5">
+        <b>General</b>
+      </td>
+      <td>driver_version</td>
+      <td>nvidia-smi -q -x/rocm-smi -a</td>
+      <td>driver version</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>topology</td>
+      <td>nvidia-smi topo -m/rocm-smi --showtopo</td>
+      <td>gpu connection topology (nvidia only)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>nvidia-container-runtime_version</td>
+      <td>nvidia-container-runtime -v</td>
+      <td>version of nvidia-container-runtime (nvidia only)</td>
+      <td></td>
+      <td>1.0.0-rc92</td>
+    </tr>
+    <tr>
+      <td>nvidia-fabricmanager_version</td>
+      <td>nv-fabricmanager --version</td>
+      <td>version of nvidia-fabricmanager (nvidia only)</td>
+      <td></td>
+      <td>460.27.04</td>
+    </tr>
+    <tr>
+      <td>nv_peer_mem_version</td>
+      <td>dpkg -l | grep 'nvidia-peer-memory'</td>
+      <td>version of nv_peer_mem (nvidia only)</td>
+      <td></td>
+      <td>1.1-0</td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="2">
+        <b>GPUCard</b>
+      </td>
+      <td>rocm_info</td>
+      <td>rocm-smi -a & rocm-smi --showmeminfo vram</td>
+      <td>amd gpu info of each gpu<index>, including firmware, frequency, memory, etc. (amd only)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>nvidia_info</td>
+      <td>nvidia-smi -q</td>
+      <td>nvidia gpu info list of each gpu, including firmware, frequency, memory, etc. (nvidia only)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+### PCIe
+
+<table>
+  <tbody>
+    <tr align="centor" valign="bottom">
+      <td>
+        <b>SubCategory</b>
+      </td>
+      <td>
+        <b>Key</b>
+      </td>
+      <td>
+        <b>Command</b>
+      </td>
+      <td>
+        <b>Description</b>
+      </td>
+      <td>
+        <b>Example(NVIDIA)</b>
+      </td>
+      <td>
+        <b>Example(AMD)</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="middle" rowspan="2">
+        <b>General</b>
+      </td>
+      <td>topology</td>
+      <td>lspci -t -vvv</td>
+      <td>topology of installed PCI devices</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>device_info</td>
+      <td>lspci -vvv</td>
+      <td>device info on installed PCI devices</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
