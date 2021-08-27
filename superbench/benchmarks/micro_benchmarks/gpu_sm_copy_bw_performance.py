@@ -66,7 +66,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--size',
             type=int,
-            default=64*1024**2,
+            default=64 * 1024 ** 2,
             required=False,
             help='Size of data buffer.',
         )
@@ -125,7 +125,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         try:
             output_prefix = "Bandwidth (GB/s): "
-            assert(raw_output.startswith(output_prefix))
+            assert (raw_output.startswith(output_prefix))
             self.__result_tags[cmd_idx] = float(raw_output[len(output_prefix):])
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

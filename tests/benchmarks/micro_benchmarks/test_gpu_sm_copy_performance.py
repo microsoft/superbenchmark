@@ -30,7 +30,7 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
         """Test gpu-sm-copy-bw benchmark command generation with empty parameter."""
         benchmark_name = 'gpu-sm-copy-bw'
 
-        for platform in [Platform.CUDA, Platform.ROCM]
+        for platform in [Platform.CUDA, Platform.ROCM]:
             (benchmark_class,
              predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
             assert (benchmark_class)
@@ -52,7 +52,7 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
         """Test gpu-sm-copy-bw benchmark command generation with all benchmarks disabled."""
         benchmark_name = 'gpu-sm-copy-bw'
 
-        for platform in [Platform.CUDA, Platform.ROCM]
+        for platform in [Platform.CUDA, Platform.ROCM]:
             (benchmark_class,
              predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
             assert (benchmark_class)
@@ -83,7 +83,7 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
         """Test disk-performance benchmark command generation with all benchmarks enabled."""
         benchmark_name = 'gpu-sm-copy-bw'
 
-        for platform in [Platform.CUDA, Platform.ROCM]
+        for platform in [Platform.CUDA, Platform.ROCM]:
             (benchmark_class,
              predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
             assert (benchmark_class)
@@ -130,7 +130,7 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
         """Test gpu-sm-copy-bw benchmark result parsing."""
         benchmark_name = 'gpu-sm-copy-bw'
 
-        for platform in [Platform.CUDA, Platform.ROCM]
+        for platform in [Platform.CUDA, Platform.ROCM]:
             (benchmark_class,
              predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
             assert (benchmark_class)
