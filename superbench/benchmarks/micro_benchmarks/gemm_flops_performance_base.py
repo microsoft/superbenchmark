@@ -79,7 +79,6 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
             self._args.precision = [p.upper() for p in self._args.precision]
             for p in self._args.precision:
                 if p not in self._support_precisions:
-                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                     logger.warning(
                         'Unsupported precision - benchmark: {}, precision: {}, expected: {}.'.format(
                             self._name, p, self._support_precisions

@@ -118,13 +118,12 @@ def test_memory_bw_performance_base():
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)
 
+    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision FP64 BF64')
+    assert (benchmark._benchmark_type == BenchmarkType.MICRO)
+    assert (benchmark.run() is True)
+
     # Negative case - INVALID_ARGUMENT.
     benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision BF64')
     assert (benchmark._benchmark_type == BenchmarkType.MICRO)
     assert (benchmark.run() is False)
     assert (benchmark.return_code == ReturnCode.NO_SUPPORTED_PRECISION)
-
-    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision FP64 BF64')
-    assert (benchmark._benchmark_type == BenchmarkType.MICRO)
-    assert (benchmark.run() is True)
-    assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
