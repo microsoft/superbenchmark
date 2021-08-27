@@ -29,8 +29,8 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self.__num_gpus = 0
         try:
             self.__num_gpus = len([x for x in next(os.walk('/sys/class/drm/'))[1] if x.startswith('card')])
-        except BaseException as e:
-            pass
+        except StopIteration:
+            logger.info('No GPU found, disable benchmark: {}'.format(self._name))
         self.__default_gpu_ids = list(range(self.__num_gpus))
 
     def add_parser_arguments(self):
