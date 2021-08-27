@@ -43,9 +43,8 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     assert (benchmark._args.num_loops == num_loops)
 
     # Check and revise command list
-    assert (len(copy_directions) * benchmark._GpuSmCopyBwBenchmark__num_gpus_in_system == len(benchmark._commands))
-    for idx in range(benchmark._GpuSmCopyBwBenchmark__num_gpus_in_system):
-        copy_direction = copy_directions[idx]
+    assert (len(copy_directions) == len(benchmark._commands))
+    for idx, copy_direction in enumerate(copy_directions):
         assert (
             benchmark._commands[idx] == 'numactl -N %d -m %d %s %d %s %d %d' %
             (numa_node, numa_node, benchmark._GpuSmCopyBwBenchmark__bin_path, gpu_id, copy_direction, size, num_loops)
@@ -60,9 +59,7 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    for idx in range(benchmark._GpuSmCopyBwBenchmark__num_gpus_in_system):
-        copy_direction = copy_directions[idx]
-
+    for idx, copy_direction in enumerate(copy_directions):
         raw_output_key = 'raw_output_%d' % idx
         assert (raw_output_key in benchmark.raw_data)
         assert (len(benchmark.raw_data[raw_output_key]) == 1)
