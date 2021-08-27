@@ -19,6 +19,6 @@ from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import Cuda
 
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
-    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsBenchmark', 'CudaGemmFlopsBenchmark', 'MemBwBenchmark', 'CudaMemBwBenchmark',
-    'DiskBenchmark', 'IBLoopbackBenchmark', 'CudaNcclBwBenchmark'
+    'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsBenchmark', 'CudaGemmFlopsBenchmark', 'MemBwBenchmark',
+    'CudaMemBwBenchmark', 'DiskBenchmark', 'IBLoopbackBenchmark', 'CudaNcclBwBenchmark'
 ]

@@ -77,7 +77,8 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             return False
 
         self._support_precisions = list(self.__kernel_map[capability].keys())
-        # 'support_precisions' are precise only after getting capability, and then using super.preprocess() to check if the precision in arguments are supported to run
+        # 'support_precisions' are precise only after getting capability,
+        #  and then using super.preprocess() to check if the precision in arguments are supported to run
         if not super()._preprocess():
             return False
 
