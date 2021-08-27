@@ -58,6 +58,7 @@ def test_gpu_sm_copy_bw_performance_cuda():
     """Test gpu-sm-copy-bw benchmark, CUDA case."""
     _test_gpu_sm_copy_bw_performance_impl()
 
+
 @decorator.rocm_test
 def test_gpu_sm_copy_bw_performance_rocm():
     """Test gpu-sm-copy-bw benchmark, ROCm case."""
