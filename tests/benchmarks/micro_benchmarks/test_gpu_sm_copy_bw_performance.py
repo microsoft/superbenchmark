@@ -3,11 +3,10 @@
 
 """Tests for disk-performance benchmark."""
 
-from pathlib import Path
-import os
-import unittest
+import numbers
 
-from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
+from tests.helper import decorator
+from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 
 
 @decorator.cuda_test
