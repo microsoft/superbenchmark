@@ -48,10 +48,8 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     for idx in range(benchmark.__num_gpus_in_system):
         copy_direction = copy_directions[idx]
         assert (
-            benchmark._commands[idx], 'numactl -N %d -m %d %s %d %s %d %d' % (
-                numa_node, numa_node, os.path.join(benchmark._args.bin_dir,
-                                                   benchmark._bin_name), gpu_id, copy_direction, size, num_loops
-            )
+            benchmark._commands[idx] == 'numactl -N %d -m %d %s %d %s %d %d' %
+            (numa_node, numa_node, benchmark.__bin_path, gpu_id, copy_direction, size, num_loops)
         )
         numactl_prefix = 'numactl -N %d -m %d ' % (numa_node, numa_node)
         # Remove numactl because test environment is not privileged
