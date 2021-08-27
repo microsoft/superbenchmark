@@ -557,7 +557,7 @@ id: system-config
       </td>
       <td>rocm_info</td>
       <td>rocm-smi -a & rocm-smi --showmeminfo vram</td>
-      <td>amd gpu info of each gpu<index>, including firmware, frequency, memory, etc. (amd only)</td>
+      <td>amd gpu info of each gpu&lsindex&gt, including firmware, frequency, memory, etc. (amd only)</td>
       <td></td>
       <td></td>
     </tr>
