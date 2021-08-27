@@ -53,6 +53,7 @@ def _test_gpu_sm_copy_bw_performance_impl():
         assert (len(benchmark.result[output_key]) == 1)
         assert (isinstance(benchmark.result[output_key][0], numbers.Number))
 
+
 @decorator.cuda_test
 def test_gpu_sm_copy_bw_performance_cuda():
     """Test gpu-sm-copy-bw benchmark, CUDA case."""
