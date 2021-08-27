@@ -126,6 +126,8 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
                                 copy_direction,
                                 test_data_size,
                                 test_num_loops,
+                            )
+                        )
                         command_idx += 1
 
     def test_gpu_sm_copy_bw_result_parsing(self):
