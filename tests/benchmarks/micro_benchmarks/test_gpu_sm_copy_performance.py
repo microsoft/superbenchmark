@@ -76,7 +76,7 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
             # Command list should be empty
             assert (0 == len(benchmark._commands))
 
-    def test_gpu_sm_copy_bw_benchmark_enabled(self, mock_is_block_device):
+    def test_gpu_sm_copy_bw_benchmark_enabled(self):
         """Test disk-performance benchmark command generation with all benchmarks enabled."""
         benchmark_name = 'gpu-sm-copy-bw'
 
