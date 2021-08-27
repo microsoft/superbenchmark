@@ -4,7 +4,6 @@
 """Tests for disk-performance benchmark."""
 
 from pathlib import Path
-from unittest import mock
 import os
 import unittest
 
@@ -120,10 +119,12 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
             for numa_node in numa_nodes:
                 for gpu_id in gpu_ids:
                     for copy_direction in ['dtoh', 'htod']:
-                        assert (benchmark._commands[command_idx] ==
-                            'numactl -N %s -m %s %s %d %s %s %s' % \
-                            (numa_node, numa_node, self.__binary_file, gpu_id,
-                            copy_direction, test_size, test_data_size))
+                        assert (
+                            benchmark._commands[command_idx] == 'numactl -N %s -m %s %s %d %s %s %s' % (
+                                numa_node, numa_node, self.__binary_file, gpu_id, copy_direction, test_data_size,
+                                test_data_size
+                            )
+                        )
                         command_idx += 1
 
     def test_gpu_sm_copy_bw_result_parsing(self):

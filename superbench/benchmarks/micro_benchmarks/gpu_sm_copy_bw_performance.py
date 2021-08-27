@@ -3,8 +3,6 @@
 
 """Module of the GPU SM Copy Bandwidth Performance benchmark."""
 
-from pathlib import Path
-import json
 import os
 
 from superbench.common.utils import logger
@@ -103,8 +101,8 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
                         (numa_node, numa_node, gpu_sm_copy_path, gpu_id,
                          copy_direction, self._args.size, self._args.num_loops)
                     self.__result_tags.append(
-                        "gpu_sm_copy_performance:numa%d:gpu%d:%s" % \
-                        (numa_node, gpu_id, copy_direction))
+                        "gpu_sm_copy_performance:numa%d:gpu%d:%s" % (numa_node, gpu_id, copy_direction)
+                    )
                     self._commands.append(command)
 
         return True
