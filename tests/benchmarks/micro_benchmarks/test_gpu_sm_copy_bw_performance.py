@@ -4,31 +4,35 @@
 """Tests for disk-performance benchmark."""
 
 import numbers
+import os
 
 from tests.helper import decorator
-from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-def _test_gpu_sm_copy_bw_performance_impl():
+def _test_gpu_sm_copy_bw_performance_impl(platform):
     """Test gpu-sm-copy-bw benchmark."""
+    benchmark_name = 'gpu-sm-copy-bw'
+    (benchmark_class,
+     predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
+    assert (benchmark_class)
+
     numa_node = 0
     gpu_id = 0
     size = 1048576
     num_loops = 10000
     copy_directions = ['dtoh', 'htod']
-    context = BenchmarkRegistry.create_benchmark_context(
-        'gpu-sm-copy-bw',
-        parameters='--numa_nodes %d --gpu_ids %d --%s --%s --size %d --num_loops %d' %
+
+    parameters='--numa_nodes %d --gpu_ids %d --%s --%s --size %d --num_loops %d' % \
         (numa_node, gpu_id, copy_directions[0], copy_directions[1], size, num_loops)
-    )
+    benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
-    assert (BenchmarkRegistry.is_benchmark_context_valid(context))
-
-    benchmark = BenchmarkRegistry.launch_benchmark(context)
-
-    # Check basic information.
+    # Check basic information
     assert (benchmark)
-    assert (benchmark.name == 'gpu-sm-copy-bw')
+    ret = benchmark._preprocess()
+    assert (ret is True)
+    assert (benchmark.return_code == ReturnCode.SUCCESS)
+    assert (benchmark.name == benchmark_name)
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.
@@ -39,10 +43,29 @@ def _test_gpu_sm_copy_bw_performance_impl():
     assert (benchmark._args.size == size)
     assert (benchmark._args.num_loops == num_loops)
 
+    # Check and revise command list
+    assert (len(copy_directions) * benchmark.__num_gpus_in_system == len(benchmark._commands))
+    for idx in range(benchmark.__num_gpus_in_system):
+        copy_direction = copy_directions[idx]
+        assert (
+            benchmark._commands[idx], 'numactl -N %d -m %d %s %d %s %d %d' % (
+                numa_node, numa_node, os.path.join(benchmark._args.bin_dir,
+                                                   benchmark._bin_name), gpu_id, copy_direction, size, num_loops
+            )
+        )
+        numactl_prefix = 'numactl -N %d -m %d ' % (numa_node, numa_node)
+        # Remove numactl because test environment is not privileged
+        benchmark._commands[idx] = benchmark._commands[idx][len(numactl_prefix):]
+
+    # Run benchmark
+    assert (benchmark._benchmark())
+
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    for idx, copy_direction in enumerate(copy_directions):
+    for idx in range(benchmark.__num_gpus_in_system):
+        copy_direction = copy_directions[idx]
+
         raw_output_key = 'raw_output_%d' % idx
         assert (raw_output_key in benchmark.raw_data)
         assert (len(benchmark.raw_data[raw_output_key]) == 1)
@@ -54,13 +77,18 @@ def _test_gpu_sm_copy_bw_performance_impl():
         assert (isinstance(benchmark.result[output_key][0], numbers.Number))
 
 
+def test_gpu_sm_copy_bw_performance_cpu():
+    """Test gpu-sm-copy-bw benchmark, CPU case."""
+    _test_gpu_sm_copy_bw_performance_impl(Platform.CPU)
+
+
 @decorator.cuda_test
 def test_gpu_sm_copy_bw_performance_cuda():
     """Test gpu-sm-copy-bw benchmark, CUDA case."""
-    _test_gpu_sm_copy_bw_performance_impl()
+    _test_gpu_sm_copy_bw_performance_impl(Platform.CUDA)
 
 
 @decorator.rocm_test
 def test_gpu_sm_copy_bw_performance_rocm():
     """Test gpu-sm-copy-bw benchmark, ROCm case."""
-    _test_gpu_sm_copy_bw_performance_impl()
+    _test_gpu_sm_copy_bw_performance_impl(Platform.ROCM)

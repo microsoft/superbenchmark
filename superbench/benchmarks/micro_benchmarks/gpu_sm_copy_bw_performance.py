@@ -24,14 +24,16 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._bin_name = 'gpu_sm_copy'
 
         self.__result_tags = []
-        self.__num_numa_nodes = len([x for x in next(os.walk('/sys/devices/system/node/'))[1] if x.startswith('node')])
-        self.__default_numa_nodes = list(range(self.__num_numa_nodes))
-        self.__num_gpus = 0
+        self.__num_numa_nodes_in_system = len(
+            [x for x in next(os.walk('/sys/devices/system/node/'))[1] if x.startswith('node')]
+        )
+        self.__default_numa_nodes = list(range(self.__num_numa_nodes_in_system))
+        self.__num_gpus_in_system = 0
         try:
-            self.__num_gpus = len([x for x in next(os.walk('/sys/class/drm/'))[1] if x.startswith('card')])
+            self.__num_gpus_in_system = len([x for x in next(os.walk('/sys/class/drm/'))[1] if x.startswith('card')])
         except StopIteration:
             logger.info('No GPU found, disable benchmark: {}'.format(self._name))
-        self.__default_gpu_ids = list(range(self.__num_gpus))
+        self.__default_gpu_ids = list(range(self.__num_gpus_in_system))
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -93,6 +95,9 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         """
         if not super()._preprocess():
             return False
+
+        if self.__num_gpus_in_system == 0:
+            return True
 
         gpu_sm_copy_path = os.path.join(self._args.bin_dir, self._bin_name)
 
