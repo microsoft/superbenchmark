@@ -24,6 +24,10 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._bin_name = 'gpu_sm_copy'
 
         self.__result_tags = []
+        self.__num_numa_nodes = len([x for x in next(os.walk('/sys/devices/system/node/'))[1] if x.startswith('node')])
+        self.__default_numa_nodes = list(range(self.__num_numa_nodes))
+        self.__num_gpus = len([x for x in next(os.walk('/sys/class/drm/'))[1] if x.startswith('card')])
+        self.__default_gpu_ids = list(range(self.__num_gpus))
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -32,8 +36,8 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--numa_nodes',
             type=int,
-            nargs='*',
-            default=[],
+            nargs='+',
+            default=self.__default_numa_nodes,
             required=False,
             help='NUMA nodes to cover.',
         )
@@ -41,21 +45,21 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--gpu_ids',
             type=int,
-            nargs='*',
-            default=[],
+            nargs='+',
+            default=self.__default_gpu_ids,
             required=False,
             help='Device IDs of GPUs to cover.',
         )
 
         self._parser.add_argument(
-            '--enable_dtoh',
+            '--dtoh',
             action='store_true',
             required=False,
             help='Enable device-to-host bandwidth test.',
         )
 
         self._parser.add_argument(
-            '--enable_htod',
+            '--htod',
             action='store_true',
             required=False,
             help='Enable host-to-device bandwidth test.',
@@ -66,7 +70,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
             type=int,
             default=64 * 1024**2,
             required=False,
-            help='Size of data buffer.',
+            help='Size of data buffer in bytes.',
         )
 
         self._parser.add_argument(
@@ -89,9 +93,9 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         gpu_sm_copy_path = os.path.join(self._args.bin_dir, self._bin_name)
 
         copy_directions = []
-        if self._args.enable_dtoh:
+        if self._args.dtoh:
             copy_directions.append('dtoh')
-        if self._args.enable_htod:
+        if self._args.htod:
             copy_directions.append('htod')
 
         for numa_node in self._args.numa_nodes:
@@ -100,9 +104,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
                     command = 'numactl -N %d -m %d %s %d %s %d %d' % \
                         (numa_node, numa_node, gpu_sm_copy_path, gpu_id,
                          copy_direction, self._args.size, self._args.num_loops)
-                    self.__result_tags.append(
-                        'gpu_sm_copy_performance:numa%d:gpu%d:%s' % (numa_node, gpu_id, copy_direction)
-                    )
+                    self.__result_tags.append('numa%d_gpu%d_%s' % (numa_node, gpu_id, copy_direction))
                     self._commands.append(command)
 
         return True

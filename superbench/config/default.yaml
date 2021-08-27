@@ -69,8 +69,8 @@ superbench:
           - 0
         gpu_ids:
           - 0
-        enable_dtoh: true
-        enable_htod: true
+        dtoh: true
+        htod: true
     kernel-launch:
       <<: *default_local_mode
     gemm-flops:
