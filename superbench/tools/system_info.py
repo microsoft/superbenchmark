@@ -12,7 +12,7 @@ from pathlib import Path
 class SystemInfo():
     """Systsem info class."""
     def __run_cmd(self, command, non_root=False):
-        """Run the command in root right or non-root right and return the stdout string.
+        """Run the command as root or non-root user and return the stdout string..
 
         Args:
             command (string): the command to run in terminal.
@@ -34,34 +34,36 @@ class SystemInfo():
         )
         return output.stdout
 
-    def __cal_indent(self, line, symbol='\t'):
-        r"""Calcudate the indent count of the symbol in the beginning of the line.
+    def __count_prefix_indent(self, content, symbol='\t'):
+        r"""Count the number of a specific symbol in the content.
 
         Args:
-            line (string): the line to calculate the indent count.
+            content (string): the content for counting the indent.
             symbol (str, optional): the symbol of the indent. Defaults to '\t'.
 
         Returns:
-            int: the indent count of the symbol in the beginning of the line.
+            int: the indent count of the symbol in the beginning of the content.
         """
         count = 0
-        for char in line:
+        for char in content:
             if char == symbol:
                 count += 1
             else:
                 break
         return count
 
-    def __parse_key_value_lines(self, lines, selected=None, omitted_value=None, symbol=':'):    # noqa: C901
+    def __parse_key_value_lines(self, lines, required_keywords=None, omitted_values=None, symbol=':'):    # noqa: C901
         """Parse the lines like "key:value" and convert them to dict.
 
-        If selected is None, parse all lines, otherwise only parse the lines which contain selected.
-        If omitted_value is None, accept any value in dict, otherwise drop the item whose value in omitted_value.
+        if required_keywords is None, include all line. Otherwise,
+        only include the line containing one of the keyword in required_keywords.
+        If omitted_values is None, accept any value in dict,
+        otherwise drop the item whose value in omitted_values.
 
         Args:
             lines (list): the lines to parse.
-            selected (list, optional): list of select keys. Defaults to None.
-            omitted_value (list, optional): list of omitted values. Defaults to None.
+            required_keywords (list, optional): list of select keys. Defaults to None.
+            omitted_values (list, optional): list of omitted values. Defaults to None.
 
         Returns:
             dict: the result in dict.
@@ -74,20 +76,20 @@ class SystemInfo():
         while i < length:
             line = lines[i]
             is_selected = True
-            if selected is not None:
+            if required_keywords is not None:
                 is_selected = False
-                for key in selected:
+                for key in required_keywords:
                     if key in line:
                         is_selected = True
             if not is_selected:
                 i += 1
                 continue
             # process with indent recursively
-            indent = self.__cal_indent(lines[i])
-            if i + 1 < length and self.__cal_indent(lines[i + 1]) > indent:
+            indent = self.__count_prefix_indent(lines[i])
+            if i + 1 < length and self.__count_prefix_indent(lines[i + 1]) > indent:
                 key = lines[i].strip().strip('\t')
                 next_indent_index = i + 1
-                while next_indent_index < length and self.__cal_indent(lines[next_indent_index]) > indent:
+                while next_indent_index < length and self.__count_prefix_indent(lines[next_indent_index]) > indent:
                     next_indent_index += 1
 
                 value = self.__parse_key_value_lines(lines[i + 1:next_indent_index])
@@ -103,8 +105,8 @@ class SystemInfo():
                     value = ''
 
             is_omit = False
-            if omitted_value is not None:
-                for omit in omitted_value:
+            if omitted_values is not None:
+                for omit in omitted_values:
                     if omit in value.lower():
                         is_omit = True
             if not is_omit:
@@ -158,7 +160,9 @@ class SystemInfo():
         """
         lscpu_dict = {}
         try:
+            # get general cpu infomation from lscpu
             lscpu = self.__run_cmd('lscpu').splitlines()
+            # get distinct max_speed and current_speed of cpus from dmidecode
             speed = self.__run_cmd(r'dmidecode -t processor | grep "Speed"').splitlines()
             lscpu_dict = self.__parse_key_value_lines(lscpu)
             lscpu_dict.update(self.__parse_key_value_lines(speed))
@@ -185,6 +189,7 @@ class SystemInfo():
             system_dict['docker'] = self.__get_docker_version()
             system_dict['kernel_parameters'] = sysctl
             system_dict['kernel_modules'] = lsmod
+            system_dict['dmidecode'] = self.__run_cmd('dmidecode').strip()
             if system_dict['system_product'] == 'Virtual Machine':
                 lsvmbus = self.__run_cmd('lsvmbus').splitlines()
                 lsvmbus = self.__parse_key_value_lines(lsvmbus)
@@ -233,7 +238,7 @@ class SystemInfo():
             dmidecode_memory = dmidecode_memory.splitlines()
             model = self.__parse_key_value_lines(
                 dmidecode_memory, ['Manufacturer', 'Part Number', 'Type', 'Speed', 'Number Of Devices'],
-                omitted_value=['other', 'unknown']
+                omitted_values=['other', 'unknown']
             )
             memory_dict['channels'] = model.get('Number Of Devices', '')
             memory_dict['type'] = model.get('Type', '')
