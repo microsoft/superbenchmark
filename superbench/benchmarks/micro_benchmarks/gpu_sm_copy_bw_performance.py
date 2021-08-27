@@ -90,18 +90,18 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         copy_directions = []
         if self._args.enable_dtoh:
-            copy_directions.append("dtoh")
+            copy_directions.append('dtoh')
         if self._args.enable_htod:
-            copy_directions.append("htod")
+            copy_directions.append('htod')
 
         for numa_node in self._args.numa_nodes:
             for gpu_id in self._args.gpu_ids:
                 for copy_direction in copy_directions:
-                    command = "numactl -N %d -m %d %s %d %s %d %d" % \
+                    command = 'numactl -N %d -m %d %s %d %s %d %d' % \
                         (numa_node, numa_node, gpu_sm_copy_path, gpu_id,
                          copy_direction, self._args.size, self._args.num_loops)
                     self.__result_tags.append(
-                        "gpu_sm_copy_performance:numa%d:gpu%d:%s" % (numa_node, gpu_id, copy_direction)
+                        'gpu_sm_copy_performance:numa%d:gpu%d:%s' % (numa_node, gpu_id, copy_direction)
                     )
                     self._commands.append(command)
 
@@ -122,7 +122,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         try:
-            output_prefix = "Bandwidth (GB/s): "
+            output_prefix = 'Bandwidth (GB/s): '
             assert (raw_output.startswith(output_prefix))
             self.__result_tags[cmd_idx] = float(raw_output[len(output_prefix):])
         except BaseException as e:
