@@ -65,10 +65,6 @@ superbench:
         - proc_num: 1
           parallel: no
       parameters:
-        numa_nodes:
-          - 0
-        gpu_ids:
-          - 0
         dtoh: true
         htod: true
     kernel-launch:

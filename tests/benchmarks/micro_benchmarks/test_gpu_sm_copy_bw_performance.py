@@ -9,9 +9,7 @@ from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 
 
-@decorator.cuda_test
-@decorator.rocm_test
-def test_gpu_sm_copy_bw_performance():
+def _test_gpu_sm_copy_bw_performance_impl():
     """Test gpu-sm-copy-bw benchmark."""
     numa_node = 0
     gpu_id = 0
@@ -54,3 +52,13 @@ def test_gpu_sm_copy_bw_performance():
         assert (output_key in benchmark.result)
         assert (len(benchmark.result[output_key]) == 1)
         assert (isinstance(benchmark.result[output_key][0], numbers.Number))
+
+@decorator.cuda_test
+def test_gpu_sm_copy_bw_performance_cuda():
+    """Test gpu-sm-copy-bw benchmark, CUDA case."""
+    _test_gpu_sm_copy_bw_performance_impl()
+
+@decorator.rocm_test
+def test_gpu_sm_copy_bw_performance_rocm():
+    """Test gpu-sm-copy-bw benchmark, ROCm case."""
+    _test_gpu_sm_copy_bw_performance_impl()

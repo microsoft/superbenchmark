@@ -26,7 +26,11 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self.__result_tags = []
         self.__num_numa_nodes = len([x for x in next(os.walk('/sys/devices/system/node/'))[1] if x.startswith('node')])
         self.__default_numa_nodes = list(range(self.__num_numa_nodes))
-        self.__num_gpus = len([x for x in next(os.walk('/sys/class/drm/'))[1] if x.startswith('card')])
+        self.__num_gpus = 0
+        try:
+            self.__num_gpus = len([x for x in next(os.walk('/sys/class/drm/'))[1] if x.startswith('card')])
+        except BaseException as e:
+            pass
         self.__default_gpu_ids = list(range(self.__num_gpus))
 
     def add_parser_arguments(self):
