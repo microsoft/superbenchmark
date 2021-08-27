@@ -11,7 +11,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import GemmFlopsBenchmark
 
 
-class GemmFlopsCuda(GemmFlopsBenchmark):
+class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
     """The GEMM FLOPs performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -44,7 +44,14 @@ class GemmFlopsCuda(GemmFlopsBenchmark):
                 'INT4_TC': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
             }
         }
-        self.__capability = None
+        self.__parse_logline = [
+            'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
+            'gemm,cutlass_simt_hgemm_256x128_8x2', 'gemm,cutlass_tensorop_d884gemm_128x128_16x3',
+            'gemm,cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3',
+            'gemm,cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3', 'gemm,cutlass_tensorop_h16816gemm_256x128_32x3',
+            'gemm,cutlass_tensorop_h884gemm_256x128_32x2', 'gemm,cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3',
+            'gemm,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3'
+        ]
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -58,8 +65,9 @@ class GemmFlopsCuda(GemmFlopsBenchmark):
         """
         # Reset kernels according to compute capability.
         capability = nv_helper.get_device_compute_capability()
-        self.__capability = capability
         if capability not in self.__kernel_map:
+            # After preprocess() self._result.return_code can be generated
+            super()._preprocess()
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
             logger.error(
                 'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.0 or 8.0'.format(
@@ -69,7 +77,7 @@ class GemmFlopsCuda(GemmFlopsBenchmark):
             return False
 
         self._support_precisions = list(self.__kernel_map[capability].keys())
-
+        # 'support_precisions' are precise only after getting capability, and then using super.preprocess() to check if the precision in arguments are supported to run
         if not super()._preprocess():
             return False
 
@@ -104,10 +112,10 @@ class GemmFlopsCuda(GemmFlopsBenchmark):
         flops = list()
         content = raw_output.splitlines()
         try:
-            parse_logline = 'gemm,' + self.__kernel_map[self.__capability][precision].strip('*')
             for line in content:
-                if parse_logline in line:
-                    flops.append(float(line.split(',')[-1]))
+                for item in self.__parse_logline:
+                    if item in line:
+                        flops.append(float(line.split(',')[-1]))
         except BaseException:
             valid = False
         finally:
@@ -124,4 +132,4 @@ class GemmFlopsCuda(GemmFlopsBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark('gemm-flops', GemmFlopsCuda, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('gemm-flops', CudaGemmFlopsBenchmark, platform=Platform.CUDA)
