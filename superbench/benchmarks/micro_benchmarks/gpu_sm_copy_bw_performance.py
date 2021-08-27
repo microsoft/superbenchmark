@@ -99,7 +99,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         if self.__num_gpus_in_system == 0:
             return True
 
-        gpu_sm_copy_path = os.path.join(self._args.bin_dir, self._bin_name)
+        self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
         copy_directions = []
         if self._args.dtoh:
@@ -111,7 +111,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
             for gpu_id in self._args.gpu_ids:
                 for copy_direction in copy_directions:
                     command = 'numactl -N %d -m %d %s %d %s %d %d' % \
-                        (numa_node, numa_node, gpu_sm_copy_path, gpu_id,
+                        (numa_node, numa_node, self.__bin_path, gpu_id,
                          copy_direction, self._args.size, self._args.num_loops)
                     self.__result_tags.append('numa%d_gpu%d_%s' % (numa_node, gpu_id, copy_direction))
                     self._commands.append(command)
