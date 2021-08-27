@@ -124,7 +124,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         try:
             output_prefix = 'Bandwidth (GB/s): '
             assert (raw_output.startswith(output_prefix))
-            self.__result_tags[cmd_idx] = float(raw_output[len(output_prefix):])
+            self._result.add_result(self.__result_tags[cmd_idx], float(raw_output[len(output_prefix):]))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

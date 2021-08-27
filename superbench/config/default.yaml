@@ -59,7 +59,7 @@ superbench:
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
           parallel: yes
-    gpu-sm-copy-benchmark:
+    gpu-sm-copy-bw:
       enable: false
       modes:
         - proc_num: 1

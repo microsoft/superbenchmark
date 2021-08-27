@@ -63,8 +63,6 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
             gpu_id_option = '--gpu_ids ' + ' '.join(gpu_ids)
 
             param_str = numa_node_option + ' ' + gpu_id_option
-            param_str += ' --enable_dtoh=0'
-            param_str += ' --enable_htod=0'
             benchmark = benchmark_class(benchmark_name, parameters=param_str)
 
             # Check basic information
@@ -94,8 +92,8 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
             gpu_id_option = '--gpu_ids ' + ' '.join(gpu_ids)
 
             param_str = numa_node_option + ' ' + gpu_id_option
-            param_str += ' --enable_dtoh=1'
-            param_str += ' --enable_htod=1'
+            param_str += ' --enable_dtoh 1'
+            param_str += ' --enable_htod 1'
             test_data_size = '5'
             param_str += ' --size=%s' % test_data_size
             test_num_loops = '6'
