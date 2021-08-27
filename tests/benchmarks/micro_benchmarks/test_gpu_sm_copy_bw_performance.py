@@ -4,7 +4,6 @@
 """Tests for disk-performance benchmark."""
 
 import numbers
-import os
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
@@ -23,7 +22,7 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     num_loops = 10000
     copy_directions = ['dtoh', 'htod']
 
-    parameters='--numa_nodes %d --gpu_ids %d --%s --%s --size %d --num_loops %d' % \
+    parameters = '--numa_nodes %d --gpu_ids %d --%s --%s --size %d --num_loops %d' % \
         (numa_node, gpu_id, copy_directions[0], copy_directions[1], size, num_loops)
     benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
