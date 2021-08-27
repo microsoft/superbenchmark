@@ -59,6 +59,18 @@ superbench:
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
           parallel: yes
+    gpu-sm-copy-benchmark:
+      enable: false
+      modes:
+        - proc_num: 1
+          parallel: no
+      parameters:
+        numa_nodes:
+          - 0
+        gpu_ids:
+          - 0
+        enable_dtoh: true
+        enable_htod: true
     kernel-launch:
       <<: *default_local_mode
     gemm-flops:
