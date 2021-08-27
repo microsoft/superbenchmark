@@ -71,9 +71,9 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
         ]
 
         for i in range(len(benchmark._args.operations)):
-            commnad = bin_names[i] + benchmark._commands[i].split(bin_names[i])[1]
+            command = bin_names[i] + benchmark._commands[i].split(bin_names[i])[1]
             expected_command = '{} -b 8 -e 8G -f 2 -g 8 -c 0 -n 20 -w 5'.format(bin_names[i])
-            assert (commnad == expected_command)
+            assert (command == expected_command)
 
         # Check results and metrics.
         # Case with no raw_output
