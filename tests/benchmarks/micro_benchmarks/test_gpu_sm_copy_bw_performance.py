@@ -33,7 +33,7 @@ def _test_gpu_sm_copy_bw_performance_impl():
 
     # Check parameters specified in BenchmarkContext.
     assert (benchmark._args.numa_nodes == [numa_node])
-    assert (benchmark._args.gpu_id == [gpu_id])
+    assert (benchmark._args.gpu_ids == [gpu_id])
     assert (benchmark._args.dtoh)
     assert (benchmark._args.htod)
     assert (benchmark._args.size == size)
