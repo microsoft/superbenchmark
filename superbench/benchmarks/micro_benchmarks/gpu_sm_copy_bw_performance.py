@@ -66,7 +66,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--size',
             type=int,
-            default=64 * 1024 ** 2,
+            default=64 * 1024**2,
             required=False,
             help='Size of data buffer.',
         )
