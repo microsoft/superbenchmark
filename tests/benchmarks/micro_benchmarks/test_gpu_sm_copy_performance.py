@@ -118,7 +118,7 @@ class GpuSmCopyBwBenchmarkTest(unittest.TestCase):
                 for gpu_id in gpu_ids:
                     for copy_direction in ['dtoh', 'htod']:
                         assert (
-                            benchmark._commands[command_idx] == 'numactl -N %s -m %s %s %d %s %s %s' % (
+                            benchmark._commands[command_idx] == 'numactl -N %s -m %s %s %s %s %s %s' % (
                                 numa_node, numa_node, self.__binary_file, gpu_id, copy_direction, test_data_size,
                                 test_data_size
                             )
