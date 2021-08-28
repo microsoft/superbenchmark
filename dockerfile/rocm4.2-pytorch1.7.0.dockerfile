@@ -13,8 +13,8 @@ FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.7.0
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | sudo APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add -
-RUN apt-get update && \
+RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
     automake \
@@ -65,7 +65,7 @@ ENV PATH="${PATH}" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -j -C third_party rocm
+RUN ROCM_VERSION=rocm-4.2 make -j -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install . \
