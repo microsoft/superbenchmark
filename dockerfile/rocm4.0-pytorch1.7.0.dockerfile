@@ -65,7 +65,7 @@ ENV PATH="${PATH}" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-4.0 make -j -C third_party rocm
+RUN ROCM_VERSION=rocm-4.0.0 make -j -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install . \
