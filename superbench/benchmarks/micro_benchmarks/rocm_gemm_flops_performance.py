@@ -6,7 +6,7 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks import GemmFlopsBenchmark
 
 
@@ -37,13 +37,15 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
 
         self._parser.add_argument(
             '--transposeA',
-            type=str,
+            type=str.upper,
+            choices=['N', 'T', 'C'],
             default='N',
             help='Transpose type of Matrix A, N = no transpose, T = transpose, C = conjugate transpose',
         )
         self._parser.add_argument(
             '--transposeB',
-            type=str,
+            type=str.upper,
+            choices=['N', 'T', 'C'],
             default='T',
             help='Transpose type of Matrix B, N = no transpose, T = transpose, C = conjugate transpose',
         )
@@ -99,13 +101,6 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
         if not super()._preprocess():
             return False
 
-        transpose_types = ['N', 'T', 'C']
-        if self._args.transposeA not in transpose_types or self._args.transposeB not in transpose_types:
-            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.warning(
-                'Unsupported transpose type - benchmark: {}, expected: {}.'.format(self._name, transpose_types)
-            )
-            return False
         for p in self._precision_need_to_run:
             command = os.path.join(self._args.bin_dir, self._bin_name)
             command += ' ' + self.__precision_and_kernel_map[p]

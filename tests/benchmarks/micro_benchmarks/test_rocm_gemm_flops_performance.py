@@ -10,7 +10,7 @@ from pathlib import Path
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, BenchmarkType
 
 
-class GemmFlopsCudaTest(unittest.TestCase):
+class RocmGemmFlopsTest(unittest.TestCase):
     """Tests for RocmGemmFlops benchmark."""
     def setUp(self):
         """Method called to prepare the test fixture."""
@@ -25,7 +25,7 @@ class GemmFlopsCudaTest(unittest.TestCase):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
 
-    def test_flops_performance_cuda(self):
+    def test_rocm_flops_performance(self):
         """Test gemm-flops benchmark."""
         benchmark_name = 'gemm-flops'
         (benchmark_class,
