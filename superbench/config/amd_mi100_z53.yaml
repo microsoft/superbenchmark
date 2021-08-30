@@ -42,7 +42,7 @@ superbench:
       enable: true
       modes:
         - name: local
-          prefix: NCCL_DEBUG=INFO NCCL_IB_DISABLE=1
+          prefix: NCCL_IB_DISABLE=1
       parameters:
         maxbytes: 128M
         iters: 50
@@ -58,15 +58,19 @@ superbench:
       enable: true
       modes:
         - name: local
+          proc_num: 1
           prefix: PROC_RANK={proc_rank} IB_DEVICES=0
           parallel: no
         - name: local
+          proc_num: 1
           prefix: PROC_RANK={proc_rank} IB_DEVICES=1
           parallel: no
         - name: local
+          proc_num: 1
           prefix: PROC_RANK={proc_rank} IB_DEVICES=2
           parallel: no
         - name: local
+          proc_num: 1
           prefix: PROC_RANK={proc_rank} IB_DEVICES=3
           parallel: no
     gpt_models:
