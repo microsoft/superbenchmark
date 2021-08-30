@@ -12,8 +12,8 @@ from superbench.common.utils import nv_helper
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, BenchmarkType
 
 
-class GemmFlopsCudaTest(unittest.TestCase):
-    """Tests for GemmFlopsCuda benchmark."""
+class CudaGemmFlopsBenchmarkTest(unittest.TestCase):
+    """Tests for CudaGemmFlopsBenchmark benchmark."""
     def setUp(self):
         """Method called to prepare the test fixture."""
         # Create fake binary file just for testing.
@@ -60,7 +60,7 @@ class GemmFlopsCudaTest(unittest.TestCase):
         assert (benchmark._args.k == 512)
         assert (benchmark._args.m == 2048)
         assert (benchmark._args.precision == ['FP32', 'TF32_TC', 'FP16_TC', 'INT8_TC'])
-        benchmark._GemmFlopsCuda__precision_need_to_run = ['FP32', 'TF32_TC', 'FP16_TC', 'INT8_TC']
+        benchmark._CudaGemmFlopsBenchmark__precision_need_to_run = ['FP32', 'TF32_TC', 'FP16_TC', 'INT8_TC']
 
         # Check results and metrics.
         raw_output_FP32 = """
