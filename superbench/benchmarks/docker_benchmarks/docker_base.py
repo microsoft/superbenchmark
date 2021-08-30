@@ -3,9 +3,10 @@
 
 """Module of the docker-benchmark base class."""
 
-from abc import abstractmethod
+import subprocess
 
-from superbench.benchmarks import BenchmarkType
+from superbench.common.utils import logger
+from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 
 
@@ -20,8 +21,12 @@ class DockerBenchmark(Benchmark):
         """
         super().__init__(name, parameters)
         self._benchmark_type = BenchmarkType.DOCKER
+
         # Command lines to launch the docker image and run the benchmarks inside docker.
-        self.__commands = list()
+        self._commands = list()
+
+        # Image url of the current docker-benchmark.
+        self._image = None
 
     '''
     # If need to add new arguments, super().add_parser_arguments() must be called.
@@ -36,12 +41,52 @@ class DockerBenchmark(Benchmark):
         Return:
             True if _preprocess() succeed.
         """
-        return super()._preprocess()
+        if not super()._preprocess():
+            return False
 
-    @abstractmethod
+        if self._image is None:
+            self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_IMAGE_NOT_SET)
+            logger.error('The image url is not set - benchmark: {}.'.format(self._name))
+            return False
+
+        self._commands.append('docker pull {}'.format(self._image))
+
+        return True
+
     def _benchmark(self):
-        """Implementation for benchmarking."""
-        pass
+        """Implementation for benchmarking.
+
+        Return:
+            True if run benchmark successfully.
+        """
+        for cmd_idx in range(len(self._commands)):
+            logger.info(
+                'Execute command - round: {}, benchmark: {}, command: {}.'.format(
+                    self._curr_run_index, self._name, self._commands[cmd_idx]
+                )
+            )
+            output = subprocess.run(
+                self._commands[cmd_idx],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                check=False,
+                universal_newlines=True
+            )
+            if output.returncode != 0:
+                self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_EXECUTION_FAILURE)
+                logger.error(
+                    'Microbenchmark execution failed - round: {}, benchmark: {}, error message: {}.'.format(
+                        self._curr_run_index, self._name, output.stdout
+                    )
+                )
+                return False
+            else:
+                if not self._process_raw_result(cmd_idx, output.stdout):
+                    self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_RESULT_PARSING_FAILURE)
+                    return False
+
+        return True
 
     def _process_raw_result(self, raw_output):
         """Function to process raw results and save the summarized results.
