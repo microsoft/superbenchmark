@@ -164,7 +164,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
                     command += ' ' + self.__support_ib_commands[ib_command]
                     command += command_mode + ' -F'
                     command += ' --iters=' + str(self._args.iters)
-                    command += ' -d ' + network.get_ib_devices()[self._args.ib_index]
+                    command += ' -d ' + network.get_ib_devices()[self._args.ib_index].split(':')[0]
                     command += ' -p ' + str(network.get_free_port())
                     command += ' -x ' + str(self._args.gid_index)
                     self._commands.append(command)
