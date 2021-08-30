@@ -22,53 +22,18 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'gpu_sm_copy'
-
-        self.__result_tags = []
-        self.__num_numa_nodes_in_system = len(
-            [x for x in next(os.walk('/sys/devices/system/node/'))[1] if x.startswith('node')]
-        )
-        self.__default_numa_nodes = list(range(self.__num_numa_nodes_in_system))
-        self.__num_gpus_in_system = 0
-        try:
-            self.__num_gpus_in_system = len([x for x in next(os.walk('/sys/class/drm/'))[1] if x.startswith('card')])
-        except StopIteration:
-            logger.info('No GPU found, disable benchmark: {}'.format(self._name))
-        self.__default_gpu_ids = list(range(self.__num_gpus_in_system))
+        self._mem_types = ['htod', 'dtoh']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--numa_nodes',
-            type=int,
+            '--mem_type',
+            type=str,
             nargs='+',
-            default=self.__default_numa_nodes,
-            required=False,
-            help='NUMA nodes to cover.',
-        )
-
-        self._parser.add_argument(
-            '--gpu_ids',
-            type=int,
-            nargs='+',
-            default=self.__default_gpu_ids,
-            required=False,
-            help='Device IDs of GPUs to cover.',
-        )
-
-        self._parser.add_argument(
-            '--dtoh',
-            action='store_true',
-            required=False,
-            help='Enable device-to-host bandwidth test.',
-        )
-
-        self._parser.add_argument(
-            '--htod',
-            action='store_true',
-            required=False,
-            help='Enable host-to-device bandwidth test.',
+            default=self._mem_types,
+            help='Memory types for benchmark. E.g. {}.'.format(' '.join(self._mem_types)),
         )
 
         self._parser.add_argument(
@@ -96,25 +61,12 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        if self.__num_gpus_in_system == 0:
-            return True
-
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
-        copy_directions = []
-        if self._args.dtoh:
-            copy_directions.append('dtoh')
-        if self._args.htod:
-            copy_directions.append('htod')
-
-        for numa_node in self._args.numa_nodes:
-            for gpu_id in self._args.gpu_ids:
-                for copy_direction in copy_directions:
-                    command = 'numactl -N %d -m %d %s %d %s %d %d' % \
-                        (numa_node, numa_node, self.__bin_path, gpu_id,
-                         copy_direction, self._args.size, self._args.num_loops)
-                    self.__result_tags.append('numa%d_gpu%d_%s' % (numa_node, gpu_id, copy_direction))
-                    self._commands.append(command)
+        for mem_type in self._args.mem_type:
+            command = '%s 0 %s %d %d' % \
+                (self.__bin_path, mem_type, self._args.size, self._args.num_loops)
+            self._commands.append(command)
 
         return True
 
@@ -135,7 +87,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         try:
             output_prefix = 'Bandwidth (GB/s): '
             assert (raw_output.startswith(output_prefix))
-            self._result.add_result(self.__result_tags[cmd_idx], float(raw_output[len(output_prefix):]))
+            self._result.add_result(self._args.mem_type[cmd_idx], float(raw_output[len(output_prefix):]))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

@@ -16,14 +16,12 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
      predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
     assert (benchmark_class)
 
-    numa_node = 0
-    gpu_id = 0
     size = 1048576
     num_loops = 10000
-    copy_directions = ['dtoh', 'htod']
+    mem_types = ['dtoh', 'htod']
 
-    parameters = '--numa_nodes %d --gpu_ids %d --%s --%s --size %d --num_loops %d' % \
-        (numa_node, gpu_id, copy_directions[0], copy_directions[1], size, num_loops)
+    parameters = '--mem_type %s --size %d --num_loops %d' % \
+        (numa_node, gpu_id, ' '.join(mem_types), size, num_loops)
     benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
     # Check basic information
@@ -35,23 +33,17 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.
-    assert (benchmark._args.numa_nodes == [numa_node])
-    assert (benchmark._args.gpu_ids == [gpu_id])
-    assert (benchmark._args.dtoh)
-    assert (benchmark._args.htod)
+    assert (benchmark._args.mem_type == mem_types)
     assert (benchmark._args.size == size)
     assert (benchmark._args.num_loops == num_loops)
 
     # Check and revise command list
-    assert (len(copy_directions) == len(benchmark._commands))
-    for idx, copy_direction in enumerate(copy_directions):
+    assert (len(mem_types) == len(benchmark._commands))
+    for idx, mem_type in enumerate(mem_types):
         assert (
-            benchmark._commands[idx] == 'numactl -N %d -m %d %s %d %s %d %d' %
-            (numa_node, numa_node, benchmark._GpuSmCopyBwBenchmark__bin_path, gpu_id, copy_direction, size, num_loops)
+            benchmark._commands[idx] == '%s 0 %s %d %d' %
+            (benchmark._GpuSmCopyBwBenchmark__bin_path, mem_type, size, num_loops)
         )
-        numactl_prefix = 'numactl -N %d -m %d ' % (numa_node, numa_node)
-        # Remove numactl because test environment is not privileged
-        benchmark._commands[idx] = benchmark._commands[idx][len(numactl_prefix):]
 
     # Run benchmark
     assert (benchmark._benchmark())
@@ -59,13 +51,13 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    for idx, copy_direction in enumerate(copy_directions):
+    for idx, mem_type in enumerate(mem_types):
         raw_output_key = 'raw_output_%d' % idx
         assert (raw_output_key in benchmark.raw_data)
         assert (len(benchmark.raw_data[raw_output_key]) == 1)
         assert (isinstance(benchmark.raw_data[raw_output_key][0], str))
 
-        output_key = 'numa%d_gpu%d_%s' % (numa_node, gpu_id, copy_direction)
+        output_key = mem_type
         assert (output_key in benchmark.result)
         assert (len(benchmark.result[output_key]) == 1)
         assert (isinstance(benchmark.result[output_key][0], numbers.Number))
