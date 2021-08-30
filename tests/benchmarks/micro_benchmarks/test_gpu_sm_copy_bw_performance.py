@@ -21,7 +21,7 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     mem_types = ['dtoh', 'htod']
 
     parameters = '--mem_type %s --size %d --num_loops %d' % \
-        (numa_node, gpu_id, ' '.join(mem_types), size, num_loops)
+        (' '.join(mem_types), size, num_loops)
     benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
     # Check basic information
