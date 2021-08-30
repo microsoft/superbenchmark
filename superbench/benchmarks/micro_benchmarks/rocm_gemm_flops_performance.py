@@ -22,13 +22,13 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
         super().__init__(name, parameters)
 
         self._bin_name = 'rocblas-bench'
-        self._support_precisions = ['FP64', 'TF32_TC', 'FP16_TC', 'BF16_TC', 'INT8_TC']
+        self._support_precisions = ['FP64', 'FP32_xDLOPS', 'FP16_xDLOPS', 'BF16_xDLOPS', 'INT8_xDLOPS']
         self.__precision_and_kernel_map = {
             'FP64': '-r f64_r -f gemm',
-            'TF32_TC': '-r f32_r -f gemm_ex --compute_type f32_r',
-            'FP16_TC': '-r f16_r -f gemm_ex --compute_type f32_r',
-            'BF16_TC': '-r bf16_r -f gemm_ex --compute_type f32_r',
-            'INT8_TC': '--a_type i8_r --b_type i8_r --c_type i32_r --d_type i32_r -f gemm_ex --compute_type i32_r'
+            'FP32_xDLOPS': '-r f32_r -f gemm_ex --compute_type f32_r',
+            'FP16_xDLOPS': '-r f16_r -f gemm_ex --compute_type f32_r',
+            'BF16_xDLOPS': '-r bf16_r -f gemm_ex --compute_type f32_r',
+            'INT8_xDLOPS': '--a_type i8_r --b_type i8_r --c_type i32_r --d_type i32_r -f gemm_ex --compute_type i32_r'
         }
 
     def add_parser_arguments(self):
