@@ -4,6 +4,7 @@
 """Module of the docker-benchmark base class."""
 
 import subprocess
+from abc import abstractmethod
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkType, ReturnCode
@@ -49,8 +50,14 @@ class DockerBenchmark(Benchmark):
             logger.error('The image url is not set - benchmark: {}.'.format(self._name))
             return False
 
-        self._commands.append('docker pull {}'.format(self._image))
+        return True
 
+    def _postprocess(self):
+        """Postprocess/cleanup operations after the benchmarking.
+
+        Return:
+            True if _postprocess() succeed.
+        """
         return True
 
     def _benchmark(self):
@@ -88,17 +95,20 @@ class DockerBenchmark(Benchmark):
 
         return True
 
-    def _process_raw_result(self, raw_output):
+    @abstractmethod
+    def _process_raw_result(self, cmd_idx, raw_output):
         """Function to process raw results and save the summarized results.
 
+          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
         Args:
-            raw_output (str): raw output string of the docker benchmark.
+            cmd_idx (int): the index of command corresponding with the raw_output.
+            raw_output (str): raw output string of the micro-benchmark.
 
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        # TODO: will implement it when add real benchmarks in the future.
-        return True
+        pass
 
     def print_env_info(self):
         """Print environments or dependencies information."""
