@@ -159,8 +159,8 @@ setup(
             'yapf>=0.30.0',
         ],
         'torch': [
-            'torch>=1.7.0',
-            'torchvision>=0.8.0',
+            'torch>=0.0.0',
+            'torchvision>=0.0.0',
             'transformers>=4.3.3',
         ],
         'nvidia': ['py3nvml>=0.2.6']
