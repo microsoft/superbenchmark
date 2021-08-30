@@ -54,13 +54,13 @@ id: system-config
       <td>operating_system</td>
       <td>cat /proc/version</td>
       <td>version of current running os</td>
-      <td>Ubuntu 18.04.1 LTS</td>
+      <td>Ubuntu 9.3.0-17ubuntu1~20.04</td>
     </tr>
     <tr>
       <td>uname</td>
       <td>uname</td>
       <td>short for system information</td>
-      <td></td>
+      <td>Linux sb-test-wu-000000 5.8.0-1039-azure #42~20.04.1-Ubuntu</td>
     </tr>
     <tr>
       <td align="center" valign="middle" rowspan="2">
@@ -266,19 +266,25 @@ id: system-config
       <td>L&ltx&gt caches</td>
       <td>lscpu</td>
       <td>cache size</td>
-      <td></td>
+      <td>"L1d cache": "4 MiB",
+        "L1i cache": "4 MiB",
+        "L2 cache": "64 MiB",
+        "L3 cache": "512 MiB"</td>
     </tr>
     <tr>
       <td>NUMA node&ltx&gt CPU(s)</td>
       <td>lscpu</td>
       <td>cpu core list of the numa node</td>
-      <td></td>
+      <td>"NUMA node0 CPU(s)": "0-31,128-159",
+        "NUMA node1 CPU(s)": "32-63,160-191",
+        "NUMA node2 CPU(s)": "64-95,192-223",
+        "NUMA node3 CPU(s)": "96-127,224-255"</td>
     </tr>
     <tr>
       <td>Flags</td>
       <td>lscpu</td>
       <td>cpu flags</td>
-      <td></td>
+      <td> fpu vme de pse tsc msr pae mce cx8 apic ...</td>
     </tr>
     <tr>
       <td>max_speed</td>
@@ -323,37 +329,37 @@ id: system-config
       <td>filesystem</td>
       <td>df -Th</td>
       <td>the name/path of the filesystem</td>
-      <td></td>
+      <td>/dev/nvme0n1p2</td>
     </tr>
     <tr>
       <td>avail</td>
       <td>df -Th</td>
       <td>avail size of the filesystem</td>
-      <td></td>
+      <td>1.4T</td>
     </tr>
     <tr>
       <td>size</td>
       <td>df -Th</td>
       <td>total size of the filesystem</td>
-      <td></td>
+      <td>1.8T</td>
     </tr>
     <tr>
       <td>type</td>
       <td>df -Th</td>
       <td>the type of the filesystem</td>
-      <td></td>
+      <td>ext4</td>
     </tr>
     <tr>
       <td>block_size</td>
       <td>blockdev --getbsz /dev/&ltdevice&gt</td>
       <td>the block size of the filesytem</td>
-      <td></td>
+      <td>4096</td>
     </tr>
     <tr>
       <td>4k_alignment</td>
       <td>4kDEVICE=/dev/sdb1 do parted $DEVICE align-check opt 1; done_alignment</td>
       <td>whether the file system is 4k alignment</td>
-      <td></td>
+      <td>1 aligned</td>
     </tr>
     <tr>
       <td align="center" valign="middle" rowspan="6">
@@ -362,31 +368,31 @@ id: system-config
       <td>name</td>
       <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
       <td>the name of the block device</td>
-      <td></td>
+      <td>nvme0n1</td>
     </tr>
     <tr>
       <td>model</td>
       <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
       <td>the model name of the block device</td>
-      <td></td>
+      <td>VO001920KXAVP</td>
     </tr>
     <tr>
       <td>rotational</td>
       <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
       <td>whether rotational, thai is HDD or SSD</td>
-      <td></td>
+      <td>0</td>
     </tr>
     <tr>
       <td>size</td>
       <td>lsblk -e 7 -o NAME,ROTA,SIZE,MODEL </td>
       <td>the total size of the block device</td>
-      <td></td>
+      <td>1.8T</td>
     </tr>
     <tr>
       <td>block_size</td>
       <td>fdisk -l -u /dev/{} | grep "Sector size"</td>
       <td>the sector size of the block device</td>
-      <td></td>
+      <td>Sector size (logical/physical): 512 bytes / 512 bytes</td>
     </tr>
     <tr>
       <td>usage</td>
@@ -432,37 +438,37 @@ id: system-config
       <td>nic_logical_name</td>
       <td>lshw -c network</td>
       <td>logical name of the nic</td>
-      <td> Mellanox Technologies MT28908 Family [ConnectX-6]</td>
+      <td>ib1</td>
     </tr>
     <tr>
       <td>nic_model</td>
       <td>lshw -c network</td>
       <td>model name of the nic</td>
-      <td> 20.30.1004 (MT_0000000594)</td>
+      <td>Mellanox Technologies MT28908 Family [ConnectX-6]</td>
     </tr>
     <tr>
       <td>nic_firmware</td>
       <td>lshw -c network</td>
       <td>fw version</td>
-      <td>mlx5_core[ib_ipoib] 5.3-1.0.0</td>
+      <td>20.30.1004 (MT_0000000594)</td>
     </tr>
     <tr>
       <td>nic_driver</td>
       <td>lshw -c network</td>
       <td>driver version</td>
-      <td>200 Gbit/s</td>
+      <td>mlx5_core[ib_ipoib] 5.3-1.0.0</td>
     </tr>
     <tr>
       <td>nic_speed</td>
       <td>lshw -c network</td>
       <td>speed spec of the nic</td>
-      <td></td>
+      <td>200 Gbit/s</td>
     </tr>
     <tr>
       <td>nic_disabled</td>
       <td>lshw -c network</td>
       <td>whether diabled</td>
-      <td></td>
+      <td>false</td>
     </tr>
     <tr>
       <td align="center" valign="middle" rowspan="2">
@@ -520,8 +526,8 @@ id: system-config
       <td>driver_version</td>
       <td>nvidia-smi -q -x/rocm-smi -a</td>
       <td>driver version</td>
-      <td></td>
-      <td></td>
+      <td>460.27.04</td>
+      <td>5.9.25</td>
     </tr>
     <tr>
       <td>topology</td>
