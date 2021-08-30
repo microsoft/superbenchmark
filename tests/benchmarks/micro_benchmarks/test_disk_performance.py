@@ -504,7 +504,7 @@ class DiskBenchmarkTest(unittest.TestCase):
   ]
 }
 """
-        jobname_prefix = '/dev/nvme0n1_rand_read_write'
+        jobname_prefix = 'nvme0n1_rand_read_write'
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 

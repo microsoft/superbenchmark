@@ -190,7 +190,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
             fio_output = json.loads(raw_output)
 
             jobname = fio_output['jobs'][0]['jobname']
-            block_device = fio_output['global options']['filename']
+            block_device = os.path.basename(fio_output['global options']['filename'])
             jobname_prefix = '%s_%s' % (block_device, jobname)
             lat_units = ['lat_ns', 'lat_us', 'lat_ms']
 
