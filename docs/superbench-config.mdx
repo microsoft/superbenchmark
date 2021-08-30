@@ -259,14 +259,14 @@ Enable current benchmark or not, can be overwritten by [`superbench.enable`](#su
 
 ### `modes`
 
-A list of mode in which the benchmark runs.
+A list of modes in which the benchmark runs.
 Currently only one mode is supported for each benchmark.
 
 See [`Mode` Schema](#mode-schema) for mode definition.
 
 ### `frameworks`
 
-A list of framework in which the benchmark runs.
+A list of frameworks in which the benchmark runs.
 Some benchmarks can support multiple frameworks while others only support one.
 
 * accepted values: `[ onnx | pytorch | tf1 | tf2 | none ]`
@@ -338,6 +338,15 @@ Mode name to use. Here lists available modes:
 + `mpi`: launch benchmark through MPI, the benchmark implementation could leverage MPI interface.
 
 Some attributes may only be suitable for specific mode.
+
+|            | `local` | `torch.distributed` | `mpi` |
+| ---------: | :-----: | :-----------------: | :---: |
+| `proc_num` |    ✓    |          ✓          |   ✓   |
+| `node_num` |    ✘    |          ✓          |   ✘   |
+| `prefix`   |    ✓    |          ✘          |   ✘   |
+| `env`      |    ✘    |          ✘          |   ✓   |
+| `mca`      |    ✘    |          ✘          |   ✓   |
+| `parallel` |    ✓    |          ✘          |   ✘   |
 
 * accepted values: `local | torch.distributed | mpi`
 * default value: `local`
