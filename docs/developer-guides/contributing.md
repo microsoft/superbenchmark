@@ -51,33 +51,33 @@ If you want to contribute benchmark results run by specified SuperBench version,
 All the results are stored under [superbench-results](https://github.com/microsoft/superbench-results) repository. The directory structure is as follows. Please create `<your-benchmark-folder>` to submit results.
 
 ```
-└── superbench-results
-    ├── v0.2
-    │   └── your-benchmark-foldername
-    │       ├── LICENSE.md
-    │       ├── README.md
-    │       ├── configs
-    │       │   ├── config1.yaml
-    │       │   └── config2.yaml
-    │       ├── results
-    │       │   ├── result1.json
-    │       │   └── result2.json
-    │       └── systems
-    │           ├── system1.json
-    │           └── system2.json
-    └── v0.3
-        └── your-benchmark-foldername
-            ├── LICENSE.md
-            ├── README.md
-            ├── configs
-            │   ├── config1.yaml
-            │   └── config2.yaml
-            ├── results
-            │   ├── result1.json
-            │   └── result2.json
-            └── systems
-                ├── system1.json
-                └── system2.json
+superbench-results
+  ├── v0.2
+  │   └── your-benchmark-foldername
+  │       ├── LICENSE.md
+  │       ├── README.md
+  │       ├── configs
+  │       │   ├── config1.yaml
+  │       │   └── config2.yaml
+  │       ├── results
+  │       │   ├── result1.json
+  │       │   └── result2.json
+  │       └── systems
+  │           ├── system1.json
+  │           └── system2.json
+  └── v0.3
+      └── your-benchmark-foldername
+          ├── LICENSE.md
+          ├── README.md
+          ├── configs
+          │   ├── config1.yaml
+          │   └── config2.yaml
+          ├── results
+          │   ├── result1.json
+          │   └── result2.json
+          └── systems
+              ├── system1.json
+              └── system2.json
 ```
 
 #### Files to provide
