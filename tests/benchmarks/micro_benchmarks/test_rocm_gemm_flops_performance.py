@@ -33,7 +33,7 @@ class GemmFlopsCudaTest(unittest.TestCase):
         assert (benchmark_class)
 
         # Negative case - MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE.
-        benchmark = benchmark_class(benchmark_name)
+        benchmark = benchmark_class(benchmark_name, parameters='--m 7680 --n 8192 --k 8192')
 
         ret = benchmark._preprocess()
         assert (ret is True)
@@ -48,7 +48,6 @@ class GemmFlopsCudaTest(unittest.TestCase):
         assert (benchmark._args.m == 7680)
         assert (benchmark._args.n == 8192)
         assert (benchmark._args.k == 8192)
-        assert (benchmark._args.precision == ['FP64', 'FP32_X', 'FP16_X', 'BF16_X', 'INT8_X'])
 
         params = '--transposeA N --transposeB T -m 7680 -n 8192 -k 8192' + \
             ' --alpha 1 --beta 0 --lda 8384 --ldb 8384 --ldc 8384 --ldd 8384'
@@ -94,10 +93,10 @@ T,N,7680,8192,8192,1,8416,0,8416,8416,8416,1, 162675, 6336.5
         assert (benchmark._process_raw_result(4, raw_output_INT8_X))
 
         assert (benchmark.result['FP64'][0] == 10037.5)
-        assert (benchmark.result['FP32_X'][0] == 39441.6)
-        assert (benchmark.result['FP16_X'][0] == 153728)
-        assert (benchmark.result['BF16_X'][0] == 81374.3)
-        assert (benchmark.result['INT8_X'][0] == 162675)
+        assert (benchmark.result['TF32_TC'][0] == 39441.6)
+        assert (benchmark.result['FP16_TC'][0] == 153728)
+        assert (benchmark.result['BF16_TC'][0] == 81374.3)
+        assert (benchmark.result['INT8_TC'][0] == 162675)
 
         # Negative case - Add invalid raw output.
         assert (benchmark._process_raw_result(4, 'Invalid raw output') is False)

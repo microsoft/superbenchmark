@@ -7,10 +7,10 @@ import os
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
-from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
+from superbench.benchmarks.micro_benchmarks import GemmFlopsBenchmark
 
 
-class RocmGemmFlops(MicroBenchmarkWithInvoke):
+class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
     """The GEMM FLOPs performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -98,6 +98,7 @@ class RocmGemmFlops(MicroBenchmarkWithInvoke):
         """
         if not super()._preprocess():
             return False
+
         transpose_types = ['N', 'T', 'C']
         if self._args.transposeA not in transpose_types or self._args.transposeB not in transpose_types:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
@@ -105,7 +106,7 @@ class RocmGemmFlops(MicroBenchmarkWithInvoke):
                 'Unsupported transpose type - benchmark: {}, expected: {}.'.format(self._name, transpose_types)
             )
             return False
-        for p in self._args.precision:
+        for p in self._precision_need_to_run:
             command = os.path.join(self._args.bin_dir, self._bin_name)
             command += ' ' + self.__precision_and_kernel_map[p]
             command += ' --transposeA {} --transposeB {}'.format(self._args.transposeA, self._args.transposeB)
@@ -130,7 +131,7 @@ class RocmGemmFlops(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        precision = self._args.precision[cmd_idx]
+        precision = self._precision_need_to_run[cmd_idx]
         self._result.add_raw_data('raw_output_' + precision, raw_output)
 
         content = raw_output.splitlines()
@@ -163,4 +164,4 @@ class RocmGemmFlops(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('gemm-flops', RocmGemmFlops, platform=Platform.ROCM)
+BenchmarkRegistry.register_benchmark('gemm-flops', RocmGemmFlopsBenchmark, platform=Platform.ROCM)
