@@ -69,14 +69,6 @@ superbench:
         - name: local
           prefix: PROC_RANK={proc_rank} IB_DEVICES=3
           parallel: no
-    disk-benchmark:
-      enable: false
-      modes:
-        - proc_num: 1
-          parallel: no
-      parameters:
-        block_devices:
-          - /dev/nvme0n1
     gpt_models:
       <<: *default_pytorch_mode
       models:
