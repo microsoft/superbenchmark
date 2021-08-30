@@ -100,6 +100,7 @@
           {{ '--gpus=all' if nvidia_gpu_exist else '' }} \
           {{ '--security-opt seccomp=unconfined --group-add video' if amd_gpu_exist else '' }} \
           -w /root -v {{ workspace }}:/root -v /mnt:/mnt \
+          -v /var/run/docker.sock:/var/run/docker.sock -v /mnt/docker:/var/lib/docker \
           {{ docker_image }} bash && \
         docker exec {{ container }} bash -c \
           "chown -R root:root ~ && \
