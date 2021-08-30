@@ -22,26 +22,19 @@ class RocmGemmFlops(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'rocblas-bench'
-
-        self.__precision_map = {
+        self._support_precisions = ['FP64', 'TF32_TC', 'FP16_TC', 'BF16_TC', 'INT8_TC']
+        self.__precision_and_kernel_map = {
             'FP64': '-r f64_r -f gemm',
-            'FP32_X': '-r f32_r -f gemm_ex --compute_type f32_r',
-            'FP16_X': '-r f16_r -f gemm_ex --compute_type f32_r',
-            'BF16_X': '-r bf16_r -f gemm_ex --compute_type f32_r',
-            'INT8_X': '--a_type i8_r --b_type i8_r --c_type i32_r --d_type i32_r -f gemm_ex --compute_type i32_r'
+            'TF32_TC': '-r f32_r -f gemm_ex --compute_type f32_r',
+            'FP16_TC': '-r f16_r -f gemm_ex --compute_type f32_r',
+            'BF16_TC': '-r bf16_r -f gemm_ex --compute_type f32_r',
+            'INT8_TC': '--a_type i8_r --b_type i8_r --c_type i32_r --d_type i32_r -f gemm_ex --compute_type i32_r'
         }
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
-        self._parser.add_argument(
-            '--precision',
-            type=str,
-            nargs='+',
-            default=None,
-            help='Precision for benchmarking. E.g. {}.'.format(' '.join(list(self.__precision_map.keys()))),
-        )
         self._parser.add_argument(
             '--transposeA',
             type=str,
@@ -53,27 +46,6 @@ class RocmGemmFlops(MicroBenchmarkWithInvoke):
             type=str,
             default='T',
             help='Transpose type of Matrix B, N = no transpose, T = transpose, C = conjugate transpose',
-        )
-        self._parser.add_argument(
-            '--m',
-            type=int,
-            default=7680,
-            required=False,
-            help='The M dim of matmul (N, K) * (K, M).',
-        )
-        self._parser.add_argument(
-            '--n',
-            type=int,
-            default=8192,
-            required=False,
-            help='The N dim of matmul (N, K) * (K, M).',
-        )
-        self._parser.add_argument(
-            '--k',
-            type=int,
-            default=8192,
-            required=False,
-            help='The K dim of matmul (N, K) * (K, M).',
         )
         self._parser.add_argument(
             '--lda',
@@ -126,30 +98,23 @@ class RocmGemmFlops(MicroBenchmarkWithInvoke):
         """
         if not super()._preprocess():
             return False
-
-        if self._args.precision is None:
-            self._args.precision = list(self.__precision_map.keys())
-        else:
-            self._args.precision = [p.upper() for p in self._args.precision]
+        transpose_types = ['N', 'T', 'C']
+        if self._args.transposeA not in transpose_types or self._args.transposeB not in transpose_types:
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            logger.warning(
+                'Unsupported transpose type - benchmark: {}, expected: {}.'.format(self._name, transpose_types)
+            )
+            return False
         for p in self._args.precision:
-            if p not in self.__precision_map:
-                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                logger.warning(
-                    'Unsupported precision - benchmark: {}, precision: {}, expected: {}.'.format(
-                        self._name, p, list(self.__precision_map.keys())
-                    )
-                )
-                return False
-            else:
-                command = os.path.join(self._args.bin_dir, self._bin_name)
-                command += ' ' + self.__precision_map[p]
-                command += ' --transposeA {} --transposeB {}'.format(self._args.transposeA, self._args.transposeB)
-                command += ' -m {} -n {} -k {}'.format(self._args.m, self._args.n, self._args.k)
-                command += ' --alpha {} --beta {}'.format(self._args.alpha, self._args.beta)
-                command += ' --lda {} --ldb {} --ldc {} --ldd {}'.format(
-                    self._args.lda, self._args.ldb, self._args.ldc, self._args.ldd
-                )
-                self._commands.append(command)
+            command = os.path.join(self._args.bin_dir, self._bin_name)
+            command += ' ' + self.__precision_and_kernel_map[p]
+            command += ' --transposeA {} --transposeB {}'.format(self._args.transposeA, self._args.transposeB)
+            command += ' -m {} -n {} -k {}'.format(self._args.m, self._args.n, self._args.k)
+            command += ' --alpha {} --beta {}'.format(self._args.alpha, self._args.beta)
+            command += ' --lda {} --ldb {} --ldc {} --ldd {}'.format(
+                self._args.lda, self._args.ldb, self._args.ldc, self._args.ldd
+            )
+            self._commands.append(command)
 
         return True
 
