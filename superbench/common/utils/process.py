@@ -7,7 +7,7 @@ import subprocess
 
 
 def run_command(command):
-    """Constructor.
+    """Run command in string format, return the result with stdout and stderr.
 
     Args:
         command (str): command to run.
