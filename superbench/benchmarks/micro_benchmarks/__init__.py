@@ -18,10 +18,11 @@ from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoo
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_gemm_flops_performance import RocmGemmFlopsBenchmark
+from superbench.benchmarks.micro_benchmarks.gpu_sm_copy_bw_performance import GpuSmCopyBwBenchmark
 
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
     'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsBenchmark', 'CudaGemmFlopsBenchmark', 'MemBwBenchmark',
     'CudaMemBwBenchmark', 'DiskBenchmark', 'IBLoopbackBenchmark', 'CudaNcclBwBenchmark', 'RocmMemBwBenchmark',
-    'RocmGemmFlopsBenchmark'
+    'RocmGemmFlopsBenchmark', 'GpuSmCopyBwBenchmark'
 ]
