@@ -46,7 +46,7 @@ superbench:
       parameters:
         maxbytes: 128M
         iters: 50
-        mem-bw:
+    mem-bw:
       <<: *default_local_mode
     gemm-flops:
       <<: *default_local_mode
