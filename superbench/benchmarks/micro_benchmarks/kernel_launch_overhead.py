@@ -100,8 +100,8 @@ class KernelLaunch(MicroBenchmarkWithInvoke):
             )
             return False
 
-        self._result.add_result('kernel_launch_overhead_event', result[0])
-        self._result.add_result('kernel_launch_overhead_wall', result[1])
+        self._result.add_result('event_overhead', result[0])
+        self._result.add_result('wall_overhead', result[1])
 
         return True
 
