@@ -3,10 +3,9 @@
 
 """Module of the docker-benchmark base class."""
 
-import subprocess
 from abc import abstractmethod
 
-from superbench.common.utils import logger
+from superbench.common.utils import logger, run_command
 from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 
@@ -29,6 +28,9 @@ class DockerBenchmark(Benchmark):
         # Image url of the current docker-benchmark.
         self._image = None
 
+        # Container name of the current docker-benchmark.
+        self._container = None
+
     '''
     # If need to add new arguments, super().add_parser_arguments() must be called.
     def add_parser_arguments(self):
@@ -50,6 +52,21 @@ class DockerBenchmark(Benchmark):
             logger.error('The image url is not set - benchmark: {}.'.format(self._name))
             return False
 
+        if self._container is None:
+            self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_CONTAINER_NOT_SET)
+            logger.error('The container name is not set - benchmark: {}.'.format(self._name))
+            return False
+
+        output = run_command('docker pull {}'.format(self._image))
+        if output.returncode != 0:
+            self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_IMAGE_PULL_FAILURE)
+            logger.error(
+                'Docker benchmark pull image failed - benchmark: {}, error message: {}.'.format(
+                    self._name, output.stdout
+                )
+            )
+            return False
+
         return True
 
     def _postprocess(self):
@@ -58,6 +75,12 @@ class DockerBenchmark(Benchmark):
         Return:
             True if _postprocess() succeed.
         """
+        rm_containers = 'docker rm $(docker stop {}))'.format(self._container)
+        run_command(rm_containers)
+
+        rm_image = 'docker rmi {}'.format(self._image)
+        run_command(rm_image)
+
         return True
 
     def _benchmark(self):
@@ -72,14 +95,7 @@ class DockerBenchmark(Benchmark):
                     self._curr_run_index, self._name, self._commands[cmd_idx]
                 )
             )
-            output = subprocess.run(
-                self._commands[cmd_idx],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                shell=True,
-                check=False,
-                universal_newlines=True
-            )
+            output = run_command(self._commands[cmd_idx])
             if output.returncode != 0:
                 self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_EXECUTION_FAILURE)
                 logger.error(
@@ -103,7 +119,7 @@ class DockerBenchmark(Benchmark):
 
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
-            raw_output (str): raw output string of the micro-benchmark.
+            raw_output (str): raw output string of the docker-benchmark.
 
         Return:
             True if the raw output string is valid and result can be extracted.
