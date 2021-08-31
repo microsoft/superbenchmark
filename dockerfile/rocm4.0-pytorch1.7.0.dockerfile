@@ -36,6 +36,10 @@ RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DON
     util-linux \
     vim \
     wget \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
+    lsb-release \
     && \
     apt-get autoremove && \
     apt-get clean && \
@@ -56,6 +60,15 @@ RUN cd /tmp && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
     PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
+
+# Install Docker
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+    gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo \
+    "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt update && \
+    apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io
 
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
