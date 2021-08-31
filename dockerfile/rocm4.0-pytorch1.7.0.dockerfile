@@ -64,6 +64,17 @@ ENV PATH="${PATH}" \
 
 WORKDIR ${SB_HOME}
 
+# Install rocblas
+ENV ROCM_ARCH=gfx908
+ENV ROCM_VERSION=rocm-4.0.0
+RUN cd /tmp && \
+    git clone -b ${ROCM_VERSION} https://github.com/ROCmSoftwarePlatform/rocBLAS.git rocBLAS && \
+    sed -i '/CMAKE_MATCH_1/a\      get_filename_component(HIP_CLANG_ROOT "${HIP_CLANG_ROOT}" DIRECTORY)'  /opt/rocm/hip/lib/cmake/hip/hip-config.cmake && \
+    cd /tmp/rocBLAS && HIPCC_COMPILE_FLAGS_APPEND="-D_OPENMP=201811 -O3 -Wno-format-nonliteral -DCMAKE_HAVE_LIBC_PTHREAD -parallel-jobs=2" HIPCC_LINK_FLAGS_APPEND="-lpthread -O3 -parallel-jobs=2" ./install.sh -idc -a ${ROCM_ARCH} && \
+    mkdir -p ${SB_MICRO_PATH}/bin && \
+    cp -v /tmp/rocBLAS/build/release/clients/staging/rocblas-bench ${SB_MICRO_PATH}/bin/ && \
+    cd /tmp && rm -rf rocBLAS
+
 ADD third_party third_party
 RUN ROCM_VERSION=rocm-4.0.0 make -j -C third_party rocm
 
