@@ -362,7 +362,7 @@ id: system-config
       <td>1 aligned</td>
     </tr>
     <tr>
-      <td align="center" valign="middle" rowspan="6">
+      <td align="center" valign="middle" rowspan="5">
         <b>BlockDevice</b>
       </td>
       <td>name</td>
@@ -393,12 +393,6 @@ id: system-config
       <td>fdisk -l -u /dev/{} | grep "Sector size"</td>
       <td>the sector size of the block device</td>
       <td>Sector size (logical/physical): 512 bytes / 512 bytes</td>
-    </tr>
-    <tr>
-      <td>usage</td>
-      <td>nvme list(need to install nvme-cli)</td>
-      <td>used size of the block device(nvme only)</td>
-      <td></td>
     </tr>
     <tr>
       <td align="center"><b>General</b></td>
@@ -540,22 +534,22 @@ id: system-config
       <td>nvidia-container-runtime_version</td>
       <td>nvidia-container-runtime -v</td>
       <td>version of nvidia-container-runtime (nvidia only)</td>
-      <td></td>
       <td>1.0.0-rc92</td>
+      <td>N/A</td>
     </tr>
     <tr>
       <td>nvidia-fabricmanager_version</td>
       <td>nv-fabricmanager --version</td>
       <td>version of nvidia-fabricmanager (nvidia only)</td>
-      <td></td>
       <td>460.27.04</td>
+      <td>N/A</td>
     </tr>
     <tr>
       <td>nv_peer_mem_version</td>
       <td>dpkg -l | grep 'nvidia-peer-memory'</td>
       <td>version of nv_peer_mem (nvidia only)</td>
-      <td></td>
       <td>1.1-0</td>
+      <td>N/A</td>
     </tr>
     <tr>
       <td align="center" valign="middle" rowspan="2">
