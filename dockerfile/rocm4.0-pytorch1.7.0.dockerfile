@@ -72,6 +72,5 @@ RUN mv /root/.local/bin/* /opt/conda/bin/ && \
     mv /root/.local/lib/python3.6/site-packages/* /opt/conda/lib/python3.6/
 
 ADD . .
-RUN python3 -m pip install . \
-    transformers==4.3.3 && \
+RUN python3 -m pip install .[torch] && \
     make cppbuild

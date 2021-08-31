@@ -68,6 +68,5 @@ ADD third_party third_party
 RUN ROCM_VERSION=rocm-4.2.0 make -j -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install . \
-    transformers==4.3.3 && \
+RUN python3 -m pip install .[torch] && \
     make cppbuild
