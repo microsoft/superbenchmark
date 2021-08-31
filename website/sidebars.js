@@ -52,5 +52,6 @@ module.exports = {
   ],
   api: [
     'cli',
+    'superbench-config',
   ],
 };
