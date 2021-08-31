@@ -48,41 +48,46 @@ If you want to contribute benchmark results run by specified SuperBench version,
 
 #### Where to submit
 
-All the results are stored under `results` folder. The directory structure is as follows. Please create `<your-benchmark-folder>` to submit results.
+All the results are stored under [superbench-results](https://github.com/microsoft/superbench-results) repository. The directory structure is as follows. Please create `<your-benchmark-folder>` to submit results.
 
 ```
-└── results
-    ├── v0.2
-    │   └── your-benchmark-foldername
-    │       ├── LICENSE.md
-    │       ├── README.md
-    │       ├── configs
-    │       │   ├── config1.yaml
-    │       │   └── config2.yaml
-    │       ├── results
-    │       │   ├── result1.json
-    │       │   └── result2.json
-    │       └── systems
-    │           ├── system1.json
-    │           └── system2.json
-    └── v0.3
-        └── your-benchmark-foldername
-            ├── LICENSE.md
-            ├── README.md
-            ├── configs
-            │   ├── config1.yaml
-            │   └── config2.yaml
-            ├── results
-            │   ├── result1.json
-            │   └── result2.json
-            └── systems
-                ├── system1.json
-                └── system2.json
+superbench-results
+  ├── v0.2
+  │   └── your-benchmark-foldername
+  │       ├── LICENSE.md
+  │       ├── README.md
+  │       ├── configs
+  │       │   ├── config1.yaml
+  │       │   └── config2.yaml
+  │       ├── results
+  │       │   ├── result1.json
+  │       │   └── result2.json
+  │       └── systems
+  │           ├── system1.json
+  │           └── system2.json
+  └── v0.3
+      └── your-benchmark-foldername
+          ├── LICENSE.md
+          ├── README.md
+          ├── configs
+          │   ├── config1.yaml
+          │   └── config2.yaml
+          ├── results
+          │   ├── result1.json
+          │   └── result2.json
+          └── systems
+              ├── system1.json
+              └── system2.json
 ```
 
 #### Files to provide
 
 Besides `README` and `LICENSE` file, you should provide at least three benchmarking related files.
-* `system.json`: This file lists all the system configurations in json format.
+* `system.json`: This file lists all the system configurations in json format. 
+
+  You can get the system info automatically by executing `system_info.py` using below command. The file is under `superbench/tools` folder.
+  ```
+  python system_info.py
+  ```
 * `config.yaml`: This file is the config file to run benchmarks. Click [here](../getting-started/configuration) to learn the details.
 * `result.json`: This file contains the results run by SuperBench with system configuations listed in `system.json` file.

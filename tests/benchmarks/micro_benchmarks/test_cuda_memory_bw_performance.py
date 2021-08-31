@@ -50,8 +50,8 @@ class CudaMemBwTest(unittest.TestCase):
             'bandwidthTest --dtoh mode=shmoo memory=pinned --csv', 'bandwidthTest --dtod mode=shmoo memory=pinned --csv'
         ]
         for i in range(len(expected_command)):
-            commnad = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
-            assert (commnad == expected_command[i])
+            command = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
+            assert (command == expected_command[i])
 
         # Check results and metrics.
         raw_output = {}

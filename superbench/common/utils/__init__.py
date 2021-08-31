@@ -6,6 +6,7 @@
 from superbench.common.utils.logging import SuperBenchLogger, logger
 from superbench.common.utils.file_handler import rotate_dir, create_sb_output_dir, get_sb_config
 from superbench.common.utils.lazy_import import LazyImport
+from superbench.common.utils.process import run_command
 
 nv_helper = LazyImport('superbench.common.utils.nvidia_helper')
 
@@ -18,4 +19,5 @@ __all__ = [
     'network',
     'nv_helper',
     'rotate_dir',
+    'run_command',
 ]
