@@ -69,7 +69,8 @@ RUN ROCM_VERSION=rocm-4.0.0 make -j -C third_party rocm
 
 # Workaround for image having package installed in user path
 RUN mv /root/.local/bin/* /opt/conda/bin/ && \
-    mv /root/.local/lib/python3.6/site-packages/* /opt/conda/lib/python3.6/
+    mv /root/.local/lib/python3.6/site-packages/* /opt/conda/lib/python3.6/ && \
+    rm -rf /root/.local
 
 ADD . .
 RUN python3 -m pip install .[torch] && \
