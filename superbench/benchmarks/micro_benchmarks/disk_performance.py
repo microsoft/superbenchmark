@@ -190,25 +190,25 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
             fio_output = json.loads(raw_output)
 
             jobname = fio_output['jobs'][0]['jobname']
-            block_device = fio_output['global options']['filename']
-            jobname_prefix = 'disk_performance:%s:%s' % (block_device, jobname)
+            block_device = os.path.basename(fio_output['global options']['filename'])
+            jobname_prefix = '%s_%s' % (block_device, jobname)
             lat_units = ['lat_ns', 'lat_us', 'lat_ms']
 
             bs = fio_output['jobs'][0]['job options']['bs']
-            self._result.add_result('%s:bs' % jobname_prefix, float(bs))
+            self._result.add_result('%s_bs' % jobname_prefix, float(bs))
 
             for io_type in ['read', 'write']:
-                io_type_prefix = '%s:%s' % (jobname_prefix, io_type)
+                io_type_prefix = '%s_%s' % (jobname_prefix, io_type)
 
                 iops = fio_output['jobs'][0][io_type]['iops']
-                self._result.add_result('%s:iops' % io_type_prefix, float(iops))
+                self._result.add_result('%s_iops' % io_type_prefix, float(iops))
 
                 for lat_unit in lat_units:
                     if lat_unit in fio_output['jobs'][0][io_type]:
-                        lat_unit_prefix = '%s:%s' % (io_type_prefix, lat_unit)
+                        lat_unit_prefix = '%s_%s' % (io_type_prefix, lat_unit)
                         for lat_percentile in ['95.000000', '99.000000', '99.900000']:
                             lat = fio_output['jobs'][0][io_type][lat_unit]['percentile'][lat_percentile]
-                            self._result.add_result('%s:%s' % (lat_unit_prefix, lat_percentile), float(lat))
+                            self._result.add_result('%s_%s' % (lat_unit_prefix, lat_percentile), float(lat))
                         break
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

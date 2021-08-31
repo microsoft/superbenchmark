@@ -504,34 +504,34 @@ class DiskBenchmarkTest(unittest.TestCase):
   ]
 }
 """
-        jobname_prefix = 'disk_performance:/dev/nvme0n1:rand_read_write'
+        jobname_prefix = 'nvme0n1_rand_read_write'
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
         # bs + <read, write> x <iops, 95th, 99th, 99.9th>
         assert (9 == len(benchmark.result.keys()))
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':bs']))
-        assert (4096 == benchmark.result[jobname_prefix + ':bs'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_bs']))
+        assert (4096 == benchmark.result[jobname_prefix + '_bs'][0])
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:iops']))
-        assert (85138.890741 == benchmark.result[jobname_prefix + ':read:iops'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:iops']))
-        assert (85066.128925 == benchmark.result[jobname_prefix + ':write:iops'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_iops']))
+        assert (85138.890741 == benchmark.result[jobname_prefix + '_read_iops'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_iops']))
+        assert (85066.128925 == benchmark.result[jobname_prefix + '_write_iops'][0])
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:lat_ns:95.000000']))
-        assert (1941504 == benchmark.result[jobname_prefix + ':read:lat_ns:95.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:lat_ns:99.000000']))
-        assert (2244608 == benchmark.result[jobname_prefix + ':read:lat_ns:99.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:lat_ns:99.900000']))
-        assert (3620864 == benchmark.result[jobname_prefix + ':read:lat_ns:99.900000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_lat_ns_95.000000']))
+        assert (1941504 == benchmark.result[jobname_prefix + '_read_lat_ns_95.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_lat_ns_99.000000']))
+        assert (2244608 == benchmark.result[jobname_prefix + '_read_lat_ns_99.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_lat_ns_99.900000']))
+        assert (3620864 == benchmark.result[jobname_prefix + '_read_lat_ns_99.900000'][0])
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:lat_ns:95.000000']))
-        assert (1908736 == benchmark.result[jobname_prefix + ':write:lat_ns:95.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:lat_ns:99.000000']))
-        assert (2072576 == benchmark.result[jobname_prefix + ':write:lat_ns:99.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:lat_ns:99.900000']))
-        assert (2605056 == benchmark.result[jobname_prefix + ':write:lat_ns:99.900000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_lat_ns_95.000000']))
+        assert (1908736 == benchmark.result[jobname_prefix + '_write_lat_ns_95.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_lat_ns_99.000000']))
+        assert (2072576 == benchmark.result[jobname_prefix + '_write_lat_ns_99.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_lat_ns_99.900000']))
+        assert (2605056 == benchmark.result[jobname_prefix + '_write_lat_ns_99.900000'][0])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
