@@ -81,7 +81,7 @@ rocm_rocblas: sb_micro_path
 	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
 	git clone -b ${ROCM_VERSION} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
 ifeq (${ROCM_VERSION}_${ROCM_ARCH}, rocm-4.0.0_gfx908)
-	cp -v utils/hip-config.cmake /opt/rocm/hip/lib/cmake/hip/
+	sed -i '/CMAKE_MATCH_1/a\      get_filename_component(HIP_CLANG_ROOT "$${HIP_CLANG_ROOT}" DIRECTORY)'  /opt/rocm/hip/lib/cmake/hip/hip-config.cmake
 	cd ./rocBLAS && HIPCC_COMPILE_FLAGS_APPEND="-D_OPENMP=201811 -O3 -Wno-format-nonliteral -DCMAKE_HAVE_LIBC_PTHREAD -parallel-jobs=2" HIPCC_LINK_FLAGS_APPEND="-lpthread -O3 -parallel-jobs=2" ./install.sh -idc -a gfx908
 else 
 	cd ./rocBLAS && ./install.sh -idc
