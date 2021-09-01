@@ -5,7 +5,6 @@ id: system-config
 # System Configuration Information
 
 ## Category
-
 - [System](#system)
 - [Memory](#memory)
 - [CPU](#cpu)
@@ -82,7 +81,11 @@ id: system-config
       <td>vmbus</td>
       <td>lsvmbus</td>
       <td>devices attached to the Hyper-V VMBus</td>
-      <td>&nbsp;</td>
+      <td>
+        "VMBUS ID  1": "[Dynamic Memory]",<br>
+        "VMBUS ID  2": "Synthetic mouse",<br>
+        ...
+      </td>
     </tr>
     <tr>
       <td align="center" valign="middle" rowspan="2">
@@ -91,20 +94,29 @@ id: system-config
       <td>kernel_modules</td>
       <td>sysctl</td>
       <td>list of active kernel modules</td>
-      <td>&nbsp;</td>
+      <td>
+        "abi.vsyscall32": "1",<br>
+        "debug.exception-trace": "1",<br>
+        ...
+      </td>
     </tr>
     <tr>
       <td>kernel_parameters</td>
       <td>lsmod</td>
       <td>kernel parameters</td>
-      <td>&nbsp;</td>
+      <td>
+        "Module": "binfmt_misc",<br>
+        "Size": "24576",<br>
+        "Used": "1"<br>
+        ...
+      </td>
     </tr>
     <tr>
       <td align="center"><b>DMI</b></td>
       <td>dmidecode</td>
       <td>dmidecode</td>
       <td>DMI table dump (info on hardware components)</td>
-      <td>&nbsp;</td>
+      <td>"dmidecode": "# dmidecode 3.2\nGetting SMBIOS data from sysfs..."</td>
     </tr>
   </tbody>
 </table>
@@ -471,13 +483,27 @@ id: system-config
       <td>device_info</td>
       <td>ibv_devinfo -v</td>
       <td>list of device information for each ib device</td>
-      <td></td>
+      <td>
+        "hca_id:\tmlx5_0": {<br>
+          "transport": "InfiniBand (0)",<br>
+          "fw_ver": "20.30.1004",<br>
+          ...<br>
+        },<br>
+        ...<br>
+      </td>
     </tr>
     <tr>
       <td>device_status</td>
       <td>ibstat</td>
       <td>list of device status for each ib device</td>
-      <td></td>
+      <td>
+        "CA 'mlx5_0'": {<br>
+          "CA type": "MT4123",<br>
+          "Number of ports": "1",<br>
+          ...<br>
+        },<br>
+        ...
+      </td>
     </tr>
     <tr>
       <td align="center"><b>General</b></td>
@@ -527,8 +553,8 @@ id: system-config
       <td>topology</td>
       <td>nvidia-smi topo -m/rocm-smi --showtopo</td>
       <td>gpu connection topology (nvidia only)</td>
-      <td></td>
-      <td></td>
+      <td>/</td>
+      <td>/</td>
     </tr>
     <tr>
       <td>nvidia-container-runtime_version</td>
@@ -558,15 +584,35 @@ id: system-config
       <td>rocm_info</td>
       <td>rocm-smi -a & rocm-smi --showmeminfo vram</td>
       <td>amd gpu info of each gpu&lsindex&gt, including firmware, frequency, memory, etc. (amd only)</td>
-      <td></td>
-      <td></td>
+      <td>N/A</td>
+      <td>
+        "card0": {<br>
+          "GPU ID": "0x738c",<br>
+          ...<br>
+          "VRAM Total Memory (B)": "34342961152",<br>
+          "VRAM Total Used Memory (B)": "7438336"<br>
+        },<br>
+        ...
+      </td>
     </tr>
     <tr>
       <td>nvidia_info</td>
       <td>nvidia-smi -q</td>
       <td>nvidia gpu info list of each gpu, including firmware, frequency, memory, etc. (nvidia only)</td>
-      <td></td>
-      <td></td>
+      <td>
+         "timestamp": "Fri Aug 20 05:36:24 2021",<br>
+         "driver_version": "460.27.04",<br>
+          "cuda_version": "11.2",<br>
+          "attached_gpus": "8",<br>
+          "gpu": [<br>
+            { "@id": "00000001:00:00.0",<br>
+              "product_name": "A100-SXM4-40GB",<br>
+              ...<br>
+            },<br>
+            ... ]<br>
+          ...<br>
+      </td>
+      <td>N/A</td>
     </tr>
   </tbody>
 </table>
@@ -599,13 +645,13 @@ id: system-config
       <td>topology</td>
       <td>lspci -t -vvv</td>
       <td>topology of installed PCI devices</td>
-      <td></td>
+      <td>/</td>
     </tr>
     <tr>
       <td>device_info</td>
       <td>lspci -vvv</td>
       <td>device info on installed PCI devices</td>
-      <td></td>
+      <td>00:00.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Starship/Matisse Root Complex...</td>
     </tr>
   </tbody>
 </table>
