@@ -3,7 +3,6 @@
 
 """Tests for DockerBenchmark modules."""
 
-import os
 import re
 
 from superbench.benchmarks import BenchmarkType, ReturnCode
@@ -20,21 +19,6 @@ class FakeDockerBenchmark(DockerBenchmark):
             parameters: benchmark parameters.
         """
         super().__init__(name, parameters)
-
-    def _preprocess(self):
-        """Preprocess/preparation operations before the benchmarking.
-
-        Return:
-            True if _preprocess() succeed.
-        """
-        if not super()._preprocess():
-            return False
-
-        command = os.path.join(self._args.bin_dir, self._bin_name)
-        command += " -n 'cost1: 10.2, cost2: 20.2'"
-        self._commands.append(command)
-
-        return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to process raw results and save the summarized results.
@@ -75,14 +59,14 @@ def test_docker_benchmark_base():
 
     # Negative case - DOCKERBENCHMARK_CONTAINER_NOT_SET.
     benchmark = FakeDockerBenchmark('fake')
-    benchmark._image = 'image'
+    benchmark._image_uri = 'image'
     assert (benchmark.run() is False)
     assert (benchmark.return_code == ReturnCode.DOCKERBENCHMARK_CONTAINER_NOT_SET)
 
     # Negative case - DOCKERBENCHMARK_IMAGE_PULL_FAILURE.
     benchmark = FakeDockerBenchmark('fake')
-    benchmark._image = 'image'
-    benchmark._container = 'container'
+    benchmark._image_uri = 'image'
+    benchmark._container_name = 'container'
     assert (benchmark.run() is False)
     assert (benchmark.return_code == ReturnCode.DOCKERBENCHMARK_IMAGE_PULL_FAILURE)
 

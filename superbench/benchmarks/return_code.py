@@ -14,7 +14,7 @@ class ReturnCode(Enum):
     INVALID_BENCHMARK_TYPE = 2
     INVALID_BENCHMARK_RESULT = 3
     RUNTIME_EXCEPTION_ERROR = 4
-    # Return codes related with model benchmarks.
+    # Return codes related to model benchmarks.
     NO_SUPPORTED_PRECISION = 10
     DISTRIBUTED_SETTING_INIT_FAILURE = 13
     DISTRIBUTED_SETTING_DESTROY_FAILURE = 14
@@ -22,14 +22,14 @@ class ReturnCode(Enum):
     DATALOADER_INIT_FAILURE = 16
     OPTIMIZER_CREATION_FAILURE = 17
     MODEL_CREATION_FAILURE = 18
-    # Return codes related with micro benchmarks.
+    # Return codes related to micro benchmarks.
     MICROBENCHMARK_BINARY_NAME_NOT_SET = 30
     MICROBENCHMARK_BINARY_NOT_EXIST = 31
     MICROBENCHMARK_EXECUTION_FAILURE = 32
     MICROBENCHMARK_RESULT_PARSING_FAILURE = 33
     MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE = 34
     MICROBENCHMARK_DEVICE_GETTING_FAILURE = 35
-    # Return codes related with docker benchmarks.
+    # Return codes related to docker benchmarks.
     DOCKERBENCHMARK_IMAGE_NOT_SET = 50
     DOCKERBENCHMARK_CONTAINER_NOT_SET = 51
     DOCKERBENCHMARK_IMAGE_PULL_FAILURE = 52

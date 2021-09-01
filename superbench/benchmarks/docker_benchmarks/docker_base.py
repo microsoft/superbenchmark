@@ -26,10 +26,10 @@ class DockerBenchmark(Benchmark):
         self._commands = list()
 
         # Image url of the current docker-benchmark.
-        self._image = None
+        self._image_uri = None
 
         # Container name of the current docker-benchmark.
-        self._container = None
+        self._container_name = None
 
     '''
     # If need to add new arguments, super().add_parser_arguments() must be called.
@@ -47,21 +47,21 @@ class DockerBenchmark(Benchmark):
         if not super()._preprocess():
             return False
 
-        if self._image is None:
+        if self._image_uri is None:
             self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_IMAGE_NOT_SET)
-            logger.error('The image url is not set - benchmark: {}.'.format(self._name))
+            logger.error('The image uri is not set - benchmark: {}.'.format(self._name))
             return False
 
-        if self._container is None:
+        if self._container_name is None:
             self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_CONTAINER_NOT_SET)
             logger.error('The container name is not set - benchmark: {}.'.format(self._name))
             return False
 
-        output = run_command('docker pull {}'.format(self._image))
+        output = run_command('docker pull --quiet {}'.format(self._image_uri))
         if output.returncode != 0:
             self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_IMAGE_PULL_FAILURE)
             logger.error(
-                'Docker benchmark pull image failed - benchmark: {}, error message: {}.'.format(
+                'DockerBenchmark pull image failed - benchmark: {}, error message: {}.'.format(
                     self._name, output.stdout
                 )
             )
@@ -75,10 +75,12 @@ class DockerBenchmark(Benchmark):
         Return:
             True if _postprocess() succeed.
         """
-        rm_containers = 'docker rm $(docker stop {}))'.format(self._container)
+        rm_containers = 'docker stop --time 20 {container} && docker rm {container}'.format(
+            container=self._container_name
+        )
         run_command(rm_containers)
 
-        rm_image = 'docker rmi {}'.format(self._image)
+        rm_image = 'docker rmi {}'.format(self._image_uri)
         run_command(rm_image)
 
         return True
@@ -99,7 +101,7 @@ class DockerBenchmark(Benchmark):
             if output.returncode != 0:
                 self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_EXECUTION_FAILURE)
                 logger.error(
-                    'Microbenchmark execution failed - round: {}, benchmark: {}, error message: {}.'.format(
+                    'Dockerbenchmark execution failed - round: {}, benchmark: {}, error message: {}.'.format(
                         self._curr_run_index, self._name, output.stdout
                     )
                 )
