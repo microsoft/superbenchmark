@@ -52,7 +52,7 @@ RUN cd /tmp && \
     make -j $(nproc) all && \
     make install && \
     ldconfig && \
-    rm -rf openmpi-${OPENMPI_VERSION}*
+    rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
 
 # Configure SSH
 RUN mkdir -p /root/.ssh && \
