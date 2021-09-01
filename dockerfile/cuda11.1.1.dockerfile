@@ -2,6 +2,7 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 
 # OS:
 #   - Ubuntu: 20.04
+#   - OpenMPI: 4.0.5
 # NVIDIA:
 #   - CUDA: 11.1.1
 #   - cuDNN: 8.0.5

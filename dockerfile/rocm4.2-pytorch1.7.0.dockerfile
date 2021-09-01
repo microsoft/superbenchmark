@@ -43,7 +43,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DON
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 # Install Open MPI
-ENV OPENMPI_VERSION=4.0.0
+ENV OPENMPI_VERSION=4.0.5
 RUN cd /tmp && \
     wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \

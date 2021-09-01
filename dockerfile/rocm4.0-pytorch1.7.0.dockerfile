@@ -2,7 +2,7 @@ FROM rocm/pytorch:rocm4.0_ubuntu18.04_py3.6_pytorch_1.7.0
 
 # OS:
 #   - Ubuntu: 18.04
-#   - OpenMPI: 4.0.0
+#   - OpenMPI: 4.0.5
 # AMD:
 #   - ROCm: 4.0
 #   - HIP: 3.21.2
@@ -43,7 +43,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DON
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 # Install OpenMPI
-ENV OPENMPI_VERSION=4.0.0
+ENV OPENMPI_VERSION=4.0.5
 RUN cd /tmp && \
     wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
