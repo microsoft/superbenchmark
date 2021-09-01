@@ -47,7 +47,8 @@ superbench:
     disk-benchmark:
       enable: false
       modes:
-        - proc_num: 1
+        - name: local
+          proc_num: 1
           parallel: no
       parameters:
         block_devices:
