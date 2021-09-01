@@ -2,6 +2,7 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 
 # OS:
 #   - Ubuntu: 20.04
+#   - Docker Client: 20.10.8
 # NVIDIA:
 #   - CUDA: 11.1.1
 #   - cuDNN: 8.0.5
@@ -40,6 +41,13 @@ RUN apt-get update && \
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
+
+# Install Docker
+ENV DOCKER_VERSION=20.10.8
+RUN cd /tmp && \
+    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
+    rm docker.tgz
 
 # Configure SSH
 RUN mkdir -p /root/.ssh && \
