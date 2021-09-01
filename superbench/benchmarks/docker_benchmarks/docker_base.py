@@ -25,7 +25,7 @@ class DockerBenchmark(Benchmark):
         # Command lines to launch the docker image and run the benchmarks inside docker.
         self._commands = list()
 
-        # Image url of the current docker-benchmark.
+        # Image uri of the current docker-benchmark.
         self._image_uri = None
 
         # Container name of the current docker-benchmark.
@@ -101,7 +101,7 @@ class DockerBenchmark(Benchmark):
             if output.returncode != 0:
                 self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_EXECUTION_FAILURE)
                 logger.error(
-                    'Dockerbenchmark execution failed - round: {}, benchmark: {}, error message: {}.'.format(
+                    'DockerBenchmark execution failed - round: {}, benchmark: {}, error message: {}.'.format(
                         self._curr_run_index, self._name, output.stdout
                     )
                 )
