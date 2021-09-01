@@ -481,14 +481,14 @@ id: system-config
       <td>device_info</td>
       <td>ibv_devinfo -v</td>
       <td>list of device information for each ib device</td>
-      <td>"hca_id:\tmlx5_0": {"transport":"InfiniBand (0)",...},...</td>
+      <td>"hca_id:\tmlx5_0": ...</td>
     </tr>
     <tr>
       <td>device_status</td>
       <td>ibstat</td>
       <td>list of device status for each ib device</td>
       <td>
-        "CA 'mlx5_0'": {"CA type":"MT4123",...},...</td>
+        "CA 'mlx5_0'": ...</td>
     </tr>
     <tr>
       <td align="center"><b>General</b></td>
@@ -570,7 +570,7 @@ id: system-config
       <td>rocm-smi -a & rocm-smi --showmeminfo vram</td>
       <td>amd gpu info of each gpu&lsindex&gt, including firmware, frequency, memory, etc. (amd only)</td>
       <td>N/A</td>
-      <td>"card0": {"GPU ID":"0x738c",...},...</td>
+      <td>"card0": ...<br />"card1": ...</td>
     </tr>
     <tr>
       <td>nvidia_info</td>
