@@ -36,14 +36,17 @@ RUN apt-get update && \
     util-linux \
     vim \
     wget \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release \
     && \
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
+
+# Install Docker
+ENV DOCKER_VERSION=20.10.8
+RUN cd /tmp && \
+    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
+    rm docker.tgz
 
 # Configure SSH
 RUN mkdir -p /root/.ssh && \
@@ -88,19 +91,6 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && \
     rm -rf nccl
-
-# Install Docker and NVIDIA Container Toolkit
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-    gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-    echo \
-    "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
-    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
-    tee /etc/apt/sources.list.d/nvidia-docker.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io nvidia-docker2
 
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
