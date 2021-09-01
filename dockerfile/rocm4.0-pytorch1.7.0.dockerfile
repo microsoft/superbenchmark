@@ -3,6 +3,7 @@ FROM rocm/pytorch:rocm4.0_ubuntu18.04_py3.6_pytorch_1.7.0
 # OS:
 #   - Ubuntu: 18.04
 #   - OpenMPI: 4.0.5
+#   - Docker Client: 20.10.8
 # AMD:
 #   - ROCm: 4.0
 #   - HIP: 3.21.2
@@ -41,6 +42,13 @@ RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DON
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
+
+# Install Docker
+ENV DOCKER_VERSION=20.10.8
+RUN cd /tmp && \
+    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
+    rm docker.tgz
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.0.5
