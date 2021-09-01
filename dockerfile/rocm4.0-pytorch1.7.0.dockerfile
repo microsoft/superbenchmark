@@ -2,6 +2,7 @@ FROM rocm/pytorch:rocm4.0_ubuntu18.04_py3.6_pytorch_1.7.0
 
 # OS:
 #   - Ubuntu: 18.04
+#   - Docker Client: 20.10.8
 # AMD:
 #   - ROCm: 4.0
 #   - HIP: 3.21.2
