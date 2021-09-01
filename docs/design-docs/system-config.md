@@ -82,8 +82,8 @@ id: system-config
       <td>lsvmbus</td>
       <td>devices attached to the Hyper-V VMBus</td>
       <td>
-        "VMBUS ID  1": "[Dynamic Memory]",</br>
-        "VMBUS ID  2": "Synthetic mouse",</br>
+        "VMBUS ID  1": "[Dynamic Memory]",<br />
+        "VMBUS ID  2": "Synthetic mouse",<br />
         ...
       </td>
     </tr>
@@ -95,8 +95,8 @@ id: system-config
       <td>sysctl</td>
       <td>list of active kernel modules</td>
       <td>
-        "abi.vsyscall32": "1",</br>
-        "debug.exception-trace": "1",</br>
+        "abi.vsyscall32": "1",<br />
+        "debug.exception-trace": "1",<br />
         ...
       </td>
     </tr>
@@ -105,9 +105,9 @@ id: system-config
       <td>lsmod</td>
       <td>kernel parameters</td>
       <td>
-        "Module": "binfmt_misc",</br>
-        "Size": "24576",</br>
-        "Used": "1"</br>
+        "Module": "binfmt_misc",<br />
+        "Size": "24576",<br />
+        "Used": "1"<br />
         ...
       </td>
     </tr>
@@ -484,12 +484,12 @@ id: system-config
       <td>ibv_devinfo -v</td>
       <td>list of device information for each ib device</td>
       <td>
-        "hca_id:\tmlx5_0": {</br>
-          "transport": "InfiniBand (0)",</br>
-          "fw_ver": "20.30.1004",</br>
-          ...</br>
-        },</br>
-        ...</br>
+        "hca_id:\tmlx5_0": {<br />
+          "transport": "InfiniBand (0)",<br />
+          "fw_ver": "20.30.1004",<br />
+          ...<br />
+        },<br />
+        ...<br />
       </td>
     </tr>
     <tr>
@@ -497,11 +497,11 @@ id: system-config
       <td>ibstat</td>
       <td>list of device status for each ib device</td>
       <td>
-        "CA 'mlx5_0'": {</br>
-          "CA type": "MT4123",</br>
-          "Number of ports": "1",</br>
-          ...</br>
-        },</br>
+        "CA 'mlx5_0'": {<br />
+          "CA type": "MT4123",<br />
+          "Number of ports": "1",<br />
+          ...<br />
+        },<br />
         ...
       </td>
     </tr>
@@ -586,12 +586,12 @@ id: system-config
       <td>amd gpu info of each gpu&lsindex&gt, including firmware, frequency, memory, etc. (amd only)</td>
       <td>N/A</td>
       <td>
-        "card0": {</br>
-          "GPU ID": "0x738c",</br>
-          ...</br>
-          "VRAM Total Memory (B)": "34342961152",</br>
-          "VRAM Total Used Memory (B)": "7438336"</br>
-        },</br>
+        "card0": {<br />
+          "GPU ID": "0x738c",<br />
+          ...<br />
+          "VRAM Total Memory (B)": "34342961152",<br />
+          "VRAM Total Used Memory (B)": "7438336"<br />
+        },<br />
         ...
       </td>
     </tr>
@@ -600,17 +600,17 @@ id: system-config
       <td>nvidia-smi -q</td>
       <td>nvidia gpu info list of each gpu, including firmware, frequency, memory, etc. (nvidia only)</td>
       <td>
-         "timestamp": "Fri Aug 20 05:36:24 2021",</br>
-         "driver_version": "460.27.04",</br>
-          "cuda_version": "11.2",</br>
-          "attached_gpus": "8",</br>
-          "gpu": [</br>
-            { "@id": "00000001:00:00.0",</br>
-              "product_name": "A100-SXM4-40GB",</br>
-              ...</br>
-            },</br>
-            ... ]</br>
-          ...</br>
+         "timestamp": "Fri Aug 20 05:36:24 2021",<br />
+         "driver_version": "460.27.04",<br />
+          "cuda_version": "11.2",<br />
+          "attached_gpus": "8",<br />
+          "gpu": [<br />
+            { "@id": "00000001:00:00.0",<br />
+              "product_name": "A100-SXM4-40GB",<br />
+              ...<br />
+            },<br />
+            ... ]<br />
+          ...<br />
       </td>
       <td>N/A</td>
     </tr>
