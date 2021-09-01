@@ -482,7 +482,7 @@ id: system-config
       <td>ibv_devinfo -v</td>
       <td>list of device information for each ib device</td>
       <td>
-        "hca_id:\tmlx5_0": {"transport": "InfiniBand (0)", ...},<br />
+        "hca_id:\tmlx5_0": {"transport":"InfiniBand (0)",...},<br />
         ...<br />
       </td>
     </tr>
@@ -491,7 +491,7 @@ id: system-config
       <td>ibstat</td>
       <td>list of device status for each ib device</td>
       <td>
-        "CA 'mlx5_0'": {"CA type": "MT4123", "Number of ports": "1", ...},<br />
+        "CA 'mlx5_0'": {"CA type":"MT4123",...},<br />
         ...
       </td>
     </tr>
@@ -576,7 +576,7 @@ id: system-config
       <td>amd gpu info of each gpu&lsindex&gt, including firmware, frequency, memory, etc. (amd only)</td>
       <td>N/A</td>
       <td>
-        "card0": {"GPU ID": "0x738c", ... , "VRAM Total Memory (B)": "34342961152"},<br />
+        "card0": {"GPU ID":"0x738c",...},<br />
         ...
       </td>
     </tr>
