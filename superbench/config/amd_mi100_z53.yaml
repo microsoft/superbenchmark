@@ -41,11 +41,17 @@ superbench:
     rccl-bw:
       enable: true
       modes:
-        - name: local
-          prefix: NCCL_IB_DISABLE=1
+        - name: mpi
+          proc_num: 8
+          env:  
+            NCCL_SOCKET_IFNAME: ens17f0 
+            NCCL_IB_GDR_LEVEL: 1
       parameters:
         maxbytes: 128M
+        minbytes: 32M
         iters: 50
+        ngpus: 1
+        operations: allreduce
     mem-bw:
       <<: *default_local_mode
     gemm-flops:
@@ -68,8 +74,7 @@ superbench:
           proc_num: 1
           parallel: no
       parameters:
-        block_devices:
-          - /dev/nvme0n1
+        block_devices: []
     gpu-sm-copy-bw:
       enable: false
       modes:
