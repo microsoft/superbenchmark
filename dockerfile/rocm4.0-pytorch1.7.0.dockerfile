@@ -72,9 +72,8 @@ ENV PATH="${PATH}" \
 
 WORKDIR ${SB_HOME}
 
-ARG ROCM_ARCH=gfx908
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-4.0.0 ROCM_ARCH=${ROCM_ARCH} make -j -C third_party rocm
+RUN ROCM_VERSION=rocm-4.0.0 make -j -C third_party rocm
 
 # Workaround for image having package installed in user path
 RUN mv /root/.local/bin/* /opt/conda/bin/ && \

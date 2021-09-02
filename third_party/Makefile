@@ -8,7 +8,7 @@ MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 ROCM_VERSION ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
-ROCM_ARCH ?= $(shell rocminfo | grep " gfx" | uniq | awk '{print $$2}')
+ROCM_ARCH ?= gfx908
 
 .PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
 
