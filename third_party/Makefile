@@ -8,7 +8,6 @@ MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 ROCM_VERSION ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
-ROCM_ARCH ?= gfx908
 
 .PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
 
@@ -81,10 +80,11 @@ rocm_rocblas: sb_micro_path
 ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
 	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
 	git clone -b ${ROCM_VERSION} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
+# For rocm4.0.0, due to some issues about rocblas building, now only support MI100(gfx908) 
 ifeq (${ROCM_VERSION}, rocm-4.0.0)
 	sed -i '/CMAKE_MATCH_1/a\      get_filename_component(HIP_CLANG_ROOT "$${HIP_CLANG_ROOT}" DIRECTORY)'  /opt/rocm/hip/lib/cmake/hip/hip-config.cmake
-	cd ./rocBLAS && HIPCC_COMPILE_FLAGS_APPEND="-D_OPENMP=201811 -O3 -Wno-format-nonliteral -DCMAKE_HAVE_LIBC_PTHREAD -parallel-jobs=2" HIPCC_LINK_FLAGS_APPEND="-lpthread -O3 -parallel-jobs=2" ./install.sh -idc -a ${ROCM_ARCH}
-else 
+	cd ./rocBLAS && HIPCC_COMPILE_FLAGS_APPEND="-D_OPENMP=201811 -O3 -Wno-format-nonliteral -DCMAKE_HAVE_LIBC_PTHREAD -parallel-jobs=2" HIPCC_LINK_FLAGS_APPEND="-lpthread -O3 -parallel-jobs=2" ./install.sh -idc -a gfx908
+else
 	cd ./rocBLAS && ./install.sh -idc
 endif
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
