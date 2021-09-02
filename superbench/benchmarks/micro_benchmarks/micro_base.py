@@ -4,12 +4,11 @@
 """Module of the micro-benchmark base class."""
 
 import os
-import subprocess
 import shutil
 import statistics
 from abc import abstractmethod
 
-from superbench.common.utils import logger
+from superbench.common.utils import logger, run_command
 from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 
@@ -170,14 +169,8 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
                     self._curr_run_index, self._name, self._commands[cmd_idx]
                 )
             )
-            output = subprocess.run(
-                self._commands[cmd_idx],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                shell=True,
-                check=False,
-                universal_newlines=True
-            )
+
+            output = run_command(self._commands[cmd_idx])
             if output.returncode != 0:
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 logger.error(

@@ -85,9 +85,7 @@ class DiskBenchmarkTest(unittest.TestCase):
         param_str = block_device_option
         param_str += ' --rand_precond_time=0'
         param_str += ' --seq_read_runtime=0'
-        param_str += ' --seq_write_runtime=0'
         param_str += ' --rand_read_runtime=0'
-        param_str += ' --rand_write_runtime=0'
         benchmark = benchmark_class(benchmark_name, parameters=param_str)
 
         # Check basic information
@@ -124,7 +122,7 @@ class DiskBenchmarkTest(unittest.TestCase):
         curr_test_magic += 1
         # Seq/rand read/write
         for io_pattern in ['seq', 'rand']:
-            for io_type in ['read', 'write']:
+            for io_type in ['read', 'write', 'readwrite']:
                 io_str = '%s_%s' % (io_pattern, io_type)
                 param_str += ' --%s_ramp_time=%d' % (io_str, curr_test_magic)
                 curr_test_magic += 1
@@ -145,12 +143,12 @@ class DiskBenchmarkTest(unittest.TestCase):
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check command list
-        # 2 files * (2 preconditions + 2 io_patterns * 2 io_types) = 12 commands
-        assert (12 == len(benchmark._commands))
+        # 2 files * (2 preconditions + 3 io_patterns * 2 io_types) = 16 commands
+        assert (16 == len(benchmark._commands))
 
         # Check parameter assignments
         command_idx = 0
-
+        default_rwmixread = 80
         for block_device in block_devices:
             curr_test_magic = init_test_magic
 
@@ -164,7 +162,7 @@ class DiskBenchmarkTest(unittest.TestCase):
             command_idx += 1
             # Seq/rand read/write
             for io_pattern in ['seq', 'rand']:
-                for io_type in ['read', 'write']:
+                for io_type in ['read', 'write', 'rw']:
                     assert ('--filename=%s' % block_device in benchmark._commands[command_idx])
                     fio_rw = '%s%s' % (io_pattern if io_pattern == 'rand' else '', io_type)
                     assert ('--rw=%s' % fio_rw in benchmark._commands[command_idx])
@@ -176,6 +174,8 @@ class DiskBenchmarkTest(unittest.TestCase):
                     curr_test_magic += 1
                     assert ('--numjobs=%d' % curr_test_magic in benchmark._commands[command_idx])
                     curr_test_magic += 1
+                    if io_type == 'rw':
+                        assert ('--rwmixread=%d' % default_rwmixread in benchmark._commands[command_idx])
                     command_idx += 1
 
     def test_disk_performance_result_parsing(self):
@@ -504,34 +504,34 @@ class DiskBenchmarkTest(unittest.TestCase):
   ]
 }
 """
-        jobname_prefix = 'disk_performance:/dev/nvme0n1:rand_read_write'
+        jobname_prefix = 'nvme0n1_rand_read_write'
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
         # bs + <read, write> x <iops, 95th, 99th, 99.9th>
         assert (9 == len(benchmark.result.keys()))
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':bs']))
-        assert (4096 == benchmark.result[jobname_prefix + ':bs'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_bs']))
+        assert (4096 == benchmark.result[jobname_prefix + '_bs'][0])
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:iops']))
-        assert (85138.890741 == benchmark.result[jobname_prefix + ':read:iops'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:iops']))
-        assert (85066.128925 == benchmark.result[jobname_prefix + ':write:iops'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_iops']))
+        assert (85138.890741 == benchmark.result[jobname_prefix + '_read_iops'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_iops']))
+        assert (85066.128925 == benchmark.result[jobname_prefix + '_write_iops'][0])
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:lat_ns:95.000000']))
-        assert (1941504 == benchmark.result[jobname_prefix + ':read:lat_ns:95.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:lat_ns:99.000000']))
-        assert (2244608 == benchmark.result[jobname_prefix + ':read:lat_ns:99.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':read:lat_ns:99.900000']))
-        assert (3620864 == benchmark.result[jobname_prefix + ':read:lat_ns:99.900000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_lat_ns_95.000000']))
+        assert (1941504 == benchmark.result[jobname_prefix + '_read_lat_ns_95.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_lat_ns_99.000000']))
+        assert (2244608 == benchmark.result[jobname_prefix + '_read_lat_ns_99.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_read_lat_ns_99.900000']))
+        assert (3620864 == benchmark.result[jobname_prefix + '_read_lat_ns_99.900000'][0])
 
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:lat_ns:95.000000']))
-        assert (1908736 == benchmark.result[jobname_prefix + ':write:lat_ns:95.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:lat_ns:99.000000']))
-        assert (2072576 == benchmark.result[jobname_prefix + ':write:lat_ns:99.000000'][0])
-        assert (1 == len(benchmark.result[jobname_prefix + ':write:lat_ns:99.900000']))
-        assert (2605056 == benchmark.result[jobname_prefix + ':write:lat_ns:99.900000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_lat_ns_95.000000']))
+        assert (1908736 == benchmark.result[jobname_prefix + '_write_lat_ns_95.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_lat_ns_99.000000']))
+        assert (2072576 == benchmark.result[jobname_prefix + '_write_lat_ns_99.000000'][0])
+        assert (1 == len(benchmark.result[jobname_prefix + '_write_lat_ns_99.900000']))
+        assert (2605056 == benchmark.result[jobname_prefix + '_write_lat_ns_99.900000'][0])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
