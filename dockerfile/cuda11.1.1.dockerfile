@@ -54,8 +54,8 @@ RUN mkdir -p /root/.ssh && \
     touch /root/.ssh/authorized_keys && \
     mkdir -p /var/run/sshd && \
     sed -i "s/[# ]*PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config && \
+    sed -i "s/[# ]*PermitUserEnvironment no/PermitUserEnvironment yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*Port.*/Port 22/" /etc/ssh/sshd_config && \
-    echo "PermitUserEnvironment yes" >> /etc/ssh/sshd_config && \
     echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
     echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
