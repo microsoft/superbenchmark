@@ -1,0 +1,63 @@
+# SuperBench Config
+#
+# Server:
+#   - Product: mi200ev2-linux
+
+version: v0.2
+superbench:
+  enable: null
+  var:
+    default_local_mode: &default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+          parallel: yes
+    default_pytorch_mode: &default_pytorch_mode
+      enable: true
+      modes:
+        - name: torch.distributed
+          proc_num: 8
+          node_num: 1
+      frameworks:
+        - pytorch
+    common_model_config: &common_model_config
+      duration: 0
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 32
+      precision:
+        - float32
+        - float16
+      model_action:
+        - train
+      pin_memory: yes
+  benchmarks:
+    disk-benchmark:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 4
+          prefix: numactl -N $(({proc_rank}%4)) -m $(({proc_rank}%4))
+          parallel: no
+      parameters:
+        block_devices:
+          - /dev/nvme0n1
+          - /dev/nvme1n1
+          - /dev/nvme2n1
+          - /dev/nvme3n1
+          - /dev/nvme4n1
+          - /dev/nvme5n1
+          - /dev/nvme6n1
+          - /dev/nvme7n1
+          - /dev/nvme8n1
+          - /dev/nvme9n1
+          - /dev/nvme10n1
+          - /dev/nvme11n1
+          - /dev/nvme12n1
+          - /dev/nvme13n1
+          - /dev/nvme14n1
+          - /dev/nvme15n1
+          - /dev/nvme16n1
