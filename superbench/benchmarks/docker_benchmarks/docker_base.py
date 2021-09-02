@@ -5,7 +5,8 @@
 
 from abc import abstractmethod
 
-from superbench.benchmarks import BenchmarkType
+from superbench.common.utils import logger, run_command
+from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 
 
@@ -20,8 +21,15 @@ class DockerBenchmark(Benchmark):
         """
         super().__init__(name, parameters)
         self._benchmark_type = BenchmarkType.DOCKER
+
         # Command lines to launch the docker image and run the benchmarks inside docker.
-        self.__commands = list()
+        self._commands = list()
+
+        # Image uri of the current docker-benchmark.
+        self._image_uri = None
+
+        # Container name of the current docker-benchmark.
+        self._container_name = None
 
     '''
     # If need to add new arguments, super().add_parser_arguments() must be called.
@@ -36,24 +44,89 @@ class DockerBenchmark(Benchmark):
         Return:
             True if _preprocess() succeed.
         """
-        return super()._preprocess()
+        if not super()._preprocess():
+            return False
+
+        if self._image_uri is None:
+            self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_IMAGE_NOT_SET)
+            logger.error('The image uri is not set - benchmark: {}.'.format(self._name))
+            return False
+
+        if self._container_name is None:
+            self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_CONTAINER_NOT_SET)
+            logger.error('The container name is not set - benchmark: {}.'.format(self._name))
+            return False
+
+        output = run_command('docker pull --quiet {}'.format(self._image_uri))
+        if output.returncode != 0:
+            self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_IMAGE_PULL_FAILURE)
+            logger.error(
+                'DockerBenchmark pull image failed - benchmark: {}, error message: {}.'.format(
+                    self._name, output.stdout
+                )
+            )
+            return False
+
+        return True
+
+    def _postprocess(self):
+        """Postprocess/cleanup operations after the benchmarking.
+
+        Return:
+            True if _postprocess() succeed.
+        """
+        rm_containers = 'docker stop --time 20 {container} && docker rm {container}'.format(
+            container=self._container_name
+        )
+        run_command(rm_containers)
+
+        rm_image = 'docker rmi {}'.format(self._image_uri)
+        run_command(rm_image)
+
+        return True
+
+    def _benchmark(self):
+        """Implementation for benchmarking.
+
+        Return:
+            True if run benchmark successfully.
+        """
+        for cmd_idx in range(len(self._commands)):
+            logger.info(
+                'Execute command - round: {}, benchmark: {}, command: {}.'.format(
+                    self._curr_run_index, self._name, self._commands[cmd_idx]
+                )
+            )
+            output = run_command(self._commands[cmd_idx])
+            if output.returncode != 0:
+                self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_EXECUTION_FAILURE)
+                logger.error(
+                    'DockerBenchmark execution failed - round: {}, benchmark: {}, error message: {}.'.format(
+                        self._curr_run_index, self._name, output.stdout
+                    )
+                )
+                return False
+            else:
+                if not self._process_raw_result(cmd_idx, output.stdout):
+                    self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_RESULT_PARSING_FAILURE)
+                    return False
+
+        return True
 
     @abstractmethod
-    def _benchmark(self):
-        """Implementation for benchmarking."""
-        pass
-
-    def _process_raw_result(self, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):
         """Function to process raw results and save the summarized results.
 
+          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
         Args:
-            raw_output (str): raw output string of the docker benchmark.
+            cmd_idx (int): the index of command corresponding with the raw_output.
+            raw_output (str): raw output string of the docker-benchmark.
 
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        # TODO: will implement it when add real benchmarks in the future.
-        return True
+        pass
 
     def print_env_info(self):
         """Print environments or dependencies information."""
