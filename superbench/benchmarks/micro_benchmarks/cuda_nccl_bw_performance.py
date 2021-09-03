@@ -41,10 +41,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--operations',
+            '--operation',
             type=str,
             default='allreduce',
-            help='Nccl operations to benchmark, e.g., {}.'.format(' '.join(list(self.__operations.keys()))),
+            help='NCCL operation to benchmark, e.g., {}.'.format(' '.join(list(self.__operations.keys()))),
         )
         self._parser.add_argument(
             '--ngpus',
@@ -99,10 +99,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # Format the arguments
-        self._args.operations = self._args.operations.lower()
+        self._args.operation = self._args.operation.lower()
 
         # Check the arguments and generate the commands
-        op = self._args.operations
+        op = self._args.operation
         if op not in self.__operations:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             logger.error(
@@ -143,7 +143,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             if rank > 0:
                 return True
 
-        self._result.add_raw_data('raw_output_' + self._args.operations, raw_output)
+        self._result.add_raw_data('raw_output_' + self._args.operation, raw_output)
 
         content = raw_output.splitlines()
         size = -1
@@ -188,9 +188,9 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                         busbw_out = float(line[busbw_index])
                         time_out = float(line[time_index])
                         algbw_out = float(line[algbw_index])
-                        self._result.add_result(self._args.operations + '_' + str(size) + '_busbw', busbw_out)
-                        self._result.add_result(self._args.operations + '_' + str(size) + '_algbw', algbw_out)
-                        self._result.add_result(self._args.operations + '_' + str(size) + '_time', time_out)
+                        self._result.add_result(self._args.operation + '_' + str(size) + '_busbw', busbw_out)
+                        self._result.add_result(self._args.operation + '_' + str(size) + '_algbw', algbw_out)
+                        self._result.add_result(self._args.operation + '_' + str(size) + '_time', time_out)
         except BaseException as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(

@@ -51,7 +51,7 @@ class CudaNcclBwBenchmarkTest(unittest.TestCase):
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check parameters specified in BenchmarkContext.
-        assert (benchmark._args.operations == 'allreduce')
+        assert (benchmark._args.operation == 'allreduce')
         assert (benchmark._args.ngpus == 8)
         assert (benchmark._args.minbytes == '8')
         assert (benchmark._args.maxbytes == '8G')
@@ -407,7 +407,7 @@ hostname:3442:3442 [0] NCCL INFO Launch mode Parallel
 """
 
         for op in raw_output.keys():
-            benchmark._args.operations = op
+            benchmark._args.operation = op
             assert (benchmark._process_raw_result(0, raw_output[op]))
 
             for name in ['time', 'algbw', 'busbw']:
