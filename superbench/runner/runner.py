@@ -3,14 +3,18 @@
 
 """SuperBench Runner."""
 
+import json
 import random
 from pathlib import Path
+from collections import defaultdict
 
+from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
 from superbench.common.utils import SuperBenchLogger, logger
 from superbench.runner.ansible import AnsibleClient
+from superbench.benchmarks import ReduceType, Reducer
 
 
 class SuperBenchRunner():
@@ -48,7 +52,7 @@ class SuperBenchRunner():
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
-    def __validate_sb_config(self):
+    def __validate_sb_config(self):    # noqa: C901
         """Validate SuperBench config object.
 
         Raise:
@@ -69,6 +73,18 @@ class SuperBenchRunner():
                 elif mode.name == 'torch.distributed':
                     if not mode.proc_num:
                         self._sb_benchmarks[name].modes[idx].proc_num = 8
+                elif mode.name == 'mpi':
+                    if not mode.mca:
+                        self._sb_benchmarks[name].modes[idx].mca = {
+                            'pml': 'ob1',
+                            'btl': '^openib',
+                            'btl_tcp_if_exclude': 'lo,docker0',
+                            'coll_hcoll_enable': 0,
+                        }
+                    if not mode.env:
+                        self._sb_benchmarks[name].modes[idx].env = {}
+                    for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH']:
+                        self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
 
     def __get_enabled_benchmarks(self):
         """Get enabled benchmarks list.
@@ -122,6 +138,23 @@ class SuperBenchRunner():
                     'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
                 ).format(name=benchmark_name),
             )
+        elif mode.name == 'mpi':
+            mode_command = (
+                'mpirun '    # use default OpenMPI in image
+                '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
+                '-allow-run-as-root '    # allow mpirun to run when executed by root user
+                '-hostfile hostfile '    # use prepared hostfile
+                '-map-by ppr:{proc_num}:node '    # launch {proc_num} processes on each node
+                '-bind-to numa '    # bind processes to numa
+                '{mca_list} {env_list} {command}'
+            ).format(
+                proc_num=mode.proc_num,
+                mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
+                env_list=' '.join(f'-x {k}={v}' if v else f'-x {k}' for k, v in mode.env.items()),
+                command=exec_command,
+            )
+        else:
+            logger.warning('Unknown mode %s.', mode.name)
         return mode_command.strip()
 
     def deploy(self):    # pragma: no cover
@@ -173,6 +206,103 @@ class SuperBenchRunner():
             )
         )
 
+    def __create_results_summary(self):    # pragma: no cover
+        """Create the result summary file of all nodes."""
+        all_results = list()
+        for node_path in (self._output_path / 'nodes').glob('*'):
+            if not node_path.is_dir():
+                continue
+            results_summary = self.__create_single_node_summary(node_path)
+            results_summary['node'] = node_path.name
+            all_results.append(results_summary)
+
+        with (self._output_path / 'results-summary.jsonl').open(mode='w') as f:
+            for result in all_results:
+                json.dump(result, f)
+                f.write('\n')
+
+    def __create_single_node_summary(self, node_path):    # pragma: no cover
+        """Create the result summary file of single node.
+
+        Args:
+            node_path (Path): The Path instance of node directory.
+
+        Returns:
+            dict: Result summary of single node.
+        """
+        results_summary = dict()
+        reduce_ops = dict()
+        file_list = [Path(f) for f in natsorted([str(f) for f in node_path.glob('**/results.json')])]
+        for results_file in file_list:
+            with results_file.open() as f:
+                try:
+                    results = json.load(f)
+                except ValueError:
+                    logger.error('Invalid JSON file: {}'.format(results_file))
+                    continue
+
+                for result in results:
+                    benchmark_name = result['name']
+                    if results_file.parts[-3].endswith('_models'):
+                        benchmark_name = '{}/{}'.format(results_file.parts[-3], result['name'])
+                    if benchmark_name not in results_summary:
+                        results_summary[benchmark_name] = defaultdict(list)
+                    for metric in result['result']:
+                        metric_name = '{}/{}'.format(benchmark_name, metric)
+                        if metric_name not in reduce_ops:
+                            reduce_ops[metric_name] = result['reduce_op'][metric]
+                        elif reduce_ops[metric_name] != result['reduce_op'][metric]:
+                            logger.error('Inconsistent reduce type for metric: {}'.format(metric_name))
+                            continue
+
+                        results_summary[benchmark_name][metric].append(result['result'][metric])
+
+        results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
+        with (node_path / 'results-summary.json').open(mode='w') as f:
+            json.dump(results_summary, f, indent=2)
+
+        return results_summary
+
+    def __merge_all_metrics(self, results_summary, reduce_ops):
+        """Merge metrics of all benchmarks in one node.
+
+        Args:
+            results_summary (dict): Summarized result of one node.
+            reduce_ops (dict): The reduce type of each metric.
+
+        Returns:
+            dict: Flattened result with metric as key.
+        """
+        metrics_summary = dict()
+        for benchmark_name in results_summary:
+            for metric in results_summary[benchmark_name]:
+                metric_name = '{}/{}'.format(benchmark_name, metric)
+                if metric_name not in reduce_ops or (
+                    reduce_ops[metric_name] is not None and reduce_ops[metric_name] not in ReduceType.get_values()
+                ):
+                    logger.error('Unknown reduce type for metric: {}'.format(metric_name))
+                    continue
+
+                if reduce_ops[metric_name] is not None:
+                    reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
+                    values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
+                    for run_count in range(len(values)):
+                        if len(values) > 1:
+                            metric_name = '{}/{}/{}'.format(benchmark_name, run_count, metric)
+                        else:
+                            metric_name = '{}/{}'.format(benchmark_name, metric)
+                        metrics_summary[metric_name] = values[run_count]
+                else:
+                    for rank in range(len(results_summary[benchmark_name][metric])):
+                        for run_count in range(len(results_summary[benchmark_name][metric][rank])):
+                            if len(results_summary[benchmark_name][metric][rank]) > 1:
+                                metric_name = '{}/{}/{}:{}'.format(benchmark_name, run_count, metric, rank)
+                            else:
+                                metric_name = '{}/{}:{}'.format(benchmark_name, metric, rank)
+                            metrics_summary[metric_name] = results_summary[benchmark_name][metric][rank][run_count]
+
+        return metrics_summary
+
     def _run_proc(self, benchmark_name, mode, vars):
         """Run the process.
 
@@ -186,15 +316,15 @@ class SuperBenchRunner():
         """
         mode.update(vars)
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
-        rc = self._ansible_client.run(
-            self._ansible_client.get_shell_config(
-                (
-                    'docker exec sb-workspace bash -c '
-                    "'set -o allexport && source sb.env && set +o allexport && {command}'"
-                ).format(command=self.__get_mode_command(benchmark_name, mode), )
-            ),
-            sudo=True
+        ansible_runner_config = self._ansible_client.get_shell_config(
+            (
+                'docker exec sb-workspace bash -c '
+                "'set -o allexport && source sb.env && set +o allexport && {command}'"
+            ).format(command=self.__get_mode_command(benchmark_name, mode))
         )
+        if mode.name == 'mpi':
+            ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
+        rc = self._ansible_client.run(ansible_runner_config, sudo=True)
         return rc
 
     def run(self):
@@ -211,6 +341,10 @@ class SuperBenchRunner():
                             'proc_rank': proc_rank
                         }) for proc_rank in range(mode.proc_num)
                     )
-                elif mode.name == 'torch.distributed':
+                elif mode.name == 'torch.distributed' or mode.name == 'mpi':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                else:
+                    logger.warning('Unknown mode %s.', mode.name)
             self.fetch_results()
+
+        self.__create_results_summary()

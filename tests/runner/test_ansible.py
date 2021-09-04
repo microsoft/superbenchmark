@@ -48,13 +48,21 @@ class AnsibleClientTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.ansible_client._config, {
                 'private_data_dir': None,
-                'inventory': self.host_file,
                 'host_pattern': 'all',
-                'cmdline': '--forks 5 --user user --ask-pass --ask-become-pass',
+                'cmdline': f'--forks 5 --inventory {self.host_file} --user user --ask-pass --ask-become-pass',
                 'passwords': {
                     'password': 'pass',
                     'passphrase': 'pass',
                 },
+            }
+        )
+
+    def test_update_mpi_config(self):
+        """Test update_mpi_config of client."""
+        self.assertDictEqual(
+            self.ansible_client.update_mpi_config(self.ansible_client._config), {
+                **self.ansible_client._config,
+                'host_pattern': 'all[0]',
             }
         )
 
@@ -64,9 +72,8 @@ class AnsibleClientTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.ansible_client.get_shell_config(cmd), {
                 'private_data_dir': None,
-                'inventory': self.host_file,
                 'host_pattern': 'all',
-                'cmdline': '--forks 5 --user user --ask-pass --ask-become-pass',
+                'cmdline': f'--forks 5 --inventory {self.host_file} --user user --ask-pass --ask-become-pass',
                 'passwords': {
                     'password': 'pass',
                     'passphrase': 'pass',
@@ -81,9 +88,8 @@ class AnsibleClientTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.ansible_client.get_playbook_config('play', {'foo': 'bar'}), {
                 'private_data_dir': None,
-                'inventory': self.host_file,
                 'host_pattern': 'all',
-                'cmdline': '--forks 5 --user user --ask-pass --ask-become-pass',
+                'cmdline': f'--forks 5 --inventory {self.host_file} --user user --ask-pass --ask-become-pass',
                 'passwords': {
                     'password': 'pass',
                     'passphrase': 'pass',

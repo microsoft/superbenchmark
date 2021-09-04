@@ -104,6 +104,11 @@ module.exports = {
         '📢 <a href="https://microsoft.github.io/superbenchmark/blog/release-sb-v0.2">v0.2.1</a> has been released! ' +
         '⭐️ If you like SuperBench, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/microsoft/superbenchmark">GitHub</a>! ⭐️',
     },
+    algolia: {
+      apiKey: '6809111d3dabf59fe562601d591d7c53',
+      indexName: 'superbenchmark',
+      contextualSearch: true,
+    },
     prism: {
       theme: lightCodeTheme,
       darkTheme: darkCodeTheme,
