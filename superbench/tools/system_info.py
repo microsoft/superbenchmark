@@ -11,26 +11,17 @@ from pathlib import Path
 
 class SystemInfo():
     """Systsem info class."""
-    def __run_cmd(self, command, non_root=False):
+    def __run_cmd(self, command):
         """Run the command as root or non-root user and return the stdout string..
 
         Args:
             command (string): the command to run in terminal.
-            non_root (bool): the mode to run the command, root or non-root.
 
         Returns:
             string: the stdout string of the command.
         """
-        prefix = ''
-        if not non_root:
-            prefix = 'sudo '
         output = subprocess.run(
-            prefix + command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True,
-            check=False,
-            universal_newlines=True
+            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
         )
         return output.stdout
 
@@ -160,7 +151,7 @@ class SystemInfo():
         """
         lscpu_dict = {}
         try:
-            # get general cpu infomation from lscpu
+            # get general cpu information from lscpu
             lscpu = self.__run_cmd('lscpu').splitlines()
             # get distinct max_speed and current_speed of cpus from dmidecode
             speed = self.__run_cmd(r'dmidecode -t processor | grep "Speed"').splitlines()
@@ -320,7 +311,7 @@ class SystemInfo():
             print('Error: get pcie gpu info failed')
         return pcie_dict
 
-    def get_storage(self):
+    def get_storage(self):    # noqa: C901
         """Get storage info dict, including file system info, blocl device info and their mapping.
 
         Returns:
@@ -334,11 +325,13 @@ class SystemInfo():
                 fs_device = fs.get('Filesystem', 'UNKNOWN')
                 if fs_device.startswith('/dev'):
                     fs['Block_size'] = self.__run_cmd('blockdev --getbsz {}'.format(fs_device)).strip()
-                    fs['4k_alignment'] = self.__run_cmd(
-                        'for i in `sudo parted {} print '.format(fs_device) +
-                        '| grep -oE "^[[:blank:]]*[0-9]+"`; do sudo parted {} align-check opt "$i"; done'.
-                        format(fs_device), True
-                    ).strip()
+                    fs['4k_alignment'] = ''
+                    partition_ids = self.__run_cmd(
+                        'parted {} print | grep -oE "^[[:blank:]]*[0-9]+"'.format(fs_device)
+                    ).splitlines()
+                    for id in partition_ids:
+                        fs['4k_alignment'] += self.__run_cmd('parted {} align-check opt {}'.format(fs_device,
+                                                                                                   id)).strip()
             storage_dict['file_system'] = fs_list
         except Exception:
             print('Error: get file system info failed')
