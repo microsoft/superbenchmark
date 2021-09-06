@@ -9,9 +9,9 @@ import xmltodict
 from pathlib import Path
 
 
-class SystemInfo():
+class SystemInfo():    # pragma: no cover
     """Systsem info class."""
-    def __run_cmd(self, command):
+    def run_cmd(self, command):
         """Run the command as root or non-root user and return the stdout string..
 
         Args:
@@ -25,7 +25,7 @@ class SystemInfo():
         )
         return output.stdout
 
-    def __count_prefix_indent(self, content, symbol='\t'):
+    def count_prefix_indent(self, content, symbol='\t'):
         r"""Count the number of a specific symbol in the content.
 
         Args:
@@ -43,7 +43,7 @@ class SystemInfo():
                 break
         return count
 
-    def __parse_key_value_lines(self, lines, required_keywords=None, omitted_values=None, symbol=':'):    # noqa: C901
+    def parse_key_value_lines(self, lines, required_keywords=None, omitted_values=None, symbol=':'):    # noqa: C901
         """Parse the lines like "key:value" and convert them to dict.
 
         if required_keywords is None, include all line. Otherwise,
@@ -112,7 +112,7 @@ class SystemInfo():
             i += 1
         return dict
 
-    def __parse_table_lines(self, lines, key):
+    def parse_table_lines(self, lines, key):
         """Parse lines like a table and extract the colomns whose table index are the same as key to list of dict.
 
         Args:
