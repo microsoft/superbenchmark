@@ -2,6 +2,8 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 
 # OS:
 #   - Ubuntu: 20.04
+#   - OpenMPI: 4.0.5
+#   - Docker Client: 20.10.8
 # NVIDIA:
 #   - CUDA: 11.1.1
 #   - cuDNN: 8.0.5
@@ -41,13 +43,22 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
 
-# Configure SSH
+# Install Docker
+ENV DOCKER_VERSION=20.10.8
+RUN cd /tmp && \
+    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
+    rm docker.tgz
+
+# Update system config
 RUN mkdir -p /root/.ssh && \
     touch /root/.ssh/authorized_keys && \
     mkdir -p /var/run/sshd && \
     sed -i "s/[# ]*PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config && \
+    sed -i "s/[# ]*PermitUserEnvironment no/PermitUserEnvironment yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*Port.*/Port 22/" /etc/ssh/sshd_config && \
-    echo "PermitUserEnvironment yes" >> /etc/ssh/sshd_config
+    echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
+    echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
 ENV OFED_VERSION=5.2-2.2.3.0

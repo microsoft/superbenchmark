@@ -23,7 +23,6 @@ class AnsibleClient():
         self._playbook_path = Path(__file__).parent / 'playbooks'
         self._config = {
             'private_data_dir': None,
-            'inventory': None,
             'host_pattern': 'localhost',
             'cmdline': '--forks 128',
         }
@@ -33,7 +32,6 @@ class AnsibleClient():
             if inventory_list:
                 inventory_list = inventory_list.strip(',')
             if inventory_file or inventory_list:
-                self._config['inventory'] = inventory_file or inventory_list
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
                 host_list = inventory.get_groups_dict()['all']
@@ -41,6 +39,7 @@ class AnsibleClient():
                     self._config['cmdline'] = '--forks {}'.format(len(host_list))
                 if inventory_list in ['localhost', '127.0.0.1']:
                     self._config['cmdline'] += ' --connection local'
+                self._config['cmdline'] += ' --inventory {}'.format(inventory_file or f'{inventory_list},')
             username = getattr(config, 'host_username', None)
             if username:
                 self._config['cmdline'] += ' --user {}'.format(username)
@@ -77,6 +76,18 @@ class AnsibleClient():
             logger.warning('Run failed, return code {}.'.format(r.rc))
         logger.info(r.stats)
         return r.rc
+
+    def update_mpi_config(self, ansible_config):
+        """Update ansible config for mpi, run on the first host of inventory group.
+
+        Args:
+            ansible_config (dict): Ansible config dict.
+
+        Returns:
+            dict: Updated Ansible config dict.
+        """
+        ansible_config['host_pattern'] += '[0]'
+        return ansible_config
 
     def get_shell_config(self, cmd):
         """Get ansible config for shell module.

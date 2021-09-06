@@ -1,18 +1,17 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the Kernel Launch overhead benchmarks."""
+"""Module of the GPU SM Copy Bandwidth Performance benchmark."""
 
 import os
-import re
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry
+from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class KernelLaunch(MicroBenchmarkWithInvoke):
-    """The KernelLaunch overhead benchmark class."""
+class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
+    """The GPU SM copy bandwidth performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -22,32 +21,35 @@ class KernelLaunch(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'kernel_launch_overhead'
+        self._bin_name = 'gpu_sm_copy'
+        self._mem_types = ['htod', 'dtoh']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--num_warmup',
+            '--mem_type',
+            type=str,
+            nargs='+',
+            default=self._mem_types,
+            help='Memory types for benchmark. E.g. {}.'.format(' '.join(self._mem_types)),
+        )
+
+        self._parser.add_argument(
+            '--size',
+            type=int,
+            default=64 * 1024**2,
+            required=False,
+            help='Size of data buffer in bytes.',
+        )
+
+        self._parser.add_argument(
+            '--num_loops',
             type=int,
             default=100,
             required=False,
-            help='The number of warmup step.',
-        )
-        self._parser.add_argument(
-            '--num_steps',
-            type=int,
-            default=2000000,
-            required=False,
-            help='The number of test step.',
-        )
-        self._parser.add_argument(
-            '--interval',
-            type=int,
-            default=2000,
-            required=False,
-            help='The interval between different kernel launch tests, unit is millisecond.',
+            help='Number of data buffer copies performed.',
         )
 
     def _preprocess(self):
@@ -59,11 +61,12 @@ class KernelLaunch(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        command = os.path.join(self._args.bin_dir, self._bin_name)
-        command += (' -w ' + str(self._args.num_warmup))
-        command += (' -n ' + str(self._args.num_steps))
-        command += (' -i ' + str(self._args.interval))
-        self._commands.append(command)
+        self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
+
+        for mem_type in self._args.mem_type:
+            command = '%s 0 %s %d %d' % \
+                (self.__bin_path, mem_type, self._args.size, self._args.num_loops)
+            self._commands.append(command)
 
         return True
 
@@ -81,29 +84,20 @@ class KernelLaunch(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
-        pattern = r'\d+\.\d+'
-        result = re.findall(pattern, raw_output)
-        if len(result) != 2:
-            logger.error(
-                'Cannot extract kernel launch overhead in event and wall mode - round: {}, benchmark: {}, raw data: {}.'
-                .format(self._curr_run_index, self._name, raw_output)
-            )
-            return False
-
         try:
-            result = [float(item) for item in result]
+            output_prefix = 'Bandwidth (GB/s): '
+            assert (raw_output.startswith(output_prefix))
+            self._result.add_result(self._args.mem_type[cmd_idx], float(raw_output[len(output_prefix):]))
         except BaseException as e:
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
-                'The result format is invalid - round: {}, benchmark: {}, result: {}, message: {}.'.format(
-                    self._curr_run_index, self._name, result, str(e)
+                'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
+                    self._curr_run_index, self._name, raw_output, str(e)
                 )
             )
             return False
 
-        self._result.add_result('event_overhead', result[0])
-        self._result.add_result('wall_overhead', result[1])
-
         return True
 
 
-BenchmarkRegistry.register_benchmark('kernel-launch', KernelLaunch)
+BenchmarkRegistry.register_benchmark('gpu-sm-copy-bw', GpuSmCopyBwBenchmark)

@@ -139,6 +139,7 @@ setup(
         'jinja2>=2.10.1',
         'joblib>=1.0.1',
         'knack>=0.7.2',
+        'natsort>=7.1.1',
         'omegaconf==2.0.6',
         'pyyaml>=5.3',
         'xmltodict>=0.12.0',
@@ -159,8 +160,8 @@ setup(
             'yapf>=0.30.0',
         ],
         'torch': [
-            'torch>=1.7.0',
-            'torchvision>=0.8.0',
+            'torch>=1.7.0a0',
+            'torchvision>=0.8.0a0',
             'transformers>=4.3.3',
         ],
         'nvidia': ['py3nvml>=0.2.6']
