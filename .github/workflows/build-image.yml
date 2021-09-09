@@ -11,17 +11,17 @@ on:
 
 jobs:
   docker:
-    name: Docker build
+    name: Docker build ${{ matrix.name }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-        - tags: superbench/superbench:dev-cuda11.1.1,superbench/superbench:latest
-          dockerfile: cuda11.1.1.dockerfile
-        - tags: superbench/superbench:dev-rocm4.2
-          dockerfile: rocm4.2-pytorch1.7.0.dockerfile
-        - tags: superbench/superbench:dev-rocm4.0
-          dockerfile: rocm4.0-pytorch1.7.0.dockerfile
+        - name: cuda11.1.1
+          tags: superbench/superbench:dev-cuda11.1.1,superbench/superbench:latest
+        - name: rocm4.2-pytorch1.7.0
+          tags: superbench/superbench:dev-rocm4.2
+        - name: rocm4.0-pytorch1.7.0
+          tags: superbench/superbench:dev-rocm4.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -40,7 +40,7 @@ jobs:
         id: metadata
         run: |
           TAGS=${{ matrix.tags }}
-          DOCKERFILE=dockerfile/${{ matrix.dockerfile }}
+          DOCKERFILE=dockerfile/${{ matrix.name }}.dockerfile
 
           CACHE_FROM="type=registry,ref=$(cut -d, -f1 <<< ${TAGS})"
           CACHE_TO=""
