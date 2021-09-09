@@ -93,9 +93,7 @@ endif
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
-rocm_bandwidthTest:
+rocm_bandwidthTest: sb_micro_path
 	cp -r -v $(shell hipconfig -p) ./
-ifneq (, $(wildcard hip/samples/1_Utils/hipBusBandwidth/CMakeLists.txt))
 	cd ./hip/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./hip/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
-endif
