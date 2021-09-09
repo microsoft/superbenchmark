@@ -1,6 +1,17 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+// IB validation tool is a tool to validate IB traffic of different pattern in multi nodes flexibly
+// input：
+//  cmd_prefix: the prefix of command to run
+//  input_config: the path of input config file, the format of config file is as the following,
+//    each row will run in parallel, different rows will run in sequence, each pair is (server index, client index)
+//    1,0;2,0;3,0
+//    0,1;2,1;3,1
+//    0,2;1,2;3,2
+//    0,3;1,3;2,3
+//  output_path: the path of output csv file
+
 #include <vector>
 #include <string>
 #include <stdio.h>
