@@ -128,7 +128,7 @@ class SuperBenchRunner():
                 '--use_env --no_python --nproc_per_node={proc_num} '
                 '--nnodes={node_num} --node_rank=$NODE_RANK '
                 '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                '{command} {torch_distributed_suffix}'
+                '{command} {torch_distributed_suffix} {model_name}'
             ).format(
                 proc_num=mode.proc_num,
                 node_num=1 if mode.node_num == 1 else '$NNODES',
@@ -137,6 +137,8 @@ class SuperBenchRunner():
                     'superbench.benchmarks.{name}.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
                 ).format(name=benchmark_name),
+                model_name=('superbench.benchmarks.{name}.models=[{model}]'
+                            ).format(name=benchmark_name, model=mode.model_name)
             )
         elif mode.name == 'mpi':
             mode_command = (
@@ -341,7 +343,10 @@ class SuperBenchRunner():
                             'proc_rank': proc_rank
                         }) for proc_rank in range(mode.proc_num)
                     )
-                elif mode.name == 'torch.distributed' or mode.name == 'mpi':
+                elif mode.name == 'torch.distributed':
+                    for m in self._sb_benchmarks[benchmark_name].models:
+                        self._run_proc(benchmark_name, mode, {'proc_rank': 0, 'model_name': m})
+                elif mode.name == 'mpi':
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
