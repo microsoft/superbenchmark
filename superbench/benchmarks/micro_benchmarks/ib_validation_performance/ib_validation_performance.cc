@@ -286,10 +286,14 @@ void gather_ips(vector<string> &ips) {
 float process_raw_output(string output) {
     float res = -1.0;
     try {
+        vector<string> lines;
+        split_string(output, lines, "\n");
         regex re("\\d+\\s+\\d+\\s+\\d+\\.\\d+\\s+(\\d+\\.\\d+)\\s+\\d+\\.\\d+");
-        smatch m;
-        regex_search(output, m, re);
-        res = stof(m.str(1));
+        for (string line : lines) {
+            smatch m;
+            if (regex_search(line, m, re))
+                res = std::max(res, stof(m.str(1)));
+        }
     } catch (const std::exception &e) {
         std::cout << "Error: failed to parse raw_output: " << output << std::endl;
     }
