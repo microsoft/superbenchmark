@@ -13,7 +13,6 @@ find_package(HIP QUIET)
 # Cuda environment
 if(CUDAToolkit_FOUND)
     message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
-    enable_language(CUDA)
 
     add_executable(kernel_launch_overhead kernel_launch.cu)
     set_property(TARGET kernel_launch_overhead PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
@@ -22,7 +21,7 @@ if(CUDAToolkit_FOUND)
 # ROCm environment
 elseif(HIP_FOUND)
     message(STATUS "Found HIP: " ${HIP_VERSION})
-    
+
     # Convert cuda code to hip code inplace
     execute_process(COMMAND hipify-perl -inplace -print-stats kernel_launch.cu
                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
@@ -37,4 +36,3 @@ elseif(HIP_FOUND)
 else()
     message(FATAL_ERROR "No CUDA or ROCm environment found.")
 endif()
-
