@@ -17,11 +17,11 @@ jobs:
       matrix:
         include:
         - name: cuda11.1.1
-          tags: superbench/superbench:dev-cuda11.1.1,superbench/superbench:latest
+          tags: superbench/main:cuda11.1.1,superbench/superbench:latest
         - name: rocm4.2-pytorch1.7.0
-          tags: superbench/superbench:dev-rocm4.2
-        - name: rocm4.0-pytorch1.7.0
-          tags: superbench/superbench:dev-rocm4.0
+          tags: superbench/main:rocm4.2-pytorch1.7.0
+        # - name: rocm4.0-pytorch1.7.0
+        #   tags: superbench/main:rocm4.0-pytorch1.7.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
