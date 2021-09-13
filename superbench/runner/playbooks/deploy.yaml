@@ -101,7 +101,7 @@
           {{ '--security-opt seccomp=unconfined --group-add video' if amd_gpu_exist else '' }} \
           -w /root -v {{ workspace }}:/root -v /mnt:/mnt \
           -v /var/run/docker.sock:/var/run/docker.sock \
-          {{ docker_image }} bash && \
+          --entrypoint /bin/bash {{ docker_image }} && \
         docker exec {{ container }} bash -c \
           "chown -R root:root ~ && \
           sed -i 's/[# ]*Port.*/Port {{ ssh_port }}/g' /etc/ssh/sshd_config && \
