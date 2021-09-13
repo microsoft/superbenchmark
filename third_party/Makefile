@@ -97,4 +97,3 @@ rocm_bandwidthTest: sb_micro_path
 	cp -r -v $(shell hipconfig -p)/samples/1_Utils/hipBusBandwidth ./
 	cd ./hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
-	rm -rf hipBusBandwidth
