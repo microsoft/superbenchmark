@@ -3,6 +3,7 @@
 # Copyright (c) Microsoft Corporation - All rights reserved
 # Licensed under the MIT License
 
+set -e
 
 SB_MICRO_PATH="${SB_MICRO_PATH:-/usr/local}"
 
