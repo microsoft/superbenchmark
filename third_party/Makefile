@@ -80,7 +80,7 @@ rocm_rocblas: sb_micro_path
 ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
 	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
 	git clone -b ${ROCM_VERSION} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
-	cd ./rocBLAS && ./install.sh -idc
+	cd ./rocBLAS && ./install.sh --dependencies --clients-only --library-path /opt/rocm/rocblas/
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
 endif
 
