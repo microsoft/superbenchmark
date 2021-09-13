@@ -174,6 +174,7 @@ class PytorchBase(ModelBenchmark):
 
         try:
             if self._args.distributed_impl == DistributedImpl.DDP:
+                torch.distributed.barrier()
                 torch.distributed.destroy_process_group()
         except BaseException as e:
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE)
