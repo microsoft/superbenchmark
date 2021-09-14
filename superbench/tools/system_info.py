@@ -21,7 +21,12 @@ class SystemInfo():    # pragma: no cover
             string: the stdout string of the command.
         """
         output = subprocess.run(
-            'sudo ' + command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
+            'sudo ' + command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True,
+            check=False,
+            universal_newlines=True
         )
         return output.stdout
 
@@ -326,12 +331,10 @@ class SystemInfo():    # pragma: no cover
                 if fs_device.startswith('/dev'):
                     fs['Block_size'] = self.run_cmd('blockdev --getbsz {}'.format(fs_device)).strip()
                     fs['4k_alignment'] = ''
-                    partition_ids = self.run_cmd(
-                        'parted {} print | grep -oE "^[[:blank:]]*[0-9]+"'.format(fs_device)
-                    ).splitlines()
+                    partition_ids = self.run_cmd('parted {} print | grep -oE "^[[:blank:]]*[0-9]+"'.format(fs_device)
+                                                 ).splitlines()
                     for id in partition_ids:
-                        fs['4k_alignment'] += self.run_cmd('parted {} align-check opt {}'.format(fs_device,
-                                                                                                   id)).strip()
+                        fs['4k_alignment'] += self.run_cmd('parted {} align-check opt {}'.format(fs_device, id)).strip()
             storage_dict['file_system'] = fs_list
         except Exception:
             print('Error: get file system info failed')
@@ -344,7 +347,7 @@ class SystemInfo():    # pragma: no cover
                 disk['NAME'] = block_device
                 disk['Rotational'] = disk.pop('ROTA')
                 disk['Block_size'] = self.run_cmd('fdisk -l -u /dev/{} | grep "Sector size"'.format(block_device)
-                                                    ).strip()
+                                                  ).strip()
                 if 'nvme' in block_device:
                     nvme_info = self.run_cmd('nvme list | grep {}'.format(block_device)).strip().split()
                     if len(nvme_info) >= 15:
