@@ -4,9 +4,9 @@
 cmake_minimum_required(VERSION 3.18)
 project(cudnn_benchmark LANGUAGES CXX)
 
-include(../cuda_common.cmake)
 find_package(CUDAToolkit QUIET)
 if(CUDAToolkit_FOUND)
+  include(../cuda_common.cmake)
   set(SRC "cudnn_helper.cpp" CACHE STRING "source file")
   set(TARGET_NAME "cudnn_function" CACHE STRING "target name")
 
@@ -28,7 +28,7 @@ if(CUDAToolkit_FOUND)
     add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
   endif()
 
-  add_executable(cudnn_benchmark cudnn_test.cpp)   
-  target_link_libraries(cudnn_benchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart ${CUDNN_LIBRARY}) 
+  add_executable(cudnn_benchmark cudnn_test.cpp)
+  target_link_libraries(cudnn_benchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart ${CUDNN_LIBRARY})
   install(TARGETS cudnn_benchmark ${TARGET_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 endif()
