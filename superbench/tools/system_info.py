@@ -418,7 +418,7 @@ class SystemInfo():    # pragma: no cover
                     if speed.isdigit():
                         nic_info['speed'] = str(int(speed) / 1000) + ' Gbit/s'
                 except Exception as ex:
-                    print('Error: get nic device {} info failed, message: {}'.format(nic_info['logical_name']), str(ex))
+                    print('Error: get nic device {} info failed, message: {}'.format(nic_info['logical_name'], str(ex)))
                 nic_list.append(nic_info)
         except Exception as ex:
             print('Error: get nic info failed, message: {}'.format(str(ex)))
