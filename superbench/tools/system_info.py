@@ -11,8 +11,8 @@ from pathlib import Path
 
 class SystemInfo():    # pragma: no cover
     """Systsem info class."""
-    def run_cmd(self, command):
-        """Run the command as root user and return the stdout string..
+    def _run_cmd(self, command):
+        """Run the command and return the stdout string.
 
         Args:
             command (string): the command to run in terminal.
@@ -21,16 +21,17 @@ class SystemInfo():    # pragma: no cover
             string: the stdout string of the command.
         """
         output = subprocess.run(
-            'sudo ' + command,
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             shell=True,
             check=False,
-            universal_newlines=True
+            universal_newlines=True,
+            timeout=600
         )
         return output.stdout
 
-    def count_prefix_indent(self, content, symbol='\t'):
+    def __count_prefix_indent(self, content, symbol='\t'):
         r"""Count the number of a specific symbol in the content.
 
         Args:
@@ -81,11 +82,11 @@ class SystemInfo():    # pragma: no cover
                 i += 1
                 continue
             # process with indent recursively
-            indent = self.count_prefix_indent(lines[i])
-            if i + 1 < length and self.count_prefix_indent(lines[i + 1]) > indent:
+            indent = self.__count_prefix_indent(lines[i])
+            if i + 1 < length and self.__count_prefix_indent(lines[i + 1]) > indent:
                 key = lines[i].strip().strip('\t')
                 next_indent_index = i + 1
-                while next_indent_index < length and self.count_prefix_indent(lines[next_indent_index]) > indent:
+                while next_indent_index < length and self.__count_prefix_indent(lines[next_indent_index]) > indent:
                     next_indent_index += 1
 
                 value = self.parse_key_value_lines(lines[i + 1:next_indent_index])
@@ -144,8 +145,8 @@ class SystemInfo():    # pragma: no cover
                         if index[i] < len(line):
                             dict[key[i]] = line[index[i]]
                     list.append(dict)
-        except Exception:
-            print('Error: key error in parse_table_lines')
+        except Exception as ex:
+            raise RuntimeError('Error: error in parse_table_lines') from ex
         return list
 
     def get_cpu(self):
@@ -157,13 +158,13 @@ class SystemInfo():    # pragma: no cover
         lscpu_dict = {}
         try:
             # get general cpu information from lscpu
-            lscpu = self.run_cmd('lscpu').splitlines()
+            lscpu = self._run_cmd('lscpu').splitlines()
             # get distinct max_speed and current_speed of cpus from dmidecode
-            speed = self.run_cmd(r'dmidecode -t processor | grep "Speed"').splitlines()
+            speed = self._run_cmd(r'dmidecode -t processor | grep "Speed"').splitlines()
             lscpu_dict = self.parse_key_value_lines(lscpu)
             lscpu_dict.update(self.parse_key_value_lines(speed))
-        except Exception:
-            print('Error: get CPU info failed')
+        except Exception as ex:
+            print('Error: get CPU info failed, message: {}'.format(str(ex)))
         return lscpu_dict
 
     def get_system(self):
@@ -174,24 +175,24 @@ class SystemInfo():    # pragma: no cover
         """
         system_dict = {}
         try:
-            lsmod = self.run_cmd('lsmod').splitlines()
+            lsmod = self._run_cmd('lsmod').splitlines()
             lsmod = self.parse_table_lines(lsmod, key=['Module', 'Size', 'Used', 'by'])
-            sysctl = self.run_cmd('sysctl -a').splitlines()
+            sysctl = self._run_cmd('sysctl -a').splitlines()
             sysctl = self.parse_key_value_lines(sysctl, None, None, '=')
-            system_dict['system_manufacturer'] = self.run_cmd('dmidecode -s system-manufacturer').strip()
-            system_dict['system_product'] = self.run_cmd('dmidecode -s system-product-name').strip()
-            system_dict['os'] = self.run_cmd('cat /proc/version').strip()
-            system_dict['uname'] = self.run_cmd('uname -a').strip()
+            system_dict['system_manufacturer'] = self._run_cmd('dmidecode -s system-manufacturer').strip()
+            system_dict['system_product'] = self._run_cmd('dmidecode -s system-product-name').strip()
+            system_dict['os'] = self._run_cmd('cat /proc/version').strip()
+            system_dict['uname'] = self._run_cmd('uname -a').strip()
             system_dict['docker'] = self.get_docker_version()
             system_dict['kernel_parameters'] = sysctl
             system_dict['kernel_modules'] = lsmod
-            system_dict['dmidecode'] = self.run_cmd('dmidecode').strip()
+            system_dict['dmidecode'] = self._run_cmd('dmidecode').strip()
             if system_dict['system_product'] == 'Virtual Machine':
-                lsvmbus = self.run_cmd('lsvmbus').splitlines()
+                lsvmbus = self._run_cmd('lsvmbus').splitlines()
                 lsvmbus = self.parse_key_value_lines(lsvmbus)
                 system_dict['vmbus'] = lsvmbus
-        except Exception:
-            print('Error: get system info failed')
+        except Exception as ex:
+            print('Error: get system info failed, message: {}'.format(str(ex)))
         return system_dict
 
     def get_docker_version(self):
@@ -202,7 +203,7 @@ class SystemInfo():    # pragma: no cover
         """
         docker_version_dict = {}
         try:
-            docker_version = self.run_cmd('docker version')
+            docker_version = self._run_cmd('docker version')
             lines = docker_version.splitlines()
 
             key = ''
@@ -213,8 +214,8 @@ class SystemInfo():    # pragma: no cover
                     key = 'docker_daemon_version'
                 elif 'Version' in line and key not in docker_version_dict:
                     docker_version_dict[key] = line.split(':')[1].strip().strip('\t')
-        except Exception:
-            print('Error: get docker info failed')
+        except Exception as ex:
+            raise RuntimeError('Error: get docker info failed') from ex
         return docker_version_dict
 
     def get_memory(self):
@@ -225,12 +226,12 @@ class SystemInfo():    # pragma: no cover
         """
         memory_dict = {}
         try:
-            lsmem = self.run_cmd('lsmem')
+            lsmem = self._run_cmd('lsmem')
             lsmem = lsmem.splitlines()
             lsmem = self.parse_key_value_lines(lsmem)
             memory_dict['block_size'] = lsmem.get('Memory block size', '')
             memory_dict['total_capacity'] = lsmem.get('Total online memory', '')
-            dmidecode_memory = self.run_cmd('dmidecode --type memory')
+            dmidecode_memory = self._run_cmd('dmidecode --type memory')
             dmidecode_memory = dmidecode_memory.splitlines()
             model = self.parse_key_value_lines(
                 dmidecode_memory, ['Manufacturer', 'Part Number', 'Type', 'Speed', 'Number Of Devices'],
@@ -240,8 +241,8 @@ class SystemInfo():    # pragma: no cover
             memory_dict['type'] = model.get('Type', '')
             memory_dict['clock_frequency'] = model.get('Speed', '')
             memory_dict['model'] = model.get('Manufacturer', [''])[0] + ' ' + model.get('Part Number', [''])[0]
-        except Exception:
-            print('Error: get memory info failed')
+        except Exception as ex:
+            print('Error: get memory info failed, message: {}'.format(str(ex)))
         return memory_dict
 
     def get_gpu_nvidia(self):
@@ -252,18 +253,18 @@ class SystemInfo():    # pragma: no cover
         """
         gpu_dict = {}
         try:
-            gpu_query = self.run_cmd('nvidia-smi -q -x')
+            gpu_query = self._run_cmd('nvidia-smi -q -x')
             gpu_query = xmltodict.parse(gpu_query).get('nvidia_smi_log', '')
             gpu_dict['gpu_count'] = gpu_query.get('attached_gpus', '')
             gpu_dict['nvidia_info'] = gpu_query
-            gpu_dict['topo'] = self.run_cmd('nvidia-smi topo -m')
-            gpu_dict['nvidia-container-runtime_version'] = self.run_cmd('nvidia-container-runtime -v').strip()
-            gpu_dict['nvidia-fabricmanager_version'] = self.run_cmd('nv-fabricmanager --version').strip()
-            gpu_dict['nv_peer_mem_version'] = self.run_cmd(
+            gpu_dict['topo'] = self._run_cmd('nvidia-smi topo -m')
+            gpu_dict['nvidia-container-runtime_version'] = self._run_cmd('nvidia-container-runtime -v').strip()
+            gpu_dict['nvidia-fabricmanager_version'] = self._run_cmd('nv-fabricmanager --version').strip()
+            gpu_dict['nv_peer_mem_version'] = self._run_cmd(
                 'dpkg -l | grep \'nvidia-peer-memory \' | awk \'$2=="nvidia-peer-memory" {print $3}\''
             ).strip()
-        except Exception:
-            print('Error: get nvidia gpu info failed')
+        except Exception as ex:
+            raise RuntimeError('Error: get nvidia gpu info failed') from ex
 
         return gpu_dict
 
@@ -275,18 +276,18 @@ class SystemInfo():    # pragma: no cover
         """
         gpu_dict = {}
         try:
-            gpu_query = self.run_cmd('rocm-smi -a --json')
+            gpu_query = self._run_cmd('rocm-smi -a --json')
             gpu_query = json.loads(gpu_query)
             gpu_per_node = list(filter(lambda x: 'card' in x, gpu_query.keys()))
             gpu_dict['gpu_count'] = len(gpu_per_node)
-            gpu_mem_info = self.run_cmd('rocm-smi --showmeminfo vram --json')
+            gpu_mem_info = self._run_cmd('rocm-smi --showmeminfo vram --json')
             gpu_mem_info = json.loads(gpu_mem_info)
             for card in gpu_per_node:
                 gpu_query[card].update(gpu_mem_info.get(card))
             gpu_dict['rocm_info'] = gpu_query
-            gpu_dict['topo'] = self.run_cmd('rocm-smi --showtopo')
-        except Exception:
-            print('Error: get amd gpu info failed')
+            gpu_dict['topo'] = self._run_cmd('rocm-smi --showtopo')
+        except Exception as ex:
+            raise RuntimeError('Error: get amd gpu info failed') from ex
         return gpu_dict
 
     def get_gpu(self):
@@ -295,10 +296,13 @@ class SystemInfo():    # pragma: no cover
         Returns:
             dict: gpu info dict.
         """
-        if Path('/dev/nvidiactl').is_char_device() and Path('/dev/nvidia-uvm').is_char_device():
-            return self.get_gpu_nvidia()
-        if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
-            return self.get_gpu_amd()
+        try:
+            if Path('/dev/nvidiactl').is_char_device() and Path('/dev/nvidia-uvm').is_char_device():
+                return self.get_gpu_nvidia()
+            if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
+                return self.get_gpu_amd()
+        except Exception as ex:
+            print('Error: get gpu info failed, message: {}'.format(str(ex)))
         print('Warning: no gpu detected')
         return {}
 
@@ -310,10 +314,10 @@ class SystemInfo():    # pragma: no cover
         """
         pcie_dict = {}
         try:
-            pcie_dict['pcie_topo'] = self.run_cmd('lspci -t -vvv')
-            pcie_dict['pcie_info'] = self.run_cmd('lspci -vvv')
-        except Exception:
-            print('Error: get pcie gpu info failed')
+            pcie_dict['pcie_topo'] = self._run_cmd('lspci -t -vvv')
+            pcie_dict['pcie_info'] = self._run_cmd('lspci -vvv')
+        except Exception as ex:
+            print('Error: get pcie gpu info failed, message: {}'.format(str(ex)))
         return pcie_dict
 
     def get_storage(self):    # noqa: C901
@@ -324,38 +328,39 @@ class SystemInfo():    # pragma: no cover
         """
         storage_dict = {}
         try:
-            fs_info = self.run_cmd("df -Th | grep -v \'^/dev/loop\'").splitlines()
+            fs_info = self._run_cmd("df -Th | grep -v \'^/dev/loop\'").splitlines()
             fs_list = self.parse_table_lines(fs_info, key=['Filesystem', 'Type', 'Size', 'Avail', 'Mounted'])
             for fs in fs_list:
                 fs_device = fs.get('Filesystem', 'UNKNOWN')
                 if fs_device.startswith('/dev'):
-                    fs['Block_size'] = self.run_cmd('blockdev --getbsz {}'.format(fs_device)).strip()
+                    fs['Block_size'] = self._run_cmd('blockdev --getbsz {}'.format(fs_device)).strip()
                     fs['4k_alignment'] = ''
-                    partition_ids = self.run_cmd('parted {} print | grep -oE "^[[:blank:]]*[0-9]+"'.format(fs_device)
-                                                 ).splitlines()
+                    partition_ids = self._run_cmd('parted {} print | grep -oE "^[[:blank:]]*[0-9]+"'.format(fs_device)
+                                                  ).splitlines()
                     for id in partition_ids:
-                        fs['4k_alignment'] += self.run_cmd('parted {} align-check opt {}'.format(fs_device, id)).strip()
+                        fs['4k_alignment'] += self._run_cmd('parted {} align-check opt {}'.format(fs_device,
+                                                                                                  id)).strip()
             storage_dict['file_system'] = fs_list
-        except Exception:
-            print('Error: get file system info failed')
+        except Exception as ex:
+            print('Error: get file system info failed, message: {}'.format(str(ex)))
 
         try:
-            disk_info = self.run_cmd("lsblk -e 7 -o NAME,ROTA,SIZE,MODEL | grep -v \'^/dev/loop\'").splitlines()
+            disk_info = self._run_cmd("lsblk -e 7 -o NAME,ROTA,SIZE,MODEL | grep -v \'^/dev/loop\'").splitlines()
             disk_list = self.parse_table_lines(disk_info, key=['NAME', 'ROTA', 'SIZE', 'MODEL'])
             for disk in disk_list:
                 block_device = disk.get('NAME', 'UNKNOWN').strip('\u251c\u2500').strip('\u2514\u2500')
                 disk['NAME'] = block_device
                 disk['Rotational'] = disk.pop('ROTA')
-                disk['Block_size'] = self.run_cmd('fdisk -l -u /dev/{} | grep "Sector size"'.format(block_device)
-                                                  ).strip()
+                disk['Block_size'] = self._run_cmd('fdisk -l -u /dev/{} | grep "Sector size"'.format(block_device)
+                                                   ).strip()
                 if 'nvme' in block_device:
-                    nvme_info = self.run_cmd('nvme list | grep {}'.format(block_device)).strip().split()
+                    nvme_info = self._run_cmd('nvme list | grep {}'.format(block_device)).strip().split()
                     if len(nvme_info) >= 15:
                         disk['Nvme_usage'] = nvme_info[-11] + nvme_info[-10]
             storage_dict['block_device'] = disk_list
-            storage_dict['mapping_bwtween_filesystem_and_blockdevice'] = self.run_cmd('mount')
-        except Exception:
-            print('Error: get block device info failed')
+            storage_dict['mapping_bwtween_filesystem_and_blockdevice'] = self._run_cmd('mount')
+        except Exception as ex:
+            print('Error: get block device info failed, message: {}'.format(str(ex)))
 
         return storage_dict
 
@@ -367,9 +372,9 @@ class SystemInfo():    # pragma: no cover
         """
         ib_dict = {}
         try:
-            ibstat = self.run_cmd('ibstat').splitlines()
+            ibstat = self._run_cmd('ibstat').splitlines()
             ib_dict['ib_device_status'] = self.parse_key_value_lines(ibstat)
-            ibv_devinfo = self.run_cmd('ibv_devinfo -v').splitlines()
+            ibv_devinfo = self._run_cmd('ibv_devinfo -v').splitlines()
             for i in range(len(ibv_devinfo) - 1, -1, -1):
                 if ':' not in ibv_devinfo[i]:
                     ibv_devinfo[i - 1] = ibv_devinfo[i - 1] + ',' + ibv_devinfo[i].strip('\t')
@@ -387,7 +392,7 @@ class SystemInfo():    # pragma: no cover
         """
         nic_list = []
         try:
-            lsnic_xml = self.run_cmd('lshw -c network -xml')
+            lsnic_xml = self._run_cmd('lshw -c network -xml')
             lsnic_list = xmltodict.parse(lsnic_xml).get('list', {}).get('node', [])
             if not isinstance(lsnic_list, list):
                 lsnic_list = [lsnic_list]
@@ -409,14 +414,14 @@ class SystemInfo():    # pragma: no cover
                             'driverversion', ''
                         )
                         nic_info['firmware'] = configuration_dict.get('firmware', '')
-                    speed = self.run_cmd('cat /sys/class/net/{}/speed'.format(nic_info['logical_name'])).strip()
+                    speed = self._run_cmd('cat /sys/class/net/{}/speed'.format(nic_info['logical_name'])).strip()
                     if speed.isdigit():
                         nic_info['speed'] = str(int(speed) / 1000) + ' Gbit/s'
-                except Exception:
-                    print('Error: get nic device {} info failed'.format(nic_info['logical_name']))
+                except Exception as ex:
+                    print('Error: get nic device {} info failed, message: {}'.format(nic_info['logical_name']), str(ex))
                 nic_list.append(nic_info)
-        except Exception:
-            print('Error: get nic info failed')
+        except Exception as ex:
+            print('Error: get nic info failed, message: {}'.format(str(ex)))
         return nic_list
 
     def get_network(self):
@@ -428,7 +433,7 @@ class SystemInfo():    # pragma: no cover
         network_dict = {}
         network_dict['nic'] = self.get_nic()
         network_dict['ib'] = self.get_ib()
-        ofed_version = self.run_cmd('ofed_info  -s').strip()
+        ofed_version = self._run_cmd('ofed_info  -s').strip()
         network_dict['ofed_version'] = ofed_version
         return network_dict
 
