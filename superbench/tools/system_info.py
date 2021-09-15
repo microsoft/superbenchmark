@@ -49,7 +49,7 @@ class SystemInfo():    # pragma: no cover
                 break
         return count
 
-    def parse_key_value_lines(self, lines, required_keywords=None, omitted_values=None, symbol=':'):    # noqa: C901
+    def _parse_key_value_lines(self, lines, required_keywords=None, omitted_values=None, symbol=':'):    # noqa: C901
         """Parse the lines like "key:value" and convert them to dict.
 
         if required_keywords is None, include all line. Otherwise,
@@ -89,7 +89,7 @@ class SystemInfo():    # pragma: no cover
                 while next_indent_index < length and self.__count_prefix_indent(lines[next_indent_index]) > indent:
                     next_indent_index += 1
 
-                value = self.parse_key_value_lines(lines[i + 1:next_indent_index])
+                value = self._parse_key_value_lines(lines[i + 1:next_indent_index])
                 i = next_indent_index - 1
             # split line by symbol
             elif symbol in line:
@@ -118,7 +118,7 @@ class SystemInfo():    # pragma: no cover
             i += 1
         return dict
 
-    def parse_table_lines(self, lines, key):
+    def _parse_table_lines(self, lines, key):
         """Parse lines like a table and extract the colomns whose table index are the same as key to list of dict.
 
         Args:
@@ -161,8 +161,8 @@ class SystemInfo():    # pragma: no cover
             lscpu = self._run_cmd('lscpu').splitlines()
             # get distinct max_speed and current_speed of cpus from dmidecode
             speed = self._run_cmd(r'dmidecode -t processor | grep "Speed"').splitlines()
-            lscpu_dict = self.parse_key_value_lines(lscpu)
-            lscpu_dict.update(self.parse_key_value_lines(speed))
+            lscpu_dict = self._parse_key_value_lines(lscpu)
+            lscpu_dict.update(self._parse_key_value_lines(speed))
         except Exception as ex:
             print('Error: get CPU info failed, message: {}'.format(str(ex)))
         return lscpu_dict
@@ -176,9 +176,9 @@ class SystemInfo():    # pragma: no cover
         system_dict = {}
         try:
             lsmod = self._run_cmd('lsmod').splitlines()
-            lsmod = self.parse_table_lines(lsmod, key=['Module', 'Size', 'Used', 'by'])
+            lsmod = self._parse_table_lines(lsmod, key=['Module', 'Size', 'Used', 'by'])
             sysctl = self._run_cmd('sysctl -a').splitlines()
-            sysctl = self.parse_key_value_lines(sysctl, None, None, '=')
+            sysctl = self._parse_key_value_lines(sysctl, None, None, '=')
             system_dict['system_manufacturer'] = self._run_cmd('dmidecode -s system-manufacturer').strip()
             system_dict['system_product'] = self._run_cmd('dmidecode -s system-product-name').strip()
             system_dict['os'] = self._run_cmd('cat /proc/version').strip()
@@ -189,7 +189,7 @@ class SystemInfo():    # pragma: no cover
             system_dict['dmidecode'] = self._run_cmd('dmidecode').strip()
             if system_dict['system_product'] == 'Virtual Machine':
                 lsvmbus = self._run_cmd('lsvmbus').splitlines()
-                lsvmbus = self.parse_key_value_lines(lsvmbus)
+                lsvmbus = self._parse_key_value_lines(lsvmbus)
                 system_dict['vmbus'] = lsvmbus
         except Exception as ex:
             print('Error: get system info failed, message: {}'.format(str(ex)))
@@ -228,12 +228,12 @@ class SystemInfo():    # pragma: no cover
         try:
             lsmem = self._run_cmd('lsmem')
             lsmem = lsmem.splitlines()
-            lsmem = self.parse_key_value_lines(lsmem)
+            lsmem = self._parse_key_value_lines(lsmem)
             memory_dict['block_size'] = lsmem.get('Memory block size', '')
             memory_dict['total_capacity'] = lsmem.get('Total online memory', '')
             dmidecode_memory = self._run_cmd('dmidecode --type memory')
             dmidecode_memory = dmidecode_memory.splitlines()
-            model = self.parse_key_value_lines(
+            model = self._parse_key_value_lines(
                 dmidecode_memory, ['Manufacturer', 'Part Number', 'Type', 'Speed', 'Number Of Devices'],
                 omitted_values=['other', 'unknown']
             )
@@ -329,7 +329,7 @@ class SystemInfo():    # pragma: no cover
         storage_dict = {}
         try:
             fs_info = self._run_cmd("df -Th | grep -v \'^/dev/loop\'").splitlines()
-            fs_list = self.parse_table_lines(fs_info, key=['Filesystem', 'Type', 'Size', 'Avail', 'Mounted'])
+            fs_list = self._parse_table_lines(fs_info, key=['Filesystem', 'Type', 'Size', 'Avail', 'Mounted'])
             for fs in fs_list:
                 fs_device = fs.get('Filesystem', 'UNKNOWN')
                 if fs_device.startswith('/dev'):
@@ -346,7 +346,7 @@ class SystemInfo():    # pragma: no cover
 
         try:
             disk_info = self._run_cmd("lsblk -e 7 -o NAME,ROTA,SIZE,MODEL | grep -v \'^/dev/loop\'").splitlines()
-            disk_list = self.parse_table_lines(disk_info, key=['NAME', 'ROTA', 'SIZE', 'MODEL'])
+            disk_list = self._parse_table_lines(disk_info, key=['NAME', 'ROTA', 'SIZE', 'MODEL'])
             for disk in disk_list:
                 block_device = disk.get('NAME', 'UNKNOWN').strip('\u251c\u2500').strip('\u2514\u2500')
                 disk['NAME'] = block_device
@@ -373,13 +373,13 @@ class SystemInfo():    # pragma: no cover
         ib_dict = {}
         try:
             ibstat = self._run_cmd('ibstat').splitlines()
-            ib_dict['ib_device_status'] = self.parse_key_value_lines(ibstat)
+            ib_dict['ib_device_status'] = self._parse_key_value_lines(ibstat)
             ibv_devinfo = self._run_cmd('ibv_devinfo -v').splitlines()
             for i in range(len(ibv_devinfo) - 1, -1, -1):
                 if ':' not in ibv_devinfo[i]:
                     ibv_devinfo[i - 1] = ibv_devinfo[i - 1] + ',' + ibv_devinfo[i].strip('\t')
                     ibv_devinfo.remove(ibv_devinfo[i])
-            ib_dict['ib_device_info'] = self.parse_key_value_lines(ibv_devinfo)
+            ib_dict['ib_device_info'] = self._parse_key_value_lines(ibv_devinfo)
         except Exception as e:
             print('Error: get ib info failed. message: {}.'.format(str(e)))
         return ib_dict
@@ -450,8 +450,3 @@ class SystemInfo():    # pragma: no cover
         with open('system.json', 'w', encoding='utf-8') as f:
             json.dump(sum_dict, f, indent=4)
         return sum_dict
-
-
-if __name__ == '__main__':
-    sys = SystemInfo()
-    sum_dict = sys.get_all()
