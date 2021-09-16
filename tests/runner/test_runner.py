@@ -116,8 +116,6 @@ class RunnerTestCase(unittest.TestCase):
                 'expected_command': (
                     'python3 -m torch.distributed.launch '
                     '--use_env --no_python --nproc_per_node=8 '
-                    '--nnodes=1 --node_rank=$NODE_RANK '
-                    '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo '
                     'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
