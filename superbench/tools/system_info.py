@@ -447,6 +447,4 @@ class SystemInfo():    # pragma: no cover
         sum_dict['Network'] = self.get_network()
         sum_dict['PCIe'] = self.get_pcie()
         sum_dict['Accelerator'] = self.get_gpu()
-        with open('system.json', 'w', encoding='utf-8') as f:
-            json.dump(sum_dict, f, indent=4)
         return sum_dict
