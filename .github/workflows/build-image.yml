@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - main
+    - release/*
   pull_request:
     branches:
     - main
@@ -36,11 +37,19 @@ jobs:
           done
           sudo apt-get clean
           df -h
-          echo 'nproc: '$(nproc)
       - name: Prepare metadata
         id: metadata
         run: |
           TAGS=${{ matrix.tags }}
+          if [ "${{ github.event_name }}" == "push" ] && [[ ${{ github.ref }} == refs/heads/release/* ]]; then
+            TAGS=$(sed "s/main:/release:${GITHUB_REF##*/}-/g" <<< ${TAGS})
+          fi
+          if [ "${{ github.event_name }}" == "pull_request" ] && [[ ${{ github.base_ref }} == refs/heads/release/* ]]; then
+            TAGS=$(sed "s/main:/release:${GITHUB_BASE_REF##*/}-/g" <<< ${TAGS})
+          fi
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            TAGS=$(sed "s/main:/dev:/g" <<< ${TAGS})
+          fi
           DOCKERFILE=dockerfile/${{ matrix.name }}.dockerfile
 
           CACHE_FROM="type=registry,ref=$(cut -d, -f1 <<< ${TAGS})"
@@ -53,6 +62,8 @@ jobs:
           echo ::set-output name=tags::${TAGS}
           echo ::set-output name=cache_from::${CACHE_FROM}
           echo ::set-output name=cache_to::${CACHE_TO}
+      - name: Echo image tag
+        run: echo ${{ steps.metadata.outputs.tags }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
