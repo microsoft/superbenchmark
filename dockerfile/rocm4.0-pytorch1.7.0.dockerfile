@@ -88,7 +88,7 @@ ENV PATH="${PATH}" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-4.0.0 make -j -C third_party rocm
+RUN ROCM_VERSION=rocm-4.0.0 make -j -C third_party -o rocm_rocblas rocm
 
 # Workaround for image having package installed in user path
 RUN mv /root/.local/bin/* /opt/conda/bin/ && \
