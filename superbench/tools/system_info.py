@@ -6,8 +6,9 @@
 import json
 import os
 import subprocess
-import xmltodict
 from pathlib import Path
+
+import xmltodict
 
 from superbench.common.utils import logger
 
@@ -163,8 +164,8 @@ class SystemInfo():    # pragma: no cover
             speed = self._run_cmd(r'dmidecode -t processor | grep "Speed"').splitlines()
             lscpu_dict = self._parse_key_value_lines(lscpu)
             lscpu_dict.update(self._parse_key_value_lines(speed))
-        except Exception as ex:
-            logger.exception('Error: get CPU info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get CPU info failed')
         return lscpu_dict
 
     def get_system(self):
@@ -191,8 +192,8 @@ class SystemInfo():    # pragma: no cover
                 lsvmbus = self._run_cmd('lsvmbus').splitlines()
                 lsvmbus = self._parse_key_value_lines(lsvmbus)
                 system_dict['vmbus'] = lsvmbus
-        except Exception as ex:
-            logger.exception('Error: get system info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get system info failed')
         return system_dict
 
     def get_docker_version(self):
@@ -214,8 +215,8 @@ class SystemInfo():    # pragma: no cover
                     key = 'docker_daemon_version'
                 elif 'Version' in line and key not in docker_version_dict:
                     docker_version_dict[key] = line.split(':')[1].strip().strip('\t')
-        except Exception as ex:
-            logger.exception('Error: get docker info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get docker info failed')
         return docker_version_dict
 
     def get_memory(self):
@@ -241,8 +242,8 @@ class SystemInfo():    # pragma: no cover
             memory_dict['type'] = model.get('Type', '')
             memory_dict['clock_frequency'] = model.get('Speed', '')
             memory_dict['model'] = model.get('Manufacturer', [''])[0] + ' ' + model.get('Part Number', [''])[0]
-        except Exception as ex:
-            logger.exception('Error: get memory info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get memory info failed')
         return memory_dict
 
     def get_gpu_nvidia(self):
@@ -296,8 +297,8 @@ class SystemInfo():    # pragma: no cover
                 return self.get_gpu_nvidia()
             if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
                 return self.get_gpu_amd()
-        except Exception as ex:
-            logger.exception('Error: get gpu info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get gpu info failed')
         print('Warning: no gpu detected')
         return {}
 
@@ -311,8 +312,8 @@ class SystemInfo():    # pragma: no cover
         try:
             pcie_dict['pcie_topo'] = self._run_cmd('lspci -t -vvv')
             pcie_dict['pcie_info'] = self._run_cmd('lspci -vvv')
-        except Exception as ex:
-            logger.exception('Error: get pcie gpu info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get pcie info failed')
         return pcie_dict
 
     def get_storage(self):    # noqa: C901
@@ -338,8 +339,8 @@ class SystemInfo():    # pragma: no cover
                             'yes Cancel | parted {} align-check opt {}'.format(fs_device, id)
                         ).strip()
             storage_dict['file_system'] = fs_list
-        except Exception as ex:
-            logger.exception('Error: get file system info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get file system info failed')
 
         try:
             disk_info = self._run_cmd("lsblk -e 7 -o NAME,ROTA,SIZE,MODEL | grep -v \'^/dev/loop\'").splitlines()
@@ -356,8 +357,8 @@ class SystemInfo():    # pragma: no cover
                         disk['Nvme_usage'] = nvme_info[-11] + nvme_info[-10]
             storage_dict['block_device'] = disk_list
             storage_dict['mapping_bwtween_filesystem_and_blockdevice'] = self._run_cmd('mount')
-        except Exception as ex:
-            logger.exception('Error: get block device info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get block device info failed')
 
         return storage_dict
 
@@ -377,8 +378,8 @@ class SystemInfo():    # pragma: no cover
                     ibv_devinfo[i - 1] = ibv_devinfo[i - 1] + ',' + ibv_devinfo[i].strip('\t')
                     ibv_devinfo.remove(ibv_devinfo[i])
             ib_dict['ib_device_info'] = self._parse_key_value_lines(ibv_devinfo)
-        except Exception as e:
-            logger.exception('Error: get ib info failed. message: {}.'.format(str(e)))
+        except Exception:
+            logger.exception('Error: get ib info failed')
         return ib_dict
 
     def get_nic(self):
@@ -414,14 +415,12 @@ class SystemInfo():    # pragma: no cover
                     speed = self._run_cmd('cat /sys/class/net/{}/speed'.format(nic_info['logical_name'])).strip()
                     if speed.isdigit():
                         nic_info['speed'] = str(int(speed) / 1000) + ' Gbit/s'
-                except Exception as ex:
-                    logger.exception(
-                        'Error: get nic device {} info failed, message: {}'.format(nic_info['logical_name'], str(ex))
-                    )
+                except Exception:
+                    logger.exception('Error: get nic device {} info failed')
+
                 nic_list.append(nic_info)
-        except Exception as ex:
-            logger.exception('Error: get nic info failed, message: {}'.format(str(ex)))
-        return nic_list
+        except Exception:
+            logger.exception('Error: get nic info failed')
 
     def get_network(self):
         """Get network info, including nic info, ib info and ofed version.
@@ -435,8 +434,8 @@ class SystemInfo():    # pragma: no cover
             network_dict['ib'] = self.get_ib()
             ofed_version = self._run_cmd('ofed_info  -s').strip()
             network_dict['ofed_version'] = ofed_version
-        except Exception as ex:
-            logger.exception('Error: get network info failed, message: {}'.format(str(ex)))
+        except Exception:
+            logger.exception('Error: get network info failed')
         return network_dict
 
     def get_all(self):
