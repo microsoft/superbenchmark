@@ -4,9 +4,12 @@
 """Generate system config."""
 
 import json
+import os
 import subprocess
 import xmltodict
 from pathlib import Path
+
+from superbench.common.utils import logger
 
 
 class SystemInfo():    # pragma: no cover
@@ -27,7 +30,7 @@ class SystemInfo():    # pragma: no cover
             shell=True,
             check=False,
             universal_newlines=True,
-            timeout=600
+            timeout=300
         )
         return output.stdout
 
@@ -131,22 +134,19 @@ class SystemInfo():    # pragma: no cover
         index = []
         list = []
         valid = False
-        try:
-            for line in lines:
-                line = line.split()
-                if key[0] in line:
-                    for i in range(len(key)):
-                        index.append(line.index(key[i]))
-                    valid = True
-                    continue
-                if valid:
-                    dict = {}
-                    for i in range(len(key)):
-                        if index[i] < len(line):
-                            dict[key[i]] = line[index[i]]
-                    list.append(dict)
-        except Exception as ex:
-            raise RuntimeError('Error: error in parse_table_lines') from ex
+        for line in lines:
+            line = line.split()
+            if key[0] in line:
+                for i in range(len(key)):
+                    index.append(line.index(key[i]))
+                valid = True
+                continue
+            if valid:
+                dict = {}
+                for i in range(len(key)):
+                    if index[i] < len(line):
+                        dict[key[i]] = line[index[i]]
+                list.append(dict)
         return list
 
     def get_cpu(self):
@@ -164,7 +164,7 @@ class SystemInfo():    # pragma: no cover
             lscpu_dict = self._parse_key_value_lines(lscpu)
             lscpu_dict.update(self._parse_key_value_lines(speed))
         except Exception as ex:
-            print('Error: get CPU info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get CPU info failed, message: {}'.format(str(ex)))
         return lscpu_dict
 
     def get_system(self):
@@ -192,7 +192,7 @@ class SystemInfo():    # pragma: no cover
                 lsvmbus = self._parse_key_value_lines(lsvmbus)
                 system_dict['vmbus'] = lsvmbus
         except Exception as ex:
-            print('Error: get system info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get system info failed, message: {}'.format(str(ex)))
         return system_dict
 
     def get_docker_version(self):
@@ -215,7 +215,7 @@ class SystemInfo():    # pragma: no cover
                 elif 'Version' in line and key not in docker_version_dict:
                     docker_version_dict[key] = line.split(':')[1].strip().strip('\t')
         except Exception as ex:
-            raise RuntimeError('Error: get docker info failed') from ex
+            logger.exception('Error: get docker info failed, message: {}'.format(str(ex)))
         return docker_version_dict
 
     def get_memory(self):
@@ -242,7 +242,7 @@ class SystemInfo():    # pragma: no cover
             memory_dict['clock_frequency'] = model.get('Speed', '')
             memory_dict['model'] = model.get('Manufacturer', [''])[0] + ' ' + model.get('Part Number', [''])[0]
         except Exception as ex:
-            print('Error: get memory info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get memory info failed, message: {}'.format(str(ex)))
         return memory_dict
 
     def get_gpu_nvidia(self):
@@ -252,19 +252,16 @@ class SystemInfo():    # pragma: no cover
             dict: nvidia gpu info dict.
         """
         gpu_dict = {}
-        try:
-            gpu_query = self._run_cmd('nvidia-smi -q -x')
-            gpu_query = xmltodict.parse(gpu_query).get('nvidia_smi_log', '')
-            gpu_dict['gpu_count'] = gpu_query.get('attached_gpus', '')
-            gpu_dict['nvidia_info'] = gpu_query
-            gpu_dict['topo'] = self._run_cmd('nvidia-smi topo -m')
-            gpu_dict['nvidia-container-runtime_version'] = self._run_cmd('nvidia-container-runtime -v').strip()
-            gpu_dict['nvidia-fabricmanager_version'] = self._run_cmd('nv-fabricmanager --version').strip()
-            gpu_dict['nv_peer_mem_version'] = self._run_cmd(
-                'dpkg -l | grep \'nvidia-peer-memory \' | awk \'$2=="nvidia-peer-memory" {print $3}\''
-            ).strip()
-        except Exception as ex:
-            raise RuntimeError('Error: get nvidia gpu info failed') from ex
+        gpu_query = self._run_cmd('nvidia-smi -q -x')
+        gpu_query = xmltodict.parse(gpu_query).get('nvidia_smi_log', '')
+        gpu_dict['gpu_count'] = gpu_query.get('attached_gpus', '')
+        gpu_dict['nvidia_info'] = gpu_query
+        gpu_dict['topo'] = self._run_cmd('nvidia-smi topo -m')
+        gpu_dict['nvidia-container-runtime_version'] = self._run_cmd('nvidia-container-runtime -v').strip()
+        gpu_dict['nvidia-fabricmanager_version'] = self._run_cmd('nv-fabricmanager --version').strip()
+        gpu_dict['nv_peer_mem_version'] = self._run_cmd(
+            'dpkg -l | grep \'nvidia-peer-memory \' | awk \'$2=="nvidia-peer-memory" {print $3}\''
+        ).strip()
 
         return gpu_dict
 
@@ -275,19 +272,17 @@ class SystemInfo():    # pragma: no cover
             dict: amd gpu info dict.
         """
         gpu_dict = {}
-        try:
-            gpu_query = self._run_cmd('rocm-smi -a --json')
-            gpu_query = json.loads(gpu_query)
-            gpu_per_node = list(filter(lambda x: 'card' in x, gpu_query.keys()))
-            gpu_dict['gpu_count'] = len(gpu_per_node)
-            gpu_mem_info = self._run_cmd('rocm-smi --showmeminfo vram --json')
-            gpu_mem_info = json.loads(gpu_mem_info)
-            for card in gpu_per_node:
-                gpu_query[card].update(gpu_mem_info.get(card))
-            gpu_dict['rocm_info'] = gpu_query
-            gpu_dict['topo'] = self._run_cmd('rocm-smi --showtopo')
-        except Exception as ex:
-            raise RuntimeError('Error: get amd gpu info failed') from ex
+        gpu_query = self._run_cmd('rocm-smi -a --json')
+        gpu_query = json.loads(gpu_query)
+        gpu_per_node = list(filter(lambda x: 'card' in x, gpu_query.keys()))
+        gpu_dict['gpu_count'] = len(gpu_per_node)
+        gpu_mem_info = self._run_cmd('rocm-smi --showmeminfo vram --json')
+        gpu_mem_info = json.loads(gpu_mem_info)
+        for card in gpu_per_node:
+            gpu_query[card].update(gpu_mem_info.get(card))
+        gpu_dict['rocm_info'] = gpu_query
+        gpu_dict['topo'] = self._run_cmd('rocm-smi --showtopo')
+
         return gpu_dict
 
     def get_gpu(self):
@@ -302,7 +297,7 @@ class SystemInfo():    # pragma: no cover
             if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
                 return self.get_gpu_amd()
         except Exception as ex:
-            print('Error: get gpu info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get gpu info failed, message: {}'.format(str(ex)))
         print('Warning: no gpu detected')
         return {}
 
@@ -317,7 +312,7 @@ class SystemInfo():    # pragma: no cover
             pcie_dict['pcie_topo'] = self._run_cmd('lspci -t -vvv')
             pcie_dict['pcie_info'] = self._run_cmd('lspci -vvv')
         except Exception as ex:
-            print('Error: get pcie gpu info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get pcie gpu info failed, message: {}'.format(str(ex)))
         return pcie_dict
 
     def get_storage(self):    # noqa: C901
@@ -335,14 +330,16 @@ class SystemInfo():    # pragma: no cover
                 if fs_device.startswith('/dev'):
                     fs['Block_size'] = self._run_cmd('blockdev --getbsz {}'.format(fs_device)).strip()
                     fs['4k_alignment'] = ''
-                    partition_ids = self._run_cmd('parted {} print | grep -oE "^[[:blank:]]*[0-9]+"'.format(fs_device)
-                                                  ).splitlines()
+                    partition_ids = self._run_cmd(
+                        'yes Cancel | parted {} print | grep -oE "^[[:blank:]]*[0-9]+"'.format(fs_device)
+                    ).splitlines()
                     for id in partition_ids:
-                        fs['4k_alignment'] += self._run_cmd('parted {} align-check opt {}'.format(fs_device,
-                                                                                                  id)).strip()
+                        fs['4k_alignment'] += self._run_cmd(
+                            'yes Cancel | parted {} align-check opt {}'.format(fs_device, id)
+                        ).strip()
             storage_dict['file_system'] = fs_list
         except Exception as ex:
-            print('Error: get file system info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get file system info failed, message: {}'.format(str(ex)))
 
         try:
             disk_info = self._run_cmd("lsblk -e 7 -o NAME,ROTA,SIZE,MODEL | grep -v \'^/dev/loop\'").splitlines()
@@ -360,7 +357,7 @@ class SystemInfo():    # pragma: no cover
             storage_dict['block_device'] = disk_list
             storage_dict['mapping_bwtween_filesystem_and_blockdevice'] = self._run_cmd('mount')
         except Exception as ex:
-            print('Error: get block device info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get block device info failed, message: {}'.format(str(ex)))
 
         return storage_dict
 
@@ -381,7 +378,7 @@ class SystemInfo():    # pragma: no cover
                     ibv_devinfo.remove(ibv_devinfo[i])
             ib_dict['ib_device_info'] = self._parse_key_value_lines(ibv_devinfo)
         except Exception as e:
-            print('Error: get ib info failed. message: {}.'.format(str(e)))
+            logger.exception('Error: get ib info failed. message: {}.'.format(str(e)))
         return ib_dict
 
     def get_nic(self):
@@ -418,10 +415,12 @@ class SystemInfo():    # pragma: no cover
                     if speed.isdigit():
                         nic_info['speed'] = str(int(speed) / 1000) + ' Gbit/s'
                 except Exception as ex:
-                    print('Error: get nic device {} info failed, message: {}'.format(nic_info['logical_name'], str(ex)))
+                    logger.exception(
+                        'Error: get nic device {} info failed, message: {}'.format(nic_info['logical_name'], str(ex))
+                    )
                 nic_list.append(nic_info)
         except Exception as ex:
-            print('Error: get nic info failed, message: {}'.format(str(ex)))
+            logger.exception('Error: get nic info failed, message: {}'.format(str(ex)))
         return nic_list
 
     def get_network(self):
@@ -431,15 +430,21 @@ class SystemInfo():    # pragma: no cover
             dict: dict of network info.
         """
         network_dict = {}
-        network_dict['nic'] = self.get_nic()
-        network_dict['ib'] = self.get_ib()
-        ofed_version = self._run_cmd('ofed_info  -s').strip()
-        network_dict['ofed_version'] = ofed_version
+        try:
+            network_dict['nic'] = self.get_nic()
+            network_dict['ib'] = self.get_ib()
+            ofed_version = self._run_cmd('ofed_info  -s').strip()
+            network_dict['ofed_version'] = ofed_version
+        except Exception as ex:
+            logger.exception('Error: get network info failed, message: {}'.format(str(ex)))
         return network_dict
 
     def get_all(self):
         """Get all system info and save them to file in json format."""
         sum_dict = {}
+        if os.geteuid() != 0:
+            logger.error('You need to be as a root user to run this tool.')
+            return sum_dict
         sum_dict['System'] = self.get_system()
         sum_dict['CPU'] = self.get_cpu()
         sum_dict['Memory'] = self.get_memory()
