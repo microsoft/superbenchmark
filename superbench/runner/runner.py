@@ -123,20 +123,13 @@ class SuperBenchRunner():
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
+            torch_dist_params = '' if mode.node_num == 1 else \
+                '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
             mode_command = (
-                'python3 -m torch.distributed.launch '
-                '--use_env --no_python --nproc_per_node={proc_num} '
-                '--nnodes={node_num} --node_rank=$NODE_RANK '
-                '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
-                '{command} {torch_distributed_suffix}'
-            ).format(
-                proc_num=mode.proc_num,
-                node_num=1 if mode.node_num == 1 else '$NNODES',
-                command=exec_command,
-                torch_distributed_suffix=(
-                    'superbench.benchmarks.{name}.parameters.distributed_impl=ddp '
-                    'superbench.benchmarks.{name}.parameters.distributed_backend=nccl'
-                ).format(name=benchmark_name),
+                f'python3 -m torch.distributed.launch'
+                f' --use_env --no_python --nproc_per_node={mode.proc_num} {torch_dist_params}{exec_command}'
+                f' superbench.benchmarks.{benchmark_name}.parameters.distributed_impl=ddp'
+                f' superbench.benchmarks.{benchmark_name}.parameters.distributed_backend=nccl'
             )
         elif mode.name == 'mpi':
             mode_command = (
