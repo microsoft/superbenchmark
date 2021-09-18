@@ -47,25 +47,25 @@ jobs:
         id: metadata
         run: |
           TAGS=${{ matrix.tags }}
-          if [ "${{ github.event_name }}" == "push" ] && [[ ${{ github.ref }} == refs/heads/release/* ]]; then
+          if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/release/"* ]]; then
             TAGS=$(sed "s/main:/release:${GITHUB_REF##*/}-/g" <<< ${TAGS})
           fi
-          if [ "${{ github.event_name }}" == "pull_request" ] && [[ ${{ github.base_ref }} == release/* ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]] && [[ "${{ github.base_ref }}" == "release/"* ]]; then
             TAGS=$(sed "s/main:/release:${GITHUB_BASE_REF##*/}-/g" <<< ${TAGS})
           fi
-          if [ "${{ github.event_name }}" == "release" ]; then
+          if [[ "${{ github.event_name }}" == "release" ]]; then
             TAGS=$(sed "s/main:/superbench:${GITHUB_REF##*/}-/g" <<< ${TAGS})
             GHCR_TAG=$(cut -d, -f1 <<< ${TAGS} | sed "s#superbench/superbench#ghcr.io/${{ github.repository }}/superbench#g")
             TAGS="${TAGS},${GHCR_TAG}"
           fi
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             TAGS=$(sed "s/main:/dev:/g" <<< ${TAGS})
           fi
           DOCKERFILE=dockerfile/${{ matrix.name }}.dockerfile
 
           CACHE_FROM="type=registry,ref=$(cut -d, -f1 <<< ${TAGS})"
           CACHE_TO=""
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             CACHE_TO="type=inline,mode=max"
           fi
 
