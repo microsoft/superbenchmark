@@ -75,7 +75,7 @@ superbench:
       parameters:
         block_devices: []
     gpu-sm-copy-bw:
-      enable: false
+      enable: true
       modes:
         - name: local
           proc_num: 32
