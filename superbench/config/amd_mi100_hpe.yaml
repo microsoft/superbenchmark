@@ -50,7 +50,7 @@ superbench:
         minbytes: 32M
         iters: 50
         ngpus: 1
-        operations: allreduce
+        operation: allreduce
     mem-bw:
       <<: *default_local_mode
     gemm-flops:
