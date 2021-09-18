@@ -4,16 +4,23 @@ on:
   push:
     branches:
     - main
+    - release/*
   pull_request:
     branches:
     - main
     - release/*
+  release:
+    types:
+    - published
   workflow_dispatch:
 
 jobs:
   docker:
     name: Docker build ${{ matrix.name }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
@@ -21,8 +28,8 @@ jobs:
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
         - name: rocm4.2-pytorch1.7.0
           tags: superbench/main:rocm4.2-pytorch1.7.0
-        # - name: rocm4.0-pytorch1.7.0
-        #   tags: superbench/main:rocm4.0-pytorch1.7.0
+        - name: rocm4.0-pytorch1.7.0
+          tags: superbench/main:rocm4.0-pytorch1.7.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -36,11 +43,24 @@ jobs:
           done
           sudo apt-get clean
           df -h
-          echo 'nproc: '$(nproc)
       - name: Prepare metadata
         id: metadata
         run: |
           TAGS=${{ matrix.tags }}
+          if [ "${{ github.event_name }}" == "push" ] && [[ ${{ github.ref }} == refs/heads/release/* ]]; then
+            TAGS=$(sed "s/main:/release:${GITHUB_REF##*/}-/g" <<< ${TAGS})
+          fi
+          if [ "${{ github.event_name }}" == "pull_request" ] && [[ ${{ github.base_ref }} == release/* ]]; then
+            TAGS=$(sed "s/main:/release:${GITHUB_BASE_REF##*/}-/g" <<< ${TAGS})
+          fi
+          if [ "${{ github.event_name }}" == "release" ]; then
+            TAGS=$(sed "s/main:/superbench:${GITHUB_REF##*/}-/g" <<< ${TAGS})
+            GHCR_TAG=$(cut -d, -f1 <<< ${TAGS} | sed "s#superbench/superbench#ghcr.io/${{ github.repository }}/superbench#g")
+            TAGS="${TAGS},${GHCR_TAG}"
+          fi
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            TAGS=$(sed "s/main:/dev:/g" <<< ${TAGS})
+          fi
           DOCKERFILE=dockerfile/${{ matrix.name }}.dockerfile
 
           CACHE_FROM="type=registry,ref=$(cut -d, -f1 <<< ${TAGS})"
@@ -53,6 +73,8 @@ jobs:
           echo ::set-output name=tags::${TAGS}
           echo ::set-output name=cache_from::${CACHE_FROM}
           echo ::set-output name=cache_to::${CACHE_TO}
+      - name: Echo image tag
+        run: echo ${{ steps.metadata.outputs.tags }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -63,6 +85,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to the GitHub Container Registry
+        uses: docker/login-action@v1
+        if: ${{ github.event_name == 'release' }}
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2

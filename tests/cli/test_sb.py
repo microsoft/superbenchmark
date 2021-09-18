@@ -84,4 +84,4 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_node_info(self):
         """Test sb node info, should fail."""
-        self.cmd('sb node info', expect_failure=True)
+        self.cmd('sb node info', expect_failure=False)
