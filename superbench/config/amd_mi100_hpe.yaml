@@ -44,12 +44,10 @@ superbench:
           proc_num: 1
           parallel: no
       parameters:
-        ngpus: 8
-      parameters:
         maxbytes: 128M
         minbytes: 32M
         iters: 50
-        ngpus: 1
+        ngpus: 8
         operation: allreduce
     mem-bw:
       <<: *default_local_mode
