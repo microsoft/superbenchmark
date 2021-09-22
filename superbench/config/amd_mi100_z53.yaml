@@ -13,7 +13,7 @@ superbench:
       modes:
         - name: local
           proc_num: 8
-          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+          prefix: HIP_VISIBLE_DEVICES={proc_rank}
           parallel: yes
     default_pytorch_mode: &default_pytorch_mode
       enable: true
@@ -62,8 +62,8 @@ superbench:
       enable: true
       modes:
         - name: local
-          proc_num: 4
-          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,1,2,3
+          proc_num: 2
+          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,1
           parallel: no
     disk-benchmark:
       enable: false
