@@ -3,7 +3,7 @@
 # Server:
 #   - Product: HPE Apollo 6500
 
-version: v0.2
+version: v0.3
 superbench:
   enable: null
   var:
@@ -42,8 +42,8 @@ superbench:
       modes:
         - name: mpi
           proc_num: 8
-          env:  
-            NCCL_SOCKET_IFNAME: ens17f0 
+          env:
+            NCCL_SOCKET_IFNAME: ens17f0
             NCCL_IB_GDR_LEVEL: 1
       parameters:
         maxbytes: 128M
@@ -56,8 +56,8 @@ superbench:
     gemm-flops:
       <<: *default_local_mode
       parameters:
-        m: 7680 
-        n: 8192 
+        m: 7680
+        n: 8192
         k: 8192
     ib-loopback:
       enable: true

@@ -1,5 +1,5 @@
 # SuperBench Config
-version: v0.2
+version: v0.3
 superbench:
   enable: null
   var:
