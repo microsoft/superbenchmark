@@ -32,7 +32,10 @@ superbench:
       enable: true
       modes:
         - name: local
-          prefix: NCCL_DEBUG=INFO NCCL_IB_DISABLE=1
+          proc_num: 1
+          parallel: no
+      parameters:
+        ngpus: 8
     ib-loopback:
       enable: true
       modes:
