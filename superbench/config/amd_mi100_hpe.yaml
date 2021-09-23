@@ -44,9 +44,7 @@ superbench:
           proc_num: 1
           parallel: no
       parameters:
-        maxbytes: 128M
-        minbytes: 32M
-        iters: 50
+        maxbytes: 8G
         ngpus: 8
         operation: allreduce
     mem-bw:
