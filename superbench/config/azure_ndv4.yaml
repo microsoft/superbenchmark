@@ -35,6 +35,32 @@ superbench:
       <<: *default_local_mode
     gemm-flops:
       <<: *default_local_mode
+    nccl-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        ngpus: 8
+    ib-loopback:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 4
+          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,2,4,6 NUMA_NODES=1,0,3,2
+          parallel: yes
+        - name: local
+          proc_num: 4
+          prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=1,0,3,2
+          parallel: yes
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
+          parallel: yes
     disk-benchmark:
       enable: false
       modes:
