@@ -27,7 +27,7 @@ sb deploy -f remote.ini --host-password [password]
 :::note Note
 You should deploy corresponding Docker image to use release version, for example,
 
-`sb deploy -f local.ini -i superbench/superbench:v0.2.1-cuda11.1.1`
+`sb deploy -f local.ini -i superbench/superbench:v0.3.0-cuda11.1.1`
 :::
 
 ## Run
