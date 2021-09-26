@@ -6,6 +6,8 @@ if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 endif()
 
+enable_language(CUDA)
+
 if(NOT DEFINED NVCC_ARCHS_SUPPORTED)
     # Reference: https://github.com/NVIDIA/cutlass/blob/0e137486498a52954eff239d874ee27ab23358e7/CMakeLists.txt#L89
     set(NVCC_ARCHS_SUPPORTED "")

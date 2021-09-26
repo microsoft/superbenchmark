@@ -264,11 +264,7 @@ class ComputationCommunicationOverlap(MicroBenchmark):
             torch.distributed.destroy_process_group()
         except BaseException as e:
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE)
-            logger.error(
-                'Post process failed - benchmark: {}, mode: {}, message: {}.'.format(
-                    self._name, self._args.mode, str(e)
-                )
-            )
+            logger.error('Post process failed - benchmark: {}, message: {}.'.format(self._name, str(e)))
             return False
 
         return True
