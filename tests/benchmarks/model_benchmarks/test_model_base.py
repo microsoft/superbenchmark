@@ -42,6 +42,10 @@ class FakeModelBenchmark(ModelBenchmark):
         """Judge GPUs' availability according to arguments and running environment."""
         self._gpu_available = False
 
+    def _set_force_fp32(self):
+        """Set the config that controls whether full float32 precision will be used."""
+        pass
+
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU."""
         return True
@@ -161,6 +165,7 @@ def test_arguments_related_interfaces():
                         Distributed backends. E.g. nccl mpi gloo.
   --no_gpu              Disable GPU training.
   --pin_memory          Enable option to pin memory in data loader.
+  --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
   --seq_len int         Sequence length."""
     )
@@ -194,6 +199,7 @@ def test_preprocess():
                         Distributed backends. E.g. nccl mpi gloo.
   --no_gpu              Disable GPU training.
   --pin_memory          Enable option to pin memory in data loader.
+  --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
   --seq_len int         Sequence length."""
     )
