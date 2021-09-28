@@ -38,8 +38,8 @@ class PytorchBase(ModelBenchmark):
         On Ampere or newer GPUs, pytorch and tensorflow will use TF32 instead of FP32 by default.
         We can disable TF32 execution by setting force_fp32 as True.
         """
-        torch.backends.cuda.matmul.allow_tf32 = self._args.force_fp32
-        torch.backends.cudnn.allow_tf32 = self._args.force_fp32
+        torch.backends.cuda.matmul.allow_tf32 = not self._args.force_fp32
+        torch.backends.cudnn.allow_tf32 = not self._args.force_fp32
 
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU.
