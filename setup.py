@@ -143,6 +143,7 @@ setup(
         'omegaconf==2.0.6',
         'pyyaml>=5.3',
         'xmltodict>=0.12.0',
+        'tcping>=0.1.1rc1',
     ],
     extras_require={
         'dev': ['pre-commit>=2.10.0'],
