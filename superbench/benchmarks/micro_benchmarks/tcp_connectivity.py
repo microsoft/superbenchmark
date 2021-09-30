@@ -167,6 +167,7 @@ class TCPConnectivityBenchmark(MicroBenchmark):
             mininum = 0.00
             maximum = 0.00
             average = 0.00
+            rate = 0
             # Parse and add result from table-like output of TCPing
             if 'failure' not in raw_output:
                 raw_output = raw_output.splitlines()
@@ -177,20 +178,23 @@ class TCPConnectivityBenchmark(MicroBenchmark):
                         lable = line.split('|')
                         for i in range(len(lable)):
                             lable[i] = lable[i].strip()
+                        print(lable)
                     if host in line:
                         res = line.split('|')
                         for i in range(len(res)):
                             res[i] = res[i].strip()
                         suc = int(res[lable.index('Successed')])
                         fail = int(res[lable.index('Failed')])
+                        rate = float(res[lable.index('Success Rate')].strip('%'))
                         mininum = float(res[lable.index('Minimum')].strip('ms'))
                         maximum = float(res[lable.index('Maximum')].strip('ms'))
                         average = float(res[lable.index('Average')].strip('ms'))
-            self._result.add_result(host + '_successed', suc)
-            self._result.add_result(host + '_failed', fail)
-            self._result.add_result(host + '_minimum', mininum)
-            self._result.add_result(host + '_maximum', maximum)
-            self._result.add_result(host + '_average', average)
+            self._result.add_result('Successed_' + host, suc)
+            self._result.add_result('Failed_' + host, fail)
+            self._result.add_result('Success_Rate_' + host, rate)
+            self._result.add_result('Minimum_' + host, mininum)
+            self._result.add_result('Maximum_' + host, maximum)
+            self._result.add_result('Average_' + host, average)
         except Exception as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, address: {}, raw output: {}, message: {}.'.
