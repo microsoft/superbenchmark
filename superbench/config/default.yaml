@@ -53,7 +53,7 @@ superbench:
       parameters:
         block_devices:
           - /dev/nvme0n1
-    memory-bw-latency-benchmark:
+    cpu-memory-bw-latency:
       enable: false
       modes:
         - name: local

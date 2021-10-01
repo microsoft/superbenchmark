@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'memory-bw-latency-benchmark', platform=Platform.CPU, parameters='--tests bandwidth_matrix latency_matrix max_bandwidth'
+        'cpu-memory-bw-latency', platform=Platform.CPU, parameters='--tests bandwidth_matrix latency_matrix max_bandwidth'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

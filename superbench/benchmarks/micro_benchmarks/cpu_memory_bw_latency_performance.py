@@ -11,7 +11,7 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class MemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
+class CPUMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
     """The Memory bandwidth and latency benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -33,7 +33,7 @@ class MemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
                 '--tests',
                 type=str,
                 nargs='+',
-                default=["bandwidth_matrix"],
+                default=['bandwidth_matrix'],
                 required=False,
                 help='The modes to run mlc with. Possible values are {}.'.format(' '.join(self.__support_mlc_commands))
         )
@@ -134,4 +134,4 @@ class MemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             out_table[key]=[vals[-1]]
         return out_table
 
-BenchmarkRegistry.register_benchmark('memory-bw-latency-benchmark', MemBwLatencyBenchmark)
+BenchmarkRegistry.register_benchmark('cpu-memory-bw-latency', CPUMemBwLatencyBenchmark)

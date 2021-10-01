@@ -14,7 +14,7 @@ from superbench.benchmarks.micro_benchmarks.cuda_gemm_flops_performance import C
 from superbench.benchmarks.micro_benchmarks.memory_bw_performance_base import MemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import CudaMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmark
-from superbench.benchmarks.micro_benchmarks.memory_bw_latency_performance import MemBwLatencyBenchmark
+from superbench.benchmarks.micro_benchmarks.cpu_memory_bw_latency_performance import CPUMemBwLatencyBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoopbackBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
@@ -25,5 +25,5 @@ __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
     'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsBenchmark', 'CudaGemmFlopsBenchmark', 'MemBwBenchmark',
     'CudaMemBwBenchmark', 'DiskBenchmark', 'IBLoopbackBenchmark', 'CudaNcclBwBenchmark', 'RocmMemBwBenchmark',
-    'RocmGemmFlopsBenchmark', 'GpuSmCopyBwBenchmark','MemBwLatencyBenchmark'
+    'RocmGemmFlopsBenchmark', 'GpuSmCopyBwBenchmark','CPUMemBwLatencyBenchmark'
 ]

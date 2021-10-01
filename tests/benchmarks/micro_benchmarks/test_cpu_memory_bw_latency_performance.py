@@ -9,11 +9,10 @@ from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 
 
-@decorator.cuda_test
-def test_memory_bw_latency_performance():
-    """Test memory bandwidth-latency benchmark."""
+def test_cpu_memory_bw_latency_performance():
+    """Test CPU/Host memory bandwidth-latency."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'memory-bw-latency-benchmark', parameters='--tests bandwidth_matrix latency_matrix'
+        'cpu-memory-bw-latency', parameters='--tests bandwidth_matrix latency_matrix'
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -22,7 +21,7 @@ def test_memory_bw_latency_performance():
 
     # Check basic information.
     assert (benchmark)
-    assert (benchmark.name == 'memory-bw-latency-benchmark')
+    assert (benchmark.name == 'cpu-memory-bw-latency')
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.
@@ -33,6 +32,7 @@ def test_memory_bw_latency_performance():
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     # we skip the output from the first command that is enabling huge page
     assert ('raw_output_1' in benchmark.raw_data)
+    assert ('raw_output_2' in benchmark.raw_data)
     assert (len(benchmark.raw_data['raw_output_1']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_1'][0], str))
     for metric in ['Mem_bandwidth_matrix_numa_0_0_BW','Mem_latency_matrix_numa_0_0_Latency']:
