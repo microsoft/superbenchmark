@@ -36,7 +36,10 @@ docker buildx build \
 <TabItem value='rocm'>
 
 ```bash
-# coming soon
+export DOCKER_BUILDKIT=1
+docker buildx build \
+  --platform linux/amd64 --cache-to type=inline,mode=max \
+  --tag superbench-dev --file dockerfile/rocm4.2-pytorch1.7.0.dockerfile .
 ```
 
 </TabItem>
