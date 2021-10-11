@@ -54,6 +54,6 @@ jobs:
       with:
         languages: cpp
     - name: Build
-      uses: make cppbuild -j
+      run: make cppbuild -j
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
