@@ -140,7 +140,7 @@ setup(
         'joblib>=1.0.1',
         'knack>=0.7.2',
         'natsort>=7.1.1',
-        'omegaconf==2.0.6',
+        'omegaconf==2.1.1',
         'pyyaml>=5.3',
         'xmltodict>=0.12.0',
     ],
