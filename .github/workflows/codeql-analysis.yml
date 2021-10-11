@@ -24,7 +24,6 @@ jobs:
       fail-fast: false
       matrix:
         language:
-        - cpp
         - python
         - javascript
     steps:
@@ -36,5 +35,25 @@ jobs:
         languages: ${{ matrix.language }}
     - name: Autobuild
       uses: github/codeql-action/autobuild@v1
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+  analyze-cpp:
+    name: CodeQL analyze cpp
+    runs-on: ubuntu-latest
+    container:
+      image: nvcr.io/nvidia/pytorch:20.12-py3
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: cpp
+    - name: Build
+      uses: make cppbuild -j
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
