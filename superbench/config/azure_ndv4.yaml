@@ -74,7 +74,7 @@ superbench:
       modes:
         - name: local
           proc_num: 32
-          prefix: CUDA_VISIBLE_DEVICES=$(({proc_rank}%8)) numactl -N $(({proc_rank}%4)) -m $(({proc_rank}%4))
+          prefix: CUDA_VISIBLE_DEVICES=$(({proc_rank}%8)) numactl -N $(({proc_rank}/8)) -m $(({proc_rank}/8))
           parallel: no
       parameters:
         mem_type:
