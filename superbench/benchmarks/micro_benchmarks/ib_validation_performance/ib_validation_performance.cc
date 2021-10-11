@@ -26,6 +26,8 @@
 #include <vector>
 
 #include <arpa/inet.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/program_options.hpp>
 #include <mpi.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -34,9 +36,11 @@
 
 using namespace std;
 
-int world_size;
-int world_rank;
-char processor_name[MPI_MAX_PROCESSOR_NAME];
+#define ROOT_RANK 0
+
+int g_world_size;
+int g_world_rank;
+char g_processor_name[MPI_MAX_PROCESSOR_NAME];
 
 // The struct to store command line arguments
 struct Args {
@@ -46,43 +50,42 @@ struct Args {
     std::string input_config;
     // The path of output csv file
     std::string output_path;
-
-    // Get the string type value of cmd line argument
-    std::string get_cmd_line_argument_string(int argc, char *argv[], const std::string &option) {
-        char **begin;
-        char **end;
-        begin = argv;
-        end = argv + argc;
-        char **itr = std::find(begin, end, option);
-        if (itr != end && ++itr != end) {
-            return std::string(*itr);
-        }
-        return "";
-    }
-
-    // Parse and save command line arguments
-    Args(int argc, char *argv[]) {
-        // Get and parse command line arguments
-        cmd_prefix = get_cmd_line_argument_string(argc, argv, "--cmd_prefix");
-        cmd_prefix = cmd_prefix == "" ? "ib_write_bw -s 33554432 -d ibP257p0s0" : cmd_prefix;
-        input_config = get_cmd_line_argument_string(argc, argv, "--input_config");
-        input_config = input_config == "" ? "config.txt" : input_config;
-        output_path = get_cmd_line_argument_string(argc, argv, "--output_path");
-        output_path = output_path == "" ? "result.csv" : output_path;
-        if (world_rank == 0) {
-            printf("The predix of cmd to run is: %s\n", cmd_prefix.c_str());
-            printf("Load the config file from: %s\n", input_config.c_str());
-            printf("Output will be saved to: %s\n", output_path.c_str());
-        }
-    }
 };
+
+// Parse and save command line arguments
+void load_args(int argc, char *argv[], Args &args) {
+    // Get and parse command line arguments
+    boost::program_options::options_description opt("all options");
+    opt.add_options()("cmd_prefix,c",
+                      boost::program_options::value<std::string>(&args.cmd_prefix)
+                          ->default_value("ib_write_bw -s 33554432 -d ibP257p0s0"),
+                      "ib command prefix")(
+        "input_config,i", boost::program_options::value<std::string>(&args.input_config)->default_value("config.txt"),
+        "the path of input config file")(
+        "output_path,o", boost::program_options::value<std::string>(&args.output_path)->default_value("result.csv"),
+        "custom the path of the output csv file")("help", "print help info");
+
+    boost::program_options::variables_map vm;
+    boost::program_options::store(parse_command_line(argc, argv, opt), vm);
+    boost::program_options::notify(vm);
+    if (vm.count("help")) {
+        if (g_world_rank == ROOT_RANK)
+            std::cout << opt << std::endl;
+        return;
+    }
+    if (g_world_rank == ROOT_RANK) {
+        printf("The predix of cmd to run is: %s\n", args.cmd_prefix.c_str());
+        printf("Load the config file from: %s\n", args.input_config.c_str());
+        printf("Output will be saved to: %s\n", args.output_path.c_str());
+    }
+}
 
 // Joint vector<string> to vector<char> for mpi to send ips, each string split by '\0'.
 char *string_to_char(const std::vector<std::string> &strings) {
     // the max length of each ip is 16
     int max_len = 16;
     // calculate size and allocate memory to save ips for all ranks
-    int size = (max_len + 1) * world_size + 1;
+    int size = (max_len + 1) * g_world_size + 1;
     char *all_str = (char *)malloc(size * sizeof(char));
     memset(all_str, '\0', size + 1);
     // joint each string in the vector to a long char*
@@ -92,22 +95,6 @@ char *string_to_char(const std::vector<std::string> &strings) {
         str_idx = str_idx + max_len + 1;
     }
     return all_str;
-}
-
-// Split string by given symbol
-void split_string(const std::string &s, std::vector<std::string> &v, const std::string &c) {
-    std::string::size_type pos1, pos2;
-    pos2 = s.find(c);
-    pos1 = 0;
-    while (std::string::npos != pos2) {
-        if (pos1 != pos2) {
-            v.push_back(s.substr(pos1, pos2 - pos1));
-        }
-        pos1 = pos2 + c.size();
-        pos2 = s.find(c, pos1);
-    }
-    if (pos1 != s.length())
-        v.push_back(s.substr(pos1));
 }
 
 // Load and parse config file to vector
@@ -122,11 +109,10 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
             config.push_back(line);
         }
     } else {
-        std::cout << "Error: failed to open config file." << std::endl;
-        MPI_Finalize();
+        throw exception("Failed to open config file.");
     }
 
-    if (world_rank == 0) {
+    if (g_world_rank == ROOT_RANK) {
         std::cout << "config: " << std::endl;
         for (const std::string &line : config) {
             std::cout << line << std::endl;
@@ -141,19 +127,21 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
             vector<string> run_in_parallel;
             vector<std::pair<int, int>> run_pairs_in_parallel;
             // split line to pair by ";"
-            split_string(single_line, run_in_parallel, ";");
+            boost::split(run_in_parallel, single_line, boost::is_any_of(";"), boost::token_compress_on);
             for (const auto &pair : run_in_parallel) {
                 // split pair by ","
                 int quote = pair.find(',');
+                if (quote == pair.npos) {
+                    throw exception("Invalid config format.");
+                }
                 int first = stoi(pair.substr(0, quote));
                 int second = stoi(pair.substr(quote + 1));
                 run_pairs_in_parallel.emplace_back(first, second);
             }
             run_in_total.emplace_back(run_pairs_in_parallel);
         }
-    } catch (const std::exception &e) {
-        std::cout << "Error: failed to parse the config, message: " << e.what() << std::endl;
-        MPI_Finalize();
+    } catch (...) {
+        throw exception("Invalid config format.");
     }
 
     return run_in_total;
@@ -166,7 +154,7 @@ std::string exec(const char *cmd) {
     // use pipe to execute command
     FILE *pipe = popen(cmd, "r");
     if (!pipe)
-        throw std::runtime_error("popen() failed!");
+        throw exception("popen() failed!");
     try {
         // use buffer to get output
         while (fgets(buffer, sizeof buffer, pipe) != NULL) {
@@ -183,15 +171,10 @@ std::string exec(const char *cmd) {
 // Get private ip of current machine
 std::string get_my_ip() {
     std::string ip;
-    try {
-        string command = "hostname -I | awk '{print $1}'";
-        ip = exec(command.c_str());
-        int r = ip.find('\n');
-        ip = ip.substr(0, r);
-    } catch (const std::exception &e) {
-        std::cout << "Error: failed to get ip of " << processor_name << std::endl;
-        MPI_Finalize();
-    }
+    string command = "hostname -I | awk '{print $1}'";
+    ip = exec(command.c_str());
+    int r = ip.find('\n');
+    ip = ip.substr(0, r);
     return ip;
 }
 
@@ -201,8 +184,7 @@ int get_available_port() {
     int sockfd;
     // open a socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        std::cout << "Error: failed to open socket.";
-        MPI_Finalize();
+        throw exception("Error: failed to open socket.");
     }
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -211,22 +193,19 @@ int get_available_port() {
     bzero((char *)&server_addr, sizeof(server_addr));
     // assign a port number
     if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        std::cout << "Error: failed to bind socker.";
-        MPI_Finalize();
+        throw exception("Error: failed to bind socker.");
     }
     socklen_t len_inet = sizeof(server_addr);
     // get socket name
     if (getsockname(sockfd, (struct sockaddr *)&server_addr, &len_inet) < 0) {
-        std::cout << "Error: failed to get socketname." << endl;
-        MPI_Finalize();
+        throw exception("Error: failed to get socketname.");
     }
     // get the port number
     int local_port = ntohs(server_addr.sin_port);
     // make the port can be reused
     int enable = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
-        std::cout << "Error: failed to set socket." << endl;
-        MPI_Finalize();
+        throw exception("Error: failed to set socket.");
     }
     return local_port;
 }
@@ -238,20 +217,20 @@ vector<int> prepare_ports(const vector<std::pair<int, int>> &run_pairs_in_parall
 
     for (int index = 0; index < run_pairs_in_parallel.size(); index++) {
         int server_index = run_pairs_in_parallel[index].first;
-        // server get a free port and send to rank 0
-        if (server_index == world_rank) {
+        // server get a free port and send to rank ROOT_RANK
+        if (server_index == g_world_rank) {
             int port = get_available_port();
-            MPI_Send(&port, 1, MPI_INT, 0, index, MPI_COMM_WORLD);
+            MPI_Send(&port, 1, MPI_INT, ROOT_RANK, index, MPI_COMM_WORLD);
         }
-        // rank 0 recv port from server
-        if (world_rank == 0) {
+        // rank ROOT_RANK recv port from server
+        if (g_world_rank == ROOT_RANK) {
             int port;
             MPI_Recv(&port, 1, MPI_INT, server_index, index, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             ports[index] = port;
         }
     }
-    // rank 0 broadcast ports to all ranks
-    MPI_Bcast(ports.data(), pair_count, MPI_INT, 0, MPI_COMM_WORLD);
+    // rank ROOT_RANK broadcast ports to all ranks
+    MPI_Bcast(ports.data(), pair_count, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
     return ports;
 }
 
@@ -267,7 +246,7 @@ void gather_ips(vector<string> &ips) {
     memcpy(my_str_padded, ip.c_str(), my_len);
     // prepare buffer to save ips from all ranks
     char *all_str = NULL;
-    int all_len = (max_len + 1) * world_size;
+    int all_len = (max_len + 1) * g_world_size;
     all_str = (char *)malloc(all_len * sizeof(char));
     memset(all_str, '\0', all_len);
 
@@ -276,7 +255,7 @@ void gather_ips(vector<string> &ips) {
 
     // restore all ips from char* to vector<string>
     char *str_idx = all_str;
-    for (int rank_idx = 0; rank_idx < world_size; rank_idx++) {
+    for (int rank_idx = 0; rank_idx < g_world_size; rank_idx++) {
         ips.push_back(str_idx);
         str_idx = str_idx + max_len + 1;
     }
@@ -287,7 +266,7 @@ float process_raw_output(string output) {
     float res = -1.0;
     try {
         vector<string> lines;
-        split_string(output, lines, "\n");
+        boost::split(lines, output, boost::is_any_of("\n"), boost::token_compress_on);
         regex re("\\d+\\s+\\d+\\s+\\d+\\.\\d+\\s+(\\d+\\.\\d+)\\s+\\d+\\.\\d+");
         for (string line : lines) {
             smatch m;
@@ -303,10 +282,9 @@ float process_raw_output(string output) {
 
 // Run ib command on server/client with server ip
 float run_cmd(string cmd_prefix, int port, bool server, string ip) {
-    string is_server = server ? "server" : "client";
     // client sleep 1s in case that client starts before server
     if (!server) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     string command, output;
@@ -331,27 +309,45 @@ vector<float> run_cmd_parallel(string cmd_prefix, const vector<std::pair<int, in
     int size = run_pairs_in_parallel.size();
     // invoke function to run cmd in multi threads mode for each rank in the pairs
     unordered_map<int, std::future<float>> threads;
+    int flag;
     for (int index = 0; index < size; index++) {
         int server_index = run_pairs_in_parallel[index].first;
         int client_index = run_pairs_in_parallel[index].second;
-        if (server_index == world_rank) {
-            threads[2 * index] = (std::async(run_cmd, cmd_prefix, ports[index], true, ips[server_index]));
-        }
-        if (client_index == world_rank) {
-            threads[2 * index + 1] = (std::async(run_cmd, cmd_prefix, ports[index], false, ips[server_index]));
+        if (server_index == g_world_rank) {
+            flag = index;
+            MPI_Send(&flag, 1, MPI_INT, client_index, index + 2 * size, MPI_COMM_WORLD);
+            threads[2 * index] =
+                (std::async(std::launch::async, run_cmd, cmd_prefix, ports[index], true, ips[server_index]));
         }
     }
-    // send the result of client to rank0
+    for (int index = 0; index < size; index++) {
+        int server_index = run_pairs_in_parallel[index].first;
+        int client_index = run_pairs_in_parallel[index].second;
+        if (client_index == g_world_rank) {
+            // in case that client starts before server
+            MPI_Recv(&flag, 1, MPI_INT, server_index, index + 2 * size, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            threads[2 * index + 1] =
+                (std::async(std::launch::async, run_cmd, cmd_prefix, ports[index], false, ips[server_index]));
+        }
+    }
+    // send the result of client to rank ROOT_RANK
     for (auto &thread : threads) {
-        float client_result = thread.second.get();
+        std::future_status status;
+        float client_result = -1.0;
+        status = thread.second.wait_for(std::chrono::seconds(10));
+        if (status == std::future_status::timeout) {
+            throw exception("thread timeout");
+        } else if (status == std::future_status::ready) {
+            client_result = thread.second.get();
+        }
         int index = thread.first;
         if (index % 2 == 1) {
-            MPI_Send(&client_result, 1, MPI_FLOAT, 0, index, MPI_COMM_WORLD);
+            MPI_Send(&client_result, 1, MPI_FLOAT, ROOT_RANK, index, MPI_COMM_WORLD);
         }
     }
-    // rank 0 recv results
+    // rank ROOT_RANK recv results
     vector<float> results;
-    if (world_rank == 0) {
+    if (g_world_rank == ROOT_RANK) {
         results.resize(size);
         for (int index = 0; index < size; index++) {
             int client_index = run_pairs_in_parallel[index].second;
@@ -373,8 +369,8 @@ vector<vector<float>> run_benchmark(const Args &args, vector<vector<std::pair<in
         vector<float> results_single_line = run_cmd_parallel(args.cmd_prefix, line, ports, ips);
         // collect results for each run
         results.push_back(results_single_line);
-        if (world_rank == 0) {
-            std::cout << "results from rank 0: ";
+        if (g_world_rank == ROOT_RANK) {
+            std::cout << "results from rank ROOT_RANK: ";
             for (auto res : results_single_line) {
                 std::cout << res << " ";
             }
@@ -389,8 +385,7 @@ void output_to_file(const std::string cmd_prefix, const vector<vector<std::pair<
                     vector<vector<float>> &results, const std::string filename = "results.csv") {
     ofstream out(filename);
     if (!out) {
-        std::cout << "Error: failed to open output file." << std::endl;
-        MPI_Finalize();
+        throw exception("Error: failed to open output file.");
     }
     // output command predix
     out << "command prefix: " << cmd_prefix << std::endl;
@@ -414,37 +409,47 @@ void output_to_file(const std::string cmd_prefix, const vector<vector<std::pair<
 }
 
 int main(int argc, char **argv) {
-    // Initialize the MPI environment.
-    MPI_Init(NULL, NULL);
+    try {
+        // Initialize the MPI environment.
+        int provided;
+        MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided);
 
-    // Get the number of ranks
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+        // Get the number of ranks
+        MPI_Comm_size(MPI_COMM_WORLD, &g_world_size);
 
-    // Get the rank of the process
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        // Get the rank of the process
+        MPI_Comm_rank(MPI_COMM_WORLD, &g_world_rank);
 
-    // Get the name of the processor
-    int name_len;
-    MPI_Get_processor_name(processor_name, &name_len);
+        // Get the name of the processor
+        int name_len;
+        MPI_Get_processor_name(g_processor_name, &name_len);
 
-    // Get and parse command line arguments
-    Args args(argc, argv);
+        // Get and parse command line arguments
+        Args args;
+        load_args(argc, argv, args);
 
-    // Load and parse running config from file
-    vector<vector<std::pair<int, int>>> config = load_config(args.input_config);
+        // Load and parse running config from file
+        vector<vector<std::pair<int, int>>> config = load_config(args.input_config);
 
-    // Get ips of all ranks
-    vector<string> ips;
-    gather_ips(ips);
+        // Get ips of all ranks
+        vector<string> ips;
+        gather_ips(ips);
 
-    // Run validation benchmark
-    vector<vector<float>> results = run_benchmark(args, config, ips);
+        // Run validation benchmark
+        vector<vector<float>> results = run_benchmark(args, config, ips);
 
-    // rank 0 output the results to file
-    if (world_rank == 0) {
-        output_to_file(args.cmd_prefix, config, results, args.output_path);
+        // rank ROOT_RANK output the results to file
+        if (g_world_rank == ROOT_RANK) {
+            output_to_file(args.cmd_prefix, config, results, args.output_path);
+        }
+
+        // Finalize the MPI environment. No more MPI calls can be made after this
+        MPI_Finalize();
+    } catch (const std::exception &e) {
+        std::cout << e.what() << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    } catch (const std::runtime_error &e) {
+        std::cout << e.what() << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, 1);
     }
-
-    // Finalize the MPI environment. No more MPI calls can be made after this
-    MPI_Finalize();
 }
