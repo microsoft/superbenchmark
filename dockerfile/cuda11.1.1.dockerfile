@@ -26,6 +26,7 @@ RUN apt-get update && \
     git \
     jq \
     libaio-dev \
+    libboost-all-dev \
     libcap2 \
     libpci-dev \
     libtinfo5 \

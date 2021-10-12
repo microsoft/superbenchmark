@@ -26,6 +26,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DON
     git \
     jq \
     libaio-dev \
+    libboost-all-dev \
     libcap2 \
     libpci-dev \
     libtinfo5 \

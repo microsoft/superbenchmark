@@ -372,7 +372,7 @@ vector<vector<float>> run_benchmark(const Args &args, vector<vector<std::pair<in
         if (g_world_rank == ROOT_RANK) {
             std::cout << "results from rank ROOT_RANK: ";
             for (auto res : results_single_line) {
-                std::cout << res << " ";
+                std::cout << res << ",";
             }
             std::cout << endl;
         }
@@ -393,8 +393,7 @@ void output_to_file(const std::string cmd_prefix, const vector<vector<std::pair<
     out << "config:" << std::endl;
     for (auto &line : config) {
         for (auto &pair : line) {
-            out << "\"(" << pair.first << "," << pair.second << ")\""
-                << ",";
+            out << pair.first << "," << pair.second << ";";
         }
         out << std::endl;
     }
