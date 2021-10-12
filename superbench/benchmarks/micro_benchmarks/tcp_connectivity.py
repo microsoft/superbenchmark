@@ -59,7 +59,7 @@ class TCPConnectivityBenchmark(MicroBenchmark):
         self._parser.add_argument(
             '--port',
             type=int,
-            default=22222,
+            default=22,
             required=False,
             help='Listened tcp port of the target node',
         )
