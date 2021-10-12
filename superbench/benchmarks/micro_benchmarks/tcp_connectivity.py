@@ -3,8 +3,6 @@
 
 """Module of the TCP connectivity benchmarks."""
 
-import socket
-
 import tcping
 from joblib import Parallel, delayed
 
