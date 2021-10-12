@@ -109,7 +109,7 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
             config.push_back(line);
         }
     } else {
-        throw exception("Failed to open config file.");
+        throw "Failed to open config file.";
     }
 
     if (g_world_rank == ROOT_RANK) {
@@ -132,7 +132,7 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
                 // split pair by ","
                 int quote = pair.find(',');
                 if (quote == pair.npos) {
-                    throw exception("Invalid config format.");
+                    throw "Invalid config format.";
                 }
                 int first = stoi(pair.substr(0, quote));
                 int second = stoi(pair.substr(quote + 1));
@@ -141,7 +141,7 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
             run_in_total.emplace_back(run_pairs_in_parallel);
         }
     } catch (...) {
-        throw exception("Invalid config format.");
+        std::throw_with_nested(std::logic_error("Invalid config format."));
     }
 
     return run_in_total;
@@ -154,7 +154,7 @@ std::string exec(const char *cmd) {
     // use pipe to execute command
     FILE *pipe = popen(cmd, "r");
     if (!pipe)
-        throw exception("popen() failed!");
+        throw "popen() failed!";
     try {
         // use buffer to get output
         while (fgets(buffer, sizeof buffer, pipe) != NULL) {
@@ -184,7 +184,7 @@ int get_available_port() {
     int sockfd;
     // open a socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        throw exception("Error: failed to open socket.");
+        throw "Error: failed to open socket.";
     }
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -193,19 +193,19 @@ int get_available_port() {
     bzero((char *)&server_addr, sizeof(server_addr));
     // assign a port number
     if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        throw exception("Error: failed to bind socker.");
+        throw "Error: failed to bind socker.";
     }
     socklen_t len_inet = sizeof(server_addr);
     // get socket name
     if (getsockname(sockfd, (struct sockaddr *)&server_addr, &len_inet) < 0) {
-        throw exception("Error: failed to get socketname.");
+        throw "Error: failed to get socketname.";
     }
     // get the port number
     int local_port = ntohs(server_addr.sin_port);
     // make the port can be reused
     int enable = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
-        throw exception("Error: failed to set socket.");
+        throw "Error: failed to set socket.";
     }
     return local_port;
 }
@@ -334,9 +334,9 @@ vector<float> run_cmd_parallel(string cmd_prefix, const vector<std::pair<int, in
     for (auto &thread : threads) {
         std::future_status status;
         float client_result = -1.0;
-        status = thread.second.wait_for(std::chrono::seconds(10));
+        status = thread.second.wait_for(std::chrono::seconds(300));
         if (status == std::future_status::timeout) {
-            throw exception("thread timeout");
+            throw "thread timeout";
         } else if (status == std::future_status::ready) {
             client_result = thread.second.get();
         }
@@ -385,7 +385,7 @@ void output_to_file(const std::string cmd_prefix, const vector<vector<std::pair<
                     vector<vector<float>> &results, const std::string filename = "results.csv") {
     ofstream out(filename);
     if (!out) {
-        throw exception("Error: failed to open output file.");
+        throw "Error: failed to open output file.";
     }
     // output command predix
     out << "command prefix: " << cmd_prefix << std::endl;
@@ -445,9 +445,6 @@ int main(int argc, char **argv) {
         // Finalize the MPI environment. No more MPI calls can be made after this
         MPI_Finalize();
     } catch (const std::exception &e) {
-        std::cout << e.what() << std::endl;
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    } catch (const std::runtime_error &e) {
         std::cout << e.what() << std::endl;
         MPI_Abort(MPI_COMM_WORLD, 1);
     }

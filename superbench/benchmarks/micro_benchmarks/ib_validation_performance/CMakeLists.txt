@@ -10,13 +10,18 @@ set(CMAKE_CXX_STANDARD 14)
 set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -pedantic -lm -O3 -funroll-loops -fopenmp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
-add_executable(ib_mpi ib_validation_performance.cc)
+add_executable(ib_mpi ib_mpi.cc)
 
 # MPI
 find_package(MPI REQUIRED)
 
 # Boost
-execute_process(COMMAND apt-get install libboost-all-dev -y WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+execute_process(COMMAND wget -O boost_1_71_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.71.0/source/boost_1_71_0.tar.gz WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+execute_process(COMMAND tar xzvf boost_1_71_0.tar.gz WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+execute_process(COMMAND boost_1_71_0/bootstrap.sh --prefix=boost_1_71_0/build WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+execute_process(COMMAND ./b2 install WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/boost_1_71_0/)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/boost_1_71_0/build/)  
+
 find_package(Boost REQUIRED COMPONENTS system thread program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(ib_mpi PUBLIC MPI::MPI_CXX ${Boost_LIBRARIES})
