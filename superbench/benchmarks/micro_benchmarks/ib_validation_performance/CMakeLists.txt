@@ -16,7 +16,7 @@ add_executable(ib_mpi ib_validation_performance.cc)
 find_package(MPI REQUIRED)
 
 # Boost
+execute_process(COMMAND apt-get install libboost-all-dev -y WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 find_package(Boost REQUIRED COMPONENTS system thread program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(ib_mpi PUBLIC MPI::MPI_CXX ${Boost_LIBRARIES})
-
