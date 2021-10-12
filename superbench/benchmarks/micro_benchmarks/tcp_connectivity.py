@@ -13,7 +13,7 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 
 
-def run_tcping(self, host, port, count, timeout):
+def run_tcping(host, port, count, timeout):
     """Run tcping for the given host address, port, count and timeout.
 
     Args:
@@ -30,8 +30,6 @@ def run_tcping(self, host, port, count, timeout):
     try:
         ping_obj.ping(count)
         output = ping_obj.result.table
-    except socket.gaierror as e:
-        return 'Socket connection failure, address: {}, port: {}, message: {}.'.format(host, port, str(e))
     except Exception as e:
         return 'Socket connection failure, address: {}, port: {}, message: {}.'.format(host, port, str(e))
     return output
@@ -125,7 +123,7 @@ class TCPConnectivityBenchmark(MicroBenchmark):
         # Run TCPing on host in the hostfile in parallel
         try:
             outputs = Parallel(n_jobs=min(len(self.__hosts), self._args.parallel))(
-                delayed(run_tcping)(self, self.__hosts[i], self._args.port, self._args.count, self._args.timeout)
+                delayed(run_tcping)(self.__hosts[i], self._args.port, self._args.count, self._args.timeout)
                 for i in (range(len(self.__hosts)))
             )
         except Exception as e:
@@ -171,24 +169,21 @@ class TCPConnectivityBenchmark(MicroBenchmark):
             # Parse and add result from table-like output of TCPing
             if 'failure' not in raw_output:
                 raw_output = raw_output.splitlines()
-                lable = None
+                labels = None
                 for line in raw_output:
-                    # Get the line of the table lables
+                    # Get the line of the table labels
                     if 'Host' in line:
-                        lable = line.split('|')
-                        for i in range(len(lable)):
-                            lable[i] = lable[i].strip()
-                        print(lable)
+                        labels = line.split('|')
+                        labels = [label.strip() for label in labels]
                     if host in line:
                         res = line.split('|')
-                        for i in range(len(res)):
-                            res[i] = res[i].strip()
-                        suc = int(res[lable.index('Successed')])
-                        fail = int(res[lable.index('Failed')])
-                        rate = float(res[lable.index('Success Rate')].strip('%'))
-                        mininum = float(res[lable.index('Minimum')].strip('ms'))
-                        maximum = float(res[lable.index('Maximum')].strip('ms'))
-                        average = float(res[lable.index('Average')].strip('ms'))
+                        res = [result.strip() for result in res]
+                        suc = int(res[labels.index('Successed')])
+                        fail = int(res[labels.index('Failed')])
+                        rate = float(res[labels.index('Success Rate')].strip('%'))
+                        mininum = float(res[labels.index('Minimum')].strip('ms'))
+                        maximum = float(res[labels.index('Maximum')].strip('ms'))
+                        average = float(res[labels.index('Average')].strip('ms'))
             self._result.add_result('Successed_' + host, suc)
             self._result.add_result('Failed_' + host, fail)
             self._result.add_result('Success_Rate_' + host, rate)
