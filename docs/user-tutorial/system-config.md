@@ -2,7 +2,8 @@
 id: system-config
 ---
 
-# System Configuration Information
+# System Config Info
+
 - [System](#system)
 - [Memory](#memory)
 - [CPU](#cpu)
