@@ -9,13 +9,13 @@ HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 ROCM_VERSION ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
-common: fio
+common: fio gpcnet
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -91,3 +91,8 @@ rocm_bandwidthTest: sb_micro_path
 	cp -r -v $(shell hipconfig -p)/samples/1_Utils/hipBusBandwidth ./
 	cd ./hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
+
+gpcnet: sb_micro_path
+	cd ./GPCNET && make all CC="mpicc"
+	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
+	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
