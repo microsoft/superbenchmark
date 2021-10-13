@@ -18,7 +18,7 @@ find_package(MPI REQUIRED)
 # Boost
 execute_process(COMMAND wget -O boost_1_71_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.71.0/source/boost_1_71_0.tar.gz WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 execute_process(COMMAND tar xzvf boost_1_71_0.tar.gz WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
-execute_process(COMMAND boost_1_71_0/bootstrap.sh --prefix=boost_1_71_0/build WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+execute_process(COMMAND ./bootstrap.sh --prefix=build WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/boost_1_71_0/)
 execute_process(COMMAND ./b2 install WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/boost_1_71_0/)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/boost_1_71_0/build/)  
 
