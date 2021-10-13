@@ -62,7 +62,7 @@ void load_args(int argc, char *argv[], Args &args) {
                       "ib command prefix")(
         "input_config,i", boost::program_options::value<std::string>(&args.input_config)->default_value("config.txt"),
         "the path of input config file")(
-        "output_path,o", boost::program_options::value<std::string>(&args.output_path)->default_value("result.csv"),
+        "output_path,o", boost::program_options::value<std::string>(&args.output_path)->default_value(""),
         "custom the path of the output csv file")("help", "print help info");
 
     boost::program_options::variables_map vm;
@@ -439,7 +439,8 @@ int main(int argc, char **argv) {
 
         // rank ROOT_RANK output the results to file
         if (g_world_rank == ROOT_RANK) {
-            output_to_file(args.cmd_prefix, config, results, args.output_path);
+            if (args.output_path.size() != 0)
+                output_to_file(args.cmd_prefix, config, results, args.output_path);
         }
 
         // Finalize the MPI environment. No more MPI calls can be made after this

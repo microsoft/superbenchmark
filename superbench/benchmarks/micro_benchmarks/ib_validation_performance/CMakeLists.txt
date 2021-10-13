@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -pedantic -lm -O3 -funroll-loops -fopenmp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
-add_executable(ib_mpi ib_mpi.cc)
+add_executable(ib_mpi ib_validation_performance.cc)
 
 # MPI
 find_package(MPI REQUIRED)
