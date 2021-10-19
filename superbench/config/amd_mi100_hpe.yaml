@@ -81,6 +81,13 @@ superbench:
         mem_type:
           - dtoh
           - htod
+    model-benchmark:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+      frameworks:
+        - onnx
     gpt_models:
       <<: *default_pytorch_mode
       models:
