@@ -12,15 +12,21 @@
 #include <cuda_runtime.h>
 
 // Argurment index used in argument parsing.
-enum class ArgIdx { kGpuId = 1, kCopyDirection, kSize, kNumLoops, kNumArgs };
+enum class ArgIdx { kSrcDev = 1, kDstDev, kWorkingDev, kSize, kNumLoops, kNumArgs };
+
+// Device type.
+enum class DevType { kCpu, kGpu };
+
+// Indices of devices involved.
+enum class DevIdx { kSrcDevIdx, kDstDevIdx, kWorkingDevIdx, kNumDevices };
 
 // Stored arguments for this program.
 struct Args {
-    // ID of GPU used in this benchmark.
-    int gpu_id = 0;
+    // Type of source/destination/working devices.
+    DevType dev_types[static_cast<int>(DevIdx::kNumDevices)] = {DevType::kGpu, DevType::kGpu, DevType::kGpu};
 
-    // Data transfer direction, can be "dtoh" or "htod".
-    std::string copy_direction;
+    // GPU IDs for source/destination/working devices.
+    int gpu_ids[static_cast<int>(DevIdx::kNumDevices)] = {0, 0, 0};
 
     // Data buffer size used.
     uint64_t size = 0;
@@ -36,68 +42,93 @@ struct Buffers {
     // Buffer to validate the correctness of data transfer.
     uint8_t *check_buf = nullptr;
 
-    // Data buffer in host memory.
-    uint8_t *host_buf = nullptr;
+    // Host pointers of the data buffers on source/destination devices.
+    uint8_t *host_buf_ptrs[static_cast<int>(DevIdx::kNumDevices) - 1] = {nullptr, nullptr};
 
-    // Device pointer of the data buffer in host memory.
-    uint8_t *host_buf_dev_ptr = nullptr;
-
-    // Data buffer in device memory
-    uint8_t *dev_buf = nullptr;
+    // GPU pointers of the data buffers on source/destination devices.
+    uint8_t *gpu_buf_ptrs[static_cast<int>(DevIdx::kNumDevices) - 1] = {nullptr, nullptr};
 };
 
 // Pring usage of this program.
 void PrintUsage() {
     printf("Usage: gpu_sm_copy "
-           "<gpu-id> "
-           "<copy-direction: dtoh|htod> "
+           "<src-dev: cpu|gpu[0-9]+> "
+           "<dst-dev: cpu|gpu[0-9]+> "
+           "<working-dev: gpu[0-9]+> "
            "<size> "
            "<num_loops>\n");
+}
+
+// Set GPU context according to device index and device types
+int SetGpu(const Args &args, int dev_idx) {
+    cudaError_t cuda_err = cudaSuccess;
+    if (args.dev_types[dev_idx] == DevType::kCpu) {
+        // Set to working device
+        cuda_err = cudaSetDevice(args.gpu_ids[static_cast<int>(DevIdx::kWorkingDevIdx)]);
+    } else {
+        // Set to specified device
+        cuda_err = cudaSetDevice(args.gpu_ids[dev_idx]);
+    }
+    if (cuda_err != cudaSuccess) {
+        fprintf(stderr, "SetGpu::cudaSetDevice error: %d\n", cuda_err);
+        return -1;
+    }
+    return 0;
 }
 
 // Prepare data buffers to be used.
 int PrepareBuf(const Args &args, Buffers *buffers) {
     cudaError_t cuda_err = cudaSuccess;
+    constexpr int uint8_mod = 256;
 
     // Generate data to copy
     buffers->data_buf = static_cast<uint8_t *>(malloc(args.size));
     for (int i = 0; i < args.size; i++) {
-        buffers->data_buf[i] = static_cast<uint8_t>(i % 256);
+        buffers->data_buf[i] = static_cast<uint8_t>(i % uint8_mod);
     }
 
     // Reset check buffer
     buffers->check_buf = static_cast<uint8_t *>(malloc(args.size));
     memset(buffers->check_buf, 0, args.size);
 
-    // Allocate host buffer
-    buffers->host_buf = static_cast<uint8_t *>(malloc(args.size));
-    cuda_err = cudaHostRegister(buffers->host_buf, args.size, cudaHostRegisterMapped);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "PrepareBuf::cudaHostRegister error: %d\n", cuda_err);
-        return -1;
-    }
-    cuda_err = cudaHostGetDevicePointer((void **)(&(buffers->host_buf_dev_ptr)), buffers->host_buf, 0);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "PrepareBuf::cudaHostGetDevicePointer error: %d\n", cuda_err);
-        return -1;
-    }
-
-    // Allocate device buffer
-    cuda_err = cudaMalloc(&(buffers->dev_buf), args.size);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "PrepareBuf::cudaMalloc error: %d\n", cuda_err);
-        return -1;
+    // Only allocate buffers for source/destination devices
+    for (int i = 0; i < static_cast<int>(DevIdx::kNumDevices) - 1; i++) {
+        // Allocate buffers
+        if (args.dev_types[i] == DevType::kCpu) {
+            // Set to working device for host memory buffer
+            if (SetGpu(args, static_cast<int>(DevIdx::kWorkingDevIdx))) {
+                return -1;
+            }
+            buffers->host_buf_ptrs[i] = static_cast<uint8_t *>(malloc(args.size));
+            cuda_err = cudaHostRegister(buffers->host_buf_ptrs[i], args.size, cudaHostRegisterMapped);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "PrepareBuf::cudaHostRegister error: %d\n", cuda_err);
+                return -1;
+            }
+            cuda_err = cudaHostGetDevicePointer((void **)(&(buffers->gpu_buf_ptrs[i])), buffers->host_buf_ptrs[i], 0);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "PrepareBuf::cudaHostGetDevicePointer error: %d\n", cuda_err);
+                return -1;
+            }
+        } else {
+            // Set to buffer device for GPU buffer
+            if (SetGpu(args, i)) {
+                return -1;
+            }
+            buffers->host_buf_ptrs[i] = nullptr;
+            cuda_err = cudaMalloc(&(buffers->gpu_buf_ptrs[i]), args.size);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "PrepareBuf::cudaMalloc error: %d\n", cuda_err);
+                return -1;
+            }
+        }
     }
 
     // Initialize source buffer
-    if (args.copy_direction == "dtoh") {
-        cuda_err = cudaMemcpy(buffers->dev_buf, buffers->data_buf, args.size, cudaMemcpyDefault);
-    } else if (args.copy_direction == "htod") {
-        cuda_err = cudaMemcpy(buffers->host_buf, buffers->data_buf, args.size, cudaMemcpyDefault);
-    } else {
-        fprintf(stderr, "Unrecognized copy direction: %s\n", args.copy_direction.c_str());
+    if (SetGpu(args, static_cast<int>(DevIdx::kSrcDevIdx))) {
         return -1;
     }
+    cuda_err = cudaMemcpy(buffers->gpu_buf_ptrs[0], buffers->data_buf, args.size, cudaMemcpyDefault);
     if (cuda_err != cudaSuccess) {
         fprintf(stderr, "PrepareBuf::cudaMemcpy error: %d\n", cuda_err);
         return -1;
@@ -111,11 +142,11 @@ int CheckBuf(const Args &args, Buffers *buffers) {
     cudaError_t cuda_err = cudaSuccess;
 
     // Copy result
-    if (args.copy_direction == "dtoh") {
-        cuda_err = cudaMemcpy(buffers->check_buf, buffers->host_buf, args.size, cudaMemcpyDefault);
-    } else if (args.copy_direction == "htod") {
-        cuda_err = cudaMemcpy(buffers->check_buf, buffers->dev_buf, args.size, cudaMemcpyDefault);
+    if (SetGpu(args, static_cast<int>(DevIdx::kDstDevIdx))) {
+        return -1;
     }
+    cuda_err = cudaMemcpy(buffers->check_buf, buffers->gpu_buf_ptrs[static_cast<int>(DevIdx::kDstDevIdx)], args.size,
+                          cudaMemcpyDefault);
     if (cuda_err != cudaSuccess) {
         fprintf(stderr, "CheckBuf::cudaMemcpy error: %d\n", cuda_err);
         return -1;
@@ -124,7 +155,7 @@ int CheckBuf(const Args &args, Buffers *buffers) {
     // Validate result
     int memcmp_result = memcmp(buffers->data_buf, buffers->check_buf, args.size);
     if (memcmp_result) {
-        fprintf(stderr, "Memory check failed\n");
+        fprintf(stderr, "CheckBuf: Memory check failed\n");
         return -1;
     }
 
@@ -132,7 +163,7 @@ int CheckBuf(const Args &args, Buffers *buffers) {
 }
 
 // Destroy data buffers
-int DestroyBuf(Buffers *buffers) {
+int DestroyBuf(const Args &args, Buffers *buffers) {
     int ret = 0;
     cudaError_t cuda_err = cudaSuccess;
 
@@ -142,24 +173,40 @@ int DestroyBuf(Buffers *buffers) {
     if (buffers->check_buf != nullptr)
         free(buffers->check_buf);
 
-    // Destroy device buffer
-    if (buffers->dev_buf != nullptr) {
-        cuda_err = cudaFree(buffers->dev_buf);
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "DestroyBuf::cudaFree error: %d\n", cuda_err);
-            ret = -1;
+    // Only destroy buffers for first 2 devices
+    for (int i = 0; i < 2; i++) {
+        // Destroy buffers
+        if (args.dev_types[i] == DevType::kCpu) {
+            if (buffers->host_buf_ptrs[i] == nullptr) {
+                continue;
+            }
+            // Set to working device for host memory buffer
+            if (SetGpu(args, static_cast<int>(DevIdx::kWorkingDevIdx))) {
+                return -1;
+            }
+            cuda_err = cudaHostUnregister(buffers->host_buf_ptrs[i]);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "DestroyBuf::cudaHostUnregister error: %d\n", cuda_err);
+                ret = -1;
+            }
+            free(buffers->host_buf_ptrs[i]);
+            buffers->host_buf_ptrs[i] = nullptr;
+            buffers->gpu_buf_ptrs[i] = nullptr;
+        } else {
+            if (buffers->gpu_buf_ptrs[i] == nullptr) {
+                continue;
+            }
+            // Set to buffer device for GPU buffer
+            if (SetGpu(args, i)) {
+                return -1;
+            }
+            cuda_err = cudaFree(buffers->gpu_buf_ptrs[i]);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "DestroyBuf::cudaFree error: %d\n", cuda_err);
+                ret = -1;
+            }
+            buffers->gpu_buf_ptrs[i] = nullptr;
         }
-    }
-
-    // Destroy host buffer
-    if (buffers->host_buf != nullptr) {
-        cuda_err = cudaHostUnregister(buffers->host_buf);
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "DestroyBuf::cudaHostUnregister error: %d\n", cuda_err);
-            ret = -1;
-        }
-        free(buffers->host_buf);
-        buffers->host_buf_dev_ptr = nullptr;
     }
 
     return ret;
@@ -218,23 +265,17 @@ __global__ void SMCopyKernel(ulong2 *tgt, const ulong2 *src) {
 int BenchSMCopyKernel(const Args &args, Buffers *buffers) {
     cudaError_t cuda_err = cudaSuccess;
     cudaStream_t stream;
-    uint8_t *src_buf = nullptr;
-    uint8_t *tgt_buf = nullptr;
 
-    // Determine source buffer and target buff
-    if (args.copy_direction == "dtoh") {
-        src_buf = buffers->dev_buf;
-        tgt_buf = buffers->host_buf_dev_ptr;
-    } else {
-        src_buf = buffers->host_buf_dev_ptr;
-        tgt_buf = buffers->dev_buf;
+    // Set to working device
+    if (SetGpu(args, static_cast<int>(DevIdx::kWorkingDevIdx))) {
+        return -1;
     }
 
     // Validate data size
     uint64_t num_elements_in_thread_block = NUM_LOOP_UNROLL * NUM_THREADS_IN_BLOCK;
     uint64_t num_bytes_in_thread_block = num_elements_in_thread_block * sizeof(ulong2);
     if (args.size % num_bytes_in_thread_block) {
-        fprintf(stderr, "Data size should be multiple of %lu\n", num_bytes_in_thread_block);
+        fprintf(stderr, "BenchSMCopyKernel: Data size should be multiple of %lu\n", num_bytes_in_thread_block);
         return -1;
     }
 
@@ -249,8 +290,9 @@ int BenchSMCopyKernel(const Args &args, Buffers *buffers) {
     uint64_t num_thread_blocks = args.size / num_bytes_in_thread_block;
     auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < args.num_loops; i++) {
-        SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, stream>>>(reinterpret_cast<ulong2 *>(tgt_buf),
-                                                                             reinterpret_cast<ulong2 *>(src_buf));
+        SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, stream>>>(
+            reinterpret_cast<ulong2 *>(buffers->gpu_buf_ptrs[static_cast<int>(DevIdx::kDstDevIdx)]),
+            reinterpret_cast<ulong2 *>(buffers->gpu_buf_ptrs[static_cast<int>(DevIdx::kSrcDevIdx)]));
     }
     cuda_err = cudaStreamSynchronize(stream);
     auto end = std::chrono::steady_clock::now();
@@ -273,10 +315,69 @@ int BenchSMCopyKernel(const Args &args, Buffers *buffers) {
     return 0;
 }
 
+// Enable P2P communication between all GPU pairs involved.
+int EnableP2P(const Args &args) {
+    cudaError_t cuda_err = cudaSuccess;
+    int can_access = 0;
+    for (int i = 0; i < static_cast<int>(DevIdx::kNumDevices); i++) {
+        for (int j = 0; j < static_cast<int>(DevIdx::kNumDevices); j++) {
+            if (args.gpu_ids[i] != args.gpu_ids[j] && args.dev_types[i] == DevType::kGpu &&
+                args.dev_types[j] == DevType::kGpu) {
+                cuda_err = cudaDeviceCanAccessPeer(&can_access, args.gpu_ids[i], args.gpu_ids[j]);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "EnableP2P::cudaDeviceCanAccessPeer error: %d\n", cuda_err);
+                    return -1;
+                }
+                if (can_access) {
+                    if (SetGpu(args, i)) {
+                        return -1;
+                    }
+                    cuda_err = cudaDeviceEnablePeerAccess(args.gpu_ids[j], 0);
+                    if (cuda_err != cudaErrorPeerAccessAlreadyEnabled && cuda_err != cudaSuccess) {
+                        fprintf(stderr, "EnableP2P::cudaDeviceEnablePeerAccess error: %d\n", cuda_err);
+                        return -1;
+                    }
+                } else {
+                    fprintf(stderr, "EnableP2P: P2P communication between GPU %d and GPU %d cannot be enabled\n",
+                            args.gpu_ids[i], args.gpu_ids[j]);
+                    return -1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+// Parse arguments.
+int ParseArgs(Args *args, char **argv) {
+    const char *cpu_prefix = "cpu";
+    const char *gpu_prefix = "gpu";
+    constexpr int prefix_len = 3;
+    ArgIdx dev_args[static_cast<int>(DevIdx::kNumDevices)] = {ArgIdx::kSrcDev, ArgIdx::kDstDev, ArgIdx::kWorkingDev};
+
+    for (int i = 0; i < static_cast<int>(DevIdx::kNumDevices); i++) {
+        std::string dev_str = argv[static_cast<int>(dev_args[i])];
+        // Working device can only be GPU
+        if (i < 2 && dev_str == cpu_prefix) {
+            args->dev_types[i] = DevType::kCpu;
+            args->gpu_ids[i] = 0;
+        } else if (dev_str.rfind(gpu_prefix, 0) == 0) {
+            args->dev_types[i] = DevType::kGpu;
+            args->gpu_ids[i] = std::stoi(dev_str.substr(prefix_len));
+        } else {
+            fprintf(stderr, "ParseArgs: Invalid device %d: %s\n", i, dev_str.c_str());
+            return -1;
+        }
+    }
+
+    args->size = std::stoul(argv[static_cast<int>(ArgIdx::kSize)]);
+    args->num_loops = std::stoul(argv[static_cast<int>(ArgIdx::kNumLoops)]);
+    return 0;
+}
+
 int main(int argc, char **argv) {
     int ret = 0;
     int destroy_buf_ret = 0;
-    cudaError_t cuda_err = cudaSuccess;
     Args args;
     Buffers buffers;
 
@@ -285,15 +386,15 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    args.gpu_id = std::stoi(argv[static_cast<int>(ArgIdx::kGpuId)]);
-    args.copy_direction = argv[static_cast<int>(ArgIdx::kCopyDirection)];
-    args.size = std::stoul(argv[static_cast<int>(ArgIdx::kSize)]);
-    args.num_loops = std::stoul(argv[static_cast<int>(ArgIdx::kNumLoops)]);
+    // Parse arguments
+    ret = ParseArgs(&args, argv);
+    if (ret != 0) {
+        goto destroy_buf;
+    }
 
-    // Set device context
-    cuda_err = cudaSetDevice(args.gpu_id);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice error: %d\n", cuda_err);
+    // Enable P2P access
+    ret = EnableP2P(args);
+    if (ret != 0) {
         goto destroy_buf;
     }
 
@@ -314,7 +415,7 @@ int main(int argc, char **argv) {
 
 destroy_buf:
     // Destroy buffers
-    destroy_buf_ret = DestroyBuf(&buffers);
+    destroy_buf_ret = DestroyBuf(args, &buffers);
     if (ret == 0) {
         ret = destroy_buf_ret;
     }
