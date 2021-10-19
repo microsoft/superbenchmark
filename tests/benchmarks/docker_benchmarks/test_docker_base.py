@@ -6,11 +6,11 @@
 import re
 
 from superbench.benchmarks import BenchmarkType, ReturnCode
-from superbench.benchmarks.docker_benchmarks import DockerBenchmark
+from superbench.benchmarks.docker_benchmarks import CudaDockerBenchmark, RocmDockerBenchmark
 
 
-class FakeDockerBenchmark(DockerBenchmark):
-    """Fake benchmark inherit from DockerBenchmark."""
+class FakeCudaDockerBenchmark(CudaDockerBenchmark):
+    """Fake benchmark inherit from RocmDockerBenchmark."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -49,22 +49,48 @@ class FakeDockerBenchmark(DockerBenchmark):
         return True
 
 
+class FakeRocmDockerBenchmark(RocmDockerBenchmark):
+    """Fake benchmark inherit from CudaDockerBenchmark."""
+    def __init__(self, name, parameters=''):
+        """Constructor.
+
+        Args:
+            name: benchmark name.
+            parameters: benchmark parameters.
+        """
+        super().__init__(name, parameters)
+
+    def _process_raw_result(self, cmd_idx, raw_output):
+        """Function to process raw results and save the summarized results.
+
+          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
+        Args:
+            cmd_idx (int): the index of command corresponding with the raw_output.
+            raw_output (str): raw output string of the docker-benchmark.
+
+        Return:
+            True if the raw output string is valid and result can be extracted.
+        """
+        return True
+
+
 def test_docker_benchmark_base():
     """Test MicroBenchmarkWithInvoke."""
     # Negative case - DOCKERBENCHMARK_IMAGE_NOT_SET.
-    benchmark = FakeDockerBenchmark('fake')
+    benchmark = FakeCudaDockerBenchmark('fake')
     assert (benchmark._benchmark_type == BenchmarkType.DOCKER)
     assert (benchmark.run() is False)
     assert (benchmark.return_code == ReturnCode.DOCKERBENCHMARK_IMAGE_NOT_SET)
 
     # Negative case - DOCKERBENCHMARK_CONTAINER_NOT_SET.
-    benchmark = FakeDockerBenchmark('fake')
+    benchmark = FakeCudaDockerBenchmark('fake')
     benchmark._image_uri = 'image'
     assert (benchmark.run() is False)
     assert (benchmark.return_code == ReturnCode.DOCKERBENCHMARK_CONTAINER_NOT_SET)
 
     # Negative case - DOCKERBENCHMARK_IMAGE_PULL_FAILURE.
-    benchmark = FakeDockerBenchmark('fake')
+    benchmark = FakeCudaDockerBenchmark('fake')
     benchmark._image_uri = 'image'
     benchmark._container_name = 'container'
     assert (benchmark.run() is False)
@@ -76,3 +102,8 @@ def test_docker_benchmark_base():
     assert (benchmark.raw_data['raw_output_0'] == ['cost1: 10.2, cost2: 20.2'])
     assert (benchmark.result['cost1'] == [10.2])
     assert (benchmark.result['cost2'] == [20.2])
+
+    # Test for _platform_options.
+    assert (benchmark._platform_options == '--gpus=all')
+    benchmark = FakeRocmDockerBenchmark('fake')
+    assert (benchmark._platform_options == '--security-opt seccomp=unconfined --group-add video')
