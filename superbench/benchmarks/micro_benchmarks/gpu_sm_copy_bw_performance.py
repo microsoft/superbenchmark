@@ -93,7 +93,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
             else:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
-                    'Unsupported operation of NCCL test - benchmark: {}, operation: {}, expected: {}.'.format(
+                    'Unsupported mem_type - benchmark: {}, mem_type: {}, expected: {}.'.format(
                         self._name, mem_type, ' '.join(self._mem_types)
                     )
                 )
