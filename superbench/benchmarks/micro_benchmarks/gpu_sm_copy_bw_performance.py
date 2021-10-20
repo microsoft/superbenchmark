@@ -6,6 +6,7 @@
 import os
 
 from superbench.common.utils import logger
+from superbench.common.utils import nv_helper
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
@@ -22,7 +23,9 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'gpu_sm_copy'
-        self._mem_types = ['htod', 'dtoh']
+        self._mem_types = ['htoh', 'htod', 'dtoh', 'dtod', 'ptop']
+        self._num_devices = nv_helper.get_device_count()
+        self._command_settings = []
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -64,9 +67,41 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
         for mem_type in self._args.mem_type:
-            command = '%s 0 %s %d %d' % \
-                (self.__bin_path, mem_type, self._args.size, self._args.num_loops)
-            self._commands.append(command)
+            if mem_type == 'htoh':
+                self._command_settings += [
+                    {'tag': 'htoh_gpu%d' % x, 'devices': ('cpu', 'cpu', 'gpu%d' % x)}
+                    for x in range(self._num_devices)]
+            elif mem_type == 'htod':
+                self._command_settings += [
+                    {'tag': 'htod_gpu%d' % x, 'devices': ('cpu', 'gpu%d' % x, 'gpu%d' % x)}
+                    for x in range(self._num_devices)]
+            elif mem_type == 'dtoh':
+                self._command_settings += [
+                    {'tag': 'dtoh_gpu%d' % x, 'devices': ('gpu%d' % x, 'cpu', 'gpu%d' % x)}
+                    for x in range(self._num_devices)]
+            elif mem_type == 'dtod':
+                self._command_settings += [
+                    {'tag': 'dtod_gpu%d' % x, 'devices': ('gpu%d' % x, 'gpu%d' % x, 'gpu%d' % x)}
+                    for x in range(self._num_devices)]
+            elif mem_type == 'ptop':
+                for x in range(self._num_devices):
+                    for y in range(self._num_devices):
+                        self._command_settings.append(
+                            {'tag': 'ptop_gpu%d_reads_gpu%d' % (y, x), 'devices': ('gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y)})
+                        self._command_settings.append(
+                            {'tag': 'ptop_gpu%d_writes_gpu%d' % (x, y), 'devices': ('gpu%d' % x, 'gpu%d' % y, 'gpu%d' % x)})
+            else:
+                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                logger.error(
+                    'Unsupported operation of NCCL test - benchmark: {}, operation: {}, expected: {}.'.format(
+                        self._name, mem_type, ' '.join(self._mem_types)
+                    )
+                )
+                return False
+
+        self._commands = [
+            '%s %s %d %d' % (self.__bin_path, ' '.join(self._command_settings['devices']), self._args.size, self._args.num_loops)
+            for x in self._command_settings]
 
         return True
 
@@ -87,7 +122,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         try:
             output_prefix = 'Bandwidth (GB/s): '
             assert (raw_output.startswith(output_prefix))
-            self._result.add_result(self._args.mem_type[cmd_idx], float(raw_output[len(output_prefix):]))
+            self._result.add_result(self._command_settings[cmd_idx]['tag'], float(raw_output[len(output_prefix):]))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

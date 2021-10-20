@@ -74,13 +74,16 @@ superbench:
       enable: true
       modes:
         - name: local
-          proc_num: 32
-          prefix: HIP_VISIBLE_DEVICES=$(({proc_rank}%8)) numactl -N $(({proc_rank}%4)) -m $(({proc_rank}%4))
+          proc_num: 4
+          prefix: numactl -N {proc_rank} -m {proc_rank}
           parallel: no
       parameters:
         mem_type:
-          - dtoh
+          - htoh
           - htod
+          - dtoh
+          - dtod
+          - ptop
     gpt_models:
       <<: *default_pytorch_mode
       models:

@@ -18,7 +18,7 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
 
     size = 1048576
     num_loops = 10000
-    mem_types = ['dtoh', 'htod']
+    mem_types = ['htoh', 'htod', 'dtoh', 'dtod', 'ptop']
 
     parameters = '--mem_type %s --size %d --num_loops %d' % \
         (' '.join(mem_types), size, num_loops)
@@ -38,12 +38,9 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     assert (benchmark._args.num_loops == num_loops)
 
     # Check and revise command list
-    assert (len(mem_types) == len(benchmark._commands))
-    for idx, mem_type in enumerate(mem_types):
-        assert (
-            benchmark._commands[idx] == '%s 0 %s %d %d' %
-            (benchmark._GpuSmCopyBwBenchmark__bin_path, mem_type, size, num_loops)
-        )
+    assert (len(benchmark._command_settings) == len(benchmark._commands))
+    for command_setting, command in zip(benchmark._command_settings, benchmark._commands):
+        assert (command == '%s %s %d %d' % (benchmark._GpuSmCopyBwBenchmark__bin_path, command_setting['mem_type'], size, num_loops))
 
     # Run benchmark
     assert (benchmark._benchmark())
@@ -51,13 +48,15 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    for idx, mem_type in enumerate(mem_types):
+    assert (len(benchmark._command_settings) == len(benchmark.raw_data))
+    assert (len(benchmark._command_settings) == len(benchmark.result))
+    for idx, command_setting in enumerate(benchmark._command_settings):
         raw_output_key = 'raw_output_%d' % idx
         assert (raw_output_key in benchmark.raw_data)
         assert (len(benchmark.raw_data[raw_output_key]) == 1)
         assert (isinstance(benchmark.raw_data[raw_output_key][0], str))
 
-        output_key = mem_type
+        output_key = command_setting['mem_type']
         assert (output_key in benchmark.result)
         assert (len(benchmark.result[output_key]) == 1)
         assert (isinstance(benchmark.result[output_key][0], numbers.Number))
