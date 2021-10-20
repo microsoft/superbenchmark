@@ -23,6 +23,8 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('deploy', 'deploy_command_handler')
             g.command('exec', 'exec_command_handler')
             g.command('run', 'run_command_handler')
+        with CommandGroup(self, 'node', 'superbench.cli._node_handler#{}') as g:
+            g.command('info', 'info_command_handler')
         return super().load_command_table(args)
 
     def load_arguments(self, command):

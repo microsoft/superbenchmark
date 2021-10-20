@@ -2,6 +2,10 @@
 id: installation
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
 # Installation
 
 SuperBench is used to run validations for AI infrastructure,
@@ -57,7 +61,7 @@ You can clone the source from GitHub and build it.
 :::note Note
 You should checkout corresponding tag to use release version, for example,
 
-`git clone -b v0.2.1 https://github.com/microsoft/superbenchmark`
+`git clone -b v0.3.0 https://github.com/microsoft/superbenchmark`
 :::
 
 ```bash
@@ -80,10 +84,29 @@ Here're the system requirements for all managed GPU nodes.
 
 ### Requirements
 
+<Tabs
+  groupId='gpu-vendor'
+  defaultValue='nvidia'
+  values={[
+    {label: 'NVIDIA GPU', value: 'nvidia'},
+    {label: 'AMD GPU', value: 'amd'},
+  ]
+}>
+<TabItem value='nvidia'>
+
 * Latest version of Linux, you're highly encouraged to use Ubuntu 18.04 or later.
-* Compatible GPU drivers should be install correctly.
-  * For NVIDIA GPUs, driver version can be checked by running `nvidia-smi`.
+* Compatible GPU drivers should be installed correctly. Driver version can be checked by running `nvidia-smi`.
 * [Docker CE](https://docs.docker.com/engine/install/) version 19.03 or later (which can be checked by running `docker --version`).
-* GPU support in Docker.
-  * For NVIDIA GPUs, install
+* NVIDIA GPU support in Docker, install
   [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#setting-up-nvidia-container-toolkit).
+
+</TabItem>
+<TabItem value='amd'>
+
+* Latest version of Linux, you're highly encouraged to use Ubuntu 18.04 or later.
+* Compatible GPU drivers should be installed correctly, and group permission should be set to access GPU resources.
+  You should be able to run `rocm-smi` and `rocminfo` directly to check GPU usage and information.
+* [Docker CE](https://docs.docker.com/engine/install/) version 19.03 or later (which can be checked by running `docker --version`).
+
+</TabItem>
+</Tabs>

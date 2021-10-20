@@ -178,7 +178,7 @@ def test_pytorch_base():
     BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
 
     # Launch benchmark with --no_gpu for testing.
-    parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu'
+    parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu --force_fp32'
     benchmark = PytorchMNIST('pytorch-mnist', parameters=parameters)
     assert (benchmark)
     assert (benchmark._preprocess())
@@ -201,6 +201,9 @@ def test_pytorch_base():
 
     # Test _judge_gpu_availability().
     assert (benchmark._gpu_available is False)
+
+    # Test _set_force_fp32().
+    assert (benchmark._args.force_fp32 is True)
 
     # Test _init_distributed_setting().
     assert (benchmark._args.distributed_impl is None)
