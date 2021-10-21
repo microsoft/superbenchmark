@@ -95,6 +95,6 @@ rocm_bandwidthTest: sb_micro_path
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
-	source $(HPCX_HOME)/hpcx-init.sh && hpcx_load && make CC="mpicc" -C GPCNET && hpcx_unload
+	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
