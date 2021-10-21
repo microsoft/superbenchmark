@@ -6,7 +6,7 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.common.utils import nv_helper
+from superbench.common.devices import GPU
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
@@ -24,7 +24,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         self._bin_name = 'gpu_sm_copy'
         self._mem_types = ['htoh', 'htod', 'dtoh', 'dtod', 'ptop']
-        self._num_devices = nv_helper.get_device_count()
+        self._num_devices = GPU().count
         self._command_settings = []
 
     def add_parser_arguments(self):
