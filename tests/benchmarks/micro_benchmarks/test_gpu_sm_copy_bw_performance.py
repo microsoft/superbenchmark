@@ -62,7 +62,7 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
         assert (len(benchmark.raw_data[raw_output_key]) == 1)
         assert (isinstance(benchmark.raw_data[raw_output_key][0], str))
 
-        output_key = command_setting['mem_type']
+        output_key = command_setting['tag']
         assert (output_key in benchmark.result)
         assert (len(benchmark.result[output_key]) == 1)
         assert (isinstance(benchmark.result[output_key][0], numbers.Number))
