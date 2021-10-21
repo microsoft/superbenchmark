@@ -1,5 +1,5 @@
 # SuperBench Config
-version: v0.2
+version: v0.3
 superbench:
   enable: null
   var:
@@ -32,7 +32,10 @@ superbench:
       enable: true
       modes:
         - name: local
-          prefix: NCCL_DEBUG=INFO NCCL_IB_DISABLE=1
+          proc_num: 1
+          parallel: no
+      parameters:
+        ngpus: 8
     ib-loopback:
       enable: true
       modes:
@@ -61,15 +64,16 @@ superbench:
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
           parallel: yes
     gpu-sm-copy-bw:
-      enable: false
+      enable: true
       modes:
         - name: local
           proc_num: 32
           prefix: CUDA_VISIBLE_DEVICES=$(({proc_rank}%8)) numactl -N $(({proc_rank}%4)) -m $(({proc_rank}%4))
           parallel: no
       parameters:
-        dtoh: true
-        htod: true
+        mem_type:
+          - dtoh
+          - htod
     kernel-launch:
       <<: *default_local_mode
     gemm-flops:

@@ -11,7 +11,7 @@ You can also develop online with [GitHub Codespaces](https://github.com/codespac
 
 ## Check Environment
 
-Follow [System Requirements](../getting-started/installation.md).
+Follow [System Requirements](../getting-started/installation).
 
 ## Set Up
 

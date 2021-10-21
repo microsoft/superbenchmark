@@ -32,6 +32,15 @@ class PytorchBase(ModelBenchmark):
         """Judge GPUs' availability according to arguments and running environment."""
         self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
 
+    def _set_force_fp32(self):
+        """Set the config that controls whether full float32 precision will be used.
+
+        On Ampere or newer GPUs, pytorch and tensorflow will use TF32 instead of FP32 by default.
+        We can disable TF32 execution by setting force_fp32 as True.
+        """
+        torch.backends.cuda.matmul.allow_tf32 = not self._args.force_fp32
+        torch.backends.cudnn.allow_tf32 = not self._args.force_fp32
+
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU.
 
@@ -174,6 +183,7 @@ class PytorchBase(ModelBenchmark):
 
         try:
             if self._args.distributed_impl == DistributedImpl.DDP:
+                torch.distributed.barrier()
                 torch.distributed.destroy_process_group()
         except BaseException as e:
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE)

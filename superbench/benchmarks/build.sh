@@ -3,6 +3,7 @@
 # Copyright (c) Microsoft Corporation - All rights reserved
 # Licensed under the MIT License
 
+set -e
 
 SB_MICRO_PATH="${SB_MICRO_PATH:-/usr/local}"
 
@@ -12,6 +13,7 @@ for dir in micro_benchmarks/*/ ; do
         BUILD_ROOT=$dir/build
         mkdir -p $BUILD_ROOT
         cmake -DCMAKE_INSTALL_PREFIX=$SB_MICRO_PATH -DCMAKE_BUILD_TYPE=Release -S $SOURCE_DIR -B $BUILD_ROOT
-        cmake --build $BUILD_ROOT --target install
+        cmake --build $BUILD_ROOT
+        cmake --install $BUILD_ROOT
     fi
 done

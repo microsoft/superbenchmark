@@ -81,3 +81,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb run, --host-file does not exist, should fail."""
         result = self.cmd('sb run --host-file ./nonexist.yaml', expect_failure=True)
         self.assertEqual(result.exit_code, 1)
+
+    def test_sb_node_info(self):
+        """Test sb node info, should fail."""
+        self.cmd('sb node info', expect_failure=False)
