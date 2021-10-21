@@ -55,8 +55,8 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         Path('test_gen_config.txt').unlink()
 
     @mock.patch('superbench.common.utils.network.get_ib_devices')
-    def test_ib_loopback_all_sizes(self, mock_ib_devices):
-        """Test ib-loopback benchmark for all sizes."""
+    def test_ib_traffic_performance(self, mock_ib_devices):
+        """Test ib-traffic benchmark for all sizes."""
 
         # Test without ib devices
         # Check registry.
@@ -97,7 +97,7 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         Path('config.txt').unlink()
         assert (ret)
 
-        expect_command = 'ib_mpi --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config config.txt --output_path result.csv'
+        expect_command = 'ib_mpi --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -113,47 +113,66 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         Path('test_config.txt').unlink()
         assert (ret)
 
-        expect_command = 'ib_mpi --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt --output_path result.csv'
+        expect_command = 'ib_mpi --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
-        raw_output = """
+        raw_output_0 = """
 The predix of cmd to run is: ib_write_bw -a -d ibP257p0s0
 Load the config file from: config.txt
-Output will be saved to: result.csv
+Output will be saved to:
 config:
 0,1
 1,0;0,1
 0,1;1,0
 1,0;0,1
-results from rank 0: 23452.6
-results from rank 0: 22212.6 22433
-results from rank 0: 22798.8 23436.3
-results from rank 0: 23435.3 22766.5
+config end
+results from rank ROOT_RANK:
+23452.6,
+22212.6,22433
+22798.8,23436.3
+23435.3,22766.5
 """
-        output_file_content = """
-command prefix: ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0
+        raw_output_1 = """
+The predix of cmd to run is: ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0
+Load the config file from: config.txt
+Output will be saved to:
 config:
-"(0,1)","(1,0)","(2,3)","(3,2)"
-"(0,3)","(3,0)","(1,2)","(2,1)"
-"(0,2)","(2,0)","(3,1)","(1,3)"
-results:
+0,1
+1,0;0,1
+0,1;1,0
+1,0;0,1
+config end
+results from rank ROOT_RANK:
 23452.6,
 22212.6,22433,
 22798.8,23436.3,
-23435.3,22766.5,
 """
-        with open('result.csv', 'w') as f:
-            f.write(output_file_content)
-        os.environ['OMPI_COMM_WORLD_RANK'] = '0'
-        assert (benchmark._process_raw_result(0, raw_output))
-        os.environ.pop('OMPI_COMM_WORLD_RANK')
-        Path('result.csv').unlink()
+        raw_output_2 = """
+--------------------------------------------------------------------------
+mpirun was unable to launch the specified application as it could not access
+or execute an executable:
+
+Executable: /root/ib_mpi/i,docker0
+Node: GCRAMDRR1-MI100-081
+
+while attempting to start process rank 0.
+--------------------------------------------------------------------------
+2 total processes failed to start
+"""
+
         # Check function process_raw_data.
         # Positive case - valid raw output.
+        os.environ['OMPI_COMM_WORLD_RANK'] = '0'
+        assert (benchmark._process_raw_result(0, raw_output_0))
+
         for metric in benchmark.result:
             assert (metric in benchmark.result)
             assert (len(benchmark.result[metric]) == 1)
             assert (isinstance(benchmark.result[metric][0], numbers.Number))
+        # Negative case - valid raw output.
+        assert (benchmark._process_raw_result(0, raw_output_1) == False)
+        assert (benchmark._process_raw_result(0, raw_output_2) == False)
+        os.environ.pop('OMPI_COMM_WORLD_RANK')
 
         # Check basic information.
         assert (benchmark.name == 'ib-traffic')

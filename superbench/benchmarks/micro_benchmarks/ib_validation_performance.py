@@ -27,7 +27,6 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
             'ib_write_bw', 'ib_read_bw', 'ib_send_bw', 'ib_write_lat', 'ib_read_lat', 'ib_send_lat'
         ]
         self.__modes = ['one-to-one', 'one-to-many', 'many-to-one']
-        self.__output_path = 'result.csv'
         self.__config_path = 'config.txt'
         self.__config = []
 
@@ -182,7 +181,7 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
                 lines = f.readlines()
                 for line in lines:
                     pairs = line.strip().split(';')
-                    self.__config.append(pairs)
+                    self.__config.extend(pairs)
             if len(self.__config) == 0:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error('No valid config - benchmark: {}.'.format(self._name))
@@ -237,7 +236,6 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
                 command = os.path.join(self._args.bin_dir, self._bin_name)
                 command += ' --cmd_prefix ' + '\"' + ib_command_prefix + '\"'
                 command += ' --input_config ' + self.__config_path
-                command += ' --output_path ' + self.__output_path
                 self._commands.append(command)
 
         return True
@@ -256,34 +254,37 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data('raw_output_' + self._args.commands[cmd_idx], raw_output)
 
+        # If it's invoked by MPI and rank is not 0, no result is expected
         if os.getenv('OMPI_COMM_WORLD_RANK'):
             rank = int(os.getenv('OMPI_COMM_WORLD_RANK'))
             if rank > 0:
                 return True
 
         valid = False
-        content = None
+        content = raw_output.splitlines()
         line_index = 0
+        config_index = 0
         try:
-            with open(self.__output_path, 'r') as f:
-                content = f.readlines()
             result_index = -1
             for index, line in enumerate(content):
-                if 'results:' in line:
+                if 'results' in line:
                     result_index = index + 1
                     break
-            if result_index != -1:
+            if result_index == -1:
+                valid = False
+            else:
                 content = content[result_index:]
-            for line in content:
-                line = line.strip().split(',')
-                for i in range(len(self.__config[line_index])):
-                    metric = '{line}-{pair}'.format(line=str(line_index), pair=self.__config[line_index][i])
-                    self._result.add_result(metric, float(line[i]))
-                    valid = True
-                line_index += 1
+                for line in content:
+                    line = list(filter(None, line.strip().split(',')))
+                    for item in line:
+                        metric = '{line}-{pair}'.format(line=str(line_index), pair=self.__config[config_index])
+                        self._result.add_result(metric, float(item))
+                        valid = True
+                        config_index += 1
+                    line_index += 1
         except Exception:
             valid = False
-        if valid is False:
+        if valid is False or config_index != len(self.__config):
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
                     self._curr_run_index, self._name, raw_output
