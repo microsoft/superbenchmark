@@ -39,6 +39,8 @@
 using namespace std;
 
 #define ROOT_RANK 0
+#define SERVER_MAX_THREADS 25000
+#define MAX_THREADS 65535
 
 int g_world_size;
 int g_world_rank;
@@ -126,7 +128,8 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
                 s_occurrence[first]++;
                 // limit the maximum threads of each rank no more than 65535 and server threads no more than 25000 at
                 // the same time because by default a server can use (32768-60999) ports
-                if (s_occurrence[first] == 25000 || occurrence[second] == 65535 || occurrence[first] == 65535) {
+                if (s_occurrence[first] == SERVER_MAX_THREADS || occurrence[second] == MAX_THREADS ||
+                    occurrence[first] == MAX_THREADS) {
                     if (g_world_rank == ROOT_RANK)
                         std::cout << "Warning: split the line due to the limit of maximum threads nums" << std::endl;
                     run_in_total.emplace_back(run_pairs_in_parallel);
