@@ -31,7 +31,7 @@ The structure of `benchmarks` package can be divided into layers from the bottom
    4. `DockerBenchmark` is the base class for real workloads based on docker. It also defines the abstract interfaces that need to be implemented by the subclasses.
 2. Derived classes for all implemented benchmarks, which need to realize all the abstract interfaces. The benchmarks will be registered into `BenchmarkRegistry`.
 3. `BenchmarkRegistry` provides a way of benchmark registration, maintains all the registered benchmarks, and supports benchmark launching by `BenchmarkContext`.
-4. `BenchmarkContext` provides the context to launch one benchmark, including name, parameters, platform(CPU, GPU, etc.), and framework(Pytorch, TF, ONNX, etc.).
+4. `BenchmarkContext` provides the context to launch one benchmark, including name, parameters, platform(CPU, GPU, etc.), and framework(Pytorch, TF, ONNXRuntime, etc.).
 5. `BenchmarkResult` defines the structured results for each benchmark in json format, including name, return_code, start_time, end_time, raw_data, summarized metrics, reduce type, etc.
 
 The `Executor` on the uppermost layer is the entrance for all the benchmarks. It launches the benchmark by `BenchmarkRegistry` and fetch `BenchmarkResult`.
@@ -114,7 +114,7 @@ class BenchmarkRegistry:
             name (str): name of benchmark in config file.
             platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM.
             parameters (str): predefined parameters of benchmark.
-            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNX.
+            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNXRUNTIME.
         Return:
             benchmark_context (BenchmarkContext): the benchmark context.
         """
