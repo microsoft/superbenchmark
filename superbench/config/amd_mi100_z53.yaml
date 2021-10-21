@@ -86,9 +86,8 @@ superbench:
       enable: false
       modes:
         - name: local
-          proc_num: 1
       frameworks:
-        - onnx
+        - onnxruntime
     gpt_models:
       <<: *default_pytorch_mode
       models:

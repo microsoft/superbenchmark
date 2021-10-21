@@ -1,22 +1,22 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for RocmOnnxModelBenchmark modules."""
+"""Tests for RocmOnnxRuntimeModelBenchmark modules."""
 
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, Platform, ReturnCode
 from superbench.benchmarks.result import BenchmarkResult
 
 
-def test_rocm_onnx_performance():
-    """Test onnx model benchmark."""
-    benchmark_name = 'onnx-model-benchmark'
+def test_rocm_onnxruntime_performance():
+    """Test onnxruntime model benchmark."""
+    benchmark_name = 'onnxruntime-model-benchmark'
     (benchmark_class,
      predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.ROCM)
     assert (benchmark_class)
     benchmark = benchmark_class(benchmark_name)
     assert (benchmark._benchmark_type == BenchmarkType.DOCKER)
     assert (benchmark._image_uri == 'superbench/benchmark:rocm4.3.1-onnxruntime1.9.0')
-    assert (benchmark._container_name == 'rocm-onnx-model-benchmarks')
+    assert (benchmark._container_name == 'rocm-onnxruntime-model-benchmarks')
     assert (benchmark._entrypoint == '/stage/onnxruntime-training-examples/huggingface/azureml/run_benchmark.sh')
     assert (benchmark._cmd is None)
     benchmark._result = BenchmarkResult(benchmark._name, benchmark._benchmark_type, ReturnCode.SUCCESS)

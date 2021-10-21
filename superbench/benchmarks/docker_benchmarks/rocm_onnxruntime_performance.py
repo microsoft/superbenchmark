@@ -21,7 +21,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.docker_benchmarks.docker_base import RocmDockerBenchmark
 
 
-class RocmOnnxModelBenchmark(RocmDockerBenchmark):
+class RocmOnnxRuntimeModelBenchmark(RocmDockerBenchmark):
     """The onnxruntime E2E model benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -36,7 +36,7 @@ class RocmOnnxModelBenchmark(RocmDockerBenchmark):
         self._image_uri = 'superbench/benchmark:rocm4.3.1-onnxruntime1.9.0'
 
         # Container name of the current docker-benchmark.
-        self._container_name = 'rocm-onnx-model-benchmarks'
+        self._container_name = 'rocm-onnxruntime-model-benchmarks'
 
         # Entrypoint option of the current docker-benchmark.
         self._entrypoint = '/stage/onnxruntime-training-examples/huggingface/azureml/run_benchmark.sh'
@@ -83,4 +83,6 @@ class RocmOnnxModelBenchmark(RocmDockerBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark('onnx-model-benchmark', RocmOnnxModelBenchmark, platform=Platform.ROCM)
+BenchmarkRegistry.register_benchmark(
+    'onnxruntime-model-benchmark', RocmOnnxRuntimeModelBenchmark, platform=Platform.ROCM
+)
