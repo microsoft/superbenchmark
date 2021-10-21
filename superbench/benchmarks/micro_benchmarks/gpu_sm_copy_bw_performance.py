@@ -116,6 +116,8 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         command_settings = []
         for x in range(self._num_devices):
             for y in range(self._num_devices):
+                if x == y:
+                    continue
                 command_settings.append(
                     self._gen_command_setting('ptop_gpu%d_reads_gpu%d' % (y, x), 'gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y)
                 )
