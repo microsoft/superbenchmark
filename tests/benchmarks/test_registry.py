@@ -88,12 +88,12 @@ def test_is_benchmark_context_valid():
 def test_get_benchmark_name():
     """Test interface BenchmarkRegistry.get_benchmark_name()."""
     # Register benchmarks for testing.
-    benchmark_names = ['accumulation', 'pytorch-accumulation', 'tf1-accumulation', 'onnx-accumulation']
+    benchmark_names = ['accumulation', 'pytorch-accumulation', 'tf1-accumulation', 'onnxruntime-accumulation']
     for name in benchmark_names:
         BenchmarkRegistry.register_benchmark(name, AccumulationBenchmark)
 
     # Test benchmark name for different Frameworks.
-    benchmark_frameworks = [Framework.NONE, Framework.PYTORCH, Framework.TENSORFLOW1, Framework.ONNX]
+    benchmark_frameworks = [Framework.NONE, Framework.PYTORCH, Framework.TENSORFLOW1, Framework.ONNXRUNTIME]
     for i in range(len(benchmark_names)):
         context = BenchmarkRegistry.create_benchmark_context(
             'accumulation', platform=Platform.CPU, framework=benchmark_frameworks[i]
