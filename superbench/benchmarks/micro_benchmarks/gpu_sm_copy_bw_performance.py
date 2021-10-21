@@ -121,7 +121,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         self._commands = [
             '%s %s %d %d' %
-            (self.__bin_path, ' '.join(self._command_settings['devices']), self._args.size, self._args.num_loops)
+            (self.__bin_path, ' '.join(x['devices']), self._args.size, self._args.num_loops)
             for x in self._command_settings
         ]
 
