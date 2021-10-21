@@ -11,6 +11,7 @@ pool:
 
 container:
   image: nvcr.io/nvidia/pytorch:20.12-py3
+  options: '-v /var/run/docker.sock:/var/run/docker.sock'
 
 steps:
   - script: |
@@ -26,6 +27,12 @@ steps:
   - script: |
       SB_MICRO_PATH=$PWD make cppbuild
     displayName: Build benchmarks
+  - script: |
+      cd /tmp && \
+      wget https://download.docker.com/linux/static/stable/x86_64/docker-20.10.8.tgz -O docker.tgz && \
+      tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
+      rm docker.tgz
+    displayName: Install docker client
   - script: |
       SB_MICRO_PATH=$PWD python3 setup.py test
     displayName: Run unit tests

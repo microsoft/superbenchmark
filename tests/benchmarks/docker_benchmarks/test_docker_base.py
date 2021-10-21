@@ -5,6 +5,7 @@
 
 import re
 
+from tests.helper import decorator
 from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.docker_benchmarks import DockerBenchmark, CudaDockerBenchmark, RocmDockerBenchmark
 
@@ -101,6 +102,7 @@ class FakeRocmDockerBenchmark(RocmDockerBenchmark):
         return True
 
 
+@decorator.cuda_test
 def test_docker_benchmark_base():
     """Test DockerBenchmark."""
     # Negative case - DOCKERBENCHMARK_IMAGE_NOT_SET.
