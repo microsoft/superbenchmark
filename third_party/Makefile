@@ -8,6 +8,7 @@ MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 ROCM_VERSION ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
+HPCX_HOME ?= /opt/hpcx
 
 .PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet
 
@@ -92,7 +93,8 @@ rocm_bandwidthTest: sb_micro_path
 	cd ./hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
 
+# Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
-	cd ./GPCNET && make all CC="mpicc"
+	source $(HPCX_HOME)/hpcx-init.sh && hpcx_load && make CC="mpicc" -C GPCNET && hpcx_unload
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
