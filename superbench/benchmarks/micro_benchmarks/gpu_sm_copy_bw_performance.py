@@ -66,6 +66,10 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
+        if self._num_devices == 0:
+            self._commands = []
+            return True
+
         for mem_type in self._args.mem_type:
             if mem_type == 'htoh':
                 self._command_settings += [
