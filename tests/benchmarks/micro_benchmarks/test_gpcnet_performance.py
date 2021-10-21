@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for ib-loopback benchmark."""
+"""Tests for GPCNet benchmark."""
 
 import os
 import numbers
@@ -103,7 +103,7 @@ Network Tests v1.3
         assert (benchmark._bin_name == 'network_test')
 
     def test_gpcnet_network_load(self):    # noqa: C901
-        """Test gpcnet-network-load benchmark for 8M size."""
+        """Test gpcnet-network-load-test benchmark."""
         raw_output = """# noqa: E501
 NetworkLoad Tests v1.3
   Test with 10 MPI ranks (10 nodes)
@@ -204,7 +204,7 @@ NetworkLoad Tests v1.3
 +---------------------------------+----------------------+---------------------+
 """
         # Check registry.
-        benchmark_name = 'gpcnet-network-load'
+        benchmark_name = 'gpcnet-network-load-test'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
@@ -282,6 +282,6 @@ NetworkLoad Tests v1.3
         assert (benchmark._process_raw_result(0, 'ERROR') is False)
 
         # Check basic information.
-        assert (benchmark.name == 'gpcnet-network-load')
+        assert (benchmark.name == 'gpcnet-network-load-test')
         assert (benchmark.type == BenchmarkType.MICRO)
         assert (benchmark._bin_name == 'network_load_test')

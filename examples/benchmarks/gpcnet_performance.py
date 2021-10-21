@@ -12,6 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context('gpcnet-network-test')
+    # context = BenchmarkRegistry.create_benchmark_context('gpcnet-network-load-test')
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:

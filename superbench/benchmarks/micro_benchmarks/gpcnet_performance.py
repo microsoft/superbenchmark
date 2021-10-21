@@ -11,7 +11,7 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
 class GPCNetBenchmark(MicroBenchmarkWithInvoke):
-    """The TCP connectivity performance benchmark class."""
+    """The GPCNet performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -22,7 +22,7 @@ class GPCNetBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
         if self._name == 'gpcnet-network-test':
             self._bin_name = 'network_test'
-        if self._name == 'gpcnet-network-load':
+        if self._name == 'gpcnet-network-load-test':
             self._bin_name = 'network_load_test'
 
     def add_parser_arguments(self):
@@ -62,7 +62,6 @@ class GPCNetBenchmark(MicroBenchmarkWithInvoke):
             if 'ERROR' not in raw_output:
                 raw_output = raw_output.splitlines()
                 labels = None
-                label_len = -1
                 test_name = ''
                 for line in raw_output:
                     if not line.startswith('|'):
@@ -73,18 +72,16 @@ class GPCNetBenchmark(MicroBenchmarkWithInvoke):
                     if len(items) == 3 and 'Tests' in items[1]:
                         test_name = items[1].replace(' ', '')
                     # Get the line of the table labels
-                    elif 'Avg' in line:
-                        label_len = len(items)
+                    elif 'Avg' in line or 'Name' in line:
                         labels = items
                     # Get values related to the labels
                     else:
-                        if len(items) == label_len:
-                            name_prefix = items[1].replace(' ', '')
-                            for i in range(2, len(items) - 1):
-                                if labels[i] != 'Units':
-                                    self._result.add_result(
-                                        test_name + '_' + name_prefix + '_' + labels[i], float(items[i].strip('X'))
-                                    )
+                        name_prefix = items[1].replace(' ', '')
+                        for i in range(2, len(items) - 1):
+                            if labels[i] != 'Units':
+                                self._result.add_result(
+                                    test_name + '_' + name_prefix + '_' + labels[i], float(items[i].strip('X'))
+                                )
             else:
                 logger.error(
                     'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
@@ -104,4 +101,4 @@ class GPCNetBenchmark(MicroBenchmarkWithInvoke):
 
 
 BenchmarkRegistry.register_benchmark('gpcnet-network-test', GPCNetBenchmark)
-BenchmarkRegistry.register_benchmark('gpcnet-network-load', GPCNetBenchmark)
+BenchmarkRegistry.register_benchmark('gpcnet-network-load-test', GPCNetBenchmark)
