@@ -68,7 +68,14 @@ class DockerBenchmark(Benchmark):
             self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_CONTAINER_NOT_SET)
             logger.error('The container name is not set - benchmark: {}.'.format(self._name))
             return False
+        output = run_command('whereis docker')
+        print('whereis docker')
+        print(output.stdout)
+        print('which docker')
+        output = run_command('which docker')
+        print(output.stdout)
 
+        print('docker pull --quiet {}'.format(self._image_uri))
         output = run_command('docker pull --quiet {}'.format(self._image_uri))
         if output.returncode != 0:
             self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_IMAGE_PULL_FAILURE)
