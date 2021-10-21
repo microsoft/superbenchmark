@@ -55,13 +55,78 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
             help='Number of data buffer copies performed.',
         )
 
-    def _gen_command_settings(self, tag, src_dev, dst_dev, working_dev):
+    def _gen_command_setting(self, tag, src_dev, dst_dev, working_dev):
         """Generate command setting structure.
 
         Return:
             Command settings.
         """
         return {'tag': tag, 'devices': (src_dev, dst_dev, working_dev)}
+
+    def _gen_htoh_command_settings(self):
+        """Generate host-to-host command settings.
+
+        Return:
+            Host-to-host command settings.
+        """
+        return [
+            self._gen_command_setting('htoh_gpu%d' % x, 'cpu', 'cpu', 'gpu%d' % x)
+            for x in range(self._num_devices)
+        ]
+
+    def _gen_htod_command_settings(self):
+        """Generate host-to-device command settings.
+
+        Return:
+            Host-to-device command settings.
+        """
+        return [
+            self._gen_command_setting('htod_gpu%d' % x, 'cpu', 'gpu%d' % x, 'gpu%d' % x)
+            for x in range(self._num_devices)
+        ]
+
+    def _gen_dtoh_command_settings(self):
+        """Generate device-to-host command settings.
+
+        Return:
+            Device-to-host command settings.
+        """
+        return [
+            self._gen_command_setting('dtoh_gpu%d' % x, 'gpu%d' % x, 'cpu', 'gpu%d' % x)
+            for x in range(self._num_devices)
+        ]
+
+    def _gen_dtod_command_settings(self):
+        """Generate device-to-device command settings.
+
+        Return:
+            Device-to-device command settings.
+        """
+        return [
+            self._gen_command_setting('dtod_gpu%d' % x, 'gpu%d' % x, 'gpu%d' % x, 'gpu%d' % x)
+            for x in range(self._num_devices)
+        ]
+
+    def _gen_ptop_command_settings(self):
+        """Generate peer-to-peer command settings.
+
+        Return:
+            Peer-to-peer command settings.
+        """
+        command_settings = []
+        for x in range(self._num_devices):
+            for y in range(self._num_devices):
+                command_settings.append(
+                    self._gen_command_setting(
+                        'ptop_gpu%d_reads_gpu%d' % (y, x), 'gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y
+                    )
+                )
+                command_settings.append(
+                    self._gen_command_setting(
+                        'ptop_gpu%d_writes_gpu%d' % (x, y), 'gpu%d' % x, 'gpu%d' % y, 'gpu%d' % x
+                    )
+                )
+        return command_settings
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -80,38 +145,15 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         for mem_type in self._args.mem_type:
             if mem_type == 'htoh':
-                self._command_settings += [
-                    self._gen_command_settings('htoh_gpu%d' % x, 'cpu', 'cpu', 'gpu%d' % x)
-                    for x in range(self._num_devices)
-                ]
+                self._command_settings += self._gen_htoh_command_settings()
             elif mem_type == 'htod':
-                self._command_settings += [
-                    self._gen_command_settings('htod_gpu%d' % x, 'cpu', 'gpu%d' % x, 'gpu%d' % x)
-                    for x in range(self._num_devices)
-                ]
+                self._command_settings += self._gen_htod_command_settings()
             elif mem_type == 'dtoh':
-                self._command_settings += [
-                    self._gen_command_settings('dtoh_gpu%d' % x, 'gpu%d' % x, 'cpu', 'gpu%d' % x)
-                    for x in range(self._num_devices)
-                ]
+                self._command_settings += self._gen_dtoh_command_settings()
             elif mem_type == 'dtod':
-                self._command_settings += [
-                    self._gen_command_settings('dtod_gpu%d' % x, 'gpu%d' % x, 'gpu%d' % x, 'gpu%d' % x)
-                    for x in range(self._num_devices)
-                ]
+                self._command_settings += self._gen_dtod_command_settings()
             elif mem_type == 'ptop':
-                for x in range(self._num_devices):
-                    for y in range(self._num_devices):
-                        self._command_settings.append(
-                            self._gen_command_settings(
-                                'ptop_gpu%d_reads_gpu%d' % (y, x), 'gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y
-                            )
-                        )
-                        self._command_settings.append(
-                            self._gen_command_settings(
-                                'ptop_gpu%d_writes_gpu%d' % (x, y), 'gpu%d' % x, 'gpu%d' % y, 'gpu%d' % x
-                            )
-                        )
+                self._command_settings += self._gen_ptop_command_settings()
             else:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
