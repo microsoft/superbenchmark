@@ -40,7 +40,10 @@ def _test_gpu_sm_copy_bw_performance_impl(platform):
     # Check and revise command list
     assert (len(benchmark._command_settings) == len(benchmark._commands))
     for command_setting, command in zip(benchmark._command_settings, benchmark._commands):
-        assert (command == '%s %s %d %d' % (benchmark._GpuSmCopyBwBenchmark__bin_path, command_setting['mem_type'], size, num_loops))
+        assert (
+            command == '%s %s %d %d' %
+            (benchmark._GpuSmCopyBwBenchmark__bin_path, command_setting['mem_type'], size, num_loops)
+        )
 
     # Run benchmark
     assert (benchmark._benchmark())

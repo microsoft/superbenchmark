@@ -69,27 +69,47 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         for mem_type in self._args.mem_type:
             if mem_type == 'htoh':
                 self._command_settings += [
-                    {'tag': 'htoh_gpu%d' % x, 'devices': ('cpu', 'cpu', 'gpu%d' % x)}
-                    for x in range(self._num_devices)]
+                    {
+                        'tag': 'htoh_gpu%d' % x,
+                        'devices': ('cpu', 'cpu', 'gpu%d' % x)
+                    } for x in range(self._num_devices)
+                ]
             elif mem_type == 'htod':
                 self._command_settings += [
-                    {'tag': 'htod_gpu%d' % x, 'devices': ('cpu', 'gpu%d' % x, 'gpu%d' % x)}
-                    for x in range(self._num_devices)]
+                    {
+                        'tag': 'htod_gpu%d' % x,
+                        'devices': ('cpu', 'gpu%d' % x, 'gpu%d' % x)
+                    } for x in range(self._num_devices)
+                ]
             elif mem_type == 'dtoh':
                 self._command_settings += [
-                    {'tag': 'dtoh_gpu%d' % x, 'devices': ('gpu%d' % x, 'cpu', 'gpu%d' % x)}
-                    for x in range(self._num_devices)]
+                    {
+                        'tag': 'dtoh_gpu%d' % x,
+                        'devices': ('gpu%d' % x, 'cpu', 'gpu%d' % x)
+                    } for x in range(self._num_devices)
+                ]
             elif mem_type == 'dtod':
                 self._command_settings += [
-                    {'tag': 'dtod_gpu%d' % x, 'devices': ('gpu%d' % x, 'gpu%d' % x, 'gpu%d' % x)}
-                    for x in range(self._num_devices)]
+                    {
+                        'tag': 'dtod_gpu%d' % x,
+                        'devices': ('gpu%d' % x, 'gpu%d' % x, 'gpu%d' % x)
+                    } for x in range(self._num_devices)
+                ]
             elif mem_type == 'ptop':
                 for x in range(self._num_devices):
                     for y in range(self._num_devices):
                         self._command_settings.append(
-                            {'tag': 'ptop_gpu%d_reads_gpu%d' % (y, x), 'devices': ('gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y)})
+                            {
+                                'tag': 'ptop_gpu%d_reads_gpu%d' % (y, x),
+                                'devices': ('gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y)
+                            }
+                        )
                         self._command_settings.append(
-                            {'tag': 'ptop_gpu%d_writes_gpu%d' % (x, y), 'devices': ('gpu%d' % x, 'gpu%d' % y, 'gpu%d' % x)})
+                            {
+                                'tag': 'ptop_gpu%d_writes_gpu%d' % (x, y),
+                                'devices': ('gpu%d' % x, 'gpu%d' % y, 'gpu%d' % x)
+                            }
+                        )
             else:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
@@ -100,8 +120,10 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
                 return False
 
         self._commands = [
-            '%s %s %d %d' % (self.__bin_path, ' '.join(self._command_settings['devices']), self._args.size, self._args.num_loops)
-            for x in self._command_settings]
+            '%s %s %d %d' %
+            (self.__bin_path, ' '.join(self._command_settings['devices']), self._args.size, self._args.num_loops)
+            for x in self._command_settings
+        ]
 
         return True
 
