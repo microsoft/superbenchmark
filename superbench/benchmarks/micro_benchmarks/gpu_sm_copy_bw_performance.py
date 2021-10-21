@@ -61,10 +61,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         Return:
             Command settings.
         """
-        return {
-            'tag': tag,
-            'devices': (src_dev, dst_dev, working_dev)
-        }
+        return {'tag': tag, 'devices': (src_dev, dst_dev, working_dev)}
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
