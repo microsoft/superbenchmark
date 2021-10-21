@@ -29,7 +29,7 @@ steps:
     displayName: Build benchmarks
   - script: |
       wget https://download.docker.com/linux/static/stable/x86_64/docker-20.10.8.tgz -O docker.tgz && \
-      tar --verbose --preserve --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
+      tar --verbose --preserve-permissions --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
       rm docker.tgz
     displayName: Install docker client
   - script: |
