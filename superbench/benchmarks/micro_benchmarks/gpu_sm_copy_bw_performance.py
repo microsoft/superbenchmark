@@ -70,7 +70,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
             Host-to-host command settings.
         """
         return [
-            self._gen_command_setting('htoh_gpu%d' % x, 'cpu', 'cpu', 'gpu%d' % x)
+            self._gen_command_setting('htoh_gpu%d' % x, 'cpu', 'cpu', 'gpu%d' % x) for x in range(self._num_devices)
             for x in range(self._num_devices)
         ]
 
@@ -117,9 +117,7 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         for x in range(self._num_devices):
             for y in range(self._num_devices):
                 command_settings.append(
-                    self._gen_command_setting(
-                        'ptop_gpu%d_reads_gpu%d' % (y, x), 'gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y
-                    )
+                    self._gen_command_setting('ptop_gpu%d_reads_gpu%d' % (y, x), 'gpu%d' % x, 'gpu%d' % y, 'gpu%d' % y)
                 )
                 command_settings.append(
                     self._gen_command_setting(
