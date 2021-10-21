@@ -28,7 +28,7 @@ class Platform(Enum):
 
 class Framework(Enum):
     """The Enum class representing different frameworks."""
-    ONNX = 'onnx'
+    ONNXRUNTIME = 'onnxruntime'
     PYTORCH = 'pytorch'
     TENSORFLOW1 = 'tf1'
     TENSORFLOW2 = 'tf2'
@@ -89,7 +89,7 @@ class BenchmarkContext():
             name (str): name of benchmark in config file.
             platform (Platform): Platform types like CUDA, ROCM.
             parameters (str): predefined parameters of benchmark.
-            framework (Framework): Framework types like ONNX, PYTORCH.
+            framework (Framework): Framework types like ONNXRUNTIME, PYTORCH.
         """
         self.__name = name
         self.__platform = platform
