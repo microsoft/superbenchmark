@@ -31,6 +31,18 @@ class DockerBenchmark(Benchmark):
         # Container name of the current docker-benchmark.
         self._container_name = None
 
+        # Default options for docker run.
+        self._default_options = '-i --rm --privileged --net=host --ipc=host'
+
+        # Platform-specific options for docker run.
+        self._platform_options = None
+
+        # Entrypoint option of the current docker-benchmark.
+        self._entrypoint = None
+
+        # CMD option of the current docker-benchmark.
+        self._cmd = None
+
     '''
     # If need to add new arguments, super().add_parser_arguments() must be called.
     def add_parser_arguments(self):
@@ -66,6 +78,19 @@ class DockerBenchmark(Benchmark):
                 )
             )
             return False
+
+        command = 'docker run '
+        command += self._default_options
+        command += ' --name={container_name} {platform_options} {entrypoint} {image} {cmd}'
+        self._commands.append(
+            command.format(
+                container_name=self._container_name,
+                platform_options=self._platform_options or '',
+                entrypoint='' if self._entrypoint is None else '--entrypoint {}'.format(self._entrypoint),
+                image=self._image_uri,
+                cmd=self._cmd or ''
+            )
+        )
 
         return True
 
@@ -132,3 +157,29 @@ class DockerBenchmark(Benchmark):
         """Print environments or dependencies information."""
         # TODO: will implement it when add real benchmarks in the future.
         pass
+
+
+class CudaDockerBenchmark(DockerBenchmark):
+    """The base class of benchmarks packaged in nvidia docker container."""
+    def __init__(self, name, parameters=''):
+        """Constructor.
+
+        Args:
+            name (str): benchmark name.
+            parameters (str): benchmark parameters.
+        """
+        super().__init__(name, parameters)
+        self._platform_options = '--gpus=all'
+
+
+class RocmDockerBenchmark(DockerBenchmark):
+    """The base class of benchmarks packaged in amd docker container."""
+    def __init__(self, name, parameters=''):
+        """Constructor.
+
+        Args:
+            name (str): benchmark name.
+            parameters (str): benchmark parameters.
+        """
+        super().__init__(name, parameters)
+        self._platform_options = '--security-opt seccomp=unconfined --group-add video'

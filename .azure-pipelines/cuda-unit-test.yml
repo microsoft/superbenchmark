@@ -11,6 +11,7 @@ pool:
 
 container:
   image: nvcr.io/nvidia/pytorch:20.12-py3
+  options: '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker'
 
 steps:
   - script: |
