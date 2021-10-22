@@ -81,7 +81,7 @@ superbench:
         mem_type:
           - dtoh
           - htod
-    model-benchmark:
+    ort-models:
       enable: false
       modes:
         - name: local

@@ -9,7 +9,7 @@ from superbench.benchmarks.result import BenchmarkResult
 
 def test_rocm_onnxruntime_performance():
     """Test onnxruntime model benchmark."""
-    benchmark_name = 'onnxruntime-model-benchmark'
+    benchmark_name = 'onnxruntime-ort-models'
     (benchmark_class,
      predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.ROCM)
     assert (benchmark_class)

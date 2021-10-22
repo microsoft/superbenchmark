@@ -83,6 +83,4 @@ class RocmOnnxRuntimeModelBenchmark(RocmDockerBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark(
-    'onnxruntime-model-benchmark', RocmOnnxRuntimeModelBenchmark, platform=Platform.ROCM
-)
+BenchmarkRegistry.register_benchmark('onnxruntime-ort-models', RocmOnnxRuntimeModelBenchmark, platform=Platform.ROCM)
