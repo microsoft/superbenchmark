@@ -78,10 +78,26 @@ Network Tests v1.3
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
-        assert (benchmark._process_raw_result(0, raw_output))
+        raw_output_no_execution = """
+ERROR: this application must be run on at least 2 nodes
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[63697,1],0]
+  Exit code:    1
+--------------------------------------------------------------------------
+"""
+        assert (benchmark._process_raw_result(0, raw_output_no_execution))
+        assert (len(benchmark.result) == 0)
 
         # Check function process_raw_data.
         # Positive case - valid raw output.
+        assert (benchmark._process_raw_result(0, raw_output))
         test_name = 'IsolatedNetworkTests'
         metric_list = [
             'RRTwo-sidedLat(8B)', 'RRGetLat(8B)', 'RRTwo-sidedBW(131072B)', 'RRPutBW(131072B)',
@@ -218,10 +234,25 @@ NetworkLoad Tests v1.3
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
-        assert (benchmark._process_raw_result(0, raw_output))
-
         # Check function process_raw_data.
+        raw_output_no_execution = """
+ERROR: this application must be run on at least 10 nodes
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[63697,1],0]
+  Exit code:    1
+--------------------------------------------------------------------------
+"""
+        assert (benchmark._process_raw_result(0, raw_output_no_execution))
+        assert (len(benchmark.result) == 0)
         # Positive case - valid raw output.
+        assert (benchmark._process_raw_result(0, raw_output))
         test_name = 'IsolatedNetworkTests'
         metric_list = ['RRTwo-sidedLat(8B)', 'RRTwo-sidedBW+Sync(131072B)', 'MultipleAllreduce(8B)']
         for metric_medium in metric_list:
