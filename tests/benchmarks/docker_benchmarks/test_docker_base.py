@@ -134,7 +134,7 @@ def test_docker_benchmark_base():
     assert (
         benchmark._commands[0] ==
         'docker run -i --rm --privileged --net=host --ipc=host --name=fake-docker-benchmark-test'
-        ' --entrypoint echo ubuntu -n "cost1: 10.2, cost2: 20.2"'
+        '  --entrypoint echo ubuntu -n "cost1: 10.2, cost2: 20.2"'
     )
 
     # Test for _platform_options.
