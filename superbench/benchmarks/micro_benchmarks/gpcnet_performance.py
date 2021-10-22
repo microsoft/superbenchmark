@@ -82,6 +82,15 @@ class GPCNetBenchmark(MicroBenchmarkWithInvoke):
                                 self._result.add_result(
                                     test_name + '_' + name_prefix + '_' + labels[i], float(items[i].strip('X'))
                                 )
+            elif 'ERROR: this application must be run on at least' in raw_output:
+                return True
+            else:
+                logger.error(
+                    'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
+                        self._curr_run_index, self._name, raw_output
+                    )
+                )
+                return False
         except Exception as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
