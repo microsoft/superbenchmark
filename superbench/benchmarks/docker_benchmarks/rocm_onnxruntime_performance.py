@@ -35,6 +35,9 @@ class RocmOnnxRuntimeModelBenchmark(RocmDockerBenchmark):
         # Image uri of the current docker-benchmark.
         self._image_uri = 'superbench/benchmark:rocm4.3.1-onnxruntime1.9.0'
 
+        # Image digest of the current docker-benchmark.
+        self._digest = 'f5e6c832e3cdcbba9820c619bb30fa47ca7117aa7f2c15944d17e6983d37ab9a'
+
         # Container name of the current docker-benchmark.
         self._container_name = 'rocm-onnxruntime-model-benchmarks'
 

@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'model-benchmark', platform=Platform.ROCM, framework=Framework.ONNXRUNTIME
+        'ort-models', platform=Platform.ROCM, framework=Framework.ONNXRUNTIME
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
