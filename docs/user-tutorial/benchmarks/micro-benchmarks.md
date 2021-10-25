@@ -4,76 +4,177 @@ id: micro-benchmarks
 
 # Micro Benchmarks
 
-## Benchmarking list
+## Computation Benchmarks
 
-### Computation benchmark
+### `kernel-launch`
 
-### Communication benchmark
+#### Introduction
 
-### Computation-communication benchmark
+Measure GPU kernel launch time.
 
-### Storage benchmark
+#### Metrics
 
+| Name                         | Unit      | Description                            |
+|------------------------------|-----------|----------------------------------------|
+| kernel-launch/event_overhead | time (ms) | Dispatch latency measured in GPU time. |
+| kernel-launch/wall_overhead  | time (ms) | Dispatch latency measured in CPU time. |
 
-## Benchmarking metrics
+### `gemm-flops`
 
-<table>
-  <tbody>
-    <tr valign="top">
-      <td align="center" valign="middle">
-        <b>Metrics</b>
-      </td>
-      <td>
-        <ul><li><b>Computation Benchmark</b></li>
-          <ul><li><b>GEMM FLOPS</b></li>
-            <ul>
-              <li>GFLOPS</li>
-              <li>TensorCore</li>
-              <li>cuBLAS</li>
-              <li>cuDNN</li>
-            </ul>
-          </ul>
-          <ul><li><b>Kernel Launch Time</b></li>
-            <ul>
-              <li>Kernel_Launch_Event_Time</li>
-              <li>Kernel_Launch_Wall_Time</li>
-            </ul>
-          </ul>
-          <ul><li><b>Operator Performance</b></li>
-            <ul><li>MatMul</li><li>Sharding_MatMul</li></ul>
-          </ul>
-        </ul>
-        <ul><li><b>Communication Benchmark</b></li>
-          <ul><li><b>Memory</b></li>
-            <ul><li>H2D_Mem_BW_&lt;GPU ID&gt;</li>
-              <li>D2H_Mem_BW_&lt;GPU ID&gt;</li></ul>
-          </ul>
-          <ul><li><b>Device P2P Bandwidth</b></li>
-            <ul><li>P2P_BW_Max</li><li>P2P_BW_Min</li><li>P2P_BW_Avg</li></ul>
-          </ul>
-          <ul><li><b>RDMA</b></li>
-            <ul><li>RDMA_Peak</li><li>RDMA_Avg</li></ul>
-          </ul>
-          <ul><li><b>NCCL</b></li>
-            <ul><li>NCCL_AllReduce</li></ul>
-            <ul><li>NCCL_AllGather</li></ul>
-            <ul><li>NCCL_broadcast</li></ul>
-            <ul><li>NCCL_reduce</li></ul>
-            <ul><li>NCCL_reduce_scatter</li></ul>
-          </ul>
-        </ul>
-        <ul><li><b>Computation-Communication Benchmark</b></li>
-          <ul><li><b>Mul_During_NCCL</b></li><li><b>MatMul_During_NCCL</b></li></ul>
-        </ul>
-        <ul><li><b>Storage Benchmark</b></li>
-          <ul><li><b>Disk</b></li>
-            <ul>
-              <li>Seq_Read/Seq_Write</li><li>Rand_Read/Rand_Write</li>
-              <li>Seq_R/W_Read</li><li>Seq_R/W_Write</li><li>Rand_R/W_Read</li><li>Rand_R/W_Write</li>
-            </ul>
-          </ul>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+#### Introduction
+
+Measure the GPU GEMM FLOPS for different float and int data types, with or without Tensor Core (XDLOPS),
+performed by NVIDIA [cutlass](https://github.com/NVIDIA/cutlass/tree/ccb697bac77fcc898e9c897b2c90aa5b60ac72fb)
+or AMD [rocblas-bench](https://github.com/ROCmSoftwarePlatform/rocBLAS/tree/develop/clients/benchmarks).
+
+#### Metrics
+
+| Name                   | Unit           | Description                                             |
+|------------------------|----------------|---------------------------------------------------------|
+| gemm-flops/FP64        | FLOPS (GFLOPS) | GEMM float64 peak FLOPS.                                |
+| gemm-flops/FP32        | FLOPS (GFLOPS) | GEMM float32 peak FLOPS.                                |
+| gemm-flops/FP16        | FLOPS (GFLOPS) | GEMM float16 peak FLOPS.                                |
+| gemm-flops/FP64_TC     | FLOPS (GFLOPS) | GEMM float64 peak FLOPS with NVIDIA Tensor Core.        |
+| gemm-flops/TF32_TC     | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with NVIDIA Tensor Core. |
+| gemm-flops/FP16_TC     | FLOPS (GFLOPS) | GEMM float16 peak FLOPS with NVIDIA Tensor Core.        |
+| gemm-flops/BF16_TC     | FLOPS (GFLOPS) | GEMM bfloat16 peak FLOPS with NVIDIA Tensor Core.       |
+| gemm-flops/INT8_TC     | IOPS (GIOPS)   | GEMM int8 peak IOPS with NVIDIA Tensor Core.            |
+| gemm-flops/INT4_TC     | IOPS (GIOPS)   | GEMM int4 peak IOPS with NVIDIA Tensor Core.            |
+| gemm-flops/FP32_xDLOPS | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with AMD XDLOPS.         |
+| gemm-flops/FP16_xDLOPS | FLOPS (GFLOPS) | GEMM float16 peak FLOPS with AMD XDLOPS.                |
+| gemm-flops/BF16_xDLOPS | FLOPS (GFLOPS) | GEMM bfloat16 peak FLOPS with AMD XDLOPS.               |
+| gemm-flops/INT8_xDLOPS | IOPS (GIOPS)   | GEMM int8 peak IOPS with AMD XDLOPS.                    |
+
+### `matmul`
+
+#### Introduction
+
+Large scale matmul operation in PyTorch with one GPU.
+
+#### Metrics
+
+| Name                      | Unit      | Description                    |
+|---------------------------|-----------|--------------------------------|
+| pytorch-matmul/nosharding | time (ms) | Time of pure matmul operation. |
+
+### `cublas-function`
+
+TODO
+
+### `cudnn-function`
+
+TODO
+
+## Communication Benchmarks
+
+### `mem-bw`
+
+#### Introduction
+
+Measure the memory copy bus bandwidth across PCI-e and memory copy bus bandwidth between GPUs,
+performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/bandwidthTest)
+or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils/hipBusBandwidth) bandwidth test tool.
+
+#### Metrics
+
+| Name              | Unit             | Description                      |
+|-------------------|------------------|----------------------------------|
+| mem-bw/H2D_Mem_BW | bandwidth (GB/s) | Host to device copy bandwidth.   |
+| mem-bw/D2H_Mem_BW | bandwidth (GB/s) | Device to host copy bandwidth.   |
+| mem-bw/D2D_Mem_BW | bandwidth (GB/s) | Device to device copy bandwidth. |
+
+### `gpu-sm-copy-bw`
+
+Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between GPUs, initialized by GPU SM.
+
+#### Metrics
+
+| Name                | Unit             | Description                                          |
+|---------------------|------------------|------------------------------------------------------|
+| gpu-sm-copy-bw/htod | bandwidth (GB/s) | Host to device copy bandwidth initialized by GPU SM. |
+| gpu-sm-copy-bw/dtoh | bandwidth (GB/s) | Device to host copy bandwidth initialized by GPU SM. |
+
+### `ib-loopback`
+
+#### Introduction
+
+Measure the InfiniBand loopback verbs bandwidth, performed by
+[OFED performance tests](https://github.com/linux-rdma/perftest/tree/7504ce48ac396a02f4d00de359257b2cb8458f06).
+
+#### Metrics
+
+| Name                                               | Unit             | Description                                                  |
+|----------------------------------------------------|------------------|--------------------------------------------------------------|
+| ib-loopback/IB\_write\_${msg\_size}\_Avg_${ib_dev} | bandwidth (MB/s) | InfiniBand loopback write bandwidth with given message size. |
+| ib-loopback/IB\_read\_${msg\_size}\_Avg_${ib_dev}  | bandwidth (MB/s) | InfiniBand loopback read bandwidth with given message size.  |
+| ib-loopback/IB\_send\_${msg\_size}\_Avg_${ib_dev}  | bandwidth (MB/s) | InfiniBand loopback send bandwidth with given message size.  |
+
+### `nccl-bw` / `rccl-bw`
+
+#### Introduction
+
+Measure the performance of NCCL/RCCL operations,
+performed by [nccl-tests](https://github.com/NVIDIA/nccl-tests/tree/44df0bf010dcc95e840ca0fb7466c67cff3f1f0f)
+or [rccl-tests](https://github.com/ROCmSoftwarePlatform/rccl-tests/tree/dc1ad4853d7ec738387d42a75a58a98d7af00c7b).
+
+#### Metrics
+
+| Name                                | Unit             | Description                                                  |
+|-------------------------------------|------------------|--------------------------------------------------------------|
+| nccl-bw/allreduce_${msg_size}_time  | time (us)        | NCCL all reduce lantency with given message size.            |
+| nccl-bw/allreduce_${msg_size}_algbw | bandwidth (GB/s) | NCCL all reduce algorithm bandwidth with given message size. |
+| nccl-bw/allreduce_${msg_size}_busbw | bandwidth (GB/s) | NCCL all reduce bus bandwidth with given message size.       |
+
+## Computation-communication Benchmarks
+
+### `computation-communication-overlap`
+
+#### Introduction
+
+Test the performance of single node when communication and computation overlap.
+
+#### Metrics
+
+| Name                                                  | Unit      | Description                                                  |
+|-------------------------------------------------------|-----------|--------------------------------------------------------------|
+| pytorch-computation-communication-overlap/mul_cost    | time (ms) | Time of communication and mul kernel computation overlap.    |
+| pytorch-computation-communication-overlap/matmul_cost | time (ms) | Time of communication and matmul kernel computation overlap. |
+
+####
+
+### `sharding-matmul`
+
+#### Introduction
+
+Test the performance of large scale matmul operation with multiple GPUs:
+* allreduce: Each GPU will calculate part of the MM calculation, and use AllReduce to merge all data into one tensor.
+* allgather: Each GPU will calculate part of the MM calculation, and use AllGather + Concat to merge all data into one tensor.
+
+#### Metrics
+
+| Name                              | Unit      | Description                              |
+|-----------------------------------|-----------|------------------------------------------|
+| pytorch-sharding-matmul/allreduce | time (ms) | Time of sharding matmul using allreduce. |
+| pytorch-sharding-matmul/allgather | time (ms) | Time of sharding matmul using allgather. |
+
+## Storage Benchmarks
+
+### `disk-benchmark`
+
+#### Introduction
+
+Measure the disk performance through [FIO](https://github.com/axboe/fio/tree/0313e938c9c8bb37d71dade239f1f5326677b079).
+
+#### Metrics
+
+| Name                                                               | Unit         | Description                                              |
+|--------------------------------------------------------------------|--------------|----------------------------------------------------------|
+| disk-benchmark/${disk_name}_rand_read_write_bs                     | size (bytes) | Disk random read write block size.                       |
+| disk-benchmark/${disk_name}_rand_read_write_read_iops              | IOPS         | Disk random read write read IOPS.                        |
+| disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_95.000000  | time (ns)    | Disk random read write read latency in 95.0 percentile.  |
+| disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_99.000000  | time (ns)    | Disk random read write read latency in 99.0 percentile.  |
+| disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_99.900000  | time (ns)    | Disk random read write read latency in 99.9 percentile.  |
+| disk-benchmark/${disk_name}_rand_read_write_write_iops             | IOPS         | Disk random read write write IOPS.                       |
+| disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_95.000000 | time (ns)    | Disk random read write write latency in 95.0 percentile. |
+| disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_99.000000 | time (ns)    | Disk random read write write latency in 99.0 percentile. |
+| disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_99.900000 | time (ns)    | Disk random read write write latency in 99.9 percentile. |
