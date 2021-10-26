@@ -17,14 +17,14 @@ including gpt2-small, gpt2-medium, gpt2-large and gpt2-xl.
 
 | Name                                                          | Unit                   | Description                                 |
 |---------------------------------------------------------------|------------------------|---------------------------------------------|
-| gpt_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train with single precision step time.      |
-| gpt_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train with single precision throughput.     |
-| gpt_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference with single precision step time.  |
-| gpt_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference with single precision throughput. |
-| gpt_models/pytorch-${model_name}/steptime_train_float16       | time (ms)              | Train with half precision step time.        |
-| gpt_models/pytorch-${model_name}/throughput_train_float16     | throughput (samples/s) | Train with half precision throughput.       |
-| gpt_models/pytorch-${model_name}/steptime_inference_float16   | time (ms)              | Inference with half precision step time.    |
-| gpt_models/pytorch-${model_name}/throughput_inference_float16 | throughput (samples/s) | Inference with half precision throughput.   |
+| gpt_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| gpt_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
+| gpt_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
+| gpt_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
+| gpt_models/pytorch-${model_name}/steptime_train_float16       | time (ms)              | Train step time with half precision.        |
+| gpt_models/pytorch-${model_name}/throughput_train_float16     | throughput (samples/s) | Train throughput with half precision.       |
+| gpt_models/pytorch-${model_name}/steptime_inference_float16   | time (ms)              | Inference step time with half precision.    |
+| gpt_models/pytorch-${model_name}/throughput_inference_float16 | throughput (samples/s) | Inference throughput with half precision.   |
 
 ### `bert_models`
 
@@ -36,14 +36,14 @@ Run training or inference tasks with single or half precision for BERT models, i
 
 | Name                                                           | Unit                   | Description                                 |
 |----------------------------------------------------------------|------------------------|---------------------------------------------|
-| bert_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train with single precision step time.      |
-| bert_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train with single precision throughput.     |
-| bert_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference with single precision step time.  |
-| bert_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference with single precision throughput. |
-| bert_models/pytorch-${model_name}/steptime_train_float16       | time (ms)              | Train with half precision step time.        |
-| bert_models/pytorch-${model_name}/throughput_train_float16     | throughput (samples/s) | Train with half precision throughput.       |
-| bert_models/pytorch-${model_name}/steptime_inference_float16   | time (ms)              | Inference with half precision step time.    |
-| bert_models/pytorch-${model_name}/throughput_inference_float16 | throughput (samples/s) | Inference with half precision throughput.   |
+| bert_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| bert_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
+| bert_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
+| bert_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
+| bert_models/pytorch-${model_name}/steptime_train_float16       | time (ms)              | Train step time with half precision.        |
+| bert_models/pytorch-${model_name}/throughput_train_float16     | throughput (samples/s) | Train throughput with half precision.       |
+| bert_models/pytorch-${model_name}/steptime_inference_float16   | time (ms)              | Inference step time with half precision.    |
+| bert_models/pytorch-${model_name}/throughput_inference_float16 | throughput (samples/s) | Inference throughput with half precision.   |
 
 ### `lstm_models`
 
@@ -55,14 +55,14 @@ Run training or inference tasks with single or half precision for one bidirectio
 
 | Name                                                  | Unit                   | Description                                 |
 |-------------------------------------------------------|------------------------|---------------------------------------------|
-| lstm_models/pytorch-lstm/steptime_train_float32       | time (ms)              | Train with single precision step time.      |
-| lstm_models/pytorch-lstm/throughput_train_float32     | throughput (samples/s) | Train with single precision throughput.     |
-| lstm_models/pytorch-lstm/steptime_inference_float32   | time (ms)              | Inference with single precision step time.  |
-| lstm_models/pytorch-lstm/throughput_inference_float32 | throughput (samples/s) | Inference with single precision throughput. |
-| lstm_models/pytorch-lstm/steptime_train_float16       | time (ms)              | Train with half precision step time.        |
-| lstm_models/pytorch-lstm/throughput_train_float16     | throughput (samples/s) | Train with half precision throughput.       |
-| lstm_models/pytorch-lstm/steptime_inference_float16   | time (ms)              | Inference with half precision step time.    |
-| lstm_models/pytorch-lstm/throughput_inference_float16 | throughput (samples/s) | Inference with half precision throughput.   |
+| lstm_models/pytorch-lstm/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| lstm_models/pytorch-lstm/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
+| lstm_models/pytorch-lstm/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
+| lstm_models/pytorch-lstm/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
+| lstm_models/pytorch-lstm/steptime_train_float16       | time (ms)              | Train step time with half precision.        |
+| lstm_models/pytorch-lstm/throughput_train_float16     | throughput (samples/s) | Train throughput with half precision.       |
+| lstm_models/pytorch-lstm/steptime_inference_float16   | time (ms)              | Inference step time with half precision.    |
+| lstm_models/pytorch-lstm/throughput_inference_float16 | throughput (samples/s) | Inference throughput with half precision.   |
 
 ### `cnn_models`
 
@@ -85,11 +85,11 @@ Run training or inference tasks with single or half precision for CNN models lis
 
 | Name                                                          | Unit                   | Description                                 |
 |---------------------------------------------------------------|------------------------|---------------------------------------------|
-| cnn_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train with single precision step time.      |
-| cnn_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train with single precision throughput.     |
-| cnn_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference with single precision step time.  |
-| cnn_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference with single precision throughput. |
-| cnn_models/pytorch-${model_name}/steptime_train_float16       | time (ms)              | Train with half precision step time.        |
-| cnn_models/pytorch-${model_name}/throughput_train_float16     | throughput (samples/s) | Train with half precision throughput.       |
-| cnn_models/pytorch-${model_name}/steptime_inference_float16   | time (ms)              | Inference with half precision step time.    |
-| cnn_models/pytorch-${model_name}/throughput_inference_float16 | throughput (samples/s) | Inference with half precision throughput.   |
+| cnn_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| cnn_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
+| cnn_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
+| cnn_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
+| cnn_models/pytorch-${model_name}/steptime_train_float16       | time (ms)              | Train step time with half precision.        |
+| cnn_models/pytorch-${model_name}/throughput_train_float16     | throughput (samples/s) | Train throughput with half precision.       |
+| cnn_models/pytorch-${model_name}/steptime_inference_float16   | time (ms)              | Inference step time with half precision.    |
+| cnn_models/pytorch-${model_name}/throughput_inference_float16 | throughput (samples/s) | Inference throughput with half precision.   |

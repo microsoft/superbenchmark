@@ -10,14 +10,15 @@ id: micro-benchmarks
 
 #### Introduction
 
-Measure GPU kernel launch time.
+Measure GPU kernel launch latency,
+which is defined as the time range from the beginning of the launch API call to the beginning of the kernel execution.
 
 #### Metrics
 
-| Name                         | Unit      | Description                            |
-|------------------------------|-----------|----------------------------------------|
-| kernel-launch/event_overhead | time (ms) | Dispatch latency measured in GPU time. |
-| kernel-launch/wall_overhead  | time (ms) | Dispatch latency measured in CPU time. |
+| Name                         | Unit      | Description                          |
+|------------------------------|-----------|--------------------------------------|
+| kernel-launch/event_overhead | time (ms) | Launch latency measured in GPU time. |
+| kernel-launch/wall_overhead  | time (ms) | Launch latency measured in CPU time. |
 
 ### `gemm-flops`
 
@@ -49,7 +50,7 @@ or AMD [rocblas-bench](https://github.com/ROCmSoftwarePlatform/rocBLAS/tree/deve
 
 #### Introduction
 
-Large scale matmul operation in PyTorch with one GPU.
+Large scale matmul operation using `torch.matmul` with one GPU.
 
 #### Metrics
 
@@ -116,14 +117,18 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 Measure the performance of NCCL/RCCL operations,
 performed by [nccl-tests](https://github.com/NVIDIA/nccl-tests/tree/44df0bf010dcc95e840ca0fb7466c67cff3f1f0f)
 or [rccl-tests](https://github.com/ROCmSoftwarePlatform/rccl-tests/tree/dc1ad4853d7ec738387d42a75a58a98d7af00c7b).
+Support the following operations currently: allreduce, allgather, broadcast, reduce, reducescatter, alltoall.
 
 #### Metrics
 
-| Name                                | Unit             | Description                                                  |
-|-------------------------------------|------------------|--------------------------------------------------------------|
-| nccl-bw/allreduce_${msg_size}_time  | time (us)        | NCCL all reduce lantency with given message size.            |
-| nccl-bw/allreduce_${msg_size}_algbw | bandwidth (GB/s) | NCCL all reduce algorithm bandwidth with given message size. |
-| nccl-bw/allreduce_${msg_size}_busbw | bandwidth (GB/s) | NCCL all reduce bus bandwidth with given message size.       |
+| Name                                   | Unit             | Description                                                 |
+|----------------------------------------|------------------|-------------------------------------------------------------|
+| nccl-bw/${operation}_${msg_size}_time  | time (us)        | NCCL operation lantency with given message size.            |
+| nccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | NCCL operation algorithm bandwidth with given message size. |
+| nccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | NCCL operation bus bandwidth with given message size.       |
+| rccl-bw/${operation}_${msg_size}_time  | time (us)        | RCCL operation lantency with given message size.            |
+| rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
+| rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
 
 ## Computation-communication Benchmarks
 
