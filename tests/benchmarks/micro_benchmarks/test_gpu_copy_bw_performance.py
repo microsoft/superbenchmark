@@ -41,7 +41,7 @@ def _test_gpu_copy_bw_performance_impl(platform):
 
     # Check command
     assert (1 == len(benchmark._commands))
-    assert(benchmark._commands[0].startswith(benchmark._GpuSmCopyBwBenchmark__bin_path))
+    assert (benchmark._commands[0].startswith(benchmark._GpuSmCopyBwBenchmark__bin_path))
     for mem_type in mem_types:
         assert ('--%s' % mem_type in benchmark._commands[0])
     for copy_type in copy_types:
