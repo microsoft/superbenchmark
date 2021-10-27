@@ -72,7 +72,7 @@ TODO
 
 #### Introduction
 
-Measure the memory copy bus bandwidth across PCI-e and memory copy bus bandwidth between GPUs,
+Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between GPUs,
 performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/bandwidthTest)
 or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils/hipBusBandwidth) bandwidth test tool.
 
