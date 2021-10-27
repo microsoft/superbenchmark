@@ -12,7 +12,7 @@ if(CUDAToolkit_FOUND)
     message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
 
     include(../cuda_common.cmake)
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -lnuma")
+    add_link_options(-lnuma)
     add_executable(gpu_copy gpu_copy.cu)
     set_property(TARGET gpu_copy PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
     install(TARGETS gpu_copy RUNTIME DESTINATION bin)
@@ -30,7 +30,7 @@ else()
         # Add HIP targets
         set_source_files_properties(gpu_copy.cu PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
         # Link with HIP
-        set(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} -lnuma")
+        add_link_options(-lnuma)
         hip_add_executable(gpu_copy gpu_copy.cu)
         # Install tergets
         install(TARGETS gpu_copy RUNTIME DESTINATION bin)

@@ -227,7 +227,7 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
                 return -1;
             }
         } else {
-            // Set to working device for host memory buffer
+            // Set to worker device for host memory buffer
             if (SetGpu(args.worker_gpu_id)) {
                 return -1;
             }
@@ -319,7 +319,7 @@ int DestroyBuf(const BenchArgs &args, Buffers *buffers) {
             if (*(host_buf_ptrs[i]) == nullptr) {
                 continue;
             }
-            // Set to working device for host memory buffer
+            // Set to worker device for host memory buffer
             if (SetGpu(args.worker_gpu_id)) {
                 return -1;
             }
@@ -386,7 +386,7 @@ __global__ void SMCopyKernel(ulong2 *tgt, const ulong2 *src) {
         StoreULong2(tgt + index + i * blockDim.x, val[i]);
 }
 
-// Print result tag as <src_dev>_to_<dst_dev>_by_<working_dev>_using_<sm|dma>_under_<numa_node>.
+// Print result tag as <src_dev>_to_<dst_dev>_by_<worker_dev>_using_<sm|dma>_under_<numa_node>.
 void PringResultTag(const BenchArgs &args) {
     if (args.is_src_dev_gpu) {
         printf("gpu%d", args.src_gpu_id);
@@ -408,7 +408,7 @@ int RunCopy(const BenchArgs &args, const Buffers &buffers) {
     cudaStream_t stream;
     uint64_t num_thread_blocks;
 
-    // Set to working device
+    // Set to worker device
     if (SetGpu(args.worker_gpu_id)) {
         return -1;
     }
