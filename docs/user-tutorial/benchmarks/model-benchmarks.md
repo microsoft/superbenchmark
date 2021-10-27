@@ -17,7 +17,7 @@ including gpt2-small, gpt2-medium, gpt2-large and gpt2-xl.
 
 | Name                                                          | Unit                   | Description                                 |
 |---------------------------------------------------------------|------------------------|---------------------------------------------|
-| gpt_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| gpt_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time with single precision.      |
 | gpt_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
 | gpt_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
 | gpt_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
@@ -36,7 +36,7 @@ Run training or inference tasks with single or half precision for BERT models, i
 
 | Name                                                           | Unit                   | Description                                 |
 |----------------------------------------------------------------|------------------------|---------------------------------------------|
-| bert_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| bert_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time with single precision.      |
 | bert_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
 | bert_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
 | bert_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
@@ -55,7 +55,7 @@ Run training or inference tasks with single or half precision for one bidirectio
 
 | Name                                                  | Unit                   | Description                                 |
 |-------------------------------------------------------|------------------------|---------------------------------------------|
-| lstm_models/pytorch-lstm/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| lstm_models/pytorch-lstm/steptime_train_float32       | time (ms)              | Train step time with single precision.      |
 | lstm_models/pytorch-lstm/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
 | lstm_models/pytorch-lstm/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
 | lstm_models/pytorch-lstm/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
@@ -85,7 +85,7 @@ Run training or inference tasks with single or half precision for CNN models lis
 
 | Name                                                          | Unit                   | Description                                 |
 |---------------------------------------------------------------|------------------------|---------------------------------------------|
-| cnn_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time single precision.           |
+| cnn_models/pytorch-${model_name}/steptime_train_float32       | time (ms)              | Train step time with single precision.      |
 | cnn_models/pytorch-${model_name}/throughput_train_float32     | throughput (samples/s) | Train throughput with single precision.     |
 | cnn_models/pytorch-${model_name}/steptime_inference_float32   | time (ms)              | Inference step time with single precision.  |
 | cnn_models/pytorch-${model_name}/throughput_inference_float32 | throughput (samples/s) | Inference throughput with single precision. |
