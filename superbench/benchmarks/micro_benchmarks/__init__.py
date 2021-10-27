@@ -20,10 +20,11 @@ from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import Ro
 from superbench.benchmarks.micro_benchmarks.rocm_gemm_flops_performance import RocmGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_copy_bw_performance import GpuCopyBwBenchmark
 from superbench.benchmarks.micro_benchmarks.tcp_connectivity import TCPConnectivityBenchmark
+from superbench.benchmarks.micro_benchmarks.gpcnet_performance import GPCNetBenchmark
 
 __all__ = [
     'MicroBenchmark', 'MicroBenchmarkWithInvoke', 'ShardingMatmul', 'ComputationCommunicationOverlap', 'KernelLaunch',
     'CublasBenchmark', 'CudnnBenchmark', 'GemmFlopsBenchmark', 'CudaGemmFlopsBenchmark', 'MemBwBenchmark',
     'CudaMemBwBenchmark', 'DiskBenchmark', 'IBLoopbackBenchmark', 'CudaNcclBwBenchmark', 'RocmMemBwBenchmark',
-    'RocmGemmFlopsBenchmark', 'GpuCopyBwBenchmark', 'TCPConnectivityBenchmark'
+    'RocmGemmFlopsBenchmark', 'GpuCopyBwBenchmark', 'TCPConnectivityBenchmark', 'GPCNetBenchmark'
 ]
