@@ -71,20 +71,20 @@ superbench:
           parallel: no
       parameters:
         block_devices: []
-    gpu-sm-copy-bw:
+    gpu-copy-bw:
       enable: true
       modes:
         - name: local
-          proc_num: 4
-          prefix: numactl -N {proc_rank} -m {proc_rank}
+          proc_num: 1
           parallel: no
       parameters:
         mem_type:
-          - htoh
           - htod
           - dtoh
           - dtod
-          - ptop
+        copy_type:
+          - sm
+          - dma
     gpt_models:
       <<: *default_pytorch_mode
       models:
