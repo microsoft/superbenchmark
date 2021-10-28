@@ -84,6 +84,12 @@ superbench:
         copy_type:
           - sm
           - dma
+    ort-models:
+      enable: false
+      modes:
+        - name: local
+      frameworks:
+        - onnxruntime
     gpt_models:
       <<: *default_pytorch_mode
       models:

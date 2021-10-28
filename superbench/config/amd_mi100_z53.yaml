@@ -53,8 +53,8 @@ superbench:
     gemm-flops:
       <<: *default_local_mode
       parameters:
-        m: 7680 
-        n: 8192 
+        m: 7680
+        n: 8192
         k: 8192
     ib-loopback:
       enable: true
@@ -85,6 +85,12 @@ superbench:
         copy_type:
           - sm
           - dma
+    ort-models:
+      enable: false
+      modes:
+        - name: local
+      frameworks:
+        - onnxruntime
     gpt_models:
       <<: *default_pytorch_mode
       models:
