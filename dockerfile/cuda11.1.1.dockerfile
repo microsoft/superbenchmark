@@ -27,6 +27,7 @@ RUN apt-get update && \
     jq \
     libaio-dev \
     libcap2 \
+    libnuma-dev \
     libpci-dev \
     libtinfo5 \
     libtool \
