@@ -97,7 +97,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         try:
-            output_lines = [x.strip() for x in raw_output.splitlines()]
+            output_lines = [x.strip() for x in raw_output.strip().splitlines()]
             for output_line in output_lines:
                 tag, bw_str = output_line.split()
                 self._result.add_result(tag, float(bw_str))
