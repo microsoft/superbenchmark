@@ -4,7 +4,6 @@
 """Tests for disk-performance benchmark."""
 
 from pathlib import Path
-from unittest import mock
 import numbers
 import os
 import unittest
