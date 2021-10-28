@@ -12,10 +12,8 @@ if(CUDAToolkit_FOUND)
     message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
 
     include(../cuda_common.cmake)
-    add_link_options(-lnuma)
     add_executable(gpu_copy gpu_copy.cu)
     set_property(TARGET gpu_copy PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
-    install(TARGETS gpu_copy RUNTIME DESTINATION bin)
 else()
     # ROCm environment
     include(../rocm_common.cmake)
@@ -30,11 +28,11 @@ else()
         # Add HIP targets
         set_source_files_properties(gpu_copy.cu PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
         # Link with HIP
-        add_link_options(-lnuma)
         hip_add_executable(gpu_copy gpu_copy.cu)
-        # Install tergets
-        install(TARGETS gpu_copy RUNTIME DESTINATION bin)
     else()
         message(FATAL_ERROR "No CUDA or ROCm environment found.")
     endif()
 endif()
+
+install(TARGETS gpu_copy RUNTIME DESTINATION bin)
+target_link_libraries(gpu_copy numa)
