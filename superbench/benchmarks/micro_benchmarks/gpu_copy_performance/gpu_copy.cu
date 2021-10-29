@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include <getopt.h>
 #include <numa.h>
@@ -515,6 +516,7 @@ int main(int argc, char **argv) {
     int gpu_count = 0;
     Opts opts;
     BenchArgs args;
+    std::vector<BenchArgs> args_list;
     int can_access = 0;
 
     ret = ParseOpts(argc, argv, &opts);
@@ -540,11 +542,6 @@ int main(int argc, char **argv) {
     // Scan all NUMA nodes
     for (int i = 0; i < numa_count; i++) {
         args.numa_id = i;
-        ret = numa_run_on_node(args.numa_id);
-        if (ret != 0) {
-            fprintf(stderr, "main::numa_run_on_node error: %d\n", errno);
-            return -1;
-        }
         // Scan all GPUs
         for (int j = 0; j < gpu_count; j++) {
             // Host-to-device benchmark
@@ -555,17 +552,11 @@ int main(int argc, char **argv) {
                 args.worker_gpu_id = j;
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
-                    ret = RunBench(args);
-                    if (ret != 0) {
-                        return -1;
-                    }
+                    args_list.push_back(args);
                 }
                 if (opts.dma_copy_enabled) {
                     args.is_sm_copy = false;
-                    ret = RunBench(args);
-                    if (ret != 0) {
-                        return -1;
-                    }
+                    args_list.push_back(args);
                 }
             }
             // Device-to-host benchmark
@@ -576,17 +567,11 @@ int main(int argc, char **argv) {
                 args.worker_gpu_id = j;
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
-                    ret = RunBench(args);
-                    if (ret != 0) {
-                        return -1;
-                    }
+                    args_list.push_back(args);
                 }
                 if (opts.dma_copy_enabled) {
                     args.is_sm_copy = false;
-                    ret = RunBench(args);
-                    if (ret != 0) {
-                        return -1;
-                    }
+                    args_list.push_back(args);
                 }
             }
             // Device-to-device benchmark
@@ -594,29 +579,9 @@ int main(int argc, char **argv) {
                 args.is_src_dev_gpu = true;
                 args.src_gpu_id = j;
                 args.is_dst_dev_gpu = true;
-                args.dst_gpu_id = j;
-                args.worker_gpu_id = j;
-                // Self copy
-                if (opts.sm_copy_enabled) {
-                    args.is_sm_copy = true;
-                    ret = RunBench(args);
-                    if (ret != 0) {
-                        return -1;
-                    }
-                }
-                if (opts.dma_copy_enabled) {
-                    args.is_sm_copy = false;
-                    ret = RunBench(args);
-                    if (ret != 0) {
-                        return -1;
-                    }
-                }
-                // Scan all peers except self
+                // Scan all peers
                 for (int k = 0; k < gpu_count; k++) {
                     args.dst_gpu_id = k;
-                    if (j == k) {
-                        continue;
-                    }
                     // P2P write
                     ret = EnablePeerAccess(j, k, &can_access);
                     if (ret != 0) {
@@ -626,18 +591,15 @@ int main(int argc, char **argv) {
                         args.worker_gpu_id = j;
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;
-                            ret = RunBench(args);
-                            if (ret != 0) {
-                                return -1;
-                            }
+                            args_list.push_back(args);
                         }
                         if (opts.dma_copy_enabled) {
                             args.is_sm_copy = false;
-                            ret = RunBench(args);
-                            if (ret != 0) {
-                                return -1;
-                            }
+                            args_list.push_back(args);
                         }
+                    }
+                    if (j == k) {
+                        continue;
                     }
                     // P2P read
                     ret = EnablePeerAccess(k, j, &can_access);
@@ -648,21 +610,27 @@ int main(int argc, char **argv) {
                         args.worker_gpu_id = k;
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;
-                            ret = RunBench(args);
-                            if (ret != 0) {
-                                return -1;
-                            }
+                            args_list.push_back(args);
                         }
                         if (opts.dma_copy_enabled) {
                             args.is_sm_copy = false;
-                            ret = RunBench(args);
-                            if (ret != 0) {
-                                return -1;
-                            }
+                            args_list.push_back(args);
                         }
                     }
                 }
             }
+        }
+    }
+
+    for (const BenchArgs &curr_args : args_list) {
+        ret = numa_run_on_node(curr_args.numa_id);
+        if (ret != 0) {
+            fprintf(stderr, "main::numa_run_on_node error: %d\n", errno);
+            return -1;
+        }
+        ret = RunBench(curr_args);
+        if (ret != 0) {
+            return -1;
         }
     }
 
