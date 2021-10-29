@@ -15,7 +15,7 @@ FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.7.0
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
+RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
