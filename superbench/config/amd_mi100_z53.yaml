@@ -75,7 +75,6 @@ superbench:
       enable: true
       modes:
         - name: local
-          proc_num: 1
           parallel: no
       parameters:
         mem_type:
