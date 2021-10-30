@@ -69,17 +69,19 @@ superbench:
           parallel: no
       parameters:
         block_devices: []
-    gpu-sm-copy-bw:
+    gpu-copy-bw:
       enable: true
       modes:
         - name: local
-          proc_num: 32
-          prefix: CUDA_VISIBLE_DEVICES=$(({proc_rank}%8)) numactl -N $(({proc_rank}%4)) -m $(({proc_rank}%4))
           parallel: no
       parameters:
         mem_type:
-          - dtoh
           - htod
+          - dtoh
+          - dtod
+        copy_type:
+          - sm
+          - dma
     cudnn-function:
       <<: *default_local_mode
     cublas-function:
