@@ -8,12 +8,13 @@ import numbers
 import unittest
 from pathlib import Path
 from unittest import mock
+from collections import defaultdict
 
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 
 
-class IBTrafficBenchmarkTest(unittest.TestCase):
-    """Tests for IBTrafficBenchmark benchmark."""
+class IBBenchmarkTest(unittest.TestCase):
+    """Tests for IBBenchmark benchmark."""
     def setUp(self):
         """Method called to prepare the test fixture."""
         # Create fake binary file just for testing.
@@ -29,6 +30,17 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
 
     def test_generate_config(self):
         """Test util functions ."""
+        test_config_file = 'test_gen_config.txt'
+
+        def read_config(filename):
+            config = []
+            with open(filename, 'r') as f:
+                lines = f.readlines()
+                for line in lines:
+                    pairs = line.strip().split(';')
+                    config.append(pairs)
+            return config
+
         expected_config = {}
         expected_config['one-to-one'] = [['0,3', '1,2'], ['0,1', '2,3'], ['0,2', '3,1']]
         expected_config['many-to-one'] = [
@@ -42,21 +54,61 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
         benchmark = benchmark_class(benchmark_name)
+
         node_num = 4
         for m in ['one-to-one', 'one-to-many', 'many-to-one']:
-            config = []
-            benchmark.gen_traffic_pattern(node_num, m, 'test_gen_config.txt')
-            with open('test_gen_config.txt', 'r') as f:
-                lines = f.readlines()
-                for line in lines:
-                    pairs = line.strip().split(';')
-                    config.append(pairs)
+            benchmark.gen_traffic_pattern(node_num, m, test_config_file)
+            config = read_config(test_config_file)
             assert (config == expected_config[m])
-        Path('test_gen_config.txt').unlink()
+
+        node_num = 1000
+        for m in ['one-to-many', 'many-to-one']:
+            benchmark.gen_traffic_pattern(node_num, m, test_config_file)
+            config = read_config(test_config_file)
+            assert (len(config) == node_num)
+            assert (len(config[0]) == node_num - 1)
+            for step in range(node_num):
+                server = defaultdict(int)
+                client = defaultdict(int)
+                for pair in config[step]:
+                    pair = pair.split(',')
+                    server[int(pair[0])] += 1
+                    client[int(pair[1])] += 1
+                for i in range(node_num):
+                    if m == 'many-to-one':
+                        if i == step:
+                            assert (server[i] == node_num - 1)
+                        else:
+                            assert (client[i] == 1)
+                    elif m == 'one-to-many':
+                        if i == step:
+                            assert (client[i] == node_num - 1)
+                        else:
+                            assert (server[i] == 1)
+
+        benchmark.gen_traffic_pattern(node_num, 'one-to-one', test_config_file)
+        config = read_config(test_config_file)
+        assert (len(config) == node_num - 1)
+        assert (len(config[0]) == node_num / 2)
+        test_pairs = defaultdict(list)
+        for step in range(node_num - 1):
+            node = defaultdict(int)
+            for pair in config[step]:
+                pair = pair.split(',')
+                node[int(pair[0])] += 1
+                node[int(pair[1])] += 1
+                test_pairs[int(pair[0])].append(int(pair[1]))
+                test_pairs[int(pair[1])].append(int(pair[0]))
+            for i in range(node_num):
+                assert (node[i] == 1)
+        for node in range(node_num):
+            assert (sorted(test_pairs[node]) == [(i) for i in range(node_num) if i != node])
+
+        Path(test_config_file).unlink()
 
     @mock.patch('superbench.common.utils.network.get_ib_devices')
     def test_ib_traffic_performance(self, mock_ib_devices):
-        """Test ib-traffic benchmark for all sizes."""
+        """Test ib-traffic benchmark."""
 
         # Test without ib devices
         # Check registry.
@@ -66,13 +118,14 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         assert (benchmark_class)
 
         # Check preprocess
-        # Negative case
+        # Negative cases
         parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         mock_ib_devices.return_value = None
         ret = benchmark._preprocess()
         assert (ret is False)
         assert (benchmark.return_code == ReturnCode.MPI_INIT_FAILURE)
+
         os.environ['OMPI_COMM_WORLD_SIZE'] = '3'
         parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
@@ -80,6 +133,7 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret is False)
         assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+
         os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
         parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
@@ -88,7 +142,8 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         assert (ret is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
 
-        # Positive case
+        # Positive cases
+        # Generate config
         parameters = '--ib_index 0 --iters 2000 --msg_size 33554432'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
@@ -96,11 +151,12 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-
-        expect_command = 'ib_mpi --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config config.txt'
+        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config ' + os.getcwd(
+        ) + '/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
+        # Custom config
         config = ['0,1', '1,0;0,1', '0,1;1,0', '1,0;0,1']
         with open('test_config.txt', 'w') as f:
             for line in config:
@@ -112,8 +168,7 @@ class IBTrafficBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-
-        expect_command = 'ib_mpi --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
+        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
         raw_output_0 = """

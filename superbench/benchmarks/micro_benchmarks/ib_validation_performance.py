@@ -8,10 +8,11 @@ import os
 from superbench.common.utils import logger
 from superbench.common.utils import network
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
+from superbench.common.devices import GPU
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
+class IBBenchmark(MicroBenchmarkWithInvoke):
     """The IB traffic pattern performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -26,8 +27,8 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
         self.__support_ib_commands = [
             'ib_write_bw', 'ib_read_bw', 'ib_send_bw', 'ib_write_lat', 'ib_read_lat', 'ib_send_lat'
         ]
-        self.__modes = ['one-to-one', 'one-to-many', 'many-to-one']
-        self.__config_path = 'config.txt'
+        self.__patterns = ['one-to-one', 'one-to-many', 'many-to-one']
+        self.__config_path = os.getcwd() + '/config.txt'
         self.__config = []
 
     def add_parser_arguments(self):
@@ -44,7 +45,7 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--iters',
             type=int,
-            default=20000,
+            default=1000,
             required=False,
             help='The iterations of running ib command',
         )
@@ -74,23 +75,27 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
             type=str,
             default='one-to-one',
             required=False,
-            help='Test IB traffic pattern type, e.g., {}.'.format(''.join(self.__modes)),
+            help='Test IB traffic pattern type, e.g., {}.'.format(''.join(self.__patterns)),
         )
         self._parser.add_argument(
             '--config',
             type=str,
             default=None,
             required=False,
-            help='The path of config file on the target machine',
+            help='The path of config file on the target machines',
         )
         self._parser.add_argument(
             '--bidirectional', action='store_true', default=False, help='Measure bidirectional bandwidth.'
         )
         self._parser.add_argument(
-            '--use_cuda', type=int, default=None, required=False, help='Test Use GPUDirect with the gpu index.'
+            '--gpu_index', type=int, default=None, required=False, help='Test Use GPUDirect with the gpu index.'
         )
         self._parser.add_argument(
-            '--use_rocm', type=int, default=None, required=False, help='Test Use GPUDirect with the gpu index.'
+            '--hostfile',
+            type=str,
+            default='/root/hostfile',
+            required=False,
+            help='The path of hostfile on the target machines',
         )
 
     def __one_to_many(self, n):
@@ -201,10 +206,16 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
             else:
                 msg_size = '-s ' + str(self._args.msg_size)
             gpu_enable = ''
-            if self._args.use_cuda:
-                gpu_enable = ' --use_cuda={gpu_index}'.format(gpu_index=str(self._args.use_cuda))
-            elif self._args.use_rocm:
-                gpu_enable = ' --use_rocm={gpu_index}'.format(gpu_index=str(self._args.use_rocm))
+            if self._args.gpu_index:
+                gpu = GPU()
+                if gpu.vendor == 'nvidia':
+                    gpu_enable = ' --use_cuda={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
+                elif gpu.vendor == 'amd':
+                    gpu_enable = ' --use_rocm={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
+                else:
+                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                    logger.error('No GPU found - benchmark: {}'.format(self._name))
+                    return False
             command_params = '-F --iters={iter} -d {device} {size} -x {gid}{gpu}'.format(
                 iter=str(self._args.iters),
                 device=network.get_ib_devices()[self._args.ib_index].split(':')[0],
@@ -234,6 +245,7 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
                     ib_command_prefix += ' -b'
 
                 command = os.path.join(self._args.bin_dir, self._bin_name)
+                command += ' --hostfile ' + self._args.hostfile
                 command += ' --cmd_prefix ' + '\"' + ib_command_prefix + '\"'
                 command += ' --input_config ' + self.__config_path
                 self._commands.append(command)
@@ -295,4 +307,4 @@ class IBTrafficBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('ib-traffic', IBTrafficBenchmark)
+BenchmarkRegistry.register_benchmark('ib-traffic', IBBenchmark)
