@@ -45,7 +45,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--iters',
             type=int,
-            default=1000,
+            default=5000,
             required=False,
             help='The iterations of running ib command',
         )
