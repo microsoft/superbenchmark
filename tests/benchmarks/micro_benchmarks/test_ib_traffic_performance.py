@@ -150,8 +150,8 @@ class IBBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F \
-            --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config ' + os.getcwd() + '/config.txt'
+        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
+            '--iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config ' + os.getcwd() + '/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -167,8 +167,8 @@ class IBBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F \
-        --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
+        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
+            '--iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
 
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
