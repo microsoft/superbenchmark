@@ -124,7 +124,7 @@ class BenchmarkRegistry:
             name (str): name of benchmark in config file.
             platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM.
             parameters (str): predefined parameters of benchmark.
-            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNX.
+            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNXRUNTIME.
 
         Return:
             benchmark_context (BenchmarkContext): the benchmark context.

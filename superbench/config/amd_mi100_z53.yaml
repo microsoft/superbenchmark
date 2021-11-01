@@ -4,7 +4,7 @@
 #   - Product: G482-Z53
 #   - Link: https://www.gigabyte.cn/FileUpload/Global/MicroSite/553/G482-Z53.html
 
-version: v0.2
+version: v0.3
 superbench:
   enable: null
   var:
@@ -13,7 +13,7 @@ superbench:
       modes:
         - name: local
           proc_num: 8
-          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+          prefix: HIP_VISIBLE_DEVICES={proc_rank}
           parallel: yes
     default_pytorch_mode: &default_pytorch_mode
       enable: true
@@ -36,6 +36,60 @@ superbench:
         - train
       pin_memory: yes
   benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    rccl-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        maxbytes: 8G
+        ngpus: 8
+        operation: allreduce
+    mem-bw:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
+      parameters:
+        m: 7680
+        n: 8192
+        k: 8192
+    ib-loopback:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 2
+          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,1
+          parallel: no
+    disk-benchmark:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        block_devices: []
+    gpu-copy-bw:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type:
+          - htod
+          - dtoh
+          - dtod
+        copy_type:
+          - sm
+          - dma
+    ort-models:
+      enable: false
+      modes:
+        - name: local
+      frameworks:
+        - onnxruntime
     gpt_models:
       <<: *default_pytorch_mode
       models:

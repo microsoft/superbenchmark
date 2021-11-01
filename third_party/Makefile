@@ -8,15 +8,15 @@ MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 ROCM_VERSION ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
-ROCM_ARCH ?= $(shell rocminfo | grep " gfx" | uniq | awk '{print $$2}')
+HPCX_HOME ?= /opt/hpcx
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
-common: fio
+common: fio gpcnet
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -66,7 +66,7 @@ ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
-# Build rccl-tests from commit cc34c5 of develop branch (default branch).
+# Build rccl-tests from commit dc1ad48 of develop branch (default branch).
 rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
 	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=$(HIP_HOME) RCCL_HOME=$(RCCL_HOME) -j
@@ -81,21 +81,20 @@ rocm_rocblas: sb_micro_path
 ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
 	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
 	git clone -b ${ROCM_VERSION} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
-ifeq (${ROCM_VERSION}, rocm-4.0.0)
-	sed -i '/CMAKE_MATCH_1/a\      get_filename_component(HIP_CLANG_ROOT "$${HIP_CLANG_ROOT}" DIRECTORY)'  /opt/rocm/hip/lib/cmake/hip/hip-config.cmake
-	cd ./rocBLAS && HIPCC_COMPILE_FLAGS_APPEND="-D_OPENMP=201811 -O3 -Wno-format-nonliteral -DCMAKE_HAVE_LIBC_PTHREAD -parallel-jobs=2" HIPCC_LINK_FLAGS_APPEND="-lpthread -O3 -parallel-jobs=2" ./install.sh -idc -a ${ROCM_ARCH}
-else 
-	cd ./rocBLAS && ./install.sh -idc
-endif
+	cd ./rocBLAS && ./install.sh --dependencies --clients-only
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
 endif
 
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
-rocm_bandwidthTest:
-	cp -r -v $(shell hipconfig -p) ./
-ifneq (, $(wildcard hip/samples/1_Utils/hipBusBandwidth/CMakeLists.txt))
-	cd ./hip/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
-	cp -v ./hip/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
-endif
+rocm_bandwidthTest: sb_micro_path
+	cp -r -v $(shell hipconfig -p)/samples/1_Utils/hipBusBandwidth ./
+	cd ./hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
+	cp -v ./hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
+
+# Build GPCNET from commit c56fd9.
+gpcnet: sb_micro_path
+	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
+	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
+	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/

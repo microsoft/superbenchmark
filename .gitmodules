@@ -15,3 +15,6 @@
 [submodule "third_party/rccl-tests"]
 	path = third_party/rccl-tests
 	url = https://github.com/ROCmSoftwarePlatform/rccl-tests.git
+[submodule "third_party/GPCNET"]
+	path = third_party/GPCNET
+	url = https://github.com/netbench/GPCNET.git

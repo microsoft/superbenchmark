@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the GPU SM Copy Bandwidth Performance benchmark."""
+"""Module of the GPU Copy Bandwidth Performance benchmark."""
 
 import os
 
@@ -10,8 +10,8 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
-    """The GPU SM copy bandwidth performance benchmark class."""
+class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
+    """The GPU copy bandwidth performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -21,8 +21,9 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'gpu_sm_copy'
-        self._mem_types = ['htod', 'dtoh']
+        self._bin_name = 'gpu_copy'
+        self._mem_types = ['htod', 'dtoh', 'dtod']
+        self._copy_types = ['sm', 'dma']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -34,6 +35,14 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
             nargs='+',
             default=self._mem_types,
             help='Memory types for benchmark. E.g. {}.'.format(' '.join(self._mem_types)),
+        )
+
+        self._parser.add_argument(
+            '--copy_type',
+            type=str,
+            nargs='+',
+            default=self._copy_types,
+            help='Copy types for benchmark. E.g. {}.'.format(' '.join(self._copy_types)),
         )
 
         self._parser.add_argument(
@@ -63,10 +72,13 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
+        args = '--size %d --num_loops %d' % (self._args.size, self._args.num_loops)
         for mem_type in self._args.mem_type:
-            command = '%s 0 %s %d %d' % \
-                (self.__bin_path, mem_type, self._args.size, self._args.num_loops)
-            self._commands.append(command)
+            args += ' --%s' % mem_type
+        for copy_type in self._args.copy_type:
+            args += ' --%s_copy' % copy_type
+
+        self._commands = ['%s %s' % (self.__bin_path, args)]
 
         return True
 
@@ -85,9 +97,10 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         try:
-            output_prefix = 'Bandwidth (GB/s): '
-            assert (raw_output.startswith(output_prefix))
-            self._result.add_result(self._args.mem_type[cmd_idx], float(raw_output[len(output_prefix):]))
+            output_lines = [x.strip() for x in raw_output.strip().splitlines()]
+            for output_line in output_lines:
+                tag, bw_str = output_line.split()
+                self._result.add_result(tag, float(bw_str))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
@@ -100,4 +113,4 @@ class GpuSmCopyBwBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('gpu-sm-copy-bw', GpuSmCopyBwBenchmark)
+BenchmarkRegistry.register_benchmark('gpu-copy-bw', GpuCopyBwBenchmark)
