@@ -1,10 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Micro benchmark example for IB triffic performance between nodes.
+"""Micro benchmark example for IB validation performance between nodes.
 
 Commands to run:
-  mpirun -np 2 -H node0:1,node1:1  -mca pml ob1 --mca btl ^openib -mca btl_tcp_if_exclude lo,docker0 -mca coll_hcoll_enable 0 -x LD_LIBRARY_PATH -x PATH python examples/benchmarks/ib_traffic_performance.py
+  mpirun -np 2 -H node0:1,node1:1  -mca pml ob1 --mca btl ^openib \
+      -mca btl_tcp_if_exclude lo,docker0 -mca coll_hcoll_enable 0 \
+          -x LD_LIBRARY_PATH -x PATH python examples/benchmarks/ib_traffic_performance.py
 """
 
 from superbench.benchmarks import BenchmarkRegistry

@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for ib-loopback benchmark."""
+"""Tests for ib-traffic benchmark."""
 
 import os
 import numbers
@@ -28,7 +28,7 @@ class IBBenchmarkTest(unittest.TestCase):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
 
-    def test_generate_config(self):
+    def test_generate_config(self):    # noqa: C901
         """Test util functions ."""
         test_config_file = 'test_gen_config.txt'
 
@@ -109,7 +109,6 @@ class IBBenchmarkTest(unittest.TestCase):
     @mock.patch('superbench.common.utils.network.get_ib_devices')
     def test_ib_traffic_performance(self, mock_ib_devices):
         """Test ib-traffic benchmark."""
-
         # Test without ib devices
         # Check registry.
         benchmark_name = 'ib-traffic'
@@ -151,8 +150,8 @@ class IBBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config ' + os.getcwd(
-        ) + '/config.txt'
+        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F \
+            --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config ' + os.getcwd() + '/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -168,7 +167,9 @@ class IBBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
+        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F \
+        --iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
+
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
         raw_output_0 = """
@@ -225,8 +226,8 @@ while attempting to start process rank 0.
             assert (len(benchmark.result[metric]) == 1)
             assert (isinstance(benchmark.result[metric][0], numbers.Number))
         # Negative case - valid raw output.
-        assert (benchmark._process_raw_result(0, raw_output_1) == False)
-        assert (benchmark._process_raw_result(0, raw_output_2) == False)
+        assert (benchmark._process_raw_result(0, raw_output_1) is False)
+        assert (benchmark._process_raw_result(0, raw_output_2) is False)
         os.environ.pop('OMPI_COMM_WORLD_RANK')
 
         # Check basic information.

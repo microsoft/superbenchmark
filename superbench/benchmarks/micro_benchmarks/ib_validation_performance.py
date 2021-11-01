@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the IB traffic pattern benchmarks."""
+"""Module of the IB performance benchmarks."""
 
 import os
 
@@ -13,7 +13,7 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
 class IBBenchmark(MicroBenchmarkWithInvoke):
-    """The IB traffic pattern performance benchmark class."""
+    """The IB validation performance benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -149,6 +149,13 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         return config
 
     def gen_traffic_pattern(self, n, mode, config_file_path):
+        """Generate traffic pattern into config file.
+
+        Args:
+            n (int): the number of nodes.
+            mode (str): the traffic mode, including 'one-to-one', 'one-to-many', 'many-to-one'.
+            config_file_path (str): the path of config file to generate
+        """
         config = []
         if mode == 'one-to-many':
             config = self.__one_to_many(n)
@@ -160,7 +167,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             for line in config:
                 f.write(line + '\n')
 
-    def _preprocess(self):
+    def _preprocess(self):    # noqa: C901
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
@@ -168,6 +175,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         """
         if not super()._preprocess():
             return False
+
         # Check MPI environment
         self._args.pattern = self._args.pattern.lower()
         if os.getenv('OMPI_COMM_WORLD_SIZE'):
@@ -176,6 +184,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             self._result.set_return_code(ReturnCode.MPI_INIT_FAILURE)
             logger.error('No MPI environment - benchmark: {}.'.format(self._name))
             return False
+
         # Generate and check config
         try:
             if self._args.config is None:
@@ -228,6 +237,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             logger.error('Getting ib devices failure - benchmark: {}, message: {}.'.format(self._name, str(e)))
             return False
 
+        # Generate commands
         for ib_command in self._args.commands:
             if ib_command not in self.__support_ib_commands:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
@@ -252,7 +262,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
 
         return True
 
-    def _process_raw_result(self, cmd_idx, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to parse raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
