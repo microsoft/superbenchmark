@@ -49,12 +49,17 @@ superbench:
         ngpus: 8
         operation: allreduce
     mem-bw:
-      <<: *default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: HIP_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
+          parallel: no
     gemm-flops:
       <<: *default_local_mode
       parameters:
-        m: 7680 
-        n: 8192 
+        m: 7680
+        n: 8192
         k: 8192
     ib-loopback:
       enable: true
