@@ -5,6 +5,9 @@ trigger:
   - main
   - release/*
 
+pool:
+  vmImage: ubuntu-latest
+
 container:
   image: python:3.7
 
