@@ -117,6 +117,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data(f'raw_output_{self._args.pytorch_models[cmd_idx]}', raw_output)
 
+        success = False
         try:
             for line in raw_output.strip().splitlines():
                 line = line.strip()
@@ -128,6 +129,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                     elif len(lats) == 2:
                         self._result.add_result(f'host_lat_ms_{tag}', float(lats[0]))
                         self._result.add_result(f'end_to_end_lat_ms_{tag}', float(lats[1]))
+                    success = True
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
@@ -136,8 +138,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 )
             )
             return False
-
-        return True
+        return success
 
 
 BenchmarkRegistry.register_benchmark(
