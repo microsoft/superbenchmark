@@ -51,15 +51,15 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
         test_cases = [
             {},
             {
-                'pytorch_models': ['resnet50', 'vgg19'],
+                'pytorch_models': ['resnet50', 'mnasnet0_5'],
             },
             {
                 'pytorch_models': ['resnet50'],
-                'batch_size': 128,
+                'batch_size': 4,
             },
             {
-                'batch_size': 128,
-                'iterations': 512,
+                'batch_size': 4,
+                'iterations': 128,
             },
         ]
         for test_case in test_cases:
@@ -73,11 +73,11 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
                     parameter_list.append(f'--iterations {test_case["iterations"]}')
 
                 # Check basic information
-                benchmark = benchmark_cls(self.benchmark_name, parameters=''.join(parameter_list))
+                benchmark = benchmark_cls(self.benchmark_name, parameters=' '.join(parameter_list))
                 self.assertTrue(benchmark)
 
                 # Limit model number
-                benchmark._pytorch_models = benchmark._pytorch_models[:2]
+                benchmark._pytorch_models = benchmark._pytorch_models[:1]
                 benchmark._TensorRTInferenceBenchmark__model_cache_path = Path(self.__tmp_dir) / 'hub/checkpoints'
 
                 # Preprocess

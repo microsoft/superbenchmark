@@ -83,7 +83,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 torch.onnx.export(
                     getattr(torchvision.models, model)(pretrained=True).cuda(),
                     torch.randn(self._args.batch_size, 3, 224, 224, device='cuda'),
-                    f'{self.__model_cache_path / model}',
+                    f'{self.__model_cache_path / (model + ".onnx")}',
                 )
                 self._commands.append(
                     ' '.join(
@@ -94,7 +94,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                             f'--iterations={self._args.iterations}',
                             '--workspace=1024',
                             '--percentile=99',
-                            f'--onnx={self.__model_cache_path / model}',
+                            f'--onnx={self.__model_cache_path / (model + ".onnx")}',
                         ]
                     )
                 )
