@@ -54,14 +54,16 @@ class IBBenchmarkTest(unittest.TestCase):
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
         benchmark = benchmark_class(benchmark_name)
-
+        # Small scale test
         node_num = 4
         for m in ['one-to-one', 'one-to-many', 'many-to-one']:
             benchmark.gen_traffic_pattern(node_num, m, test_config_file)
             config = read_config(test_config_file)
             assert (config == expected_config[m])
-
+        # Large scale test
         node_num = 1000
+        # check for 'one-to-many' and 'many-to-one'
+        # In Nth step, the count of N is (N-1), others are all 1
         for m in ['one-to-many', 'many-to-one']:
             benchmark.gen_traffic_pattern(node_num, m, test_config_file)
             config = read_config(test_config_file)
@@ -85,13 +87,19 @@ class IBBenchmarkTest(unittest.TestCase):
                             assert (client[i] == node_num - 1)
                         else:
                             assert (server[i] == 1)
-
+        # check for 'one-to-one'
+        # Each index appears 1 time in each step
+        # Each index has been combined once with all the remaining indexes
         benchmark.gen_traffic_pattern(node_num, 'one-to-one', test_config_file)
         config = read_config(test_config_file)
-        assert (len(config) == node_num - 1)
-        assert (len(config[0]) == node_num / 2)
+        if node_num % 2 == 1:
+            assert (len(config) == node_num)
+            assert (len(config[0]) == node_num // 2)
+        else:
+            assert (len(config) == node_num - 1)
+            assert (len(config[0]) == node_num // 2)
         test_pairs = defaultdict(list)
-        for step in range(node_num - 1):
+        for step in range(len(config)):
             node = defaultdict(int)
             for pair in config[step]:
                 pair = pair.split(',')
@@ -99,8 +107,8 @@ class IBBenchmarkTest(unittest.TestCase):
                 node[int(pair[1])] += 1
                 test_pairs[int(pair[0])].append(int(pair[1]))
                 test_pairs[int(pair[1])].append(int(pair[0]))
-            for i in range(node_num):
-                assert (node[i] == 1)
+            for index in node:
+                assert (node[index] == 1)
         for node in range(node_num):
             assert (sorted(test_pairs[node]) == [(i) for i in range(node_num) if i != node])
 
@@ -123,15 +131,7 @@ class IBBenchmarkTest(unittest.TestCase):
         mock_ib_devices.return_value = None
         ret = benchmark._preprocess()
         assert (ret is False)
-        assert (benchmark.return_code == ReturnCode.MPI_INIT_FAILURE)
-
-        os.environ['OMPI_COMM_WORLD_SIZE'] = '3'
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
-        benchmark = benchmark_class(benchmark_name, parameters=parameters)
-        mock_ib_devices.return_value = ['mlx5_0']
-        ret = benchmark._preprocess()
-        assert (ret is False)
-        assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_MPI_INIT_FAILURE)
 
         os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
         parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
@@ -142,6 +142,13 @@ class IBBenchmarkTest(unittest.TestCase):
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
 
         # Positive cases
+        os.environ['OMPI_COMM_WORLD_SIZE'] = '3'
+        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        mock_ib_devices.return_value = ['mlx5_0']
+        ret = benchmark._preprocess()
+        assert (ret is True)
+
         # Generate config
         parameters = '--ib_index 0 --iters 2000 --msg_size 33554432'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)

@@ -99,6 +99,17 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         )
 
     def __one_to_many(self, n):
+        """Generate one-to-many pattern config.
+
+        There are a total of n rounds
+        In each round, The i-th participant will be paired as a client with the remaining n-1 servers.
+
+        Args:
+            n (int): the number of participants.
+
+        Returns:
+            list: the generated config list, each item in the list is a str like "0,1;2,3".
+        """
         config = []
         for client in range(n):
             row = []
@@ -111,6 +122,17 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         return config
 
     def __many_to_one(self, n):
+        """Generate many-to-one pattern config.
+
+        There are a total of n rounds
+        In each round, The i-th participant will be paired as a server with the remaining n-1 clients.
+
+        Args:
+            n (int): the number of participants.
+
+        Returns:
+            list: the generated config list, each item in the list is a str like "0,1;2,3".
+        """
         config = []
         for server in range(n):
             row = []
@@ -122,30 +144,39 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             config.append(row)
         return config
 
-    def __roundRobin(self, candidates):
-        res = []
-        count = len(candidates)
-        robin = candidates
-        first = [candidates[0]]
-        for _ in range(count - 1):
-            pairs = [[robin[i], robin[count - i - 1]] for i in range(0, (count + 1) // 2)]
-            res.append(pairs)
-            robin = robin[1:]
-            robin = first + robin[1:] + robin[:1]
-        return res
-
     def __fully_one_to_one(self, n):
+        """Generate one-to-one pattern config.
+
+        One-to-one means that each participant plays every other participant once.
+        The algorithm refers circle method of Round-robin tournament in
+        https://en.wikipedia.org/wiki/Round-robin_tournament.
+        if n is even, there are a total of n-1 rounds, with n/2 pair of 2 unique participants in each round.
+        If n is odd, there will be n rounds, each with n-1/2 pairs, and one participant rotating empty in that round.
+        In each round, pair up two by two from the beginning to the middle as (begin, end),(begin+1,end-1)...
+        Then, all the participants except the beginning shift left one position, and repeat the previous step.
+
+        Args:
+            n (int): the number of participants.
+
+        Returns:
+            list: the generated config list, each item in the list is a str like "0,1;2,3".
+        """
         config = []
-        if n % 2 == 1:
-            return config
         candidates = list(range(n))
-        res = self.__roundRobin(candidates)
-        for line in res:
-            row = []
-            for pair in line:
-                row.append('{},{}'.format(pair[0], pair[1]))
-            row = ';'.join(row)
+        # Add a fake participant if n is odd
+        if n % 2 == 1:
+            candidates.append(-1)
+        count = len(candidates)
+        non_moving = [candidates[0]]
+        for _ in range(count - 1):
+            pairs = [
+                '{},{}'.format(candidates[i], candidates[count - i - 1]) for i in range(0, count // 2)
+                if candidates[i] != -1 and candidates[count - i - 1] != -1
+            ]
+            row = ';'.join(pairs)
             config.append(row)
+            robin = candidates[2:] + candidates[1:2]
+            candidates = non_moving + robin
         return config
 
     def gen_traffic_pattern(self, n, mode, config_file_path):
@@ -154,7 +185,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         Args:
             n (int): the number of nodes.
             mode (str): the traffic mode, including 'one-to-one', 'one-to-many', 'many-to-one'.
-            config_file_path (str): the path of config file to generate
+            config_file_path (str): the path of config file to generate.
         """
         config = []
         if mode == 'one-to-many':
@@ -167,7 +198,87 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             for line in config:
                 f.write(line + '\n')
 
-    def _preprocess(self):    # noqa: C901
+    def __prepare_config(self, node_num):
+        """Prepare and read config file.
+
+        Args:
+            node_num (int): the number of nodes.
+
+        Returns:
+            True if the config is not empty and valid.
+        """
+        try:
+            # Generate the config file if not define
+            if self._args.config is None:
+                self.gen_traffic_pattern(node_num, self._args.pattern, self.__config_path)
+            # Use the config file defined in args
+            else:
+                self.__config_path = self._args.config
+            # Read the config file and check if it's empty and valid
+            with open(self.__config_path, 'r') as f:
+                lines = f.readlines()
+                for line in lines:
+                    pairs = line.strip().strip(';').split(';')
+                    # Check format of config
+                    for pair in pairs:
+                        pair = pair.split(',')
+                        if len(pair) != 2:
+                            return False
+                        pair[0] = int(pair[0])
+                        pair[1] = int(pair[1])
+                    self.__config.extend(pairs)
+        except BaseException as e:
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            logger.error('Failed to generate and check config - benchmark: {}, message: {}.'.format(self._name, str(e)))
+            return False
+        if len(self.__config) == 0:
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            logger.error('No valid config - benchmark: {}.'.format(self._name))
+            return False
+        return True
+
+    def __prepare_general_ib_command_params(self):
+        """Prepare general params for ib commands.
+
+        Returns:
+            Str of ib command params if arguments are valid, otherwise False.
+        """
+        # Format the ib command type
+        self._args.commands = [command.lower() for command in self._args.commands]
+        # Add message size for ib command
+        msg_size = ''
+        if self._args.msg_size is None:
+            msg_size = '-a'
+        else:
+            msg_size = '-s ' + str(self._args.msg_size)
+        # Add GPUDirect for ib command
+        gpu_enable = ''
+        if self._args.gpu_index:
+            gpu = GPU()
+            if gpu.vendor == 'nvidia':
+                gpu_enable = ' --use_cuda={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
+            elif gpu.vendor == 'amd':
+                gpu_enable = ' --use_rocm={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
+            else:
+                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                logger.error('No GPU found - benchmark: {}'.format(self._name))
+                return False
+        # Generate ib command params
+        try:
+            command_params = '-F --iters={iter} -d {device} {size} -x {gid}{gpu}'.format(
+                iter=str(self._args.iters),
+                device=network.get_ib_devices()[self._args.ib_index].split(':')[0],
+                size=msg_size,
+                gid=str(self._args.gid_index),
+                gpu=gpu_enable
+            )
+        except BaseException as e:
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+            logger.error('Getting ib devices failure - benchmark: {}, message: {}.'.format(self._name, str(e)))
+            return False
+        return command_params
+
+    def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
@@ -181,62 +292,18 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         if os.getenv('OMPI_COMM_WORLD_SIZE'):
             node_num = int(os.getenv('OMPI_COMM_WORLD_SIZE'))
         else:
-            self._result.set_return_code(ReturnCode.MPI_INIT_FAILURE)
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_MPI_INIT_FAILURE)
             logger.error('No MPI environment - benchmark: {}.'.format(self._name))
             return False
 
         # Generate and check config
-        try:
-            if self._args.config is None:
-                self.gen_traffic_pattern(node_num, self._args.pattern, self.__config_path)
-            else:
-                self.__config_path = self._args.config
-            with open(self.__config_path, 'r') as f:
-                lines = f.readlines()
-                for line in lines:
-                    pairs = line.strip().split(';')
-                    self.__config.extend(pairs)
-            if len(self.__config) == 0:
-                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                logger.error('No valid config - benchmark: {}.'.format(self._name))
-                return False
-        except BaseException as e:
-            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error('Failed to generate and check config - benchmark: {}, message: {}.'.format(self._name, str(e)))
+        if not self.__prepare_config(node_num):
             return False
 
-        # Format the arguments
-        self._args.commands = [command.lower() for command in self._args.commands]
-        try:
-            # Check whether arguments are valid
-            msg_size = ''
-            if self._args.msg_size is None:
-                msg_size = '-a'
-            else:
-                msg_size = '-s ' + str(self._args.msg_size)
-            gpu_enable = ''
-            if self._args.gpu_index:
-                gpu = GPU()
-                if gpu.vendor == 'nvidia':
-                    gpu_enable = ' --use_cuda={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
-                elif gpu.vendor == 'amd':
-                    gpu_enable = ' --use_rocm={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
-                else:
-                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                    logger.error('No GPU found - benchmark: {}'.format(self._name))
-                    return False
-            command_params = '-F --iters={iter} -d {device} {size} -x {gid}{gpu}'.format(
-                iter=str(self._args.iters),
-                device=network.get_ib_devices()[self._args.ib_index].split(':')[0],
-                size=msg_size,
-                gid=str(self._args.gid_index),
-                gpu=gpu_enable
-            )
-        except BaseException as e:
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
-            logger.error('Getting ib devices failure - benchmark: {}, message: {}.'.format(self._name, str(e)))
+        # Prepare general params for ib commands
+        command_params = self.__prepare_general_ib_command_params()
+        if not command_params:
             return False
-
         # Generate commands
         for ib_command in self._args.commands:
             if ib_command not in self.__support_ib_commands:
