@@ -10,7 +10,7 @@ id: docker-benchmarks
 
 #### Introduction
 
-Run the rocm onnxruntime model training benchmarks packaged in docker `superbench/benchmark:rocm4.3.1-onnxruntime1.9.0` which include Bert-large, Distilbert-base, GPT-2, facebook/Bart-large and Roberta-large.
+Run the rocm onnxruntime model training benchmarks packaged in docker `superbench/benchmark:rocm4.3.1-onnxruntime1.9.0` which includes Bert-large, Distilbert-base, GPT-2, facebook/Bart-large and Roberta-large.
 
 #### Metrics
 
