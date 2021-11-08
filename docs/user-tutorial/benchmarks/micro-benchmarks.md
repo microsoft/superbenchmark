@@ -16,7 +16,7 @@ which is defined as the time range from the beginning of the launch API call to 
 #### Metrics
 
 | Name                         | Unit      | Description                          |
-|------------------------------|-----------|--------------------------------------|
+| ---------------------------- | --------- | ------------------------------------ |
 | kernel-launch/event_overhead | time (ms) | Launch latency measured in GPU time. |
 | kernel-launch/wall_overhead  | time (ms) | Launch latency measured in CPU time. |
 
@@ -31,7 +31,7 @@ or AMD [rocblas-bench](https://github.com/ROCmSoftwarePlatform/rocBLAS/tree/deve
 #### Metrics
 
 | Name                   | Unit           | Description                                             |
-|------------------------|----------------|---------------------------------------------------------|
+| ---------------------- | -------------- | ------------------------------------------------------- |
 | gemm-flops/FP64        | FLOPS (GFLOPS) | GEMM float64 peak FLOPS.                                |
 | gemm-flops/FP32        | FLOPS (GFLOPS) | GEMM float32 peak FLOPS.                                |
 | gemm-flops/FP16        | FLOPS (GFLOPS) | GEMM float16 peak FLOPS.                                |
@@ -55,7 +55,7 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 #### Metrics
 
 | Name                      | Unit      | Description                    |
-|---------------------------|-----------|--------------------------------|
+| ------------------------- | --------- | ------------------------------ |
 | pytorch-matmul/nosharding | time (ms) | Time of pure matmul operation. |
 
 ### `cublas-function`
@@ -79,7 +79,7 @@ or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils
 #### Metrics
 
 | Name              | Unit             | Description                      |
-|-------------------|------------------|----------------------------------|
+| ----------------- | ---------------- | -------------------------------- |
 | mem-bw/H2D_Mem_BW | bandwidth (GB/s) | Host to device copy bandwidth.   |
 | mem-bw/D2H_Mem_BW | bandwidth (GB/s) | Device to host copy bandwidth.   |
 | mem-bw/D2D_Mem_BW | bandwidth (GB/s) | Device to device copy bandwidth. |
@@ -91,7 +91,7 @@ Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between
 #### Metrics
 
 | Name                | Unit             | Description                                          |
-|---------------------|------------------|------------------------------------------------------|
+| ------------------- | ---------------- | ---------------------------------------------------- |
 | gpu-sm-copy-bw/htod | bandwidth (GB/s) | Host to device copy bandwidth initialized by GPU SM. |
 | gpu-sm-copy-bw/dtoh | bandwidth (GB/s) | Device to host copy bandwidth initialized by GPU SM. |
 
@@ -105,7 +105,7 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 #### Metrics
 
 | Name                                               | Unit             | Description                                                  |
-|----------------------------------------------------|------------------|--------------------------------------------------------------|
+| -------------------------------------------------- | ---------------- | ------------------------------------------------------------ |
 | ib-loopback/IB\_write\_${msg\_size}\_Avg_${ib_dev} | bandwidth (MB/s) | InfiniBand loopback write bandwidth with given message size. |
 | ib-loopback/IB\_read\_${msg\_size}\_Avg_${ib_dev}  | bandwidth (MB/s) | InfiniBand loopback read bandwidth with given message size.  |
 | ib-loopback/IB\_send\_${msg\_size}\_Avg_${ib_dev}  | bandwidth (MB/s) | InfiniBand loopback send bandwidth with given message size.  |
@@ -122,13 +122,59 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 #### Metrics
 
 | Name                                   | Unit             | Description                                                 |
-|----------------------------------------|------------------|-------------------------------------------------------------|
+| -------------------------------------- | ---------------- | ----------------------------------------------------------- |
 | nccl-bw/${operation}_${msg_size}_time  | time (us)        | NCCL operation lantency with given message size.            |
 | nccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | NCCL operation algorithm bandwidth with given message size. |
 | nccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | NCCL operation bus bandwidth with given message size.       |
 | rccl-bw/${operation}_${msg_size}_time  | time (us)        | RCCL operation lantency with given message size.            |
 | rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
 | rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
+
+### `tcp-connectivity`
+
+#### Introduction
+
+Test the TCP connectivity between current node and nodes in the hostfile,
+performed by [tcping](https://github.com/zhengxiaowai/tcping)
+
+#### Metrics
+
+| Metrics                                      | Unit     | Description                                                                          |
+| -------------------------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| tcp-connectivity/Successed_${hostname/ip}    | count    | successed times of tcp connections between current node and other nodes              |
+| tcp-connectivity/Failed_${hostname/ip}       | count    | failed times of tcp connections between current node and other nodes                 |
+| tcp-connectivity/Success_Rate_${hostname/ip} | count    | success rate(successed/total) of tcp connection between current node and other nodes |
+| tcp-connectivity/Minimum_${hostname/ip}      | time(ms) | mininum latency of tcp connections between current node and other nodes              |
+| tcp-connectivity/Maximum_${hostname/ip}      | time(ms) | maximum latency of tcp connections between current node and other nodes              |
+| tcp-connectivity/Average_${hostname/ip}      | time(ms) | average latency of tcp connections between current node and other nodes              |
+
+### `gpcnet-network-test` / `gpcnet-network-load-test`
+
+#### Introduction
+
+Distributed test, test the global network performance and congestion,
+performed by [GPCNET](https://github.com/netbench/GPCNET)
+
+gpcnet-network-test: Full system network tests in random and natural ring, alltoall and allreduce, at least 2 nodes
+
+gpcnet-network-load-test: Select full system network tests run with four congestors to measure network congestion or contention, at least 10 nodes
+
+ - test title: Isolated Network Tests, Isolated Congestion Tests, Network Tests running with Congestion Tests ( RR Two-sided Lat Network Test), Network Tests running with Congestion Tests (RR Two-sided BW+Sync Network Test), Network Tests running with Congestion Tests ( Multiple Allreduce Network Test), Network Tests running with Congestion Tests - Key Results
+ - supporting network tests: RR Two-sided Lat (8 B), RR Two-sided BW+Sync (131072 B), Multiple Allreduce (8 B)
+ - supporting congetors: Alltoall (4096 B), Two-sided Incast (4096 B), Put Incast (4096 B), Get Bcast (4096 B)
+
+#### Metrics
+
+| Metrics                                                             | Unit                  | Description                                                                                                                                                                |
+| ------------------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| {benchmark_name}/${test_title}_RRTwo-sidedLat(8B)_${stat}           | time(usec)            | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
+| {benchmark_name}/${test_title}_RRTwo-sidedBW+Sync(131072B)_${stat}  | MiB/s/rank            | fstatistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
+| {benchmark_name}/${test_title}_MultipleAllreduce(8B)_${stat}        | time(usec)            | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
+| {benchmark_name}/${test_title}_GetBcast(4096B)_${stat}              | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
+| {benchmark_name}/${test_title}_PutIncast(4096B)_${stat}             | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
+| {benchmark_name}/${test_title}_Two-sidedIncast(4096B)_${stat}       | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
+| {benchmark_name}/${test_title}_Alltoall(4096B)_${stat}              | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
+| gpcnet-network-load-test/${test_title}_${network_test_algo}_${stat} | times(x)              | summary about congestion impact factor of every network test algorithm                                                                                                     |
 
 ## Computation-communication Benchmarks
 
@@ -141,7 +187,7 @@ Test the performance of single node when communication and computation overlap.
 #### Metrics
 
 | Name                                                  | Unit      | Description                                                  |
-|-------------------------------------------------------|-----------|--------------------------------------------------------------|
+| ----------------------------------------------------- | --------- | ------------------------------------------------------------ |
 | pytorch-computation-communication-overlap/mul_cost    | time (ms) | Time of communication and mul kernel computation overlap.    |
 | pytorch-computation-communication-overlap/matmul_cost | time (ms) | Time of communication and matmul kernel computation overlap. |
 
@@ -158,7 +204,7 @@ Test the performance of large scale matmul operation with multiple GPUs:
 #### Metrics
 
 | Name                              | Unit      | Description                              |
-|-----------------------------------|-----------|------------------------------------------|
+| --------------------------------- | --------- | ---------------------------------------- |
 | pytorch-sharding-matmul/allreduce | time (ms) | Time of sharding matmul using allreduce. |
 | pytorch-sharding-matmul/allgather | time (ms) | Time of sharding matmul using allgather. |
 
@@ -173,7 +219,7 @@ Measure the disk performance through [FIO](https://github.com/axboe/fio/tree/031
 #### Metrics
 
 | Name                                                               | Unit         | Description                                              |
-|--------------------------------------------------------------------|--------------|----------------------------------------------------------|
+| ------------------------------------------------------------------ | ------------ | -------------------------------------------------------- |
 | disk-benchmark/${disk_name}_rand_read_write_bs                     | size (bytes) | Disk random read write block size.                       |
 | disk-benchmark/${disk_name}_rand_read_write_read_iops              | IOPS         | Disk random read write read IOPS.                        |
 | disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_95.000000  | time (ns)    | Disk random read write read latency in 95.0 percentile.  |
