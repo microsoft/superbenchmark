@@ -16,7 +16,7 @@ which is defined as the time range from the beginning of the launch API call to 
 #### Metrics
 
 | Name                         | Unit      | Description                          |
-| ---------------------------- | --------- | ------------------------------------ |
+|------------------------------|-----------|--------------------------------------|
 | kernel-launch/event_overhead | time (ms) | Launch latency measured in GPU time. |
 | kernel-launch/wall_overhead  | time (ms) | Launch latency measured in CPU time. |
 
@@ -31,7 +31,7 @@ or AMD [rocblas-bench](https://github.com/ROCmSoftwarePlatform/rocBLAS/tree/deve
 #### Metrics
 
 | Name                   | Unit           | Description                                             |
-| ---------------------- | -------------- | ------------------------------------------------------- |
+|------------------------|----------------|---------------------------------------------------------|
 | gemm-flops/FP64        | FLOPS (GFLOPS) | GEMM float64 peak FLOPS.                                |
 | gemm-flops/FP32        | FLOPS (GFLOPS) | GEMM float32 peak FLOPS.                                |
 | gemm-flops/FP16        | FLOPS (GFLOPS) | GEMM float16 peak FLOPS.                                |
@@ -55,7 +55,7 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 #### Metrics
 
 | Name                      | Unit      | Description                    |
-| ------------------------- | --------- | ------------------------------ |
+|---------------------------|-----------|--------------------------------|
 | pytorch-matmul/nosharding | time (ms) | Time of pure matmul operation. |
 
 ### `cublas-function`
@@ -79,7 +79,7 @@ or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils
 #### Metrics
 
 | Name              | Unit             | Description                      |
-| ----------------- | ---------------- | -------------------------------- |
+|-------------------|------------------|----------------------------------|
 | mem-bw/H2D_Mem_BW | bandwidth (GB/s) | Host to device copy bandwidth.   |
 | mem-bw/D2H_Mem_BW | bandwidth (GB/s) | Device to host copy bandwidth.   |
 | mem-bw/D2D_Mem_BW | bandwidth (GB/s) | Device to device copy bandwidth. |
@@ -91,7 +91,7 @@ Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between
 #### Metrics
 
 | Name                | Unit             | Description                                          |
-| ------------------- | ---------------- | ---------------------------------------------------- |
+|---------------------|------------------|------------------------------------------------------|
 | gpu-sm-copy-bw/htod | bandwidth (GB/s) | Host to device copy bandwidth initialized by GPU SM. |
 | gpu-sm-copy-bw/dtoh | bandwidth (GB/s) | Device to host copy bandwidth initialized by GPU SM. |
 
@@ -105,7 +105,7 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 #### Metrics
 
 | Name                                               | Unit             | Description                                                  |
-| -------------------------------------------------- | ---------------- | ------------------------------------------------------------ |
+|----------------------------------------------------|------------------|--------------------------------------------------------------|
 | ib-loopback/IB\_write\_${msg\_size}\_Avg_${ib_dev} | bandwidth (MB/s) | InfiniBand loopback write bandwidth with given message size. |
 | ib-loopback/IB\_read\_${msg\_size}\_Avg_${ib_dev}  | bandwidth (MB/s) | InfiniBand loopback read bandwidth with given message size.  |
 | ib-loopback/IB\_send\_${msg\_size}\_Avg_${ib_dev}  | bandwidth (MB/s) | InfiniBand loopback send bandwidth with given message size.  |
@@ -122,7 +122,7 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 #### Metrics
 
 | Name                                   | Unit             | Description                                                 |
-| -------------------------------------- | ---------------- | ----------------------------------------------------------- |
+|----------------------------------------|------------------|-------------------------------------------------------------|
 | nccl-bw/${operation}_${msg_size}_time  | time (us)        | NCCL operation lantency with given message size.            |
 | nccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | NCCL operation algorithm bandwidth with given message size. |
 | nccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | NCCL operation bus bandwidth with given message size.       |
@@ -187,7 +187,7 @@ Test the performance of single node when communication and computation overlap.
 #### Metrics
 
 | Name                                                  | Unit      | Description                                                  |
-| ----------------------------------------------------- | --------- | ------------------------------------------------------------ |
+|-------------------------------------------------------|-----------|--------------------------------------------------------------|
 | pytorch-computation-communication-overlap/mul_cost    | time (ms) | Time of communication and mul kernel computation overlap.    |
 | pytorch-computation-communication-overlap/matmul_cost | time (ms) | Time of communication and matmul kernel computation overlap. |
 
@@ -204,7 +204,7 @@ Test the performance of large scale matmul operation with multiple GPUs:
 #### Metrics
 
 | Name                              | Unit      | Description                              |
-| --------------------------------- | --------- | ---------------------------------------- |
+|-----------------------------------|-----------|------------------------------------------|
 | pytorch-sharding-matmul/allreduce | time (ms) | Time of sharding matmul using allreduce. |
 | pytorch-sharding-matmul/allgather | time (ms) | Time of sharding matmul using allgather. |
 
@@ -219,7 +219,7 @@ Measure the disk performance through [FIO](https://github.com/axboe/fio/tree/031
 #### Metrics
 
 | Name                                                               | Unit         | Description                                              |
-| ------------------------------------------------------------------ | ------------ | -------------------------------------------------------- |
+|--------------------------------------------------------------------|--------------|----------------------------------------------------------|
 | disk-benchmark/${disk_name}_rand_read_write_bs                     | size (bytes) | Disk random read write block size.                       |
 | disk-benchmark/${disk_name}_rand_read_write_read_iops              | IOPS         | Disk random read write read IOPS.                        |
 | disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_95.000000  | time (ns)    | Disk random read write read latency in 95.0 percentile.  |
