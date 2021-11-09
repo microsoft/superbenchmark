@@ -52,6 +52,7 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
             {},
             {
                 'pytorch_models': ['resnet50', 'mnasnet0_5'],
+                'precision': 'fp16',
             },
             {
                 'pytorch_models': ['resnet50'],
@@ -67,6 +68,8 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
                 parameter_list = []
                 if 'pytorch_models' in test_case:
                     parameter_list.append(f'--pytorch_models {" ".join(test_case["pytorch_models"])}')
+                if 'precision' in test_case:
+                    parameter_list.append(f'--precision {test_case["precision"]}')
                 if 'batch_size' in test_case:
                     parameter_list.append(f'--batch_size {test_case["batch_size"]}')
                 if 'iterations' in test_case:
@@ -91,6 +94,10 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
                 self.assertEqual(
                     test_case.get('pytorch_models', benchmark._pytorch_models),
                     benchmark._args.pytorch_models,
+                )
+                self.assertEqual(
+                    test_case.get('precision', 'int8'),
+                    benchmark._args.precision,
                 )
                 self.assertEqual(
                     test_case.get('batch_size', 32),

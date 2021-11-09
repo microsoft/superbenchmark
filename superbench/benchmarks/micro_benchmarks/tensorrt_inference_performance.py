@@ -52,6 +52,15 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         )
 
         self._parser.add_argument(
+            '--precision',
+            type=str,
+            choices=['int8', 'fp16'],
+            default='int8',
+            required=False,
+            help='Precision for inference, allowe int8 or fp16.',
+        )
+
+        self._parser.add_argument(
             '--batch_size',
             type=int,
             default=32,
@@ -89,7 +98,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                     ' '.join(
                         [
                             self.__bin_path,
-                            '--int8',
+                            f'--{self._args.precision}',
                             f'--batch={self._args.batch_size}',
                             f'--iterations={self._args.iterations}',
                             '--workspace=1024',
