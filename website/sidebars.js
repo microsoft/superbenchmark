@@ -27,6 +27,7 @@ module.exports = {
           items: [
             'user-tutorial/benchmarks/micro-benchmarks',
             'user-tutorial/benchmarks/model-benchmarks',
+            'user-tutorial/benchmarks/docker-benchmarks',
           ],
         },
         'user-tutorial/system-config',
