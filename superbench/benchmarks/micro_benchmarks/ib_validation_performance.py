@@ -23,7 +23,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'ib_mpi'
+        self._bin_name = 'ib_validation'
         self.__support_ib_commands = [
             'ib_write_bw', 'ib_read_bw', 'ib_send_bw', 'ib_write_lat', 'ib_read_lat', 'ib_send_lat'
         ]
@@ -62,13 +62,6 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             nargs='+',
             default=['ib_write_bw'],
             help='The ib command used to run, e.g., {}.'.format(' '.join(self.__support_ib_commands)),
-        )
-        self._parser.add_argument(
-            '--gid_index',
-            type=int,
-            default=0,
-            required=False,
-            help='Test uses GID with GID index taken from command.',
         )
         self._parser.add_argument(
             '--pattern',
@@ -265,11 +258,10 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                 return False
         # Generate ib command params
         try:
-            command_params = '-F --iters={iter} -d {device} {size} -x {gid}{gpu}'.format(
+            command_params = '-F --iters={iter} -d {device} {size}{gpu}'.format(
                 iter=str(self._args.iters),
                 device=network.get_ib_devices()[self._args.ib_index].split(':')[0],
                 size=msg_size,
-                gid=str(self._args.gid_index),
                 gpu=gpu_enable
             )
         except BaseException as e:

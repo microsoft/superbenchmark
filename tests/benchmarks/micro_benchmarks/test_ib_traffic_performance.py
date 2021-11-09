@@ -21,7 +21,7 @@ class IBBenchmarkTest(unittest.TestCase):
         os.environ['SB_MICRO_PATH'] = '/tmp/superbench'
         binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
         binary_path.mkdir(parents=True, exist_ok=True)
-        self.__binary_file = Path(binary_path, 'ib_mpi')
+        self.__binary_file = Path(binary_path, 'ib_validation')
         self.__binary_file.touch(mode=0o755, exist_ok=True)
 
     def tearDown(self):
@@ -157,8 +157,8 @@ class IBBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
-            '--iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config ' + os.getcwd() + '/config.txt'
+        expect_command = 'ib_validation --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
+            '--iters=2000 -d mlx5_0 -s 33554432" --input_config ' + os.getcwd() + '/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -174,8 +174,8 @@ class IBBenchmarkTest(unittest.TestCase):
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_mpi --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
-            '--iters=2000 -d mlx5_0 -s 33554432 -x 0" --input_config test_config.txt'
+        expect_command = 'ib_validation --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
+            '--iters=2000 -d mlx5_0 -s 33554432" --input_config test_config.txt'
 
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
@@ -196,7 +196,7 @@ results from rank ROOT_RANK:
 23435.3,22766.5
 """
         raw_output_1 = """
-The predix of cmd to run is: ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432 -x 0
+The predix of cmd to run is: ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432
 Load the config file from: config.txt
 Output will be saved to:
 config:
@@ -214,9 +214,6 @@ results from rank ROOT_RANK:
 --------------------------------------------------------------------------
 mpirun was unable to launch the specified application as it could not access
 or execute an executable:
-
-Executable: /root/ib_mpi/i,docker0
-Node: GCRAMDRR1-MI100-081
 
 while attempting to start process rank 0.
 --------------------------------------------------------------------------
@@ -240,7 +237,7 @@ while attempting to start process rank 0.
         # Check basic information.
         assert (benchmark.name == 'ib-traffic')
         assert (benchmark.type == BenchmarkType.MICRO)
-        assert (benchmark._bin_name == 'ib_mpi')
+        assert (benchmark._bin_name == 'ib_validation')
 
         # Check parameters specified in BenchmarkContext.
         assert (benchmark._args.ib_index == 0)
