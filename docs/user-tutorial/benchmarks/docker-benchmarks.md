@@ -4,7 +4,7 @@ id: docker-benchmarks
 
 # Docker Benchmarks
 
-## Rocm OnnxRuntime Model Benchmarks
+## ROCm ONNXRuntime Model Benchmarks
 
 ### `ort-models`
 
