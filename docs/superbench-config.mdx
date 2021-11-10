@@ -148,8 +148,8 @@ superbench:
 
 Mappings of `${benchmark_name}: Benchmark`.
 
-There are two types of benchmarks, micro-benchmark and model-benchmark.
-For micro-benchmark, `${benchmark_name}` should be the exact same as provided micro-benchmarks' name.
+There are three types of benchmarks, micro-benchmark, model-benchmark and docker-benchmark.
+For micro-benchmark and docker-benchmark, `${benchmark_name}` should be the exact same as provided benchmarks' name.
 For model-benchmark, `${benchmark_name}` should be in `${name}_models` format,
 each model-benchmark can have a customized name while ending with `_models`.
 
@@ -269,7 +269,7 @@ See [`Mode` Schema](#mode-schema) for mode definition.
 A list of frameworks in which the benchmark runs.
 Some benchmarks can support multiple frameworks while others only support one.
 
-* accepted values: `[ onnx | pytorch | tf1 | tf2 | none ]`
+* accepted values: `[ onnxruntime | pytorch | tf1 | tf2 | none ]`
 * default value: `[ none ]`
 
 ### `models`
