@@ -159,26 +159,31 @@ def get_device_row_remapped_info(idx):
 def get_device_ecc_error(idx):
     """Get the ecc error information of device.
 
-    The command 'nvidia-smi dmon -i 0 -s e -c 1' gets the following output:
-        # gpu sbecc dbecc   pci
-        # Idx  errs  errs  errs
-            0     0     0     0
-
     Args:
         idx (int): device index.
 
     Return:
-        sbecc (int): the count of single bit ecc error, None means failed to get the data.
-        dbecc (int): the count of double bit ecc error, None means failed to get the data.
+        corrected_ecc (int)  : the count of single bit ecc error.
+        uncorrected_ecc (int): the count of double bit ecc error.
     """
-    output = run_command('nvidia-smi dmon -i {} -s e -c 1'.format(idx))
-    if output.returncode == 0:
-        content = output.stdout.splitlines()
-        if len(content) == 3:
-            ecc = list(filter(None, content[2].split(' ')))
-            if len(ecc) == 4:
-                sbecc = int(ecc[1])
-                dbecc = int(ecc[2])
-                return sbecc, dbecc
+    handle = nvml.nvmlDeviceGetHandleByIndex(idx)
+    corrected_ecc = 0
+    uncorrected_ecc = 0
+    for location_idx in range(nvml.NVML_MEMORY_LOCATION_COUNT):
+        try:
+            count = nvml.nvmlDeviceGetMemoryErrorCounter(
+                handle, nvml.NVML_MEMORY_ERROR_TYPE_CORRECTED, nvml.NVML_VOLATILE_ECC, location_idx
+            )
+            corrected_ecc += count
+        except nvml.NVMLError:
+            pass
 
-    return None, None
+        try:
+            count = nvml.nvmlDeviceGetMemoryErrorCounter(
+                handle, nvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED, nvml.NVML_VOLATILE_ECC, location_idx
+            )
+            uncorrected_ecc += count
+        except nvml.NVMLError:
+            pass
+
+    return corrected_ecc, uncorrected_ecc

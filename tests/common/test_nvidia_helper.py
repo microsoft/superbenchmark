@@ -19,14 +19,14 @@ def test_nvidia_helper_utils(mock_run_command):
     assert (isinstance(nv_helper.get_device_utilization(0), numbers.Number))
     assert (isinstance(nv_helper.get_device_temperature(0), numbers.Number))
     assert (isinstance(nv_helper.get_device_power_limit(0), numbers.Number))
+
     used_mem, total_mem = nv_helper.get_device_memory(0)
     assert (isinstance(used_mem, numbers.Number) and isinstance(total_mem, numbers.Number))
 
-    mock_run_command.return_value.returncode = 0
-    mock_run_command.return_value.stdout = '# gpu sbecc dbecc   pci\n# Idx  errs  errs  errs\n    0     0     0     0'
-    sbecc, dbecc = nv_helper.get_device_ecc_error(0)
-    assert (isinstance(sbecc, numbers.Number) and isinstance(dbecc, numbers.Number))
+    corrected_ecc, uncorrected_ecc = nv_helper.get_device_ecc_error(0)
+    assert (isinstance(corrected_ecc, numbers.Number) and isinstance(uncorrected_ecc, numbers.Number))
 
+    mock_run_command.return_value.returncode = 0
     mock_run_command.return_value.stdout = """
         Remapped Rows
             Correctable Error                 : 0
