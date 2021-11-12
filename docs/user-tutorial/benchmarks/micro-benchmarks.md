@@ -66,6 +66,23 @@ TODO
 
 TODO
 
+### `tensorrt-inference`
+
+#### Introduction
+
+Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.nvidia.com/tensorrt).
+
+#### Metrics
+
+| Name                                      | Unit      | Description                                                                                              |
+|-------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|
+| tensorrt-inference/gpu_lat_ms_mean        | time (ms) | The mean GPU latency to execute the kernels for a query.                                                 |
+| tensorrt-inference/gpu_lat_ms_99          | time (ms) | The 99th percentile GPU latency to execute the kernels for a query.                                      |
+| tensorrt-inference/host_lat_ms_mean       | time (ms) | The mean H2D, GPU, and D2H latency to execute the kernels for a query.                                   |
+| tensorrt-inference/host_lat_ms_99         | time (ms) | The 99th percentile H2D, GPU, and D2H latency to execute the kernels for a query.                        |
+| tensorrt-inference/end_to_end_lat_ms_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
+| tensorrt-inference/end_to_end_lat_ms_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
+
 ## Communication Benchmarks
 
 ### `mem-bw`
