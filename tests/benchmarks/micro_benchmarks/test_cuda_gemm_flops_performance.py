@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from tests.helper import decorator
-from superbench.common.utils import nv_helper
+from superbench.common.utils.device_manager import device_manager
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, BenchmarkType
 
 
@@ -42,7 +42,7 @@ class CudaGemmFlopsBenchmarkTest(unittest.TestCase):
         )
 
         ret = benchmark._preprocess()
-        if nv_helper.get_device_compute_capability() not in [7.0, 8.0]:
+        if device_manager.get_device_compute_capability() not in [7.0, 8.0]:
             assert (ret is False)
             assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
         else:

@@ -6,7 +6,7 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.common.utils import nv_helper
+from superbench.common.utils.device_manager import device_manager
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import GemmFlopsBenchmark
 
@@ -64,7 +64,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             True if _preprocess() succeed.
         """
         # Reset kernels according to compute capability.
-        capability = nv_helper.get_device_compute_capability()
+        capability = device_manager.get_device_compute_capability()
         if capability not in self.__kernel_map:
             # After preprocess() self._result.return_code can be generated
             super()._preprocess()
