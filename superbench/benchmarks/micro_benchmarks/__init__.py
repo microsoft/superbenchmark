@@ -17,6 +17,7 @@ from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmar
 from superbench.benchmarks.micro_benchmarks.gpcnet_performance import GPCNetBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_copy_bw_performance import GpuCopyBwBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoopbackBenchmark
+from superbench.benchmarks.micro_benchmarks.ib_validation_performance import IBBenchmark
 from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import KernelLaunch
 from superbench.benchmarks.micro_benchmarks.rocm_gemm_flops_performance import RocmGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
@@ -35,6 +36,7 @@ __all__ = [
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
     'GpuCopyBwBenchmark',
+    'IBBenchmark',
     'IBLoopbackBenchmark',
     'KernelLaunch',
     'MemBwBenchmark',
