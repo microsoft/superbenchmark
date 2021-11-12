@@ -49,7 +49,9 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
 
         test_cases = [
-            {},
+            {
+                'precision': 'fp32',
+            },
             {
                 'pytorch_models': ['resnet50', 'mnasnet0_5'],
                 'precision': 'fp16',

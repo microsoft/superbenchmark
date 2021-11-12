@@ -55,10 +55,10 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--precision',
             type=str,
-            choices=['int8', 'fp16'],
+            choices=['int8', 'fp16', 'fp32'],
             default='int8',
             required=False,
-            help='Precision for inference, allowe int8 or fp16.',
+            help='Precision for inference, allow int8, fp16, or fp32 only.',
         )
 
         self._parser.add_argument(
@@ -97,15 +97,17 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 )
                 self._commands.append(
                     ' '.join(
-                        [
-                            self.__bin_path,
-                            f'--{self._args.precision}',
-                            f'--batch={self._args.batch_size}',
-                            f'--iterations={self._args.iterations}',
-                            '--workspace=1024',
-                            '--percentile=99',
-                            f'--onnx={self.__model_cache_path / (model + ".onnx")}',
-                        ]
+                        filter(
+                            None, [
+                                self.__bin_path,
+                                None if self._args.precision == 'fp32' else f'--{self._args.precision}',
+                                f'--batch={self._args.batch_size}',
+                                f'--iterations={self._args.iterations}',
+                                '--workspace=1024',
+                                '--percentile=99',
+                                f'--onnx={self.__model_cache_path / (model + ".onnx")}',
+                            ]
+                        )
                     )
                 )
             else:

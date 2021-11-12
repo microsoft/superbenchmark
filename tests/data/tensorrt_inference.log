@@ -1,6 +1,6 @@
 [11/02/2021-09:15:15] [I] === Model Options ===
 [11/02/2021-09:15:15] [I] Format: ONNX
-[11/02/2021-09:15:15] [I] Model: vision/classification/resnet/model/resnet50-v1-7.onnx
+[11/02/2021-09:15:15] [I] Model: resnet/model/resnet50-v1.onnx
 [11/02/2021-09:15:15] [I] Output:
 [11/02/2021-09:15:15] [I] === Build Options ===
 [11/02/2021-09:15:15] [I] Max batch: explicit
@@ -61,7 +61,7 @@
 [11/02/2021-09:15:16] [I] Memory Clock Rate: 1.215 GHz
 [11/02/2021-09:15:16] [I]
 ----------------------------------------------------------------
-Input filename:   vision/classification/resnet/model/resnet50-v1-7.onnx
+Input filename:   resnet/model/resnet50-v1.onnx
 ONNX IR version:  0.0.3
 Opset version:    8
 Producer name:
@@ -101,4 +101,4 @@ Doc string:
 [11/02/2021-09:17:09] [I] median: 0.5 ms
 [11/02/2021-09:17:09] [I] percentile: 0.5 ms at 99%
 [11/02/2021-09:17:09] [I] total compute time: 2.96622 s
-&&&& PASSED TensorRT.trtexec # trtexec --batch=32 --iterations=1024 --workspace=1024 --percentile=99 --onnx=vision/classification/resnet/model/resnet50-v1-7.onnx --int8
+&&&& PASSED TensorRT.trtexec # trtexec --batch=32 --iterations=1024 --workspace=1024 --percentile=99 --onnx=resnet/model/resnet50-v1.onnx --int8
