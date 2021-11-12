@@ -6,6 +6,7 @@
 import re
 from pathlib import Path
 
+import torch.hub
 import torch.onnx
 import torchvision.models
 
@@ -37,7 +38,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             'vgg16',
             'vgg19',
         ]
-        self.__model_cache_path = Path.home() / '.cache/torch/hub/checkpoints'
+        self.__model_cache_path = Path(torch.hub.get_dir()) / 'checkpoints'
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
