@@ -43,7 +43,7 @@ class Monitor(multiprocessing.Process):
         Return:
             True if _preprocess() succeed.
         """
-        if self._container_name != None:
+        if self._container_name is not None:
             output = run_command('docker ps -qf name={}'.format(self._container_name))
             if output.returncode != 0:
                 logger.error(
@@ -72,7 +72,7 @@ class Monitor(multiprocessing.Process):
                 self._net_file = '/proc/{}/net/dev'.format(container_pid)
             except BaseException as e:
                 logger.error(
-                    'Faild to get the cpu/mem/net file - container: {}, error message'.format(
+                    'Faild to get the cpu/mem/net file - container: {}, error message: {}'.format(
                         self._container_name, str(e)
                     )
                 )

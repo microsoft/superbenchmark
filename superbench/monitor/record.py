@@ -6,10 +6,8 @@
 import json
 import numbers
 
-from superbench.common.utils import logger
 
-
-class MonitorRecord(object):
+class MonitorRecord:
     """Record class to save all monitoring data."""
     def __init__(self):
         """Constructor."""
@@ -32,66 +30,6 @@ class MonitorRecord(object):
         """Decoration function to access __cpu_usage."""
         return self.__cpu_usage
 
-    @property
-    def mem_used(self):
-        """Decoration function to access __mem_used."""
-        return self.__mem_used
-
-    @property
-    def mem_total(self):
-        """Decoration function to access __mem_total."""
-        return self.__mem_total
-
-    @property
-    def gpu_usage(self):
-        """Decoration function to access __gpu_usage."""
-        return self.__gpu_usage
-
-    @property
-    def gpu_temperature(self):
-        """Decoration function to access __gpu_temperature."""
-        return self.__gpu_temperature
-
-    @property
-    def gpu_power_limit(self):
-        """Decoration function to access __gpu_power_limit."""
-        return self.__gpu_power_limit
-
-    @property
-    def gpu_mem_used(self):
-        """Decoration function to access __gpu_mem_used."""
-        return self.__gpu_mem_used
-
-    @property
-    def gpu_mem_total(self):
-        """Decoration function to access __gpu_mem_total."""
-        return self.__gpu_mem_total
-
-    @property
-    def gpu_corrected_ecc(self):
-        """Decoration function to access __gpu_corrected_ecc."""
-        return self.__gpu_corrected_ecc
-
-    @property
-    def gpu_uncorrected_ecc(self):
-        """Decoration function to access __gpu_uncorrected_ecc."""
-        return self.__gpu_uncorrected_ecc
-
-    @property
-    def gpu_remap_info(self):
-        """Decoration function to access __gpu_remap_info."""
-        return self.__gpu_remap_info
-
-    @property
-    def net_receive(self):
-        """Decoration function to access __net_receive."""
-        return self.__net_receive
-
-    @property
-    def net_transmit(self):
-        """Decoration function to access __net_transmit."""
-        return self.__net_transmit
-
     @cpu_usage.setter
     def cpu_usage(self, usage):
         """Set the cpu usage.
@@ -100,6 +38,11 @@ class MonitorRecord(object):
             usage (float): cpu usage.
         """
         self.__cpu_usage = usage
+
+    @property
+    def mem_used(self):
+        """Decoration function to access __mem_used."""
+        return self.__mem_used
 
     @mem_used.setter
     def mem_used(self, mem_used):
@@ -110,6 +53,11 @@ class MonitorRecord(object):
         """
         self.__mem_used = mem_used
 
+    @property
+    def mem_total(self):
+        """Decoration function to access __mem_total."""
+        return self.__mem_total
+
     @mem_total.setter
     def mem_total(self, mem_total):
         """Set the total host memory, unit: MB.
@@ -118,6 +66,11 @@ class MonitorRecord(object):
             mem_total (float): total host memory.
         """
         self.__mem_total = mem_total
+
+    @property
+    def gpu_usage(self):
+        """Decoration function to access __gpu_usage."""
+        return self.__gpu_usage
 
     @gpu_usage.setter
     def gpu_usage(self, gpu_usage):
@@ -128,6 +81,11 @@ class MonitorRecord(object):
         """
         self.__gpu_usage = gpu_usage
 
+    @property
+    def gpu_temperature(self):
+        """Decoration function to access __gpu_temperature."""
+        return self.__gpu_temperature
+
     @gpu_temperature.setter
     def gpu_temperature(self, gpu_temperature):
         """Set the gpu temperature, unit: Celsius.
@@ -137,14 +95,24 @@ class MonitorRecord(object):
         """
         self.__gpu_temperature = gpu_temperature
 
+    @property
+    def gpu_power_limit(self):
+        """Decoration function to access __gpu_power_limit."""
+        return self.__gpu_power_limit
+
     @gpu_power_limit.setter
     def gpu_power_limit(self, gpu_power_limit):
         """Set the gpu power limit, unit: Watt.
 
         Args:
-            gpu_power (list): list of gpu power limit.
+            gpu_power_limit (list): list of gpu power limit.
         """
         self.__gpu_power_limit = gpu_power_limit
+
+    @property
+    def gpu_mem_used(self):
+        """Decoration function to access __gpu_mem_used."""
+        return self.__gpu_mem_used
 
     @gpu_mem_used.setter
     def gpu_mem_used(self, gpu_mem_used):
@@ -155,6 +123,11 @@ class MonitorRecord(object):
         """
         self.__gpu_mem_used = gpu_mem_used
 
+    @property
+    def gpu_mem_total(self):
+        """Decoration function to access __gpu_mem_total."""
+        return self.__gpu_mem_total
+
     @gpu_mem_total.setter
     def gpu_mem_total(self, gpu_mem_total):
         """Set the total gpu memory, unit: MB.
@@ -163,6 +136,11 @@ class MonitorRecord(object):
             gpu_mem_total (list): list of total gpu memory.
         """
         self.__gpu_mem_total = gpu_mem_total
+
+    @property
+    def gpu_corrected_ecc(self):
+        """Decoration function to access __gpu_corrected_ecc."""
+        return self.__gpu_corrected_ecc
 
     @gpu_corrected_ecc.setter
     def gpu_corrected_ecc(self, gpu_corrected_ecc):
@@ -173,6 +151,11 @@ class MonitorRecord(object):
         """
         self.__gpu_corrected_ecc = gpu_corrected_ecc
 
+    @property
+    def gpu_uncorrected_ecc(self):
+        """Decoration function to access __gpu_uncorrected_ecc."""
+        return self.__gpu_uncorrected_ecc
+
     @gpu_uncorrected_ecc.setter
     def gpu_uncorrected_ecc(self, gpu_uncorrected_ecc):
         """Set the count of uncorrected (double bit) ecc error.
@@ -181,6 +164,11 @@ class MonitorRecord(object):
             gpu_uncorrected_ecc (list): list of gpu uncorrected ecc error.
         """
         self.__gpu_uncorrected_ecc = gpu_uncorrected_ecc
+
+    @property
+    def gpu_remap_info(self):
+        """Decoration function to access __gpu_remap_info."""
+        return self.__gpu_remap_info
 
     @gpu_remap_info.setter
     def gpu_remap_info(self, gpu_remap_info):
@@ -191,6 +179,11 @@ class MonitorRecord(object):
         """
         self.__gpu_remap_info = gpu_remap_info
 
+    @property
+    def net_receive(self):
+        """Decoration function to access __net_receive."""
+        return self.__net_receive
+
     @net_receive.setter
     def net_receive(self, net_receive):
         """Set the network receive bandwidth, unit: Bytes/s.
@@ -199,6 +192,11 @@ class MonitorRecord(object):
             net_receive (dict): receive bandwidth for all devices.
         """
         self.__net_receive = net_receive
+
+    @property
+    def net_transmit(self):
+        """Decoration function to access __net_transmit."""
+        return self.__net_transmit
 
     @net_transmit.setter
     def net_transmit(self, net_transmit):
