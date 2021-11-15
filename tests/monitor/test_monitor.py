@@ -3,7 +3,6 @@
 
 """Tests for Monitor module."""
 
-import json
 import numbers
 
 from tests.helper import decorator
@@ -15,9 +14,9 @@ from superbench.monitor import MonitorRecord
 def test_monitor():
     """Test the module Monitor."""
     monitor = Monitor(None, 1, 10, 'file')
-    monitor._preprocess()
+    monitor._Monitor__preprocess()
     record = MonitorRecord()
-    monitor._sample_host_metrics(record)
+    monitor._Monitor__sample_host_metrics(record)
     assert (isinstance(record.cpu_usage, numbers.Number))
     assert (record.net_receive)
     assert (record.net_transmit)
@@ -28,7 +27,7 @@ def test_monitor():
         assert ('_transmit_bw' in key)
         isinstance(value, numbers.Number)
 
-    monitor._sample_gpu_metrics(record)
+    monitor._Monitor__sample_gpu_metrics(record)
     gpu_list_metrics = [
         record.gpu_usage, record.gpu_temperature, record.gpu_power_limit, record.gpu_mem_used, record.gpu_mem_total,
         record.gpu_corrected_ecc, record.gpu_uncorrected_ecc

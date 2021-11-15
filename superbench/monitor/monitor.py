@@ -26,29 +26,29 @@ class Monitor(multiprocessing.Process):
             output_file (str): output file in jsonline format.
         """
         multiprocessing.Process.__init__(self)
-        self._container_name = container_name
-        self._sample_duration = sample_duration
-        self._sample_freq = sample_freq
-        self._output_file = output_file
+        self.__container_name = container_name
+        self.__sample_duration = sample_duration
+        self.__sample_freq = sample_freq
+        self.__output_file = output_file
 
-        self._scheduler = sched.scheduler(time.time, time.sleep)
-        self._running = multiprocessing.Value('i', 0)
+        self.__scheduler = sched.scheduler(time.time, time.sleep)
+        self.__running = multiprocessing.Value('i', 0)
 
-        self._online_cpus = os.sysconf(os.sysconf_names['SC_NPROCESSORS_ONLN'])
-        self._unit_MiByte = 1024 * 1024 * 1.0
+        self.__online_cpus = os.sysconf(os.sysconf_names['SC_NPROCESSORS_ONLN'])
+        self.__unit_MiByte = 1024 * 1024 * 1.0
 
-    def _preprocess(self):
+    def __preprocess(self):
         """Preprocess/preparation operations before the monitoring.
 
         Return:
-            True if _preprocess() succeed.
+            True if __preprocess() succeed.
         """
-        if self._container_name is not None:
-            output = run_command('docker ps -qf name={}'.format(self._container_name))
+        if self.__container_name is not None:
+            output = run_command('docker ps -qf name={}'.format(self.__container_name))
             if output.returncode != 0:
                 logger.error(
                     'Failed to get the container id - container name: {}, error message: {}'.format(
-                        self._container_name, output.stderr
+                        self.__container_name, output.stderr
                     )
                 )
                 return False
@@ -73,7 +73,7 @@ class Monitor(multiprocessing.Process):
             except BaseException as e:
                 logger.error(
                     'Faild to get the cpu/mem/net file - container: {}, error message: {}'.format(
-                        self._container_name, str(e)
+                        self.__container_name, str(e)
                     )
                 )
                 return False
@@ -81,6 +81,8 @@ class Monitor(multiprocessing.Process):
             self._cpu_file = '/sys/fs/cgroup/cpuacct/cpuacct.stat'
             self._mem_file = '/sys/fs/cgroup/memory/memory.usage_in_bytes'
             self._net_file = '/proc/net/dev'
+
+        self._output_handler = open(self.__output_file, 'a')
 
         return True
 
@@ -90,59 +92,64 @@ class Monitor(multiprocessing.Process):
         Return:
             True if launching the process succeed.
         """
-        try:
-            logger.info('Start monitoring.')
-            self._running.value = 1
-            self._output_handler = open(self._output_file, 'a')
-            self._sample()
-            self._scheduler.run()
-        except BaseException as e:
-            logger.error('Failed to launch the monitor process - error message: {}'.format(str(e)))
-            self._running.value = 0
-            return False
+        if self.__running.value == 0:
+            if not self.__preprocess():
+                return False
+
+            try:
+                logger.info('Start monitoring.')
+                self.__running.value = 1
+                self.__sample()
+                self.__scheduler.run()
+            except BaseException as e:
+                logger.error('Failed to launch the monitor process - error message: {}'.format(str(e)))
+                self.stop()
+                return False
+        else:
+            logger.error('Monitor is still running')
 
         return True
 
     def stop(self):
         """Method stopping the process’s activity."""
-        self._running.value = 0
-        list(map(self._scheduler.cancel, self._scheduler.queue))
+        self.__running.value = 0
+        list(map(self.__scheduler.cancel, self.__scheduler.queue))
         self.join()
         self._output_handler.close()
 
-    def _sample(self):
+    def __sample(self):
         """Method sampling system metrics."""
-        if self._running.value == 1:
-            self._scheduler.enter(self._sample_freq, 1, self._sample, ())
+        if self.__running.value == 1:
+            self.__scheduler.enter(self.__sample_freq, 1, self.__sample, ())
             # Sampling
             record = MonitorRecord()
-            self._sample_host_metrics(record)
-            self._sample_gpu_metrics(record)
+            self.__sample_host_metrics(record)
+            self.__sample_gpu_metrics(record)
             self._output_handler.write('{}\n'.format(record.to_string))
 
-    def _sample_host_metrics(self, record):
+    def __sample_host_metrics(self, record):
         """Method sampling the host metrics.
 
         Args:
             record (MonitorRecord): record instance to save the metrics.
         """
         # First round of capturing.
-        system_ticks_s = self._get_total_cpu_ticks()
-        container_ticks_s = self._get_process_cpu_ticks()
+        system_ticks_s = self.__get_total_cpu_ticks()
+        container_ticks_s = self.__get_process_cpu_ticks()
         start_time = time.time()
-        net_bytes_s = self._get_network_bytes()
+        net_bytes_s = self.__get_network_bytes()
 
-        time.sleep(self._sample_duration)
+        time.sleep(self.__sample_duration)
 
         # Second round of capturing.
-        system_ticks_e = self._get_total_cpu_ticks()
-        container_ticks_e = self._get_process_cpu_ticks()
+        system_ticks_e = self.__get_total_cpu_ticks()
+        container_ticks_e = self.__get_process_cpu_ticks()
         end_time = time.time()
-        net_bytes_e = self._get_network_bytes()
+        net_bytes_e = self.__get_network_bytes()
 
         # Calculate CPU usage.
         cpu_usage = (container_ticks_e -
-                     container_ticks_s) * 1.0 / (system_ticks_e - system_ticks_s) * self._online_cpus * 100
+                     container_ticks_s) * 1.0 / (system_ticks_e - system_ticks_s) * self.__online_cpus * 100
         record.cpu_usage = cpu_usage
 
         # Calculate network bandwidth.
@@ -151,14 +158,14 @@ class Monitor(multiprocessing.Process):
         for device in net_bytes_s:
             net_receive[
                 '{}_receive_bw'.format(device)
-            ] = ((net_bytes_e[device][0] - net_bytes_s[device][0]) / (end_time - start_time) / self._unit_MiByte)
+            ] = ((net_bytes_e[device][0] - net_bytes_s[device][0]) / (end_time - start_time) / self.__unit_MiByte)
             net_transmit[
                 '{}_transmit_bw'.format(device)
-            ] = ((net_bytes_e[device][1] - net_bytes_s[device][1]) / (end_time - start_time) / self._unit_MiByte)
+            ] = ((net_bytes_e[device][1] - net_bytes_s[device][1]) / (end_time - start_time) / self.__unit_MiByte)
         record.net_receive = net_receive
         record.net_transmit = net_transmit
 
-    def _sample_gpu_metrics(self, record):
+    def __sample_gpu_metrics(self, record):
         """Method sampling the gpu metrics.
 
         Args:
@@ -195,7 +202,7 @@ class Monitor(multiprocessing.Process):
         record.gpu_uncorrected_ecc = gpu_uncorrected_ecc
         record.gpu_remap_info = gpu_remap_info
 
-    def _get_total_cpu_ticks(self):
+    def __get_total_cpu_ticks(self):
         """Method to get the total cpu ticks.
 
         Return:
@@ -211,11 +218,11 @@ class Monitor(multiprocessing.Process):
                             total_clock_ticks += int(item)
                         return total_clock_ticks
         except BaseException as e:
-            logger.error('Failed to read total cpu ticks infomation - error message: {}'.format(str(e)))
+            logger.error('Failed to read total cpu ticks information - error message: {}'.format(str(e)))
 
         return None
 
-    def _get_process_cpu_ticks(self):
+    def __get_process_cpu_ticks(self):
         """Method to get the process cpu ticks.
 
         Return:
@@ -233,11 +240,11 @@ class Monitor(multiprocessing.Process):
                         system_time = int(items[1])
                 return user_time + system_time
         except BaseException as e:
-            logger.error('Failed to read process cpu ticks infomation - error message: {}'.format(str(e)))
+            logger.error('Failed to read process cpu ticks information - error message: {}'.format(str(e)))
 
         return None
 
-    def _get_network_bytes(self):
+    def __get_network_bytes(self):
         """Method to get the network traffic information, unit: bytes.
 
         Return:
@@ -256,6 +263,6 @@ class Monitor(multiprocessing.Process):
                         net_info[items[0].strip()[:-1]] = [receive_bytes, transmit_bytes]
             return net_info
         except BaseException as e:
-            logger.error('Failed to read network traffic infomation - error message: {}'.format(str(e)))
+            logger.error('Failed to read network traffic information - error message: {}'.format(str(e)))
 
         return None
