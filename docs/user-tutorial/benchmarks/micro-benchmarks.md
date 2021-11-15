@@ -66,6 +66,23 @@ TODO
 
 TODO
 
+### `tensorrt-inference`
+
+#### Introduction
+
+Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.nvidia.com/tensorrt).
+
+#### Metrics
+
+| Name                                      | Unit      | Description                                                                                              |
+|-------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|
+| tensorrt-inference/gpu_lat_ms_mean        | time (ms) | The mean GPU latency to execute the kernels for a query.                                                 |
+| tensorrt-inference/gpu_lat_ms_99          | time (ms) | The 99th percentile GPU latency to execute the kernels for a query.                                      |
+| tensorrt-inference/host_lat_ms_mean       | time (ms) | The mean H2D, GPU, and D2H latency to execute the kernels for a query.                                   |
+| tensorrt-inference/host_lat_ms_99         | time (ms) | The 99th percentile H2D, GPU, and D2H latency to execute the kernels for a query.                        |
+| tensorrt-inference/end_to_end_lat_ms_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
+| tensorrt-inference/end_to_end_lat_ms_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
+
 ## Communication Benchmarks
 
 ### `mem-bw`
@@ -129,6 +146,52 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 | rccl-bw/${operation}_${msg_size}_time  | time (us)        | RCCL operation lantency with given message size.            |
 | rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
 | rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
+
+### `tcp-connectivity`
+
+#### Introduction
+
+Test the TCP connectivity between current node and nodes in the hostfile,
+performed by [tcping](https://github.com/zhengxiaowai/tcping)
+
+#### Metrics
+
+| Metrics                                      | Unit     | Description                                                                          |
+| -------------------------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| tcp-connectivity/Successed_${hostname/ip}    | count    | successed times of tcp connections between current node and other nodes              |
+| tcp-connectivity/Failed_${hostname/ip}       | count    | failed times of tcp connections between current node and other nodes                 |
+| tcp-connectivity/Success_Rate_${hostname/ip} | count    | success rate(successed/total) of tcp connection between current node and other nodes |
+| tcp-connectivity/Minimum_${hostname/ip}      | time(ms) | mininum latency of tcp connections between current node and other nodes              |
+| tcp-connectivity/Maximum_${hostname/ip}      | time(ms) | maximum latency of tcp connections between current node and other nodes              |
+| tcp-connectivity/Average_${hostname/ip}      | time(ms) | average latency of tcp connections between current node and other nodes              |
+
+### `gpcnet-network-test` / `gpcnet-network-load-test`
+
+#### Introduction
+
+Distributed test, test the global network performance and congestion,
+performed by [GPCNET](https://github.com/netbench/GPCNET)
+
+gpcnet-network-test: Full system network tests in random and natural ring, alltoall and allreduce, at least 2 nodes
+
+gpcnet-network-load-test: Select full system network tests run with four congestors to measure network congestion or contention, at least 10 nodes
+
+ - test title: Isolated Network Tests, Isolated Congestion Tests, Network Tests running with Congestion Tests ( RR Two-sided Lat Network Test), Network Tests running with Congestion Tests (RR Two-sided BW+Sync Network Test), Network Tests running with Congestion Tests ( Multiple Allreduce Network Test), Network Tests running with Congestion Tests - Key Results
+ - supporting network tests: RR Two-sided Lat (8 B), RR Two-sided BW+Sync (131072 B), Multiple Allreduce (8 B)
+ - supporting congetors: Alltoall (4096 B), Two-sided Incast (4096 B), Put Incast (4096 B), Get Bcast (4096 B)
+
+#### Metrics
+
+| Metrics                                                             | Unit                  | Description                                                                                                                                                                |
+| ------------------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| {benchmark_name}/${test_title}_RRTwo-sidedLat(8B)_${stat}           | time(usec)            | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
+| {benchmark_name}/${test_title}_RRTwo-sidedBW+Sync(131072B)_${stat}  | MiB/s/rank            | fstatistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
+| {benchmark_name}/${test_title}_MultipleAllreduce(8B)_${stat}        | time(usec)            | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
+| {benchmark_name}/${test_title}_GetBcast(4096B)_${stat}              | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
+| {benchmark_name}/${test_title}_PutIncast(4096B)_${stat}             | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
+| {benchmark_name}/${test_title}_Two-sidedIncast(4096B)_${stat}       | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
+| {benchmark_name}/${test_title}_Alltoall(4096B)_${stat}              | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
+| gpcnet-network-load-test/${test_title}_${network_test_algo}_${stat} | times(x)              | summary about congestion impact factor of every network test algorithm                                                                                                     |
 
 ## Computation-communication Benchmarks
 
