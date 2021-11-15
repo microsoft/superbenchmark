@@ -6,7 +6,7 @@
 import os
 
 from superbench.common.utils import logger
-import superbench.common.utils.device_manager as dm
+from superbench.common.utils import device_manager as dm
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import GemmFlopsBenchmark
 

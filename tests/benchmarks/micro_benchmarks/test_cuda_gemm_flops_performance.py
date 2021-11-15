@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from tests.helper import decorator
-import superbench.common.utils.device_manager as dm
+from superbench.common.utils import device_manager as dm
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, BenchmarkType
 
 

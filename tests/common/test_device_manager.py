@@ -7,7 +7,7 @@ import numbers
 from unittest import mock
 
 from tests.helper import decorator
-import superbench.common.utils.device_manager as dm
+from superbench.common.utils import device_manager as dm
 
 
 @decorator.cuda_test
