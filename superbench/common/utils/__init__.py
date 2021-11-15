@@ -8,7 +8,7 @@ from superbench.common.utils.file_handler import rotate_dir, create_sb_output_di
 from superbench.common.utils.lazy_import import LazyImport
 from superbench.common.utils.process import run_command
 
-nv_helper = LazyImport('superbench.common.utils.nvidia_helper')
+device_manager = LazyImport('superbench.common.utils.device_manager')
 
 __all__ = [
     'LazyImport',
@@ -17,7 +17,7 @@ __all__ = [
     'get_sb_config',
     'logger',
     'network',
-    'nv_helper',
+    'device_manager',
     'rotate_dir',
     'run_command',
 ]
