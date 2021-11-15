@@ -1,0 +1,104 @@
+[11/02/2021-09:15:15] [I] === Model Options ===
+[11/02/2021-09:15:15] [I] Format: ONNX
+[11/02/2021-09:15:15] [I] Model: resnet/model/resnet50-v1.onnx
+[11/02/2021-09:15:15] [I] Output:
+[11/02/2021-09:15:15] [I] === Build Options ===
+[11/02/2021-09:15:15] [I] Max batch: explicit
+[11/02/2021-09:15:15] [I] Workspace: 1024 MiB
+[11/02/2021-09:15:15] [I] minTiming: 1
+[11/02/2021-09:15:15] [I] avgTiming: 8
+[11/02/2021-09:15:15] [I] Precision: FP32+INT8
+[11/02/2021-09:15:15] [I] Calibration: Dynamic
+[11/02/2021-09:15:15] [I] Refit: Disabled
+[11/02/2021-09:15:15] [I] Safe mode: Disabled
+[11/02/2021-09:15:15] [I] Save engine:
+[11/02/2021-09:15:15] [I] Load engine:
+[11/02/2021-09:15:15] [I] Builder Cache: Enabled
+[11/02/2021-09:15:15] [I] NVTX verbosity: 0
+[11/02/2021-09:15:15] [I] Tactic sources: Using default tactic sources
+[11/02/2021-09:15:15] [I] Input(s)s format: fp32:CHW
+[11/02/2021-09:15:15] [I] Output(s)s format: fp32:CHW
+[11/02/2021-09:15:15] [I] Input build shapes: model
+[11/02/2021-09:15:15] [I] Input calibration shapes: model
+[11/02/2021-09:15:15] [I] === System Options ===
+[11/02/2021-09:15:15] [I] Device: 0
+[11/02/2021-09:15:15] [I] DLACore:
+[11/02/2021-09:15:15] [I] Plugins:
+[11/02/2021-09:15:15] [I] === Inference Options ===
+[11/02/2021-09:15:15] [I] Batch: Explicit
+[11/02/2021-09:15:15] [I] Input inference shapes: model
+[11/02/2021-09:15:15] [I] Iterations: 1024
+[11/02/2021-09:15:15] [I] Duration: 3s (+ 200ms warm up)
+[11/02/2021-09:15:15] [I] Sleep time: 0ms
+[11/02/2021-09:15:15] [I] Streams: 1
+[11/02/2021-09:15:15] [I] ExposeDMA: Disabled
+[11/02/2021-09:15:15] [I] Data transfers: Enabled
+[11/02/2021-09:15:15] [I] Spin-wait: Disabled
+[11/02/2021-09:15:15] [I] Multithreading: Disabled
+[11/02/2021-09:15:15] [I] CUDA Graph: Disabled
+[11/02/2021-09:15:15] [I] Separate profiling: Disabled
+[11/02/2021-09:15:15] [I] Skip inference: Disabled
+[11/02/2021-09:15:15] [I] Inputs:
+[11/02/2021-09:15:15] [I] === Reporting Options ===
+[11/02/2021-09:15:15] [I] Verbose: Disabled
+[11/02/2021-09:15:15] [I] Averages: 10 inferences
+[11/02/2021-09:15:15] [I] Percentile: 99
+[11/02/2021-09:15:15] [I] Dump refittable layers:Disabled
+[11/02/2021-09:15:15] [I] Dump output: Disabled
+[11/02/2021-09:15:15] [I] Profile: Disabled
+[11/02/2021-09:15:15] [I] Export timing to JSON file:
+[11/02/2021-09:15:15] [I] Export output to JSON file:
+[11/02/2021-09:15:15] [I] Export profile to JSON file:
+[11/02/2021-09:15:15] [I]
+[11/02/2021-09:15:16] [I] === Device Information ===
+[11/02/2021-09:15:16] [I] Selected Device: A100-SXM4-40GB
+[11/02/2021-09:15:16] [I] Compute Capability: 8.0
+[11/02/2021-09:15:16] [I] SMs: 108
+[11/02/2021-09:15:16] [I] Compute Clock Rate: 1.41 GHz
+[11/02/2021-09:15:16] [I] Device Global Memory: 40536 MiB
+[11/02/2021-09:15:16] [I] Shared Memory per SM: 164 KiB
+[11/02/2021-09:15:16] [I] Memory Bus Width: 5120 bits (ECC enabled)
+[11/02/2021-09:15:16] [I] Memory Clock Rate: 1.215 GHz
+[11/02/2021-09:15:16] [I]
+----------------------------------------------------------------
+Input filename:   resnet/model/resnet50-v1.onnx
+ONNX IR version:  0.0.3
+Opset version:    8
+Producer name:
+Producer version:
+Domain:
+Model version:    0
+Doc string:
+----------------------------------------------------------------
+[11/02/2021-09:15:26] [I] FP32 and INT8 precisions have been specified - more performance might be enabled by additionally specifying --fp16 or --best
+[11/02/2021-09:15:26] [W] [TRT] Calibrator is not being used. Users must provide dynamic range for all tensors that are not Int32.
+[11/02/2021-09:16:39] [I] [TRT] Some tactics do not have sufficient workspace memory to run. Increasing workspace size may increase performance, please check verbose output.
+[11/02/2021-09:17:06] [I] [TRT] Detected 1 inputs and 1 output network tensors.
+[11/02/2021-09:17:06] [I] Engine built in 109.833 sec.
+[11/02/2021-09:17:06] [I] Starting inference
+[11/02/2021-09:17:09] [I] Warmup completed 0 queries over 200 ms
+[11/02/2021-09:17:09] [I] Timing trace has 0 queries over 3.00142 s
+[11/02/2021-09:17:09] [I] Trace averages of 10 runs:
+[11/02/2021-09:17:09] [I] Average on 10 runs - GPU latency: 0.5 ms - Host latency: 0.6 ms (end to end 1.0 ms, enqueue 0.2 ms)
+[11/02/2021-09:17:09] [I] Average on 10 runs - GPU latency: 0.5 ms - Host latency: 0.6 ms (end to end 1.0 ms, enqueue 0.2 ms)
+[11/02/2021-09:17:09] [I] Average on 10 runs - GPU latency: 0.5 ms - Host latency: 0.6 ms (end to end 1.0 ms, enqueue 0.2 ms)
+[11/02/2021-09:17:09] [I] Host Latency
+[11/02/2021-09:17:09] [I] min: 0.6 ms (end to end 1.0 ms)
+[11/02/2021-09:17:09] [I] max: 0.6 ms (end to end 1.0 ms)
+[11/02/2021-09:17:09] [I] mean: 0.6 ms (end to end 1.0 ms)
+[11/02/2021-09:17:09] [I] median: 0.6 ms (end to end 1.0 ms)
+[11/02/2021-09:17:09] [I] percentile: 0.6 ms at 99% (end to end 1.0 ms at 99%)
+[11/02/2021-09:17:09] [I] throughput: 0 qps
+[11/02/2021-09:17:09] [I] walltime: 3.00142 s
+[11/02/2021-09:17:09] [I] Enqueue Time
+[11/02/2021-09:17:09] [I] min: 0.2 ms
+[11/02/2021-09:17:09] [I] max: 0.2 ms
+[11/02/2021-09:17:09] [I] median: 0.2 ms
+[11/02/2021-09:17:09] [I] GPU Compute
+[11/02/2021-09:17:09] [I] min: 0.5 ms
+[11/02/2021-09:17:09] [I] max: 0.5 ms
+[11/02/2021-09:17:09] [I] mean: 0.5 ms
+[11/02/2021-09:17:09] [I] median: 0.5 ms
+[11/02/2021-09:17:09] [I] percentile: 0.5 ms at 99%
+[11/02/2021-09:17:09] [I] total compute time: 2.96622 s
+&&&& PASSED TensorRT.trtexec # trtexec --batch=32 --iterations=1024 --workspace=1024 --percentile=99 --onnx=resnet/model/resnet50-v1.onnx --int8
