@@ -3,6 +3,7 @@
 
 """Tests for MonitorRecord module."""
 
+import re
 import json
 
 from superbench.monitor import MonitorRecord
@@ -38,6 +39,7 @@ def test_monitor_record():
     mr.net_transmit = {'eth0_transmit_bw': 80, 'ib0_transmit_bw': 800}
 
     expected_record = {
+        'time': '2021-11-18 06:24:00',
         'cpu_usage': 80,
         'mem_used': 100,
         'mem_total': 1024,
@@ -158,4 +160,7 @@ def test_monitor_record():
         'eth0_transmit_bw': 80,
         'ib0_transmit_bw': 800
     }
-    assert (json.loads(mr.to_string()) == expected_record)
+
+    result = mr.to_string()
+    result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', '\"2021-11-18 06:24:00\"', result)
+    assert (json.loads(result) == expected_record)

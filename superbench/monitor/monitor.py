@@ -37,6 +37,8 @@ class Monitor(multiprocessing.Process):
         self.__online_cpus = os.sysconf(os.sysconf_names['SC_NPROCESSORS_ONLN'])
         self.__unit_MiByte = 1024 * 1024 * 1.0
 
+        self.__output_handler = open(self.__output_file, 'a')
+
     def __preprocess(self):
         """Preprocess/preparation operations before the monitoring.
 
@@ -82,8 +84,6 @@ class Monitor(multiprocessing.Process):
             self._mem_file = '/sys/fs/cgroup/memory/memory.usage_in_bytes'
             self._net_file = '/proc/net/dev'
 
-        self._output_handler = open(self.__output_file, 'a')
-
         return True
 
     def run(self):
@@ -115,7 +115,7 @@ class Monitor(multiprocessing.Process):
         self.__running.value = 0
         list(map(self.__scheduler.cancel, self.__scheduler.queue))
         self.join()
-        self._output_handler.close()
+        self.__output_handler.close()
 
     def __sample(self):
         """Method sampling system metrics."""
@@ -125,7 +125,8 @@ class Monitor(multiprocessing.Process):
             record = MonitorRecord()
             self.__sample_host_metrics(record)
             self.__sample_gpu_metrics(record)
-            self._output_handler.write('{}\n'.format(record.to_string))
+            self.__output_handler.write('{}\n'.format(record.to_string()))
+            self.__output_handler.flush()
 
     def __sample_host_metrics(self, record):
         """Method sampling the host metrics.
@@ -171,36 +172,18 @@ class Monitor(multiprocessing.Process):
         Args:
             record (MonitorRecord): record instance to save the metrics.
         """
-        gpu_usage = list()
-        gpu_temperature = list()
-        gpu_power_limit = list()
-        gpu_mem_used = list()
-        gpu_mem_total = list()
-        gpu_corrected_ecc = list()
-        gpu_uncorrected_ecc = list()
-        gpu_remap_info = list()
-
         device_count = dm.device_manager.get_device_count()
         for i in range(device_count):
-            gpu_usage.append(dm.device_manager.get_device_utilization(i))
-            gpu_temperature.append(dm.device_manager.get_device_temperature(i))
-            gpu_power_limit.append(dm.device_manager.get_device_power_limit(i))
+            record.gpu_usage.append(dm.device_manager.get_device_utilization(i))
+            record.gpu_temperature.append(dm.device_manager.get_device_temperature(i))
+            record.gpu_power_limit.append(dm.device_manager.get_device_power_limit(i))
             mem_used, mem_total = dm.device_manager.get_device_memory(i)
-            gpu_mem_used.append(mem_used)
-            gpu_mem_total.append(mem_total)
+            record.gpu_mem_used.append(mem_used)
+            record.gpu_mem_total.append(mem_total)
             corrected_ecc, uncorrected_ecc = dm.device_manager.get_device_ecc_error(i)
-            gpu_corrected_ecc.append(corrected_ecc)
-            gpu_uncorrected_ecc.append(uncorrected_ecc)
-            gpu_remap_info.append(dm.device_manager.get_device_row_remapped_info(i))
-
-        record.gpu_usage = gpu_usage
-        record.gpu_temperature = gpu_temperature
-        record.gpu_power_limit = gpu_power_limit
-        record.gpu_mem_used = gpu_mem_used
-        record.gpu_mem_total = gpu_mem_total
-        record.gpu_corrected_ecc = gpu_corrected_ecc
-        record.gpu_uncorrected_ecc = gpu_uncorrected_ecc
-        record.gpu_remap_info = gpu_remap_info
+            record.gpu_corrected_ecc.append(corrected_ecc)
+            record.gpu_uncorrected_ecc.append(uncorrected_ecc)
+            record.gpu_remap_info.append(dm.device_manager.get_device_row_remapped_info(i))
 
     def __get_total_cpu_ticks(self):
         """Method to get the total cpu ticks.

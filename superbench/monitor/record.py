@@ -5,12 +5,14 @@
 
 import json
 import numbers
+from datetime import datetime
 
 
 class MonitorRecord:
     """Record class to save all monitoring data."""
     def __init__(self):
         """Constructor."""
+        self.__time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         self.__cpu_usage = None
         self.__mem_used = None
         self.__mem_total = None
@@ -24,6 +26,11 @@ class MonitorRecord:
         self.__gpu_remap_info = list()
         self.__net_receive = dict()
         self.__net_transmit = dict()
+
+    @property
+    def time(self):
+        """Decoration function to access __time."""
+        return self.__time
 
     @property
     def cpu_usage(self):
@@ -218,7 +225,7 @@ class MonitorRecord:
             # The name of internal member is like '_MonitorRecord__name'.
             # For the result object return to caller, need to reformat the 'name' as key.
             formatted_key = key.split('__')[1]
-            if isinstance(value, numbers.Number):
+            if isinstance(value, numbers.Number) or isinstance(value, str):
                 formatted_obj[formatted_key] = value
             elif isinstance(value, list):
                 for i, item in enumerate(value):
