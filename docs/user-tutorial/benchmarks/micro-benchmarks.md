@@ -101,16 +101,17 @@ or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils
 | mem-bw/D2H_Mem_BW | bandwidth (GB/s) | Device to host copy bandwidth.   |
 | mem-bw/D2D_Mem_BW | bandwidth (GB/s) | Device to device copy bandwidth. |
 
-### `gpu-sm-copy-bw`
+### `gpu-copy-bw`
 
-Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between GPUs, initialized by GPU SM.
+Measure the memory copy bandwidth performed by GPU SM/DMA engine, including device-to-host, host-to-device and device-to-device.
 
 #### Metrics
 
-| Name                | Unit             | Description                                          |
-|---------------------|------------------|------------------------------------------------------|
-| gpu-sm-copy-bw/htod | bandwidth (GB/s) | Host to device copy bandwidth initialized by GPU SM. |
-| gpu-sm-copy-bw/dtoh | bandwidth (GB/s) | Device to host copy bandwidth initialized by GPU SM. |
+| Name | Unit | Description | 
+|---|---|---|
+| cpu\_to\_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth reading from all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs. |
+| gpu[0-9]+\_to\_cpu\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth writing to all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs. |
+| gpu[0-9]+\_to_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth reading from  or writing to all GPUs using DMA engine or GPU SM by all GPUs with peer communication enabled. |
 
 ### `ib-loopback`
 
