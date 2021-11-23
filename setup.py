@@ -138,6 +138,7 @@ setup(
         'colorlog>=4.7.2',
         'jinja2>=2.10.1',
         'joblib>=1.0.1',
+        'jsonlines>=2.0.0',
         'knack>=0.7.2',
         'natsort>=7.1.1',
         'omegaconf==2.0.6',

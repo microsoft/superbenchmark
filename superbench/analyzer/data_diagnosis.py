@@ -148,6 +148,7 @@ class DataDiagnosis():
                         if re.search(rule_metric, metric):
                             full_baseline[metric] = single_benchmark_rules[rule_metric]
                             full_baseline[metric] = self._set_default_criteria(full_baseline[metric], metric)
+                            break
         except Exception as e:
             logger.error('DataDiagnosis: invalid rule file fomat - {}'.format(str(e)))
             return False
