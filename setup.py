@@ -142,7 +142,7 @@ setup(
         'knack>=0.7.2',
         'natsort>=7.1.1',
         'omegaconf==2.0.6',
-        'pandas>=1.2.4',
+        'pandas>=1.2.0',
         'pyyaml>=5.3',
         'tcping>=0.1.1rc1',
         'xmltodict>=0.12.0',
