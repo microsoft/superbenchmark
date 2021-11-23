@@ -1,0 +1,35 @@
+# SuperBench baseline
+version: v0.3
+superbench:
+  enable: null
+  var:
+    default_variance_rule: &default_variance_rule    
+      rules:
+        name: variance
+        condition: -0.05
+    default_value_rule: &default_value_rule
+      rules:
+        name: highervalue
+    return_code_rule: &return_code_rule
+      .*/return_code:
+        criteria: 0
+        <<: *default_value_rule
+
+  benchmarks:
+    kernel-launch:
+        enable: true
+        metrics:
+          kernel-launch/event_overhead:\d+: 
+              criteria: 0.0062818742
+              <<: *default_variance_rule
+          kernel-launch/wall_overhead:\d+: 
+              criteria: 0.0111200617
+              <<: *default_variance_rule
+          <<: *return_code_rule
+    mem-bw:
+        enable: true
+        metrics:
+          mem-bw/H2D_Mem_BW:\d+: 
+              criteria: 25.6
+              <<: *default_variance_rule
+          <<: *return_code_rule
