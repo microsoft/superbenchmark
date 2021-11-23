@@ -3,11 +3,12 @@
 
 """A module for data analysis."""
 
-import jsonlines
 import re
-import yaml
 from pathlib import Path
+
+import jsonlines
 import pandas as pd
+import yaml
 
 from superbench.common.utils import logger
 from superbench.analyzer.rule_op import RuleOp, RuleType
