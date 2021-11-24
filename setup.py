@@ -160,12 +160,16 @@ setup(
             'vcrpy>=4.1.1',
             'yapf>=0.30.0',
         ],
+        'nvidia': ['py3nvml>=0.2.6'],
+        'ort': [
+            'onnx>=1.10.2'
+            'onnxruntime-gpu>=1.9.0',
+        ],
         'torch': [
             'torch>=1.7.0a0',
             'torchvision>=0.8.0a0',
             'transformers>=4.3.3',
         ],
-        'nvidia': ['py3nvml>=0.2.6']
     },
     include_package_data=True,
     entry_points={

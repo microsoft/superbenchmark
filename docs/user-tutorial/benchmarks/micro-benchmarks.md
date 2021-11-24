@@ -83,6 +83,18 @@ Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.n
 | tensorrt-inference/end_to_end_lat_ms_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
 | tensorrt-inference/end_to_end_lat_ms_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
 
+### `ort-inference`
+
+#### Introduction
+
+Inference performance of the torchvision models using ONNXRuntime.
+
+#### Metrics
+
+| Name                                          | Unit      | Description                                               |
+|-----------------------------------------------|-----------|-----------------------------------------------------------|
+| ort-inference/latency_{model}_{precision}     | time (ms) | The mean latency to execute one batch of inference.       |
+
 ## Communication Benchmarks
 
 ### `mem-bw`
