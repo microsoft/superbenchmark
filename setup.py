@@ -162,7 +162,7 @@ setup(
         ],
         'nvidia': ['py3nvml>=0.2.6'],
         'ort': [
-            'onnx>=1.10.2'
+            'onnx>=1.10.2',
             'onnxruntime-gpu>=1.9.0',
         ],
         'torch': [
