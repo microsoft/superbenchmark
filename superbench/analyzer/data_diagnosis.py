@@ -258,7 +258,8 @@ class DataDiagnosis():
             rule_file (str): The path of baseline yaml file
 
         Returns:
-            DataFrame: issued nodes's detailed information
+            data_not_accept_df (DataFrame): issued nodes's detailed information
+            label_df (DataFrame): labels for all nodes
         """
         if len(self._raw_data_df) == 0:
             return False
