@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Model benchmark example for matmul with pytorch.
+"""Model benchmark example for kernel launch overhead.
 
 Commands to run:
   python3 examples/benchmarks/kernel_launch_overhead.py
