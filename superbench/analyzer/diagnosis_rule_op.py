@@ -55,7 +55,7 @@ class RuleOp:
     def variance(cls, val, baseline, rule):
         """Rule op function of variance."""
         pass_rule = True
-        var = 1 - val / baseline
+        var = val / baseline - 1
         if 'condition' not in rule:
             rule['condition'] = -0.05
         if rule['condition'] >= 0:

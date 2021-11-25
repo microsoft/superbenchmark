@@ -21,10 +21,14 @@ superbench:
         metrics:
           kernel-launch/event_overhead:\d+: 
               criteria: 0.0062818742
-              <<: *default_variance_rule
+              rules:
+                name: variance
+                condition: 0.05   
           kernel-launch/wall_overhead:\d+: 
               criteria: 0.0111200617
-              <<: *default_variance_rule
+              rules:
+                name: variance
+                condition: 0.05   
           kernel-launch/return_code:
             criteria: 0
             <<: *default_value_rule

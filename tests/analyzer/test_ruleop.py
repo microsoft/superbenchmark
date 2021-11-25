@@ -20,19 +20,19 @@ class TestRuleOp(unittest.TestCase):
         assert (rule_op == RuleOp.variance)
         # Test - variance
         # condition<0
-        val = 2.5
+        val = 1.5
         baseline = 2
         rule = {'name': 'variance', 'condition': -0.05}
         (pass_rule, var) = rule_op(val, baseline, rule)
         assert (not pass_rule)
         assert (var == -0.25)
-        val = 1
+        val = 3
         (pass_rule, var) = rule_op(val, baseline, rule)
         assert (pass_rule)
         assert (var == 0.5)
         # condition>0
-        val = 1
-        baseline = 2
+        val = 1.5
+        baseline = 1
         rule = {'name': 'variance', 'condition': 0.05}
         (pass_rule, var) = rule_op(val, baseline, rule)
         assert (not pass_rule)
