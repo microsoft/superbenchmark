@@ -25,7 +25,9 @@ superbench:
           kernel-launch/wall_overhead:\d+: 
               criteria: 0.0111200617
               <<: *default_variance_rule
-          <<: *return_code_rule
+          kernel-launch/return_code:
+            criteria: 0
+            <<: *default_value_rule
     mem-bw:
         enable: true
         metrics:

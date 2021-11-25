@@ -278,11 +278,10 @@ class DataDiagnosis():
         data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
         return data_not_accept_df
 
-    def excel_output(self, raw_data_df, data_not_accept_df, output_file):
+    def excel_output(self, data_not_accept_df, output_file):
         """Output the processed results into excel file.
 
         Args:
-            raw_data_df (DataFrame): raw data
             data_not_accept_df (DataFrame): issued nodes's detailed information
             output_file (str): the path of output excel file
         """
@@ -290,6 +289,6 @@ class DataDiagnosis():
         # Check whether writer is valiad
         if not isinstance(writer, pd.ExcelWriter):
             return
-        output_excel.excel_raw_data_output(writer, raw_data_df)
-        output_excel.excel_data_not_accept_output(writer, data_not_accept_df)
+        output_excel.excel_raw_data_output(writer, self._raw_data_df)
+        output_excel.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
         writer.save()

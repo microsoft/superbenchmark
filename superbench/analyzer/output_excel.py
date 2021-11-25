@@ -17,7 +17,7 @@ def excel_raw_data_output(writer, raw_data_df):
         logger.warning('DataDiagnosis: excel_data_output - raw_data_df is empty.')
 
 
-def excel_data_not_accept_output(writer, data_not_accept_df, baselilnes):
+def excel_data_not_accept_output(writer, data_not_accept_df, baselines):
     """Output data_not_accept_df into 'Not Accept' excel page."""
     # Get the xlsxwriter workbook objects and init the color format
     workbook = writer.book
@@ -40,7 +40,7 @@ def excel_data_not_accept_output(writer, data_not_accept_df, baselilnes):
 
             for colums in columns:
                 col_start += 1
-                if baselilnes[colums]['rules']['name'] == 'variance':
+                if baselines[colums]['rules']['name'] == 'variance':
                     worksheet.conditional_format(
                         row_start,
                         col_start,
@@ -52,7 +52,7 @@ def excel_data_not_accept_output(writer, data_not_accept_df, baselilnes):
                         }
                     )    # Apply percent format for the columns whose rules are variance type.
 
-                    if baselilnes[colums]['rules']['condition'] < 0:
+                    if baselines[colums]['rules']['condition'] < 0:
                         symbol = '<='
                     else:
                         symbol = '>='
@@ -64,12 +64,12 @@ def excel_data_not_accept_output(writer, data_not_accept_df, baselilnes):
                         {
                             'type': 'cell',
                             'criteria': symbol,
-                            'value': baselilnes[colums]['rules']['condition'],
+                            'value': baselines[colums]['rules']['condition'],
                             'format': color_format_red
                         }
                     )    # Apply red format if the variance violates the rule.
 
-                elif baselilnes[colums]['rules']['name'] == 'value':
+                elif baselines[colums]['rules']['name'] == 'value':
                     worksheet.conditional_format(
                         row_start,
                         col_start,
@@ -78,7 +78,7 @@ def excel_data_not_accept_output(writer, data_not_accept_df, baselilnes):
                         {
                             'type': 'cell',
                             'criteria': '>',
-                            'value': baselilnes[colums]['criteria'],
+                            'value': baselines[colums]['criteria'],
                             'format': color_format_red
                         }
                     )    # Apply red format if the value violates the rule.

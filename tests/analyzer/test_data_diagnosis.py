@@ -3,6 +3,7 @@
 
 """Tests for DataDiagnosis module."""
 
+import pandas as pd
 import unittest
 import yaml
 from pathlib import Path
@@ -12,20 +13,29 @@ from superbench.analyzer import DataDiagnosis
 
 class TestDataDiagnosis(unittest.TestCase):
     """Test for DataDiagnosis class."""
+    def setUp(self):
+        """Method called to prepare the test fixture."""
+        self.output_file = 'test_summary.xlsx'
+        self.test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
+
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
-        test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
-        p = Path(test_rule_file_fake)
+        p = Path(self.test_rule_file_fake)
+        if p.is_file():
+            p.unlink()
+        p = Path(self.output_file)
         if p.is_file():
             p.unlink()
 
     def test_data_diagnosis(self):
         """Test for rule-based data diagnosis."""
+        # Test - read_raw_data and get_metrics_from_raw_data
+        # Positive case
         test_raw_data = str(Path(__file__).parent.resolve()) + '/test_results.jsonl'
         test_rule_file = str(Path(__file__).parent.resolve()) + '/test_rules.yaml'
         diag1 = DataDiagnosis(test_raw_data)
         assert (len(diag1._raw_data_df) == 3)
-
+        # Negative case
         test_raw_data_fake = str(Path(__file__).parent.resolve()) + '/test_results_fake.jsonl'
         test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
         diag2 = DataDiagnosis(test_raw_data_fake)
@@ -33,12 +43,12 @@ class TestDataDiagnosis(unittest.TestCase):
         diag2._get_metrics_from_raw_data()
         assert (len(diag2._raw_data_df) == 0)
         assert (len(diag2._metrics) == 0)
-
+        # Test - read baseline
         baseline = diag2._read_baseline(test_rule_file_fake)
         assert (not baseline)
         baseline = diag1._read_baseline(test_rule_file)
         assert (baseline)
-
+        # Test - _check_baseline
         false_baselines = [
             {
                 'criteria': 0.05
@@ -74,11 +84,17 @@ class TestDataDiagnosis(unittest.TestCase):
                     'name': 'variance',
                     'condition': -0.05
                 }
+            }, {
+                'rules': {
+                    'name': 'variance',
+                    'condition': -0.05
+                }
             }
         ]
         for baseline in true_baselines:
             assert (diag1._check_baseline(baseline, metric))
-
+        # Test - _get_criteria
+        # Negative case
         assert (diag2._get_criteria(test_rule_file_fake) is False)
         diag2 = DataDiagnosis(test_raw_data)
         p = Path(test_rule_file)
@@ -89,19 +105,19 @@ class TestDataDiagnosis(unittest.TestCase):
         with open(test_rule_file_fake, 'w') as f:
             yaml.dump(baseline, f)
         assert (diag1._get_criteria(test_rule_file_fake) is False)
-
+        # Positive case
         assert (diag1._get_criteria(test_rule_file))
-
+        # Test - hw_issue
         benchmark_list = {'mem-bw', 'bert_models'}
         assert (diag1.hw_issue(benchmark_list))
         benchmark_list = {'tensorrt-inference', 'bert_models', 'ort-inference'}
         assert (diag1.hw_issue(benchmark_list) is False)
-
+        # Test - _run_diagnosis_rules_for_single_node
         (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-01')
         assert (details_row)
         (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-02')
         assert (not details_row)
-
+        # Test - _run_diagnosis_rules
         data_not_accept_df = diag1.run_diagnosis_rules(test_rule_file)
         node = 'sb-validation-01'
         row = data_not_accept_df.loc[node]
@@ -115,4 +131,13 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (row['# of Issues'] == 9)
         assert ('mem-bw' in row['Category'])
         assert ('MissTest' in row['Category'])
+        assert (len(data_not_accept_df) == 2)
+        # Test - excel_output
+        diag1.excel_output(data_not_accept_df, self.output_file)
+        excel_file = pd.ExcelFile(self.output_file)
+        data_sheet_name = 'Raw Data'
+        raw_data_df = excel_file.parse(data_sheet_name)
+        assert (len(raw_data_df) == 3)
+        data_sheet_name = 'Not Accept'
+        data_not_accept_df = excel_file.parse(data_sheet_name)
         assert (len(data_not_accept_df) == 2)
