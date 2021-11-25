@@ -107,10 +107,10 @@ Measure the memory copy bandwidth performed by GPU SM/DMA engine, including devi
 
 #### Metrics
 
-| Name | Unit | Description | 
-|---|---|---|
-| cpu\_to\_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth reading from all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs. |
-| gpu[0-9]+\_to\_cpu\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth writing to all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs. |
+| Name                                                                       | Unit             | Description                                                                                                                | 
+|----------------------------------------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------------------|
+| cpu\_to\_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+      | bandwidth (GB/s) | The bandwidth reading from all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                             |
+| gpu[0-9]+\_to\_cpu\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+      | bandwidth (GB/s) | The bandwidth writing to all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                               |
 | gpu[0-9]+\_to_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth reading from  or writing to all GPUs using DMA engine or GPU SM by all GPUs with peer communication enabled. |
 
 ### `ib-loopback`
