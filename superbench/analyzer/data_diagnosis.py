@@ -3,6 +3,7 @@
 
 """A module for data analysis."""
 
+import numbers
 import re
 from pathlib import Path
 
@@ -11,7 +12,8 @@ import pandas as pd
 import yaml
 
 from superbench.common.utils import logger
-from superbench.analyzer.rule_op import RuleOp, RuleType
+from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
+import superbench.analyzer.output_excel as output_excel
 
 
 class DataDiagnosis():
@@ -91,8 +93,8 @@ class DataDiagnosis():
             baseline = yaml.load(f, Loader=yaml.SafeLoader)
         return baseline
 
-    def _set_default_criteria(self, baseline, metric):
-        """Set the default criteria and rule for the metric if not set.
+    def _check_baseline(self, baseline, metric):
+        """Check the baseline of the metric whether formart is valid.
 
         Args:
             baseline (dict): criteria and rule for the metric
@@ -105,11 +107,16 @@ class DataDiagnosis():
         if 'criteria' not in baseline:
             baseline['criteria'] = self._raw_data_df[metric].mean()
             logger.warning('DataDiagnosis: get_criteria - [{}] use the mean when criteria is not set.'.format(metric))
-        # use variance with -0.05 as the dedault rule if not set
-        if 'rules' not in baseline or (
-            baseline['rules']['name'] == 'variance' and 'condition' not in baseline['rules']
-        ):
-            baseline['rules'] = {'name': 'variance', 'condition': -0.05}
+        # check if criteria is number
+        if not isinstance(baseline['criteria'], numbers.Number):
+            logger.log_and_raise(exception=Exception, msg='{} invalid criteria'.format(metric))
+        # check if rule is supported
+        if not isinstance(DiagnosisRuleType(baseline['rules']['name']), DiagnosisRuleType):
+            logger.log_and_raise(exception=Exception, msg='{} invalid rule name'.format(metric))
+        # check if variance rule is valid
+        if baseline['rules']['name'] == 'variance':
+            if not isinstance(baseline['rules']['condition'], numbers.Number):
+                logger.log_and_raise(exception=Exception, msg='{} invalid variance rule'.format(metric))
         return baseline
 
     def _get_criteria(self, baseline_file):
@@ -148,7 +155,7 @@ class DataDiagnosis():
                     for rule_metric in single_benchmark_rules:
                         if re.search(rule_metric, metric):
                             full_baseline[metric] = single_benchmark_rules[rule_metric]
-                            full_baseline[metric] = self._set_default_criteria(full_baseline[metric], metric)
+                            full_baseline[metric] = self._check_baseline(full_baseline[metric], metric)
                             break
         except Exception as e:
             logger.error('DataDiagnosis: invalid rule file fomat - {}'.format(str(e)))
@@ -160,7 +167,7 @@ class DataDiagnosis():
     def hw_issue(self, benchmark_list):
         """Idendify if the benchmark is classified as hardware issue.
 
-        All benchmarks except models are classified hardware issue.
+        All benchmarks except models and inferences(TensorRT and ORT) are classified hardware issue.
 
         Args:
             benchmark_list (list): list of benchmarks
@@ -171,11 +178,11 @@ class DataDiagnosis():
         if not isinstance(benchmark_list, set):
             return False
         for category in benchmark_list:
-            if 'models' not in category:
+            if 'models' not in category and 'inference' not in category:
                 return True
         return False
 
-    def single_node_diagnosis(self, node):
+    def _run_diagnosis_rules_for_single_node(self, node):
         """Use rules to diagnosis single node data.
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
@@ -209,7 +216,7 @@ class DataDiagnosis():
             else:
                 data = data_row[metric]
                 rule = self._sb_baseline[metric]['rules']
-                rule_op = RuleOp.get_rule_func(RuleType(rule['name']))
+                rule_op = RuleOp.get_rule_func(DiagnosisRuleType(rule['name']))
                 (pass_rule, processed) = rule_op(data, baseline, rule)
                 summary_data_row[metric] = processed
             # label the node as issued one
@@ -240,7 +247,7 @@ class DataDiagnosis():
 
         return (None, None)
 
-    def rule_based_diagnosis(self, rule_file):
+    def run_diagnosis_rules(self, rule_file):
         """Rule-based data diagnosis for multi nodes' raw data.
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
@@ -262,7 +269,7 @@ class DataDiagnosis():
         summary_details_df = pd.DataFrame()
 
         for node in self._raw_data_df.index:
-            (details_row, summary_data_row) = self.single_node_diagnosis(node)
+            (details_row, summary_data_row) = self._run_diagnosis_rules_for_single_node(node)
             if details_row:
                 data_not_accept_df.loc[node] = details_row
                 summary_details_df = summary_details_df.append(summary_data_row)
@@ -271,10 +278,11 @@ class DataDiagnosis():
         data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
         return data_not_accept_df
 
-    def _excel_output(self, data_not_accept_df, output_file):
+    def excel_output(self, raw_data_df, data_not_accept_df, output_file):
         """Output the processed results into excel file.
 
         Args:
+            raw_data_df (DataFrame): raw data
             data_not_accept_df (DataFrame): issued nodes's detailed information
             output_file (str): the path of output excel file
         """
@@ -282,78 +290,6 @@ class DataDiagnosis():
         # Check whether writer is valiad
         if not isinstance(writer, pd.ExcelWriter):
             return
-        self._excel_raw_data_output(writer, self._raw_data_df)
-        self._excel_data_not_accept_output(writer, data_not_accept_df)
+        output_excel.excel_raw_data_output(writer, raw_data_df)
+        output_excel.excel_data_not_accept_output(writer, data_not_accept_df)
         writer.save()
-
-    def _excel_raw_data_output(self, writer, raw_data_df):
-        """Output raw data into 'Raw Data' excel page."""
-        # Output the raw data
-        if isinstance(raw_data_df, pd.DataFrame) and not raw_data_df.empty:
-            raw_data_df.to_excel(writer, 'Raw Data', index=True)
-        else:
-            logger.warning('DataDiagnosis: excel_data_output - raw_data_df is empty.')
-
-    def _excel_data_not_accept_output(self, writer, data_not_accept_df):
-        """Output data_not_accept_df into 'Not Accept' excel page."""
-        # Get the xlsxwriter workbook objects and init the color format
-        workbook = writer.book
-        # Add a format. red fill with dark red text.
-        color_format_red = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006'})
-        # Add a format. Light red fill with red text.
-        color_format_light_red = workbook.add_format({'bg_color': '#ffebed', 'font_color': '#9e292e'})
-        percent_format = workbook.add_format({'num_format': '0.00%'})
-
-        # Output the not accept
-        if isinstance(data_not_accept_df, pd.DataFrame):
-            data_not_accept_df.to_excel(writer, 'Not Accept', index=True)
-            if not data_not_accept_df.empty:
-                row_start = 1
-                row_end = max(row_start, len(data_not_accept_df))
-                fix_table_len = 4
-                columns = data_not_accept_df.columns
-                columns = columns[fix_table_len:]
-                col_start = fix_table_len
-                # Get the xlsxwriter worksheet objects.
-                worksheet = writer.sheets['Not Accept']
-
-                for colums in columns:
-                    col_start += 1
-                    if self._sb_baseline[colums]['rules']['name'] == 'variance':
-                        worksheet.conditional_format(
-                            row_start,
-                            col_start,
-                            row_end,
-                            col_start,    # start_row, start_col, end_row, end_col
-                            {
-                                'type': 'no_blanks',
-                                'format': percent_format
-                            }
-                        )    # Apply percent format for the columns whose rules are variance type.
-                        worksheet.conditional_format(
-                            row_start,
-                            col_start,
-                            row_end,
-                            col_start,    # start_row, start_col, end_row, end_col
-                            {
-                                'type': 'cell',
-                                'criteria': '<=',
-                                'value': self._sb_baseline[colums]['rules']['condition'],
-                                'format': color_format_red
-                            }
-                        )    # Apply red format if the variance violates the rule.
-                        worksheet.conditional_format(
-                            row_start,
-                            1,
-                            row_end,
-                            len(data_not_accept_df.columns),    # start_row, start_col, end_row, end_col
-                            {
-                                'type': 'cell',
-                                'criteria': '<=',
-                                'value': -0.03,
-                                'format': color_format_light_red
-                            }
-                        )    # Apply light red format if the variance is lower than -3%.
-
-        else:
-            logger.warning('DataDiagnosis: excel_data_output - data_not_accept_df is empty.')

@@ -9,7 +9,7 @@ superbench:
         condition: -0.05
     default_value_rule: &default_value_rule
       rules:
-        name: highervalue
+        name: value
     return_code_rule: &return_code_rule
       .*/return_code:
         criteria: 0

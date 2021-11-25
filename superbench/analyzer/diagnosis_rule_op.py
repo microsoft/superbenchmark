@@ -8,24 +8,24 @@ from typing import Dict, Callable
 from superbench.benchmarks.context import Enum
 
 
-class RuleType(Enum):
+class DiagnosisRuleType(Enum):
     """The Enum class representing different rule ops."""
 
     VARIANCE = 'variance'
-    HIGHERTHANVALUE = 'highervalue'
+    HIGHERTHANVALUE = 'value'
 
 
 class RuleOp:
     """RuleOp class to maintain all rule functions."""
 
-    functions: Dict[RuleType, Callable] = dict()
+    functions: Dict[DiagnosisRuleType, Callable] = dict()
 
     @classmethod
     def add_rule_func(cls, rule_type):
         """Add rule fuction.
 
         Args:
-            rule_type (RuleType): The type of rule function.
+            rule_type (DiagnosisRuleType): The type of rule function.
 
         Return:
             decorator (Callable): return the decorator to add the rule function.
@@ -41,7 +41,7 @@ class RuleOp:
         """Get rule fuction by rule_type.
 
         Args:
-            rule_type (RuleType): The type of rule function.
+            rule_type (DiagnosisRuleType): The type of rule function.
 
         Return:
             func (Callable): rule function, None means invalid rule type.
@@ -75,5 +75,5 @@ class RuleOp:
         return (pass_rule, val)
 
 
-RuleOp.add_rule_func(RuleType.VARIANCE)(RuleOp.variance)
-RuleOp.add_rule_func(RuleType.HIGHERTHANVALUE)(RuleOp.higher_than_value)
+RuleOp.add_rule_func(DiagnosisRuleType.VARIANCE)(RuleOp.variance)
+RuleOp.add_rule_func(DiagnosisRuleType.HIGHERTHANVALUE)(RuleOp.higher_than_value)
