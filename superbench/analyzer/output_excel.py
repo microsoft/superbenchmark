@@ -8,17 +8,29 @@ import pandas as pd
 from superbench.common.utils import logger
 
 
-def excel_raw_data_output(writer, raw_data_df):
-    """Output raw data into 'Raw Data' excel page."""
+def excel_raw_data_output(writer, raw_data_df, sheet_name):
+    """Output raw data into 'sheet_name' excel page.
+
+    Args:
+        writer (xlsxwriter): xlsxwriter handle
+        raw_data_df (DataFrame): the DataFrame to output
+        sheet_name (str): sheet name of the excel
+    """
     # Output the raw data
     if isinstance(raw_data_df, pd.DataFrame) and not raw_data_df.empty:
-        raw_data_df.to_excel(writer, 'Raw Data', index=True)
+        raw_data_df.to_excel(writer, sheet_name, index=True)
     else:
-        logger.warning('DataDiagnosis: excel_data_output - raw_data_df is empty.')
+        logger.warning('DataDiagnosis: excel_data_output - {} data_df is empty.'.format(sheet_name))
 
 
 def excel_data_not_accept_output(writer, data_not_accept_df, baselines):
-    """Output data_not_accept_df into 'Not Accept' excel page."""
+    """Output data_not_accept_df into 'Not Accept' excel page.
+
+    Args:
+        writer (xlsxwriter): xlsxwriter handle
+        data_not_accept_df (DataFrame): the DataFrame to output
+        baselines (dict): the baseline to diagnosis data
+    """
     # Get the xlsxwriter workbook objects and init the color format
     workbook = writer.book
     # Add a format. red fill with dark red text.

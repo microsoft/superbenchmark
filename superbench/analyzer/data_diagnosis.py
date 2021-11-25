@@ -267,16 +267,20 @@ class DataDiagnosis():
         summary_columns = ['Hw Issues', '# of Issues', 'Category', 'Issue Details']
         data_not_accept_df = pd.DataFrame(columns=summary_columns)
         summary_details_df = pd.DataFrame()
+        label_df = pd.DataFrame(columns=['label'])
 
         for node in self._raw_data_df.index:
             (details_row, summary_data_row) = self._run_diagnosis_rules_for_single_node(node)
             if details_row:
                 data_not_accept_df.loc[node] = details_row
                 summary_details_df = summary_details_df.append(summary_data_row)
+                label_df.loc[node] = 1
+            else:
+                label_df.loc[node] = 0
 
         data_not_accept_df = data_not_accept_df.join(summary_details_df)
         data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
-        return data_not_accept_df
+        return data_not_accept_df, label_df
 
     def excel_output(self, data_not_accept_df, output_file):
         """Output the processed results into excel file.
@@ -289,6 +293,6 @@ class DataDiagnosis():
         # Check whether writer is valiad
         if not isinstance(writer, pd.ExcelWriter):
             return
-        output_excel.excel_raw_data_output(writer, self._raw_data_df)
+        output_excel.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
         output_excel.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
         writer.save()
