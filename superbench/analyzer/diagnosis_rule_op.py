@@ -56,8 +56,6 @@ class RuleOp:
         """Rule op function of variance."""
         pass_rule = True
         var = val / baseline - 1
-        if 'condition' not in rule:
-            rule['condition'] = -0.05
         if rule['condition'] >= 0:
             if var > rule['condition']:
                 pass_rule = False
