@@ -9,6 +9,7 @@ import yaml
 from pathlib import Path
 
 from superbench.analyzer import DataDiagnosis
+import superbench.analyzer.file_handler as file_handler
 
 
 class TestDataDiagnosis(unittest.TestCase):
@@ -39,14 +40,12 @@ class TestDataDiagnosis(unittest.TestCase):
         test_raw_data_fake = str(Path(__file__).parent.resolve()) + '/test_results_fake.jsonl'
         test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
         diag2 = DataDiagnosis(test_raw_data_fake)
-        diag2._read_raw_data(test_raw_data_fake)
-        diag2._get_metrics_from_raw_data()
         assert (len(diag2._raw_data_df) == 0)
         assert (len(diag2._metrics) == 0)
         # Test - read baseline
-        baseline = diag2._read_baseline(test_rule_file_fake)
+        baseline = file_handler.read_baseline(test_rule_file_fake)
         assert (not baseline)
-        baseline = diag1._read_baseline(test_rule_file)
+        baseline = file_handler.read_baseline(test_rule_file)
         assert (baseline)
         # Test - _check_baseline
         false_baselines = [

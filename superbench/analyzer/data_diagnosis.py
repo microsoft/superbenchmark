@@ -5,15 +5,12 @@
 
 import numbers
 import re
-from pathlib import Path
 
-import jsonlines
 import pandas as pd
-import yaml
 
 from superbench.common.utils import logger
 from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
-import superbench.analyzer.output_excel as output_excel
+import superbench.analyzer.file_handler as file_handler
 
 
 class DataDiagnosis():
@@ -27,29 +24,8 @@ class DataDiagnosis():
         self._raw_data_path = raw_data_path
         self._sb_baseline = {}
         self._metrics = {}
-        self._raw_data_df = pd.DataFrame()
-        self._read_raw_data(self._raw_data_path)
+        self._raw_data_df = file_handler.read_raw_data(self._raw_data_path)
         self._get_metrics_from_raw_data()
-
-    def _read_raw_data(self, raw_data_path):
-        """Read raw data from raw_data_path and store them in self._raw_data_df.
-
-        Args:
-            raw_data_path (str): the path of raw data jsonl file
-        """
-        p = Path(raw_data_path)
-        if not p.is_file():
-            logger.error('DataDiagnosis: invalid raw data path - {}'.format(raw_data_path))
-            return
-        try:
-            with p.open(encoding='utf-8') as f:
-                for single_node_summary in jsonlines.Reader(f):
-                    self._raw_data_df = self._raw_data_df.append(single_node_summary, ignore_index=True)
-            self._raw_data_df = self._raw_data_df.rename(self._raw_data_df['node'])
-            self._raw_data_df = self._raw_data_df.drop(columns=['node'])
-        except Exception as e:
-            self._raw_data_df = None
-            logger.error('DataDiagnosis: invalid raw data fomat - {}'.format(str(e)))
 
     def _get_metrics_from_raw_data(self):
         """Get all metrics by benchmark from raw data."""
@@ -73,25 +49,6 @@ class DataDiagnosis():
             elif isinstance(self._sb_baseline['superbench']['enable'], list):
                 return list(self._sb_baseline['superbench']['enable'])
         return [k for k, v in self._sb_baseline['superbench']['benchmarks'].items() if v['enable']]
-
-    def _read_baseline(self, baseline_file=None):
-        """Read baseline from baseline yaml file.
-
-        Args:
-            baseline_file (str, optional): The path of baseline yaml file. Defaults to None.
-
-        Returns:
-            dict: dict object read from yaml file
-        """
-        default_rule_file = Path(__file__).parent / 'default_rule.yaml'
-        p = Path(baseline_file) if baseline_file else default_rule_file
-        if not p.is_file():
-            logger.error('DataDiagnosis: invalid rule file path - {}'.format(str(p.resolve())))
-            return None
-        baseline = None
-        with p.open() as f:
-            baseline = yaml.load(f, Loader=yaml.SafeLoader)
-        return baseline
 
     def _check_baseline(self, baseline, metric):
         """Check the baseline of the metric whether formart is valid.
@@ -132,7 +89,7 @@ class DataDiagnosis():
         Returns:
             bool: return True if successfully get the criteria, otherwise False.
         """
-        self._sb_baseline = self._read_baseline(baseline_file)
+        self._sb_baseline = file_handler.read_baseline(baseline_file)
         if not self._sb_baseline:
             return False
         full_baseline = {}
@@ -294,6 +251,6 @@ class DataDiagnosis():
         # Check whether writer is valiad
         if not isinstance(writer, pd.ExcelWriter):
             return
-        output_excel.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
-        output_excel.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
+        file_handler.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
+        file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
         writer.save()
