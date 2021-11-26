@@ -29,7 +29,7 @@ def test_ort_inference_performance(mock_ort_session_run, mock_get_dir):
     mock_get_dir.return_value = '/tmp/superbench/'
     benchmark = benchmark_class(
         benchmark_name,
-        parameters='--pytorch_models resnet50 resnet101 --graph_opt_level 1 --precision float16'
+        parameters='--pytorch_models resnet50 --graph_opt_level 1 --precision float16'
         ' --batch_size 64 --num_warmup 128 --num_steps 512'
     )
 
@@ -46,7 +46,7 @@ def test_ort_inference_performance(mock_ort_session_run, mock_get_dir):
         assert ((benchmark._ORTInferenceBenchmark__model_cache_path / file_name).is_file())
 
     # Check parameters specified in BenchmarkContext.
-    assert (benchmark._args.pytorch_models == ['resnet50', 'resnet101'])
+    assert (benchmark._args.pytorch_models == ['resnet50'])
     assert (benchmark._args.graph_opt_level == 1)
     assert (benchmark._args.precision == Precision.FLOAT16)
     assert (benchmark._args.batch_size == 64)

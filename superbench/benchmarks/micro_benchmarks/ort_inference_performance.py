@@ -10,8 +10,6 @@ from pathlib import Path
 import torch
 import torchvision.models
 import numpy as np
-import onnxruntime as ort
-from onnxruntime.quantization import quantize_dynamic
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, Precision
@@ -40,12 +38,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             'vgg16',
             'vgg19',
         ]
-        self.__graph_opt_level = {
-            0: ort.GraphOptimizationLevel.ORT_DISABLE_ALL,
-            1: ort.GraphOptimizationLevel.ORT_ENABLE_BASIC,
-            2: ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
-            3: ort.GraphOptimizationLevel.ORT_ENABLE_ALL,
-        }
+        self.__graph_opt_level = None
         self.__model_cache_path = Path(torch.hub.get_dir()) / 'checkpoints'
 
     def add_parser_arguments(self):
@@ -112,6 +105,14 @@ class ORTInferenceBenchmark(MicroBenchmark):
         if not super()._preprocess():
             return False
 
+        import onnxruntime as ort
+        self.__graph_opt_level = {
+            0: ort.GraphOptimizationLevel.ORT_DISABLE_ALL,
+            1: ort.GraphOptimizationLevel.ORT_ENABLE_BASIC,
+            2: ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
+            3: ort.GraphOptimizationLevel.ORT_ENABLE_ALL,
+        }
+
         for model in self._args.pytorch_models:
             if hasattr(torchvision.models, model):
                 data_type = Precision.FLOAT16.value if self._args.precision == Precision.FLOAT16 \
@@ -125,14 +126,19 @@ class ORTInferenceBenchmark(MicroBenchmark):
                 )
                 if self._args.precision == Precision.INT8:
                     file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision)
+                    # For quantization of ONNXRuntime, refer
+                    # https://onnxruntime.ai/docs/performance/quantization.html#quantization-overview
+                    from onnxruntime.quantization import quantize_dynamic
                     quantize_dynamic(model_path, f'{self.__model_cache_path / file_name}')
             else:
                 logger.error('Cannot find PyTorch model %s.', model)
                 return False
+
         return True
 
     def _benchmark(self):
         """Implementation for benchmarking."""
+        import onnxruntime as ort
         for model in self._args.pytorch_models:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = self.__graph_opt_level[self._args.graph_opt_level]
