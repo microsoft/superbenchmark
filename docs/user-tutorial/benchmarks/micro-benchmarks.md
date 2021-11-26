@@ -192,6 +192,7 @@ gpcnet-network-load-test: Select full system network tests run with four congest
 | {benchmark_name}/${test_title}_Two-sidedIncast(4096B)_${stat}       | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
 | {benchmark_name}/${test_title}_Alltoall(4096B)_${stat}              | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
 | gpcnet-network-load-test/${test_title}_${network_test_algo}_${stat} | times(x)              | summary about congestion impact factor of every network test algorithm                                                                                                     |
+
 ### `ib-traffic`
 
 #### Introduction
@@ -205,8 +206,8 @@ Each row in the config is one round, and all pairs of nodes in a row run ib comm
                                                               
 | Metrics                    | Unit            | Description                                                                                                                                      |
 | -------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| \<COMMAND>-\<LINE>-\<PAIR> | bandwidth(MB/s) | The average bandwidth of ib command(ib_write_bw, ib_send_bw, ib_read_bw) run between the \<pair>th node pair in the \<line>th line of the config |
-| \<COMMAND>-\<LINE>-\<PAIR> | time(usec)      | The max latency of ib command(ib_write_lat, ib_send_lat, ib_read_lat) run between the \<pair>th node pair in the \<line>th line of the config    |
+| ib-traffic/\${command}-\${line}-${pair} | bandwidth(MB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}th node pair in the ${line}th line of the config |
+| ib-traffic/\${command}-\${line}-${pair} | time(usec)      | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}th node pair in the ${line}th line of the config    |
 
 
 ## Computation-communication Benchmarks
