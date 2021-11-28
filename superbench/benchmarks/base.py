@@ -60,7 +60,7 @@ class Benchmark(ABC):
         """
         return self._parser.format_help().strip()
 
-    def parse_args(self):
+    def parse_args(self, ignore_required=False):
         """Parse the arguments.
 
         Return:
@@ -71,8 +71,12 @@ class Benchmark(ABC):
         try:
             args, unknown = self._parser.parse_known_args(self._argv)
         except BaseException as e:
-            logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
-            return False, None, None
+            if ignore_required and isinstance(e, SystemExit):
+                logger.info('Missing required parameter, will ignore the error and skip the args checking.')
+                return True, None, []
+            else:
+                logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
+                return False, None, []
 
         ret = True
         if len(unknown) > 0:
