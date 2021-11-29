@@ -73,7 +73,7 @@ class BenchmarkRegistry:
     def __parse_and_check_args(cls, name, class_def, parameters):
         """Parse and check the predefine parameters.
 
-        If ignore_required is True, and 'required' arguments are not set when register the benchmark,
+        If ignore_invalid is True, and 'required' arguments are not set when register the benchmark,
         the arguments should be provided by user in config and skip the arguments checking.
 
         Args:
@@ -83,7 +83,7 @@ class BenchmarkRegistry:
         """
         benchmark = class_def(name, parameters)
         benchmark.add_parser_arguments()
-        ret, args, unknown = benchmark.parse_args(ignore_required=True)
+        ret, args, unknown = benchmark.parse_args(ignore_invalid=True)
         if not ret or len(unknown) >= 1:
             logger.log_and_raise(
                 TypeError,
@@ -95,8 +95,8 @@ class BenchmarkRegistry:
         else:
             cls.benchmarks[name]['predefine_param'] = dict()
             logger.info(
-                'Benchmark registration - benchmark: {}, missing required parameters, should be provided by user'
-                ' and skip the arguments checking.'.format(name)
+                'Benchmark registration - benchmark: {}, missing required parameters or invalid parameters, '
+                'skip the arguments checking.'.format(name)
             )
 
     @classmethod
