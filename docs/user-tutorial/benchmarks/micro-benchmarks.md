@@ -206,8 +206,8 @@ Each row in the config is one round, and all pairs of nodes in a row run ib comm
                                                               
 | Metrics                    | Unit            | Description                                                                                                                                      |
 | -------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ib-traffic/\${command}-\${line}-${pair} | bandwidth(MB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}th node pair in the ${line}th line of the config |
-| ib-traffic/\${command}-\${line}-${pair} | time(usec)      | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}th node pair in the ${line}th line of the config    |
+| ib-traffic/${command}-${line}-${pair} | bandwidth (MB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config |
+| ib-traffic/${command}-${line}-${pair} | time (us)      | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config    |
 
 
 ## Computation-communication Benchmarks
