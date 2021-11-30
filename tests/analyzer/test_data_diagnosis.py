@@ -16,7 +16,7 @@ class TestDataDiagnosis(unittest.TestCase):
     """Test for DataDiagnosis class."""
     def setUp(self):
         """Method called to prepare the test fixture."""
-        self.output_file = 'test_summary.xlsx'
+        self.output_file = str(Path(__file__).parent.resolve()) + '/results_summary.xlsx'
         self.test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
 
     def tearDown(self):
@@ -34,12 +34,16 @@ class TestDataDiagnosis(unittest.TestCase):
         # Positive case
         test_raw_data = str(Path(__file__).parent.resolve()) + '/test_results.jsonl'
         test_rule_file = str(Path(__file__).parent.resolve()) + '/test_rules.yaml'
-        diag1 = DataDiagnosis(test_raw_data)
+        diag1 = DataDiagnosis()
+        diag1._raw_data_df = file_handler.read_raw_data(test_raw_data)
+        diag1._get_metrics_from_raw_data()
         assert (len(diag1._raw_data_df) == 3)
         # Negative case
         test_raw_data_fake = str(Path(__file__).parent.resolve()) + '/test_results_fake.jsonl'
         test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
-        diag2 = DataDiagnosis(test_raw_data_fake)
+        diag2 = DataDiagnosis()
+        diag2._raw_data_df = file_handler.read_raw_data(test_raw_data_fake)
+        diag2._get_metrics_from_raw_data()
         assert (len(diag2._raw_data_df) == 0)
         assert (len(diag2._metrics) == 0)
         # Test - read baseline
@@ -95,7 +99,9 @@ class TestDataDiagnosis(unittest.TestCase):
         # Test - _get_criteria
         # Negative case
         assert (diag2._get_criteria(test_rule_file_fake) is False)
-        diag2 = DataDiagnosis(test_raw_data)
+        diag2 = DataDiagnosis()
+        diag2._raw_data_df = file_handler.read_raw_data(test_raw_data)
+        diag2._get_metrics_from_raw_data()
         p = Path(test_rule_file)
         with p.open() as f:
             baseline = yaml.load(f, Loader=yaml.SafeLoader)
@@ -135,7 +141,7 @@ class TestDataDiagnosis(unittest.TestCase):
         assert ('MissTest' in row['Category'])
         assert (len(data_not_accept_df) == 2)
         # Test - excel_output
-        diag1.excel_output(data_not_accept_df, self.output_file)
+        diag1.excel_output(data_not_accept_df, str(Path(__file__).parent.resolve()))
         excel_file = pd.ExcelFile(self.output_file)
         data_sheet_name = 'Raw Data'
         raw_data_df = excel_file.parse(data_sheet_name)

@@ -14,18 +14,11 @@ import superbench.analyzer.file_handler as file_handler
 
 
 class DataDiagnosis():
-    """The DataDiagnosis class to process and analyze the sammary data."""
-    def __init__(self, raw_data_path):
-        """Init function using the raw data file path.
-
-        Args:
-            raw_data_path (str): the path of raw data jsonl file.
-        """
-        self._raw_data_path = raw_data_path
+    """The DataDiagnosis class to do the baseline-based data diagnosis."""
+    def __init__(self):
+        """Init function using the raw data file path."""
         self._sb_baseline = {}
         self._metrics = {}
-        self._raw_data_df = file_handler.read_raw_data(self._raw_data_path)
-        self._get_metrics_from_raw_data()
 
     def _get_metrics_from_raw_data(self):
         """Get all metrics by benchmark from raw data."""
@@ -255,14 +248,14 @@ class DataDiagnosis():
             logger.error('DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e)))
         return data_not_accept_df, label_df
 
-    def excel_output(self, data_not_accept_df, output_file):
+    def excel_output(self, data_not_accept_df, output_dir):
         """Output the processed results into excel file.
 
         Args:
             data_not_accept_df (DataFrame): issued nodes's detailed information
-            output_file (str): the path of output excel file
+            output_dir (str): the path of output excel file
         """
-        writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
+        writer = pd.ExcelWriter(output_dir + '/results_summary.xlsx', engine='xlsxwriter')
         # Check whether writer is valiad
         if not isinstance(writer, pd.ExcelWriter):
             logger.error('DataDiagnosis: excel_data_output - invalid file path.')
@@ -270,3 +263,18 @@ class DataDiagnosis():
         file_handler.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
         file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
         writer.save()
+
+    def run(self, raw_data_path, rule_file, output_dir):
+        """Run the data diagnosis and output the results.
+
+        Args:
+            raw_data_path (str): the path of raw data jsonl file.
+            rule_file (str): The path of baseline yaml file
+            output_dir (str): the path of output excel file
+        """
+        self._raw_data_df = file_handler.read_raw_data(raw_data_path)
+        self._get_metrics_from_raw_data()
+        logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
+        data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file)
+        logger.info('DataDiagnosis: Processed finished')
+        self.excel_output(data_not_accept_df, output_dir)
