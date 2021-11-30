@@ -114,37 +114,19 @@ class DataDiagnosis():
 
         return True
 
-    def hw_issue(self, benchmark_list):
-        """Idendify if the benchmark is classified as hardware issue.
-
-        All benchmarks except models and inferences(TensorRT and ORT) are classified hardware issue.
-
-        Args:
-            benchmark_list (list): list of benchmarks
-
-        Returns:
-            bool: return true if it's hardware issue
-        """
-        if not isinstance(benchmark_list, set):
-            return False
-        for category in benchmark_list:
-            if 'models' not in category and 'inference' not in category:
-                return True
-        return False
-
     def _run_diagnosis_rules_for_single_node(self, node):
         """Use rules to diagnosis single node data.
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
         if the node violate any rule, label as issued node and save
-        the 'Hw Issues', '# of Issues', 'Category', 'Issue Details' and processed data of issued node.
+        the '# of Issues', 'Category', 'Issue Details' and processed data of issued node.
 
         Args:
             node (str): the node to do the diagosis
 
         Returns:
             details_row (list): None if the node is not labeled as issued,
-                otherwise details of ['Hw Issues', '# of Issues', 'Category', 'Issue Details']
+                otherwise details of ['# of Issues', 'Category', 'Issue Details']
             summary_data_row (dict): None if the node is not labeled as issued,
                 otherwise data summary of the metrics used in diagnosis
         """
@@ -154,12 +136,11 @@ class DataDiagnosis():
         category_details = []
         categories = set()
         summary_data_row = pd.Series(index=self._sb_baseline.keys(), name=node, dtype=float)
-        cnn_benchmarks = ['densenet_models', 'vgg_models', 'resnet_models']
-        model_label_num = 0
 
         for metric in self._sb_baseline:
             benchmark = metric.split('/')[0]
             baseline = self._sb_baseline[metric]['criteria']
+            rule = self._sb_baseline[metric]['rules']
             pass_rule = True
             # metric not in raw_data not the value is none, miss test
             if metric not in columns or pd.isna(data_row[metric]):
@@ -167,39 +148,36 @@ class DataDiagnosis():
             # check if metric pass the rule
             else:
                 data = data_row[metric]
-                rule = self._sb_baseline[metric]['rules']
                 rule_op = RuleOp.get_rule_func(DiagnosisRuleType(rule['name']))
                 (pass_rule, processed) = rule_op(data, baseline, rule)
                 summary_data_row[metric] = processed
             # label the node as issued one
             if not pass_rule:
+                issue_label = True
                 # use return code to identify 'miss test'
                 if 'return_code' in metric:
                     category_details.append(benchmark + '_miss')
                     categories.add('MissTest')
-                    issue_label = True
                 # use isna to identify miss metrics
-                elif pd.isna(data_row[metric]):
+                elif metric not in columns or pd.isna(data_row[metric]):
                     category_details.append(metric + '_miss')
                     categories.add('MissTest')
-                    issue_label = True
                 else:
-                    category_details.append(metric)
-                    categories.add(benchmark)
-                    if benchmark not in cnn_benchmarks:
-                        issue_label = True
-                    # for cnn models, only 2 model metric issued, label as issue
+                    if rule['name'] == 'value':
+                        category_details.append(metric)
                     else:
-                        model_label_num += 1
-                        if model_label_num >= 2:
-                            issue_label = True
+                        info_str = metric + \
+                            '(B/L: ' + '{:.4f}'.format(baseline) + ' VAL: ' + \
+                            '{:.4f}'.format(data_row[metric]) + ' VAR: ' + \
+                            '{:.4f}'.format(summary_data_row[metric] * 100) + '%)'
+                        category_details.append(info_str)
+                    categories.add(benchmark)
 
         if issue_label:
             # Add category information
             general_cat_str = ','.join(categories)
             details_cat_str = ','.join(category_details)
-            hw_issue_flag = self.hw_issue(categories)
-            details_row = [hw_issue_flag, len(category_details), general_cat_str, details_cat_str]
+            details_row = [len(category_details), general_cat_str, details_cat_str]
             return details_row, summary_data_row
 
         return None, None
@@ -209,7 +187,7 @@ class DataDiagnosis():
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
         if the node violate any rule, label as issued node and save
-        the 'Hw Issues', '# of Issues', 'Category', 'Issue Details' and processed data of issued node.
+        the '# of Issues', 'Category', 'Issue Details' and processed data of issued node.
 
         Args:
             rule_file (str): The path of baseline yaml file
@@ -219,7 +197,7 @@ class DataDiagnosis():
             label_df (DataFrame): labels for all nodes
         """
         try:
-            summary_columns = ['Hw Issues', '# of Issues', 'Category', 'Issue Details']
+            summary_columns = ['# of Issues', 'Category', 'Issue Details']
             data_not_accept_df = pd.DataFrame(columns=summary_columns)
             summary_details_df = pd.DataFrame()
             label_df = pd.DataFrame(columns=['label'])
@@ -255,14 +233,17 @@ class DataDiagnosis():
             data_not_accept_df (DataFrame): issued nodes's detailed information
             output_dir (str): the path of output excel file
         """
-        writer = pd.ExcelWriter(output_dir + '/results_summary.xlsx', engine='xlsxwriter')
-        # Check whether writer is valiad
-        if not isinstance(writer, pd.ExcelWriter):
-            logger.error('DataDiagnosis: excel_data_output - invalid file path.')
-            return
-        file_handler.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
-        file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
-        writer.save()
+        try:
+            writer = pd.ExcelWriter(output_dir + '/results_summary.xlsx', engine='xlsxwriter')
+            # Check whether writer is valiad
+            if not isinstance(writer, pd.ExcelWriter):
+                logger.error('DataDiagnosis: excel_data_output - invalid file path.')
+                return
+            file_handler.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
+            file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
+            writer.save()
+        except Exception as e:
+            logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
 
     def run(self, raw_data_path, rule_file, output_dir):
         """Run the data diagnosis and output the results.
@@ -272,9 +253,12 @@ class DataDiagnosis():
             rule_file (str): The path of baseline yaml file
             output_dir (str): the path of output excel file
         """
-        self._raw_data_df = file_handler.read_raw_data(raw_data_path)
-        self._get_metrics_from_raw_data()
-        logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
-        data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file)
-        logger.info('DataDiagnosis: Processed finished')
-        self.excel_output(data_not_accept_df, output_dir)
+        try:
+            self._raw_data_df = file_handler.read_raw_data(raw_data_path)
+            self._get_metrics_from_raw_data()
+            logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
+            data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file)
+            logger.info('DataDiagnosis: Processed finished')
+            self.excel_output(data_not_accept_df, output_dir)
+        except Exception as e:
+            logger.error('DataDiagnosis: launch failed - {}'.format(str(e)))

@@ -112,11 +112,6 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (diag1._get_criteria(test_rule_file_fake) is False)
         # Positive case
         assert (diag1._get_criteria(test_rule_file))
-        # Test - hw_issue
-        benchmark_list = {'mem-bw', 'bert_models'}
-        assert (diag1.hw_issue(benchmark_list))
-        benchmark_list = {'tensorrt-inference', 'bert_models', 'ort-inference'}
-        assert (diag1.hw_issue(benchmark_list) is False)
         # Test - _run_diagnosis_rules_for_single_node
         (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-01')
         assert (details_row)
@@ -130,13 +125,13 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (label_df.loc['sb-validation-03']['label'] == 1)
         node = 'sb-validation-01'
         row = data_not_accept_df.loc[node]
-        assert (len(row) == 30)
+        assert (len(row) == 29)
         assert (row['# of Issues'] == 1)
         assert (row['Category'] == 'kernel-launch')
-        assert (row['Issue Details'] == 'kernel-launch/event_overhead:0')
+        assert (row['Issue Details'] == 'kernel-launch/event_overhead:0(B/L: 0.0063 VAL: 0.1000 VAR: 1491.8816%)')
         node = 'sb-validation-03'
         row = data_not_accept_df.loc[node]
-        assert (len(row) == 30)
+        assert (len(row) == 29)
         assert (row['# of Issues'] == 9)
         assert ('MissTest' in row['Category'])
         assert (len(data_not_accept_df) == 2)
