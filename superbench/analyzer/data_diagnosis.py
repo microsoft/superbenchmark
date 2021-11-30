@@ -89,11 +89,11 @@ class DataDiagnosis():
         Returns:
             bool: return True if successfully get the criteria, otherwise False.
         """
-        self._sb_baseline = file_handler.read_baseline(baseline_file)
-        if not self._sb_baseline:
-            return False
-        full_baseline = {}
         try:
+            self._sb_baseline = file_handler.read_baseline(baseline_file)
+            if not self._sb_baseline:
+                return False
+            full_baseline = {}
             self._sb_enable_validation_benchmarks = self.__get_validation_enabled_benchmarks()
             benchmark_rules = self._sb_baseline['superbench']['benchmarks']
             for benchmark_name in self._sb_enable_validation_benchmarks:
@@ -114,11 +114,11 @@ class DataDiagnosis():
                             full_baseline[metric] = single_benchmark_rules[rule_metric]
                             full_baseline[metric] = self._check_baseline(full_baseline[metric], metric)
                             break
+            self._sb_baseline = full_baseline
         except Exception as e:
             logger.error('DataDiagnosis: invalid rule file fomat - {}'.format(str(e)))
             return False
 
-        self._sb_baseline = full_baseline
         return True
 
     def hw_issue(self, benchmark_list):
@@ -150,8 +150,10 @@ class DataDiagnosis():
             node (str): the node to do the diagosis
 
         Returns:
-            None if the node is not labeled as issued,
-            otherwise return details for the issued node.
+            details_row (list): None if the node is not labeled as issued,
+                otherwise details of ['Hw Issues', '# of Issues', 'Category', 'Issue Details']
+            summary_data_row (dict): None if the node is not labeled as issued,
+                otherwise data summary of the metrics used in diagnosis
         """
         data_row = self._raw_data_df.loc[node]
         columns = self._raw_data_df.columns
@@ -183,6 +185,11 @@ class DataDiagnosis():
                     category_details.append(benchmark + '_miss')
                     categories.add('MissTest')
                     issue_label = True
+                # use isna to identify miss metrics
+                elif pd.isna(data_row[metric]):
+                    category_details.append(metric + '_miss')
+                    categories.add('MissTest')
+                    issue_label = True
                 else:
                     category_details.append(metric)
                     categories.add(benchmark)
@@ -200,9 +207,9 @@ class DataDiagnosis():
             details_cat_str = ','.join(category_details)
             hw_issue_flag = self.hw_issue(categories)
             details_row = [hw_issue_flag, len(category_details), general_cat_str, details_cat_str]
-            return (details_row, summary_data_row)
+            return details_row, summary_data_row
 
-        return (None, None)
+        return None, None
 
     def run_diagnosis_rules(self, rule_file):
         """Rule-based data diagnosis for multi nodes' raw data.
@@ -218,26 +225,34 @@ class DataDiagnosis():
             data_not_accept_df (DataFrame): issued nodes's detailed information
             label_df (DataFrame): labels for all nodes
         """
-        if len(self._raw_data_df) == 0:
-            return False
-        if not self._get_criteria(rule_file):
-            return False
-        summary_columns = ['Hw Issues', '# of Issues', 'Category', 'Issue Details']
-        data_not_accept_df = pd.DataFrame(columns=summary_columns)
-        summary_details_df = pd.DataFrame()
-        label_df = pd.DataFrame(columns=['label'])
+        try:
+            summary_columns = ['Hw Issues', '# of Issues', 'Category', 'Issue Details']
+            data_not_accept_df = pd.DataFrame(columns=summary_columns)
+            summary_details_df = pd.DataFrame()
+            label_df = pd.DataFrame(columns=['label'])
+            # check raw data whether empty
+            if len(self._raw_data_df) == 0:
+                logger.error('DataDiagnosis: empty raw data')
+                return data_not_accept_df, label_df
+            # get criteria
+            if not self._get_criteria(rule_file):
+                return data_not_accept_df, label_df
+            # run diagnosis rules for each node
+            for node in self._raw_data_df.index:
+                details_row, summary_data_row = self._run_diagnosis_rules_for_single_node(node)
+                if details_row:
+                    data_not_accept_df.loc[node] = details_row
+                    summary_details_df = summary_details_df.append(summary_data_row)
+                    label_df.loc[node] = 1
+                else:
+                    label_df.loc[node] = 0
+            # combine details for issued nodes
+            if len(data_not_accept_df) != 0:
+                data_not_accept_df = data_not_accept_df.join(summary_details_df)
+                data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
 
-        for node in self._raw_data_df.index:
-            (details_row, summary_data_row) = self._run_diagnosis_rules_for_single_node(node)
-            if details_row:
-                data_not_accept_df.loc[node] = details_row
-                summary_details_df = summary_details_df.append(summary_data_row)
-                label_df.loc[node] = 1
-            else:
-                label_df.loc[node] = 0
-
-        data_not_accept_df = data_not_accept_df.join(summary_details_df)
-        data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
+        except Exception as e:
+            logger.error('DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e)))
         return data_not_accept_df, label_df
 
     def excel_output(self, data_not_accept_df, output_file):
@@ -250,6 +265,7 @@ class DataDiagnosis():
         writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
         # Check whether writer is valiad
         if not isinstance(writer, pd.ExcelWriter):
+            logger.error('DataDiagnosis: excel_data_output - invalid file path.')
             return
         file_handler.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
         file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)

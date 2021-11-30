@@ -132,7 +132,6 @@ class TestDataDiagnosis(unittest.TestCase):
         row = data_not_accept_df.loc[node]
         assert (len(row) == 30)
         assert (row['# of Issues'] == 9)
-        assert ('mem-bw' in row['Category'])
         assert ('MissTest' in row['Category'])
         assert (len(data_not_accept_df) == 2)
         # Test - excel_output
