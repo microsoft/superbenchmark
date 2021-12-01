@@ -60,7 +60,7 @@ ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=/opt/rocm --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
-# Build FIO from commit 0313e9 (fio-3.27 tag).
+# Build FIO from commit d83ac9 (fio-3.28 tag).
 fio:
 ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
