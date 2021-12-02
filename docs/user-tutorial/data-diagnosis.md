@@ -6,7 +6,7 @@ id: data-diagnosis
 
 ## Introduction
 
-This tool is to filter the defective machines from thousands of benchmarking results automatically according to rules defined in **baseline file**.
+This tool is to filter the defective machines from thousands of benchmarking results automatically according to rules defined in **Rule file**.
 
 ## Input
 
@@ -16,108 +16,118 @@ The input mainly includes 2 files:
 
     `Tips: the file can be found at ${output-dir}/results-summary.jsonl after each successful run.`
 
- - **baseline file**: It uses YAML format and includes each metrics' rules to filter defective servers for diagnosis.
+ - **Rule file**: It uses YAML format and includes each metrics' rules to filter defective servers for diagnosis.
 
-### Baseline file
+- **baseline file**: json file including the baseline values for the metrics defined in the Rule file.
 
-This section describes how to write rules in **baseline file**.
+### Rule file
+
+This section describes how to write rules in **Rule file**.
 
 The convention is the same with [SuperBench Config File](https://microsoft.github.io/superbenchmark/docs/superbench-config), please view it first.
 
-This baseline file describes the criteria and rules of the metrics used for data diagnosis. They are firstly organized by the benchmark name, and each benchmark includes several metrics or regex. One metric or regex should have criteria and a rule, which indicates that these metrics will use this rule to do the diagnosis.
-
-Here is an overview of baseline file structure:
+Here is an overview of the Rule file structure:
 
 scheme:
 ```yaml
 version: string
 superbench:
-  enable: string | [ string ]
   var:
     ${var_name}: dict
-  benchmarks:
-    ${benchmark_name}:
-      enable: bool
+  rules:
+    ${rule_name}:
+      function: string
+      criteria: string
+      categories: string
       metrics:
-        ${metric|regex}:
-          criteria: number
-          rules: dict
-        ${metric|regex}:
-          criteria: number
-          rules: dict
+        - ${benchmark_name}/regex
+        - ${benchmark_name}/regex
         ...
 ```
 
 example:
 ```yaml
-# SuperBench baseline
+# SuperBench rules
 version: v0.3
 superbench:
-  enable: null
-  var:
-    default_variance_rule: &default_variance_rule
-      rules:
-        name: variance
-        condition: -0.05
-    default_value_rule: &default_value_rule
-      rules:
-        name: value
-    return_code_rule: &return_code_rule
-      .*/return_code:
-        criteria: 0
-        <<: *default_value_rule
-  benchmarks:
-    kernel-launch:
-        enable: true
-        metrics:
-          kernel-launch/event_overhead:\d+:
-              criteria: 0.1
-              rules:
-                name: variance
-                condition: 0.05
-          kernel-launch/wall_overhead:\d+:
-              criteria: 0.1
-              rules:
-                name: variance
-                condition: 0.05
-          <<: *return_code_rule
-    mem-bw:
-        enable: true
-        metrics:
-          mem-bw/H2D_Mem_BW:\d+:
-              criteria: 25.6
-              <<: *default_variance_rule
-          <<: *return_code_rule
+  rules:
+    default:
+      function: value
+      criteria: '>,0'
+      categories: Failed
+      metrics:
+        - kernel-launch/return_code
+        - mem-bw/return_code
+        - nccl-bw/return_code
+        - ib-loopback/return_code
+    rule0:
+    # Rule 0: If KernelLaunch suffers > 5% downgrade, label it as defective
+      function: variance
+      criteria: '>,5%'
+      categories: KernelLaunch
+      metrics:
+        - kernel-launch/event_overhead:\d+
+        - kernel-launch/wall_overhead:\d+
+    rule1:
+    # Rule 1: If H2D_Mem_BW or D2H_Mem_BW test suffers > 5% downgrade, label it as defective
+      function: variance
+      criteria: '<,-5%'
+      categories: Mem
+      metrics:
+        - mem-bw/H2D_Mem_BW:\d+
+        - mem-bw/D2H_Mem_BW:\d+
+    rule2:
+    # Rule 2: If NCCL_BW suffers > 5% downgrade, label it as defective
+      function: variance
+      criteria: '<,-5%'
+      categories: NCCL
+      metircs:
+        - nccl-bw/allreduce_8589934592_busbw:0
+    rule3:
+    # Rule 3: If GPT-2, BERT suffers > 5% downgrade, label it as defective
+      function: variance
+      criteria: '<,-5%'
+      categories: Model
+      metrics:
+        - bert_models/pytorch-bert-base/throughput_train_float(32|16)
+        - bert_models/pytorch-bert-large/throughput_train_float(32|16)
+        - gpt_models/pytorch-gpt-large/throughput_train_float(32|16)
 ```
+
+This Rule file describes the rules used for data diagnosis.
+
+They are firstly organized by the rule name, and each rule mainly includes 4 elements:
 
 #### `metrics`
 
-Metrics can be defined as either metric full name or regex for convenience.
-Each benchmark used for diagnosis must contain a default rule for the metric `${benchmark_name}/return_code` as the above `&return_code_rule` in the example, which is used to identify failed tests.
+The list of metrics for this rule. Each metric is in the format of ${benchmark_name}/regex, you can use regex after the first '/', but to be noticed, the benchmark name can not be a regex.
+
+#### `categories`
+
+The categories belong to this rule.
 
 #### `criteria`
 
-The criteria number for the metric must be a numerical value.
+The criteria used for this rule, which indicate how to compare the data with the baseline value. The format is `${operator},${value}`.
 
-#### `rules`
+- ${operator}: comparison operator, < or >
+- ${value}: the threshold, float or percentage
 
-The rule is used to determine if the raw data meets the criteria for each metric.
+#### `function`
+
+The function used for this rule.
 
 2 types of rules are supported currently:
 
- `variance`:
+- `variance`: the rule is that if the variance between raw data and baseline violates the criteria. variance = (raw data - criteria) / criteria
 
-   - `name`: variance
-   - `condition`: the variance value between raw data and criteria. variance = (raw data - criteria) / criteria
+  For example, if the criteria are `>,5%`, the rule is that if the variance is larger than 5%, it should be defective.
 
-  If the condition is positive, the rule is that the variance should be lower than the condition; if the condition is negative, the rule is that the variance should be larger than the condition.
+- `value`: the rule is that if the raw data violate the criteria.
 
+  For example, if the criteria are `>,0`, the rule is that if the raw data is larger than the 0, it should be defective.
 
-  `value`:
-
-  - `name`: value
-
-  The rule is that the raw data should be smaller than the criteria.
+`Tips: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.`
 
 ## Output
 
@@ -125,8 +135,8 @@ We support different output formats for filtering the defective machines includi
 
 - index: issued node name
 
-- Category: benchmarks in which there is any metric violating the rules
+- Category: categories defined in all violated rules
 
 - Issue Details: all violated metrics including metric data and related rule
 
-- ${metric}: processed results of the metrics defined in the baseline file. If the rule is `variance`, the result of the metric is variance in percentage; if the rule is `value`, the result of the metric is raw data.
+- ${metric}: the data of the metrics defined in the rule file. If the rule is `variance`, the form of the data is variance in percentage; if the rule is `value`, the form of the data is raw data.
