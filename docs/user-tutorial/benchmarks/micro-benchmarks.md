@@ -15,10 +15,10 @@ which is defined as the time range from the beginning of the launch API call to 
 
 #### Metrics
 
-| Name                         | Unit      | Description                          |
-| ---------------------------- | --------- | ------------------------------------ |
-| kernel-launch/event_overhead | time (ms) | Launch latency measured in GPU time. |
-| kernel-launch/wall_overhead  | time (ms) | Launch latency measured in CPU time. |
+| Name                     | Unit      | Description                          |
+| ------------------------ | --------- | ------------------------------------ |
+| kernel-launch/event_time | time (ms) | Launch latency measured in GPU time. |
+| kernel-launch/wall_time  | time (ms) | Launch latency measured in CPU time. |
 
 ### `gemm-flops`
 
@@ -54,9 +54,9 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 #### Metrics
 
-| Name                      | Unit      | Description                    |
-| ------------------------- | --------- | ------------------------------ |
-| pytorch-matmul/nosharding | time (ms) | Time of pure matmul operation. |
+| Name                           | Unit      | Description                    |
+| ------------------------------ | --------- | ------------------------------ |
+| pytorch-matmul/nosharding_time | time (ms) | Time of pure matmul operation. |
 
 ### `cublas-function`
 
@@ -95,11 +95,11 @@ or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils
 
 #### Metrics
 
-| Name       | Unit             | Description                      |
-| ---------- | ---------------- | -------------------------------- |
-| mem-bw/h2d | bandwidth (GB/s) | Host to device copy bandwidth.   |
-| mem-bw/d2h | bandwidth (GB/s) | Device to host copy bandwidth.   |
-| mem-bw/d2d | bandwidth (GB/s) | Device to device copy bandwidth. |
+| Name          | Unit             | Description                      |
+| ------------- | ---------------- | -------------------------------- |
+| mem-bw/h2d_bw | bandwidth (GB/s) | Host to device copy bandwidth.   |
+| mem-bw/d2h_bw | bandwidth (GB/s) | Device to host copy bandwidth.   |
+| mem-bw/d2d_bw | bandwidth (GB/s) | Device to device copy bandwidth. |
 
 ### `gpu-copy-bw`
 
@@ -107,11 +107,11 @@ Measure the memory copy bandwidth performed by GPU SM/DMA engine, including devi
 
 #### Metrics
 
-| Name                                                                       | Unit             | Description                                                                                                                |
-| -------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| cpu\_to\_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+      | bandwidth (GB/s) | The bandwidth reading from all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                             |
-| gpu[0-9]+\_to\_cpu\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+      | bandwidth (GB/s) | The bandwidth writing to all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                               |
-| gpu[0-9]+\_to_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth reading from  or writing to all GPUs using DMA engine or GPU SM by all GPUs with peer communication enabled. |
+| Name                                                                          | Unit             | Description                                                                                                                |
+| ----------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| cpu\_to\_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+_bw      | bandwidth (GB/s) | The bandwidth reading from all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                             |
+| gpu[0-9]+\_to\_cpu\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+_bw      | bandwidth (GB/s) | The bandwidth writing to all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                               |
+| gpu[0-9]+\_to_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+_bw | bandwidth (GB/s) | The bandwidth reading from  or writing to all GPUs using DMA engine or GPU SM by all GPUs with peer communication enabled. |
 
 ### `ib-loopback`
 
@@ -122,11 +122,11 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 
 #### Metrics
 
-| Name                                                    | Unit             | Description                                                  |
-| ------------------------------------------------------- | ---------------- | ------------------------------------------------------------ |
-| ib-loopback/ib\_write\_${msg\_size}\_avg\_ib${ib_index} | bandwidth (MB/s) | InfiniBand loopback write bandwidth with given message size. |
-| ib-loopback/ib\_read\_${msg\_size}\_avg\_ib${ib_index}  | bandwidth (MB/s) | InfiniBand loopback read bandwidth with given message size.  |
-| ib-loopback/ib\_send\_${msg\_size}\_avg\_ib${ib_index}  | bandwidth (MB/s) | InfiniBand loopback send bandwidth with given message size.  |
+| Name                                                       | Unit             | Description                                                  |
+| ---------------------------------------------------------- | ---------------- | ------------------------------------------------------------ |
+| ib-loopback/ib\_write\_${msg\_size}\_avg\_ib${ib_index}_bw | bandwidth (MB/s) | InfiniBand loopback write bandwidth with given message size. |
+| ib-loopback/ib\_read\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (MB/s) | InfiniBand loopback read bandwidth with given message size.  |
+| ib-loopback/ib\_send\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (MB/s) | InfiniBand loopback send bandwidth with given message size.  |
 
 ### `nccl-bw` / `rccl-bw`
 
@@ -162,9 +162,9 @@ performed by [tcping](https://github.com/zhengxiaowai/tcping)
 | tcp-connectivity/successed_${hostname/ip}    | count    | successed times of tcp connections between current node and other nodes              |
 | tcp-connectivity/failed_${hostname/ip}       | count    | failed times of tcp connections between current node and other nodes                 |
 | tcp-connectivity/success_rate_${hostname/ip} | count    | success rate(successed/total) of tcp connection between current node and other nodes |
-| tcp-connectivity/minimum_${hostname/ip}      | time(ms) | mininum latency of tcp connections between current node and other nodes              |
-| tcp-connectivity/maximum_${hostname/ip}      | time(ms) | maximum latency of tcp connections between current node and other nodes              |
-| tcp-connectivity/average_${hostname/ip}      | time(ms) | average latency of tcp connections between current node and other nodes              |
+| tcp-connectivity/minimum_${hostname/ip}_time | time(ms) | mininum latency of tcp connections between current node and other nodes              |
+| tcp-connectivity/maximum_${hostname/ip}_time | time(ms) | maximum latency of tcp connections between current node and other nodes              |
+| tcp-connectivity/average_${hostname/ip}_time | time(ms) | average latency of tcp connections between current node and other nodes              |
 
 ### `gpcnet-network-test` / `gpcnet-network-load-test`
 
@@ -187,11 +187,11 @@ gpcnet-network-load-test: Select full system network tests run with four congest
 | --------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | gpcnet-network-test/rr_two-sided_lat_${stat}        | time(usec)            | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
 | gpcnet-network-test/rr_two-sided_bw_${stat}         | MiB/s/rank            | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
-| gpcnet-network-test/multiple_allreduce_${stat}      | time(usec)            | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
-| gpcnet-network-test/get_bcast_${stat}               | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
-| gpcnet-network-test/put_incast_${stat}              | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
-| gpcnet-network-test/two-sided_incast_${stat}        | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
-| gpcnet-network-test/alltoall_${stat}                | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
+| gpcnet-network-test/multiple_allreduce_us_${stat}   | time(usec)            | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
+| gpcnet-network-test/get_bcast_bw_${stat}            | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
+| gpcnet-network-test/put_incast_bw_${stat}           | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
+| gpcnet-network-test/two-sided_incast_bw_${stat}     | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
+| gpcnet-network-test/alltoall_bw_${stat}             | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
 | gpcnet-network-load-test/rr_two-sided_lat_${stat}   | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
 | gpcnet-network-load-test/rr_two-sided_bw_${stat}    | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
 | gpcnet-network-load-test/multiple_allreduce_${stat} | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
@@ -207,10 +207,10 @@ Each row in the config is one round, and all pairs of nodes in a row run ib comm
 
 #### Metrics
 
-| Metrics                               | Unit             | Description                                                                                                                                                             |
-| ------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ib-traffic/${command}-${line}-${pair} | bandwidth (MB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config |
-| ib-traffic/${command}-${line}-${pair} | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config    |
+| Metrics                                    | Unit             | Description                                                                                                                                                             |
+| ------------------------------------------ | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ib-traffic/${command}-${line}-${pair}_bw   | bandwidth (MB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config |
+| ib-traffic/${command}-${line}-${pair}_time | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config    |
 
 
 ## Computation-communication Benchmarks
@@ -225,8 +225,8 @@ Test the performance of single node when communication and computation overlap.
 
 | Name                                                  | Unit      | Description                                                  |
 | ----------------------------------------------------- | --------- | ------------------------------------------------------------ |
-| pytorch-computation-communication-overlap/mul_cost    | time (ms) | Time of communication and mul kernel computation overlap.    |
-| pytorch-computation-communication-overlap/matmul_cost | time (ms) | Time of communication and matmul kernel computation overlap. |
+| pytorch-computation-communication-overlap/mul_time    | time (ms) | Time of communication and mul kernel computation overlap.    |
+| pytorch-computation-communication-overlap/matmul_time | time (ms) | Time of communication and matmul kernel computation overlap. |
 
 ####
 
@@ -240,10 +240,10 @@ Test the performance of large scale matmul operation with multiple GPUs:
 
 #### Metrics
 
-| Name                              | Unit      | Description                              |
-| --------------------------------- | --------- | ---------------------------------------- |
-| pytorch-sharding-matmul/allreduce | time (ms) | Time of sharding matmul using allreduce. |
-| pytorch-sharding-matmul/allgather | time (ms) | Time of sharding matmul using allgather. |
+| Name                                   | Unit      | Description                              |
+| -------------------------------------- | --------- | ---------------------------------------- |
+| pytorch-sharding-matmul/allreduce_time | time (ms) | Time of sharding matmul using allreduce. |
+| pytorch-sharding-matmul/allgather_time | time (ms) | Time of sharding matmul using allgather. |
 
 ## Storage Benchmarks
 
