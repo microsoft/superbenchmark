@@ -66,10 +66,10 @@ class RunnerTestCase(unittest.TestCase):
                     'name': 'local',
                     'proc_num': 8,
                     'proc_rank': 6,
-                    'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
+                    'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))'
                 },
                 'expected_command': (
-                    'PROC_RANK=6 CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
+                    'PROC_RANK=6 CUDA_VISIBLE_DEVICES=6 numactl -N $((6/2)) '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
