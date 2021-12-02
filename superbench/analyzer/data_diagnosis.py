@@ -3,7 +3,6 @@
 
 """A module for data analysis."""
 
-import numbers
 import re
 
 import pandas as pd
@@ -17,99 +16,92 @@ class DataDiagnosis():
     """The DataDiagnosis class to do the baseline-based data diagnosis."""
     def __init__(self):
         """Init function using the raw data file path."""
-        self._sb_baseline = {}
+        self._sb_rules = {}
         self._metrics = {}
 
-    def _get_metrics_from_raw_data(self):
-        """Get all metrics by benchmark from raw data."""
-        if len(self._raw_data_df) == 0:
-            return
-        for metric in self._raw_data_df.columns:
+    def _get_metrics_by_benchmarks(self, metrics_list):
+        """Get all metrics by benchmark from metrics_list."""
+        benchmarks_metrics = {}
+        for metric in metrics_list:
             benchmark = metric.split('/')[0]
-            if benchmark not in self._metrics:
-                self._metrics[benchmark] = set()
-            self._metrics[benchmark].add(metric)
+            if benchmark not in benchmarks_metrics:
+                benchmarks_metrics[benchmark] = set()
+            benchmarks_metrics[benchmark].add(metric)
+        return benchmarks_metrics
 
-    def __get_validation_enabled_benchmarks(self):
-        """Get validation enabled benchmarks list.
-
-        Return:
-            list: List of benchmarks which will be executed.
-        """
-        if self._sb_baseline['superbench']['enable']:
-            if isinstance(self._sb_baseline['superbench']['enable'], str):
-                return [self._sb_baseline['superbench']['enable']]
-            elif isinstance(self._sb_baseline['superbench']['enable'], list):
-                return list(self._sb_baseline['superbench']['enable'])
-        return [k for k, v in self._sb_baseline['superbench']['benchmarks'].items() if v['enable']]
-
-    def _check_baseline(self, baseline, metric):
-        """Check the baseline of the metric whether formart is valid.
+    def _check_rules(self, rule, name):
+        """Check the rule of the metric whether formart is valid.
 
         Args:
-            baseline (dict): criteria and rule for the metric
-            metric ([type]): the metric name
+            rule (dict): the rule
+            name ([type]): the rule name
 
         Returns:
             dict: criteria and rule for the metric
         """
         # use mean of the column as default criteria if not set
-        if 'criteria' not in baseline:
-            baseline['criteria'] = self._raw_data_df[metric].mean()
-            logger.warning('DataDiagnosis: get_criteria - [{}] use the mean when criteria is not set.'.format(metric))
-        # check if criteria is number
-        if not isinstance(baseline['criteria'], numbers.Number):
-            logger.log_and_raise(exception=Exception, msg='{} invalid criteria'.format(metric))
+        if 'criteria' not in rule:
+            logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
+        # check if criteria is valid format
+        if not re.match(r'(<|>),-?\d+%?', rule['criteria']):
+            logger.log_and_raise(exception=Exception, msg='{} invalid criteria'.format(name))
         # check if rule is supported
-        if not isinstance(DiagnosisRuleType(baseline['rules']['name']), DiagnosisRuleType):
-            logger.log_and_raise(exception=Exception, msg='{} invalid rule name'.format(metric))
-        # check if variance rule is valid
-        if baseline['rules']['name'] == 'variance':
-            if not isinstance(baseline['rules']['condition'], numbers.Number):
-                logger.log_and_raise(exception=Exception, msg='{} invalid variance rule'.format(metric))
-        return baseline
+        if not isinstance(DiagnosisRuleType(rule['function']), DiagnosisRuleType):
+            logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
+        if 'categories' not in rule:
+            logger.log_and_raise(exception=Exception, msg='{} lack of category'.format(name))
+        if 'metrics' not in rule:
+            logger.log_and_raise(exception=Exception, msg='{} lack of metrics'.format(name))
+        if isinstance(rule['metrics'], str):
+            rule['metrics'] = [rule['metrics']]
+        return rule
 
-    def _get_criteria(self, baseline_file):
+    def _get_criteria(self, rule_file, baseline_file):
         """Get and generate criteria from metrics.
 
-        Use metric with regex in baseline_file to match the metric full name from raw data
+        Use metric with regex in rule_file to match the metric full name from raw data
         for each benchmark enabled in baseline file, and then generate criteria and rule for
         matched metrics.
 
         Args:
-            baseline_file (str): The path of baseline yaml file
+            rule_file (str): The path of rule yaml file
+            baseline_file (str): The path of baseline json file
 
         Returns:
             bool: return True if successfully get the criteria, otherwise False.
         """
         try:
-            self._sb_baseline = file_handler.read_baseline(baseline_file)
-            if not self._sb_baseline:
+            rules = file_handler.read_rules(rule_file)
+            baseline = file_handler.read_baseline(baseline_file)
+            if not rules or not baseline:
                 return False
-            full_baseline = {}
-            self._sb_enable_validation_benchmarks = self.__get_validation_enabled_benchmarks()
-            benchmark_rules = self._sb_baseline['superbench']['benchmarks']
-            for benchmark_name in self._sb_enable_validation_benchmarks:
-                single_benchmark_rules = benchmark_rules[benchmark_name]['metrics']
-                # return_code rule should be a default rule for each benchmark in rule file
-                # if all nodes miss the benchmark and no return code, manually add it
-                if benchmark_name not in self._metrics:
-                    self._metrics[benchmark_name] = {benchmark_name + '/return_code'}
-                # get rules and criteria for each metric
-                for metric in self._metrics[benchmark_name]:
-                    # metric full name in baseline
-                    if metric in single_benchmark_rules:
-                        full_baseline[metric] = single_benchmark_rules[metric]
-                        continue
-                    # metric full name not in baseline, use regex to match
-                    for rule_metric in single_benchmark_rules:
-                        if re.search(rule_metric, metric):
-                            full_baseline[metric] = single_benchmark_rules[rule_metric]
-                            full_baseline[metric] = self._check_baseline(full_baseline[metric], metric)
-                            break
-            self._sb_baseline = full_baseline
+            self._sb_rules = {}
+            self._enable_metrics = []
+            benchmark_rules = rules['superbench']['rules']
+            for rule in benchmark_rules:
+                benchmark_rules[rule] = self._check_rules(benchmark_rules[rule], rule)
+                self._sb_rules[rule] = {}
+                self._sb_rules[rule]['function'] = benchmark_rules[rule]['function']
+                self._sb_rules[rule]['criteria'] = benchmark_rules[rule]['criteria']
+                self._sb_rules[rule]['categories'] = benchmark_rules[rule]['categories']
+                self._sb_rules[rule]['metrics'] = {}
+                single_rule_metrics = benchmark_rules[rule]['metrics']
+                benchmark_metrics = self._get_metrics_by_benchmarks(single_rule_metrics)
+                for benchmark_name in benchmark_metrics:
+                    # get rules and criteria for each metric
+                    for metric in self._metrics[benchmark_name]:
+                        # metric full name in baseline
+                        if metric in single_rule_metrics:
+                            self._sb_rules[rule]['metrics'][metric] = baseline[metric]
+                            self._enable_metrics.append(metric)
+                            continue
+                        # metric full name not in baseline, use regex to match
+                        for metric_regex in benchmark_metrics[benchmark_name]:
+                            if re.search(metric_regex, metric):
+                                self._sb_rules[rule]['metrics'][metric] = baseline[metric]
+                                self._enable_metrics.append(metric)
         except Exception as e:
-            logger.error('DataDiagnosis: invalid rule file fomat - {}'.format(str(e)))
+            logger.error('DataDiagnosis: get criteria failed- {}'.format(str(e)))
             return False
 
         return True
@@ -131,58 +123,29 @@ class DataDiagnosis():
                 otherwise data summary of the metrics used in diagnosis
         """
         data_row = self._raw_data_df.loc[node]
-        columns = self._raw_data_df.columns
         issue_label = False
-        category_details = []
+        details = []
         categories = set()
-        summary_data_row = pd.Series(index=self._sb_baseline.keys(), name=node, dtype=float)
+        summary_data_row = pd.Series(index=self._enable_metrics, name=node, dtype=float)
 
-        for metric in self._sb_baseline:
-            benchmark = metric.split('/')[0]
-            baseline = self._sb_baseline[metric]['criteria']
-            rule = self._sb_baseline[metric]['rules']
-            pass_rule = True
-            # metric not in raw_data not the value is none, miss test
-            if metric not in columns or pd.isna(data_row[metric]):
-                pass_rule = False
-            # check if metric pass the rule
-            else:
-                data = data_row[metric]
-                rule_op = RuleOp.get_rule_func(DiagnosisRuleType(rule['name']))
-                (pass_rule, processed) = rule_op(data, baseline, rule)
-                summary_data_row[metric] = processed
+        for rule in self._sb_rules:
+            # Get rule op function and run the rule
+            function_name = self._sb_rules[rule]['function']
+            rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
+            pass_rule = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories)
             # label the node as issued one
             if not pass_rule:
                 issue_label = True
-                # use return code to identify 'miss test'
-                if 'return_code' in metric:
-                    category_details.append(benchmark + '_miss')
-                    categories.add('MissTest')
-                # use isna to identify miss metrics
-                elif metric not in columns or pd.isna(data_row[metric]):
-                    category_details.append(metric + '_miss')
-                    categories.add('MissTest')
-                else:
-                    if rule['name'] == 'value':
-                        category_details.append(metric)
-                    else:
-                        info_str = metric + \
-                            '(B/L: ' + '{:.4f}'.format(baseline) + ' VAL: ' + \
-                            '{:.4f}'.format(data_row[metric]) + ' VAR: ' + \
-                            '{:.4f}'.format(summary_data_row[metric] * 100) + '%)'
-                        category_details.append(info_str)
-                    categories.add(benchmark)
-
         if issue_label:
             # Add category information
             general_cat_str = ','.join(categories)
-            details_cat_str = ','.join(category_details)
-            details_row = [len(category_details), general_cat_str, details_cat_str]
+            details_cat_str = ','.join(details)
+            details_row = [len(details), general_cat_str, details_cat_str]
             return details_row, summary_data_row
 
         return None, None
 
-    def run_diagnosis_rules(self, rule_file):
+    def run_diagnosis_rules(self, rule_file, baseline_file):
         """Rule-based data diagnosis for multi nodes' raw data.
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
@@ -190,7 +153,8 @@ class DataDiagnosis():
         the '# of Issues', 'Category', 'Issue Details' and processed data of issued node.
 
         Args:
-            rule_file (str): The path of baseline yaml file
+            rule_file (str): The path of rule yaml file
+            baseline_file (str): The path of baseline json file
 
         Returns:
             data_not_accept_df (DataFrame): issued nodes's detailed information
@@ -206,7 +170,7 @@ class DataDiagnosis():
                 logger.error('DataDiagnosis: empty raw data')
                 return data_not_accept_df, label_df
             # get criteria
-            if not self._get_criteria(rule_file):
+            if not self._get_criteria(rule_file, baseline_file):
                 return data_not_accept_df, label_df
             # run diagnosis rules for each node
             for node in self._raw_data_df.index:
@@ -240,7 +204,7 @@ class DataDiagnosis():
                 logger.error('DataDiagnosis: excel_data_output - invalid file path.')
                 return
             file_handler.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
-            file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_baseline)
+            file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_rules)
             writer.save()
         except Exception as e:
             logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
@@ -255,7 +219,7 @@ class DataDiagnosis():
         """
         try:
             self._raw_data_df = file_handler.read_raw_data(raw_data_path)
-            self._get_metrics_from_raw_data()
+            self._metrics = self._get_metrics_by_benchmarks(list(self._raw_data_df.columms))
             logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file)
             logger.info('DataDiagnosis: Processed finished')

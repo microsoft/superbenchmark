@@ -5,6 +5,8 @@
 
 import unittest
 
+import pandas as pd
+
 from superbench.analyzer import RuleOp, DiagnosisRuleType
 
 
@@ -18,46 +20,45 @@ class TestRuleOp(unittest.TestCase):
         # Positive case
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType.VARIANCE)
         assert (rule_op == RuleOp.variance)
+        true_baselines = [
+            {
+                'categories': 'KernelLaunch',
+                'criteria': '>,50%',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 2
+                }
+            }, {
+                'categories': 'KernelLaunch',
+                'criteria': '<,-50%',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 2
+                }
+            }, {
+                'categories': 'KernelLaunch',
+                'criteria': '>,0',
+                'function': 'value',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 0
+                }
+            }
+        ]
+        details = []
+        categories = set()
+        summary_data_row = pd.Series(index=['kernel-launch/event_overhead:0'], dtype=float)
+
         # Test - variance
-        # condition<0
-        val = 1.5
-        baseline = 2
-        rule = {'name': 'variance', 'condition': -0.05}
-        (pass_rule, var) = rule_op(val, baseline, rule)
+        data = {'kernel-launch/event_overhead:0': 3.1}
+        data_row = pd.Series(data)
+        pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories)
         assert (not pass_rule)
-        assert (var == -0.25)
-        val = 3
-        (pass_rule, var) = rule_op(val, baseline, rule)
+
+        data = {'kernel-launch/event_overhead:0': 1.5}
+        data_row = pd.Series(data)
+        pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories)
         assert (pass_rule)
-        assert (var == 0.5)
-        # condition>0
-        val = 1.5
-        baseline = 1
-        rule = {'name': 'variance', 'condition': 0.05}
-        (pass_rule, var) = rule_op(val, baseline, rule)
+
+        # Test - value
+        pass_rule = rule_op(data_row, true_baselines[2], summary_data_row, details, categories)
         assert (not pass_rule)
-        assert (var == 0.5)
-        # invalid arguments
-        baseline = 'a'
-        self.assertRaises(Exception, rule_op, val, baseline, rule)
-        baseline = 2
-        rule = {'name': 'variance', 'condition': 'a'}
-        self.assertRaises(Exception, rule_op, val, baseline, rule)
-        # Test - higher_than_value
-        rule_op = RuleOp.get_rule_func(DiagnosisRuleType.HIGHERTHANVALUE)
-        assert (rule_op == RuleOp.higher_than_value)
-        # val > baseline
-        val = 2
-        baseline = 1
-        rule = {'name': 'value'}
-        (pass_rule, var) = rule_op(val, baseline, rule)
-        assert (not pass_rule)
-        assert (var == 2)
-        # val < baseline
-        val = 1
-        (pass_rule, var) = rule_op(val, baseline, rule)
-        assert (pass_rule)
-        assert (var == 1)
-        # invalid argument
-        baseline = 'a'
-        self.assertRaises(Exception, rule_op, val, baseline, rule)
