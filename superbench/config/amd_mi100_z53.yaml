@@ -93,6 +93,7 @@ superbench:
     gpt_models:
       <<: *default_pytorch_mode
       models:
+        - gpt2-small
         - gpt2-large
       parameters:
         <<: *common_model_config
