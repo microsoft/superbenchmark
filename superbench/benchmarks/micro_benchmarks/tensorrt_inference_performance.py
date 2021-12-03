@@ -6,13 +6,10 @@
 import re
 from pathlib import Path
 
-import torch.hub
-import torch.onnx
-import torchvision.models
-
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
+from superbench.benchmarks.micro_benchmarks._export_torch_to_onnx import torch2onnxExporter
 
 
 class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
@@ -38,7 +35,6 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             'vgg16',
             'vgg19',
         ]
-        self.__model_cache_path = Path(torch.hub.get_dir()) / 'checkpoints'
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -66,7 +62,15 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             type=int,
             default=32,
             required=False,
-            help='Set batch size for implicit batch engines.',
+            help='Set batch size for inference input.',
+        )
+
+        self._parser.add_argument(
+            '--seq_length',
+            type=int,
+            default=512,
+            required=False,
+            help='Set sequence length for inference input, only effective for transformers',
         )
 
         self._parser.add_argument(
@@ -88,31 +92,36 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
 
         self.__bin_path = str(Path(self._args.bin_dir) / self._bin_name)
 
+        exporter = torch2onnxExporter()
         for model in self._args.pytorch_models:
-            if hasattr(torchvision.models, model):
-                torch.onnx.export(
-                    getattr(torchvision.models, model)(pretrained=True).cuda(),
-                    torch.randn(self._args.batch_size, 3, 224, 224, device='cuda'),
-                    f'{self.__model_cache_path / (model + ".onnx")}',
-                )
-                self._commands.append(
-                    ' '.join(
-                        filter(
-                            None, [
-                                self.__bin_path,
-                                None if self._args.precision == 'fp32' else f'--{self._args.precision}',
-                                f'--batch={self._args.batch_size}',
-                                f'--iterations={self._args.iterations}',
-                                '--workspace=1024',
-                                '--percentile=99',
-                                f'--onnx={self.__model_cache_path / (model + ".onnx")}',
-                            ]
-                        )
-                    )
-                )
-            else:
+            if not (exporter.check_torchvision_model(model) or exporter.check_transformers_model(model)):
                 logger.error('Cannot find PyTorch model %s.', model)
                 return False
+        for model in self._args.pytorch_models:
+            input_shape: str
+            onnx_model: str
+            if exporter.check_torchvision_model(model):
+                input_shape = f'{self._args.batch_size}x3x224x224'
+                onnx_model = exporter.export_torchvision_model(model, self._args.batch_size)
+            if exporter.check_transformers_model(model):
+                input_shape = f'{self._args.batch_size}x{self._args.seq_length}'
+                onnx_model = exporter.export_transformers_model(model, self._args.batch_size, self._args.seq_length)
+            self._commands.append(
+                ' '.join(
+                    filter(
+                        None, [
+                            self.__bin_path,
+                            None if self._args.precision == 'fp32' else f'--{self._args.precision}',
+                            f'--optShapes=input:{input_shape}',
+                            f'--iterations={self._args.iterations}',
+                            '--workspace=8192',
+                            '--percentile=99',
+                            f'--onnx={onnx_model}',
+                        ]
+                    )
+                )
+            )
+
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
