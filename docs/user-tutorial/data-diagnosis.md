@@ -20,7 +20,7 @@ The input mainly includes 2 files:
 
 - **baseline file**: json file including the baseline values for the metrics.
 
-    `Tips`: this file will be released in [SuperBench Results Repo](https://github.com/microsoft/superbench-results/tree/main)
+    `Tips`: this file for the partly representative machine types will be published in [SuperBench Results Repo](https://github.com/microsoft/superbench-results/tree/main) with the release of Superbench.
 
 ### Rule file
 
@@ -129,7 +129,7 @@ The function used for this rule.
 
   For example, if the criteria are `>,0`, the rule is that if the raw data is larger than the 0, it should be defective.
 
-`Tips: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.`
+`Tips`: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.
 
 ## Output
 
