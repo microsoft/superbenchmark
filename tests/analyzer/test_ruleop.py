@@ -20,20 +20,55 @@ class TestRuleOp(unittest.TestCase):
         # Positive case
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType.VARIANCE)
         assert (rule_op == RuleOp.variance)
-        true_baselines = [
+
+        # Test - check ciriteria
+        false_baselines = [
             {
                 'categories': 'KernelLaunch',
-                'criteria': '>,50%',
+                'criteria': '>',
                 'function': 'variance',
                 'metrics': {
                     'kernel-launch/event_overhead:0': 2
                 }
             }, {
                 'categories': 'KernelLaunch',
-                'criteria': '<,-50%',
+                'criteria': '5',
                 'function': 'variance',
                 'metrics': {
                     'kernel-launch/event_overhead:0': 2
+                }
+            }, {
+                'categories': 'KernelLaunch',
+                'criteria': ',5',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 2
+                }
+            }, {
+                'categories': 'KernelLaunch',
+                'criteria': '>,a',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 2
+                }
+            }
+        ]
+        true_baselines = [
+            {
+                'categories': 'KernelLaunch',
+                'criteria': '>,50%',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 2,
+                    'kernel-launch/event_overhead:1': 2
+                }
+            }, {
+                'categories': 'KernelLaunch',
+                'criteria': '<,-50%',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 2,
+                    'kernel-launch/event_overhead:1': 2
                 }
             }, {
                 'categories': 'KernelLaunch',
@@ -44,21 +79,28 @@ class TestRuleOp(unittest.TestCase):
                 }
             }
         ]
+        for rule in false_baselines:
+            self.assertRaises(Exception, RuleOp.check_criteria, rule)
+        for rule in true_baselines:
+            assert (RuleOp.check_criteria(rule))
+
+        # Test - rule function
         details = []
         categories = set()
         summary_data_row = pd.Series(index=['kernel-launch/event_overhead:0'], dtype=float)
 
         # Test - variance
-        data = {'kernel-launch/event_overhead:0': 3.1}
+        data = {'kernel-launch/event_overhead:0': 3.1, 'kernel-launch/event_overhead:1': 2}
         data_row = pd.Series(data)
         pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories)
         assert (not pass_rule)
 
-        data = {'kernel-launch/event_overhead:0': 1.5}
+        data = {'kernel-launch/event_overhead:0': 1.5, 'kernel-launch/event_overhead:1': 1.5}
         data_row = pd.Series(data)
         pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories)
         assert (pass_rule)
 
         # Test - value
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType.VALUE)
         pass_rule = rule_op(data_row, true_baselines[2], summary_data_row, details, categories)
         assert (not pass_rule)

@@ -8,6 +8,7 @@ from typing import Dict, Callable
 import pandas as pd
 
 from superbench.benchmarks.context import Enum
+from superbench.common.utils import logger
 
 
 class DiagnosisRuleType(Enum):
@@ -54,16 +55,28 @@ class RuleOp:
         return None
 
     @classmethod
+    def check_criteria(cls, rule):
+        """Get expression of the criteria and check if it's valid."""
+        try:
+            symbol = rule['criteria'].split(',')[0]
+            condition = rule['criteria'].split(',')[1]
+            if '%' in condition:
+                condition = float(condition.strip('%')) / 100
+            else:
+                condition = float(condition)
+            expression = symbol + str(condition)
+            if not isinstance(eval('1' + expression), bool):
+                logger.log_and_raise(exception=Exception, msg='invalid criteria format')
+        except Exception as e:
+            logger.log_and_raise(exception=Exception, msg='invalid criteria format - {}'.format(str(e)))
+        return expression
+
+    @classmethod
     def variance(cls, data_row, rule, summary_data_row, details, categories):
         """Rule op function of variance."""
         pass_rule = True
-        # parse symbol and condition
-        symbol = rule['criteria'].split(',')[0]
-        condition = rule['criteria'].split(',')[1]
-        if '%' in condition:
-            condition = float(condition.strip('%')) / 100
-        else:
-            condition = float(condition)
+        # parse criteria and check if valid
+        expression = RuleOp.check_criteria(rule)
         # every metric should pass the rule
         for metric in rule['metrics']:
             pass_metric = True
@@ -72,34 +85,30 @@ class RuleOp:
                 pass_rule = False
                 details.append(metric + '_miss')
                 categories.add(rule['categories'])
-                continue
-            # check if metric pass the rule
-            val = data_row[metric]
-            baseline = rule['metrics'][metric]
-            var = (val - baseline) / baseline
-            summary_data_row[metric] = var
-            info = '(B/L: ' + '{:.4f}'.format(baseline) + ' VAL: ' + '{:.4f}'.format(val) + \
-                ' VAR: ' + '{:.4f}'.format(var * 100) + '%)'
-            if symbol == '>':
-                if var > condition:
-                    pass_metric = False
-            elif symbol == '<':
-                if var < condition:
-                    pass_metric = False
-            # add issued details and categories
-            if not pass_metric:
-                pass_rule = False
-                details.append(metric + info)
-                categories.add(rule['categories'])
+            else:
+                # check if metric pass the rule
+                val = data_row[metric]
+                baseline = rule['metrics'][metric]
+                if baseline == 0:
+                    logger.log_and_raise(exception=Exception, msg='invalid baseline 0 in variance rule')
+                var = (val - baseline) / baseline
+                summary_data_row[metric] = var
+                info = '(B/L: ' + '{:.4f}'.format(baseline) + ' VAL: ' + '{:.4f}'.format(val) + \
+                    ' VAR: ' + '{:.4f}'.format(var * 100) + '%)'
+                pass_metric = eval(str(var) + expression)
+                # add issued details and categories
+                if pass_metric is True:
+                    pass_rule = False
+                    details.append(metric + info)
+                    categories.add(rule['categories'])
         return pass_rule
 
     @classmethod
     def value(cls, data_row, rule, summary_data_row, details, categories):
         """Rule op function of value higher than baseline."""
         pass_rule = True
-        # parse symbol and condition
-        symbol = rule['criteria'].split(',')[0]
-        condition = float(rule['criteria'].split(',')[1])
+        # parse criteria and check if valid
+        expression = RuleOp.check_criteria(rule)
         # every metric should pass the rule
         for metric in rule['metrics']:
             pass_metric = True
@@ -108,22 +117,18 @@ class RuleOp:
                 pass_rule = False
                 details.append(metric + '_miss')
                 categories.add(rule['categories'])
-                continue
-            # check if metric pass the rule
-            val = data_row[metric]
-            summary_data_row[metric] = val
-            info = '(B/L: ' + '{:.4f}'.format(condition) + ' VAL: ' + '{:.4f}'.format(val)
-            if symbol == '>':
-                if val > condition:
-                    pass_metric = False
-            elif symbol == '<':
-                if val < condition:
-                    pass_metric = False
-            # add issued details and categories
-            if not pass_metric:
-                pass_rule = False
-                details.append(metric + info)
-                categories.add(rule['categories'])
+            else:
+                # check if metric pass the rule
+                val = data_row[metric]
+                summary_data_row[metric] = val
+                condition = rule['criteria'].split(',')[1]
+                info = '(B/L: ' + '{}'.format(condition) + ' VAL: ' + '{:.4f}'.format(val)
+                pass_metric = eval(str(val) + expression)
+                # add issued details and categories
+                if pass_metric is True:
+                    pass_rule = False
+                    details.append(metric + info)
+                    categories.add(rule['categories'])
         return pass_rule
 
 

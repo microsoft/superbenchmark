@@ -54,7 +54,7 @@ def read_rules(baseline_file=None):
         return None
     baseline = None
     with p.open() as f:
-        baseline = yaml.load(f)
+        baseline = yaml.load(f, Loader=yaml.SafeLoader)
     return baseline
 
 

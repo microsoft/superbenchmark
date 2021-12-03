@@ -39,15 +39,12 @@ class DataDiagnosis():
         Returns:
             dict: criteria and rule for the metric
         """
-        # use mean of the column as default criteria if not set
-        if 'criteria' not in rule:
-            logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
-        # check if criteria is valid format
-        if not re.match(r'(<|>),-?\d+%?', rule['criteria']):
-            logger.log_and_raise(exception=Exception, msg='{} invalid criteria'.format(name))
         # check if rule is supported
         if not isinstance(DiagnosisRuleType(rule['function']), DiagnosisRuleType):
             logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
+        # check rule format
+        if 'criteria' not in rule:
+            logger.log_and_raise(exception=Exception, msg='{} lack of criteria'.format(name))
         if 'categories' not in rule:
             logger.log_and_raise(exception=Exception, msg='{} lack of category'.format(name))
         if 'metrics' not in rule:
@@ -198,7 +195,7 @@ class DataDiagnosis():
             output_dir (str): the path of output excel file
         """
         try:
-            writer = pd.ExcelWriter(output_dir + '/results_summary.xlsx', engine='xlsxwriter')
+            writer = pd.ExcelWriter(output_dir + '/diagnosis_summary.xlsx', engine='xlsxwriter')
             # Check whether writer is valiad
             if not isinstance(writer, pd.ExcelWriter):
                 logger.error('DataDiagnosis: excel_data_output - invalid file path.')
@@ -209,13 +206,14 @@ class DataDiagnosis():
         except Exception as e:
             logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
 
-    def run(self, raw_data_path, rule_file, output_dir):
+    def run(self, raw_data_path, rule_file, output_dir, output_format='excel'):
         """Run the data diagnosis and output the results.
 
         Args:
             raw_data_path (str): the path of raw data jsonl file.
             rule_file (str): The path of baseline yaml file
             output_dir (str): the path of output excel file
+            output_format (str): the format of the output, 'excel' or 'json'
         """
         try:
             self._raw_data_df = file_handler.read_raw_data(raw_data_path)
@@ -223,6 +221,11 @@ class DataDiagnosis():
             logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file)
             logger.info('DataDiagnosis: Processed finished')
-            self.excel_output(data_not_accept_df, output_dir)
+            if output_format == 'excel':
+                self.excel_output(data_not_accept_df, output_dir)
+            elif output_format == 'json':
+                data_not_accept_df.to_json(output_dir + '/diagnosis_summary.json')
+            else:
+                logger.error('DataDiagnosis: output failed - unsupported output format')
         except Exception as e:
-            logger.error('DataDiagnosis: launch failed - {}'.format(str(e)))
+            logger.error('DataDiagnosis: run failed - {}'.format(str(e)))

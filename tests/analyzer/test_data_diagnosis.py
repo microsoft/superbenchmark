@@ -16,7 +16,7 @@ class TestDataDiagnosis(unittest.TestCase):
     """Test for DataDiagnosis class."""
     def setUp(self):
         """Method called to prepare the test fixture."""
-        self.output_file = str(Path(__file__).parent.resolve()) + '/results_summary.xlsx'
+        self.output_file = str(Path(__file__).parent.resolve()) + '/diagnosis_summary.xlsx'
         self.test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
 
     def tearDown(self):
@@ -60,11 +60,6 @@ class TestDataDiagnosis(unittest.TestCase):
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }, {
                 'criteria': '>,5%',
-                'function': 'variance',
-                'metrics': ['kernel-launch/event_overhead:\\d+']
-            }, {
-                'criteria': '>',
-                'categories': 'KernelLaunch',
                 'function': 'variance',
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }, {
