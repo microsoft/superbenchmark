@@ -122,11 +122,11 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 
 #### Metrics
 
-| Name                                                       | Unit             | Description                                                  |
-| ---------------------------------------------------------- | ---------------- | ------------------------------------------------------------ |
-| ib-loopback/ib\_write\_${msg\_size}\_avg\_ib${ib_index}_bw | bandwidth (GB/s) | InfiniBand loopback write bandwidth with given message size. |
-| ib-loopback/ib\_read\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (GB/s) | InfiniBand loopback read bandwidth with given message size.  |
-| ib-loopback/ib\_send\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (GB/s) | InfiniBand loopback send bandwidth with given message size.  |
+| Name                                        | Unit             | Description                                                  |
+| ------------------------------------------- | ---------------- | ------------------------------------------------------------ |
+| ib-loopback/ib_write_${msg_size}_ib[0-9]_bw | bandwidth (GB/s) | InfiniBand loopback write bandwidth with given message size. |
+| ib-loopback/ib_read_${msg_size}_ib[0-9]_bw  | bandwidth (GB/s) | InfiniBand loopback read bandwidth with given message size.  |
+| ib-loopback/ib_send_${msg_size}_ib[0-9]_bw  | bandwidth (GB/s) | InfiniBand loopback send bandwidth with given message size.  |
 
 ### `nccl-bw` / `rccl-bw`
 
