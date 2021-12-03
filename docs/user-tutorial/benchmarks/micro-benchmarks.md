@@ -15,10 +15,10 @@ which is defined as the time range from the beginning of the launch API call to 
 
 #### Metrics
 
-| Name                     | Unit      | Description                          |
-| ------------------------ | --------- | ------------------------------------ |
-| kernel-launch/event_time | time (ms) | Launch latency measured in GPU time. |
-| kernel-launch/wall_time  | time (ms) | Launch latency measured in CPU time. |
+| Name                        | Unit      | Description                          |
+| --------------------------- | --------- | ------------------------------------ |
+| kernel-launch/event_time_ms | time (ms) | Launch latency measured in GPU time. |
+| kernel-launch/wall_time_ms  | time (ms) | Launch latency measured in CPU time. |
 
 ### `gemm-flops`
 
@@ -30,21 +30,21 @@ or AMD [rocblas-bench](https://github.com/ROCmSoftwarePlatform/rocBLAS/tree/deve
 
 #### Metrics
 
-| Name                   | Unit           | Description                                             |
-| ---------------------- | -------------- | ------------------------------------------------------- |
-| gemm-flops/FP64        | FLOPS (GFLOPS) | GEMM float64 peak FLOPS.                                |
-| gemm-flops/FP32        | FLOPS (GFLOPS) | GEMM float32 peak FLOPS.                                |
-| gemm-flops/FP16        | FLOPS (GFLOPS) | GEMM float16 peak FLOPS.                                |
-| gemm-flops/FP64_TC     | FLOPS (GFLOPS) | GEMM float64 peak FLOPS with NVIDIA Tensor Core.        |
-| gemm-flops/TF32_TC     | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with NVIDIA Tensor Core. |
-| gemm-flops/FP16_TC     | FLOPS (GFLOPS) | GEMM float16 peak FLOPS with NVIDIA Tensor Core.        |
-| gemm-flops/BF16_TC     | FLOPS (GFLOPS) | GEMM bfloat16 peak FLOPS with NVIDIA Tensor Core.       |
-| gemm-flops/INT8_TC     | IOPS (GIOPS)   | GEMM int8 peak IOPS with NVIDIA Tensor Core.            |
-| gemm-flops/INT4_TC     | IOPS (GIOPS)   | GEMM int4 peak IOPS with NVIDIA Tensor Core.            |
-| gemm-flops/FP32_xDLOPS | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with AMD XDLOPS.         |
-| gemm-flops/FP16_xDLOPS | FLOPS (GFLOPS) | GEMM float16 peak FLOPS with AMD XDLOPS.                |
-| gemm-flops/BF16_xDLOPS | FLOPS (GFLOPS) | GEMM bfloat16 peak FLOPS with AMD XDLOPS.               |
-| gemm-flops/INT8_xDLOPS | IOPS (GIOPS)   | GEMM int8 peak IOPS with AMD XDLOPS.                    |
+| Name                         | Unit           | Description                                             |
+| ---------------------------- | -------------- | ------------------------------------------------------- |
+| gemm-flops/fp64_flops        | FLOPS (GFLOPS) | GEMM float64 peak FLOPS.                                |
+| gemm-flops/fp32_flops        | FLOPS (GFLOPS) | GEMM float32 peak FLOPS.                                |
+| gemm-flops/fp16_flops        | FLOPS (GFLOPS) | GEMM float16 peak FLOPS.                                |
+| gemm-flops/fp64_tc_flops     | FLOPS (GFLOPS) | GEMM float64 peak FLOPS with NVIDIA Tensor Core.        |
+| gemm-flops/tp32_tc_flops     | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with NVIDIA Tensor Core. |
+| gemm-flops/fp16_tc_flops     | FLOPS (GFLOPS) | GEMM float16 peak FLOPS with NVIDIA Tensor Core.        |
+| gemm-flops/bf16_tc_flops     | FLOPS (GFLOPS) | GEMM bfloat16 peak FLOPS with NVIDIA Tensor Core.       |
+| gemm-flops/int8_tc_iops      | IOPS (GIOPS)   | GEMM int8 peak IOPS with NVIDIA Tensor Core.            |
+| gemm-flops/int4_tc_iops      | IOPS (GIOPS)   | GEMM int4 peak IOPS with NVIDIA Tensor Core.            |
+| gemm-flops/fp32_xdlops_flops | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with AMD XDLOPS.         |
+| gemm-flops/fp16_xdlops_flops | FLOPS (GFLOPS) | GEMM float16 peak FLOPS with AMD XDLOPS.                |
+| gemm-flops/bf16_xdlops_flops | FLOPS (GFLOPS) | GEMM bfloat16 peak FLOPS with AMD XDLOPS.               |
+| gemm-flops/int8_xdlops_iops  | IOPS (GIOPS)   | GEMM int8 peak IOPS with AMD XDLOPS.                    |
 
 ### `matmul`
 
@@ -54,9 +54,9 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 #### Metrics
 
-| Name                           | Unit      | Description                    |
-| ------------------------------ | --------- | ------------------------------ |
-| pytorch-matmul/nosharding_time | time (ms) | Time of pure matmul operation. |
+| Name                              | Unit      | Description                    |
+| --------------------------------- | --------- | ------------------------------ |
+| pytorch-matmul/nosharding_time_ms | time (ms) | Time of pure matmul operation. |
 
 ### `cublas-function`
 
@@ -124,9 +124,9 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 
 | Name                                                       | Unit             | Description                                                  |
 | ---------------------------------------------------------- | ---------------- | ------------------------------------------------------------ |
-| ib-loopback/ib\_write\_${msg\_size}\_avg\_ib${ib_index}_bw | bandwidth (MB/s) | InfiniBand loopback write bandwidth with given message size. |
-| ib-loopback/ib\_read\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (MB/s) | InfiniBand loopback read bandwidth with given message size.  |
-| ib-loopback/ib\_send\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (MB/s) | InfiniBand loopback send bandwidth with given message size.  |
+| ib-loopback/ib\_write\_${msg\_size}\_avg\_ib${ib_index}_bw | bandwidth (GB/s) | InfiniBand loopback write bandwidth with given message size. |
+| ib-loopback/ib\_read\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (GB/s) | InfiniBand loopback read bandwidth with given message size.  |
+| ib-loopback/ib\_send\_${msg\_size}\_avg\_ib${ib_index}_bw  | bandwidth (GB/s) | InfiniBand loopback send bandwidth with given message size.  |
 
 ### `nccl-bw` / `rccl-bw`
 
@@ -139,32 +139,32 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 
 #### Metrics
 
-| Name                                   | Unit             | Description                                                 |
-| -------------------------------------- | ---------------- | ----------------------------------------------------------- |
-| nccl-bw/${operation}_${msg_size}_time  | time (us)        | NCCL operation lantency with given message size.            |
-| nccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | NCCL operation algorithm bandwidth with given message size. |
-| nccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | NCCL operation bus bandwidth with given message size.       |
-| rccl-bw/${operation}_${msg_size}_time  | time (us)        | RCCL operation lantency with given message size.            |
-| rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
-| rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
+| Name                                     | Unit             | Description                                                 |
+| ---------------------------------------- | ---------------- | ----------------------------------------------------------- |
+| nccl-bw/${operation}_${msg_size}_time_us | time (us)        | NCCL operation lantency with given message size.            |
+| nccl-bw/${operation}_${msg_size}_algbw   | bandwidth (GB/s) | NCCL operation algorithm bandwidth with given message size. |
+| nccl-bw/${operation}_${msg_size}_busbw   | bandwidth (GB/s) | NCCL operation bus bandwidth with given message size.       |
+| rccl-bw/${operation}_${msg_size}_time_us | time (us)        | RCCL operation lantency with given message size.            |
+| rccl-bw/${operation}_${msg_size}_algbw   | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
+| rccl-bw/${operation}_${msg_size}_busbw   | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
 
 ### `tcp-connectivity`
 
 #### Introduction
 
-Test the TCP connectivity between current node and nodes in the hostfile,
+Test the tcP connectivity between current node and nodes in the hostfile,
 performed by [tcping](https://github.com/zhengxiaowai/tcping)
 
 #### Metrics
 
-| Metrics                                      | Unit     | Description                                                                          |
-| -------------------------------------------- | -------- | ------------------------------------------------------------------------------------ |
-| tcp-connectivity/successed_${hostname/ip}    | count    | successed times of tcp connections between current node and other nodes              |
-| tcp-connectivity/failed_${hostname/ip}       | count    | failed times of tcp connections between current node and other nodes                 |
-| tcp-connectivity/success_rate_${hostname/ip} | count    | success rate(successed/total) of tcp connection between current node and other nodes |
-| tcp-connectivity/minimum_${hostname/ip}_time | time(ms) | mininum latency of tcp connections between current node and other nodes              |
-| tcp-connectivity/maximum_${hostname/ip}_time | time(ms) | maximum latency of tcp connections between current node and other nodes              |
-| tcp-connectivity/average_${hostname/ip}_time | time(ms) | average latency of tcp connections between current node and other nodes              |
+| Metrics                                         | Unit     | Description                                                                           |
+| ----------------------------------------------- | -------- | ------------------------------------------------------------------------------------- |
+| tcp-connectivity/${hostname/ip}_successed_count | count    | successed times of tcp connections between current node and other nodes               |
+| tcp-connectivity/${hostname/ip}_failed_count    | count    | failed times of tcp connections between current node and other nodes                  |
+| tcp-connectivity/${hostname/ip}_success_rate    |          | success rate (successed/total) of tcp connection between current node and other nodes |
+| tcp-connectivity/${hostname/ip}_time_ms_min     | time(ms) | mininum latency of tcp connections between current node and other nodes               |
+| tcp-connectivity/${hostname/ip}_time_ms_max     | time(ms) | maximum latency of tcp connections between current node and other nodes               |
+| tcp-connectivity/${hostname/ip}_time_ms_avg     | time(ms) | average latency of tcp connections between current node and other nodes               |
 
 ### `gpcnet-network-test` / `gpcnet-network-load-test`
 
@@ -183,18 +183,18 @@ gpcnet-network-load-test: Select full system network tests run with four congest
 
 #### Metrics
 
-| Metrics                                             | Unit                  | Description                                                                                                                                                                |
-| --------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| gpcnet-network-test/rr_two-sided_lat_${stat}        | time(usec)            | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
-| gpcnet-network-test/rr_two-sided_bw_${stat}         | MiB/s/rank            | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
-| gpcnet-network-test/multiple_allreduce_us_${stat}   | time(usec)            | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
-| gpcnet-network-test/get_bcast_bw_${stat}            | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
-| gpcnet-network-test/put_incast_bw_${stat}           | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
-| gpcnet-network-test/two-sided_incast_bw_${stat}     | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
-| gpcnet-network-test/alltoall_bw_${stat}             | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
-| gpcnet-network-load-test/rr_two-sided_lat_${stat}   | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
-| gpcnet-network-load-test/rr_two-sided_bw_${stat}    | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
-| gpcnet-network-load-test/multiple_allreduce_${stat} | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| Metrics                                                | Unit                  | Description                                                                                                                                                                |
+| ------------------------------------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| gpcnet-network-test/rr_two-sided_lat_us_${stat}        | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
+| gpcnet-network-test/rr_two-sided_bw_${stat}            | bandwidth (MB/s/rank) | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
+| gpcnet-network-test/multiple_allreduce_time_us_${stat} | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
+| gpcnet-network-test/get_bcast_bw_${stat}               | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
+| gpcnet-network-test/put_incast_bw_${stat}              | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
+| gpcnet-network-test/two-sided_incast_bw_${stat}        | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
+| gpcnet-network-test/alltoall_bw_${stat}                | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
+| gpcnet-network-load-test/rr_two-sided_lat_x_${stat}    | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| gpcnet-network-load-test/rr_two-sided_bw_x_${stat}     | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| gpcnet-network-load-test/multiple_allreduce_x_${stat}  | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
 
 ### `ib-traffic`
 
@@ -207,10 +207,10 @@ Each row in the config is one round, and all pairs of nodes in a row run ib comm
 
 #### Metrics
 
-| Metrics                                    | Unit             | Description                                                                                                                                                             |
-| ------------------------------------------ | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ib-traffic/${command}-${line}-${pair}_bw   | bandwidth (MB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config |
-| ib-traffic/${command}-${line}-${pair}_time | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config    |
+| Metrics                                       | Unit             | Description                                                                                                                                                             |
+| --------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ib-traffic/${command}-${line}-${pair}_bw      | bandwidth (GB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config |
+| ib-traffic/${command}-${line}-${pair}_time_us | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config    |
 
 
 ## Computation-communication Benchmarks
@@ -223,10 +223,10 @@ Test the performance of single node when communication and computation overlap.
 
 #### Metrics
 
-| Name                                                  | Unit      | Description                                                  |
-| ----------------------------------------------------- | --------- | ------------------------------------------------------------ |
-| pytorch-computation-communication-overlap/mul_time    | time (ms) | Time of communication and mul kernel computation overlap.    |
-| pytorch-computation-communication-overlap/matmul_time | time (ms) | Time of communication and matmul kernel computation overlap. |
+| Name                                                     | Unit      | Description                                                  |
+| -------------------------------------------------------- | --------- | ------------------------------------------------------------ |
+| pytorch-computation-communication-overlap/mul_time_ms    | time (ms) | Time of communication and mul kernel computation overlap.    |
+| pytorch-computation-communication-overlap/matmul_time_ms | time (ms) | Time of communication and matmul kernel computation overlap. |
 
 ####
 
@@ -240,10 +240,10 @@ Test the performance of large scale matmul operation with multiple GPUs:
 
 #### Metrics
 
-| Name                                   | Unit      | Description                              |
-| -------------------------------------- | --------- | ---------------------------------------- |
-| pytorch-sharding-matmul/allreduce_time | time (ms) | Time of sharding matmul using allreduce. |
-| pytorch-sharding-matmul/allgather_time | time (ms) | Time of sharding matmul using allgather. |
+| Name                                      | Unit      | Description                              |
+| ----------------------------------------- | --------- | ---------------------------------------- |
+| pytorch-sharding-matmul/allreduce_time_ms | time (ms) | Time of sharding matmul using allreduce. |
+| pytorch-sharding-matmul/allgather_time_ms | time (ms) | Time of sharding matmul using allgather. |
 
 ## Storage Benchmarks
 
