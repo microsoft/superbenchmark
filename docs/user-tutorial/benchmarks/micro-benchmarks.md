@@ -74,14 +74,14 @@ Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.n
 
 #### Metrics
 
-| Name                                      | Unit      | Description                                                                                              |
-| ----------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------- |
-| tensorrt-inference/gpu_lat_ms_mean        | time (ms) | The mean GPU latency to execute the kernels for a query.                                                 |
-| tensorrt-inference/gpu_lat_ms_99          | time (ms) | The 99th percentile GPU latency to execute the kernels for a query.                                      |
-| tensorrt-inference/host_lat_ms_mean       | time (ms) | The mean H2D, GPU, and D2H latency to execute the kernels for a query.                                   |
-| tensorrt-inference/host_lat_ms_99         | time (ms) | The 99th percentile H2D, GPU, and D2H latency to execute the kernels for a query.                        |
-| tensorrt-inference/end_to_end_lat_ms_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
-| tensorrt-inference/end_to_end_lat_ms_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
+| Name                                       | Unit      | Description                                                                                              |
+| ------------------------------------------ | --------- | -------------------------------------------------------------------------------------------------------- |
+| tensorrt-inference/gpu_time_ms_mean        | time (ms) | The mean GPU latency to execute the kernels for a query.                                                 |
+| tensorrt-inference/gpu_time_ms_99          | time (ms) | The 99th percentile GPU latency to execute the kernels for a query.                                      |
+| tensorrt-inference/host_time_ms_mean       | time (ms) | The mean H2D, GPU, and D2H latency to execute the kernels for a query.                                   |
+| tensorrt-inference/host_time_ms_99         | time (ms) | The 99th percentile H2D, GPU, and D2H latency to execute the kernels for a query.                        |
+| tensorrt-inference/end_to_end_time_ms_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
+| tensorrt-inference/end_to_end_time_ms_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
 
 ## Communication Benchmarks
 
@@ -185,14 +185,14 @@ gpcnet-network-load-test: Select full system network tests run with four congest
 
 | Metrics                                                | Unit                  | Description                                                                                                                                                                |
 | ------------------------------------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| gpcnet-network-test/rr_two-sided_lat_us_${stat}        | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
+| gpcnet-network-test/rr_two-sided_time_us_${stat}       | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
 | gpcnet-network-test/rr_two-sided_bw_${stat}            | bandwidth (MB/s/rank) | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
 | gpcnet-network-test/multiple_allreduce_time_us_${stat} | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
 | gpcnet-network-test/get_bcast_bw_${stat}               | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
 | gpcnet-network-test/put_incast_bw_${stat}              | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
 | gpcnet-network-test/two-sided_incast_bw_${stat}        | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
 | gpcnet-network-test/alltoall_bw_${stat}                | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
-| gpcnet-network-load-test/rr_two-sided_lat_x_${stat}    | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| gpcnet-network-load-test/rr_two-sided_time_x_${stat}   | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
 | gpcnet-network-load-test/rr_two-sided_bw_x_${stat}     | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
 | gpcnet-network-load-test/multiple_allreduce_x_${stat}  | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
 
