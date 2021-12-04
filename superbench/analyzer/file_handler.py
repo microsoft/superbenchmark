@@ -4,6 +4,7 @@
 """A module for data analysis."""
 
 from pathlib import Path
+import re
 
 import json
 import jsonlines
@@ -100,9 +101,8 @@ def excel_data_not_accept_output(writer, data_not_accept_df, rules):
         data_not_accept_df (DataFrame): the DataFrame to output
         rules (dict): the rules to diagnosis data
     """
-    # Get the xlsxwriter workbook objects and init the color format
+    # Get the xlsxwriter workbook objects and init the format
     workbook = writer.book
-    # Add a format. red fill with dark red text.
     color_format_red = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006'})
     percent_format = workbook.add_format({'num_format': '0.00%'})
 
@@ -117,51 +117,38 @@ def excel_data_not_accept_output(writer, data_not_accept_df, rules):
 
             for rule in rules:
                 for metric in rules[rule]['metrics']:
-                    col_start = columns.index(metric)
-                    symbol = rules[rule]['criteria'].split(',')[0]
+                    col_index = columns.index(metric)
+                    # Apply percent format for the columns whose rules are variance type.
                     if rules[rule]['function'] == 'variance':
                         worksheet.conditional_format(
                             row_start,
-                            col_start,
+                            col_index,
                             row_end,
-                            col_start,    # start_row, start_col, end_row, end_col
+                            col_index,    # start_row, start_col, end_row, end_col
                             {
                                 'type': 'no_blanks',
                                 'format': percent_format
                             }
-                        )    # Apply percent format for the columns whose rules are variance type.
-                        condition = rules[rule]['criteria'].split(',')[1]
-                        if '%' in condition:
-                            condition = float(condition.strip('%')) / 100
-                        else:
-                            condition = float(condition)
+                        )
+                    # Apply red format if the value violates the rule.
+                    if rules[rule]['function'] == 'value' or rules[rule]['function'] == 'variance':
+                        match = re.search(r'(>|<|<=|>=|==|!=)(.+)', rules[rule]['criteria'])
+                        if not match:
+                            continue
+                        symbol = match.group(1)
+                        condition = float(match.group(2))
                         worksheet.conditional_format(
                             row_start,
-                            col_start,
+                            col_index,
                             row_end,
-                            col_start,    # start_row, start_col, end_row, end_col
+                            col_index,    # start_row, start_col, end_row, end_col
                             {
                                 'type': 'cell',
                                 'criteria': symbol,
                                 'value': condition,
                                 'format': color_format_red
                             }
-                        )    # Apply red format if the variance violates the rule.
-
-                    elif rules[rule]['function'] == 'value':
-                        condition = float(rules[rule]['criteria'].split(',')[1])
-                        worksheet.conditional_format(
-                            row_start,
-                            col_start,
-                            row_end,
-                            col_start,    # start_row, start_col, end_row, end_col
-                            {
-                                'type': 'cell',
-                                'criteria': symbol,
-                                'value': condition,
-                                'format': color_format_red
-                            }
-                        )    # Apply red format if the value violates the rule.
+                        )
 
     else:
         logger.warning('DataDiagnosis: excel_data_output - data_not_accept_df is empty.')

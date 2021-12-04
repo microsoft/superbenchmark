@@ -4,6 +4,7 @@
 """A module for data analysis."""
 
 import re
+from typing import Callable
 
 import pandas as pd
 
@@ -45,6 +46,8 @@ class DataDiagnosis():
         # check rule format
         if 'criteria' not in rule:
             logger.log_and_raise(exception=Exception, msg='{} lack of criteria'.format(name))
+        if not isinstance(eval(rule['criteria']), Callable):
+            logger.log_and_raise(exception=Exception, msg='invalid criteria format')
         if 'categories' not in rule:
             logger.log_and_raise(exception=Exception, msg='{} lack of category'.format(name))
         if 'metrics' not in rule:

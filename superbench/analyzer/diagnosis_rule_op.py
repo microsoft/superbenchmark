@@ -55,31 +55,15 @@ class RuleOp:
         return None
 
     @classmethod
-    def check_criteria(cls, rule):
-        """Get expression of the criteria and check if it's valid."""
-        try:
-            symbol = rule['criteria'].split(',')[0]
-            condition = rule['criteria'].split(',')[1]
-            if '%' in condition:
-                condition = float(condition.strip('%')) / 100
-            else:
-                condition = float(condition)
-            expression = symbol + str(condition)
-            if not isinstance(eval('1' + expression), bool):
-                logger.log_and_raise(exception=Exception, msg='invalid criteria format')
-        except Exception as e:
-            logger.log_and_raise(exception=Exception, msg='invalid criteria format - {}'.format(str(e)))
-        return expression
-
-    @classmethod
     def variance(cls, data_row, rule, summary_data_row, details, categories):
         """Rule op function of variance."""
         pass_rule = True
         # parse criteria and check if valid
-        expression = RuleOp.check_criteria(rule)
+        if not isinstance(eval(rule['criteria'])(0), bool):
+            logger.log_and_raise(exception=Exception, msg='invalid criteria format')
         # every metric should pass the rule
         for metric in rule['metrics']:
-            pass_metric = True
+            violate_metric = False
             # metric not in raw_data not the value is none, miss test
             if metric not in data_row or pd.isna(data_row[metric]):
                 pass_rule = False
@@ -93,11 +77,12 @@ class RuleOp:
                     logger.log_and_raise(exception=Exception, msg='invalid baseline 0 in variance rule')
                 var = (val - baseline) / baseline
                 summary_data_row[metric] = var
-                info = '(B/L: ' + '{:.4f}'.format(baseline) + ' VAL: ' + '{:.4f}'.format(val) + \
-                    ' VAR: ' + '{:.4f}'.format(var * 100) + '%)'
-                pass_metric = eval(str(var) + expression)
+                info = '(B/L: {:.4f} VAL: {:.4f} VAR: {:.2f}% Rule:{})'.format(
+                    baseline, val, var * 100, rule['criteria']
+                )
+                violate_metric = eval(rule['criteria'])(var)
                 # add issued details and categories
-                if pass_metric is True:
+                if violate_metric:
                     pass_rule = False
                     details.append(metric + info)
                     categories.add(rule['categories'])
@@ -108,10 +93,11 @@ class RuleOp:
         """Rule op function of value higher than baseline."""
         pass_rule = True
         # parse criteria and check if valid
-        expression = RuleOp.check_criteria(rule)
+        if not isinstance(eval(rule['criteria'])(0), bool):
+            logger.log_and_raise(exception=Exception, msg='invalid criteria format')
         # every metric should pass the rule
         for metric in rule['metrics']:
-            pass_metric = True
+            violate_metric = False
             # metric not in raw_data not the value is none, miss test
             if metric not in data_row or pd.isna(data_row[metric]):
                 pass_rule = False
@@ -121,11 +107,10 @@ class RuleOp:
                 # check if metric pass the rule
                 val = data_row[metric]
                 summary_data_row[metric] = val
-                condition = rule['criteria'].split(',')[1]
-                info = '(B/L: ' + '{}'.format(condition) + ' VAL: ' + '{:.4f}'.format(val)
-                pass_metric = eval(str(val) + expression)
+                info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
+                violate_metric = eval(rule['criteria'])(val)
                 # add issued details and categories
-                if pass_metric is True:
+                if violate_metric:
                     pass_rule = False
                     details.append(metric + info)
                     categories.add(rule['categories'])

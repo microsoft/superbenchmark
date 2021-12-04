@@ -55,16 +55,30 @@ class TestDataDiagnosis(unittest.TestCase):
         # Test - _check_rules
         false_rules = [
             {
-                'criteria': '>,5%',
+                'criteria': 'lambda x:x>0',
                 'categories': 'KernelLaunch',
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }, {
-                'criteria': '>,5%',
+                'criteria': 'lambda x:x>0',
                 'function': 'variance',
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }, {
                 'categories': 'KernelLaunch',
                 'function': 'variance',
+                'metrics': ['kernel-launch/event_overhead:\\d+']
+            }, {
+                'criteria': 'lambda x:x>0',
+                'function': 'abb',
+                'categories': 'KernelLaunch',
+                'metrics': ['kernel-launch/event_overhead:\\d+']
+            }, {
+                'criteria': 'lambda x:x>0',
+                'function': 'abb',
+                'categories': 'KernelLaunch',
+            }, {
+                'criteria': 'x>5',
+                'function': 'abb',
+                'categories': 'KernelLaunch',
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }
         ]
@@ -74,17 +88,17 @@ class TestDataDiagnosis(unittest.TestCase):
         true_baselines = [
             {
                 'categories': 'KernelLaunch',
-                'criteria': '>,5%',
+                'criteria': 'lambda x:x>0.05',
                 'function': 'variance',
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }, {
                 'categories': 'KernelLaunch',
-                'criteria': '<,-5%',
+                'criteria': 'lambda x:x<-0.05',
                 'function': 'variance',
                 'metrics': 'kernel-launch/event_overhead:\\d+'
             }, {
                 'categories': 'KernelLaunch',
-                'criteria': '>,0',
+                'criteria': 'lambda x:x>0',
                 'function': 'value',
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }
@@ -122,11 +136,16 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (len(row) == 37)
         assert (row['# of Issues'] == 1)
         assert (row['Category'] == 'KernelLaunch')
-        assert (row['Issue Details'] == 'kernel-launch/event_overhead:0(B/L: 0.0060 VAL: 0.1000 VAR: 1577.8523%)')
+        assert (
+            row['Issue Details'] ==
+            'kernel-launch/event_overhead:0(B/L: 0.0060 VAL: 0.1000 VAR: 1577.85% Rule:lambda x:x>0.05)'
+        )
         node = 'sb-validation-03'
         row = data_not_accept_df.loc[node]
         assert (len(row) == 37)
         assert ('FailedTest' in row['Category'])
+        assert ('mem-bw/return_code(VAL: 1.0000 Rule:lambda x:x>0)' in row['Issue Details'])
+        assert ('mem-bw/H2D_Mem_BW:0_miss' in row['Issue Details'])
         assert (len(data_not_accept_df) == 2)
         # Test - excel_output
         diag1.excel_output(data_not_accept_df, str(Path(__file__).parent.resolve()))
