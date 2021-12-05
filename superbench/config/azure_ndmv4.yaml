@@ -1,4 +1,8 @@
 # SuperBench Config
+#
+# Azure NDm A100 v4
+# reference: https://docs.microsoft.com/en-us/azure/virtual-machines/ndm-a100-v4-series
+
 version: v0.3
 superbench:
   enable: null
@@ -20,14 +24,21 @@ superbench:
         - pytorch
     common_model_config: &common_model_config
       duration: 0
-      num_warmup: 16
-      num_steps: 128
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 32
       precision:
         - float32
         - float16
       model_action:
         - train
+      pin_memory: yes
   benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
     nccl-bw:
       enable: true
       modes:
@@ -47,15 +58,6 @@ superbench:
           proc_num: 4
           prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=1,0,3,2
           parallel: yes
-    disk-benchmark:
-      enable: false
-      modes:
-        - name: local
-          proc_num: 1
-          parallel: no
-      parameters:
-        block_devices:
-          - /dev/nvme0n1
     mem-bw:
       enable: true
       modes:
@@ -63,6 +65,28 @@ superbench:
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
           parallel: yes
+    disk-benchmark:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        block_devices:
+          - /dev/nvme0n1
+          - /dev/nvme1n1
+          - /dev/nvme2n1
+          - /dev/nvme3n1
+          - /dev/nvme4n1
+          - /dev/nvme5n1
+          - /dev/nvme6n1
+          - /dev/nvme7n1
+        seq_read_runtime: 60
+        seq_write_runtime: 60
+        seq_readwrite_runtime: 60
+        rand_read_runtime: 60
+        rand_write_runtime: 60
+        rand_readwrite_runtime: 60
     gpu-copy-bw:
       enable: true
       modes:
@@ -76,10 +100,6 @@ superbench:
         copy_type:
           - sm
           - dma
-    kernel-launch:
-      <<: *default_local_mode
-    gemm-flops:
-      <<: *default_local_mode
     cudnn-function:
       <<: *default_local_mode
     cublas-function:
@@ -99,7 +119,8 @@ superbench:
         - gpt2-large
       parameters:
         <<: *common_model_config
-        batch_size: 4
+        batch_size: 8
+        seq_len: 224
     bert_models:
       <<: *default_pytorch_mode
       models:
@@ -107,14 +128,18 @@ superbench:
         - bert-large
       parameters:
         <<: *common_model_config
-        batch_size: 8
+        seq_len: 224
     lstm_models:
       <<: *default_pytorch_mode
       models:
         - lstm
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        batch_size: 224
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
     resnet_models:
       <<: *default_pytorch_mode
       models:
@@ -123,7 +148,8 @@ superbench:
         - resnet152
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        batch_size: 192
+        num_steps: 512
     densenet_models:
       <<: *default_pytorch_mode
       models:
@@ -131,7 +157,7 @@ superbench:
         - densenet201
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        pin_memory: no
     vgg_models:
       <<: *default_pytorch_mode
       models:
@@ -141,4 +167,4 @@ superbench:
         - vgg19
       parameters:
         <<: *common_model_config
-        batch_size: 128
+        pin_memory: no
