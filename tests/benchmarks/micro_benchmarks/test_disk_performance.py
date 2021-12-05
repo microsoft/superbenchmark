@@ -509,7 +509,7 @@ class DiskBenchmarkTest(unittest.TestCase):
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
         # bs + <read, write> x <iops, 95th, 99th, 99.9th>
-        assert (9 == len(benchmark.result.keys()))
+        assert (10 == len(benchmark.result.keys()))
 
         assert (1 == len(benchmark.result[jobname_prefix + '_bs']))
         assert (4096 == benchmark.result[jobname_prefix + '_bs'][0])

@@ -31,6 +31,7 @@ class BenchmarkResult():
         self.__end_time = None
         self.__raw_data = dict()
         self.__result = dict()
+        self.__result['return_code'] = [return_code.value]
         self.__reduce_op = dict()
 
     def __eq__(self, rhs):
@@ -119,6 +120,7 @@ class BenchmarkResult():
             return_code (ReturnCode): return code defined in superbench.benchmarks.ReturnCode.
         """
         self.__return_code = return_code
+        self.__result['return_code'][0] = return_code.value
 
     def to_string(self):
         """Serialize the BenchmarkResult object to string.
