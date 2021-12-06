@@ -12,6 +12,7 @@ from omegaconf import ListConfig
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
 from superbench.common.utils import SuperBenchLogger, logger, rotate_dir
 from superbench.common.devices import GPU
+from superbench.monitor import Monitor
 
 
 class SuperBenchExecutor():
@@ -32,6 +33,7 @@ class SuperBenchExecutor():
         logger.info('Executor writes to: %s.', str(self._output_path))
 
         self.__validate_sb_config()
+        self._sb_monitor_config = self._sb_config.superbench.monitor
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
         self._sb_enabled = self.__get_enabled_benchmarks()
         logger.info('Executor will execute: %s', self._sb_enabled)
@@ -131,17 +133,28 @@ class SuperBenchExecutor():
             logger.error('Executor failed in %s.', log_suffix)
         return None
 
+    def __get_rank_id(self):
+        """Get rank ID for current process.
+
+        Return:
+            int: Rank ID.
+        """
+        for rank_env in ['PROC_RANK', 'LOCAL_RANK']:
+            if os.getenv(rank_env):
+                return int(os.getenv(rank_env))
+
+        return 0
+
     def __get_benchmark_dir(self, benchmark_name):
         """Get output directory for benchmark's current rank.
 
         Args:
             benchmark_name (str): Benchmark name.
+
+        Return:
+            Path: output directory.
         """
-        benchmark_output_dir = self._output_path / 'benchmarks' / benchmark_name
-        for rank_env in ['PROC_RANK', 'LOCAL_RANK']:
-            if os.getenv(rank_env):
-                return benchmark_output_dir / 'rank{}'.format(os.getenv(rank_env))
-        return benchmark_output_dir / 'rank0'
+        return self._output_path / 'benchmarks' / benchmark_name / ('rank' + str(self.__get_rank_id()))
 
     def __create_benchmark_dir(self, benchmark_name):
         """Create output directory for benchmark.
@@ -166,6 +179,17 @@ class SuperBenchExecutor():
         with (self.__get_benchmark_dir(benchmark_name) / 'results.json').open(mode='w') as f:
             json.dump(benchmark_results, f, indent=2)
 
+    def __get_monitor_path(self, benchmark_name):
+        """Get the output file path for the monitor.
+
+        Args:
+            benchmark_name (str): Benchmark name.
+
+        Return:
+            Path: monitor output file path.
+        """
+        return f'{self.__get_benchmark_dir(benchmark_name) / "monitor.json"}'
+
     def exec(self):
         """Run the SuperBench benchmarks locally."""
         for benchmark_name in self._sb_benchmarks:
@@ -174,6 +198,15 @@ class SuperBenchExecutor():
             benchmark_config = self._sb_benchmarks[benchmark_name]
             benchmark_results = list()
             self.__create_benchmark_dir(benchmark_name)
+
+            monitor = None
+            if self.__get_rank_id() == 0 and self._sb_monitor_config and self._sb_monitor_config.enable:
+                monitor = Monitor(
+                    None, int(self._sb_monitor_config.sample_duration or 10),
+                    int(self._sb_monitor_config.sample_freq or 1), self.__get_monitor_path(benchmark_name)
+                )
+                monitor.start()
+
             for framework in benchmark_config.frameworks or [Framework.NONE.value]:
                 if benchmark_name.endswith('_models'):
                     for model in benchmark_config.models:
@@ -199,4 +232,6 @@ class SuperBenchExecutor():
                     result = self.__exec_benchmark(context, log_suffix)
                     benchmark_results.append(result)
 
+            if monitor:
+                monitor.stop()
             self.__write_benchmark_results(benchmark_name, benchmark_results)
