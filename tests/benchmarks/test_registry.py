@@ -28,8 +28,7 @@ class AccumulationBenchmark(MicroBenchmark):
         self._parser.add_argument(
             '--lower_bound',
             type=int,
-            default=0,
-            required=False,
+            required=True,
             help='The lower bound for accumulation.',
         )
 

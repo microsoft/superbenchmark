@@ -1,8 +1,7 @@
 # SuperBench Config
 #
-# Server:
-#   - Product: G482-Z53
-#   - Link: https://www.gigabyte.cn/FileUpload/Global/MicroSite/553/G482-Z53.html
+# Azure NDm A100 v4
+# reference: https://docs.microsoft.com/en-us/azure/virtual-machines/ndm-a100-v4-series
 
 version: v0.3
 superbench:
@@ -13,7 +12,7 @@ superbench:
       modes:
         - name: local
           proc_num: 8
-          prefix: HIP_VISIBLE_DEVICES={proc_rank}
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
           parallel: yes
     default_pytorch_mode: &default_pytorch_mode
       enable: true
@@ -38,39 +37,56 @@ superbench:
   benchmarks:
     kernel-launch:
       <<: *default_local_mode
-    rccl-bw:
+    gemm-flops:
+      <<: *default_local_mode
+    nccl-bw:
       enable: true
       modes:
         - name: local
           proc_num: 1
           parallel: no
       parameters:
-        maxbytes: 8G
         ngpus: 8
-        operation: allreduce
-    mem-bw:
-      <<: *default_local_mode
-    gemm-flops:
-      <<: *default_local_mode
-      parameters:
-        m: 7680
-        n: 8192
-        k: 8192
     ib-loopback:
       enable: true
       modes:
         - name: local
-          proc_num: 2
-          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,1
-          parallel: no
+          proc_num: 4
+          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,2,4,6 NUMA_NODES=1,0,3,2
+          parallel: yes
+        - name: local
+          proc_num: 4
+          prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=1,0,3,2
+          parallel: yes
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
+          parallel: yes
     disk-benchmark:
-      enable: false
+      enable: true
       modes:
         - name: local
           proc_num: 1
           parallel: no
       parameters:
-        block_devices: []
+        block_devices:
+          - /dev/nvme0n1
+          - /dev/nvme1n1
+          - /dev/nvme2n1
+          - /dev/nvme3n1
+          - /dev/nvme4n1
+          - /dev/nvme5n1
+          - /dev/nvme6n1
+          - /dev/nvme7n1
+        seq_read_runtime: 60
+        seq_write_runtime: 60
+        seq_readwrite_runtime: 60
+        rand_read_runtime: 60
+        rand_write_runtime: 60
+        rand_readwrite_runtime: 60
     gpu-copy-bw:
       enable: true
       modes:
@@ -84,12 +100,18 @@ superbench:
         copy_type:
           - sm
           - dma
-    ort-models:
-      enable: false
-      modes:
-        - name: local
+    cudnn-function:
+      <<: *default_local_mode
+    cublas-function:
+      <<: *default_local_mode
+    matmul:
+      <<: *default_local_mode
       frameworks:
-        - onnxruntime
+        - pytorch
+    sharding-matmul:
+      <<: *default_pytorch_mode
+    computation-communication-overlap:
+      <<: *default_pytorch_mode
     gpt_models:
       <<: *default_pytorch_mode
       models:
@@ -126,7 +148,8 @@ superbench:
         - resnet152
       parameters:
         <<: *common_model_config
-        pin_memory: no
+        batch_size: 192
+        num_steps: 512
     densenet_models:
       <<: *default_pytorch_mode
       models:
