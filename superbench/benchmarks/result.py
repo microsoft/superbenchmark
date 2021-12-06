@@ -161,6 +161,15 @@ class BenchmarkResult():
         return self.__return_code
 
     @property
+    def default_metric_count(self):
+        """Decoration function to get the count of default metrics."""
+        count = 0
+        if 'return_code' in self.__result:
+            count += 1
+
+        return count
+
+    @property
     def start_time(self):
         """Decoration function to access __start_time."""
         return self.__start_time

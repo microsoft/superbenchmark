@@ -112,7 +112,7 @@ gpu0_to_gpu0_by_gpu0_using_dma_under_numa1 634.203
         assert (1 == len(benchmark.raw_data))
         print(test_raw_output.splitlines())
         test_raw_output_dict = {x.split()[0]: float(x.split()[1]) for x in test_raw_output.strip().splitlines()}
-        assert (len(test_raw_output_dict) + 1 == len(benchmark.result))
+        assert (len(test_raw_output_dict) + benchmark.default_metric_count == len(benchmark.result))
         for output_key in benchmark.result:
             if output_key == 'return_code':
                 assert (benchmark.result[output_key] == [0])
