@@ -6,7 +6,7 @@ id: data-diagnosis
 
 ## Introduction
 
-This tool is to filter the defective machines automatically from thousands of benchmarking results according to rules defined in **Rule file**.
+This tool is to filter the defective machines automatically from thousands of benchmarking results according to rules defined in **rule file**.
 
 ## Input
 
@@ -16,19 +16,19 @@ The input mainly includes 3 files:
 
     `Tips`: this file can be found at ${output-dir}/results-summary.jsonl after each successful run.
 
- - **Rule file**: It uses YAML format and includes each metrics' rules to filter defective machines for diagnosis.
+ - **rule file**: It uses YAML format and includes each metrics' rules to filter defective machines for diagnosis.
 
  - **baseline file**: json file including the baseline values for the metrics.
 
     `Tips`: this file for some representative machine types will be published in [SuperBench Results Repo](https://github.com/microsoft/superbench-results/tree/main) with the release of Superbench.
 
-### Rule file
+### rule file
 
-This section describes how to write rules in **Rule file**.
+This section describes how to write rules in **rule file**.
 
 The convention is the same with [SuperBench Config File](https://microsoft.github.io/superbenchmark/docs/superbench-config), please view it first.
 
-Here is an overview of the Rule file structure:
+Here is an overview of the rule file structure:
 
 scheme:
 ```yaml
@@ -96,7 +96,7 @@ superbench:
         - gpt_models/pytorch-gpt-large/throughput_train_float(32|16)
 ```
 
-This Rule file describes the rules used for data diagnosis.
+This rule file describes the rules used for data diagnosis.
 
 They are firstly organized by the rule name, and each rule mainly includes 4 elements:
 
