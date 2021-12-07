@@ -84,7 +84,8 @@ class DataDiagnosis():
                 return baseline[short]
             # baseline not defined
             else:
-                logger.log_and_raise(exception=Exception, msg='{} baseline not found'.format(metric))
+                logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
+                return -1
 
     def _get_criteria(self, rule_file, baseline_file):
         """Get and generate criteria of metrics.
