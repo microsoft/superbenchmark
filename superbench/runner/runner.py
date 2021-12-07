@@ -8,6 +8,7 @@ import random
 from pathlib import Path
 from collections import defaultdict
 
+import jsonlines
 from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
@@ -15,6 +16,7 @@ from omegaconf import ListConfig, OmegaConf
 from superbench.common.utils import SuperBenchLogger, logger
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
+from superbench.monitor import MonitorRecord
 
 
 class SuperBenchRunner():
@@ -250,13 +252,15 @@ class SuperBenchRunner():
 
                         results_summary[benchmark_name][metric].append(result['result'][metric])
 
-        results_summary = self.__merge_all_metrics(results_summary, reduce_ops)
+        results_summary = self.__merge_benchmark_metrics(results_summary, reduce_ops)
+        monitor_summary = self.__merge_monitor_metrics(node_path)
+        results_summary = {**results_summary, **monitor_summary}
         with (node_path / 'results-summary.json').open(mode='w') as f:
             json.dump(results_summary, f, indent=2)
 
         return results_summary
 
-    def __merge_all_metrics(self, results_summary, reduce_ops):
+    def __merge_benchmark_metrics(self, results_summary, reduce_ops):
         """Merge metrics of all benchmarks in one node.
 
         Args:
@@ -293,6 +297,42 @@ class SuperBenchRunner():
                             else:
                                 metric_name = '{}/{}:{}'.format(benchmark_name, metric, rank)
                             metrics_summary[metric_name] = results_summary[benchmark_name][metric][rank][run_count]
+
+        return metrics_summary
+
+    def __merge_monitor_metrics(self, node_path):
+        """Merge and summarize monitor metrics of one node.
+
+        Args:
+            node_path (Path): The Path instance of node directory.
+
+        Returns:
+            dict: Flattened result with metric as key.
+        """
+        metrics_summary = dict()
+        all_samples = list()
+        file_list = list(node_path.glob('**/monitor.json'))
+        for results_file in file_list:
+            try:
+                with jsonlines.open(results_file) as reader:
+                    all_samples = list(reader)
+            except BaseException as e:
+                logger.error('Invalid JSON file: {}, error message: {}'.format(results_file, str(e)))
+                continue
+        all_samples = sorted(all_samples, key=lambda k: k.get('time', '0'))
+        metrics_dict = dict()
+        for sample in all_samples:
+            for metric, value in sample.items():
+                if metric not in metrics_dict:
+                    metrics_dict[metric] = list()
+                metrics_dict[metric].append(value)
+
+        for metric, values in metrics_dict.items():
+            for pattern, reduce_type in MonitorRecord.reduce_ops.items():
+                if pattern in metric:
+                    reduce_func = Reducer.get_reduce_func(reduce_type)
+                    metrics_summary[metric] = reduce_func(values)
+                    continue
 
         return metrics_summary
 

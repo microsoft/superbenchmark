@@ -7,9 +7,19 @@ import json
 import numbers
 from datetime import datetime
 
+from superbench.benchmarks import ReduceType
+
 
 class MonitorRecord:
     """Record class to save all monitoring data."""
+    reduce_ops = {
+        'gpu_temperature': ReduceType.MAX,
+        'gpu_power_limit': ReduceType.MIN,
+        'gpu_corrected_ecc': ReduceType.LAST,
+        'gpu_uncorrected_ecc': ReduceType.LAST,
+        'gpu_remap': ReduceType.LAST,
+    }
+
     def __init__(self):
         """Constructor."""
         self.__time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')

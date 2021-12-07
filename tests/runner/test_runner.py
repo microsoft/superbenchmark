@@ -185,8 +185,8 @@ class RunnerTestCase(unittest.TestCase):
         mock_ansible_client_run.return_value = 0
         self.runner.run()
 
-    def test_merge_all_metrics(self):
-        """Test __merge_all_metrics."""
+    def test_merge_benchmark_metrics(self):
+        """Test __merge_benchmark_metrics."""
         result_summary = json.loads(
             '{"kernel-launch": {"overhead_event": [[0.00583], [0.00545], [0.00581], [0.00572], [0.00559], [0.00591], '
             '[0.00562], [0.00586]], "overhead_wall": [[0.01018], [0.01039], [0.01067], [0.01079], [0.00978], '
@@ -238,4 +238,43 @@ class RunnerTestCase(unittest.TestCase):
             '"pytorch-sharding-matmul/0/allreduce": 10.87, "pytorch-sharding-matmul/1/allreduce": 10.69, '
             '"pytorch-sharding-matmul/0/allgather": 10.56, "pytorch-sharding-matmul/1/allgather": 10.16}'
         )
-        self.assertEqual(self.runner._SuperBenchRunner__merge_all_metrics(result_summary, reduce_ops), expected)
+        self.assertEqual(self.runner._SuperBenchRunner__merge_benchmark_metrics(result_summary, reduce_ops), expected)
+
+    def test_merge_monitor_metrics(self):
+        """Test __merge_monitor_metrics."""
+        path = Path('tests/data/monitor/')
+        expected = {
+            'gpu_temperature:0': 50,
+            'gpu_temperature:1': 27,
+            'gpu_temperature:2': 24,
+            'gpu_temperature:3': 26,
+            'gpu_temperature:4': 25,
+            'gpu_temperature:5': 25,
+            'gpu_temperature:6': 23,
+            'gpu_temperature:7': 26,
+            'gpu_power_limit:0': 250,
+            'gpu_power_limit:1': 200,
+            'gpu_power_limit:2': 250,
+            'gpu_power_limit:3': 250,
+            'gpu_power_limit:4': 250,
+            'gpu_power_limit:5': 250,
+            'gpu_power_limit:6': 250,
+            'gpu_power_limit:7': 250,
+            'gpu_corrected_ecc:0': 12,
+            'gpu_corrected_ecc:1': 0,
+            'gpu_corrected_ecc:2': 0,
+            'gpu_corrected_ecc:3': 0,
+            'gpu_corrected_ecc:4': 0,
+            'gpu_corrected_ecc:5': 0,
+            'gpu_corrected_ecc:6': 0,
+            'gpu_corrected_ecc:7': 0,
+            'gpu_uncorrected_ecc:0': 0,
+            'gpu_uncorrected_ecc:1': 0,
+            'gpu_uncorrected_ecc:2': 0,
+            'gpu_uncorrected_ecc:3': 0,
+            'gpu_uncorrected_ecc:4': 0,
+            'gpu_uncorrected_ecc:5': 0,
+            'gpu_uncorrected_ecc:6': 0,
+            'gpu_uncorrected_ecc:7': 0
+        }
+        self.assertEqual(self.runner._SuperBenchRunner__merge_monitor_metrics(path), expected)
