@@ -45,8 +45,8 @@ def test_pytorch_computation_communication_overlap_normal():
         assert (benchmark.run_count == 1)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-        assert (len(benchmark.raw_data) == benchmark.run_count * len(benchmark._args.kernel))
-        assert (len(benchmark.result) == benchmark.run_count * len(benchmark._args.kernel))
+        assert (len(benchmark.raw_data) == len(benchmark._args.kernel))
+        assert (len(benchmark.result) == len(benchmark._args.kernel) + benchmark.default_metric_count)
 
 
 @decorator.cuda_test
@@ -79,6 +79,6 @@ def test_pytorch_computation_communication_overlap_fake_distributed():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-    assert (len(benchmark.raw_data) == benchmark.run_count * len(benchmark._args.kernel))
-    assert (len(benchmark.result) == benchmark.run_count * len(benchmark._args.kernel))
+    assert (len(benchmark.raw_data) == len(benchmark._args.kernel))
+    assert (len(benchmark.result) == len(benchmark._args.kernel) + benchmark.default_metric_count)
     utils.clean_simulated_ddp_distributed_env()
