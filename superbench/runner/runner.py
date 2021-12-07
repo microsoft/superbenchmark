@@ -6,6 +6,7 @@
 import json
 import random
 from pathlib import Path
+from pprint import pformat
 from collections import defaultdict
 
 from natsort import natsorted
@@ -36,7 +37,7 @@ class SuperBenchRunner():
         self._ansible_client = AnsibleClient(ansible_config)
 
         self.__set_logger('sb-run.log')
-        logger.info('Runner uses config: %s.', self._sb_config)
+        logger.info('Runner uses config: %s.', pformat(self._sb_config))
         logger.info('Runner writes to: %s.', str(self._output_path))
 
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
@@ -214,7 +215,7 @@ class SuperBenchRunner():
                 json.dump(result, f)
                 f.write('\n')
 
-    def __create_single_node_summary(self, node_path):    # pragma: no cover
+    def __create_single_node_summary(self, node_path):    # pragma: no cover # noqa: C901
         """Create the result summary file of single node.
 
         Args:
@@ -235,7 +236,11 @@ class SuperBenchRunner():
                     continue
 
                 for result in results:
-                    benchmark_name = result['name']
+                    try:
+                        benchmark_name = result['name']
+                    except Exception:
+                        logger.error('Invalid content in JSON file: {}'.format(results_file))
+                        continue
                     if results_file.parts[-3].endswith('_models'):
                         benchmark_name = '{}/{}'.format(results_file.parts[-3], result['name'])
                     if benchmark_name not in results_summary:
