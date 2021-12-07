@@ -74,7 +74,7 @@ def test_cublas_functions():
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
-    assert (1 == len(benchmark.result))
+    assert (1 + benchmark.default_metric_count == len(benchmark.result))
     for metric in list(benchmark.result.keys()):
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))
