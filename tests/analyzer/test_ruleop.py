@@ -21,14 +21,15 @@ class TestRuleOp(unittest.TestCase):
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType.VARIANCE)
         assert (rule_op == RuleOp.variance)
 
-        # Test - check ciriteria
+        # Test - variance and value rule function
+        # Check whether arguments are valid
+        # Negative case
         details = []
         categories = set()
         summary_data_row = pd.Series(index=['kernel-launch/event_overhead:0'], dtype=float)
         data = {'kernel-launch/event_overhead:0': 3.1, 'kernel-launch/event_overhead:1': 2}
         data_row = pd.Series(data)
-
-        false_baselines = [
+        false_rule_and_baselines = [
             {
                 'categories': 'KernelLaunch',
                 'criteria': '>',
@@ -60,11 +61,11 @@ class TestRuleOp(unittest.TestCase):
             }
         ]
 
-        for rule in false_baselines:
+        for rule in false_rule_and_baselines:
             self.assertRaises(Exception, RuleOp.variance, data_row, rule, summary_data_row, details, categories)
             self.assertRaises(Exception, RuleOp.value, data_row, rule, summary_data_row, details, categories)
 
-        # Test - rule function
+        # Positive case
         true_baselines = [
             {
                 'categories': 'KernelLaunch',
@@ -91,10 +92,10 @@ class TestRuleOp(unittest.TestCase):
                 }
             }
         ]
+        # Check results
         details = []
         categories = set()
         summary_data_row = pd.Series(index=['kernel-launch/event_overhead:0'], dtype=float)
-
         # variance
         data = {'kernel-launch/event_overhead:0': 3.1, 'kernel-launch/event_overhead:1': 2}
         data_row = pd.Series(data)

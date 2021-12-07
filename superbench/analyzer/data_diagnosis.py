@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""A module for data analysis."""
+"""A module for baseline-based data diagnosis."""
 
 import re
 from typing import Callable
@@ -21,7 +21,7 @@ class DataDiagnosis():
         self._metrics = {}
 
     def _get_metrics_by_benchmarks(self, metrics_list):
-        """Get all metrics by benchmark from metrics_list.
+        """Get mappings of benchmarks:metrics of metrics_list.
 
         Args:
             metrics_list (list): list of metrics
@@ -38,14 +38,14 @@ class DataDiagnosis():
         return benchmarks_metrics
 
     def _check_rules(self, rule, name):
-        """Check the rule of the metric whether formart is valid.
+        """Check the rule of the metric whether the formart is valid.
 
         Args:
             rule (dict): the rule
-            name ([type]): the rule name
+            name (str): the rule name
 
         Returns:
-            dict: criteria and rule for the metric
+            dict: the rule for the metric
         """
         # check if rule is supported
         if 'function' not in rule:
@@ -66,10 +66,11 @@ class DataDiagnosis():
         return rule
 
     def _get_criteria(self, rule_file, baseline_file):
-        """Get and generate criteria from metrics.
+        """Get and generate criteria of metrics.
 
-        Use metric with regex in rule_file to match the metric full name from raw data
-        for each benchmark enabled in baseline file, and then generate criteria and rule for
+        Read rule file and baseline file. For each rule, use metric with regex
+        in the metrics of the rule to match the metric full name from raw data
+        for each benchmark in the rule, and then merge baseline and rule for
         matched metrics.
 
         Args:
@@ -77,7 +78,7 @@ class DataDiagnosis():
             baseline_file (str): The path of baseline json file
 
         Returns:
-            bool: return True if successfully get the criteria, otherwise False.
+            bool: return True if successfully get the criteria for all rules, otherwise False.
         """
         try:
             rules = file_handler.read_rules(rule_file)
@@ -121,7 +122,7 @@ class DataDiagnosis():
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
         if the node violate any rule, label as defective node and save
-        the '# of Issues', 'Category', 'Issue Details' and processed data of defective node.
+        the 'Category', 'Defective Details' and data summary of defective node.
 
         Args:
             node (str): the node to do the diagosis
@@ -130,14 +131,14 @@ class DataDiagnosis():
             details_row (list): None if the node is not labeled as defective,
                 otherwise details of ['Category', 'Defective Details']
             summary_data_row (dict): None if the node is not labeled as defective,
-                otherwise data summary of the metrics used in diagnosis
+                otherwise data summary of the metrics
         """
         data_row = self._raw_data_df.loc[node]
         issue_label = False
         details = []
         categories = set()
         summary_data_row = pd.Series(index=self._enable_metrics, name=node, dtype=float)
-
+        # Check each rule
         for rule in self._sb_rules:
             # Get rule op function and run the rule
             function_name = self._sb_rules[rule]['function']
@@ -156,11 +157,11 @@ class DataDiagnosis():
         return None, None
 
     def run_diagnosis_rules(self, rule_file, baseline_file):
-        """Rule-based data diagnosis for multi nodes' raw data.
+        """Rule-based data diagnosis for multiple nodes' raw data.
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
         if the node violate any rule, label as defective node and save
-        the Category', 'Defective Details' and processed data of defective node.
+        the 'Category', 'Defective Details' and processed data of defective node.
 
         Args:
             rule_file (str): The path of rule yaml file
@@ -207,7 +208,7 @@ class DataDiagnosis():
             raw_data_path (str): the path of raw data jsonl file.
             rule_file (str): The path of baseline yaml file
             baseline_file (str): The path of baseline json file
-            output_dir (str): the path of output excel file
+            output_dir (str): the directory of output file
             output_format (str): the format of the output, 'excel' or 'json'
         """
         try:
@@ -216,13 +217,15 @@ class DataDiagnosis():
             logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file, baseline_file)
             logger.info('DataDiagnosis: Processed finished')
+            outpout_path = ''
             if output_format == 'excel':
-                file_handler.output_excel(
-                    self._raw_data_df, data_not_accept_df, output_dir + '/diagnosis_summary.xlsx', self._sb_rules
-                )
+                output_path = output_dir + '/diagnosis_summary.xlsx'
+                file_handler.output_excel(self._raw_data_df, data_not_accept_df, outpout_path, self._sb_rules)
             elif output_format == 'json':
-                file_handler.output_json_data_not_accept(data_not_accept_df, output_dir + '/diagnosis_summary.jsonl')
+                output_path = output_dir + '/diagnosis_summary.jsonl'
+                file_handler.output_json_data_not_accept(data_not_accept_df, )
             else:
                 logger.error('DataDiagnosis: output failed - unsupported output format')
+            logger.info('DataDiagnosis: Output results to {}'.format(output_path))
         except Exception as e:
             logger.error('DataDiagnosis: run failed - {}'.format(str(e)))

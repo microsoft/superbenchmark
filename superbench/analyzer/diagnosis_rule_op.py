@@ -59,8 +59,8 @@ class RuleOp:
         """Rule op function of variance.
 
         Each metric in the rule will calculate the variance (val - baseline / baseline),
-        and use criteria in the rule to determine whether any metric's variance meet the criteria,
-        if so, the rule is not passed.
+        and use criteria in the rule to determine whether metric's variance meet the criteria,
+        if any metric is labeled, the rule is not passed.
 
         Args:
             data_row (pd.Series): raw data of the metrics
@@ -107,9 +107,9 @@ class RuleOp:
     def value(cls, data_row, rule, summary_data_row, details, categories):
         """Rule op function of value.
 
-        Each metric in the rule will  use criteria in the rule 
-        to determine whether any metric's value meet the criteria,
-        if so, the rule is not passed.
+        Each metric in the rule will use criteria in the rule
+        to determine whether metric's value meet the criteria,
+        if any metric is labeled, the rule is not passed.
 
         Args:
             data_row (pd.Series): raw data of the metrics

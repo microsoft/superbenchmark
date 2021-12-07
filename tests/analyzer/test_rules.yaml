@@ -16,7 +16,7 @@ superbench:
       metrics:
         - mem-bw/H2D_Mem_BW:\d+
         - mem-bw/D2H_Mem_BW:\d+
-    rule5:
+    falure_rule:
       function: value
       criteria: 'lambda x:x>0'
       categories: FailedTest

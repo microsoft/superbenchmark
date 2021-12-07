@@ -158,7 +158,7 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
 
 
 def output_excel(raw_data_df, data_not_accept_df, output_path, rules):
-    """Output the processed results into excel file.
+    """Output the raw_data_df and data_not_accept_df results into excel file.
 
     Args:
         raw_data_df (DataFrame): raw data

@@ -5,7 +5,6 @@
 
 import json
 import unittest
-import jsonlines
 import yaml
 from pathlib import Path
 
@@ -55,6 +54,7 @@ class TestDataDiagnosis(unittest.TestCase):
         rules = file_handler.read_rules(test_rule_file)
         assert (rules)
         # Test - _check_rules
+        # Negative case
         false_rules = [
             {
                 'criteria': 'lambda x:x>0',
@@ -87,7 +87,8 @@ class TestDataDiagnosis(unittest.TestCase):
         metric = 'kernel-launch/event_overhead:0'
         for rules in false_rules:
             self.assertRaises(Exception, diag1._check_rules, rules, metric)
-        true_baselines = [
+        # Positive case
+        true_rules = [
             {
                 'categories': 'KernelLaunch',
                 'criteria': 'lambda x:x>0.05',
@@ -105,7 +106,7 @@ class TestDataDiagnosis(unittest.TestCase):
                 'metrics': ['kernel-launch/event_overhead:\\d+']
             }
         ]
-        for rules in true_baselines:
+        for rules in true_rules:
             assert (diag1._check_rules(rules, metric))
         # Test - _get_criteria
         # Negative case
@@ -157,9 +158,16 @@ class TestDataDiagnosis(unittest.TestCase):
         data_sheet_name = 'Not Accept'
         data_not_accept_read_from_excel = excel_file.parse(data_sheet_name)
         assert (len(data_not_accept_read_from_excel) == 2)
+        assert ('Category' in data_not_accept_read_from_excel)
+        assert ('Defective Details' in data_not_accept_read_from_excel)
         # Test - output in json
         file_handler.output_json_data_not_accept(data_not_accept_df, self.output_json_file)
         assert (Path(self.output_json_file).is_file())
         with Path(self.output_json_file).open() as f:
             data_not_accept_read_from_json = f.readlines()
         assert (len(data_not_accept_read_from_json) == 2)
+        for line in data_not_accept_read_from_json:
+            json.loads(line)
+            assert ('Category' in line)
+            assert ('Defective Details' in line)
+            assert ('Index' in line)
