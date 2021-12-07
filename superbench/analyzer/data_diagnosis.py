@@ -65,6 +65,27 @@ class DataDiagnosis():
             rule['metrics'] = [rule['metrics']]
         return rule
 
+    def _get_baseline_of_metric(self, baseline, metric):
+        """Get the baseline value of the metric.
+
+        Args:
+            baseline (dict): baseline defined in baseline file
+            metric (str): the full name of the metric
+
+        Returns:
+            numeric: the baseline value of the metric
+        """
+        if metric in baseline:
+            return baseline[metric]
+        else:
+            # exclude rank info
+            short = metric.split(':')[0]
+            if short in baseline:
+                return baseline[short]
+            # baseline not defined
+            else:
+                logger.log_and_raise(exception=Exception, msg='{} baseline not found'.format(metric))
+
     def _get_criteria(self, rule_file, baseline_file):
         """Get and generate criteria of metrics.
 
@@ -103,13 +124,13 @@ class DataDiagnosis():
                     for metric in self._metrics[benchmark_name]:
                         # metric full name in baseline
                         if metric in single_rule_metrics:
-                            self._sb_rules[rule]['metrics'][metric] = baseline[metric]
+                            self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
                             self._enable_metrics.append(metric)
                             continue
                         # metric full name not in baseline, use regex to match
                         for metric_regex in benchmark_metrics[benchmark_name]:
                             if re.search(metric_regex, metric):
-                                self._sb_rules[rule]['metrics'][metric] = baseline[metric]
+                                self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
                                 self._enable_metrics.append(metric)
         except Exception as e:
             logger.error('DataDiagnosis: get criteria failed - {}'.format(str(e)))
