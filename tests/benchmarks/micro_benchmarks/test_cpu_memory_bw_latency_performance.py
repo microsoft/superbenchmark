@@ -12,7 +12,7 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 def test_cpu_memory_bw_latency_performance():
     """Test CPU/Host memory bandwidth-latency."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'cpu-memory-bw-latency', parameters='--tests bandwidth_matrix latency_matrix'
+        'cpu-memory-bw-latency', parameters='--tests bandwidth_matrix latency_matrix max_bandwidth'
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -25,7 +25,7 @@ def test_cpu_memory_bw_latency_performance():
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.
-    assert (benchmark._args.tests == ['bandwidth_matrix','latency_matrix'])
+    assert (benchmark._args.tests == ['bandwidth_matrix','latency_matrix','max_bandwidth'])
 
     # Check results and metrics.
     assert (benchmark.run_count == 1)

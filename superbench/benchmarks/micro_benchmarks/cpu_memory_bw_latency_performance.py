@@ -11,7 +11,7 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class CPUMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
+class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
     """The Memory bandwidth and latency benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -78,15 +78,15 @@ class CPUMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         # parse the command to see which command this output belongs to
-        mlc_test = self._commands[cmd_idx].split("--")[1]
+        mlc_test = self._commands[cmd_idx].split('--')[1]
         if 'max_bandwidth' in mlc_test:
-            measure = "BW"
+            measure = 'BW'
             out_table = self._parse_max_bw(raw_output)
         elif 'bandwidth_matrix' in mlc_test:
-            measure = "BW"
+            measure = 'BW'
             out_table = self._parse_bw_latency(raw_output)
         elif 'latency_matrix' in mlc_test:
-            measure = "Latency"
+            measure = 'Latency'
             out_table = self._parse_bw_latency(raw_output)
         else:
             logger.error('Invalid option {} to run the {} command'.format(mlc_test,self._commands[cmd_idx]))
@@ -134,4 +134,4 @@ class CPUMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             out_table[key]=[vals[-1]]
         return out_table
 
-BenchmarkRegistry.register_benchmark('cpu-memory-bw-latency', CPUMemBwLatencyBenchmark)
+BenchmarkRegistry.register_benchmark('cpu-memory-bw-latency', CpuMemBwLatencyBenchmark)
