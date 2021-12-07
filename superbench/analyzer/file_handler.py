@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""A module for data analysis."""
+"""A module for file related functions in analyzer."""
 
 from pathlib import Path
 import re
-
 import json
+
 import jsonlines
 import pandas as pd
 import yaml
@@ -15,10 +15,11 @@ from superbench.common.utils import logger
 
 
 def read_raw_data(raw_data_path):
-    """Read raw data from raw_data_path and store them in self._raw_data_df.
+    """Read raw data from raw_data_path and store them in raw_data_df.
 
     Args:
         raw_data_path (str): the path of raw data jsonl file
+
     Returns:
         DataFrame: raw data, node as index, metric name as columns
     """
@@ -39,17 +40,17 @@ def read_raw_data(raw_data_path):
     return raw_data_df
 
 
-def read_rules(baseline_file=None):
+def read_rules(rule_file=None):
     """Read rule from rule yaml file.
 
     Args:
-        baseline_file (str, optional): The path of rule yaml file. Defaults to None.
+        rule_file (str, optional): The path of rule yaml file. Defaults to None.
 
     Returns:
         dict: dict object read from yaml file
     """
-    default_rule_file = Path(__file__).parent / 'default_rule.yaml'
-    p = Path(baseline_file) if baseline_file else default_rule_file
+    default_rule_file = Path(__file__).parent / 'rule/default_rule.yaml'
+    p = Path(rule_file) if rule_file else default_rule_file
     if not p.is_file():
         logger.error('DataDiagnosis: invalid rule file path - {}'.format(str(p.resolve())))
         return None
@@ -78,7 +79,7 @@ def read_baseline(baseline_file):
     return baseline
 
 
-def excel_raw_data_output(writer, raw_data_df, sheet_name):
+def output_excel_raw_data(writer, raw_data_df, sheet_name):
     """Output raw data into 'sheet_name' excel page.
 
     Args:
@@ -93,13 +94,13 @@ def excel_raw_data_output(writer, raw_data_df, sheet_name):
         logger.warning('DataDiagnosis: excel_data_output - {} data_df is empty.'.format(sheet_name))
 
 
-def excel_data_not_accept_output(writer, data_not_accept_df, rules):
+def output_excel_data_not_accept(writer, data_not_accept_df, rules):
     """Output data_not_accept_df into 'Not Accept' excel page.
 
     Args:
         writer (xlsxwriter): xlsxwriter handle
         data_not_accept_df (DataFrame): the DataFrame to output
-        rules (dict): the rules to diagnosis data
+        rules (dict): the rules of DataDiagnosis
     """
     # Get the xlsxwriter workbook objects and init the format
     workbook = writer.book
@@ -150,5 +151,56 @@ def excel_data_not_accept_output(writer, data_not_accept_df, rules):
                             }
                         )
 
+        else:
+            logger.warning('DataDiagnosis: excel_data_output - data_not_accept_df is empty.')
     else:
-        logger.warning('DataDiagnosis: excel_data_output - data_not_accept_df is empty.')
+        logger.warning('DataDiagnosis: excel_data_output - data_not_accept_df is not DataFrame.')
+
+
+def output_excel(raw_data_df, data_not_accept_df, output_path, rules):
+    """Output the processed results into excel file.
+
+    Args:
+        raw_data_df (DataFrame): raw data
+        data_not_accept_df (DataFrame): defective nodes's detailed information
+        output_path (str): the path of output excel file
+        rules (dict): the rules of DataDiagnosis
+    """
+    try:
+        writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
+        # Check whether writer is valiad
+        if not isinstance(writer, pd.ExcelWriter):
+            logger.error('DataDiagnosis: excel_data_output - invalid file path.')
+            return
+        output_excel_raw_data(writer, raw_data_df, 'Raw Data')
+        output_excel_data_not_accept(writer, data_not_accept_df, rules)
+        writer.save()
+    except Exception as e:
+        logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
+
+
+def output_json_data_not_accept(data_not_accept_df, output_path):
+    """Output data_not_accept_df into jsonl file.
+
+    Args:
+        data_not_accept_df (DataFrame): the DataFrame to output
+        output_path (str): the path of output jsonl file
+    """
+    p = Path(output_path)
+    try:
+        data_not_accept_json = data_not_accept_df.to_json(orient='index')
+        data_not_accept = json.loads(data_not_accept_json)
+        if not isinstance(data_not_accept_df, pd.DataFrame):
+            logger.warning('DataDiagnosis: output json data - data_not_accept_df is not DataFrame.')
+            return
+        if data_not_accept_df.empty:
+            logger.warning('DataDiagnosis: output json data - data_not_accept_df is empty.')
+            return
+        with p.open('w') as f:
+            for node in data_not_accept:
+                line = data_not_accept[node]
+                line['Index'] = node
+                json_str = json.dumps(line)
+                f.write(json_str + '\n')
+    except Exception as e:
+        logger.error('DataDiagnosis: output json data failed, msg: {}'.format(str(e)))

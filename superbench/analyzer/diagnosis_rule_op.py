@@ -56,7 +56,22 @@ class RuleOp:
 
     @classmethod
     def variance(cls, data_row, rule, summary_data_row, details, categories):
-        """Rule op function of variance."""
+        """Rule op function of variance.
+
+        Each metric in the rule will calculate the variance (val - baseline / baseline),
+        and use criteria in the rule to determine whether any metric's variance meet the criteria,
+        if so, the rule is not passed.
+
+        Args:
+            data_row (pd.Series): raw data of the metrics
+            rule (dict): rule including function, criteria, metrics with their baseline values and categories
+            summary_data_row (pd.Series): results of the metrics processed after the function
+            details (list): defective details including data and rules
+            categories (set): categories of violated rules
+
+        Returns:
+            bool: whether the rule is passed
+        """
         pass_rule = True
         # parse criteria and check if valid
         if not isinstance(eval(rule['criteria'])(0), bool):
@@ -64,7 +79,7 @@ class RuleOp:
         # every metric should pass the rule
         for metric in rule['metrics']:
             violate_metric = False
-            # metric not in raw_data not the value is none, miss test
+            # metric not in raw_data or the value is none, miss test
             if metric not in data_row or pd.isna(data_row[metric]):
                 pass_rule = False
                 details.append(metric + '_miss')
@@ -77,20 +92,35 @@ class RuleOp:
                     logger.log_and_raise(exception=Exception, msg='invalid baseline 0 in variance rule')
                 var = (val - baseline) / baseline
                 summary_data_row[metric] = var
-                info = '(B/L: {:.4f} VAL: {:.4f} VAR: {:.2f}% Rule:{})'.format(
-                    baseline, val, var * 100, rule['criteria']
-                )
                 violate_metric = eval(rule['criteria'])(var)
                 # add issued details and categories
                 if violate_metric:
                     pass_rule = False
+                    info = '(B/L: {:.4f} VAL: {:.4f} VAR: {:.2f}% Rule:{})'.format(
+                        baseline, val, var * 100, rule['criteria']
+                    )
                     details.append(metric + info)
                     categories.add(rule['categories'])
         return pass_rule
 
     @classmethod
     def value(cls, data_row, rule, summary_data_row, details, categories):
-        """Rule op function of value higher than baseline."""
+        """Rule op function of value.
+
+        Each metric in the rule will  use criteria in the rule 
+        to determine whether any metric's value meet the criteria,
+        if so, the rule is not passed.
+
+        Args:
+            data_row (pd.Series): raw data of the metrics
+            rule (dict): rule including function, criteria, metrics with their baseline values and categories
+            summary_data_row (pd.Series): results of the metrics processed after the function
+            details (list): defective details including data and rules
+            categories (set): categories of violated rules
+
+        Returns:
+            bool: whether the rule is passed
+        """
         pass_rule = True
         # parse criteria and check if valid
         if not isinstance(eval(rule['criteria'])(0), bool):
@@ -98,7 +128,7 @@ class RuleOp:
         # every metric should pass the rule
         for metric in rule['metrics']:
             violate_metric = False
-            # metric not in raw_data not the value is none, miss test
+            # metric not in raw_data or the value is none, miss test
             if metric not in data_row or pd.isna(data_row[metric]):
                 pass_rule = False
                 details.append(metric + '_miss')
@@ -107,11 +137,11 @@ class RuleOp:
                 # check if metric pass the rule
                 val = data_row[metric]
                 summary_data_row[metric] = val
-                info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
                 violate_metric = eval(rule['criteria'])(val)
                 # add issued details and categories
                 if violate_metric:
                     pass_rule = False
+                    info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
                     details.append(metric + info)
                     categories.add(rule['categories'])
         return pass_rule

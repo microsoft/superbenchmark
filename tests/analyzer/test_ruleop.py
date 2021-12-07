@@ -83,7 +83,7 @@ class TestRuleOp(unittest.TestCase):
                     'kernel-launch/event_overhead:1': 2
                 }
             }, {
-                'categories': 'KernelLaunch',
+                'categories': 'KernelLaunch2',
                 'criteria': 'lambda x:x>0',
                 'function': 'value',
                 'metrics': {
@@ -100,13 +100,19 @@ class TestRuleOp(unittest.TestCase):
         data_row = pd.Series(data)
         pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories)
         assert (not pass_rule)
+        assert (categories == {'KernelLaunch'})
+        assert (details == ['kernel-launch/event_overhead:0(B/L: 2.0000 VAL: 3.1000 VAR: 55.00% Rule:lambda x:x>0.5)'])
 
         data = {'kernel-launch/event_overhead:0': 1.5, 'kernel-launch/event_overhead:1': 1.5}
         data_row = pd.Series(data)
         pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories)
         assert (pass_rule)
+        assert (categories == {'KernelLaunch'})
 
         # value
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType.VALUE)
         pass_rule = rule_op(data_row, true_baselines[2], summary_data_row, details, categories)
         assert (not pass_rule)
+        assert (categories == {'KernelLaunch', 'KernelLaunch2'})
+        assert ('kernel-launch/event_overhead:0(VAL: 1.5000 Rule:lambda x:x>0)' in details)
+        assert ('kernel-launch/event_overhead:0(B/L: 2.0000 VAL: 3.1000 VAR: 55.00% Rule:lambda x:x>0.5)' in details)

@@ -3,10 +3,13 @@
 
 """Tests for DataDiagnosis module."""
 
-import pandas as pd
+import json
 import unittest
+import jsonlines
 import yaml
 from pathlib import Path
+
+import pandas as pd
 
 from superbench.analyzer import DataDiagnosis
 import superbench.analyzer.file_handler as file_handler
@@ -16,17 +19,16 @@ class TestDataDiagnosis(unittest.TestCase):
     """Test for DataDiagnosis class."""
     def setUp(self):
         """Method called to prepare the test fixture."""
-        self.output_file = str(Path(__file__).parent.resolve()) + '/diagnosis_summary.xlsx'
+        self.output_excel_file = str(Path(__file__).parent.resolve()) + '/diagnosis_summary.xlsx'
         self.test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
+        self.output_json_file = str(Path(__file__).parent.resolve()) + '/diagnosis_summary.jsonl'
 
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
-        p = Path(self.test_rule_file_fake)
-        if p.is_file():
-            p.unlink()
-        p = Path(self.output_file)
-        if p.is_file():
-            p.unlink()
+        for file in [self.output_excel_file, self.output_json_file, self.test_rule_file_fake]:
+            p = Path(file)
+            if p.is_file():
+                p.unlink()
 
     def test_data_diagnosis(self):
         """Test for rule-based data diagnosis."""
@@ -133,26 +135,31 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (label_df.loc['sb-validation-03']['label'] == 1)
         node = 'sb-validation-01'
         row = data_not_accept_df.loc[node]
-        assert (len(row) == 37)
-        assert (row['# of Issues'] == 1)
+        assert (len(row) == 36)
         assert (row['Category'] == 'KernelLaunch')
         assert (
-            row['Issue Details'] ==
+            row['Defective Details'] ==
             'kernel-launch/event_overhead:0(B/L: 0.0060 VAL: 0.1000 VAR: 1577.85% Rule:lambda x:x>0.05)'
         )
         node = 'sb-validation-03'
         row = data_not_accept_df.loc[node]
-        assert (len(row) == 37)
+        assert (len(row) == 36)
         assert ('FailedTest' in row['Category'])
-        assert ('mem-bw/return_code(VAL: 1.0000 Rule:lambda x:x>0)' in row['Issue Details'])
-        assert ('mem-bw/H2D_Mem_BW:0_miss' in row['Issue Details'])
+        assert ('mem-bw/return_code(VAL: 1.0000 Rule:lambda x:x>0)' in row['Defective Details'])
+        assert ('mem-bw/H2D_Mem_BW:0_miss' in row['Defective Details'])
         assert (len(data_not_accept_df) == 2)
-        # Test - excel_output
-        diag1.excel_output(data_not_accept_df, str(Path(__file__).parent.resolve()))
-        excel_file = pd.ExcelFile(self.output_file, engine='openpyxl')
+        # Test - output in excel
+        file_handler.output_excel(diag1._raw_data_df, data_not_accept_df, self.output_excel_file, diag1._sb_rules)
+        excel_file = pd.ExcelFile(self.output_excel_file, engine='openpyxl')
         data_sheet_name = 'Raw Data'
         raw_data_df = excel_file.parse(data_sheet_name)
         assert (len(raw_data_df) == 3)
         data_sheet_name = 'Not Accept'
-        data_not_accept_df = excel_file.parse(data_sheet_name)
-        assert (len(data_not_accept_df) == 2)
+        data_not_accept_read_from_excel = excel_file.parse(data_sheet_name)
+        assert (len(data_not_accept_read_from_excel) == 2)
+        # Test - output in json
+        file_handler.output_json_data_not_accept(data_not_accept_df, self.output_json_file)
+        assert (Path(self.output_json_file).is_file())
+        with Path(self.output_json_file).open() as f:
+            data_not_accept_read_from_json = f.readlines()
+        assert (len(data_not_accept_read_from_json) == 2)

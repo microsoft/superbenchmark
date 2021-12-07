@@ -16,12 +16,19 @@ import superbench.analyzer.file_handler as file_handler
 class DataDiagnosis():
     """The DataDiagnosis class to do the baseline-based data diagnosis."""
     def __init__(self):
-        """Init function using the raw data file path."""
+        """Init function."""
         self._sb_rules = {}
         self._metrics = {}
 
     def _get_metrics_by_benchmarks(self, metrics_list):
-        """Get all metrics by benchmark from metrics_list."""
+        """Get all metrics by benchmark from metrics_list.
+
+        Args:
+            metrics_list (list): list of metrics
+
+        Returns:
+            dict: metrics organized by benchmarks
+        """
         benchmarks_metrics = {}
         for metric in metrics_list:
             benchmark = metric.split('/')[0]
@@ -41,6 +48,8 @@ class DataDiagnosis():
             dict: criteria and rule for the metric
         """
         # check if rule is supported
+        if 'function' not in rule:
+            logger.log_and_raise(exception=Exception, msg='{} lack of function'.format(name))
         if not isinstance(DiagnosisRuleType(rule['function']), DiagnosisRuleType):
             logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
         # check rule format
@@ -74,6 +83,7 @@ class DataDiagnosis():
             rules = file_handler.read_rules(rule_file)
             baseline = file_handler.read_baseline(baseline_file)
             if not rules or not baseline:
+                logger.error('DataDiagnosis: get criteria failed')
                 return False
             self._sb_rules = {}
             self._enable_metrics = []
@@ -101,7 +111,7 @@ class DataDiagnosis():
                                 self._sb_rules[rule]['metrics'][metric] = baseline[metric]
                                 self._enable_metrics.append(metric)
         except Exception as e:
-            logger.error('DataDiagnosis: get criteria failed- {}'.format(str(e)))
+            logger.error('DataDiagnosis: get criteria failed - {}'.format(str(e)))
             return False
 
         return True
@@ -110,16 +120,16 @@ class DataDiagnosis():
         """Use rules to diagnosis single node data.
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
-        if the node violate any rule, label as issued node and save
-        the '# of Issues', 'Category', 'Issue Details' and processed data of issued node.
+        if the node violate any rule, label as defective node and save
+        the '# of Issues', 'Category', 'Issue Details' and processed data of defective node.
 
         Args:
             node (str): the node to do the diagosis
 
         Returns:
-            details_row (list): None if the node is not labeled as issued,
-                otherwise details of ['# of Issues', 'Category', 'Issue Details']
-            summary_data_row (dict): None if the node is not labeled as issued,
+            details_row (list): None if the node is not labeled as defective,
+                otherwise details of ['Category', 'Defective Details']
+            summary_data_row (dict): None if the node is not labeled as defective,
                 otherwise data summary of the metrics used in diagnosis
         """
         data_row = self._raw_data_df.loc[node]
@@ -133,14 +143,14 @@ class DataDiagnosis():
             function_name = self._sb_rules[rule]['function']
             rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
             pass_rule = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories)
-            # label the node as issued one
+            # label the node as defective one
             if not pass_rule:
                 issue_label = True
         if issue_label:
             # Add category information
             general_cat_str = ','.join(categories)
             details_cat_str = ','.join(details)
-            details_row = [len(details), general_cat_str, details_cat_str]
+            details_row = [general_cat_str, details_cat_str]
             return details_row, summary_data_row
 
         return None, None
@@ -149,19 +159,19 @@ class DataDiagnosis():
         """Rule-based data diagnosis for multi nodes' raw data.
 
         Use the rules defined in rule_file to diagnose the raw data of each node,
-        if the node violate any rule, label as issued node and save
-        the '# of Issues', 'Category', 'Issue Details' and processed data of issued node.
+        if the node violate any rule, label as defective node and save
+        the Category', 'Defective Details' and processed data of defective node.
 
         Args:
             rule_file (str): The path of rule yaml file
             baseline_file (str): The path of baseline json file
 
         Returns:
-            data_not_accept_df (DataFrame): issued nodes's detailed information
+            data_not_accept_df (DataFrame): defective nodes's detailed information
             label_df (DataFrame): labels for all nodes
         """
         try:
-            summary_columns = ['# of Issues', 'Category', 'Issue Details']
+            summary_columns = ['Category', 'Defective Details']
             data_not_accept_df = pd.DataFrame(columns=summary_columns)
             summary_details_df = pd.DataFrame()
             label_df = pd.DataFrame(columns=['label'])
@@ -181,7 +191,7 @@ class DataDiagnosis():
                     label_df.loc[node] = 1
                 else:
                     label_df.loc[node] = 0
-            # combine details for issued nodes
+            # combine details for defective nodes
             if len(data_not_accept_df) != 0:
                 data_not_accept_df = data_not_accept_df.join(summary_details_df)
                 data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
@@ -190,31 +200,13 @@ class DataDiagnosis():
             logger.error('DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e)))
         return data_not_accept_df, label_df
 
-    def excel_output(self, data_not_accept_df, output_dir):
-        """Output the processed results into excel file.
-
-        Args:
-            data_not_accept_df (DataFrame): issued nodes's detailed information
-            output_dir (str): the path of output excel file
-        """
-        try:
-            writer = pd.ExcelWriter(output_dir + '/diagnosis_summary.xlsx', engine='xlsxwriter')
-            # Check whether writer is valiad
-            if not isinstance(writer, pd.ExcelWriter):
-                logger.error('DataDiagnosis: excel_data_output - invalid file path.')
-                return
-            file_handler.excel_raw_data_output(writer, self._raw_data_df, 'Raw Data')
-            file_handler.excel_data_not_accept_output(writer, data_not_accept_df, self._sb_rules)
-            writer.save()
-        except Exception as e:
-            logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
-
-    def run(self, raw_data_path, rule_file, output_dir, output_format='excel'):
+    def run(self, raw_data_path, rule_file, baseline_file, output_dir, output_format='excel'):
         """Run the data diagnosis and output the results.
 
         Args:
             raw_data_path (str): the path of raw data jsonl file.
             rule_file (str): The path of baseline yaml file
+            baseline_file (str): The path of baseline json file
             output_dir (str): the path of output excel file
             output_format (str): the format of the output, 'excel' or 'json'
         """
@@ -222,12 +214,14 @@ class DataDiagnosis():
             self._raw_data_df = file_handler.read_raw_data(raw_data_path)
             self._metrics = self._get_metrics_by_benchmarks(list(self._raw_data_df.columms))
             logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
-            data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file)
+            data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file, baseline_file)
             logger.info('DataDiagnosis: Processed finished')
             if output_format == 'excel':
-                self.excel_output(data_not_accept_df, output_dir)
+                file_handler.output_excel(
+                    self._raw_data_df, data_not_accept_df, output_dir + '/diagnosis_summary.xlsx', self._sb_rules
+                )
             elif output_format == 'json':
-                data_not_accept_df.to_json(output_dir + '/diagnosis_summary.json')
+                file_handler.output_json_data_not_accept(data_not_accept_df, output_dir + '/diagnosis_summary.jsonl')
             else:
                 logger.error('DataDiagnosis: output failed - unsupported output format')
         except Exception as e:
