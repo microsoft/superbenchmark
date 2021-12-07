@@ -54,8 +54,8 @@ class RuleOp:
 
         return None
 
-    @classmethod
-    def variance(cls, data_row, rule, summary_data_row, details, categories):
+    @staticmethod
+    def variance(data_row, rule, summary_data_row, details, categories):
         """Rule op function of variance.
 
         Each metric in the rule will calculate the variance (val - baseline / baseline),
@@ -103,8 +103,8 @@ class RuleOp:
                     categories.add(rule['categories'])
         return pass_rule
 
-    @classmethod
-    def value(cls, data_row, rule, summary_data_row, details, categories):
+    @staticmethod
+    def value(data_row, rule, summary_data_row, details, categories):
         """Rule op function of value.
 
         Each metric in the rule will use criteria in the rule
