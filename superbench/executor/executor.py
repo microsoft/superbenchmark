@@ -188,7 +188,7 @@ class SuperBenchExecutor():
         Return:
             Path: monitor output file path.
         """
-        return f'{self.__get_benchmark_dir(benchmark_name) / "monitor.json"}'
+        return f'{self.__get_benchmark_dir(benchmark_name) / "monitor.jsonl"}'
 
     def exec(self):
         """Run the SuperBench benchmarks locally."""

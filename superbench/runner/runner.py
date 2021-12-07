@@ -311,13 +311,13 @@ class SuperBenchRunner():
         """
         metrics_summary = dict()
         all_samples = list()
-        file_list = list(node_path.glob('**/monitor.json'))
+        file_list = list(node_path.glob('**/monitor.jsonl'))
         for results_file in file_list:
             try:
                 with jsonlines.open(results_file) as reader:
                     all_samples = list(reader)
             except BaseException as e:
-                logger.error('Invalid JSON file: {}, error message: {}'.format(results_file, str(e)))
+                logger.error('Invalid Jsonline file: {}, error message: {}'.format(results_file, str(e)))
                 continue
         all_samples = sorted(all_samples, key=lambda k: k.get('time', '0'))
         metrics_dict = dict()
