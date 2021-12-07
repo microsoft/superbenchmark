@@ -182,12 +182,12 @@ class TCPConnectivityBenchmark(MicroBenchmark):
                         mininum = float(res[labels.index('Minimum')].strip('ms'))
                         maximum = float(res[labels.index('Maximum')].strip('ms'))
                         average = float(res[labels.index('Average')].strip('ms'))
-            self._result.add_result('Successed_' + host, suc)
-            self._result.add_result('Failed_' + host, fail)
-            self._result.add_result('Success_Rate_' + host, rate)
-            self._result.add_result('Minimum_' + host, mininum)
-            self._result.add_result('Maximum_' + host, maximum)
-            self._result.add_result('Average_' + host, average)
+            self._result.add_result(host + '_successed_count', suc)
+            self._result.add_result(host + '_failed_count', fail)
+            self._result.add_result(host + '_success_rate', rate)
+            self._result.add_result(host + '_time_ms_min', mininum)
+            self._result.add_result(host + '_time_ms_max', maximum)
+            self._result.add_result(host + '_time_ms_avg', average)
         except Exception as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, address: {}, raw output: {}, message: {}.'.

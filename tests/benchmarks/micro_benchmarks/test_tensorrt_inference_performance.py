@@ -135,9 +135,9 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
 
         self.assertEqual(6, len(benchmark.result))
         for tag in ['mean', '99']:
-            self.assertEqual(0.5, benchmark.result[f'gpu_lat_ms_{tag}'][0])
-            self.assertEqual(0.6, benchmark.result[f'host_lat_ms_{tag}'][0])
-            self.assertEqual(1.0, benchmark.result[f'end_to_end_lat_ms_{tag}'][0])
+            self.assertEqual(0.5, benchmark.result[f'gpu_time_ms_{tag}'][0])
+            self.assertEqual(0.6, benchmark.result[f'host_time_ms_{tag}'][0])
+            self.assertEqual(1.0, benchmark.result[f'end_to_end_time_ms_{tag}'][0])
 
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'Invalid raw output'))

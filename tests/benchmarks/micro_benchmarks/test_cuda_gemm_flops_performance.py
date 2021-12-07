@@ -94,9 +94,9 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
         assert (benchmark._process_raw_result(1, raw_output_TF32_TC))
         assert (benchmark._process_raw_result(2, raw_output_FP16_TC))
 
-        assert (benchmark.result['FP32'][0] == 18369.7)
-        assert (benchmark.result['TF32_TC'][0] == 128677)
-        assert (benchmark.result['FP16_TC'][0] == 281048)
+        assert (benchmark.result['fp32_flops'][0] == 18369.7)
+        assert (benchmark.result['tf32_tc_flops'][0] == 128677)
+        assert (benchmark.result['fp32_tc_flops'][0] == 281048)
 
         # Negative case - Add invalid raw output.
         assert (benchmark._process_raw_result(3, 'Invalid raw output') is False)

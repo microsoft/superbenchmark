@@ -23,6 +23,21 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
             'FP64', 'FP32', 'FP16', 'FP64_TC', 'TF32_TC', 'BF16_TC', 'FP16_TC', 'INT8_TC', 'INT4_TC'
         ]
         self._precision_need_to_run = list()
+        self._metric_map = {
+            'FP64': 'fp64_flops',
+            'FP32': 'fp32_flops',
+            'FP16': 'fp16_flops',
+            'FP64_TC': 'fp64_tc_flops',
+            'TF32_TC': 'tp32_tc_flops',
+            'BF16_TC': 'bf16_tc_flops',
+            'FP16_TC': 'fp16_tc_flops',
+            'INT8_TC': 'int8_tc_iops',
+            'INT4_TC': 'int4_tc_iops',
+            'FP32_xDLOPS': 'fp32_xdlops_flops',
+            'FP16_xDLOPS': 'fp16_xdlops_flops',
+            'BF16_xDLOPS': 'bf16_xdlops_flops',
+            'INT8_xDLOPS': 'int8_xdlops_flops'
+        }
 
     def add_parser_arguments(self):
         """Add the specified arguments."""

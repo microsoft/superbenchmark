@@ -190,7 +190,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                         algbw_out = float(line[algbw_index])
                         self._result.add_result(self._args.operation + '_' + str(size) + '_busbw', busbw_out)
                         self._result.add_result(self._args.operation + '_' + str(size) + '_algbw', algbw_out)
-                        self._result.add_result(self._args.operation + '_' + str(size) + '_time', time_out)
+                        self._result.add_result(self._args.operation + '_' + str(size) + '_time_us', time_out)
         except BaseException as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(

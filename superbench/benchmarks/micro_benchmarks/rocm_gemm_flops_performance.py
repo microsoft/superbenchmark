@@ -154,7 +154,7 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
             )
             return False
 
-        self._result.add_result(precision, gflops)
+        self._result.add_result(self._metric_map[precision], gflops)
 
         return True
 

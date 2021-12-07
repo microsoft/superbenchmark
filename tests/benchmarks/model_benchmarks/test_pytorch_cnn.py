@@ -17,9 +17,9 @@ def test_pytorch_cnn_with_gpu():
         parameters='--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 2 --num_steps 4 \
             --model_action train inference',
         check_metrics=[
-            'steptime_train_float32', 'throughput_train_float32', 'steptime_train_float16', 'throughput_train_float16',
-            'steptime_inference_float32', 'throughput_inference_float32', 'steptime_inference_float16',
-            'throughput_inference_float16'
+            'float32_train_steptime_ms', 'float32_train_throughput', 'float16_train_steptime_ms',
+            'float16_train_throughput', 'float32_inference_steptime_ms', 'float32_inference_throughput',
+            'float16_inference_steptime_ms', 'float16_inference_throughput'
         ]
     )
 
@@ -32,8 +32,8 @@ def test_pytorch_cnn_no_gpu():
         parameters='--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 2 --num_steps 4 \
                 --model_action train inference --precision float32 --no_gpu',
         check_metrics=[
-            'steptime_train_float32', 'throughput_train_float32', 'steptime_inference_float32',
-            'throughput_inference_float32'
+            'float32_train_steptime_ms', 'float32_train_throughput', 'float32_inference_steptime_ms',
+            'float32_inference_throughput'
         ]
     )
 

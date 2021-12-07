@@ -373,7 +373,7 @@ class ModelBenchmark(Benchmark):
             )
             return False
 
-        metric = 'steptime_{}_{}'.format(model_action, precision)
+        metric = '{}_{}_steptime_ms'.format(model_action, precision)
         self._result.add_raw_data(metric, step_times)
         avg = statistics.mean(step_times)
         self._result.add_result(metric, avg, reduce_type=ReduceType.MAX if model_action is ModelAction.TRAIN else None)
@@ -381,7 +381,7 @@ class ModelBenchmark(Benchmark):
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
-        metric = 'throughput_{}_{}'.format(model_action, precision)
+        metric = '{}_{}_throughput'.format(model_action, precision)
         self._result.add_raw_data(metric, throughput)
         avg = statistics.mean(throughput)
         self._result.add_result(metric, avg, reduce_type=ReduceType.MIN if model_action is ModelAction.TRAIN else None)

@@ -177,24 +177,23 @@ gpcnet-network-test: Full system network tests in random and natural ring, allto
 
 gpcnet-network-load-test: Select full system network tests run with four congestors to measure network congestion or contention, at least 10 nodes
 
-
- - supporting network tests: RR Two-sided Lat (8 B), RR Two-sided BW+Sync (131072 B), Multiple Allreduce (8 B)
- - supporting congetors: Alltoall (4096 B), Two-sided Incast (4096 B), Put Incast (4096 B), Get Bcast (4096 B)
+ - supporting network tests: RR Two-sided Lat (8 B), RR Get Lat (8 B), RR Two-sided BW (131072 B), RR Put BW (131072 B), RR Two-sided BW+Sync (131072 B), Nat Two-sided BW (131072 B), Multiple Allreduce (8 B), Multiple Alltoall (4096 B)
+ - supporting congestors: Alltoall (4096 B), Two-sided Incast (4096 B), Put Incast (4096 B), Get Bcast (4096 B)
 
 #### Metrics
 
-| Metrics                                                | Unit                  | Description                                                                                                                                                                |
-| ------------------------------------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| gpcnet-network-test/rr_two-sided_time_us_${stat}       | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
-| gpcnet-network-test/rr_two-sided_bw_${stat}            | bandwidth (MB/s/rank) | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
-| gpcnet-network-test/multiple_allreduce_time_us_${stat} | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
-| gpcnet-network-test/get_bcast_bw_${stat}               | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Get Bcast(4096B)' for congestion testing                                               |
-| gpcnet-network-test/put_incast_bw_${stat}              | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Put Incast (4096 B)' for congestion testing                                            |
-| gpcnet-network-test/two-sided_incast_bw_${stat}        | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
-| gpcnet-network-test/alltoall_bw_${stat}                | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
-| gpcnet-network-load-test/rr_two-sided_time_x_${stat}   | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
-| gpcnet-network-load-test/rr_two-sided_bw_x_${stat}     | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
-| gpcnet-network-load-test/multiple_allreduce_x_${stat}  | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| Metrics                                                 | Unit                  | Description                                                                                                                                                                |
+| ------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| gpcnet-network-test/rr_two-sided_lat_us_${stat}         | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
+| gpcnet-network-test/rr_two-sided+sync_bw_${stat}        | bandwidth (MB/s/rank) | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
+| gpcnet-network-test/multiple_allreduce_time_us_${stat}  | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
+| gpcnet-network-test/rr_get_lat_us_${stat}               | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'RR GetLat (8 B)' for network testing                                                    |
+| gpcnet-network-test/rr_two-sided_bw_${stat}             | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'RR Two-sidedBW (131072 B)' for network testing                                          |
+| gpcnet-network-test/nat_two-sided_bw_${stat}            | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'Nat Two-sidedBW (131072 B)' for network testing                                         |
+| gpcnet-network-test/multiple_alltoall_bw_${stat}        | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'Multiple Alltoall (4096 B)' for network testing                                         |
+| gpcnet-network-load-test/rr_two-sided_lat_x_${stat}     | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| gpcnet-network-load-test/rr_two-sided+sync_bw_x_${stat} | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| gpcnet-network-load-test/multiple_allreduce_x_${stat}   | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
 
 ### `ib-traffic`
 
@@ -207,10 +206,10 @@ Each row in the config is one round, and all pairs of nodes in a row run ib comm
 
 #### Metrics
 
-| Metrics                                       | Unit             | Description                                                                                                                                                             |
-| --------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ib-traffic/${command}-${line}-${pair}_bw      | bandwidth (GB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config |
-| ib-traffic/${command}-${line}-${pair}_time_us | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config    |
+| Metrics                                                           | Unit             | Description                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ib-traffic/${command}_${line}_${pair}_${server}_${client}_bw      | bandwidth (GB/s) | The max bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client  |
+| ib-traffic/${command}_${line}_${pair}_${server}_${client}_time_us | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client |
 
 
 ## Computation-communication Benchmarks

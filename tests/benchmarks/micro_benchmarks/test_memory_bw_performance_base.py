@@ -83,7 +83,7 @@ def test_memory_bw_performance_base():
     for i in range(len(expected_command)):
         command = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
         assert (command == expected_command[i])
-    for i, metric in enumerate(['H2D_Mem_BW', 'D2H_Mem_BW', 'D2D_Mem_BW']):
+    for i, metric in enumerate(['h2d_bw', 'd2h_bw', 'd2d_bw']):
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)
 
@@ -97,7 +97,7 @@ def test_memory_bw_performance_base():
     for i in range(len(expected_command)):
         command = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
         assert (command == expected_command[i])
-    for i, metric in enumerate(['H2D_Mem_BW', 'D2H_Mem_BW', 'D2D_Mem_BW']):
+    for i, metric in enumerate(['h2d_bw', 'd2h_bw', 'd2d_bw']):
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)
 

@@ -20,7 +20,7 @@ class MemBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._mem_types = ['htod', 'dtoh', 'dtod']
-        self._metrics = ['H2D_Mem_BW', 'D2H_Mem_BW', 'D2D_Mem_BW']
+        self._metrics = ['h2d_bw', 'd2h_bw', 'd2d_bw']
         self._memory = ['pinned', 'unpinned']
         self._parse_logline_map = {'htod': 'H2D', 'dtoh': 'D2H', 'dtod': 'D2D'}
 
