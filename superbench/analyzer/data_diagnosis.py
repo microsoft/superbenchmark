@@ -222,21 +222,21 @@ class DataDiagnosis():
             logger.error('DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e)))
         return data_not_accept_df, label_df
 
-    def run(self, raw_data_path, rule_file, baseline_file, output_dir, output_format='excel'):
+    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel'):
         """Run the data diagnosis and output the results.
 
         Args:
-            raw_data_path (str): the path of raw data jsonl file.
+            raw_data_file (str): the path of raw data jsonl file.
             rule_file (str): The path of baseline yaml file
             baseline_file (str): The path of baseline json file
             output_dir (str): the directory of output file
             output_format (str): the format of the output, 'excel' or 'json'
         """
         try:
-            self._raw_data_df = file_handler.read_raw_data(raw_data_path)
-            self._metrics = self._get_metrics_by_benchmarks(list(self._raw_data_df.columms))
+            self._raw_data_df = file_handler.read_raw_data(raw_data_file)
+            self._metrics = self._get_metrics_by_benchmarks(list(self._raw_data_df.columns))
             logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
-            data_not_accept_df, label_df = self.run_diagnosis_rules(self, rule_file, baseline_file)
+            data_not_accept_df, label_df = self.run_diagnosis_rules(rule_file, baseline_file)
             logger.info('DataDiagnosis: Processed finished')
             outpout_path = ''
             if output_format == 'excel':
@@ -244,7 +244,7 @@ class DataDiagnosis():
                 file_handler.output_excel(self._raw_data_df, data_not_accept_df, outpout_path, self._sb_rules)
             elif output_format == 'json':
                 output_path = output_dir + '/diagnosis_summary.jsonl'
-                file_handler.output_json_data_not_accept(data_not_accept_df, )
+                file_handler.output_json_data_not_accept(data_not_accept_df, output_path)
             else:
                 logger.error('DataDiagnosis: output failed - unsupported output format')
             logger.info('DataDiagnosis: Output results to {}'.format(output_path))
