@@ -15,7 +15,7 @@ FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.7.0
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
+RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
@@ -27,6 +27,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | APT_KEY_DON
     jq \
     libaio-dev \
     libcap2 \
+    libnuma-dev \
     libpci-dev \
     libtinfo5 \
     libtool \
@@ -79,6 +80,13 @@ RUN cd /tmp && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
     PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
+
+# Install HPC-X
+RUN cd /opt && \
+    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
+    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
+    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64 hpcx && \
+    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz
 
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \

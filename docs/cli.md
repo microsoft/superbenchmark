@@ -41,23 +41,23 @@ sb deploy [--docker-image]
 
 #### Optional arguments
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `--docker-image` `-i` | `superbench/superbench` | Docker image URI, [here](./tutorial/container-images) listed all images. |
-| `--docker-password` | `None` | Docker registry password if authentication is needed. |
-| `--docker-username` | `None` | Docker registry username if authentication is needed. |
-| `--host-file` `-f` | `None` | Path to Ansible inventory host file. |
-| `--host-list` `-l` | `None` | Comma separated host list. |
-| `--host-password` | `None` | Host password or key passphase if needed. |
-| `--host-username` | `None` | Host username if needed. |
-| `--output-dir` | `None` | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--private-key` | `None` | Path to private key if needed. |
+| Name                  | Default                 | Description                                                                   |
+|-----------------------|-------------------------|-------------------------------------------------------------------------------|
+| `--docker-image` `-i` | `superbench/superbench` | Docker image URI, [here](./user-tutorial/container-images) listed all images. |
+| `--docker-password`   | `None`                  | Docker registry password if authentication is needed.                         |
+| `--docker-username`   | `None`                  | Docker registry username if authentication is needed.                         |
+| `--host-file` `-f`    | `None`                  | Path to Ansible inventory host file.                                          |
+| `--host-list` `-l`    | `None`                  | Comma separated host list.                                                    |
+| `--host-password`     | `None`                  | Host password or key passphase if needed.                                     |
+| `--host-username`     | `None`                  | Host username if needed.                                                      |
+| `--output-dir`        | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified.   |
+| `--private-key`       | `None`                  | Path to private key if needed.                                                |
 
 #### Global arguments
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `--help` `-h` | N/A | Show help message. |
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
 
 #### Examples
 
@@ -82,17 +82,17 @@ sb exec [--config-file]
 
 #### Optional arguments
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `--config-file` `-c` | `None` | Path to SuperBench config file. |
-| `--config-override` `-C` | `None` | Extra arguments to override config_file. |
-| `--output-dir` | `None` | Path to output directory, outputs/{datetime} will be used if not specified. |
+| Name                     | Default | Description                                                                 |
+|--------------------------|---------|-----------------------------------------------------------------------------|
+| `--config-file` `-c`     | `None`  | Path to SuperBench config file.                                             |
+| `--config-override` `-C` | `None`  | Extra arguments to override config_file.                                    |
+| `--output-dir`           | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
 
 #### Global arguments
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `--help` `-h` | N/A | Show help message. |
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
 
 #### Examples
 
@@ -120,25 +120,25 @@ sb run [--config-file]
 
 #### Optional arguments
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `--config-file` `-c` | `None` | Path to SuperBench config file. |
-| `--config-override` `-C` | `None` | Extra arguments to override config_file. |
-| `--docker-image` `-i` | `superbench/superbench` | Docker image URI. |
-| `--docker-password` | `None` | Docker registry password if authentication is needed. |
-| `--docker-username` | `None` | Docker registry username if authentication is needed. |
-| `--host-file` `-f` | `None` | Path to Ansible inventory host file. |
-| `--host-list` `-l` | `None` | Comma separated host list. |
-| `--host-password` | `None` | Host password or key passphase if needed. |
-| `--host-username` | `None` | Host username if needed. |
-| `--output-dir` | `None` | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--private-key` | `None` | Path to private key if needed. |
+| Name                     | Default                 | Description                                                                 |
+|--------------------------|-------------------------|-----------------------------------------------------------------------------|
+| `--config-file` `-c`     | `None`                  | Path to SuperBench config file.                                             |
+| `--config-override` `-C` | `None`                  | Extra arguments to override config_file.                                    |
+| `--docker-image` `-i`    | `superbench/superbench` | Docker image URI.                                                           |
+| `--docker-password`      | `None`                  | Docker registry password if authentication is needed.                       |
+| `--docker-username`      | `None`                  | Docker registry username if authentication is needed.                       |
+| `--host-file` `-f`       | `None`                  | Path to Ansible inventory host file.                                        |
+| `--host-list` `-l`       | `None`                  | Comma separated host list.                                                  |
+| `--host-password`        | `None`                  | Host password or key passphase if needed.                                   |
+| `--host-username`        | `None`                  | Host username if needed.                                                    |
+| `--output-dir`           | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified. |
+| `--private-key`          | `None`                  | Path to private key if needed.                                              |
 
 #### Global arguments
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `--help` `-h` | N/A | Show help message. |
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
 
 #### Examples
 
@@ -162,9 +162,9 @@ sb version
 
 #### Global arguments
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `--help` `-h` | N/A | Show help message. |
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
 
 #### Examples
 

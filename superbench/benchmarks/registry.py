@@ -67,17 +67,37 @@ class BenchmarkRegistry:
 
                 cls.benchmarks[name][p] = (class_def, parameters)
 
+        cls.__parse_and_check_args(name, class_def, parameters)
+
+    @classmethod
+    def __parse_and_check_args(cls, name, class_def, parameters):
+        """Parse and check the predefine parameters.
+
+        If ignore_invalid is True, and 'required' arguments are not set when register the benchmark,
+        the arguments should be provided by user in config and skip the arguments checking.
+
+        Args:
+            name (str): internal name of benchmark.
+            class_def (Benchmark): class object of benchmark.
+            parameters (str): predefined parameters of benchmark.
+        """
         benchmark = class_def(name, parameters)
         benchmark.add_parser_arguments()
-        ret, args, unknown = benchmark.parse_args()
+        ret, args, unknown = benchmark.parse_args(ignore_invalid=True)
         if not ret or len(unknown) >= 1:
             logger.log_and_raise(
                 TypeError,
                 'Registered benchmark has invalid arguments - benchmark: {}, parameters: {}'.format(name, parameters)
             )
-        else:
+        elif args is not None:
             cls.benchmarks[name]['predefine_param'] = vars(args)
             logger.debug('Benchmark registration - benchmark: {}, predefine_parameters: {}'.format(name, vars(args)))
+        else:
+            cls.benchmarks[name]['predefine_param'] = dict()
+            logger.info(
+                'Benchmark registration - benchmark: {}, missing required parameters or invalid parameters, '
+                'skip the arguments checking.'.format(name)
+            )
 
     @classmethod
     def is_benchmark_context_valid(cls, benchmark_context):
@@ -124,7 +144,7 @@ class BenchmarkRegistry:
             name (str): name of benchmark in config file.
             platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM.
             parameters (str): predefined parameters of benchmark.
-            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNX.
+            framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNXRUNTIME.
 
         Return:
             benchmark_context (BenchmarkContext): the benchmark context.

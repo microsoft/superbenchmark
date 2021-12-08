@@ -66,10 +66,10 @@ class RunnerTestCase(unittest.TestCase):
                     'name': 'local',
                     'proc_num': 8,
                     'proc_rank': 6,
-                    'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))'
+                    'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))'
                 },
                 'expected_command': (
-                    'PROC_RANK=6 CUDA_VISIBLE_DEVICES=6 numactl -c $((6/2)) '
+                    'PROC_RANK=6 CUDA_VISIBLE_DEVICES=6 numactl -N $((6/2)) '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
@@ -116,8 +116,6 @@ class RunnerTestCase(unittest.TestCase):
                 'expected_command': (
                     'python3 -m torch.distributed.launch '
                     '--use_env --no_python --nproc_per_node=8 '
-                    '--nnodes=1 --node_rank=$NODE_RANK '
-                    '--master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo '
                     'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'

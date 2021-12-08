@@ -17,18 +17,22 @@ module.exports = {
     },
     {
       type: 'category',
-      label: 'Tutorial',
+      label: 'User Tutorial',
       collapsed: false,
       items: [
-        'tutorial/container-images',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Benchmarks',
-      items: [
-        'benchmarks/micro-benchmarks',
-        'benchmarks/model-benchmarks',
+        {
+          type: 'category',
+          label: 'Benchmarks',
+          collapsed: false,
+          items: [
+            'user-tutorial/benchmarks/micro-benchmarks',
+            'user-tutorial/benchmarks/model-benchmarks',
+            'user-tutorial/benchmarks/docker-benchmarks',
+          ],
+        },
+        'user-tutorial/system-config',
+        'user-tutorial/data-diagnosis',
+        'user-tutorial/container-images',
       ],
     },
     {
@@ -46,7 +50,6 @@ module.exports = {
       items: [
         'design-docs/overview',
         'design-docs/benchmarks',
-        'design-docs/system-config'
       ],
     },
   ],

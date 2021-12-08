@@ -28,8 +28,7 @@ class AccumulationBenchmark(MicroBenchmark):
         self._parser.add_argument(
             '--lower_bound',
             type=int,
-            default=0,
-            required=False,
+            required=True,
             help='The lower bound for accumulation.',
         )
 
@@ -88,12 +87,12 @@ def test_is_benchmark_context_valid():
 def test_get_benchmark_name():
     """Test interface BenchmarkRegistry.get_benchmark_name()."""
     # Register benchmarks for testing.
-    benchmark_names = ['accumulation', 'pytorch-accumulation', 'tf1-accumulation', 'onnx-accumulation']
+    benchmark_names = ['accumulation', 'pytorch-accumulation', 'tf1-accumulation', 'onnxruntime-accumulation']
     for name in benchmark_names:
         BenchmarkRegistry.register_benchmark(name, AccumulationBenchmark)
 
     # Test benchmark name for different Frameworks.
-    benchmark_frameworks = [Framework.NONE, Framework.PYTORCH, Framework.TENSORFLOW1, Framework.ONNX]
+    benchmark_frameworks = [Framework.NONE, Framework.PYTORCH, Framework.TENSORFLOW1, Framework.ONNXRUNTIME]
     for i in range(len(benchmark_names)):
         context = BenchmarkRegistry.create_benchmark_context(
             'accumulation', platform=Platform.CPU, framework=benchmark_frameworks[i]
@@ -140,7 +139,7 @@ def test_launch_benchmark():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     assert (benchmark.raw_data == {'accumulation_result': ['1,3,6,10']})
-    assert (benchmark.result == {'accumulation_result': [10]})
+    assert (benchmark.result == {'return_code': [0], 'accumulation_result': [10]})
 
     # Replace the timestamp as null.
     result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
@@ -148,7 +147,7 @@ def test_launch_benchmark():
         '{"name": "accumulation", "type": "micro", "run_count": 1, '
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
-        '"result": {"accumulation_result": [10]}, '
+        '"result": {"return_code": [0], "accumulation_result": [10]}, '
         '"reduce_op": {"accumulation_result": null}}'
     )
     assert (result == expected)
@@ -164,7 +163,7 @@ def test_launch_benchmark():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     assert (benchmark.raw_data == {'accumulation_result': ['1,3,6']})
-    assert (benchmark.result == {'accumulation_result': [6]})
+    assert (benchmark.result == {'return_code': [0], 'accumulation_result': [6]})
 
     # Replace the timestamp as null.
     result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
@@ -172,7 +171,7 @@ def test_launch_benchmark():
         '{"name": "accumulation", "type": "micro", "run_count": 1, '
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6"]}, '
-        '"result": {"accumulation_result": [6]}, '
+        '"result": {"return_code": [0], "accumulation_result": [6]}, '
         '"reduce_op": {"accumulation_result": null}}'
     )
     assert (result == expected)

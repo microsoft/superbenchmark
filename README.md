@@ -15,7 +15,7 @@
 
 __SuperBench__ is a validation and profiling tool for AI infrastructure.
 
-📢 [v0.2.1](https://github.com/microsoft/superbenchmark/releases/tag/v0.2.1) has been released!
+📢 [v0.3.0](https://github.com/microsoft/superbenchmark/releases/tag/v0.3.0) has been released!
 
 ## _Check [aka.ms/superbench](https://aka.ms/superbench) for more details._
 
