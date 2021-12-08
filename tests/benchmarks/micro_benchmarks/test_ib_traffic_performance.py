@@ -27,7 +27,9 @@ class IBBenchmarkTest(unittest.TestCase):
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
-        Path('hostfile').unlink()
+        p = Path('hostfile')
+        if p.is_file():
+            p.unlink()
 
     def test_generate_config(self):    # noqa: C901
         """Test util functions ."""
