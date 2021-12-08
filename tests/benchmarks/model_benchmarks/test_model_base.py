@@ -225,7 +225,7 @@ def test_train():
         '"start_time": null, "end_time": null, "raw_data": {'
         '"steptime_train_float32": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"throughput_train_float32": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
-        '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0]}, '
+        '"result": {"return_code": [0], "steptime_train_float32": [2.0], "throughput_train_float32": [16000.0]}, '
         '"reduce_op": {"steptime_train_float32": "max", "throughput_train_float32": "min"}}'
     )
     assert (benchmark._preprocess())
@@ -236,7 +236,7 @@ def test_train():
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
-        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}, "reduce_op": {}}'
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {"return_code": [3]}, "reduce_op": {}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32) is False)
@@ -251,8 +251,8 @@ def test_inference():
         '"start_time": null, "end_time": null, "raw_data": {'
         '"steptime_inference_float16": [[4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]], '
         '"throughput_inference_float16": [[8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0]]}, '
-        '"result": {"steptime_inference_float16": [4.0], "throughput_inference_float16": [8000.0]}, '
-        '"reduce_op": {"steptime_inference_float16": null, "throughput_inference_float16": null}}'
+        '"result": {"return_code": [0], "steptime_inference_float16": [4.0], "throughput_inference_float16": '
+        '[8000.0]}, "reduce_op": {"steptime_inference_float16": null, "throughput_inference_float16": null}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16))
@@ -262,7 +262,7 @@ def test_inference():
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
-        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}, "reduce_op": {}}'
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {"return_code": [3]}, "reduce_op": {}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16) is False)
@@ -287,6 +287,7 @@ def test_benchmark():
     }
     assert (benchmark.raw_data == expected_raw_data)
     expected_result = {
+        'return_code': [0],
         'steptime_train_float32': [2.0],
         'throughput_train_float32': [16000.0],
         'steptime_train_float16': [2.0],
@@ -300,7 +301,7 @@ def test_benchmark():
         '"throughput_train_float32": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]], '
         '"steptime_train_float16": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"throughput_train_float16": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
-        '"result": {"steptime_train_float32": [2.0], "throughput_train_float32": [16000.0], '
+        '"result": {"return_code": [0], "steptime_train_float32": [2.0], "throughput_train_float32": [16000.0], '
         '"steptime_train_float16": [2.0], "throughput_train_float16": [16000.0]}, '
         '"reduce_op": {"steptime_train_float32": "max", "throughput_train_float32": "min", '
         '"steptime_train_float16": "max", "throughput_train_float16": "min"}}'
@@ -337,7 +338,7 @@ def test_check_result_format():
     assert (benchmark._Benchmark__check_raw_data())
 
     # Negative case for __check_result_format() - change List[int] to List[str].
-    benchmark._result._BenchmarkResult__result = {'metric1': ['2.0']}
+    benchmark._result._BenchmarkResult__result = {'return_code': [0], 'metric1': ['2.0']}
     assert (benchmark._Benchmark__check_summarized_result() is False)
 
     # Negative case for __check_raw_data() - change List[List[int]] to List[List[str]].
