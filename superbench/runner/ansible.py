@@ -74,7 +74,7 @@ class AnsibleClient():
             logger.info('Run succeed, return code {}.'.format(r.rc))
         else:
             logger.warning('Run failed, return code {}.'.format(r.rc))
-        logger.info(r.stats)
+        logger.debug(r.stats)
         return r.rc
 
     def update_mpi_config(self, ansible_config):
