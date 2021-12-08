@@ -283,3 +283,8 @@ class Benchmark(ABC):
     def serialized_result(self):
         """Decoration function to access benchmark result."""
         return self._result.to_string()
+
+    @property
+    def default_metric_count(self):
+        """Decoration function to get the count of default metrics."""
+        return self._result.default_metric_count
