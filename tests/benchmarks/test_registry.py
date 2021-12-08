@@ -139,7 +139,7 @@ def test_launch_benchmark():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     assert (benchmark.raw_data == {'accumulation_result': ['1,3,6,10']})
-    assert (benchmark.result == {'accumulation_result': [10]})
+    assert (benchmark.result == {'return_code': [0], 'accumulation_result': [10]})
 
     # Replace the timestamp as null.
     result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
@@ -147,7 +147,7 @@ def test_launch_benchmark():
         '{"name": "accumulation", "type": "micro", "run_count": 1, '
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
-        '"result": {"accumulation_result": [10]}, '
+        '"result": {"return_code": [0], "accumulation_result": [10]}, '
         '"reduce_op": {"accumulation_result": null}}'
     )
     assert (result == expected)
@@ -163,7 +163,7 @@ def test_launch_benchmark():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     assert (benchmark.raw_data == {'accumulation_result': ['1,3,6']})
-    assert (benchmark.result == {'accumulation_result': [6]})
+    assert (benchmark.result == {'return_code': [0], 'accumulation_result': [6]})
 
     # Replace the timestamp as null.
     result = re.sub(r'\"\d+-\d+-\d+ \d+:\d+:\d+\"', 'null', benchmark.serialized_result)
@@ -171,7 +171,7 @@ def test_launch_benchmark():
         '{"name": "accumulation", "type": "micro", "run_count": 1, '
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6"]}, '
-        '"result": {"accumulation_result": [6]}, '
+        '"result": {"return_code": [0], "accumulation_result": [6]}, '
         '"reduce_op": {"accumulation_result": null}}'
     )
     assert (result == expected)

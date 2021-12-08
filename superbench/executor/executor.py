@@ -29,14 +29,14 @@ class SuperBenchExecutor():
         self._output_path = Path(sb_output_dir).expanduser().resolve()
 
         self.__set_logger('sb-exec.log')
-        logger.info('Executor uses config: %s.', self._sb_config)
-        logger.info('Executor writes to: %s.', str(self._output_path))
+        logger.debug('Executor uses config: %s.', self._sb_config)
+        logger.debug('Executor writes to: %s.', str(self._output_path))
 
         self.__validate_sb_config()
         self._sb_monitor_config = self._sb_config.superbench.monitor
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
         self._sb_enabled = self.__get_enabled_benchmarks()
-        logger.info('Executor will execute: %s', self._sb_enabled)
+        logger.debug('Executor will execute: %s', self._sb_enabled)
 
     def __set_logger(self, filename):
         """Set logger and add file handler.
