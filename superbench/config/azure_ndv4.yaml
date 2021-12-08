@@ -59,8 +59,8 @@ superbench:
       modes:
         - name: local
           proc_num: 8
-          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -c $(({proc_rank}/2))
-          parallel: yes
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
+          parallel: no
     disk-benchmark:
       enable: false
       modes:
@@ -100,6 +100,7 @@ superbench:
     gpt_models:
       <<: *default_pytorch_mode
       models:
+        - gpt2-small
         - gpt2-large
       parameters:
         <<: *common_model_config

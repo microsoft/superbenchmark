@@ -49,7 +49,12 @@ superbench:
         ngpus: 8
         operation: allreduce
     mem-bw:
-      <<: *default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: HIP_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
+          parallel: no
     gemm-flops:
       <<: *default_local_mode
       parameters:
@@ -96,6 +101,7 @@ superbench:
     gpt_models:
       <<: *default_pytorch_mode
       models:
+        - gpt2-small
         - gpt2-large
       parameters:
         <<: *common_model_config

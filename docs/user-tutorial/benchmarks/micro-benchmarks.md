@@ -124,16 +124,17 @@ or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils
 | mem-bw/D2H_Mem_BW | bandwidth (GB/s) | Device to host copy bandwidth.   |
 | mem-bw/D2D_Mem_BW | bandwidth (GB/s) | Device to device copy bandwidth. |
 
-### `gpu-sm-copy-bw`
+### `gpu-copy-bw`
 
-Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between GPUs, initialized by GPU SM.
+Measure the memory copy bandwidth performed by GPU SM/DMA engine, including device-to-host, host-to-device and device-to-device.
 
 #### Metrics
 
-| Name                | Unit             | Description                                          |
-|---------------------|------------------|------------------------------------------------------|
-| gpu-sm-copy-bw/htod | bandwidth (GB/s) | Host to device copy bandwidth initialized by GPU SM. |
-| gpu-sm-copy-bw/dtoh | bandwidth (GB/s) | Device to host copy bandwidth initialized by GPU SM. |
+| Name                                                                       | Unit             | Description                                                                                                                | 
+|----------------------------------------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------------------|
+| cpu\_to\_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+      | bandwidth (GB/s) | The bandwidth reading from all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                             |
+| gpu[0-9]+\_to\_cpu\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+      | bandwidth (GB/s) | The bandwidth writing to all NUMA nodes' host memory using DMA engine or GPU SM by all GPUs.                               |
+| gpu[0-9]+\_to_gpu[0-9]+\_by\_gpu[0-9]+\_using\_(sm\|dma)\_under_numa[0-9]+ | bandwidth (GB/s) | The bandwidth reading from  or writing to all GPUs using DMA engine or GPU SM by all GPUs with peer communication enabled. |
 
 ### `ib-loopback`
 
@@ -215,6 +216,23 @@ gpcnet-network-load-test: Select full system network tests run with four congest
 | {benchmark_name}/${test_title}_Two-sidedIncast(4096B)_${stat}       | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Two-sided Incast (4096 B)' for congestion testing                                      |
 | {benchmark_name}/${test_title}_Alltoall(4096B)_${stat}              | bandwidth (MB/s/rank) | statistical values(Min, Max, Avg, 99%, 99.9%) obtained by all nodes use congestion 'Alltoall (4096 B)' for congestion testing                                              |
 | gpcnet-network-load-test/${test_title}_${network_test_algo}_${stat} | times(x)              | summary about congestion impact factor of every network test algorithm                                                                                                     |
+
+### `ib-traffic`
+
+#### Introduction
+
+Measure the InfiniBand performance under multi nodes' traffic pattern.
+
+The traffic pattern is defined in a config file, which is pre-defined for one-to-many, many-to-one and all-to-all patterns.
+Each row in the config is one round, and all pairs of nodes in a row run ib command simultaneously.
+
+#### Metrics
+                                                              
+| Metrics                    | Unit            | Description                                                                                                                                      |
+| -------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ib-traffic/${command}-${line}-${pair} | bandwidth (MB/s) | The average bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config |
+| ib-traffic/${command}-${line}-${pair} | time (us)      | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config    |
+
 
 ## Computation-communication Benchmarks
 
