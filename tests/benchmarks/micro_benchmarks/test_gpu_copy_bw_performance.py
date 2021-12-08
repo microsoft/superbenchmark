@@ -119,8 +119,8 @@ gpu0_to_gpu0_by_gpu0_using_dma_under_numa1 634.203
             else:
                 assert (len(benchmark.result[output_key]) == 1)
                 assert (isinstance(benchmark.result[output_key][0], numbers.Number))
-                assert (output_key in test_raw_output_dict)
-                assert (test_raw_output_dict[output_key] == benchmark.result[output_key][0])
+                assert (output_key.strip('_bw') in test_raw_output_dict)
+                assert (test_raw_output_dict[output_key.strip('_bw')] == benchmark.result[output_key][0])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)

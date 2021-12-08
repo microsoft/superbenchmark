@@ -372,8 +372,11 @@ class ModelBenchmark(Benchmark):
                 )
             )
             return False
+        precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
+        if precision in precision_metric:
+            precision = precision_metric[precision]
 
-        metric = '{}_{}_steptime'.format(precision, model_action)
+        metric = '{}_{}_step_time'.format(precision, model_action)
         self._result.add_raw_data(metric, step_times)
         avg = statistics.mean(step_times)
         self._result.add_result(metric, avg, reduce_type=ReduceType.MAX if model_action is ModelAction.TRAIN else None)

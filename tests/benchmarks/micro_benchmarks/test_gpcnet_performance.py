@@ -99,13 +99,13 @@ the job to be terminated. The first process to do so was:
         # Positive case - valid raw output.
         assert (benchmark._process_raw_result(0, raw_output))
         metric_list = [
-            'rr_two-sided_lat_us',
-            'rr_get_lat_us',
+            'rr_two-sided_lat',
+            'rr_get_lat',
             'rr_two-sided_bw',
             'rr_put_bw',
             'rr_two-sided+sync_bw',
             'nat_two-sided_bw',
-            'multiple_allreduce_time_us',
+            'multiple_allreduce_time',
             'multiple_alltoall_bw',
         ]
         for metric_medium in metric_list:

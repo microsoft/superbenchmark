@@ -137,10 +137,10 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                     tag = 'mean' if '[I] mean:' in line else '99'
                     lats = re.findall(r'(\d+\.\d+) ms', line)
                     if len(lats) == 1:
-                        self._result.add_result(f'gpu_time_ms_{tag}', float(lats[0]))
+                        self._result.add_result(f'gpu_time_{tag}', float(lats[0]))
                     elif len(lats) == 2:
-                        self._result.add_result(f'host_time_ms_{tag}', float(lats[0]))
-                        self._result.add_result(f'end_to_end_time_ms_{tag}', float(lats[1]))
+                        self._result.add_result(f'host_time_{tag}', float(lats[0]))
+                        self._result.add_result(f'end_to_end_time_{tag}', float(lats[1]))
                     success = True
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

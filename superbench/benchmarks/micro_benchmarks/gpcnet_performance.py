@@ -25,13 +25,13 @@ class GPCNetBenchmark(MicroBenchmarkWithInvoke):
         if self._name == 'gpcnet-network-load-test':
             self._bin_name = 'network_load_test'
         self.__metrics = {
-            'RRTwo-sidedLat(8B)': 'rr_two-sided_lat_us',
-            'RRGetLat(8B)': 'rr_get_lat_us',
+            'RRTwo-sidedLat(8B)': 'rr_two-sided_lat',
+            'RRGetLat(8B)': 'rr_get_lat',
             'RRTwo-sidedBW(131072B)': 'rr_two-sided_bw',
             'RRPutBW(131072B)': 'rr_put_bw',
             'RRTwo-sidedBW+Sync(131072B)': 'rr_two-sided+sync_bw',
             'NatTwo-sidedBW(131072B)': 'nat_two-sided_bw',
-            'MultipleAllreduce(8B)': 'multiple_allreduce_time_us',
+            'MultipleAllreduce(8B)': 'multiple_allreduce_time',
             'MultipleAlltoall(4096B)': 'multiple_alltoall_bw',
             'GetBcast(4096B)': 'get_bcast_bw',
             'PutIncast(4096B)': 'put_incast_bw',

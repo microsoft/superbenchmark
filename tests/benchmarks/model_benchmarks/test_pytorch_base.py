@@ -188,8 +188,7 @@ def test_pytorch_base():
 
     # Test results.
     for metric in [
-        'float32_train_steptime', 'float32_inference_steptime', 'float32_train_throughput',
-        'float32_inference_throughput'
+        'fp32_train_step_time', 'fp32_inference_step_time', 'fp32_train_throughput', 'fp32_inference_throughput'
     ]:
         assert (len(benchmark.raw_data[metric]) == 1)
         assert (len(benchmark.raw_data[metric][0]) == 64)

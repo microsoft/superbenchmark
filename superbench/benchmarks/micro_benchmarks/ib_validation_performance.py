@@ -352,7 +352,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         if 'bw' in command:
             suffix = '_bw'
         elif 'lat' in command:
-            suffix = '_time_us'
+            suffix = '_time'
         try:
             result_index = -1
             for index, line in enumerate(content):

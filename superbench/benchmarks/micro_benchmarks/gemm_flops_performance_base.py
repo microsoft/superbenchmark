@@ -20,23 +20,23 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._support_precisions = [
-            'FP64', 'FP32', 'FP16', 'FP64_TC', 'TF32_TC', 'BF16_TC', 'FP16_TC', 'INT8_TC', 'INT4_TC'
+            'fp64', 'fp32', 'fp16', 'fp64_tc', 'tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc', 'int4_tc'
         ]
         self._precision_need_to_run = list()
         self._metric_map = {
-            'FP64': 'fp64_flops',
-            'FP32': 'fp32_flops',
-            'FP16': 'fp16_flops',
-            'FP64_TC': 'fp64_tc_flops',
-            'TF32_TC': 'tp32_tc_flops',
-            'BF16_TC': 'bf16_tc_flops',
-            'FP16_TC': 'fp16_tc_flops',
-            'INT8_TC': 'int8_tc_iops',
-            'INT4_TC': 'int4_tc_iops',
-            'FP32_xDLOPS': 'fp32_xdlops_flops',
-            'FP16_xDLOPS': 'fp16_xdlops_flops',
-            'BF16_xDLOPS': 'bf16_xdlops_flops',
-            'INT8_xDLOPS': 'int8_xdlops_flops'
+            'fp64': 'fp64_flops',
+            'fp32': 'fp32_flops',
+            'fp16': 'fp16_flops',
+            'fp64_tc': 'fp64_tc_flops',
+            'tf32_tc': 'tp32_tc_flops',
+            'bf16_tc': 'bf16_tc_flops',
+            'fp16_tc': 'fp16_tc_flops',
+            'int8_tc': 'int8_tc_iops',
+            'int4_tc': 'int4_tc_iops',
+            'fp32_xdlops': 'fp32_xdlops_flops',
+            'fp16_xdlops': 'fp16_xdlops_flops',
+            'bf16_xdlops': 'bf16_xdlops_flops',
+            'int8_xdlops': 'int8_xdlops_iops'
         }
 
     def add_parser_arguments(self):

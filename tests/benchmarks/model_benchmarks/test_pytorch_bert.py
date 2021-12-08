@@ -50,9 +50,8 @@ def test_pytorch_bert_base():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     for metric in [
-        'float32_train_steptime', 'float32_train_throughput', 'float16_train_steptime', 'float16_train_throughput',
-        'float32_inference_steptime', 'float32_inference_throughput', 'float16_inference_steptime',
-        'float16_inference_throughput'
+        'fp32_train_step_time', 'fp32_train_throughput', 'fp16_train_step_time', 'fp16_train_throughput',
+        'fp32_inference_step_time', 'fp32_inference_throughput', 'fp16_inference_step_time', 'fp16_inference_throughput'
     ]:
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)

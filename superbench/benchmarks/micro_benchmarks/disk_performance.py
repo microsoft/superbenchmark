@@ -206,7 +206,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                 for lat_unit in lat_units:
                     if lat_unit in fio_output['jobs'][0][io_type] and \
                        'percentile' in fio_output['jobs'][0][io_type][lat_unit]:
-                        lat_unit_prefix = '%s_%s' % (io_type_prefix, lat_unit)
+                        lat_unit_prefix = '%s_%s' % (io_type_prefix, 'lat')
                         for lat_percentile in ['95.000000', '99.000000', '99.900000']:
                             lat = fio_output['jobs'][0][io_type][lat_unit]['percentile'][lat_percentile]
                             self._result.add_result('%s_%s' % (lat_unit_prefix, lat_percentile), float(lat))
