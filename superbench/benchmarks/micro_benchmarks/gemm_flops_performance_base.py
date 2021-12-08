@@ -28,7 +28,7 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
             'fp32': 'fp32_flops',
             'fp16': 'fp16_flops',
             'fp64_tc': 'fp64_tc_flops',
-            'tf32_tc': 'tp32_tc_flops',
+            'tf32_tc': 'tf32_tc_flops',
             'bf16_tc': 'bf16_tc_flops',
             'fp16_tc': 'fp16_tc_flops',
             'int8_tc': 'int8_tc_iops',

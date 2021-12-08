@@ -138,7 +138,7 @@ def test_arguments_related_interfaces():
     assert (ret and args.num_steps == 9)
 
     # Negative case for parse_args() - invalid precision.
-    benchmark = create_benchmark('--num_steps 8 --precision float32')
+    benchmark = create_benchmark('--num_steps 8 --precision fp32')
     benchmark.add_parser_arguments()
     (ret, args, unknown) = benchmark.parse_args()
     assert (ret is False)
@@ -206,7 +206,7 @@ def test_preprocess():
     assert (settings == expected_settings)
 
     # Negative case for _preprocess() - invalid precision.
-    benchmark = create_benchmark('--num_steps 8 --precision float32')
+    benchmark = create_benchmark('--num_steps 8 --precision fp32')
     assert (benchmark._preprocess() is False)
     assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
 
