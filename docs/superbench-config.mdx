@@ -56,6 +56,10 @@ Here is an overview of SuperBench configuration structure:
 version: string
 superbench:
   enable: string | [ string ]
+  monitor:
+    enable: bool
+    sample_duration: int
+    sample_freq: int
   var:
     ${var_name}: dict
   benchmarks:
@@ -69,6 +73,10 @@ superbench:
 version: v0.3
 superbench:
   enable: benchmark_1
+  monitor:
+    enable: false
+    sample_duration: 10
+    sample_freq: 1
   var:
     var_1: value
   benchmarks:
@@ -97,6 +105,22 @@ If not specified, will use [`${benchmark_name}.enable`](#enable) in each benchma
 
 * value from: benchmark names defined in `superbench.benchmarks`
 * default value: `null`
+
+### `superbench.monitor`
+
+Enable monitor to collect system metrics periodically, currently only support CUDA platform. There have three settings:
+
+#### `enable`
+
+Whether enable the monitor module or not.
+
+#### `sample_duration`
+
+Calculate the average metirc during sample_duration seconds, such as CPU usage and NIC bandwidth.
+
+#### `sample_freq`
+
+Do sampling every sample_freq seconds.
 
 ### `superbench.var`
 

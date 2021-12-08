@@ -186,7 +186,7 @@ class SuperBenchExecutor():
             benchmark_name (str): Benchmark name.
 
         Return:
-            Path: monitor output file path.
+            str: monitor output file path.
         """
         return f'{self.__get_benchmark_dir(benchmark_name) / "monitor.jsonl"}'
 
@@ -201,11 +201,14 @@ class SuperBenchExecutor():
 
             monitor = None
             if self.__get_rank_id() == 0 and self._sb_monitor_config and self._sb_monitor_config.enable:
-                monitor = Monitor(
-                    None, int(self._sb_monitor_config.sample_duration or 10),
-                    int(self._sb_monitor_config.sample_freq or 1), self.__get_monitor_path(benchmark_name)
-                )
-                monitor.start()
+                if self.__get_platform() == Platform.CUDA:
+                    monitor = Monitor(
+                        None, int(self._sb_monitor_config.sample_duration or 10),
+                        int(self._sb_monitor_config.sample_freq or 1), self.__get_monitor_path(benchmark_name)
+                    )
+                    monitor.start()
+                else:
+                    logger.warning('Monitor can not support ROCM platform.')
 
             for framework in benchmark_config.frameworks or [Framework.NONE.value]:
                 if benchmark_name.endswith('_models'):
