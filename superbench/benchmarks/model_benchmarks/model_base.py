@@ -373,7 +373,7 @@ class ModelBenchmark(Benchmark):
             )
             return False
 
-        metric = '{}_{}_steptime_ms'.format(model_action, precision)
+        metric = '{}_{}_steptime'.format(model_action, precision)
         self._result.add_raw_data(metric, step_times)
         avg = statistics.mean(step_times)
         self._result.add_result(metric, avg, reduce_type=ReduceType.MAX if model_action is ModelAction.TRAIN else None)

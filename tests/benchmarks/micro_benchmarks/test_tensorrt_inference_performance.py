@@ -133,7 +133,7 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
         self.assertTrue(benchmark._process_raw_result(0, test_raw_log))
         self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
 
-        self.assertEqual(6, len(benchmark.result))
+        self.assertEqual(6 + benchmark.default_metric_count, len(benchmark.result))
         for tag in ['mean', '99']:
             self.assertEqual(0.5, benchmark.result[f'gpu_time_ms_{tag}'][0])
             self.assertEqual(0.6, benchmark.result[f'host_time_ms_{tag}'][0])

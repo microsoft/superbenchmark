@@ -223,10 +223,10 @@ def test_train():
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {'
-        '"float32_train_steptime_ms": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
+        '"float32_train_steptime": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"float32_train_throughput": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
-        '"result": {"float32_train_steptime_ms": [2.0], "float32_train_throughput": [16000.0]}, '
-        '"reduce_op": {"float32_train_steptime_ms": "max", "float32_train_throughput": "min"}}'
+        '"result": {"return_code": [0], "float32_train_steptime": [2.0], "float32_train_throughput": [16000.0]}, '
+        '"reduce_op": {"float32_train_steptime": "max", "float32_train_throughput": "min"}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32))
@@ -236,7 +236,7 @@ def test_train():
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
-        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}, "reduce_op": {}}'
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {"return_code": [3]}, "reduce_op": {}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32) is False)
@@ -249,10 +249,11 @@ def test_inference():
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
         '"start_time": null, "end_time": null, "raw_data": {'
-        '"float16_inference_steptime_ms": [[4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]], '
+        '"float16_inference_steptime": [[4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]], '
         '"float16_inference_throughput": [[8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0]]}, '
-        '"result": {"float16_inference_steptime_ms": [4.0], "float16_inference_throughput": [8000.0]}, '
-        '"reduce_op": {"float16_inference_steptime_ms": null, "float16_inference_throughput": null}}'
+        '"result": {"return_code": [0], '
+        '"float16_inference_steptime": [4.0], "float16_inference_throughput": [8000.0]}, '
+        '"reduce_op": {"float16_inference_steptime": null, "float16_inference_throughput": null}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16))
@@ -262,7 +263,7 @@ def test_inference():
     benchmark = create_benchmark('--num_steps 0')
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 3, '
-        '"start_time": null, "end_time": null, "raw_data": {}, "result": {}, "reduce_op": {}}'
+        '"start_time": null, "end_time": null, "raw_data": {}, "result": {"return_code": [3]}, "reduce_op": {}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16) is False)
@@ -280,30 +281,31 @@ def test_benchmark():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     expected_raw_data = {
-        'float32_train_steptime_ms': [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]],
+        'float32_train_steptime': [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]],
         'float32_train_throughput': [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]],
-        'float16_train_steptime_ms': [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]],
+        'float16_train_steptime': [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]],
         'float16_train_throughput': [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]
     }
     assert (benchmark.raw_data == expected_raw_data)
     expected_result = {
-        'float32_train_steptime_ms': [2.0],
+        'return_code': [0],
+        'float32_train_steptime': [2.0],
         'float32_train_throughput': [16000.0],
-        'float16_train_steptime_ms': [2.0],
+        'float16_train_steptime': [2.0],
         'float16_train_throughput': [16000.0]
     }
     assert (benchmark.result == expected_result)
 
     expected_serialized_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, "start_time": null, '
-        '"end_time": null, "raw_data": {"float32_train_steptime_ms": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
+        '"end_time": null, "raw_data": {"float32_train_steptime": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"float32_train_throughput": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]], '
-        '"float16_train_steptime_ms": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
+        '"float16_train_steptime": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"float16_train_throughput": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
-        '"result": {"float32_train_steptime_ms": [2.0], "float32_train_throughput": [16000.0], '
-        '"float16_train_steptime_ms": [2.0], "float16_train_throughput": [16000.0]}, '
-        '"reduce_op": {"float32_train_steptime_ms": "max", "float32_train_throughput": "min", '
-        '"float16_train_steptime_ms": "max", "float16_train_throughput": "min"}}'
+        '"result": {"return_code": [0], "float32_train_steptime": [2.0], "float32_train_throughput": [16000.0], '
+        '"float16_train_steptime": [2.0], "float16_train_throughput": [16000.0]}, '
+        '"reduce_op": {"float32_train_steptime": "max", "float32_train_throughput": "min", '
+        '"float16_train_steptime": "max", "float16_train_throughput": "min"}}'
     )
     assert (benchmark.serialized_result == expected_serialized_result)
 
@@ -337,7 +339,7 @@ def test_check_result_format():
     assert (benchmark._Benchmark__check_raw_data())
 
     # Negative case for __check_result_format() - change List[int] to List[str].
-    benchmark._result._BenchmarkResult__result = {'metric1': ['2.0']}
+    benchmark._result._BenchmarkResult__result = {'return_code': [0], 'metric1': ['2.0']}
     assert (benchmark._Benchmark__check_summarized_result() is False)
 
     # Negative case for __check_raw_data() - change List[List[int]] to List[List[str]].

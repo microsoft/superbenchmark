@@ -93,7 +93,7 @@ the job to be terminated. The first process to do so was:
 --------------------------------------------------------------------------
 """
         assert (benchmark._process_raw_result(0, raw_output_no_execution))
-        assert (len(benchmark.result) == 0)
+        assert (len(benchmark.result) == benchmark.default_metric_count)
 
         # Check function process_raw_data.
         # Positive case - valid raw output.
@@ -255,7 +255,7 @@ the job to be terminated. The first process to do so was:
 --------------------------------------------------------------------------
 """
         assert (benchmark._process_raw_result(0, raw_output_no_execution))
-        assert (len(benchmark.result) == 0)
+        assert (len(benchmark.result) == benchmark.default_metric_count)
         # Positive case - valid raw output.
         assert (benchmark._process_raw_result(0, raw_output))
         metric_list = ['rr_two-sided_lat_x', 'rr_two-sided+sync_bw_x', 'multiple_allreduce_x']
