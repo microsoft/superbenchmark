@@ -152,7 +152,7 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 
 #### Introduction
 
-Test the tcP connectivity between current node and nodes in the hostfile,
+Test the TCP connectivity between current node and nodes in the hostfile,
 performed by [tcping](https://github.com/zhengxiaowai/tcping)
 
 #### Metrics
@@ -206,10 +206,10 @@ Each row in the config is one round, and all pairs of nodes in a row run ib comm
 
 #### Metrics
 
-| Metrics                                                        | Unit             | Description                                                                                                                                                                                                                         |
-|----------------------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ib-traffic/${command}_${line}_${pair}_${server}_${client}_bw   | bandwidth (GB/s) | The max bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client  |
-| ib-traffic/${command}_${line}_${pair}_${server}_${client}_time | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client |
+| Metrics                                                       | Unit             | Description                                                                                                                                                                                                                         |
+|---------------------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ib-traffic/${command}_${line}_${pair}_${server}_${client}_bw  | bandwidth (GB/s) | The max bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client  |
+| ib-traffic/${command}_${line}_${pair}_${server}_${client}_lat | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client |
 
 
 ## Computation-communication Benchmarks
@@ -254,14 +254,14 @@ Measure the disk performance through [FIO](https://github.com/axboe/fio/tree/031
 
 #### Metrics
 
-| Name                                                            | Unit         | Description                                              |
-|-----------------------------------------------------------------|--------------|----------------------------------------------------------|
-| disk-benchmark/${disk_name}_rand_read_write_bs                  | size (bytes) | Disk random read write block size.                       |
-| disk-benchmark/${disk_name}_rand_read_write_read_iops           | IOPS         | Disk random read write read IOPS.                        |
-| disk-benchmark/${disk_name}_rand_read_write_read_lat_95.000000  | time (ns)    | Disk random read write read latency in 95.0 percentile.  |
-| disk-benchmark/${disk_name}_rand_read_write_read_lat_99.000000  | time (ns)    | Disk random read write read latency in 99.0 percentile.  |
-| disk-benchmark/${disk_name}_rand_read_write_read_lat_99.900000  | time (ns)    | Disk random read write read latency in 99.9 percentile.  |
-| disk-benchmark/${disk_name}_rand_read_write_write_iops          | IOPS         | Disk random read write write IOPS.                       |
-| disk-benchmark/${disk_name}_rand_read_write_write_lat_95.000000 | time (ns)    | Disk random read write write latency in 95.0 percentile. |
-| disk-benchmark/${disk_name}_rand_read_write_write_lat_99.000000 | time (ns)    | Disk random read write write latency in 99.0 percentile. |
-| disk-benchmark/${disk_name}_rand_read_write_write_lat_99.900000 | time (ns)    | Disk random read write write latency in 99.9 percentile. |
+| Name                                                          | Unit         | Description                                              |
+|---------------------------------------------------------------|--------------|----------------------------------------------------------|
+| disk-benchmark/${disk_name}_rand_read_write_bs                | size (bytes) | Disk random read write block size.                       |
+| disk-benchmark/${disk_name}_rand_read_write_read_iops         | IOPS         | Disk random read write read IOPS.                        |
+| disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_95.0  | time (ns)    | Disk random read write read latency in 95.0 percentile.  |
+| disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_99.0  | time (ns)    | Disk random read write read latency in 99.0 percentile.  |
+| disk-benchmark/${disk_name}_rand_read_write_read_lat_ns_99.9  | time (ns)    | Disk random read write read latency in 99.9 percentile.  |
+| disk-benchmark/${disk_name}_rand_read_write_write_iops        | IOPS         | Disk random read write write IOPS.                       |
+| disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_95.0 | time (ns)    | Disk random read write write latency in 95.0 percentile. |
+| disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_99.0 | time (ns)    | Disk random read write write latency in 99.0 percentile. |
+| disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_99.9 | time (ns)    | Disk random read write write latency in 99.9 percentile. |

@@ -30,7 +30,7 @@ def test_pytorch_cnn_no_gpu():
     run_pytorch_cnn(
         models=['resnet50'],
         parameters='--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 2 --num_steps 4 \
-                --model_action train inference --precision fp32 --no_gpu',
+                --model_action train inference --precision float32 --no_gpu',
         check_metrics=[
             'fp32_train_step_time', 'fp32_train_throughput', 'fp32_inference_step_time', 'fp32_inference_throughput'
         ]

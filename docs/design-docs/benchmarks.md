@@ -238,10 +238,10 @@ result = {
     'run_count': N,
     'return_code': 0,
     'raw_data': {
-        'throughput-train-fp32': [[step1_time, ..., stepK_time], ..., […]],
-        'throughput-train-fp16': [[step1_time, ..., stepK_time], ..., […]],
-        'throughput-inference-fp32': [[step1_time, ..., stepK_time], ..., […]],
-        'throughput-inference-fp16': [[step1_time, ..., stepK_time], ..., […]],
+        'throughput-train-fp32': [[step1_throughput, ..., stepK_throughput], ..., […]],
+        'throughput-train-fp16': [[step1_throughput, ..., stepK_throughput], ..., […]],
+        'throughput-inference-fp32': [[step1_throughput, ..., stepK_throughput], ..., […]],
+        'throughput-inference-fp16': [[step1_throughput, ..., stepK_throughput], ..., […]],
     },
     'result': {
             'throughput-train-fp32': [avg_throughput1, ..., avg_throughputN],

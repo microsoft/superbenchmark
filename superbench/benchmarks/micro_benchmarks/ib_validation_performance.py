@@ -349,10 +349,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         line_index = 0
         config_index = 0
         command = self._args.commands[cmd_idx]
-        if 'bw' in command:
-            suffix = '_bw'
-        elif 'lat' in command:
-            suffix = '_time'
+        suffix = command.split('_')[-1]
         try:
             result_index = -1
             for index, line in enumerate(content):
@@ -367,7 +364,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                     line = list(filter(None, line.strip().split(',')))
                     pair_index = 0
                     for item in line:
-                        metric = '{command}_{line}_{pair}_{host}{suffix}'.format(
+                        metric = '{command}_{line}_{pair}_{host}_{suffix}'.format(
                             command=command,
                             line=str(line_index),
                             pair=pair_index,

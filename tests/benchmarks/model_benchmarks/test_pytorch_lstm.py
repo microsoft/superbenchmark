@@ -28,7 +28,7 @@ def test_pytorch_lstm_no_gpu():
     """Test pytorch-lstm benchmark with CPU."""
     run_pytorch_lstm(
         parameters='--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 --num_steps 4 \
-            --model_action train inference --precision fp32 --no_gpu',
+            --model_action train inference --precision float32 --no_gpu',
         check_metrics=[
             'fp32_train_step_time', 'fp32_train_throughput', 'fp32_inference_step_time', 'fp32_inference_throughput'
         ]

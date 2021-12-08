@@ -201,7 +201,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
                     continue
                 # Extract value from the line
                 size = int(values[0])
-                avg_bw = float(values[-2]) / 1024
+                avg_bw = float(values[-2]) / 1000
                 metric = 'ib_{}_{}_ib{}_bw'.format(self._args.commands[cmd_idx], size, str(self._args.ib_index))
                 # Filter useless value in client output
                 if metric not in metric_set:

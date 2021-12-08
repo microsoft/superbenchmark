@@ -91,7 +91,7 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
         if len(self._args.precision) == 0:
             self._precision_need_to_run = self._support_precisions
         else:
-            self._args.precision = [p.upper() for p in self._args.precision]
+            self._args.precision = [p.lower() for p in self._args.precision]
             for p in self._args.precision:
                 if p not in self._support_precisions:
                     logger.warning(
