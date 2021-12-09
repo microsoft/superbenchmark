@@ -36,7 +36,7 @@ or AMD [rocblas-bench](https://github.com/ROCmSoftwarePlatform/rocBLAS/tree/deve
 | gemm-flops/fp32_flops        | FLOPS (GFLOPS) | GEMM float32 peak FLOPS.                                |
 | gemm-flops/fp16_flops        | FLOPS (GFLOPS) | GEMM float16 peak FLOPS.                                |
 | gemm-flops/fp64_tc_flops     | FLOPS (GFLOPS) | GEMM float64 peak FLOPS with NVIDIA Tensor Core.        |
-| gemm-flops/tp32_tc_flops     | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with NVIDIA Tensor Core. |
+| gemm-flops/tf32_tc_flops     | FLOPS (GFLOPS) | GEMM tensor-float32 peak FLOPS with NVIDIA Tensor Core. |
 | gemm-flops/fp16_tc_flops     | FLOPS (GFLOPS) | GEMM float16 peak FLOPS with NVIDIA Tensor Core.        |
 | gemm-flops/bf16_tc_flops     | FLOPS (GFLOPS) | GEMM bfloat16 peak FLOPS with NVIDIA Tensor Core.       |
 | gemm-flops/int8_tc_iops      | IOPS (GIOPS)   | GEMM int8 peak IOPS with NVIDIA Tensor Core.            |
@@ -74,14 +74,14 @@ Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.n
 
 #### Metrics
 
-| Name                                    | Unit      | Description                                                                                              |
-|-----------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|
-| tensorrt-inference/gpu_time_mean        | time (ms) | The mean GPU latency to execute the kernels for a query.                                                 |
-| tensorrt-inference/gpu_time_99          | time (ms) | The 99th percentile GPU latency to execute the kernels for a query.                                      |
-| tensorrt-inference/host_time_mean       | time (ms) | The mean H2D, GPU, and D2H latency to execute the kernels for a query.                                   |
-| tensorrt-inference/host_time_99         | time (ms) | The 99th percentile H2D, GPU, and D2H latency to execute the kernels for a query.                        |
-| tensorrt-inference/end_to_end_time_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
-| tensorrt-inference/end_to_end_time_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
+| Name                                             | Unit      | Description                                                                                              |
+|--------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|
+| tensorrt-inference/${model}_gpu_time_mean        | time (ms) | The mean GPU latency to execute the kernels for a query.                                                 |
+| tensorrt-inference/${model}_gpu_time_99          | time (ms) | The 99th percentile GPU latency to execute the kernels for a query.                                      |
+| tensorrt-inference/${model}_host_time_mean       | time (ms) | The mean H2D, GPU, and D2H latency to execute the kernels for a query.                                   |
+| tensorrt-inference/${model}_host_time_99         | time (ms) | The 99th percentile H2D, GPU, and D2H latency to execute the kernels for a query.                        |
+| tensorrt-inference/${model}_end_to_end_time_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
+| tensorrt-inference/${model}_end_to_end_time_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
 
 ## Communication Benchmarks
 
@@ -157,14 +157,14 @@ performed by [tcping](https://github.com/zhengxiaowai/tcping)
 
 #### Metrics
 
-| Metrics                                         | Unit     | Description                                                                           |
-|-------------------------------------------------|----------|---------------------------------------------------------------------------------------|
-| tcp-connectivity/${hostname/ip}_successed_count | count    | successed times of tcp connections between current node and other nodes               |
-| tcp-connectivity/${hostname/ip}_failed_count    | count    | failed times of tcp connections between current node and other nodes                  |
-| tcp-connectivity/${hostname/ip}_success_rate    |          | success rate (successed/total) of tcp connection between current node and other nodes |
-| tcp-connectivity/${hostname/ip}_time_min        | time(ms) | mininum latency of tcp connections between current node and other nodes               |
-| tcp-connectivity/${hostname/ip}_time_max        | time(ms) | maximum latency of tcp connections between current node and other nodes               |
-| tcp-connectivity/${hostname/ip}_time_avg        | time(ms) | average latency of tcp connections between current node and other nodes               |
+| Metrics                                         | Unit      | Description                                                                           |
+|-------------------------------------------------|-----------|---------------------------------------------------------------------------------------|
+| tcp-connectivity/${hostname/ip}_successed_count | count     | successed times of tcp connections between current node and other nodes               |
+| tcp-connectivity/${hostname/ip}_failed_count    | count     | failed times of tcp connections between current node and other nodes                  |
+| tcp-connectivity/${hostname/ip}_success_rate    |           | success rate (successed/total) of tcp connection between current node and other nodes |
+| tcp-connectivity/${hostname/ip}_time_min        | time (ms) | mininum latency of tcp connections between current node and other nodes               |
+| tcp-connectivity/${hostname/ip}_time_max        | time (ms) | maximum latency of tcp connections between current node and other nodes               |
+| tcp-connectivity/${hostname/ip}_time_avg        | time (ms) | average latency of tcp connections between current node and other nodes               |
 
 ### `gpcnet-network-test` / `gpcnet-network-load-test`
 
@@ -182,18 +182,18 @@ gpcnet-network-load-test: Select full system network tests run with four congest
 
 #### Metrics
 
-| Metrics                                                 | Unit                  | Description                                                                                                                                                                |
-|---------------------------------------------------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| gpcnet-network-test/rr_two-sided_lat_${stat}            | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
-| gpcnet-network-test/rr_two-sided+sync_bw_${stat}        | bandwidth (MB/s/rank) | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
-| gpcnet-network-test/multiple_allreduce_time_${stat}     | time(us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
-| gpcnet-network-test/rr_get_lat_${stat}                  | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'RR GetLat (8 B)' for network testing                                                    |
-| gpcnet-network-test/rr_two-sided_bw_${stat}             | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'RR Two-sidedBW (131072 B)' for network testing                                          |
-| gpcnet-network-test/nat_two-sided_bw_${stat}            | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'Nat Two-sidedBW (131072 B)' for network testing                                         |
-| gpcnet-network-test/multiple_alltoall_bw_${stat}        | bandwidth (MB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'Multiple Alltoall (4096 B)' for network testing                                         |
-| gpcnet-network-load-test/rr_two-sided_lat_x_${stat}     | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
-| gpcnet-network-load-test/rr_two-sided+sync_bw_x_${stat} | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
-| gpcnet-network-load-test/multiple_allreduce_x_${stat}   | times(x)              | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| Metrics                                                 | Unit                   | Description                                                                                                                                                                |
+|---------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| gpcnet-network-test/rr_two-sided_lat_${stat}            | time (us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side latency' for network testing                 |
+| gpcnet-network-test/rr_two-sided+sync_bw_${stat}        | bandwidth (MiB/s/rank) | fstatistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'random ring communication pattern two-side bandwidth with barrier' for network testing |
+| gpcnet-network-test/multiple_allreduce_time_${stat}     | time (us)              | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'multiple allreduce bandwidth' for network testing                                       |
+| gpcnet-network-test/rr_get_lat_${stat}                  | bandwidth (MiB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'RR GetLat (8 B)' for network testing                                                    |
+| gpcnet-network-test/rr_two-sided_bw_${stat}             | bandwidth (MiB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'RR Two-sidedBW (131072 B)' for network testing                                          |
+| gpcnet-network-test/nat_two-sided_bw_${stat}            | bandwidth (MiB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'Nat Two-sidedBW (131072 B)' for network testing                                         |
+| gpcnet-network-test/multiple_alltoall_bw_${stat}        | bandwidth (MiB/s/rank) | statistical values(min, max, avg, 99%, 99.9%) obtained by all nodes use algorithm 'Multiple Alltoall (4096 B)' for network testing                                         |
+| gpcnet-network-load-test/rr_two-sided_lat_x_${stat}     | factor (x)             | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| gpcnet-network-load-test/rr_two-sided+sync_bw_x_${stat} | factor (x)             | summary about congestion impact factor of the network test algorithm                                                                                                       |
+| gpcnet-network-load-test/multiple_allreduce_x_${stat}   | factor (x)             | summary about congestion impact factor of the network test algorithm                                                                                                       |
 
 ### `ib-traffic`
 

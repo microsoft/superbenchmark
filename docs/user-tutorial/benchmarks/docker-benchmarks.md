@@ -15,7 +15,7 @@ Run the rocm onnxruntime model training benchmarks packaged in docker `superbenc
 #### Metrics
 
 | Name                                                                   | Unit                   | Description                                               |
-| ---------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------- |
+|------------------------------------------------------------------------|------------------------|-----------------------------------------------------------|
 | onnxruntime-ort-models/bert_large_uncased_ngpu_1_train_throughput      | throughput (samples/s) | The throughput of bert large uncased model on 1 GPU.      |
 | onnxruntime-ort-models/bert_large_uncased_ngpu_8_train_throughput      | throughput (samples/s) | The throughput of bert large uncased model on 8 GPU.      |
 | onnxruntime-ort-models/distilbert_base_uncased_ngpu_1_train_throughput | throughput (samples/s) | The throughput of distilbert base uncased model on 1 GPU. |

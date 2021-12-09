@@ -371,7 +371,10 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                             host=self.__config[config_index],
                             suffix=suffix
                         )
-                        self._result.add_result(metric, float(item))
+                        value = float(item)
+                        if 'bw' in command:
+                            value = value / 1000
+                        self._result.add_result(metric, value)
                         valid = True
                         config_index += 1
                         pair_index += 1
