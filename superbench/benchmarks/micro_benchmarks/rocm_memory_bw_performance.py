@@ -64,21 +64,18 @@ class RocmMemBwBenchmark(MemBwBenchmark):
 
         mem_bw = -1
         value_index = -1
-        size_index = -1
         valid = True
         content = raw_output.splitlines()
         try:
+            metric = self._metrics[self._mem_types.index(self._args.mem_type[cmd_idx])]
             parse_logline = self._parse_logline_map[self._args.mem_type[cmd_idx]]
             for line in content:
                 if parse_logline in line and value_index != -1:
                     line = line.split()
-                    mem_bw = float(line[value_index])
-                    metric = self._args.mem_type[cmd_idx] + '_' + line[size_index]
-                    self._result.add_result(metric, mem_bw)
+                    mem_bw = max(mem_bw, float(line[value_index]))
                 elif 'mean' in line:
                     line = line.split()
                     value_index = line.index('mean')
-                    size_index = line.index('atts')
         except BaseException:
             valid = False
         finally:
@@ -89,7 +86,7 @@ class RocmMemBwBenchmark(MemBwBenchmark):
                     )
                 )
                 return False
-
+        self._result.add_result(metric, mem_bw)
         return True
 
 

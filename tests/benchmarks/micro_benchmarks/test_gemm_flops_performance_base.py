@@ -72,7 +72,7 @@ class FakeGemmFlopsBenchmark(GemmFlopsBenchmark):
         return True
 
 
-def test_memory_bw_performance_base():
+def test_gemm_flops_performance_base():
     """Test GemmFlopsBenchmark."""
     # Positive case - memory=pinned.
     benchmark = FakeGemmFlopsBenchmark('fake')
@@ -81,49 +81,49 @@ def test_memory_bw_performance_base():
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     # Check command list
     expected_command = [
-        'echo "--precision FP64 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision FP32 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision FP16 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision FP64_TC --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision TF32_TC --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision BF16_TC --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision FP16_TC --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision INT8_TC --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision INT4_TC --m 16384 --n 16384 --k 16384 --num_warmup 5"'
+        'echo "--precision fp64 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision fp32 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision fp16 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision fp64_tc --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision tf32_tc --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision bf16_tc --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision fp16_tc --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision int8_tc --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision int4_tc --m 16384 --n 16384 --k 16384 --num_warmup 5"'
     ]
     for i in range(len(expected_command)):
         command = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
         assert (command == expected_command[i])
     for i, metric in enumerate(
-        ['FP64', 'FP32', 'FP16', 'FP64_TC', 'TF32_TC', 'BF16_TC', 'FP16_TC', 'INT8_TC', 'INT4_TC']
+        ['fp64', 'fp32', 'fp16', 'fp64_tc', 'tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc', 'int4_tc']
     ):
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)
 
     # Positive case - memory=unpinned.
-    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision FP64 FP32 FP16')
+    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision fp64 fp32 fp16')
     assert (benchmark._benchmark_type == BenchmarkType.MICRO)
     assert (benchmark.run())
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     # Check command list
     expected_command = [
-        'echo "--precision FP64 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision FP32 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
-        'echo "--precision FP16 --m 16384 --n 16384 --k 16384 --num_warmup 5"'
+        'echo "--precision fp64 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision fp32 --m 16384 --n 16384 --k 16384 --num_warmup 5"',
+        'echo "--precision fp16 --m 16384 --n 16384 --k 16384 --num_warmup 5"'
     ]
     for i in range(len(expected_command)):
         command = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
         assert (command == expected_command[i])
-    for i, metric in enumerate(['FP64', 'FP32', 'FP16']):
+    for i, metric in enumerate(['fp64', 'fp32', 'fp16']):
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)
 
-    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision FP64 BF64')
+    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision fp64 bf64')
     assert (benchmark._benchmark_type == BenchmarkType.MICRO)
     assert (benchmark.run() is True)
 
     # Negative case - INVALID_ARGUMENT.
-    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision BF64')
+    benchmark = FakeGemmFlopsBenchmark('fake', parameters='--precision bf64')
     assert (benchmark._benchmark_type == BenchmarkType.MICRO)
     assert (benchmark.run() is False)
     assert (benchmark.return_code == ReturnCode.NO_SUPPORTED_PRECISION)
