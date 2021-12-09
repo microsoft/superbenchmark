@@ -4,7 +4,6 @@
 """Module for running the Intel MLC tool to measure memory bandwidth and latency."""
 
 import os
-from pathlib import Path
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
@@ -49,7 +48,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
 
         mlc_path = os.path.join(self._args.bin_dir, self._bin_name)
         ret_val = os.access(mlc_path, os.X_OK | os.F_OK)
-        if ret_val == False:
+        if not ret_val:
             logger.error(
                 'Executable {} not found in {} or it is not executable'.format(self._bin_name, self._args.bin_dir)
             )
@@ -96,8 +95,8 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         if len(out_table) == 0:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
-                'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
-                    self._curr_run_index, self._name, raw_output, str(e)
+                'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
+                    self._curr_run_index, self._name, raw_output
                 )
             )
             return False

@@ -5,7 +5,6 @@
 
 import numbers
 
-from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 
 
