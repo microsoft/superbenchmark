@@ -100,7 +100,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
             output_lines = [x.strip() for x in raw_output.strip().splitlines()]
             for output_line in output_lines:
                 tag, bw_str = output_line.split()
-                self._result.add_result(tag, float(bw_str))
+                self._result.add_result(tag + '_bw', float(bw_str))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

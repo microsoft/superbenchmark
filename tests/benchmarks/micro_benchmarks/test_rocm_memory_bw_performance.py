@@ -159,11 +159,11 @@ Note: results marked with (*) had missing values such as
 might occur with a mixture of architectural capabilities.
     """
 
-        for i, metric in enumerate(['htod_524288kB', 'htod_524288kB']):
+        for i, metric in enumerate(['h2d_bw', 'd2h_bw']):
             assert (benchmark._process_raw_result(i, raw_output[i]))
             assert (metric in benchmark.result)
             assert (len(benchmark.result[metric]) == 1)
             assert (isinstance(benchmark.result[metric][0], numbers.Number))
 
-        assert (benchmark.result['htod_524288kB'][0] == 24.6708)
-        assert (benchmark.result['dtoh_524288kB'][0] == 27.9348)
+        assert (benchmark.result['h2d_bw'][0] == 25.2351)
+        assert (benchmark.result['d2h_bw'][0] == 27.9348)

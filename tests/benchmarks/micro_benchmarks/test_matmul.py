@@ -35,6 +35,6 @@ def test_pytorch_matmul():
     # Check results and metrics.
     assert (benchmark.run_count == 2)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    assert (len(benchmark.raw_data['nosharding']) == benchmark.run_count)
-    assert (len(benchmark.raw_data['nosharding'][0]) == benchmark._args.num_steps)
-    assert (len(benchmark.result['nosharding']) == benchmark.run_count)
+    assert (len(benchmark.raw_data['nosharding_time']) == benchmark.run_count)
+    assert (len(benchmark.raw_data['nosharding_time'][0]) == benchmark._args.num_steps)
+    assert (len(benchmark.result['nosharding_time']) == benchmark.run_count)
