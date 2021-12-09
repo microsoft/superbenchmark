@@ -12,7 +12,9 @@ from superbench.common.utils import logger
 
 
 def statistic(raw_data_df):
-    """Get the statistics of the raw data, including count, mean, std, min, max, 25%, 50%, 75%, 95%.
+    """Get the statistics of the raw data.
+
+    The statistics include count, mean, std, min, max, 1%, 5%, 25%, 50%, 75%, 95%, 99%.
 
     Args:
         raw_data_df (DataFrame): raw data
@@ -25,10 +27,14 @@ def statistic(raw_data_df):
         logger.error('DataAnalyzer: the type of raw data is not pd.DataFrame')
         return data_statistics_df
     if len(raw_data_df) == 0:
+        logger.warning('DataAnalyzer: empty data.')
         return data_statistics_df
     try:
         data_statistics_df = raw_data_df.describe()
+        data_statistics_df.loc['1%'] = raw_data_df.quantile(0.01)
+        data_statistics_df.loc['5%'] = raw_data_df.quantile(0.05)
         data_statistics_df.loc['95%'] = raw_data_df.quantile(0.95)
+        data_statistics_df.loc['99%'] = raw_data_df.quantile(0.99)
         statistics_error = []
         for column in list(raw_data_df.columns):
             if column not in list(data_statistics_df.columns) and not raw_data_df[column].isnull().all():
@@ -69,6 +75,7 @@ def interquartile_range(raw_data_df):
         logger.error('DataAnalyzer: the type of raw data is not pd.DataFrame')
         return pd.DataFrame()
     if len(raw_data_df) == 0:
+        logger.warning('DataAnalyzer: empty data.')
         return pd.DataFrame()
     try:
         data_statistics_df = statistic(raw_data_df)
@@ -111,6 +118,7 @@ def correlation(raw_data_df):
         logger.error('DataAnalyzer: the type of raw data is not pd.DataFrame')
         return data_corr_df
     if len(raw_data_df) == 0:
+        logger.warning('DataAnalyzer: empty data.')
         return data_corr_df
     try:
         data_corr_df = raw_data_df.corr()
@@ -152,12 +160,11 @@ def creat_boxplot(raw_data_df, columns, output_dir):
             if column not in data_columns or raw_data_df[column].dtype is not np.dtype('float'):
                 logger.warning('DataAnalyzer: invalid column {} for boxplot.'.format(column))
                 columns.remove(column)
-        temp_raw_data_df = raw_data_df.fillna(value=raw_data_df.mean())
         n = len(columns)
         for i in range(n):
             sns.set(style='whitegrid')
             plt.subplot(n, 1, i + 1)
-            sns.boxplot(x=columns[i], data=temp_raw_data_df, orient='h')
+            sns.boxplot(x=columns[i], data=raw_data_df, orient='h')
         plt.subplots_adjust(hspace=1)
         plt.savefig(output_dir + '/boxplot.png')
         plt.show()
@@ -165,7 +172,7 @@ def creat_boxplot(raw_data_df, columns, output_dir):
         logger.error('DataAnalyzer: creat_boxplot failed, msg: {}'.format(str(e)))
 
 
-def export_baseline(raw_data_df, output_dir):
+def generate_baseline(raw_data_df, output_dir):
     """Export baseline to json file.
 
     Args:
@@ -175,11 +182,11 @@ def export_baseline(raw_data_df, output_dir):
     try:
         if not isinstance(raw_data_df, pd.DataFrame):
             logger.error('DataAnalyzer: the type of raw data is not pd.DataFrame')
-            return pd.DataFrame()
+            return
         if len(raw_data_df) == 0:
-            logger.error('DataAnalyzer: empty data for boxplot.')
+            logger.error('DataAnalyzer: empty data.')
             return
         mean_df = raw_data_df.mean()
         mean_df.to_json(output_dir + '/baseline.json')
     except Exception as e:
-        logger.error('DataAnalyzer: export baseline failed, msg: {}'.format(str(e)))
+        logger.error('DataAnalyzer: generate baseline failed, msg: {}'.format(str(e)))

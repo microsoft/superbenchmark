@@ -38,14 +38,14 @@ class TestDataAnalysis(unittest.TestCase):
         co3 = np.random.rand(100)
         raw_data_df = pd.DataFrame({'a': co1, 'b': co2, 'c': co3})
         data_statistics_df = data_analysis.statistic(raw_data_df)
-        assert (len(data_statistics_df) == 9)
+        assert (len(data_statistics_df) == 12)
         assert (len(data_statistics_df.columns) == 3)
         raw_data_df['d'] = ['a' for i in range(100)]
         data_statistics_df = data_analysis.statistic(raw_data_df)
         assert (len(data_statistics_df.columns) == 3)
         # Test - inter_quartile_range
         data_statistics_df = data_analysis.interquartile_range(raw_data_df)
-        assert (len(data_statistics_df) == 17)
+        assert (len(data_statistics_df) == 20)
         assert (len(data_statistics_df.columns) == 3)
         # Test - correlation
         data_corr_df = data_analysis.correlation(raw_data_df)
@@ -55,8 +55,8 @@ class TestDataAnalysis(unittest.TestCase):
         fig = Path(self.fig)
         assert (fig.is_file())
         fig.unlink()
-        # Test - export baseline
-        data_analysis.export_baseline(raw_data_df, self.output_dir)
+        # Test - generate baseline
+        data_analysis.generate_baseline(raw_data_df, self.output_dir)
         baseline_path = Path(self.baseline)
         with baseline_path.open() as load_f:
             baseline = json.load(load_f)
