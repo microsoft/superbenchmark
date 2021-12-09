@@ -92,6 +92,7 @@
       shell: |
         docker pull {{ docker_image }}
       become: yes
+      throttle: 32
     - name: Starting Container
       shell: |
         docker rm --force {{ container }} ||: && \

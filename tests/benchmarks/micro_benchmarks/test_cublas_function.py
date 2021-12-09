@@ -42,7 +42,8 @@ def test_cublas_functions():
     for metric in list(benchmark.result.keys()):
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
+        if metric != 'return_code':
+            assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
 
     # Test for custom configuration
     custom_config_str = '{"name":"cublasCgemm","m":512,"n":512,"k":32,"transa":1,"transb":0}'
@@ -73,8 +74,9 @@ def test_cublas_functions():
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
-    assert (1 == len(benchmark.result))
+    assert (1 + benchmark.default_metric_count == len(benchmark.result))
     for metric in list(benchmark.result.keys()):
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
+        if metric != 'return_code':
+            assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)

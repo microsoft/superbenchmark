@@ -73,7 +73,7 @@ class RocmOnnxRuntimeModelBenchmark(RocmDockerBenchmark):
                         model_name = model_name.replace(char, '_')
                 elif value_prefix in line and model_name is not None:
                     throughput = float(line[len(value_prefix):])
-                    self._result.add_result(model_name, throughput)
+                    self._result.add_result(model_name + '_throughput', throughput)
                     model_name = None
         except BaseException as e:
             logger.error(
