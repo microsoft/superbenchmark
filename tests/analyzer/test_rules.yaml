@@ -1,0 +1,25 @@
+# SuperBench rules
+version: v0.3
+superbench:
+  rules:
+    rule0:
+      function: variance
+      criteria: lambda x:x>0.05
+      categories: KernelLaunch
+      metrics:
+        - kernel-launch/event_overhead:\d+
+        - kernel-launch/wall_overhead:\d+
+    rule1:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: Mem
+      metrics:
+        - mem-bw/H2D_Mem_BW:\d+
+        - mem-bw/D2H_Mem_BW:\d+
+    falure_rule:
+      function: value
+      criteria: 'lambda x:x>0'
+      categories: FailedTest
+      metrics:
+        - kernel-launch/return_code
+        - mem-bw/return_code
