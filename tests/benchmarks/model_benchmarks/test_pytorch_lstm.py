@@ -16,9 +16,9 @@ def test_pytorch_lstm_with_gpu():
         parameters='--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 --num_steps 4 \
             --model_action train inference',
         check_metrics=[
-            'steptime_train_float32', 'throughput_train_float32', 'steptime_train_float16', 'throughput_train_float16',
-            'steptime_inference_float32', 'throughput_inference_float32', 'steptime_inference_float16',
-            'throughput_inference_float16'
+            'fp32_train_step_time', 'fp32_train_throughput', 'fp16_train_step_time', 'fp16_train_throughput',
+            'fp32_inference_step_time', 'fp32_inference_throughput', 'fp16_inference_step_time',
+            'fp16_inference_throughput'
         ]
     )
 
@@ -30,8 +30,7 @@ def test_pytorch_lstm_no_gpu():
         parameters='--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 --num_steps 4 \
             --model_action train inference --precision float32 --no_gpu',
         check_metrics=[
-            'steptime_train_float32', 'throughput_train_float32', 'steptime_inference_float32',
-            'throughput_inference_float32'
+            'fp32_train_step_time', 'fp32_train_throughput', 'fp32_inference_step_time', 'fp32_inference_throughput'
         ]
     )
 

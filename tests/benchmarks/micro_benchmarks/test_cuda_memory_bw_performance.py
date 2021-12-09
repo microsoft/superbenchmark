@@ -328,7 +328,7 @@ bandwidthTest-D2D, Bandwidth = 772.0 GB/s, Time = 0.00008 s, Size = 64000000 byt
 bandwidthTest-D2D, Bandwidth = 762.8 GB/s, Time = 0.00009 s, Size = 68000000 bytes, NumDevsUsed = 1
 Result = PASS
     """
-        for i, metric in enumerate(['H2D_Mem_BW', 'D2H_Mem_BW', 'D2D_Mem_BW']):
+        for i, metric in enumerate(['h2d_bw', 'd2h_bw', 'd2d_bw']):
             assert (benchmark._process_raw_result(i, raw_output[i]))
             assert (metric in benchmark.result)
             assert (len(benchmark.result[metric]) == 1)
