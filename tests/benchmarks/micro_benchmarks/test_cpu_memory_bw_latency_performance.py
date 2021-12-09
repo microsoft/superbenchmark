@@ -25,7 +25,7 @@ def test_cpu_memory_bw_latency_performance():
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.
-    assert (benchmark._args.tests == ['bandwidth_matrix','latency_matrix','max_bandwidth'])
+    assert (benchmark._args.tests == ['bandwidth_matrix', 'latency_matrix', 'max_bandwidth'])
 
     # Check results and metrics.
     assert (benchmark.run_count == 1)
@@ -35,7 +35,7 @@ def test_cpu_memory_bw_latency_performance():
     assert ('raw_output_2' in benchmark.raw_data)
     assert (len(benchmark.raw_data['raw_output_1']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_1'][0], str))
-    for metric in ['Mem_bandwidth_matrix_numa_0_0_BW','Mem_latency_matrix_numa_0_0_Latency']:
+    for metric in ['Mem_bandwidth_matrix_numa_0_0_BW', 'Mem_latency_matrix_numa_0_0_Latency']:
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))

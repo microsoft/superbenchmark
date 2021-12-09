@@ -23,19 +23,19 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'mlc'
-        self.__support_mlc_commands = ['bandwidth_matrix','latency_matrix','max_bandwidth']
+        self.__support_mlc_commands = ['bandwidth_matrix', 'latency_matrix', 'max_bandwidth']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
         self._parser.add_argument(
-                '--tests',
-                type=str,
-                nargs='+',
-                default=['bandwidth_matrix'],
-                required=False,
-                help='The modes to run mlc with. Possible values are {}.'.format(' '.join(self.__support_mlc_commands))
+            '--tests',
+            type=str,
+            nargs='+',
+            default=['bandwidth_matrix'],
+            required=False,
+            help='The modes to run mlc with. Possible values are {}.'.format(' '.join(self.__support_mlc_commands))
         )
 
     def _preprocess(self):
@@ -47,10 +47,12 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        mlc_path = os.path.join(self._args.bin_dir,self._bin_name)
-        ret_val = os.access(mlc_path, os.X_OK|os.F_OK)
+        mlc_path = os.path.join(self._args.bin_dir, self._bin_name)
+        ret_val = os.access(mlc_path, os.X_OK | os.F_OK)
         if ret_val == False:
-            logger.error('Executable {} not found in {} or it is not executable'.format(self._bin_name,self._args.bin_dir))
+            logger.error(
+                'Executable {} not found in {} or it is not executable'.format(self._bin_name, self._args.bin_dir)
+            )
             return False
 
         # the mlc command requires hugapage to be enabled
@@ -89,7 +91,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             measure = 'Latency'
             out_table = self._parse_bw_latency(raw_output)
         else:
-            logger.error('Invalid option {} to run the {} command'.format(mlc_test,self._commands[cmd_idx]))
+            logger.error('Invalid option {} to run the {} command'.format(mlc_test, self._commands[cmd_idx]))
             return False
         if len(out_table) == 0:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
@@ -102,13 +104,13 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         for key in out_table.keys():
             for index in range(len(out_table[key])):
                 if 'max_bandwidth' in mlc_test:
-                    metric = 'Mem_{}_{}_{}'.format(mlc_test,key,measure)
+                    metric = 'Mem_{}_{}_{}'.format(mlc_test, key, measure)
                 else:
-                    metric = 'Mem_{}_{}_{}_{}'.format(mlc_test,key,str(index),measure)
-                self._result.add_result(metric,float(out_table[key][index]))
+                    metric = 'Mem_{}_{}_{}_{}'.format(mlc_test, key, str(index), measure)
+                self._result.add_result(metric, float(out_table[key][index]))
         return True
 
-    def _parse_bw_latency(self,raw_output):
+    def _parse_bw_latency(self, raw_output):
         out_table = dict()
         for line in raw_output.splitlines():
             if line.strip() == '':
@@ -118,9 +120,10 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
                 if len(vals) < 2:
                     continue
                 numa_index = 'numa_%s' % vals[0]
-                out_table[numa_index]=vals[1:]
+                out_table[numa_index] = vals[1:]
         return out_table
-    def _parse_max_bw(self,raw_output):
+
+    def _parse_max_bw(self, raw_output):
         out_table = dict()
         # the very last line is empty and only the last 5 lines of the output are of interest
         for line in raw_output.splitlines()[-6:]:
@@ -131,7 +134,8 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
                 continue
             key = '_'.join(vals[0:2]).rstrip(':')
             # making a list to be consistent with the _parse_bw_latency output
-            out_table[key]=[vals[-1]]
+            out_table[key] = [vals[-1]]
         return out_table
+
 
 BenchmarkRegistry.register_benchmark('cpu-memory-bw-latency', CpuMemBwLatencyBenchmark)
