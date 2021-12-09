@@ -1,0 +1,9 @@
+{
+    "kernel-launch/event_overhead": 0.00596,
+    "kernel-launch/wall_overhead": 0.01026,
+    "kernel-launch/return_code": 0,
+    "mem-bw/H2D_Mem_BW": 25.6,
+    "mem-bw/D2H_Mem_BW": 24.3,
+    "mem-bw/D2D_Mem_BW": 1118.0,
+    "mem-bw/return_code": 0
+  }
