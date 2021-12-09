@@ -12,8 +12,6 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 #   - OFED: 5.2-2.2.3.0
 #   - HPC-X: v2.8.3
 #   - NCCL RDMA SHARP plugins: 7cccbc1
-# Intel:
-#   - mlc: v3.9a
 
 LABEL maintainer="SuperBench"
 
@@ -98,16 +96,6 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && \
     rm -rf nccl
-
-# Install Intel MLC
-RUN cd /tmp && \
-    mkdir -p mlc && \
-    cd mlc && \
-    wget --user-agent="Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0" https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz && \
-    tar xvf mlc_v3.9a.tgz && \
-    cp ./Linux/mlc /usr/local/bin/ && \
-    cd /tmp && \
-    rm -rf mlc
 
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
