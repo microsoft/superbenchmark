@@ -20,9 +20,24 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._support_precisions = [
-            'FP64', 'FP32', 'FP16', 'FP64_TC', 'TF32_TC', 'BF16_TC', 'FP16_TC', 'INT8_TC', 'INT4_TC'
+            'fp64', 'fp32', 'fp16', 'fp64_tc', 'tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc', 'int4_tc'
         ]
         self._precision_need_to_run = list()
+        self._metric_map = {
+            'fp64': 'fp64_flops',
+            'fp32': 'fp32_flops',
+            'fp16': 'fp16_flops',
+            'fp64_tc': 'fp64_tc_flops',
+            'tf32_tc': 'tf32_tc_flops',
+            'bf16_tc': 'bf16_tc_flops',
+            'fp16_tc': 'fp16_tc_flops',
+            'int8_tc': 'int8_tc_iops',
+            'int4_tc': 'int4_tc_iops',
+            'fp32_xdlops': 'fp32_xdlops_flops',
+            'fp16_xdlops': 'fp16_xdlops_flops',
+            'bf16_xdlops': 'bf16_xdlops_flops',
+            'int8_xdlops': 'int8_xdlops_iops'
+        }
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -76,7 +91,7 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
         if len(self._args.precision) == 0:
             self._precision_need_to_run = self._support_precisions
         else:
-            self._args.precision = [p.upper() for p in self._args.precision]
+            self._args.precision = [p.lower() for p in self._args.precision]
             for p in self._args.precision:
                 if p not in self._support_precisions:
                     logger.warning(

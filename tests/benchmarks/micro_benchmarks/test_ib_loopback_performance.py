@@ -158,7 +158,7 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         metric_list = []
         for ib_command in benchmark._args.commands:
             for size in ['8388608', '4194304', '1024', '2']:
-                metric = 'IB_{}_{}_Avg_{}'.format(ib_command, size, str(benchmark._args.ib_index))
+                metric = 'ib_{}_{}_ib{}_bw'.format(ib_command, size, str(benchmark._args.ib_index))
                 metric_list.append(metric)
         for metric in metric_list:
             assert (metric in benchmark.result)
@@ -270,7 +270,7 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         # Positive case - valid raw output.
         metric_list = []
         for ib_command in benchmark._args.commands:
-            metric = 'IB_{}_8388608_Avg_{}'.format(ib_command, str(benchmark._args.ib_index))
+            metric = 'ib_{}_8388608_ib{}_bw'.format(ib_command, str(benchmark._args.ib_index))
             metric_list.append(metric)
         for metric in metric_list:
             assert (metric in benchmark.result)

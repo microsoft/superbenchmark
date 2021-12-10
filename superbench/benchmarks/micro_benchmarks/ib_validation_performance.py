@@ -207,19 +207,22 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             # Use the config file defined in args
             else:
                 self.__config_path = self._args.config
+            # Read the hostfile
+            with open(self._args.hostfile, 'r') as f:
+                hosts = f.readlines()
             # Read the config file and check if it's empty and valid
             with open(self.__config_path, 'r') as f:
                 lines = f.readlines()
-                for line in lines:
-                    pairs = line.strip().strip(';').split(';')
-                    # Check format of config
-                    for pair in pairs:
-                        pair = pair.split(',')
-                        if len(pair) != 2:
-                            return False
-                        pair[0] = int(pair[0])
-                        pair[1] = int(pair[1])
-                    self.__config.extend(pairs)
+            for line in lines:
+                pairs = line.strip().strip(';').split(';')
+                # Check format of config
+                for pair in pairs:
+                    pair = pair.split(',')
+                    if len(pair) != 2:
+                        return False
+                    pair[0] = int(pair[0])
+                    pair[1] = int(pair[1])
+                    self.__config.append('{}_{}'.format(hosts[pair[0]].strip(), hosts[pair[1]].strip()))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             logger.error('Failed to generate and check config - benchmark: {}, message: {}.'.format(self._name, str(e)))
@@ -345,6 +348,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         content = raw_output.splitlines()
         line_index = 0
         config_index = 0
+        command = self._args.commands[cmd_idx]
+        suffix = command.split('_')[-1]
         try:
             result_index = -1
             for index, line in enumerate(content):
@@ -357,11 +362,22 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                 content = content[result_index:]
                 for line in content:
                     line = list(filter(None, line.strip().split(',')))
+                    pair_index = 0
                     for item in line:
-                        metric = '{line}-{pair}'.format(line=str(line_index), pair=self.__config[config_index])
-                        self._result.add_result(metric, float(item))
+                        metric = '{command}_{line}_{pair}_{host}_{suffix}'.format(
+                            command=command,
+                            line=str(line_index),
+                            pair=pair_index,
+                            host=self.__config[config_index],
+                            suffix=suffix
+                        )
+                        value = float(item)
+                        if 'bw' in command:
+                            value = value / 1000
+                        self._result.add_result(metric, value)
                         valid = True
                         config_index += 1
+                        pair_index += 1
                     line_index += 1
         except Exception:
             valid = False
