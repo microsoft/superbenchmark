@@ -148,7 +148,7 @@ def test_launch_benchmark():
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6,10"]}, '
         '"result": {"return_code": [0], "accumulation_result": [10]}, '
-        '"reduce_op": {"accumulation_result": null}}'
+        '"reduce_op": {"return_code": null, "accumulation_result": null}}'
     )
     assert (result == expected)
 
@@ -172,7 +172,7 @@ def test_launch_benchmark():
         '"return_code": 0, "start_time": null, "end_time": null, '
         '"raw_data": {"accumulation_result": ["1,3,6"]}, '
         '"result": {"return_code": [0], "accumulation_result": [6]}, '
-        '"reduce_op": {"accumulation_result": null}}'
+        '"reduce_op": {"return_code": null, "accumulation_result": null}}'
     )
     assert (result == expected)
 
