@@ -89,6 +89,9 @@ superbench:
         copy_type:
           - sm
           - dma
+    ort-inference:
+      <<: *default_local_mode
+      enable: false
     ort-models:
       enable: false
       modes:
