@@ -94,7 +94,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
 
         exporter = torch2onnxExporter()
         for model in self._args.pytorch_models:
-            if not (exporter.check_torchvision_model(model) or exporter.check_transformers_model(model)):
+            if not (exporter.check_torchvision_model(model) or exporter.check_benchmark_model(model)):
                 logger.error('Cannot find PyTorch model %s.', model)
                 return False
         for model in self._args.pytorch_models:
@@ -103,9 +103,9 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             if exporter.check_torchvision_model(model):
                 input_shape = f'{self._args.batch_size}x3x224x224'
                 onnx_model = exporter.export_torchvision_model(model, self._args.batch_size)
-            if exporter.check_transformers_model(model):
+            if exporter.check_benchmark_model(model):
                 input_shape = f'{self._args.batch_size}x{self._args.seq_length}'
-                onnx_model = exporter.export_transformers_model(model, self._args.batch_size, self._args.seq_length)
+                onnx_model = exporter.export_benchmark_model(model, self._args.batch_size, self._args.seq_length)
             args = [
                 # trtexec
                 self.__bin_path,
