@@ -112,12 +112,15 @@ gpu0_to_gpu0_by_gpu0_using_dma_under_numa1 634.203
         assert (1 == len(benchmark.raw_data))
         print(test_raw_output.splitlines())
         test_raw_output_dict = {x.split()[0]: float(x.split()[1]) for x in test_raw_output.strip().splitlines()}
-        assert (len(test_raw_output_dict) == len(benchmark.result))
+        assert (len(test_raw_output_dict) + benchmark.default_metric_count == len(benchmark.result))
         for output_key in benchmark.result:
-            assert (len(benchmark.result[output_key]) == 1)
-            assert (isinstance(benchmark.result[output_key][0], numbers.Number))
-            assert (output_key in test_raw_output_dict)
-            assert (test_raw_output_dict[output_key] == benchmark.result[output_key][0])
+            if output_key == 'return_code':
+                assert (benchmark.result[output_key] == [0])
+            else:
+                assert (len(benchmark.result[output_key]) == 1)
+                assert (isinstance(benchmark.result[output_key][0], numbers.Number))
+                assert (output_key.strip('_bw') in test_raw_output_dict)
+                assert (test_raw_output_dict[output_key.strip('_bw')] == benchmark.result[output_key][0])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)

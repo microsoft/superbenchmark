@@ -44,7 +44,7 @@ def test_pytorch_sharding_matmul():
     # Check results and metrics.
     assert (benchmark.run_count == 2)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    for metric in ['allreduce', 'allgather']:
+    for metric in ['allreduce_time', 'allgather_time']:
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
         assert (len(benchmark.result[metric]) == benchmark.run_count)

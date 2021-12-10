@@ -93,19 +93,24 @@ the job to be terminated. The first process to do so was:
 --------------------------------------------------------------------------
 """
         assert (benchmark._process_raw_result(0, raw_output_no_execution))
-        assert (len(benchmark.result) == 0)
+        assert (len(benchmark.result) == benchmark.default_metric_count)
 
         # Check function process_raw_data.
         # Positive case - valid raw output.
         assert (benchmark._process_raw_result(0, raw_output))
-        test_name = 'IsolatedNetworkTests'
         metric_list = [
-            'RRTwo-sidedLat(8B)', 'RRGetLat(8B)', 'RRTwo-sidedBW(131072B)', 'RRPutBW(131072B)',
-            'RRTwo-sidedBW+Sync(131072B)', 'NatTwo-sidedBW(131072B)', 'MultipleAllreduce(8B)', 'MultipleAlltoall(4096B)'
+            'rr_two-sided_lat',
+            'rr_get_lat',
+            'rr_two-sided_bw',
+            'rr_put_bw',
+            'rr_two-sided+sync_bw',
+            'nat_two-sided_bw',
+            'multiple_allreduce_time',
+            'multiple_alltoall_bw',
         ]
         for metric_medium in metric_list:
-            for suffix in ['Avg', '99%']:
-                metric = test_name + '_' + metric_medium + '_' + suffix
+            for suffix in ['avg', '99%']:
+                metric = metric_medium + '_' + suffix
                 assert (metric in benchmark.result)
                 assert (len(benchmark.result[metric]) == 1)
                 assert (isinstance(benchmark.result[metric][0], numbers.Number))
@@ -250,61 +255,13 @@ the job to be terminated. The first process to do so was:
 --------------------------------------------------------------------------
 """
         assert (benchmark._process_raw_result(0, raw_output_no_execution))
-        assert (len(benchmark.result) == 0)
+        assert (len(benchmark.result) == benchmark.default_metric_count)
         # Positive case - valid raw output.
         assert (benchmark._process_raw_result(0, raw_output))
-        test_name = 'IsolatedNetworkTests'
-        metric_list = ['RRTwo-sidedLat(8B)', 'RRTwo-sidedBW+Sync(131072B)', 'MultipleAllreduce(8B)']
+        metric_list = ['rr_two-sided_lat_x', 'rr_two-sided+sync_bw_x', 'multiple_allreduce_x']
         for metric_medium in metric_list:
-            for suffix in ['Max', 'Min', 'Avg', '99.9%']:
-                metric = test_name + '_' + metric_medium + '_' + suffix
-                assert (metric in benchmark.result)
-                assert (len(benchmark.result[metric]) == 1)
-                assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        test_name = 'IsolatedCongestionTests'
-        metric_list = ['GetBcast(4096B)', 'PutIncast(4096B)', 'Two-sidedIncast(4096B)', 'Alltoall(4096B)']
-        for metric_medium in metric_list:
-            for suffix in ['Max', 'Min', 'Avg', '99.9%']:
-                metric = test_name + '_' + metric_medium + '_' + suffix
-                assert (metric in benchmark.result)
-                assert (len(benchmark.result[metric]) == 1)
-                assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        test_name = 'NetworkTestsrunningwithCongestionTests(RRTwo-sidedLatNetworkTest)'
-        metric_list = [
-            'GetBcast(4096B)', 'PutIncast(4096B)', 'Two-sidedIncast(4096B)', 'Alltoall(4096B)', 'RRTwo-sidedLat(8B)'
-        ]
-        for metric_medium in metric_list:
-            for suffix in ['Max', 'Min', 'Avg', '99.9%']:
-                metric = test_name + '_' + metric_medium + '_' + suffix
-                assert (metric in benchmark.result)
-                assert (len(benchmark.result[metric]) == 1)
-                assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        test_name = 'NetworkTestsrunningwithCongestionTests(RRTwo-sidedBW+SyncNetworkTest)'
-        metric_list = [
-            'GetBcast(4096B)', 'PutIncast(4096B)', 'Two-sidedIncast(4096B)', 'Alltoall(4096B)',
-            'RRTwo-sidedBW+Sync(131072B)'
-        ]
-        for metric_medium in metric_list:
-            for suffix in ['Max', 'Min', 'Avg', '99.9%']:
-                metric = test_name + '_' + metric_medium + '_' + suffix
-                assert (metric in benchmark.result)
-                assert (len(benchmark.result[metric]) == 1)
-                assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        test_name = 'NetworkTestsrunningwithCongestionTests(MultipleAllreduceNetworkTest)'
-        metric_list = [
-            'GetBcast(4096B)', 'PutIncast(4096B)', 'Two-sidedIncast(4096B)', 'Alltoall(4096B)', 'MultipleAllreduce(8B)'
-        ]
-        for metric_medium in metric_list:
-            for suffix in ['Max', 'Min', 'Avg', '99.9%']:
-                metric = test_name + '_' + metric_medium + '_' + suffix
-                assert (metric in benchmark.result)
-                assert (len(benchmark.result[metric]) == 1)
-                assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        test_name = 'NetworkTestsrunningwithCongestionTests-KeyResults'
-        metric_list = ['RRTwo-sidedLat(8B)', 'RRTwo-sidedBW+Sync(131072B)', 'MultipleAllreduce(8B)']
-        for metric_medium in metric_list:
-            for suffix in ['Avg', '99%']:
-                metric = test_name + '_' + metric_medium + '_' + suffix
+            for suffix in ['avg', '99%']:
+                metric = metric_medium + '_' + suffix
                 assert (metric in benchmark.result)
                 assert (len(benchmark.result[metric]) == 1)
                 assert (isinstance(benchmark.result[metric][0], numbers.Number))
