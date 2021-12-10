@@ -63,16 +63,16 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             )
         with ArgumentsContext(self, 'result') as ac:
             ac.argument(
-                'raw_data_file', options_list=('--raw-data-file', '-d'), type=str, help='The path of raw data file.'
+                'raw_data_file', options_list=('--raw-data-file', '-d'), type=str, help='Path to raw data file.'
             )
-            ac.argument('rule_file', options_list=('--rule-file', '-r'), type=str, help='The path of rule file.')
+            ac.argument('rule_file', options_list=('--rule-file', '-r'), type=str, help='Path to rule file.')
             ac.argument(
-                'baseline_file', options_list=('--baseline-file', '-b'), type=str, help='The path of baseline file.'
+                'baseline_file', options_list=('--baseline-file', '-b'), type=str, help='Path to baseline file.'
             )
             ac.argument(
                 'output_dir',
                 type=str,
                 help='Path to output directory, outputs/{datetime} will be used if not specified.'
             )
-            ac.argument('output_format', type=str, help='The format of output, excel or json.')
+            ac.argument('output_file_format', type=str, help='Format of output file, excel or json.')
         super().load_arguments(command)

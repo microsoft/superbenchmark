@@ -98,6 +98,6 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         # test invalid output format
         self.cmd(
             'sb result diagnosis -d {dir}/test_results.jsonl -r {dir}/test_rules.yaml -b {dir}/test_baseline.json'.
-            format(dir=test_analyzer_dir) + ' --output-dir outputs/test-diagnosis/ --output-format abb',
+            format(dir=test_analyzer_dir) + ' --output-dir outputs/test-diagnosis/ --output-file-format abb',
             expect_failure=True
         )
