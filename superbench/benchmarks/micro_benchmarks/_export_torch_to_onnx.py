@@ -23,7 +23,7 @@ class torch2onnxExporter():
         self.lstm_input_size = 256
         self.benchmark_models = {
             'lstm':
-            LSTMBenchmarkModel(
+            lambda: LSTMBenchmarkModel(
                 self.lstm_input_size,
                 1024,
                 8,
@@ -31,7 +31,7 @@ class torch2onnxExporter():
                 self.num_classes,
             ),
             'bert-base':
-            BertBenchmarkModel(
+            lambda: BertBenchmarkModel(
                 BertConfig(
                     hidden_size=768,
                     num_hidden_layers=12,
@@ -41,7 +41,7 @@ class torch2onnxExporter():
                 self.num_classes,
             ),
             'bert-large':
-            BertBenchmarkModel(
+            lambda: BertBenchmarkModel(
                 BertConfig(
                     hidden_size=1024,
                     num_hidden_layers=24,
@@ -51,7 +51,7 @@ class torch2onnxExporter():
                 self.num_classes,
             ),
             'gpt2-small':
-            GPT2BenchmarkModel(
+            lambda: GPT2BenchmarkModel(
                 GPT2Config(
                     hidden_size=768,
                     num_hidden_layers=12,
@@ -60,7 +60,7 @@ class torch2onnxExporter():
                 self.num_classes,
             ),
             'gpt2-medium':
-            GPT2BenchmarkModel(
+            lambda: GPT2BenchmarkModel(
                 GPT2Config(
                     hidden_size=1024,
                     num_hidden_layers=24,
@@ -69,7 +69,7 @@ class torch2onnxExporter():
                 self.num_classes,
             ),
             'gpt2-large':
-            GPT2BenchmarkModel(
+            lambda: GPT2BenchmarkModel(
                 GPT2Config(
                     hidden_size=1280,
                     num_hidden_layers=36,
@@ -78,7 +78,7 @@ class torch2onnxExporter():
                 self.num_classes,
             ),
             'gpt2-xl':
-            GPT2BenchmarkModel(
+            lambda: GPT2BenchmarkModel(
                 GPT2Config(
                     hidden_size=1600,
                     num_hidden_layers=48,
@@ -167,7 +167,7 @@ class torch2onnxExporter():
         if model_name == 'lstm':
             input_shape += (self.lstm_input_size, )
         torch.onnx.export(
-            self.benchmark_models[model_name].eval().cuda(),
+            self.benchmark_models[model_name]().eval().cuda(),
             torch.empty(input_shape, dtype=torch.int64, device='cuda'),
             file_name,
             opset_version=10,
