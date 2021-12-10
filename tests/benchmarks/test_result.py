@@ -86,6 +86,6 @@ def test_serialize_deserialize():
         '"start_time": "2021-02-03 16:59:49", "end_time": "2021-02-03 17:00:08", '
         '"raw_data": {"metric1": [[1, 2, 3], [4, 5, 6], [7, 8, 9]]}, '
         '"result": {"return_code": [0], "metric1": [300, 200], "metric2": [100]}, '
-        '"reduce_op": {"metric1": "max", "metric2": "avg"}}'
+        '"reduce_op": {"return_code": null, "metric1": "max", "metric2": "avg"}}'
     )
     assert (result.to_string() == expected)
