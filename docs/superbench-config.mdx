@@ -59,7 +59,7 @@ superbench:
   monitor:
     enable: bool
     sample_duration: int
-    sample_freq: int
+    sample_interval: int
   var:
     ${var_name}: dict
   benchmarks:
@@ -76,7 +76,7 @@ superbench:
   monitor:
     enable: false
     sample_duration: 10
-    sample_freq: 1
+    sample_interval: 1
   var:
     var_1: value
   benchmarks:
@@ -108,7 +108,7 @@ If not specified, will use [`${benchmark_name}.enable`](#enable) in each benchma
 
 ### `superbench.monitor`
 
-Enable monitor to collect system metrics periodically, currently only support CUDA platform. There have three settings:
+Enable monitor to collect system metrics periodically, currently only support CUDA platform. There are three settings:
 
 #### `enable`
 
@@ -116,11 +116,11 @@ Whether enable the monitor module or not.
 
 #### `sample_duration`
 
-Calculate the average metirc during sample_duration seconds, such as CPU usage and NIC bandwidth.
+Calculate the average metrics during sample_duration seconds, such as CPU usage and NIC bandwidth.
 
-#### `sample_freq`
+#### `sample_interval`
 
-Do sampling every sample_freq seconds.
+Do sampling every sample_interval seconds.
 
 ### `superbench.var`
 

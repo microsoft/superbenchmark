@@ -4,8 +4,8 @@ superbench:
   enable: null
   monitor:
     enable: false
-    sample_duration: 10
-    sample_freq: 1
+    sample_duration: 1
+    sample_interval: 10
   var:
     default_local_mode: &default_local_mode
       enable: true

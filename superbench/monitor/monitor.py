@@ -16,19 +16,19 @@ from superbench.monitor.record import MonitorRecord
 
 class Monitor(multiprocessing.Process):
     """The monitor class to collect system metrics periodically."""
-    def __init__(self, container_name, sample_duration, sample_freq, output_file):
+    def __init__(self, container_name, sample_duration, sample_interval, output_file):
         """Constructor.
 
         Args:
             container_name (str): container name that need to monitor, None means the current env.
             sample_duration (int): calculate the average metirc during sample_duration seconds.
-            sample_freq (int): do sampling every sample_freq seconds.
+            sample_interval (int): do sampling every sample_interval seconds.
             output_file (str): output file in jsonline format.
         """
         multiprocessing.Process.__init__(self)
         self.__container_name = container_name
         self.__sample_duration = sample_duration
-        self.__sample_freq = sample_freq
+        self.__sample_interval = sample_interval
         self.__output_file = output_file
 
         self.__scheduler = sched.scheduler(time.time, time.sleep)
@@ -120,7 +120,7 @@ class Monitor(multiprocessing.Process):
     def __sample(self):
         """Method sampling system metrics."""
         if self.__running.value == 1:
-            self.__scheduler.enter(self.__sample_freq, 1, self.__sample, ())
+            self.__scheduler.enter(self.__sample_interval, 1, self.__sample, ())
             # Sampling
             record = MonitorRecord()
             self.__sample_host_metrics(record)
