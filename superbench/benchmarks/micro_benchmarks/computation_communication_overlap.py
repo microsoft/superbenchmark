@@ -237,7 +237,7 @@ class ComputationCommunicationOverlap(MicroBenchmark):
             compute_end = time.perf_counter()
             torch.cuda.synchronize()
 
-            compute_metric = '{}_cost'.format(kernel)
+            compute_metric = '{}_time'.format(kernel)
             compute_elapse_times = [(compute_end - start) * 1000 / self._args.num_steps]
 
             if not self._process_numeric_result(compute_metric, compute_elapse_times):

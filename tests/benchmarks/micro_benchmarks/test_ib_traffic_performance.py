@@ -27,6 +27,9 @@ class IBBenchmarkTest(unittest.TestCase):
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
+        p = Path('hostfile')
+        if p.is_file():
+            p.unlink()
 
     def test_generate_config(self):    # noqa: C901
         """Test util functions ."""
@@ -126,15 +129,18 @@ class IBBenchmarkTest(unittest.TestCase):
 
         # Check preprocess
         # Negative cases
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
+        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         mock_ib_devices.return_value = None
         ret = benchmark._preprocess()
         assert (ret is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_MPI_INIT_FAILURE)
 
+        hosts = ['node0\n', 'node1\n', 'node2\n', 'node3\n']
+        with open('hostfile', 'w') as f:
+            f.writelines(hosts)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
+        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         mock_ib_devices.return_value = None
         ret = benchmark._preprocess()
@@ -143,21 +149,21 @@ class IBBenchmarkTest(unittest.TestCase):
 
         # Positive cases
         os.environ['OMPI_COMM_WORLD_SIZE'] = '3'
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one'
+        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         mock_ib_devices.return_value = ['mlx5_0']
         ret = benchmark._preprocess()
         assert (ret is True)
 
         # Generate config
-        parameters = '--ib_index 0 --iters 2000 --msg_size 33554432'
+        parameters = '--ib_index 0 --iters 2000 --msg_size 33554432 --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
         mock_ib_devices.return_value = ['mlx5_0']
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_validation --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
+        expect_command = 'ib_validation --hostfile hostfile --cmd_prefix "ib_write_bw -F ' + \
             '--iters=2000 -d mlx5_0 -s 33554432" --input_config ' + os.getcwd() + '/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
@@ -167,14 +173,14 @@ class IBBenchmarkTest(unittest.TestCase):
         with open('test_config.txt', 'w') as f:
             for line in config:
                 f.write(line + '\n')
-        parameters = '--ib_index 0 --iters 2000 --msg_size 33554432 --config test_config.txt'
+        parameters = '--ib_index 0 --iters 2000 --msg_size 33554432 --config test_config.txt --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '2'
         mock_ib_devices.return_value = ['mlx5_0']
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_validation --hostfile /root/hostfile --cmd_prefix "ib_write_bw -F ' + \
+        expect_command = 'ib_validation --hostfile hostfile --cmd_prefix "ib_write_bw -F ' + \
             '--iters=2000 -d mlx5_0 -s 33554432" --input_config test_config.txt'
 
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
