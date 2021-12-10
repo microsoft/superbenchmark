@@ -63,7 +63,7 @@ helps['run'] = """
 
 helps['node'] = """
     type: Group
-    short-summary: The command group of the node.
+    short-summary: Get detailed information or configurations on the local node.
 """
 
 helps['node info'] = """
@@ -76,17 +76,17 @@ helps['node info'] = """
 
 helps['result'] = """
     type: Group
-    short-summary: The command group of the result processing.
+    short-summary: Process or analyze the results of SuperBench benchmarks.
 """
 
 helps['result diagnosis'] = """
     type: command
-    short-summary: Run data diagnosis.
+    short-summary: Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
     examples:
-        - name: run data diagnosis and output in excel file
-          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-foramt 'excel'
-        - name: run data diagnosis and output in json file
-          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-foramt 'json'
+        - name: run data diagnosis and output the results in excel format
+          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-file-foramt 'excel'
+        - name: run data diagnosis and output the results in jsonl format
+          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-file-foramt 'json'
 """.format(cli_name=CLI_NAME)    # noqa: E501
 
 
