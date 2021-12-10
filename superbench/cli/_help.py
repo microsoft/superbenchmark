@@ -84,9 +84,9 @@ helps['result diagnosis'] = """
     short-summary: Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
     examples:
         - name: run data diagnosis and output the results in excel format
-          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-file-foramt 'excel'
+          text: {cli_name} result diagnosis --data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-file-foramt 'excel'
         - name: run data diagnosis and output the results in jsonl format
-          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-file-foramt 'json'
+          text: {cli_name} result diagnosis --data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-file-foramt 'json'
 """.format(cli_name=CLI_NAME)    # noqa: E501
 
 

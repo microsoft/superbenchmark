@@ -62,9 +62,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 help='Extra arguments to override config_file.'
             )
         with ArgumentsContext(self, 'result') as ac:
-            ac.argument(
-                'raw_data_file', options_list=('--raw-data-file', '-d'), type=str, help='Path to raw data file.'
-            )
+            ac.argument('raw_data_file', options_list=('--data-file', '-d'), type=str, help='Path to raw data file.')
             ac.argument('rule_file', options_list=('--rule-file', '-r'), type=str, help='Path to rule file.')
             ac.argument(
                 'baseline_file', options_list=('--baseline-file', '-b'), type=str, help='Path to baseline file.'
