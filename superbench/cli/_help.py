@@ -61,6 +61,34 @@ helps['run'] = """
           text: {cli_name} run --docker-image superbench/cuda:11.1 --host-file ./host.ini
 """.format(cli_name=CLI_NAME)
 
+helps['node'] = """
+    type: Group
+    short-summary: The command group of the node.
+"""
+
+helps['node info'] = """
+    type: command
+    short-summary: Get system info.
+    examples:
+        - name: get system info of the local node
+          text: {cli_name} node info
+""".format(cli_name=CLI_NAME)
+
+helps['result'] = """
+    type: Group
+    short-summary: The command group of the result processing.
+"""
+
+helps['result diagnosis'] = """
+    type: command
+    short-summary: Run data diagnosis.
+    examples:
+        - name: run data diagnosis and output in excel file
+          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-foramt 'excel'
+        - name: run data diagnosis and output in json file
+          text: {cli_name} result diagnosis --raw-data-file 'outputs/results-summary.jsonl' --rule-file 'rule.yaml' --baseline-file 'baseline.json' --output-foramt 'json'
+""".format(cli_name=CLI_NAME)    # noqa: E501
+
 
 class SuperBenchCLIHelp(CLIHelp):
     """SuperBench CLI help loader."""
