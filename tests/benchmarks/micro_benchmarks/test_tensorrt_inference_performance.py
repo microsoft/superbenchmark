@@ -62,7 +62,7 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
                 'batch_size': 4,
             },
             {
-                'pytorch_models': ['bert-base', 'gpt-small'],
+                'pytorch_models': ['lstm', 'bert-base', 'gpt2-small'],
                 'batch_size': 4,
                 'seq_length': 128,
                 'iterations': 256,

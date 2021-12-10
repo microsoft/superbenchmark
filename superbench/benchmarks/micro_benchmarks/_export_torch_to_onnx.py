@@ -27,7 +27,7 @@ class torch2onnxExporter():
                 self.lstm_input_size,
                 1024,
                 8,
-                True,
+                False,
                 self.num_classes,
             ),
             'bert-base':
@@ -53,36 +53,36 @@ class torch2onnxExporter():
             'gpt2-small':
             lambda: GPT2BenchmarkModel(
                 GPT2Config(
-                    hidden_size=768,
-                    num_hidden_layers=12,
-                    num_attention_heads=12,
+                    n_embd=768,
+                    n_layer=12,
+                    n_head=12,
                 ),
                 self.num_classes,
             ),
             'gpt2-medium':
             lambda: GPT2BenchmarkModel(
                 GPT2Config(
-                    hidden_size=1024,
-                    num_hidden_layers=24,
-                    num_attention_heads=16,
+                    n_embd=1024,
+                    n_layer=24,
+                    n_head=16,
                 ),
                 self.num_classes,
             ),
             'gpt2-large':
             lambda: GPT2BenchmarkModel(
                 GPT2Config(
-                    hidden_size=1280,
-                    num_hidden_layers=36,
-                    num_attention_heads=20,
+                    n_embd=1280,
+                    n_layer=36,
+                    n_head=20,
                 ),
                 self.num_classes,
             ),
             'gpt2-xl':
             lambda: GPT2BenchmarkModel(
                 GPT2Config(
-                    hidden_size=1600,
-                    num_hidden_layers=48,
-                    num_attention_heads=25,
+                    n_embd=1600,
+                    n_layer=48,
+                    n_head=25,
                 ),
                 self.num_classes,
             ),
@@ -163,12 +163,13 @@ class torch2onnxExporter():
         if not self.check_benchmark_model(model_name):
             return
         file_name = str(self._onnx_model_path / (model_name + '.onnx'))
-        input_shape = (batch_size, seq_length)
+        input_shape, dtype = (batch_size, seq_length), torch.int64
         if model_name == 'lstm':
             input_shape += (self.lstm_input_size, )
+            dtype = None
         torch.onnx.export(
             self.benchmark_models[model_name]().eval().cuda(),
-            torch.empty(input_shape, dtype=torch.int64, device='cuda'),
+            torch.empty(input_shape, dtype=dtype, device='cuda'),
             file_name,
             opset_version=10,
             do_constant_folding=True,
