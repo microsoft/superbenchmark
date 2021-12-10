@@ -30,7 +30,7 @@ def test_ort_inference_performance(mock_ort_session_run, mock_get_dir):
     benchmark = benchmark_class(
         benchmark_name,
         parameters='--pytorch_models resnet50 --graph_opt_level 1 --precision float16'
-        ' --batch_size 64 --num_warmup 128 --num_steps 512'
+        ' --batch_size 16 --num_warmup 128 --num_steps 512'
     )
 
     assert (isinstance(benchmark, ORTInferenceBenchmark))
@@ -49,7 +49,7 @@ def test_ort_inference_performance(mock_ort_session_run, mock_get_dir):
     assert (benchmark._args.pytorch_models == ['resnet50'])
     assert (benchmark._args.graph_opt_level == 1)
     assert (benchmark._args.precision == Precision.FLOAT16)
-    assert (benchmark._args.batch_size == 64)
+    assert (benchmark._args.batch_size == 16)
     assert (benchmark._args.num_warmup == 128)
     assert (benchmark._args.num_steps == 512)
 
@@ -57,7 +57,12 @@ def test_ort_inference_performance(mock_ort_session_run, mock_get_dir):
     assert (benchmark._benchmark())
     shutil.rmtree(benchmark._ORTInferenceBenchmark__model_cache_path)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
+    precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'int8': 'int8'}
     for model in benchmark._args.pytorch_models:
-        metric = 'latency_{}_{}'.format(model, benchmark._args.precision)
+        if benchmark._args.precision.value in precision_metric:
+            precision = precision_metric[benchmark._args.precision.value]
+        else:
+            precision = benchmark._args.precision.value
+        metric = '{}_{}_time'.format(precision, model)
         assert (metric in benchmark.result)
         assert (metric in benchmark.raw_data)

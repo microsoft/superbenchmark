@@ -104,7 +104,7 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 
 | Name                                          | Unit      | Description                                               |
 |-----------------------------------------------|-----------|-----------------------------------------------------------|
-| ort-inference/latency_{model}_{precision}     | time (ms) | The mean latency to execute one batch of inference.       |
+| ort-inference/{precision}_{model}_time        | time (ms) | The mean latency to execute one batch of inference.       |
 
 ## Communication Benchmarks
 

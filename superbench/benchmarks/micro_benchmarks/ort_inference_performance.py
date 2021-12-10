@@ -139,6 +139,8 @@ class ORTInferenceBenchmark(MicroBenchmark):
     def _benchmark(self):
         """Implementation for benchmarking."""
         import onnxruntime as ort
+        precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'int8': 'int8'}
+
         for model in self._args.pytorch_models:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = self.__graph_opt_level[self._args.graph_opt_level]
@@ -149,7 +151,11 @@ class ORTInferenceBenchmark(MicroBenchmark):
 
             elapse_times = self.__inference(ort_sess)
 
-            metric = 'latency_{}_{}'.format(model, self._args.precision)
+            if self._args.precision.value in precision_metric:
+                precision = precision_metric[self._args.precision.value]
+            else:
+                precision = self._args.precision.value
+            metric = '{}_{}_time'.format(precision, model)
             if not self._process_numeric_result(metric, elapse_times):
                 return False
 
