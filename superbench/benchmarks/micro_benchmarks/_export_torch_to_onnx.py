@@ -120,7 +120,7 @@ class torch2onnxExporter():
             return ''
         file_name = str(self._onnx_model_path / (model_name + '.onnx'))
         torch.onnx.export(
-            getattr(torchvision.models, model_name).eval().cuda(),
+            getattr(torchvision.models, model_name)(pretrained=False).eval().cuda(),
             torch.randn(batch_size, 3, 224, 224, device='cuda'),
             file_name,
             opset_version=10,

@@ -76,7 +76,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--iterations',
             type=int,
-            default=256,
+            default=2048,
             required=False,
             help='Run at least N inference iterations.',
         )
@@ -106,21 +106,22 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             if exporter.check_transformers_model(model):
                 input_shape = f'{self._args.batch_size}x{self._args.seq_length}'
                 onnx_model = exporter.export_transformers_model(model, self._args.batch_size, self._args.seq_length)
-            self._commands.append(
-                ' '.join(
-                    filter(
-                        None, [
-                            self.__bin_path,
-                            None if self._args.precision == 'fp32' else f'--{self._args.precision}',
-                            f'--optShapes=input:{input_shape}',
-                            f'--iterations={self._args.iterations}',
-                            '--workspace=8192',
-                            '--percentile=99',
-                            f'--onnx={onnx_model}',
-                        ]
-                    )
-                )
-            )
+            args = [
+                # trtexec
+                self.__bin_path,
+                # model options
+                f'--onnx={onnx_model}',
+                # build options
+                '--explicitBatch',
+                f'--optShapes=input:{input_shape}',
+                '--workspace=8192',
+                None if self._args.precision == 'fp32' else f'--{self._args.precision}',
+                # inference options
+                f'--iterations={self._args.iterations}',
+                # reporting options
+                '--percentile=99',
+            ]   # yapf: disable
+            self._commands.append(' '.join(filter(None, args)))
 
         return True
 

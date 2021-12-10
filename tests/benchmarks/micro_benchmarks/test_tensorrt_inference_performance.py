@@ -21,9 +21,10 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
         """Hook method for setting up the test fixture before exercising it."""
         self.benchmark_name = 'tensorrt-inference'
         self.__tmp_dir = tempfile.mkdtemp()
+        self.__model_path = Path(self.__tmp_dir) / 'hub' / 'onnx'
         self.__curr_micro_path = os.environ.get('SB_MICRO_PATH', '')
-        os.environ['SB_MICRO_PATH'] = self.__tmp_dir
         os.environ['TORCH_HOME'] = self.__tmp_dir
+        os.environ['SB_MICRO_PATH'] = self.__tmp_dir
         (Path(self.__tmp_dir) / 'bin').mkdir(parents=True, exist_ok=True)
         (Path(self.__tmp_dir) / 'bin' / 'trtexec').touch(mode=0o755, exist_ok=True)
 
@@ -61,8 +62,10 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
                 'batch_size': 4,
             },
             {
+                'pytorch_models': ['bert-base', 'gpt-small'],
                 'batch_size': 4,
-                'iterations': 128,
+                'seq_length': 128,
+                'iterations': 256,
             },
         ]
         for test_case in test_cases:
@@ -74,6 +77,8 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
                     parameter_list.append(f'--precision {test_case["precision"]}')
                 if 'batch_size' in test_case:
                     parameter_list.append(f'--batch_size {test_case["batch_size"]}')
+                if 'seq_length' in test_case:
+                    parameter_list.append(f'--seq_length {test_case["seq_length"]}')
                 if 'iterations' in test_case:
                     parameter_list.append(f'--iterations {test_case["iterations"]}')
 
@@ -83,7 +88,6 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
 
                 # Limit model number
                 benchmark._pytorch_models = benchmark._pytorch_models[:1]
-                benchmark._TensorRTInferenceBenchmark__model_cache_path = Path(self.__tmp_dir) / 'hub/checkpoints'
 
                 # Preprocess
                 ret = benchmark._preprocess()
@@ -106,15 +110,13 @@ class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
                     benchmark._args.batch_size,
                 )
                 self.assertEqual(
-                    test_case.get('iterations', 256),
+                    test_case.get('iterations', 2048),
                     benchmark._args.iterations,
                 )
 
                 # Check models
                 for model in benchmark._args.pytorch_models:
-                    self.assertTrue(
-                        (benchmark._TensorRTInferenceBenchmark__model_cache_path / f'{model}.onnx').is_file()
-                    )
+                    self.assertTrue((self.__model_path / f'{model}.onnx').is_file())
 
                 # Command list should equal to default model number
                 self.assertEqual(
