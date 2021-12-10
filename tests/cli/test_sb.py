@@ -7,6 +7,7 @@ import io
 import contextlib
 from functools import wraps
 from knack.testsdk import ScenarioTest, StringCheck, NoneCheck
+from pathlib import Path
 
 import superbench
 from superbench.cli import SuperBenchCLI
@@ -85,3 +86,18 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
     def test_sb_node_info(self):
         """Test sb node info, should fail."""
         self.cmd('sb node info', expect_failure=False)
+
+    def test_sb_result_diagnosis(self):
+        """Test sb result diagnosis."""
+        test_analyzer_dir = str(Path(__file__).parent.resolve() / '../analyzer/')
+        # test positive case
+        self.cmd(
+            'sb result diagnosis -d {dir}/test_results.jsonl -r {dir}/test_rules.yaml -b {dir}/test_baseline.json'.
+            format(dir=test_analyzer_dir) + ' --output-dir outputs/test-diagnosis/'
+        )
+        # test invalid output format
+        self.cmd(
+            'sb result diagnosis -d {dir}/test_results.jsonl -r {dir}/test_rules.yaml -b {dir}/test_baseline.json'.
+            format(dir=test_analyzer_dir) + ' --output-dir outputs/test-diagnosis/ --output-file-format abb',
+            expect_failure=True
+        )
