@@ -55,10 +55,16 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # the mlc command requires hugapage to be enabled
-        self._commands.append('bash -c "echo 4000 > /proc/sys/vm/nr_hugepages"')
+        mlc_wrapper = ''.join(['nr_hugepages=`cat /proc/sys/vm/nr_hugepages`;',
+                         'echo 4000 > /proc/sys/vm/nr_hugepages; ',
+                         '%s;', 
+                         'err=$?;', 
+                         'echo ${nr_hugepages} > /proc/sys/vm/nr_hugepages;',
+                         '(exit $err)'])
+        #self._commands.append('bash -c "echo 4000 > /proc/sys/vm/nr_hugepages"')
         for test in self._args.tests:
             command = mlc_path + ' --%s' % test
-            self._commands.append(command)
+            self._commands.append(mlc_wrapper%command)
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
@@ -73,13 +79,17 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        # ignore the output from updating nr_hugepages command
-        if 'nr_hugepages' in self._commands[cmd_idx]:
-            return True
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         # parse the command to see which command this output belongs to
-        mlc_test = self._commands[cmd_idx].split('--')[1]
+        # the command is formed as ...;mlc --option;...
+        # option needs to be extracted
+        if '--' in self._commands[cmd_idx]:
+            mlc_test = self._commands[cmd_idx].split('--')[1]
+        else:
+            logger.error('The command {} is not well formed and missing --'.format(self._commands[cmd_idx]))
+            return False
+        mlc_test = mlc_test.split(';')[0]
         if 'max_bandwidth' in mlc_test:
             measure = 'BW'
             out_table = self._parse_max_bw(raw_output)
@@ -114,6 +124,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         for line in raw_output.splitlines():
             if line.strip() == '':
                 continue
+            # only lines starting with a digit is of interest
             if line.lstrip()[0].isdigit():
                 vals = line.split()
                 if len(vals) < 2:
