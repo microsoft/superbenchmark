@@ -55,16 +55,15 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # the mlc command requires hugapage to be enabled
-        mlc_wrapper = ''.join(['nr_hugepages=`cat /proc/sys/vm/nr_hugepages`;',
-                         'echo 4000 > /proc/sys/vm/nr_hugepages; ',
-                         '%s;', 
-                         'err=$?;', 
-                         'echo ${nr_hugepages} > /proc/sys/vm/nr_hugepages;',
-                         '(exit $err)'])
-        #self._commands.append('bash -c "echo 4000 > /proc/sys/vm/nr_hugepages"')
+        mlc_wrapper = ' '.join(
+            [
+                'nr_hugepages=`cat /proc/sys/vm/nr_hugepages`;', 'echo 4000 > /proc/sys/vm/nr_hugepages;', '%s;',
+                'err=$?;', 'echo ${nr_hugepages} > /proc/sys/vm/nr_hugepages;', '(exit $err)'
+            ]
+        )
         for test in self._args.tests:
             command = mlc_path + ' --%s' % test
-            self._commands.append(mlc_wrapper%command)
+            self._commands.append(mlc_wrapper % command)
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
@@ -82,7 +81,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
 
         # parse the command to see which command this output belongs to
-        # the command is formed as ...;mlc --option;...
+        # the command is formed as ...; mlc --option; ...
         # option needs to be extracted
         if '--' in self._commands[cmd_idx]:
             mlc_test = self._commands[cmd_idx].split('--')[1]
@@ -142,7 +141,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             vals = line.split()
             if len(vals) < 2:
                 continue
-            key = '_'.join(vals[0:2]).rstrip(':')
+            key = '_'.join(vals[0:2]).rstrip(':').replace(':', '_')
             # making a list to be consistent with the _parse_bw_latency output
             out_table[key] = [vals[-1]]
         return out_table
