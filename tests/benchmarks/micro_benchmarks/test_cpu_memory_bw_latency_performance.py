@@ -92,8 +92,10 @@ Numa node            0       1
         assert (benchmark.return_code == ReturnCode.SUCCESS)
         assert ('raw_output_0' in benchmark.raw_data)
         assert ([test_raw_output] == benchmark.raw_data['raw_output_0'])
-        assert ([82542.2, 76679.9] == benchmark.result['Mem_bandwidth_matrix_numa_0_BW'])
-        assert ([76536.0, 82986.5] == benchmark.result['Mem_bandwidth_matrix_numa_1_BW'])
+        assert ([82542.2] == benchmark.result['Mem_bandwidth_matrix_numa_0_0_BW'])
+        assert ([76679.9] == benchmark.result['Mem_bandwidth_matrix_numa_0_1_BW'])
+        assert ([76536.0] == benchmark.result['Mem_bandwidth_matrix_numa_1_0_BW'])
+        assert ([82986.5] == benchmark.result['Mem_bandwidth_matrix_numa_1_1_BW'])
 
         # Positive case - valid latency matrix output.
         test_raw_output = """
@@ -113,8 +115,11 @@ Numa node            0       1
         assert (benchmark.return_code == ReturnCode.SUCCESS)
         assert ('raw_output_1' in benchmark.raw_data)
         assert ([test_raw_output] == benchmark.raw_data['raw_output_1'])
-        assert ([87.0, 101.0] == benchmark.result['Mem_latency_matrix_numa_0_Latency'])
-        assert ([101.9, 86.9] == benchmark.result['Mem_latency_matrix_numa_1_Latency'])
+
+        assert ([87.0] == benchmark.result['Mem_latency_matrix_numa_0_0_Latency'])
+        assert ([101.0] == benchmark.result['Mem_latency_matrix_numa_0_1_Latency'])
+        assert ([101.9] == benchmark.result['Mem_latency_matrix_numa_1_0_Latency'])
+        assert ([86.9] == benchmark.result['Mem_latency_matrix_numa_1_1_Latency'])
 
         # Positive case - valid max bandwidth output.
         test_raw_output = """
