@@ -146,11 +146,11 @@ Stream-triad like:      157878.32
         assert (benchmark.return_code == ReturnCode.SUCCESS)
         assert ('raw_output_2' in benchmark.raw_data)
         assert ([test_raw_output] == benchmark.raw_data['raw_output_2'])
-        assert ([165400.60] == benchmark.result['Mem_bandwidth_matrix_ALL_Reads_BW'])
-        assert ([154975.19] == benchmark.result['Mem_bandwidth_matrix_3_1_Reads-Writes_BW'])
-        assert ([158433.32] == benchmark.result['Mem_bandwidth_matrix_2_1_Reads-Writes_BW'])
-        assert ([157352.05] == benchmark.result['Mem_bandwidth_matrix_1_1_Reads-Writes_BW'])
-        assert ([157878.32] == benchmark.result['Mem_bandwidth_matrix_Stream-triad_like_BW'])
+        assert ([165400.60] == benchmark.result['Mem_max_bandwidth_ALL_Reads_BW'])
+        assert ([154975.19] == benchmark.result['Mem_max_bandwidth_3_1_Reads-Writes_BW'])
+        assert ([158433.32] == benchmark.result['Mem_max_bandwidth_2_1_Reads-Writes_BW'])
+        assert ([157352.05] == benchmark.result['Mem_max_bandwidth_1_1_Reads-Writes_BW'])
+        assert ([157878.32] == benchmark.result['Mem_max_bandwidth_Stream-triad_like_BW'])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
