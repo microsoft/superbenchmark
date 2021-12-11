@@ -4,7 +4,6 @@
 """Tests for cpu-memory-bw-latency benchmark."""
 
 from pathlib import Path
-from unittest import mock
 import os
 import unittest
 
