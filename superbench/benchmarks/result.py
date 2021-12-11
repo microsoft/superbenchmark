@@ -33,6 +33,7 @@ class BenchmarkResult():
         self.__result = dict()
         self.__result['return_code'] = [return_code.value]
         self.__reduce_op = dict()
+        self.__reduce_op['return_code'] = None
 
     def __eq__(self, rhs):
         """Override equal function for deep comparison.

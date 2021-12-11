@@ -71,6 +71,12 @@ TODO
 #### Introduction
 
 Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.nvidia.com/tensorrt).
+Currently the following models are supported:
+
+> alexnet, densenet121, densenet169, densenet201, densenet161, googlenet, inception_v3, mnasnet0_5,
+> mnasnet1_0, mobilenet_v2, resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d,
+> resnext101_32x8d, wide_resnet50_2, wide_resnet101_2, shufflenet_v2_x0_5, shufflenet_v2_x1_0,
+> squeezenet1_0, squeezenet1_1, vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19_bn, vgg19
 
 #### Metrics
 
@@ -82,6 +88,23 @@ Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.n
 | tensorrt-inference/${model}_host_time_99         | time (ms) | The 99th percentile H2D, GPU, and D2H latency to execute the kernels for a query.                        |
 | tensorrt-inference/${model}_end_to_end_time_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
 | tensorrt-inference/${model}_end_to_end_time_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
+
+### `ort-inference`
+
+#### Introduction
+
+Inference performance of the torchvision models using ONNXRuntime. Currently the following models are supported:
+
+> alexnet, densenet121, densenet169, densenet201, densenet161, googlenet, inception_v3, mnasnet0_5,
+> mnasnet1_0, mobilenet_v2, resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d,
+> resnext101_32x8d, wide_resnet50_2, wide_resnet101_2, shufflenet_v2_x0_5, shufflenet_v2_x1_0,
+> squeezenet1_0, squeezenet1_1, vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19_bn, vgg19
+
+#### Metrics
+
+| Name                                          | Unit      | Description                                               |
+|-----------------------------------------------|-----------|-----------------------------------------------------------|
+| ort-inference/{precision}_{model}_time        | time (ms) | The mean latency to execute one batch of inference.       |
 
 ## Communication Benchmarks
 
