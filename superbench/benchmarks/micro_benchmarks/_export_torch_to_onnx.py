@@ -174,13 +174,13 @@ class torch2onnxExporter():
             opset_version=10,
             do_constant_folding=True,
             input_names=['input'],
-            output_names=['outputs'],
+            output_names=['output'],
             dynamic_axes={
                 'input': {
                     0: 'batch_size',
                     1: 'seq_length',
                 },
-                'outputs': {
+                'output': {
                     0: 'batch_size',
                 }
             },

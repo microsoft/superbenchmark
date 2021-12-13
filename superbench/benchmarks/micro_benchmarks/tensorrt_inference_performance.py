@@ -24,17 +24,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'trtexec'
-        self._pytorch_models = [
-            'resnet50',
-            'resnet101',
-            'resnet152',
-            'densenet169',
-            'densenet201',
-            'vgg11',
-            'vgg13',
-            'vgg16',
-            'vgg19',
-        ]
+        self._pytorch_models = ['resnet50']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
