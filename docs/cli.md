@@ -178,7 +178,7 @@ sb version
 Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
 
 ```bash title="SB CLI"
-sb run [--baseline-file]
+sb result diagnosis [--baseline-file]
        [--data-file]
        [--rule-file]
        [--output-dir]
@@ -187,11 +187,11 @@ sb run [--baseline-file]
 
 #### Required arguments
 
-| Name                   | Description                  |
-|------------------------|------------------------------|
-| `--baseline-file` `-b` | Path to baseline file. file. |
-| `--data-file` `-d`     | Path to raw data file.       |
-| `--rule-file` `-r`     | Path to rule file.           |
+| Name                   | Description            |
+|------------------------|------------------------|
+| `--baseline-file` `-b` | Path to baseline file. |
+| `--data-file` `-d`     | Path to raw data file. |
+| `--rule-file` `-r`     | Path to rule file.     |
 
 #### Optional arguments
 
