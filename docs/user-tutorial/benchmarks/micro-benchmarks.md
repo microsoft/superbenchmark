@@ -71,6 +71,15 @@ TODO
 #### Introduction
 
 Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.nvidia.com/tensorrt).
+
+Currently the following models are supported:
+
+> alexnet, densenet121, densenet169, densenet201, densenet161, googlenet, inception_v3, mnasnet0_5,
+> mnasnet1_0, mobilenet_v2, resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d,
+> resnext101_32x8d, wide_resnet50_2, wide_resnet101_2, shufflenet_v2_x0_5, shufflenet_v2_x1_0,
+> squeezenet1_0, squeezenet1_1, vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19_bn, vgg19
+> lstm, bert-base, bert-large, gpt2-small
+
 > Do not support large models like `gpt2-large` currently because models larger than 2GB (maximum protobuf size) cannot be exported in one ONNX file.
 
 #### Metrics
@@ -84,7 +93,43 @@ Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.n
 | tensorrt-inference/${model}_end_to_end_time_mean | time (ms) | The mean duration from when the H2D of a query is called to when the D2H of the same query is completed. |
 | tensorrt-inference/${model}_end_to_end_time_99   | time (ms) | The P99 duration from when the H2D of a query is called to when the D2H of the same query is completed.  |
 
+### `ort-inference`
+
+#### Introduction
+
+Inference performance of the torchvision models using ONNXRuntime. Currently the following models are supported:
+
+> alexnet, densenet121, densenet169, densenet201, densenet161, googlenet, inception_v3, mnasnet0_5,
+> mnasnet1_0, mobilenet_v2, resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d,
+> resnext101_32x8d, wide_resnet50_2, wide_resnet101_2, shufflenet_v2_x0_5, shufflenet_v2_x1_0,
+> squeezenet1_0, squeezenet1_1, vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19_bn, vgg19
+
+#### Metrics
+
+| Name                                          | Unit      | Description                                               |
+|-----------------------------------------------|-----------|-----------------------------------------------------------|
+| ort-inference/{precision}_{model}_time        | time (ms) | The mean latency to execute one batch of inference.       |
+
 ## Communication Benchmarks
+
+### `cpu-memory-bw-latency`
+
+#### Introduction
+
+Measure the memory copy bandwidth and latency across different CPU NUMA nodes.
+performed by [Intel MLC Tool](https://www.intel.com/content/www/us/en/developer/articles/tool/intelr-memory-latency-checker.html).
+
+#### Metrics
+
+| Name                                                                    | Unit             | Description                                                         |
+|-------------------------------------------------------------------------|------------------|---------------------------------------------------------------------|
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_bw  | bandwidth (GB/s) | Former NUMA to latter NUMA memory bandwidth.                        |
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_lat | time (us)        | Former NUMA to latter NUMA memory latency.                          |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_all\_reads\_bw               | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, full read.                      |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_3_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 3 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_2_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 2 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_1_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 1 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_stream-triad\_like\_bw       | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, with stream-triad like pattern. |
 
 ### `mem-bw`
 

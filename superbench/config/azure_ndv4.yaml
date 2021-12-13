@@ -2,6 +2,10 @@
 version: v0.3
 superbench:
   enable: null
+  monitor:
+    enable: false
+    sample_duration: 1
+    sample_interval: 10
   var:
     default_local_mode: &default_local_mode
       enable: true
@@ -54,6 +58,17 @@ superbench:
           proc_num: 4
           prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=1,0,3,2
           parallel: yes
+    cpu-memory-bw-latency:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        tests:
+          - bandwidth_matrix
+          - latency_matrix
+          - max_bandwidth
     mem-bw:
       enable: true
       modes:
@@ -94,6 +109,9 @@ superbench:
       <<: *default_pytorch_mode
     computation-communication-overlap:
       <<: *default_pytorch_mode
+    ort-inference:
+      <<: *default_local_mode
+      enable: false
     gpt_models:
       <<: *default_pytorch_mode
       models:
