@@ -71,6 +71,7 @@ TODO
 #### Introduction
 
 Inference PyTorch/ONNX models on NVIDIA GPUs with [TensorRT](https://developer.nvidia.com/tensorrt).
+> Do not support large models like `gpt2-large` currently because models larger than 2GB (maximum protobuf size) cannot be exported in one ONNX file.
 
 #### Metrics
 

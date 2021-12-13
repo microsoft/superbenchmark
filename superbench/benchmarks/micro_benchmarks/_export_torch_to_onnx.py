@@ -135,7 +135,7 @@ class torch2onnxExporter():
             torch.randn(input_shape, device='cuda'),
             file_name,
             opset_version=10,
-            do_constant_folding=True,
+            operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,
             input_names=['input'],
             output_names=['output'],
             dynamic_axes={
