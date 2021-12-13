@@ -15,7 +15,7 @@ class CpuMemBwLatencyBenchmarkTest(unittest.TestCase):
     def setUp(self):
         """Method called to prepare the test fixture."""
         # Create fake binary file just for testing.
-        self.__curr_micro_path = os.environ['SB_MICRO_PATH']
+        self.__curr_micro_path = os.environ.get('SB_MICRO_PATH', '')
         os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
         binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
         binary_path.mkdir(parents=True, exist_ok=True)
