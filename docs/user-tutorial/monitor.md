@@ -30,6 +30,8 @@ Do sampling every sample_interval seconds.
 
 ## Metrics
 
+Monitor module will generate the data in jsonlines format, and each line is in json format, including the following metrics:
+
 | Name                              | Unit       | Description                                                 |
 |-----------------------------------|------------|-------------------------------------------------------------|
 | time                              | datetime   | The timestamp to collect the system metrics.                |
