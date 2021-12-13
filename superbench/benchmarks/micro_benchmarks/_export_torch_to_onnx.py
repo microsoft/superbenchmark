@@ -169,7 +169,7 @@ class torch2onnxExporter():
             dtype = None
         torch.onnx.export(
             self.benchmark_models[model_name]().eval().cuda(),
-            torch.empty(input_shape, dtype=dtype, device='cuda'),
+            torch.ones(input_shape, dtype=dtype, device='cuda'),
             file_name,
             opset_version=10,
             do_constant_folding=True,
