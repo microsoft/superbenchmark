@@ -66,7 +66,8 @@ Here're the details about work directory structure for SuperBench Runner.
         │       ├── benchmarks                # benchmarks directory
         │       │   └── benchmark-0           # output for each benchmark
         │       │       └── rank-0            # output for each rank in each benchmark
-        │       │           └── results.json  # raw results
+        │       │           ├── results.json  # raw results
+        |       |           └── monitor.jsonl # monitor results (optional)
         │       └── sb-exec.log               # collected SuperBench Executor log
         ├── sb-run.log                        # SuperBench Runner log
         ├── sb.config.yaml                    # SuperBench configuration snapshot
@@ -78,7 +79,7 @@ Here're the details about work directory structure for SuperBench Runner.
 ### SuperBench Executor
 
 SuperBench Executor is the component to run benchmarks inside Docker container.
-It will execute each benchmark and handle all pre- and post-processing, including health check, result validation, result processing, etc.
+It will start the monitor (optional), execute each benchmark and handle all pre- and post-processing, including health check, result validation, result processing, etc.
 
 Here're the SuperBench Executor's work directory structure inside Docker container.
 The `/root` directory is mounted from `$HOME/sb-workspace` on the host path.
@@ -94,7 +95,8 @@ The `/root` directory is mounted from `$HOME/sb-workspace` on the host path.
         ├── benchmarks                # benchmarks directory
         │   └── benchmark-0           # output for each benchmark
         │       └── rank-0            # output for each rank in each benchmark
-        │           └── results.json  # raw results
+        │           ├── results.json  # raw results
+        │           └── monitor.jsonl # monitor results (optional)
         ├── sb.config.yaml            # SuperBench configuration snapshot
         └── sb.env                    # SuperBench runtime environment variables
 ```
