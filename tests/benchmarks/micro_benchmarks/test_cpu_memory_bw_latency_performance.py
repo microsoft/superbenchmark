@@ -15,6 +15,7 @@ class CpuMemBwLatencyBenchmarkTest(unittest.TestCase):
     def setUp(self):
         """Method called to prepare the test fixture."""
         # Create fake binary file just for testing.
+        self.__curr_micro_path = os.environ['SB_MICRO_PATH']
         os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
         binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
         binary_path.mkdir(parents=True, exist_ok=True)
@@ -24,6 +25,7 @@ class CpuMemBwLatencyBenchmarkTest(unittest.TestCase):
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
         self.__binary_file.unlink()
+        os.environ['SB_MICRO_PATH'] = self.__curr_micro_path
 
     def test_cpu_mem_bw_latency_benchmark_empty_param(self):
         """Test cpu-memory-bw-latency benchmark command generation with empty parameter."""
