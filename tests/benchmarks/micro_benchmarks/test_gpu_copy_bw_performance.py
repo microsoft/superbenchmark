@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for disk-performance benchmark."""
+"""Tests for gpu-copy-bw benchmark."""
 
 from pathlib import Path
 import numbers
