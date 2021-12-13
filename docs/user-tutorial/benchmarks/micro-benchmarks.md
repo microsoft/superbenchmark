@@ -113,7 +113,7 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 #### Introduction
 
 Measure the memory copy bandwidth and latency across different CPU NUMA nodes.
-performed by [Intel](https://www.intel.com/content/www/us/en/developer/articles/tool/intelr-memory-latency-checker.html) MLC tool.
+performed by [Intel MLC Tool](https://www.intel.com/content/www/us/en/developer/articles/tool/intelr-memory-latency-checker.html).
 
 #### Metrics
 
