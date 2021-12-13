@@ -90,13 +90,13 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             return False
         mlc_test = mlc_test.split(';')[0]
         if 'max_bandwidth' in mlc_test:
-            measure = 'BW'
+            measure = 'bw'
             out_table = self._parse_max_bw(raw_output)
         elif 'bandwidth_matrix' in mlc_test:
-            measure = 'BW'
+            measure = 'bw'
             out_table = self._parse_bw_latency(raw_output)
         elif 'latency_matrix' in mlc_test:
-            measure = 'Latency'
+            measure = 'lat'
             out_table = self._parse_bw_latency(raw_output)
         else:
             logger.error('Invalid option {} to run the {} command'.format(mlc_test, self._commands[cmd_idx]))
@@ -112,9 +112,9 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         for key in out_table.keys():
             for index in range(len(out_table[key])):
                 if 'max_bandwidth' in mlc_test:
-                    metric = 'Mem_{}_{}_{}'.format(mlc_test, key, measure)
+                    metric = 'mem_{}_{}_{}'.format(mlc_test, key, measure).lower()
                 else:
-                    metric = 'Mem_{}_{}_{}_{}'.format(mlc_test, key, str(index), measure)
+                    metric = 'mem_{}_{}_{}_{}'.format(mlc_test, key, str(index), measure).lower()
                 self._result.add_result(metric, float(out_table[key][index]))
         return True
 

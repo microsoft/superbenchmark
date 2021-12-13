@@ -108,6 +108,25 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 
 ## Communication Benchmarks
 
+### `cpu-memory-bw-latency`
+
+#### Introduction
+
+Measure the memory copy bandwidth and latency across different CPU NUMA nodes.
+performed by [Intel](https://www.intel.com/content/www/us/en/developer/articles/tool/intelr-memory-latency-checker.html) MLC tool.
+
+#### Metrics
+
+| Name                                                                    | Unit             | Description                                                         |
+|-------------------------------------------------------------------------|------------------|---------------------------------------------------------------------|
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_bw  | bandwidth (GB/s) | Former NUMA to latter NUMA memory bandwidth.                        |
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_lat | time (us)        | Former NUMA to latter NUMA memory latency.                          |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_all\_reads\_bw               | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, full read.                      |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_3_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 3 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_2_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 2 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_1_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 1 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_stream-triad\_like\_bw       | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, with stream-triad like pattern. |
+
 ### `mem-bw`
 
 #### Introduction
