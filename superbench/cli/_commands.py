@@ -25,6 +25,8 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('run', 'run_command_handler')
         with CommandGroup(self, 'node', 'superbench.cli._node_handler#{}') as g:
             g.command('info', 'info_command_handler')
+        with CommandGroup(self, 'result', 'superbench.cli._result_handler#{}') as g:
+            g.command('diagnosis', 'diagnosis_command_handler')
         return super().load_command_table(args)
 
     def load_arguments(self, command):
@@ -59,4 +61,16 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 nargs='+',
                 help='Extra arguments to override config_file.'
             )
+        with ArgumentsContext(self, 'result') as ac:
+            ac.argument('raw_data_file', options_list=('--data-file', '-d'), type=str, help='Path to raw data file.')
+            ac.argument('rule_file', options_list=('--rule-file', '-r'), type=str, help='Path to rule file.')
+            ac.argument(
+                'baseline_file', options_list=('--baseline-file', '-b'), type=str, help='Path to baseline file.'
+            )
+            ac.argument(
+                'output_dir',
+                type=str,
+                help='Path to output directory, outputs/{datetime} will be used if not specified.'
+            )
+            ac.argument('output_file_format', type=str, help='Format of output file, excel or json.')
         super().load_arguments(command)

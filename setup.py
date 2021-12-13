@@ -140,11 +140,13 @@ setup(
         'joblib>=1.0.1',
         'jsonlines>=2.0.0',
         'knack>=0.7.2',
+        'matplotlib>=3.0.0',
         'natsort>=7.1.1',
         'openpyxl>=3.0.7',
         'omegaconf==2.0.6',
         'pandas>=1.1.5',
         'pyyaml>=5.3',
+        'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
@@ -165,12 +167,16 @@ setup(
             'vcrpy>=4.1.1',
             'yapf>=0.30.0',
         ],
+        'nvidia': ['py3nvml>=0.2.6'],
+        'ort': [
+            'onnx>=1.10.2',
+            'onnxruntime-gpu>=1.9.0',
+        ],
         'torch': [
             'torch>=1.7.0a0',
             'torchvision>=0.8.0a0',
             'transformers>=4.3.3',
         ],
-        'nvidia': ['py3nvml>=0.2.6']
     },
     include_package_data=True,
     entry_points={

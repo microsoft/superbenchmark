@@ -18,7 +18,7 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      python3 -m pip install .[test,nvidia,torch]
+      python3 -m pip install .[test,nvidia,torch,ort]
       make postinstall
     displayName: Install dependencies
   - script: |
@@ -30,7 +30,7 @@ steps:
   - script: |
       SB_MICRO_PATH=$PWD python3 setup.py test
     displayName: Run unit tests
-    timeoutInMinutes: 10
+    timeoutInMinutes: 15
   - script: |
       bash <(curl -s https://codecov.io/bash) -cF cuda-unit-test
     displayName: Report coverage results

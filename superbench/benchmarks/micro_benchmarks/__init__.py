@@ -14,11 +14,13 @@ from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import Cu
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmark
+from superbench.benchmarks.micro_benchmarks.cpu_memory_bw_latency_performance import CpuMemBwLatencyBenchmark
 from superbench.benchmarks.micro_benchmarks.gpcnet_performance import GPCNetBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_copy_bw_performance import GpuCopyBwBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoopbackBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_validation_performance import IBBenchmark
 from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import KernelLaunch
+from superbench.benchmarks.micro_benchmarks.ort_inference_performance import ORTInferenceBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_gemm_flops_performance import RocmGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul
@@ -33,6 +35,7 @@ __all__ = [
     'CudaNcclBwBenchmark',
     'CudnnBenchmark',
     'DiskBenchmark',
+    'CpuMemBwLatencyBenchmark',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
     'GpuCopyBwBenchmark',
@@ -42,6 +45,7 @@ __all__ = [
     'MemBwBenchmark',
     'MicroBenchmark',
     'MicroBenchmarkWithInvoke',
+    'ORTInferenceBenchmark',
     'RocmGemmFlopsBenchmark',
     'RocmMemBwBenchmark',
     'ShardingMatmul',

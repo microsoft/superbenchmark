@@ -15,6 +15,7 @@ class ReduceType(Enum):
     MAX = 'max'
     MIN = 'min'
     SUM = 'sum'
+    LAST = 'last'
 
 
 class Reducer:
@@ -52,8 +53,23 @@ class Reducer:
 
         return None
 
+    @staticmethod
+    def last(array):
+        """Get the last item from the input sequence.
+
+        Args:
+            array (List): The input sequence.
+
+        Return:
+            The last item of the input sequence.
+        """
+        if not isinstance(array, list) or len(array) == 0:
+            raise ValueError('last() arg is an empty sequence')
+        return array[-1]
+
 
 Reducer.add_reduce_func(ReduceType.MAX)(max)
 Reducer.add_reduce_func(ReduceType.MIN)(min)
 Reducer.add_reduce_func(ReduceType.SUM)(sum)
 Reducer.add_reduce_func(ReduceType.AVG)(mean)
+Reducer.add_reduce_func(ReduceType.LAST)(Reducer.last)
