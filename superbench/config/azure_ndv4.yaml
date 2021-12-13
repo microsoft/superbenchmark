@@ -58,6 +58,17 @@ superbench:
           proc_num: 4
           prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=1,0,3,2
           parallel: yes
+    cpu-memory-bw-latency:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        tests:
+          - bandwidth_matrix
+          - latency_matrix
+          - max_bandwidth
     mem-bw:
       enable: true
       modes:
