@@ -136,12 +136,12 @@ sb result diagnosis [--baseline-file]
 
 #### Examples
 
-run data diagnosis and output the results in excel format:
+Run data diagnosis and output the results in excel format:
 ```bash title="SB CLI"
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-foramt excel
 ```
 
-run data diagnosis and output the results in jsonl format:
+Run data diagnosis and output the results in jsonl format:
 ```bash title="SB CLI"
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-foramt json
 ```
