@@ -32,6 +32,7 @@ module.exports = {
         },
         'user-tutorial/system-config',
         'user-tutorial/data-diagnosis',
+        'user-tutorial/monitor',
         'user-tutorial/container-images',
       ],
     },
