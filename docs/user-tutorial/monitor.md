@@ -4,7 +4,7 @@ id: monitor
 
 # Monitor
 
-SuperBench has realized a simple `Monitor` module to collect the system metrics during the benchmarking. Currently only support CUDA platform. User can enable it in the config file.
+SuperBench provides a `Monitor` module to collect the system metrics and detect the failure during the benchmarking. Currently this monitor supports CUDA platform only. Users can enable it in the config file.
 
 ## Configuration
 
