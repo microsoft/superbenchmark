@@ -60,6 +60,17 @@ superbench:
       parameters:
         block_devices:
           - /dev/nvme0n1
+    cpu-memory-bw-latency:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        tests:
+          - bandwidth_matrix
+          - latency_matrix
+          - max_bandwidth
     mem-bw:
       enable: true
       modes:

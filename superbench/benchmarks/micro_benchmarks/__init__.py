@@ -14,6 +14,7 @@ from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import Cu
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmark
+from superbench.benchmarks.micro_benchmarks.cpu_memory_bw_latency_performance import CpuMemBwLatencyBenchmark
 from superbench.benchmarks.micro_benchmarks.gpcnet_performance import GPCNetBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_copy_bw_performance import GpuCopyBwBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoopbackBenchmark
@@ -34,6 +35,7 @@ __all__ = [
     'CudaNcclBwBenchmark',
     'CudnnBenchmark',
     'DiskBenchmark',
+    'CpuMemBwLatencyBenchmark',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
     'GpuCopyBwBenchmark',
