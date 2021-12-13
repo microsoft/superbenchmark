@@ -28,14 +28,14 @@ class LSTMBenchmarkModel(torch.nn.Module):
         """
         super().__init__()
         self._lstm = torch.nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=bidirectional)
-        self._linear = torch.nn.Linear(hidden_size, num_classes)
+        self._linear = torch.nn.Linear(hidden_size * (2 if bidirectional else 1), num_classes)
 
     def forward(self, input):
         """Forward propagation function.
 
         Args:
             input (torch.FloatTensor): Tensor containing the features of the input sequence,
-              shape (sequence_length, batch_size, input_size).
+              shape (batch_size, sequence_length, input_size).
 
         Return:
             result (torch.FloatTensor): The output features from the last layer of the LSTM
