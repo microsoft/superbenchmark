@@ -10,11 +10,11 @@ This tool is to filter the defective machines automatically from thousands of be
 
 ## Usage
 
-1. Install Superbench as [Superbench installation](https://microsoft.github.io/superbenchmark/docs/getting-started/installation) on the local machine.
+1. [Install SuperBench](./getting-started/installation) on the local machine.
 
 2. Prepare the raw data, rule file, baseline file under current path or somewhere on the local machine.
 
-3. After installing the superbnech and the files are ready, you can start to filter the defective machines automatically using  `sb result diagnosis` command. The detailed command can be found from [Superbench cli](https://microsoft.github.io/superbenchmark/docs/cli).
+3. After installing the Superbnech and the files are ready, you can start to filter the defective machines automatically using  `sb result diagnosis` command. The detailed command can be found from [Superbench cli](https://microsoft.github.io/superbenchmark/docs/cli).
 
 4. After the command finished, you can find the output result file named 'diagnosis_summary.xlsx' / 'diagnosis_summary.json' under ${output_dir}.
 
