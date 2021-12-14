@@ -8,6 +8,20 @@ id: data-diagnosis
 
 This tool is to filter the defective machines automatically from thousands of benchmarking results according to rules defined in **rule file**.
 
+## Usage
+
+1. [Install SuperBench](../getting-started/installation) on the local machine.
+
+2. Prepare the raw data, rule file, baseline file under current path or somewhere on the local machine.
+
+3. After installing the Superbnech and the files are ready, you can start to filter the defective machines automatically using  `sb result diagnosis` command. The detailed command can be found from [SuperBench CLI](../cli).
+
+  ```
+  sb result diagnosis --data-file ./results-summary.jsonl --rule-file ./rule.yaml --baseline-file ./baseline.json --output-file-foramt excel --output-dir ${output-dir}
+  ```
+
+4. After the command finished, you can find the output result file named 'diagnosis_summary.xlsx' / 'diagnosis_summary.json' under ${output_dir}.
+
 ## Input
 
 The input mainly includes 3 files:

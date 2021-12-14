@@ -101,6 +101,51 @@ Execute GPT2 model benchmark in default configuration:
 sb exec --config-override superbench.enable="['gpt2_models']"
 ```
 
+### `sb result diagnosis`
+
+Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
+
+```bash title="SB CLI"
+sb result diagnosis [--baseline-file]
+       [--data-file]
+       [--rule-file]
+       [--output-dir]
+       [--output-file-format]
+```
+
+#### Required arguments
+
+| Name                   | Description            |
+|------------------------|------------------------|
+| `--baseline-file` `-b` | Path to baseline file. |
+| `--data-file` `-d`     | Path to raw data file. |
+| `--rule-file` `-r`     | Path to rule file.     |
+
+#### Optional arguments
+
+| Name                   | Default | Description                                                                 |
+|------------------------|---------|-----------------------------------------------------------------------------|
+| `--output-dir`         | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
+| `--output-file-format` | `excel` | Format of output file, excel or json. Default: excel.                       |
+
+#### Global arguments
+
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
+
+#### Examples
+
+Run data diagnosis and output the results in excel format:
+```bash title="SB CLI"
+sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-foramt excel
+```
+
+Run data diagnosis and output the results in jsonl format:
+```bash title="SB CLI"
+sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-foramt json
+```
+
 ### `sb run`
 
 Run the SuperBench benchmarks distributedly.
@@ -172,3 +217,4 @@ Print version:
 ```bash title="SB CLI"
 sb version
 ```
+
