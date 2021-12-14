@@ -10,7 +10,7 @@ This tool is to filter the defective machines automatically from thousands of be
 
 ## Usage
 
-1. [Install SuperBench](./getting-started/installation) on the local machine.
+1. [Install SuperBench](../getting-started/installation) on the local machine.
 
 2. Prepare the raw data, rule file, baseline file under current path or somewhere on the local machine.
 
