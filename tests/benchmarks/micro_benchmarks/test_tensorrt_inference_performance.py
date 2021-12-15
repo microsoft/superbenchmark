@@ -3,36 +3,29 @@
 
 """Tests for tensorrt-inference benchmark."""
 
-import os
-import shutil
-import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
 from tests.helper import decorator
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 from superbench.benchmarks.result import BenchmarkResult
 
 
-class TensorRTInferenceBenchmarkTestCase(unittest.TestCase):
+class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     """Class for tensorrt-inferencee benchmark test cases."""
-    def setUp(self):
-        """Hook method for setting up the test fixture before exercising it."""
-        self.benchmark_name = 'tensorrt-inference'
-        self.__tmp_dir = tempfile.mkdtemp()
-        self.__model_path = Path(self.__tmp_dir) / 'hub' / 'onnx'
-        self.__curr_micro_path = os.environ.get('SB_MICRO_PATH', '')
-        os.environ['TORCH_HOME'] = self.__tmp_dir
-        os.environ['SB_MICRO_PATH'] = self.__tmp_dir
-        (Path(self.__tmp_dir) / 'bin').mkdir(parents=True, exist_ok=True)
-        (Path(self.__tmp_dir) / 'bin' / 'trtexec').touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Hook method for deconstructing the test fixture after testing it."""
-        shutil.rmtree(self.__tmp_dir)
-        os.environ['SB_MICRO_PATH'] = self.__curr_micro_path
-        del os.environ['TORCH_HOME']
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.benchmark_name = 'tensorrt-inference'
+        cls._model_path = Path(cls._tmp_dir) / 'hub' / 'onnx'
+        cls.createMockEnvs(cls, {
+            'TORCH_HOME': cls._tmp_dir,
+            'SB_MICRO_PATH': cls._tmp_dir,
+        })
+        cls.createMockFiles(cls, ['bin/trtexec'])
 
     def test_tensorrt_inference_cls(self):
         """Test tensorrt-inference benchmark class."""

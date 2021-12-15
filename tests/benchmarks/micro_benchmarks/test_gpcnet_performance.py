@@ -3,31 +3,21 @@
 
 """Tests for GPCNet benchmark."""
 
-import os
 import numbers
 import unittest
-from pathlib import Path
 
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType
 
 
-class GPCNetBenchmarkTest(unittest.TestCase):    # noqa: E501
+class GPCNetBenchmarkTest(BenchmarkTestCase, unittest.TestCase):    # noqa: E501
     """Tests for GPCNetBenchmark benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        # Create fake binary file just for testing.
-        os.environ['SB_MICRO_PATH'] = '/tmp/superbench'
-        binary_path = os.path.join(os.getenv('SB_MICRO_PATH'), 'bin')
-        Path(binary_path).mkdir(parents=True, exist_ok=True)
-        self.__binary_files = []
-        for bin_name in ['network_test', 'network_load_test']:
-            self.__binary_files.append(Path(binary_path, bin_name))
-            Path(binary_path, bin_name).touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        for bin_file in self.__binary_files:
-            bin_file.unlink()
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/network_test', 'bin/network_load_test'])
 
     def test_gpcnet_network_test(self):
         """Test gpcnet-network-test benchmark."""

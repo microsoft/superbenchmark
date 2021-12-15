@@ -4,27 +4,20 @@
 """Tests for mem-bw benchmark."""
 
 import numbers
-from pathlib import Path
-import os
 import unittest
 
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-class RocmMemBwTest(unittest.TestCase):
+class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
     """Test class for rocm mem-bw benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        # Create fake binary file just for testing.
-        os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
-        binary_path = os.path.join(os.getenv('SB_MICRO_PATH'), 'bin')
-        Path(os.getenv('SB_MICRO_PATH'), 'bin').mkdir(parents=True, exist_ok=True)
-        self.__binary_file = Path(binary_path, 'hipBusBandwidth')
-        self.__binary_file.touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        self.__binary_file.unlink()
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/hipBusBandwidth'])
 
     def test_rocm_memory_bw_performance(self):
         """Test rocm mem-bw benchmark."""

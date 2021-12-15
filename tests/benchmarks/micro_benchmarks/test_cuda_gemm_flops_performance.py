@@ -3,29 +3,22 @@
 
 """Tests for gemm-flops benchmark."""
 
-import os
 import unittest
-from pathlib import Path
 
 from tests.helper import decorator
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.common.utils import device_manager as dm
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform, BenchmarkType
 
 
-class CudaGemmFlopsBenchmarkTest(unittest.TestCase):
+class CudaGemmFlopsBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Tests for CudaGemmFlopsBenchmark benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        # Create fake binary file just for testing.
-        os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
-        binary_path = os.path.join(os.getenv('SB_MICRO_PATH'), 'bin')
-        Path(binary_path).mkdir(parents=True, exist_ok=True)
-        self.__binary_file = Path(os.path.join(binary_path, 'cutlass_profiler'))
-        self.__binary_file.touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        self.__binary_file.unlink()
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/cutlass_profiler'])
 
     @decorator.cuda_test
     def test_flops_performance_cuda(self):

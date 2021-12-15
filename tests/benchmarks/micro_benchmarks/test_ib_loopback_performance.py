@@ -6,30 +6,22 @@
 import os
 import numbers
 import unittest
-from pathlib import Path
 from unittest import mock
 
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 from superbench.common.utils import network
 from superbench.benchmarks.micro_benchmarks import ib_loopback_performance
 
 
-class IBLoopbackBenchmarkTest(unittest.TestCase):
+class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Tests for IBLoopbackBenchmark benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        if (len(network.get_ib_devices()) < 1):
-            # Create fake binary file just for testing.
-            os.environ['SB_MICRO_PATH'] = '/tmp/superbench'
-            binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
-            binary_path.mkdir(parents=True, exist_ok=True)
-            self.__binary_file = Path(binary_path, 'run_perftest_loopback')
-            self.__binary_file.touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        if (len(network.get_ib_devices()) < 1):
-            self.__binary_file.unlink()
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/run_perftest_loopback'])
 
     def test_ib_loopback_util(self):
         """Test util functions 'get_numa_cores' and 'get_free_port' used in ib-loopback benchmark."""
