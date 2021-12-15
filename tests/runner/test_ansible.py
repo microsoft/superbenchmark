@@ -47,7 +47,6 @@ class AnsibleClientTestCase(unittest.TestCase):
         """Test initial config of client."""
         self.assertDictEqual(
             self.ansible_client._config, {
-                'private_data_dir': None,
                 'host_pattern': 'all',
                 'cmdline': f'--forks 5 --inventory {self.host_file} --user user --ask-pass --ask-become-pass',
                 'passwords': {
@@ -71,7 +70,6 @@ class AnsibleClientTestCase(unittest.TestCase):
         cmd = 'ls -la'
         self.assertDictEqual(
             self.ansible_client.get_shell_config(cmd), {
-                'private_data_dir': None,
                 'host_pattern': 'all',
                 'cmdline': f'--forks 5 --inventory {self.host_file} --user user --ask-pass --ask-become-pass',
                 'passwords': {
@@ -87,7 +85,6 @@ class AnsibleClientTestCase(unittest.TestCase):
         """Test get_playbook_config of client."""
         self.assertDictEqual(
             self.ansible_client.get_playbook_config('play', {'foo': 'bar'}), {
-                'private_data_dir': None,
                 'host_pattern': 'all',
                 'cmdline': f'--forks 5 --inventory {self.host_file} --user user --ask-pass --ask-become-pass',
                 'passwords': {
