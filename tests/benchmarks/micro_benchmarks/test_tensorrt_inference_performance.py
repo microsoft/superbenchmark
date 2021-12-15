@@ -109,7 +109,7 @@ class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
                 # Check models
                 for model in benchmark._args.pytorch_models:
-                    self.assertTrue((self.__model_path / f'{model}.onnx').is_file())
+                    self.assertTrue((self._model_path / f'{model}.onnx').is_file())
 
                 # Command list should equal to default model number
                 self.assertEqual(
