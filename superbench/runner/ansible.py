@@ -3,6 +3,7 @@
 
 """SuperBench Ansible Client."""
 
+import tempfile
 from pathlib import Path
 
 import ansible_runner
@@ -22,7 +23,6 @@ class AnsibleClient():
         """
         self._playbook_path = Path(__file__).parent / 'playbooks'
         self._config = {
-            'private_data_dir': None,
             'host_pattern': 'localhost',
             'cmdline': '--forks 128',
         }
@@ -69,12 +69,13 @@ class AnsibleClient():
         if sudo:
             logger.info('Run as sudo ...')
             ansible_config['cmdline'] += ' --become'
-        r = ansible_runner.run(**ansible_config)
+        with tempfile.TemporaryDirectory(prefix='ansible') as tmpdir:
+            r = ansible_runner.run(private_data_dir=tmpdir, **ansible_config)
+            logger.debug(r.stats)
         if r.rc == 0:
             logger.info('Run succeed, return code {}.'.format(r.rc))
         else:
             logger.warning('Run failed, return code {}.'.format(r.rc))
-        logger.debug(r.stats)
         return r.rc
 
     def update_mpi_config(self, ansible_config):
