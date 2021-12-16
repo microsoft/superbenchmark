@@ -14,4 +14,5 @@
   vars:
     ssh_port: 12345
     output_dir: /tmp/test_ansible
-    docker_image: superbench/superbench
+    # use a mock superbench image (requires `sb` binary inside)
+    docker_image: superbench/superbench:v0.3.0-cuda11.1.1

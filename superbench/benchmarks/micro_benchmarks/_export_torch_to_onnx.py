@@ -129,10 +129,11 @@ class torch2onnxExporter():
         if not self.check_torchvision_model(model_name):
             return ''
         file_name = str(self._onnx_model_path / (model_name + '.onnx'))
-        input_shape = (batch_size, 3, 224, 224)
+        model = getattr(torchvision.models, model_name)(pretrained=False).eval().cuda()
+        dummy_input = torch.randn((batch_size, 3, 224, 224), device='cuda')
         torch.onnx.export(
-            getattr(torchvision.models, model_name)(pretrained=False).eval().cuda(),
-            torch.randn(input_shape, device='cuda'),
+            model,
+            dummy_input,
             file_name,
             opset_version=10,
             operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,
@@ -147,6 +148,10 @@ class torch2onnxExporter():
                 }
             },
         )
+
+        del model
+        del dummy_input
+        torch.cuda.empty_cache()
         return file_name
 
     def export_benchmark_model(self, model_name, batch_size=1, seq_length=512):
@@ -163,13 +168,13 @@ class torch2onnxExporter():
         if not self.check_benchmark_model(model_name):
             return
         file_name = str(self._onnx_model_path / (model_name + '.onnx'))
-        input_shape, dtype = (batch_size, seq_length), torch.int64
+        model = self.benchmark_models[model_name]().eval().cuda()
+        dummy_input = torch.ones((batch_size, seq_length), dtype=torch.int64, device='cuda')
         if model_name == 'lstm':
-            input_shape += (self.lstm_input_size, )
-            dtype = None
+            dummy_input = torch.ones((batch_size, seq_length, self.lstm_input_size), device='cuda')
         torch.onnx.export(
-            self.benchmark_models[model_name]().eval().cuda(),
-            torch.ones(input_shape, dtype=dtype, device='cuda'),
+            model,
+            dummy_input,
             file_name,
             opset_version=10,
             do_constant_folding=True,
@@ -185,4 +190,8 @@ class torch2onnxExporter():
                 }
             },
         )
+
+        del model
+        del dummy_input
+        torch.cuda.empty_cache()
         return file_name
