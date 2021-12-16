@@ -1,0 +1,89 @@
+[CUDA Bandwidth Test] - Starting...
+Running on...
+
+ Device 0: Tesla V100-PCIE-32GB
+ Shmoo Mode
+
+.................................................................................
+bandwidthTest-H2D-Pinned, Bandwidth = 0.4 GB/s, Time = 0.00000 s, Size = 1000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 0.7 GB/s, Time = 0.00000 s, Size = 2000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 1.0 GB/s, Time = 0.00000 s, Size = 3000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 1.4 GB/s, Time = 0.00000 s, Size = 4000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 1.7 GB/s, Time = 0.00000 s, Size = 5000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 2.0 GB/s, Time = 0.00000 s, Size = 6000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 2.3 GB/s, Time = 0.00000 s, Size = 7000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 2.5 GB/s, Time = 0.00000 s, Size = 8000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 2.7 GB/s, Time = 0.00000 s, Size = 9000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 2.9 GB/s, Time = 0.00000 s, Size = 10000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 3.2 GB/s, Time = 0.00000 s, Size = 11000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 3.4 GB/s, Time = 0.00000 s, Size = 12000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 3.5 GB/s, Time = 0.00000 s, Size = 13000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 3.5 GB/s, Time = 0.00000 s, Size = 14000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 3.8 GB/s, Time = 0.00000 s, Size = 15000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 4.0 GB/s, Time = 0.00000 s, Size = 16000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 4.1 GB/s, Time = 0.00000 s, Size = 17000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 4.3 GB/s, Time = 0.00000 s, Size = 18000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 4.4 GB/s, Time = 0.00000 s, Size = 19000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 4.6 GB/s, Time = 0.00000 s, Size = 20000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 4.8 GB/s, Time = 0.00000 s, Size = 22000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 5.0 GB/s, Time = 0.00000 s, Size = 24000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 5.2 GB/s, Time = 0.00000 s, Size = 26000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 5.4 GB/s, Time = 0.00001 s, Size = 28000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 5.7 GB/s, Time = 0.00001 s, Size = 30000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 5.9 GB/s, Time = 0.00001 s, Size = 32000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 6.1 GB/s, Time = 0.00001 s, Size = 34000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 6.3 GB/s, Time = 0.00001 s, Size = 36000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 6.4 GB/s, Time = 0.00001 s, Size = 38000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 6.6 GB/s, Time = 0.00001 s, Size = 40000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 6.7 GB/s, Time = 0.00001 s, Size = 42000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 6.9 GB/s, Time = 0.00001 s, Size = 44000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 7.0 GB/s, Time = 0.00001 s, Size = 46000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 7.1 GB/s, Time = 0.00001 s, Size = 48000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 7.3 GB/s, Time = 0.00001 s, Size = 50000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 7.8 GB/s, Time = 0.00001 s, Size = 60000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 8.2 GB/s, Time = 0.00001 s, Size = 70000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 8.6 GB/s, Time = 0.00001 s, Size = 80000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 8.9 GB/s, Time = 0.00001 s, Size = 90000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 9.2 GB/s, Time = 0.00001 s, Size = 100000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 10.5 GB/s, Time = 0.00002 s, Size = 200000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.1 GB/s, Time = 0.00003 s, Size = 300000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.4 GB/s, Time = 0.00004 s, Size = 400000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.6 GB/s, Time = 0.00004 s, Size = 500000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.7 GB/s, Time = 0.00005 s, Size = 600000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.8 GB/s, Time = 0.00006 s, Size = 700000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.9 GB/s, Time = 0.00007 s, Size = 800000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.9 GB/s, Time = 0.00008 s, Size = 900000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.7 GB/s, Time = 0.00009 s, Size = 1000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.1 GB/s, Time = 0.00016 s, Size = 2000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.3 GB/s, Time = 0.00024 s, Size = 3000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.3 GB/s, Time = 0.00033 s, Size = 4000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.5 GB/s, Time = 0.00043 s, Size = 5000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.3 GB/s, Time = 0.00049 s, Size = 6000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.3 GB/s, Time = 0.00057 s, Size = 7000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.3 GB/s, Time = 0.00065 s, Size = 8000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.3 GB/s, Time = 0.00073 s, Size = 9000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00081 s, Size = 10000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00089 s, Size = 11000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00097 s, Size = 12000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00105 s, Size = 13000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00113 s, Size = 14000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00121 s, Size = 15000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00129 s, Size = 16000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00145 s, Size = 18000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00162 s, Size = 20000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00178 s, Size = 22000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00194 s, Size = 24000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00210 s, Size = 26000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00226 s, Size = 28000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00242 s, Size = 30000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 10.5 GB/s, Time = 0.00304 s, Size = 32000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.2 GB/s, Time = 0.00295 s, Size = 36000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 10.8 GB/s, Time = 0.00369 s, Size = 40000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00355 s, Size = 44000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00387 s, Size = 48000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.1 GB/s, Time = 0.00431 s, Size = 52000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 11.7 GB/s, Time = 0.00480 s, Size = 56000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00484 s, Size = 60000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.1 GB/s, Time = 0.00528 s, Size = 64000000 bytes, NumDevsUsed = 1
+bandwidthTest-H2D-Pinned, Bandwidth = 12.4 GB/s, Time = 0.00549 s, Size = 68000000 bytes, NumDevsUsed = 1
+Result = PASS

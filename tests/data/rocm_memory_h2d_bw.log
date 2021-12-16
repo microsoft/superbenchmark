@@ -1,0 +1,51 @@
+Device:Device 738c Mem=32.0GB #CUs=120 Freq=1502Mhz  MallocMode=pinned
+                   test        atts        units        median  mean    stddev  min     max
+   H2D_Bandwidth_pinned      +064By       GB/sec        0.0000  0.0000  0.0000  0.0000  0.0000
+   H2D_Bandwidth_pinned      +256By       GB/sec        0.0000  0.0000  0.0000  0.0000  0.0000
+   H2D_Bandwidth_pinned      +512By       GB/sec        0.0000  0.0000  0.0000  0.0000  0.0000
+   H2D_Bandwidth_pinned         1kB       GB/sec        0.0414  0.0411  0.0017  0.0189  0.0434
+   H2D_Bandwidth_pinned         2kB       GB/sec        0.0828  0.0824  0.0018  0.0683  0.0862
+   H2D_Bandwidth_pinned         4kB       GB/sec        0.1656  0.1652  0.0032  0.1374  0.1724
+   H2D_Bandwidth_pinned         8kB       GB/sec        0.3268  0.3251  0.0117  0.1880  0.3425
+   H2D_Bandwidth_pinned        16kB       GB/sec        0.6410  0.6365  0.0259  0.3597  0.6757
+   H2D_Bandwidth_pinned        32kB       GB/sec        1.2422  1.2432  0.0278  0.9346  1.2987
+   H2D_Bandwidth_pinned        64kB       GB/sec        2.3968  2.4161  0.1486  0.7242  2.6042
+   H2D_Bandwidth_pinned       128kB       GB/sec        4.6786  4.6339  0.1310  4.1143  4.8162
+   H2D_Bandwidth_pinned       256kB       GB/sec        7.8349  7.8369  0.1150  6.9093  8.0270
+   H2D_Bandwidth_pinned       512kB       GB/sec        11.9963 11.9828 0.1287  11.2158 12.2201
+   H2D_Bandwidth_pinned      1024kB       GB/sec        16.3342 16.3315 0.0956  16.0147 16.5823
+   H2D_Bandwidth_pinned      2048kB       GB/sec        19.9790 19.9770 0.0853  19.7681 20.1635
+   H2D_Bandwidth_pinned      4096kB       GB/sec        22.2706 22.2642 0.0552  22.0644 22.3847
+   H2D_Bandwidth_pinned      8192kB       GB/sec        22.8232 22.7881 0.1669  21.3196 22.8930
+   H2D_Bandwidth_pinned     16384kB       GB/sec        24.1521 24.1411 0.0429  24.0165 24.2162
+   H2D_Bandwidth_pinned     32768kB       GB/sec        24.8695 24.7086 0.7491  20.6288 24.9035
+   H2D_Bandwidth_pinned     65536kB       GB/sec        24.4840 24.0101 2.5769  6.1754  24.5292
+   H2D_Bandwidth_pinned    131072kB       GB/sec        25.0487 24.9593 0.2601  24.1286 25.0711
+   H2D_Bandwidth_pinned    262144kB       GB/sec        25.3280 25.2351 0.1788  24.8746 25.3498
+   H2D_Bandwidth_pinned    524288kB       GB/sec        24.7523 24.6708 0.1586  24.3154 24.7880
+         H2D_Timepinned      +064By           ms        0.0245  0.0253  0.0240  0.0232  0.7821
+         H2D_Timepinned      +256By           ms        0.0243  0.0244  0.0013  0.0232  0.0546
+         H2D_Timepinned      +512By           ms        0.0243  0.0244  0.0014  0.0230  0.0566
+         H2D_Timepinned         1kB           ms        0.0242  0.0244  0.0016  0.0230  0.0530
+         H2D_Timepinned         2kB           ms        0.0242  0.0243  0.0005  0.0232  0.0293
+         H2D_Timepinned         4kB           ms        0.0242  0.0242  0.0005  0.0232  0.0291
+         H2D_Timepinned         8kB           ms        0.0245  0.0247  0.0013  0.0234  0.0426
+         H2D_Timepinned        16kB           ms        0.0250  0.0252  0.0015  0.0237  0.0445
+         H2D_Timepinned        32kB           ms        0.0258  0.0258  0.0006  0.0246  0.0342
+         H2D_Timepinned        64kB           ms        0.0271  0.0272  0.0045  0.0250  0.0898
+         H2D_Timepinned       128kB           ms        0.0280  0.0283  0.0008  0.0272  0.0318
+         H2D_Timepinned       256kB           ms        0.0334  0.0334  0.0005  0.0326  0.0379
+         H2D_Timepinned       512kB           ms        0.0437  0.0437  0.0005  0.0429  0.0467
+         H2D_Timepinned      1024kB           ms        0.0642  0.0642  0.0004  0.0632  0.0654
+         H2D_Timepinned      2048kB           ms        0.1050  0.1050  0.0004  0.1040  0.1061
+         H2D_Timepinned      4096kB           ms        0.1883  0.1884  0.0005  0.1874  0.1901
+         H2D_Timepinned      8192kB           ms        0.3675  0.3681  0.0028  0.3664  0.3934
+         H2D_Timepinned     16384kB           ms        0.6946  0.6950  0.0012  0.6928  0.6986
+         H2D_Timepinned     32768kB           ms        1.3492  1.3595  0.0482  1.3474  1.6266
+         H2D_Timepinned     65536kB           ms        2.7409  2.9163  1.1368  2.7358  10.8670
+         H2D_Timepinned    131072kB           ms        5.3582  5.3780  0.0576  5.3534  5.5626
+         H2D_Timepinned    262144kB           ms        10.5983 10.6379 0.0761  10.5892 10.7915
+         H2D_Timepinned    524288kB           ms        21.6897 21.7622 0.1411  21.6585 22.0794
+
+Note: results marked with (*) had missing values such as
+might occur with a mixture of architectural capabilities.
