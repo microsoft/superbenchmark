@@ -1,0 +1,51 @@
+Device:Device 738c Mem=32.0GB #CUs=120 Freq=1502Mhz  MallocMode=pinned
+                   test        atts        units        median  mean    stddev  min     max
+   D2H_Bandwidth_pinned      +064By       GB/sec        0.0000  0.0000  0.0000  0.0000  0.0000
+   D2H_Bandwidth_pinned      +256By       GB/sec        0.0000  0.0000  0.0000  0.0000  0.0000
+   D2H_Bandwidth_pinned      +512By       GB/sec        0.0000  0.0000  0.0000  0.0000  0.0000
+   D2H_Bandwidth_pinned         1kB       GB/sec        0.0428  0.0426  0.0019  0.0114  0.0446
+   D2H_Bandwidth_pinned         2kB       GB/sec        0.0850  0.0844  0.0034  0.0415  0.0893
+   D2H_Bandwidth_pinned         4kB       GB/sec        0.1701  0.1687  0.0084  0.0504  0.1773
+   D2H_Bandwidth_pinned         8kB       GB/sec        0.3378  0.3348  0.0168  0.1085  0.3546
+   D2H_Bandwidth_pinned        16kB       GB/sec        0.6667  0.6606  0.0218  0.5618  0.6897
+   D2H_Bandwidth_pinned        32kB       GB/sec        1.3072  1.2954  0.0663  0.5682  1.3605
+   D2H_Bandwidth_pinned        64kB       GB/sec        2.5550  2.5339  0.0955  2.1382  2.6904
+   D2H_Bandwidth_pinned       128kB       GB/sec        4.8162  4.7807  0.2331  2.0940  4.9621
+   D2H_Bandwidth_pinned       256kB       GB/sec        8.2286  8.2192  0.1671  7.2456  8.5286
+   D2H_Bandwidth_pinned       512kB       GB/sec        12.7930 12.7062 0.4407  7.1196  13.0478
+   D2H_Bandwidth_pinned      1024kB       GB/sec        17.5603 17.4938 0.3921  12.7184 17.7989
+   D2H_Bandwidth_pinned      2048kB       GB/sec        21.6275 21.5591 0.2233  20.6073 21.8076
+   D2H_Bandwidth_pinned      4096kB       GB/sec        24.2708 24.2556 0.0942  23.5724 24.4292
+   D2H_Bandwidth_pinned      8192kB       GB/sec        24.9287 24.9093 0.0733  24.7171 25.0359
+   D2H_Bandwidth_pinned     16384kB       GB/sec        26.4588 26.1976 2.4387  1.9387  26.5191
+   D2H_Bandwidth_pinned     32768kB       GB/sec        27.2939 27.1202 0.7941  23.2086 27.3277
+   D2H_Bandwidth_pinned     65536kB       GB/sec        26.8278 26.7238 0.3894  24.7946 26.9000
+   D2H_Bandwidth_pinned    131072kB       GB/sec        27.4751 27.3457 0.3968  25.4168 27.5098
+   D2H_Bandwidth_pinned    262144kB       GB/sec        27.8236 27.7173 0.3072  26.7977 27.8525
+   D2H_Bandwidth_pinned    524288kB       GB/sec        28.0193 27.9348 0.1912  27.4707 28.0314
+        D2H_Time_pinned      +064By           ms        0.0229  0.0246  0.0457  0.0216  1.4690
+        D2H_Time_pinned      +256By           ms        0.0232  0.0234  0.0013  0.0221  0.0378
+        D2H_Time_pinned      +512By           ms        0.0234  0.0238  0.0063  0.0224  0.2091
+        D2H_Time_pinned         1kB           ms        0.0234  0.0236  0.0028  0.0224  0.0875
+        D2H_Time_pinned         2kB           ms        0.0235  0.0237  0.0014  0.0224  0.0482
+        D2H_Time_pinned         4kB           ms        0.0235  0.0239  0.0031  0.0226  0.0794
+        D2H_Time_pinned         8kB           ms        0.0237  0.0240  0.0027  0.0226  0.0738
+        D2H_Time_pinned        16kB           ms        0.0240  0.0242  0.0009  0.0232  0.0285
+        D2H_Time_pinned        32kB           ms        0.0245  0.0248  0.0021  0.0235  0.0563
+        D2H_Time_pinned        64kB           ms        0.0254  0.0257  0.0011  0.0242  0.0304
+        D2H_Time_pinned       128kB           ms        0.0272  0.0275  0.0026  0.0264  0.0626
+        D2H_Time_pinned       256kB           ms        0.0318  0.0319  0.0007  0.0307  0.0362
+        D2H_Time_pinned       512kB           ms        0.0410  0.0413  0.0024  0.0402  0.0736
+        D2H_Time_pinned      1024kB           ms        0.0597  0.0599  0.0017  0.0589  0.0824
+        D2H_Time_pinned      2048kB           ms        0.0970  0.0973  0.0010  0.0962  0.1018
+        D2H_Time_pinned      4096kB           ms        0.1728  0.1729  0.0007  0.1717  0.1779
+        D2H_Time_pinned      8192kB           ms        0.3365  0.3367  0.0010  0.3350  0.3394
+        D2H_Time_pinned     16384kB           ms        0.6341  0.7147  0.7979  0.6326  8.6538
+        D2H_Time_pinned     32768kB           ms        1.2294  1.2385  0.0420  1.2278  1.4458
+        D2H_Time_pinned     65536kB           ms        2.5014  2.5117  0.0391  2.4947  2.7066
+        D2H_Time_pinned    131072kB           ms        4.8850  4.9092  0.0748  4.8789  5.2806
+        D2H_Time_pinned    262144kB           ms        9.6478  9.6860  0.1106  9.6377  10.0171
+        D2H_Time_pinned    524288kB           ms        19.1607 19.2196 0.1333  19.1525 19.5434
+
+Note: results marked with (*) had missing values such as
+might occur with a mixture of architectural capabilities.

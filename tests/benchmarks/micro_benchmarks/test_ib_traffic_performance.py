@@ -10,26 +10,26 @@ from pathlib import Path
 from unittest import mock
 from collections import defaultdict
 
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 
 
-class IBBenchmarkTest(unittest.TestCase):
+class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Tests for IBBenchmark benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        # Create fake binary file just for testing.
-        os.environ['SB_MICRO_PATH'] = '/tmp/superbench'
-        binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
-        binary_path.mkdir(parents=True, exist_ok=True)
-        self.__binary_file = Path(binary_path, 'ib_validation')
-        self.__binary_file.touch(mode=0o755, exist_ok=True)
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/ib_validation'])
 
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        self.__binary_file.unlink()
+    @classmethod
+    def tearDownClass(cls):
+        """Hook method for deconstructing the class fixture after running all tests in the class."""
         p = Path('hostfile')
         if p.is_file():
             p.unlink()
+        super().tearDownClass()
 
     def test_generate_config(self):    # noqa: C901
         """Test util functions ."""

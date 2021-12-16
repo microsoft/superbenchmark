@@ -3,29 +3,20 @@
 
 """Tests for cpu-memory-bw-latency benchmark."""
 
-from pathlib import Path
-import os
 import unittest
 
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-class CpuMemBwLatencyBenchmarkTest(unittest.TestCase):
+class CpuMemBwLatencyBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Test class for cpu-memory-bw-latency benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        # Create fake binary file just for testing.
-        self.__curr_micro_path = os.environ.get('SB_MICRO_PATH', '')
-        os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
-        binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
-        binary_path.mkdir(parents=True, exist_ok=True)
-        self.__binary_file = binary_path / 'mlc'
-        self.__binary_file.touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        self.__binary_file.unlink()
-        os.environ['SB_MICRO_PATH'] = self.__curr_micro_path
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/mlc'])
 
     def test_cpu_mem_bw_latency_benchmark_empty_param(self):
         """Test cpu-memory-bw-latency benchmark command generation with empty parameter."""

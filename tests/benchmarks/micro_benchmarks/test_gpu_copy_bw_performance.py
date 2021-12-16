@@ -3,29 +3,22 @@
 
 """Tests for gpu-copy-bw benchmark."""
 
-from pathlib import Path
 import numbers
-import os
 import unittest
 
 from tests.helper import decorator
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-class GpuCopyBwBenchmarkTest(unittest.TestCase):
+class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Test class for gpu-copy-bw benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        # Create fake binary file just for testing.
-        os.environ['SB_MICRO_PATH'] = '/tmp/superbench/'
-        binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
-        binary_path.mkdir(parents=True, exist_ok=True)
-        self.__binary_file = binary_path / 'gpu_copy'
-        self.__binary_file.touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        self.__binary_file.unlink()
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/gpu_copy'])
 
     def _test_gpu_copy_bw_performance_command_generation(self, platform):
         """Test gpu-copy benchmark command generation."""
