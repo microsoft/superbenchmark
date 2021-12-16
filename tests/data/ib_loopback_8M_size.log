@@ -1,0 +1,43 @@
+                        RDMA_Write BW Test
+ Dual-port       : OFF		Device         : ib0
+ Number of qps   : 1		Transport type : IB
+ Connection type : RC		Using SRQ      : OFF
+ PCIe relax order: ON
+ TX depth        : 128
+ CQ Moderation   : 1
+ Mtu             : 4096[B]
+ Link type       : IB
+ Max inline data : 0[B]
+ rdma_cm QPs	 : OFF
+ Data ex. method : Ethernet
+---------------------------------------------------------------------------------------
+ local address: LID 0xd06 QPN 0x095f PSN 0x3c9e82 RKey 0x080359 VAddr 0x007f9fc479c000
+ remote address: LID 0xd06 QPN 0x095e PSN 0xbd024b RKey 0x080258 VAddr 0x007fe62504b000
+---------------------------------------------------------------------------------------
+ #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
+ 8388608    20000            24056.74            24056.72		   0.003007
+************************************
+* Waiting for client to connect... *
+************************************
+---------------------------------------------------------------------------------------
+                    RDMA_Write BW Test
+ Dual-port       : OFF		Device         : ib0
+ Number of qps   : 1		Transport type : IB
+ Connection type : RC		Using SRQ      : OFF
+ PCIe relax order: ON
+ CQ Moderation   : 1
+ Mtu             : 4096[B]
+ Link type       : IB
+ Max inline data : 0[B]
+ rdma_cm QPs	 : OFF
+ Data ex. method : Ethernet
+---------------------------------------------------------------------------------------
+ local address: LID 0xd06 QPN 0x095e PSN 0xbd024b RKey 0x080258 VAddr 0x007fe62504b000
+ remote address: LID 0xd06 QPN 0x095f PSN 0x3c9e82 RKey 0x080359 VAddr 0x007f9fc479c000
+---------------------------------------------------------------------------------------
+ #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
+ 8388608    20000            24056.74            24056.72		   0.003007
+---------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------

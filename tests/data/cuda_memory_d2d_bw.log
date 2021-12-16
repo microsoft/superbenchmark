@@ -1,0 +1,89 @@
+[CUDA Bandwidth Test] - Starting...
+Running on...
+
+ Device 0: Tesla V100-PCIE-32GB
+ Shmoo Mode
+
+.................................................................................
+bandwidthTest-D2D, Bandwidth = 0.4 GB/s, Time = 0.00000 s, Size = 1000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 0.1 GB/s, Time = 0.00004 s, Size = 2000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 0.8 GB/s, Time = 0.00000 s, Size = 3000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 1.2 GB/s, Time = 0.00000 s, Size = 4000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 0.4 GB/s, Time = 0.00001 s, Size = 5000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 1.7 GB/s, Time = 0.00000 s, Size = 6000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 7.0 GB/s, Time = 0.00000 s, Size = 7000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 8.0 GB/s, Time = 0.00000 s, Size = 8000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 9.0 GB/s, Time = 0.00000 s, Size = 9000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 10.0 GB/s, Time = 0.00000 s, Size = 10000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 6.1 GB/s, Time = 0.00000 s, Size = 11000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 12.0 GB/s, Time = 0.00000 s, Size = 12000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 13.1 GB/s, Time = 0.00000 s, Size = 13000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 5.3 GB/s, Time = 0.00000 s, Size = 14000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 8.0 GB/s, Time = 0.00000 s, Size = 15000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 8.9 GB/s, Time = 0.00000 s, Size = 16000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 9.5 GB/s, Time = 0.00000 s, Size = 17000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 9.8 GB/s, Time = 0.00000 s, Size = 18000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 19.0 GB/s, Time = 0.00000 s, Size = 19000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 5.3 GB/s, Time = 0.00000 s, Size = 20000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 22.0 GB/s, Time = 0.00000 s, Size = 22000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 6.3 GB/s, Time = 0.00000 s, Size = 24000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 0.7 GB/s, Time = 0.00004 s, Size = 26000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 28.1 GB/s, Time = 0.00000 s, Size = 28000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 30.1 GB/s, Time = 0.00000 s, Size = 30000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 32.0 GB/s, Time = 0.00000 s, Size = 32000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 14.6 GB/s, Time = 0.00000 s, Size = 34000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 20.9 GB/s, Time = 0.00000 s, Size = 36000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 22.7 GB/s, Time = 0.00000 s, Size = 38000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 23.5 GB/s, Time = 0.00000 s, Size = 40000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 24.8 GB/s, Time = 0.00000 s, Size = 42000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 44.1 GB/s, Time = 0.00000 s, Size = 44000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 27.2 GB/s, Time = 0.00000 s, Size = 46000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 48.0 GB/s, Time = 0.00000 s, Size = 48000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 28.5 GB/s, Time = 0.00000 s, Size = 50000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 60.2 GB/s, Time = 0.00000 s, Size = 60000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 42.7 GB/s, Time = 0.00000 s, Size = 70000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 8.4 GB/s, Time = 0.00001 s, Size = 80000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 55.6 GB/s, Time = 0.00000 s, Size = 90000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 59.6 GB/s, Time = 0.00000 s, Size = 100000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 127.9 GB/s, Time = 0.00000 s, Size = 200000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 183.1 GB/s, Time = 0.00000 s, Size = 300000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 270.2 GB/s, Time = 0.00000 s, Size = 400000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 15.5 GB/s, Time = 0.00003 s, Size = 500000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 399.2 GB/s, Time = 0.00000 s, Size = 600000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 172.1 GB/s, Time = 0.00000 s, Size = 700000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 27.5 GB/s, Time = 0.00003 s, Size = 800000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 71.3 GB/s, Time = 0.00001 s, Size = 900000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 502.2 GB/s, Time = 0.00000 s, Size = 1000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 59.4 GB/s, Time = 0.00003 s, Size = 2000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 348.7 GB/s, Time = 0.00001 s, Size = 3000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 519.4 GB/s, Time = 0.00001 s, Size = 4000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 422.3 GB/s, Time = 0.00001 s, Size = 5000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 447.9 GB/s, Time = 0.00001 s, Size = 6000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 225.3 GB/s, Time = 0.00003 s, Size = 7000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 146.0 GB/s, Time = 0.00005 s, Size = 8000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 190.9 GB/s, Time = 0.00005 s, Size = 9000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 301.1 GB/s, Time = 0.00003 s, Size = 10000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 192.8 GB/s, Time = 0.00006 s, Size = 11000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 243.9 GB/s, Time = 0.00005 s, Size = 12000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 328.7 GB/s, Time = 0.00004 s, Size = 13000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 621.2 GB/s, Time = 0.00002 s, Size = 14000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 682.5 GB/s, Time = 0.00002 s, Size = 15000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 686.3 GB/s, Time = 0.00002 s, Size = 16000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 693.1 GB/s, Time = 0.00003 s, Size = 18000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 707.0 GB/s, Time = 0.00003 s, Size = 20000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 714.4 GB/s, Time = 0.00003 s, Size = 22000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 719.4 GB/s, Time = 0.00003 s, Size = 24000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 723.2 GB/s, Time = 0.00004 s, Size = 26000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 726.7 GB/s, Time = 0.00004 s, Size = 28000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 728.8 GB/s, Time = 0.00004 s, Size = 30000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 724.2 GB/s, Time = 0.00004 s, Size = 32000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 735.3 GB/s, Time = 0.00005 s, Size = 36000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 741.1 GB/s, Time = 0.00005 s, Size = 40000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 748.9 GB/s, Time = 0.00006 s, Size = 44000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 748.9 GB/s, Time = 0.00006 s, Size = 48000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 754.1 GB/s, Time = 0.00007 s, Size = 52000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 757.4 GB/s, Time = 0.00007 s, Size = 56000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 758.5 GB/s, Time = 0.00008 s, Size = 60000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 772.0 GB/s, Time = 0.00008 s, Size = 64000000 bytes, NumDevsUsed = 1
+bandwidthTest-D2D, Bandwidth = 762.8 GB/s, Time = 0.00009 s, Size = 68000000 bytes, NumDevsUsed = 1
+Result = PASS
