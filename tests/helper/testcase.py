@@ -58,7 +58,6 @@ class BenchmarkTestCase(object):
         """
         if not envs:
             envs = {'SB_MICRO_PATH': self._tmp_dir}
-        print(envs)
         for name in envs:
             self._curr_mock_envs[name] = os.environ.get(name, None)
             os.environ[name] = envs[name]
