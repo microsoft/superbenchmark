@@ -29,6 +29,9 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         port = network.get_free_port()
         assert (isinstance(port, numbers.Number))
         numa_cores = ib_loopback_performance.get_numa_cores(0)
+        if numa_cores is None:
+            # in case no NUMA support available on test system
+            return
         assert (len(numa_cores) >= 2)
         for i in range(len(numa_cores)):
             assert (isinstance(numa_cores[i], numbers.Number))
