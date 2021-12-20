@@ -22,8 +22,8 @@ class AnsibleClientTestCase(unittest.TestCase):
             fd, (
                 'all:\n'
                 '  hosts:\n'
-                '    10.0.0.10:\n'
                 '    10.0.0.11:\n'
+                '    10.0.0.10:\n'
                 '    10.0.0.12:\n'
                 '    10.0.0.13:\n'
                 '    10.0.0.14:\n'
@@ -61,7 +61,7 @@ class AnsibleClientTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.ansible_client.update_mpi_config(self.ansible_client._config), {
                 **self.ansible_client._config,
-                'host_pattern': 'all[0]',
+                'host_pattern': '10.0.0.10',
             }
         )
 

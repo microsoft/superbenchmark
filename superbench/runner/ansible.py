@@ -34,9 +34,9 @@ class AnsibleClient():
             if inventory_file or inventory_list:
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
-                host_list = inventory.get_groups_dict()['all']
-                if len(host_list) > 0:
-                    self._config['cmdline'] = '--forks {}'.format(len(host_list))
+                self._host_list = inventory.get_hosts(pattern='all', order='sorted')
+                if len(self._host_list) > 0:
+                    self._config['cmdline'] = '--forks {}'.format(len(self._host_list))
                 if inventory_list in ['localhost', '127.0.0.1']:
                     self._config['cmdline'] += ' --connection local'
                 self._config['cmdline'] += ' --inventory {}'.format(inventory_file or f'{inventory_list},')
@@ -87,7 +87,7 @@ class AnsibleClient():
         Returns:
             dict: Updated Ansible config dict.
         """
-        ansible_config['host_pattern'] += '[0]'
+        ansible_config['host_pattern'] = self._host_list[0].get_name()
         return ansible_config
 
     def get_shell_config(self, cmd):
