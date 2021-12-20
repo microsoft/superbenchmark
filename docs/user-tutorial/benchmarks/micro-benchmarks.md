@@ -60,11 +60,40 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 ### `cublas-function`
 
-TODO
+#### Introduction
+
+The most used cublas functions with parameters in models (resnet, vgg, bert, gpt2) traning.
+
+Cublas functions support:
+ - cublasSgemm
+ - cublasSgemmStridedBatched
+ - cublasGemmStridedBatchedEx
+ - cublasGemmEx
+ - cublasCgemm3mStridedBatched
+ - cublasCgemm
+
+#### Metrics
+
+| Name                                                     | Unit      | Description                                                       |
+|----------------------------------------------------------|-----------|-------------------------------------------------------------------|
+| cublas-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cublas function with the parameters. |
 
 ### `cudnn-function`
 
-TODO
+#### Introduction
+
+The most used cudnn functions with parameters in models (resnet, vgg, bert, gpt2) traning.
+
+Cudnn functions support:
+ - cudnnConvolutionBackwardFilter
+ - cudnnConvolutionBackwardData
+ - cudnnConvolutionForward
+
+#### Metrics
+
+| Name                                                    | Unit      | Description                                                      |
+|---------------------------------------------------------|-----------|------------------------------------------------------------------|
+| cudnn-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
 ### `tensorrt-inference`
 
@@ -106,9 +135,9 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 
 #### Metrics
 
-| Name                                          | Unit      | Description                                               |
-|-----------------------------------------------|-----------|-----------------------------------------------------------|
-| ort-inference/{precision}_{model}_time        | time (ms) | The mean latency to execute one batch of inference.       |
+| Name                                   | Unit      | Description                                         |
+|----------------------------------------|-----------|-----------------------------------------------------|
+| ort-inference/{precision}_{model}_time | time (ms) | The mean latency to execute one batch of inference. |
 
 ## Communication Benchmarks
 
