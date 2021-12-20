@@ -62,7 +62,7 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 #### Introduction
 
-The most used cublas functions with parameters in models (resnet, vgg, bert, gpt2) traning.
+The common cublas functions with parameters in models (resnet, vgg, densenet, bert, gpt2, lstm) traning.
 
 Cublas functions support:
  - cublasSgemm
@@ -82,7 +82,7 @@ Cublas functions support:
 
 #### Introduction
 
-The most used cudnn functions with parameters in models (resnet, vgg, bert, gpt2) traning.
+The common cudnn functions with parameters in models (resnet, vgg, densenet, bert, gpt2, lstm) traning.
 
 Cudnn functions support:
  - cudnnConvolutionBackwardFilter
@@ -135,9 +135,9 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 
 #### Metrics
 
-| Name                                   | Unit      | Description                                         |
-|----------------------------------------|-----------|-----------------------------------------------------|
-| ort-inference/{precision}_{model}_time | time (ms) | The mean latency to execute one batch of inference. |
+| Name                                          | Unit      | Description                                               |
+|-----------------------------------------------|-----------|-----------------------------------------------------------|
+| ort-inference/{precision}_{model}_time        | time (ms) | The mean latency to execute one batch of inference.       |
 
 ## Communication Benchmarks
 
