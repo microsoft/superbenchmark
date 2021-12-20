@@ -69,7 +69,7 @@ RUN cd /tmp && \
     wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
     cd openmpi-${OPENMPI_VERSION} && \
-    ./configure --enable-orterun-prefix-by-default && \
+    ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct && \
     make -j $(nproc) all && \
     make install && \
     ldconfig && \
