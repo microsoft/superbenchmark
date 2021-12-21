@@ -22,8 +22,8 @@ class AnsibleClientTestCase(unittest.TestCase):
             fd, (
                 'all:\n'
                 '  hosts:\n'
-                '    10.0.0.11:\n'
                 '    10.0.0.10:\n'
+                '    10.0.0.11:\n'
                 '    10.0.0.12:\n'
                 '    10.0.0.13:\n'
                 '    10.0.0.14:\n'
@@ -61,6 +61,33 @@ class AnsibleClientTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.ansible_client.update_mpi_config(self.ansible_client._config), {
                 **self.ansible_client._config,
+                'host_pattern': '10.0.0.10',
+            }
+        )
+        # Test out-of-order hosts defined in inventory
+        fd = os.open(self.host_file, os.O_RDWR)
+        os.write(
+            fd, (
+                'all:\n'
+                '  hosts:\n'
+                '    10.0.0.12:\n'
+                '    10.0.0.11:\n'
+                '    10.0.0.10:\n'
+                '    10.0.0.13:\n'
+                '    10.0.0.14:\n'
+            ).encode()
+        )
+        os.close(fd)
+        mess_hosts = AnsibleClient(
+            OmegaConf.create({
+                'host_file': self.host_file,
+                'host_username': 'user',
+                'host_password': 'pass',
+            })
+        )
+        self.assertDictEqual(
+            mess_hosts.update_mpi_config(mess_hosts._config), {
+                **mess_hosts._config,
                 'host_pattern': '10.0.0.10',
             }
         )
