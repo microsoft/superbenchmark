@@ -10,7 +10,7 @@ import pandas as pd
 
 from superbench.common.utils import logger
 from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
-import superbench.analyzer.file_handler as file_handler
+from superbench.analyzer import file_handler
 
 
 class DataDiagnosis():
@@ -31,10 +31,15 @@ class DataDiagnosis():
         """
         benchmarks_metrics = {}
         for metric in metrics_list:
-            benchmark = metric.split('/')[0]
-            if benchmark not in benchmarks_metrics:
-                benchmarks_metrics[benchmark] = set()
-            benchmarks_metrics[benchmark].add(metric)
+            if '/' not in metric:
+                if 'other' not in benchmarks_metrics:
+                    benchmarks_metrics['other'] = set()
+                benchmarks_metrics['other'].add(metric)
+            else:
+                benchmark = metric.split('/')[0]
+                if benchmark not in benchmarks_metrics:
+                    benchmarks_metrics[benchmark] = set()
+                benchmarks_metrics[benchmark].add(metric)
         return benchmarks_metrics
 
     def _check_rules(self, rule, name):
@@ -239,10 +244,10 @@ class DataDiagnosis():
             logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(rule_file, baseline_file)
             logger.info('DataDiagnosis: Processed finished')
-            outpout_path = ''
+            output_path = ''
             if output_format == 'excel':
                 output_path = output_dir + '/diagnosis_summary.xlsx'
-                file_handler.output_excel(self._raw_data_df, data_not_accept_df, outpout_path, self._sb_rules)
+                file_handler.output_excel(self._raw_data_df, data_not_accept_df, output_path, self._sb_rules)
             elif output_format == 'json':
                 output_path = output_dir + '/diagnosis_summary.jsonl'
                 file_handler.output_json_data_not_accept(data_not_accept_df, output_path)
