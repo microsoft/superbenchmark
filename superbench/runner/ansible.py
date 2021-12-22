@@ -26,6 +26,7 @@ class AnsibleClient():
             'host_pattern': 'localhost',
             'cmdline': '--forks 128',
         }
+        self._head_host = None
         if config:
             inventory_file = getattr(config, 'host_file', None)
             inventory_list = getattr(config, 'host_list', None)
@@ -35,9 +36,9 @@ class AnsibleClient():
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
                 host_list = inventory.get_hosts(pattern='all', order='sorted')
-                self._first_host = host_list[0].get_name()
                 if len(host_list) > 0:
                     self._config['cmdline'] = '--forks {}'.format(len(host_list))
+                    self._head_host = host_list[0].get_name()
                 if inventory_list in ['localhost', '127.0.0.1']:
                     self._config['cmdline'] += ' --connection local'
                 self._config['cmdline'] += ' --inventory {}'.format(inventory_file or f'{inventory_list},')
@@ -88,7 +89,9 @@ class AnsibleClient():
         Returns:
             dict: Updated Ansible config dict.
         """
-        ansible_config['host_pattern'] = self._first_host
+        if not self._head_host:
+            logger.log_and_raise('no available host to launch mpi')
+        ansible_config['host_pattern'] = self._head_host
         return ansible_config
 
     def get_shell_config(self, cmd):

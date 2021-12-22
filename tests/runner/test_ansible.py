@@ -38,10 +38,12 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'host_password': 'pass',
             })
         )
+        fd, self.host_file2 = tempfile.mkstemp()
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""
         Path(self.host_file).unlink()
+        Path(self.host_file2).unlink()
 
     def test_init_config(self):
         """Test initial config of client."""
@@ -65,22 +67,14 @@ class AnsibleClientTestCase(unittest.TestCase):
             }
         )
         # Test out-of-order hosts defined in inventory
-        fd = os.open(self.host_file, os.O_RDWR)
-        os.write(
-            fd, (
-                'all:\n'
-                '  hosts:\n'
-                '    10.0.0.12:\n'
-                '    10.0.0.11:\n'
-                '    10.0.0.10:\n'
-                '    10.0.0.13:\n'
-                '    10.0.0.14:\n'
-            ).encode()
-        )
-        os.close(fd)
+        with open(self.host_file2, 'w') as fd:
+            fd.write(
+                'all:\n' + '  hosts:\n' + '    10.0.0.12:\n' + '    10.0.0.11:\n' + '    10.0.0.10:\n' +
+                '    10.0.0.13:\n' + '    10.0.0.14:\n'
+            )
         mess_hosts = AnsibleClient(
             OmegaConf.create({
-                'host_file': self.host_file,
+                'host_file': self.host_file2,
                 'host_username': 'user',
                 'host_password': 'pass',
             })
@@ -91,6 +85,31 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'host_pattern': '10.0.0.10',
             }
         )
+        with open(self.host_file2, 'w') as fd:
+            fd.write('all:\n' + '  hosts:\n' + '    localhost:\n')
+        localhost = AnsibleClient(
+            OmegaConf.create({
+                'host_file': self.host_file2,
+                'host_username': 'user',
+                'host_password': 'pass',
+            })
+        )
+        self.assertDictEqual(
+            localhost.update_mpi_config(localhost._config), {
+                **localhost._config,
+                'host_pattern': 'localhost',
+            }
+        )
+        with open(self.host_file2, 'w') as fd:
+            fd.write('all:\n' '  hosts:\n')
+        no_hosts = AnsibleClient(
+            OmegaConf.create({
+                'host_file': self.host_file2,
+                'host_username': 'user',
+                'host_password': 'pass',
+            })
+        )
+        self.assertRaises(Exception, no_hosts.update_mpi_config, no_hosts._config)
 
     def test_get_shell_config(self):
         """Test get_shell_config of client."""
