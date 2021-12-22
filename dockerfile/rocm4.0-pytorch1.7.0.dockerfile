@@ -63,6 +63,14 @@ RUN mkdir -p /root/.ssh && \
     echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
     echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
+# Install OFED
+ENV OFED_VERSION=5.2-2.2.3.0
+RUN cd /tmp && \
+    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
+    PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
+    rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
+
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.0.5
 RUN cd /tmp && \
@@ -74,14 +82,6 @@ RUN cd /tmp && \
     make install && \
     ldconfig && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
-
-# Install OFED
-ENV OFED_VERSION=5.2-2.2.3.0
-RUN cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
-    PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
-    rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
 RUN cd /opt && \
