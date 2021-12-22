@@ -48,6 +48,17 @@ class TestDataDiagnosis(unittest.TestCase):
         diag2._metrics = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
         assert (len(diag2._raw_data_df) == 0)
         assert (len(diag2._metrics) == 0)
+        metric_list = [
+            'gpu_temperature', 'gpu_power_limit', 'gemm-flops/FP64',
+            'bert_models/pytorch-bert-base/steptime_train_float32'
+        ]
+        self.assertDictEqual(
+            diag2._get_metrics_by_benchmarks(metric_list), {
+                'gemm-flops': {'gemm-flops/FP64'},
+                'bert_models': {'bert_models/pytorch-bert-base/steptime_train_float32'},
+                'monitor': {'gpu_temperature', 'gpu_power_limit'}
+            }
+        )
         # Test - read rules
         rules = file_handler.read_rules(test_rule_file_fake)
         assert (not rules)
@@ -167,6 +178,38 @@ class TestDataDiagnosis(unittest.TestCase):
         assert ('Defective Details' in data_not_accept_read_from_excel)
         # Test - output in json
         file_handler.output_json_data_not_accept(data_not_accept_df, self.output_json_file)
+        assert (Path(self.output_json_file).is_file())
+        with Path(self.output_json_file).open() as f:
+            data_not_accept_read_from_json = f.readlines()
+        assert (len(data_not_accept_read_from_json) == 2)
+        for line in data_not_accept_read_from_json:
+            json.loads(line)
+            assert ('Category' in line)
+            assert ('Defective Details' in line)
+            assert ('Index' in line)
+
+    def test_data_diagnosis_run(self):
+        """Test for the run process of rule-based data diagnosis."""
+        test_raw_data = str(Path(__file__).parent.resolve()) + '/test_results.jsonl'
+        test_rule_file = str(Path(__file__).parent.resolve()) + '/test_rules.yaml'
+        test_baseline_file = str(Path(__file__).parent.resolve()) + '/test_baseline.json'
+        # Test - output in excel
+        DataDiagnosis().run(
+            test_raw_data, test_rule_file, test_baseline_file, str(Path(__file__).parent.resolve()), 'excel'
+        )
+        excel_file = pd.ExcelFile(self.output_excel_file, engine='openpyxl')
+        data_sheet_name = 'Raw Data'
+        raw_data_df = excel_file.parse(data_sheet_name)
+        assert (len(raw_data_df) == 3)
+        data_sheet_name = 'Not Accept'
+        data_not_accept_read_from_excel = excel_file.parse(data_sheet_name)
+        assert (len(data_not_accept_read_from_excel) == 2)
+        assert ('Category' in data_not_accept_read_from_excel)
+        assert ('Defective Details' in data_not_accept_read_from_excel)
+        # Test - output in json
+        DataDiagnosis().run(
+            test_raw_data, test_rule_file, test_baseline_file, str(Path(__file__).parent.resolve()), 'json'
+        )
         assert (Path(self.output_json_file).is_file())
         with Path(self.output_json_file).open() as f:
             data_not_accept_read_from_json = f.readlines()

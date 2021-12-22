@@ -32,9 +32,9 @@ class DataDiagnosis():
         benchmarks_metrics = {}
         for metric in metrics_list:
             if '/' not in metric:
-                if 'other' not in benchmarks_metrics:
-                    benchmarks_metrics['other'] = set()
-                benchmarks_metrics['other'].add(metric)
+                if 'monitor' not in benchmarks_metrics:
+                    benchmarks_metrics['monitor'] = set()
+                benchmarks_metrics['monitor'].add(metric)
             else:
                 benchmark = metric.split('/')[0]
                 if benchmark not in benchmarks_metrics:
