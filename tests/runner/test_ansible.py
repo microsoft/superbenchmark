@@ -38,12 +38,12 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'host_password': 'pass',
             })
         )
-        fd, self.host_file2 = tempfile.mkstemp()
+        fd, self.test_mpi_host_file = tempfile.mkstemp()
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""
         Path(self.host_file).unlink()
-        Path(self.host_file2).unlink()
+        Path(self.test_mpi_host_file).unlink()
 
     def test_init_config(self):
         """Test initial config of client."""
@@ -66,18 +66,20 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'host_pattern': '10.0.0.10',
             }
         )
-        # Test out-of-order hosts defined in inventory
-        with open(self.host_file2, 'w') as fd:
-            fd.write(
-                'all:\n' + '  hosts:\n' + '    10.0.0.12:\n' + '    10.0.0.11:\n' + '    10.0.0.10:\n' +
-                '    10.0.0.13:\n' + '    10.0.0.14:\n'
-            )
+
+    def test_update_mpi_config_for_different_inventory(self):
+        """Test update_mpi_config of client for different inventory."""
+        # Test for out-of-order
+        with open(self.test_mpi_host_file, 'w') as fd:
+            fd.write('all:\n  hosts:\n    10.0.0.12:\n    10.0.0.11:\n    10.0.0.10:\n    10.0.0.13:\n    10.0.0.14:\n')
         mess_hosts = AnsibleClient(
-            OmegaConf.create({
-                'host_file': self.host_file2,
-                'host_username': 'user',
-                'host_password': 'pass',
-            })
+            OmegaConf.create(
+                {
+                    'host_file': self.test_mpi_host_file,
+                    'host_username': 'user',
+                    'host_password': 'pass',
+                }
+            )
         )
         self.assertDictEqual(
             mess_hosts.update_mpi_config(mess_hosts._config), {
@@ -85,14 +87,17 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'host_pattern': '10.0.0.10',
             }
         )
-        with open(self.host_file2, 'w') as fd:
-            fd.write('all:\n' + '  hosts:\n' + '    localhost:\n')
+        # Test for localhost
+        with open(self.test_mpi_host_file, 'w') as fd:
+            fd.write('all:\n  hosts:\n    localhost:\n')
         localhost = AnsibleClient(
-            OmegaConf.create({
-                'host_file': self.host_file2,
-                'host_username': 'user',
-                'host_password': 'pass',
-            })
+            OmegaConf.create(
+                {
+                    'host_file': self.test_mpi_host_file,
+                    'host_username': 'user',
+                    'host_password': 'pass',
+                }
+            )
         )
         self.assertDictEqual(
             localhost.update_mpi_config(localhost._config), {
@@ -100,16 +105,24 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'host_pattern': 'localhost',
             }
         )
-        with open(self.host_file2, 'w') as fd:
-            fd.write('all:\n' '  hosts:\n')
+        # Test for no host
+        with open(self.test_mpi_host_file, 'w') as fd:
+            fd.write('all:\n  hosts:\n')
         no_hosts = AnsibleClient(
-            OmegaConf.create({
-                'host_file': self.host_file2,
-                'host_username': 'user',
-                'host_password': 'pass',
-            })
+            OmegaConf.create(
+                {
+                    'host_file': self.test_mpi_host_file,
+                    'host_username': 'user',
+                    'host_password': 'pass',
+                }
+            )
         )
-        self.assertRaises(Exception, no_hosts.update_mpi_config, no_hosts._config)
+        self.assertDictEqual(
+            no_hosts.update_mpi_config(no_hosts._config), {
+                **no_hosts._config,
+                'host_pattern': 'all[0]',
+            }
+        )
 
     def test_get_shell_config(self):
         """Test get_shell_config of client."""

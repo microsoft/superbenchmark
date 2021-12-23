@@ -90,8 +90,9 @@ class AnsibleClient():
             dict: Updated Ansible config dict.
         """
         if not self._head_host:
-            logger.log_and_raise('no available host to launch mpi')
-        ansible_config['host_pattern'] = self._head_host
+            ansible_config['host_pattern'] += '[0]'
+        else:
+            ansible_config['host_pattern'] = self._head_host
         return ansible_config
 
     def get_shell_config(self, cmd):
