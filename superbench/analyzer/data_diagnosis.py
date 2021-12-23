@@ -5,6 +5,7 @@
 
 import re
 from typing import Callable
+from pathlib import Path
 
 import pandas as pd
 
@@ -32,9 +33,9 @@ class DataDiagnosis():
         benchmarks_metrics = {}
         for metric in metrics_list:
             if '/' not in metric:
-                if 'monitor' not in benchmarks_metrics:
-                    benchmarks_metrics['monitor'] = set()
-                benchmarks_metrics['monitor'].add(metric)
+                logger.warning(
+                    'DataDiagnosis: get_metrics_by_benchmarks - {} does not have benchmark_name'.format(metric)
+                )
             else:
                 benchmark = metric.split('/')[0]
                 if benchmark not in benchmarks_metrics:
@@ -138,6 +139,7 @@ class DataDiagnosis():
                             if re.search(metric_regex, metric):
                                 self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
                                 self._enable_metrics.append(metric)
+            self._enable_metrics.sort()
         except Exception as e:
             logger.error('DataDiagnosis: get criteria failed - {}'.format(str(e)))
             return False
@@ -176,8 +178,8 @@ class DataDiagnosis():
                 issue_label = True
         if issue_label:
             # Add category information
-            general_cat_str = ','.join(categories)
-            details_cat_str = ','.join(details)
+            general_cat_str = ','.join(sorted(list(categories)))
+            details_cat_str = ','.join(sorted((details)))
             details_row = [general_cat_str, details_cat_str]
             return details_row, summary_data_row
 
@@ -241,15 +243,15 @@ class DataDiagnosis():
         try:
             self._raw_data_df = file_handler.read_raw_data(raw_data_file)
             self._metrics = self._get_metrics_by_benchmarks(list(self._raw_data_df.columns))
-            logger.info('DataDiagnosis: Begin to processe {} nodes'.format(len(self._raw_data_df)))
+            logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(rule_file, baseline_file)
             logger.info('DataDiagnosis: Processed finished')
             output_path = ''
             if output_format == 'excel':
-                output_path = output_dir + '/diagnosis_summary.xlsx'
+                output_path = str(Path(output_dir) / 'diagnosis_summary.xlsx')
                 file_handler.output_excel(self._raw_data_df, data_not_accept_df, output_path, self._sb_rules)
             elif output_format == 'json':
-                output_path = output_dir + '/diagnosis_summary.jsonl'
+                output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
                 file_handler.output_json_data_not_accept(data_not_accept_df, output_path)
             else:
                 logger.error('DataDiagnosis: output failed - unsupported output format')
