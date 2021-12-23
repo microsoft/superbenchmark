@@ -291,8 +291,8 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     raw_data = raw_data.split(',')
                     raw_data.pop()
                     raw_data = [float(item) for item in raw_data]
-                    self._result.add_result(metric, statistics.mean(raw_data))
-                    self._result.add_raw_data(metric, raw_data)
+                    self._result.add_result(metric.lower() + '_time', statistics.mean(raw_data))
+                    self._result.add_raw_data(metric.lower() + '_time', raw_data)
                 if 'Error' in line:
                     error = True
         except BaseException as e:
