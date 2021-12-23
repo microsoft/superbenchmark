@@ -60,11 +60,40 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 ### `cublas-function`
 
-TODO
+#### Introduction
+
+Measure the performance of most common Nvidia cuBLAS functions with parameters in models training including ResNet, VGG, DenseNet, LSTM, BERT, and GPT-2.
+
+The supported functions for cuBLAS are as follows:
+ - cublasSgemm
+ - cublasSgemmStridedBatched
+ - cublasGemmStridedBatchedEx
+ - cublasGemmEx
+ - cublasCgemm3mStridedBatched
+ - cublasCgemm
+
+#### Metrics
+
+| Name                                                     | Unit      | Description                                                       |
+|----------------------------------------------------------|-----------|-------------------------------------------------------------------|
+| cublas-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cublas function with the parameters. |
 
 ### `cudnn-function`
 
-TODO
+#### Introduction
+
+Measure the performance of most common Nvidia cuDNN functions with parameters in models training including ResNet, VGG, DenseNet, LSTM, BERT, and GPT-2.
+
+The supported functions for cuDNN are as follows:
+ - cudnnConvolutionBackwardFilter
+ - cudnnConvolutionBackwardData
+ - cudnnConvolutionForward
+
+#### Metrics
+
+| Name                                                    | Unit      | Description                                                      |
+|---------------------------------------------------------|-----------|------------------------------------------------------------------|
+| cudnn-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
 ### `tensorrt-inference`
 
