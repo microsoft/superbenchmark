@@ -336,7 +336,8 @@ class SuperBenchRunner():
             for pattern, reduce_type in MonitorRecord.reduce_ops.items():
                 if pattern in metric:
                     reduce_func = Reducer.get_reduce_func(reduce_type)
-                    metrics_summary[metric] = reduce_func(values)
+                    metric_name = '{}/{}'.format('monitor', metric)
+                    metrics_summary[metric_name] = reduce_func(values)
                     continue
 
         return metrics_summary
