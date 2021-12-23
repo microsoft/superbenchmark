@@ -112,6 +112,30 @@ superbench:
     ort-inference:
       <<: *default_local_mode
       enable: false
+    tensorrt-inference:
+      <<: *default_local_mode
+      enable: false
+    ib-traffic:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+    gpcnet-network-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: eth0
+    tcp-connectivity:
+      enable: false
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        port: 22
     gpt_models:
       <<: *default_pytorch_mode
       models:
