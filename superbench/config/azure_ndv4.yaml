@@ -113,8 +113,19 @@ superbench:
       <<: *default_local_mode
       enable: false
     tensorrt-inference:
-      <<: *default_local_mode
       enable: false
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+          - bert-base
+          - bert-large
+        seq_length: 224
+        batch_size: 32
     ib-traffic:
       enable: false
       modes:
