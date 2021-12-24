@@ -38,7 +38,7 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'host_password': 'pass',
             })
         )
-        fd, self.test_mpi_host_file = tempfile.mkstemp()
+        _, self.test_mpi_host_file = tempfile.mkstemp()
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""
