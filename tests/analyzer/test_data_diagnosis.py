@@ -18,9 +18,10 @@ class TestDataDiagnosis(unittest.TestCase):
     """Test for DataDiagnosis class."""
     def setUp(self):
         """Method called to prepare the test fixture."""
-        self.output_excel_file = str(Path(__file__).parent.resolve()) + '/diagnosis_summary.xlsx'
-        self.test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
-        self.output_json_file = str(Path(__file__).parent.resolve()) + '/diagnosis_summary.jsonl'
+        self.parent_path = Path(__file__).parent
+        self.output_excel_file = str(self.parent_path / 'diagnosis_summary.xlsx')
+        self.test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
+        self.output_json_file = str(self.parent_path / 'diagnosis_summary.jsonl')
 
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
@@ -33,21 +34,31 @@ class TestDataDiagnosis(unittest.TestCase):
         """Test for rule-based data diagnosis."""
         # Test - read_raw_data and get_metrics_from_raw_data
         # Positive case
-        test_raw_data = str(Path(__file__).parent.resolve()) + '/test_results.jsonl'
-        test_rule_file = str(Path(__file__).parent.resolve()) + '/test_rules.yaml'
-        test_baseline_file = str(Path(__file__).parent.resolve()) + '/test_baseline.json'
+        test_raw_data = str(self.parent_path / 'test_results.jsonl')
+        test_rule_file = str(self.parent_path / 'test_rules.yaml')
+        test_baseline_file = str(self.parent_path / 'test_baseline.json')
         diag1 = DataDiagnosis()
         diag1._raw_data_df = file_handler.read_raw_data(test_raw_data)
         diag1._metrics = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df))
         assert (len(diag1._raw_data_df) == 3)
         # Negative case
-        test_raw_data_fake = str(Path(__file__).parent.resolve()) + '/test_results_fake.jsonl'
-        test_rule_file_fake = str(Path(__file__).parent.resolve()) + '/test_rules_fake.yaml'
+        test_raw_data_fake = str(self.parent_path / 'test_results_fake.jsonl')
+        test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         diag2 = DataDiagnosis()
         diag2._raw_data_df = file_handler.read_raw_data(test_raw_data_fake)
         diag2._metrics = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
         assert (len(diag2._raw_data_df) == 0)
         assert (len(diag2._metrics) == 0)
+        metric_list = [
+            'gpu_temperature', 'gpu_power_limit', 'gemm-flops/FP64',
+            'bert_models/pytorch-bert-base/steptime_train_float32'
+        ]
+        self.assertDictEqual(
+            diag2._get_metrics_by_benchmarks(metric_list), {
+                'gemm-flops': {'gemm-flops/FP64'},
+                'bert_models': {'bert_models/pytorch-bert-base/steptime_train_float32'}
+            }
+        )
         # Test - read rules
         rules = file_handler.read_rules(test_rule_file_fake)
         assert (not rules)
@@ -176,3 +187,27 @@ class TestDataDiagnosis(unittest.TestCase):
             assert ('Category' in line)
             assert ('Defective Details' in line)
             assert ('Index' in line)
+
+    def test_data_diagnosis_run(self):
+        """Test for the run process of rule-based data diagnosis."""
+        test_raw_data = str(self.parent_path / 'test_results.jsonl')
+        test_rule_file = str(self.parent_path / 'test_rules.yaml')
+        test_baseline_file = str(self.parent_path / 'test_baseline.json')
+
+        # Test - output in excel
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'excel')
+        excel_file = pd.ExcelFile(self.output_excel_file, engine='openpyxl')
+        data_sheet_name = 'Not Accept'
+        data_not_accept_read_from_excel = excel_file.parse(data_sheet_name)
+        expect_result_file = pd.ExcelFile(str(self.parent_path / '../data/diagnosis_summary.xlsx'), engine='openpyxl')
+        expect_result = expect_result_file.parse(data_sheet_name)
+        pd.util.testing.assert_frame_equal(data_not_accept_read_from_excel, expect_result)
+        # Test - output in json
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'json')
+        assert (Path(self.output_json_file).is_file())
+        with Path(self.output_json_file).open() as f:
+            data_not_accept_read_from_json = f.read()
+        expect_result_file = self.parent_path / '../data/diagnosis_summary.jsonl'
+        with Path(expect_result_file).open() as f:
+            expect_result = f.read()
+        assert (data_not_accept_read_from_json == expect_result)
