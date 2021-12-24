@@ -109,9 +109,7 @@ superbench:
       <<: *default_pytorch_mode
     ort-inference:
       <<: *default_local_mode
-      enable: false
     tensorrt-inference:
-      enable: false
       <<: *default_local_mode
       parameters:
         pytorch_models:
@@ -124,12 +122,24 @@ superbench:
           - bert-large
         seq_length: 224
         batch_size: 32
+        precision: int8
     ib-traffic:
       enable: false
       modes:
         - name: mpi
           proc_num: 1
     gpcnet-network-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: eth0
+          env:
+            UCX_NET_DEVICES: mlx5_0:1
+    gpcnet-network-load-test:
       enable: false
       modes:
         - name: mpi

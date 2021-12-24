@@ -140,6 +140,15 @@ superbench:
             pml: ucx
             btl: ^uct
             btl_tcp_if_include: eth0
+    gpcnet-network-load-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: eth0
     tcp-connectivity:
       enable: false
       modes:
