@@ -249,7 +249,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             msg_size = '-s ' + str(self._args.msg_size)
         # Add GPUDirect for ib command
         gpu_enable = ''
-        if self._args.gpu_index:
+        if self._args.gpu_index is not None:
             gpu = GPU()
             if gpu.vendor == 'nvidia':
                 gpu_enable = ' --use_cuda={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
