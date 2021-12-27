@@ -165,7 +165,7 @@ setup(
             'pytest>=6.2.2',
             'types-pyyaml',
             'vcrpy>=4.1.1',
-            'yapf>=0.30.0',
+            'yapf==0.31.0',
         ],
         'nvidia': ['py3nvml>=0.2.6'],
         'ort': [
