@@ -1,5 +1,5 @@
 # SuperBench Config
-version: v0.3
+version: v0.4
 superbench:
   enable: null
   monitor:
