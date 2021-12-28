@@ -4,7 +4,7 @@
 #   - Product: G482-Z53
 #   - Link: https://www.gigabyte.cn/FileUpload/Global/MicroSite/553/G482-Z53.html
 
-version: v0.3
+version: v0.4
 superbench:
   enable: null
   var:
