@@ -4,9 +4,16 @@
         <title>SuperBench Blog</title>
         <link>https://microsoft.github.io/superbenchmark/blog</link>
         <description>SuperBench Blog</description>
-        <lastBuildDate>Wed, 22 Sep 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Fri, 24 Dec 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[Releasing SuperBench v0.4]]></title>
+            <link>https://microsoft.github.io/superbenchmark/blog/release-sb-v0.4</link>
+            <guid>release-sb-v0.4</guid>
+            <pubDate>Fri, 24 Dec 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[We are very happy to announce that SuperBench 0.4.0 version is officially released today!]]></description>
+        </item>
         <item>
             <title><![CDATA[Releasing SuperBench v0.3]]></title>
             <link>https://microsoft.github.io/superbenchmark/blog/release-sb-v0.3</link>

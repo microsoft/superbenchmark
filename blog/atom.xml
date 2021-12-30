@@ -2,11 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://microsoft.github.io/superbenchmark/blog</id>
     <title>SuperBench Blog</title>
-    <updated>2021-09-22T00:00:00.000Z</updated>
+    <updated>2021-12-24T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://microsoft.github.io/superbenchmark/blog"/>
     <subtitle>SuperBench Blog</subtitle>
     <icon>https://microsoft.github.io/superbenchmark/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Releasing SuperBench v0.4]]></title>
+        <id>release-sb-v0.4</id>
+        <link href="https://microsoft.github.io/superbenchmark/blog/release-sb-v0.4"/>
+        <updated>2021-12-24T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[We are very happy to announce that SuperBench 0.4.0 version is officially released today!]]></summary>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Releasing SuperBench v0.3]]></title>
         <id>release-sb-v0.3</id>
