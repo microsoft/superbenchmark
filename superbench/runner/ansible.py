@@ -3,6 +3,7 @@
 
 """SuperBench Ansible Client."""
 
+import tempfile
 from pathlib import Path
 
 import ansible_runner
@@ -22,10 +23,10 @@ class AnsibleClient():
         """
         self._playbook_path = Path(__file__).parent / 'playbooks'
         self._config = {
-            'private_data_dir': None,
             'host_pattern': 'localhost',
             'cmdline': '--forks 128',
         }
+        self._head_host = None
         if config:
             inventory_file = getattr(config, 'host_file', None)
             inventory_list = getattr(config, 'host_list', None)
@@ -34,9 +35,10 @@ class AnsibleClient():
             if inventory_file or inventory_list:
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
-                host_list = inventory.get_groups_dict()['all']
+                host_list = inventory.get_hosts(pattern='all', order='sorted')
                 if len(host_list) > 0:
                     self._config['cmdline'] = '--forks {}'.format(len(host_list))
+                    self._head_host = host_list[0].get_name()
                 if inventory_list in ['localhost', '127.0.0.1']:
                     self._config['cmdline'] += ' --connection local'
                 self._config['cmdline'] += ' --inventory {}'.format(inventory_file or f'{inventory_list},')
@@ -69,12 +71,13 @@ class AnsibleClient():
         if sudo:
             logger.info('Run as sudo ...')
             ansible_config['cmdline'] += ' --become'
-        r = ansible_runner.run(**ansible_config)
+        with tempfile.TemporaryDirectory(prefix='ansible') as tmpdir:
+            r = ansible_runner.run(private_data_dir=tmpdir, **ansible_config)
+            logger.debug(r.stats)
         if r.rc == 0:
             logger.info('Run succeed, return code {}.'.format(r.rc))
         else:
             logger.warning('Run failed, return code {}.'.format(r.rc))
-        logger.debug(r.stats)
         return r.rc
 
     def update_mpi_config(self, ansible_config):
@@ -86,7 +89,10 @@ class AnsibleClient():
         Returns:
             dict: Updated Ansible config dict.
         """
-        ansible_config['host_pattern'] += '[0]'
+        if not self._head_host:
+            ansible_config['host_pattern'] += '[0]'
+        else:
+            ansible_config['host_pattern'] = self._head_host
         return ansible_config
 
     def get_shell_config(self, cmd):

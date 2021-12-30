@@ -101,7 +101,7 @@ module.exports = {
     announcementBar: {
       id: 'supportus',
       content:
-        '📢 <a href="https://microsoft.github.io/superbenchmark/blog/release-sb-v0.3">v0.3.0</a> has been released! ' +
+        '📢 <a href="https://microsoft.github.io/superbenchmark/blog/release-sb-v0.4">v0.4.0</a> has been released! ' +
         '⭐️ If you like SuperBench, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/microsoft/superbenchmark">GitHub</a>! ⭐️',
     },
     algolia: {

@@ -3,7 +3,7 @@
 # Server:
 #   - Product: HPE Apollo 6500
 
-version: v0.3
+version: v0.4
 superbench:
   enable: null
   var:
@@ -99,9 +99,31 @@ superbench:
         copy_type:
           - sm
           - dma
-    ort-inference:
-      <<: *default_local_mode
+    ib-traffic:
       enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            btl: tcp,self
+            pml: ob1
+            btl_tcp_if_include: ens17f0
+    gpcnet-network-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: ens17f0
+    tcp-connectivity:
+      enable: false
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        port: 22
     ort-models:
       enable: false
       modes:

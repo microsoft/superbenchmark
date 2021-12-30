@@ -3,9 +3,13 @@
 # Azure NDm A100 v4
 # reference: https://docs.microsoft.com/en-us/azure/virtual-machines/ndm-a100-v4-series
 
-version: v0.3
+version: v0.4
 superbench:
   enable: null
+  monitor:
+    enable: true
+    sample_duration: 1
+    sample_interval: 10
   var:
     default_local_mode: &default_local_mode
       enable: true
@@ -123,6 +127,52 @@ superbench:
       <<: *default_pytorch_mode
     computation-communication-overlap:
       <<: *default_pytorch_mode
+    ib-traffic:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+    gpcnet-network-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: eth0
+    gpcnet-network-load-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: eth0
+    tcp-connectivity:
+      enable: false
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        port: 22
+    ort-inference:
+      <<: *default_local_mode
+    tensorrt-inference:
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+          - bert-base
+          - bert-large
+        seq_length: 224
+        batch_size: 32
+        precision: int8
     gpt_models:
       <<: *default_pytorch_mode
       models:

@@ -7,15 +7,15 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/superbench/superbench.svg)](https://hub.docker.com/r/superbench/superbench/tags)
 [![License](https://img.shields.io/github/license/microsoft/superbenchmark.svg)](LICENSE)
 
-| Azure Pipelines | Build Status |
-| :---: | :---: |
-| cpu-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cpu-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=77&branchName=main) |
-| cuda-unit-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main) |
+| Azure Pipelines          | Build Status                                                                                                                                                                                                            |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cpu-unit-test            | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cpu-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=77&branchName=main)            |
+| cuda-unit-test           | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/cuda-unit-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=80&branchName=main)           |
 | ansible-integration-test | [![Build Status](https://dev.azure.com/msrasrg/SuperBenchmark/_apis/build/status/ansible-integration-test?branchName=main)](https://dev.azure.com/msrasrg/SuperBenchmark/_build/latest?definitionId=82&branchName=main) |
 
 __SuperBench__ is a validation and profiling tool for AI infrastructure.
 
-📢 [v0.3.0](https://github.com/microsoft/superbenchmark/releases/tag/v0.3.0) has been released!
+📢 [v0.4.0](https://github.com/microsoft/superbenchmark/releases/tag/v0.4.0) has been released!
 
 ## _Check [aka.ms/superbench](https://aka.ms/superbench) for more details._
 

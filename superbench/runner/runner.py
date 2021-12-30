@@ -39,7 +39,7 @@ class SuperBenchRunner():
         self._ansible_client = AnsibleClient(ansible_config)
 
         self.__set_logger('sb-run.log')
-        logger.info('Runner uses config: %s.', pformat(self._sb_config))
+        logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
         logger.info('Runner writes to: %s.', str(self._output_path))
 
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
@@ -336,7 +336,8 @@ class SuperBenchRunner():
             for pattern, reduce_type in MonitorRecord.reduce_ops.items():
                 if pattern in metric:
                     reduce_func = Reducer.get_reduce_func(reduce_type)
-                    metrics_summary[metric] = reduce_func(values)
+                    metric_name = 'monitor/{}'.format(metric)
+                    metrics_summary[metric_name] = reduce_func(values)
                     continue
 
         return metrics_summary

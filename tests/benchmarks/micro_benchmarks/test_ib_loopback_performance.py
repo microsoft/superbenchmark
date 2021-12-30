@@ -6,113 +6,42 @@
 import os
 import numbers
 import unittest
-from pathlib import Path
 from unittest import mock
 
+from tests.helper import decorator
+from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 from superbench.common.utils import network
 from superbench.benchmarks.micro_benchmarks import ib_loopback_performance
 
 
-class IBLoopbackBenchmarkTest(unittest.TestCase):
+class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Tests for IBLoopbackBenchmark benchmark."""
-    def setUp(self):
-        """Method called to prepare the test fixture."""
-        if (len(network.get_ib_devices()) < 1):
-            # Create fake binary file just for testing.
-            os.environ['SB_MICRO_PATH'] = '/tmp/superbench'
-            binary_path = Path(os.getenv('SB_MICRO_PATH'), 'bin')
-            binary_path.mkdir(parents=True, exist_ok=True)
-            self.__binary_file = Path(binary_path, 'run_perftest_loopback')
-            self.__binary_file.touch(mode=0o755, exist_ok=True)
-
-    def tearDown(self):
-        """Method called after the test method has been called and the result recorded."""
-        if (len(network.get_ib_devices()) < 1):
-            self.__binary_file.unlink()
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in the class."""
+        super().setUpClass()
+        cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/run_perftest_loopback'])
 
     def test_ib_loopback_util(self):
         """Test util functions 'get_numa_cores' and 'get_free_port' used in ib-loopback benchmark."""
         port = network.get_free_port()
         assert (isinstance(port, numbers.Number))
         numa_cores = ib_loopback_performance.get_numa_cores(0)
+        if numa_cores is None:
+            # in case no NUMA support available on test system
+            return
         assert (len(numa_cores) >= 2)
         for i in range(len(numa_cores)):
             assert (isinstance(numa_cores[i], numbers.Number))
 
+    @decorator.load_data('tests/data/ib_loopback_all_sizes.log')
     @mock.patch('superbench.common.utils.network.get_free_port')
     @mock.patch('superbench.benchmarks.micro_benchmarks.ib_loopback_performance.get_numa_cores')
     @mock.patch('superbench.common.utils.network.get_ib_devices')
-    def test_ib_loopback_all_sizes(self, mock_ib_devices, mock_numa_cores, mock_port):
+    def test_ib_loopback_all_sizes(self, raw_output, mock_ib_devices, mock_numa_cores, mock_port):
         """Test ib-loopback benchmark for all sizes."""
-        raw_output = """
-************************************
-* Waiting for client to connect... *
-************************************
----------------------------------------------------------------------------------------
-                    RDMA_Write BW Test
-Dual-port       : OFF          Device         : ibP257p0s0
-Number of qps   : 1            Transport type : IB
-Connection type : RC           Using SRQ      : OFF
-PCIe relax order: ON
----------------------------------------------------------------------------------------
-                    RDMA_Write BW Test
-Dual-port       : OFF          Device         : ibP257p0s0
-Number of qps   : 1            Transport type : IB
-Connection type : RC           Using SRQ      : OFF
-PCIe relax order: ON
-ibv_wr* API     : ON
-TX depth        : 128
-CQ Moderation   : 100
-Mtu             : 4096[B]
-Link type       : IB
-Max inline data : 0[B]
-rdma_cm QPs     : OFF
-Data ex. method : Ethernet
----------------------------------------------------------------------------------------
-ibv_wr* API     : ON
-CQ Moderation   : 100
-Mtu             : 4096[B]
-Link type       : IB
-Max inline data : 0[B]
-rdma_cm QPs     : OFF
-Data ex. method : Ethernet
----------------------------------------------------------------------------------------
-local address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97ff50000
-local address: LID 0xd06 QPN 0x092e PSN 0x3eb82d RKey 0x080228 VAddr 0x007f19adcbf000
-remote address: LID 0xd06 QPN 0x092e PSN 0x3eb82d RKey 0x080228 VAddr 0x007f19adcbf000
-remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97ff50000
----------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------
-#bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
-#bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
-2          2000             5.32               5.30               2.778732
-4          2000             10.65              10.64              2.788833
-8          2000             21.30              21.27              2.787609
-16         2000             42.60              42.55              2.788268
-32         2000             84.90              82.82              2.713896
-64         2000             173.55             171.66             2.812504
-128        2000             362.27             353.83             2.898535
-256        2000             687.82             679.37             2.782698
-512        2000             1337.12            1311.59            2.686135
-1024       2000             2674.25            2649.39            2.712980
-2048       2000             5248.56            5118.18            2.620509
-4096       2000             10034.02            9948.41                   2.546793
-8192       2000             18620.51            12782.56                  1.636168
-16384      2000             23115.27            16782.50                  1.074080
-32768      2000             22927.94            18586.03                  0.594753
-65536      2000             23330.56            21167.79                  0.338685
-131072     2000             22750.35            21443.14                  0.171545
-262144     2000             22673.63            22411.35                  0.089645
-524288     2000             22679.02            22678.86                  0.045358
-1048576    2000             22817.06            22816.86                  0.022817
-2097152    2000             22919.37            22919.27                  0.011460
-4194304    2000             23277.93            23277.91                  0.005819
-8388608    2000             23240.68            23240.68                  0.002905
----------------------------------------------------------------------------------------
-8388608    2000             23240.68            23240.68                  0.002905
----------------------------------------------------------------------------------------
-    """
         # Test without ib devices
         # Check registry.
         benchmark_name = 'ib-loopback'
@@ -179,56 +108,12 @@ remote address: LID 0xd06 QPN 0x092f PSN 0x3ff1bc RKey 0x080329 VAddr 0x007fc97f
         assert (benchmark._args.iters == 2000)
         assert (benchmark._args.commands == ['write'])
 
+    @decorator.load_data('tests/data/ib_loopback_8M_size.log')
     @mock.patch('superbench.common.utils.network.get_free_port')
     @mock.patch('superbench.benchmarks.micro_benchmarks.ib_loopback_performance.get_numa_cores')
     @mock.patch('superbench.common.utils.network.get_ib_devices')
-    def test_ib_loopback_8M_size(self, mock_ib_devices, mock_numa_cores, mock_port):
+    def test_ib_loopback_8M_size(self, raw_output, mock_ib_devices, mock_numa_cores, mock_port):
         """Test ib-loopback benchmark for 8M size."""
-        raw_output = """
-                        RDMA_Write BW Test
- Dual-port       : OFF		Device         : ibP257p0s0
- Number of qps   : 1		Transport type : IB
- Connection type : RC		Using SRQ      : OFF
- PCIe relax order: ON
- TX depth        : 128
- CQ Moderation   : 1
- Mtu             : 4096[B]
- Link type       : IB
- Max inline data : 0[B]
- rdma_cm QPs	 : OFF
- Data ex. method : Ethernet
----------------------------------------------------------------------------------------
- local address: LID 0xd06 QPN 0x095f PSN 0x3c9e82 RKey 0x080359 VAddr 0x007f9fc479c000
- remote address: LID 0xd06 QPN 0x095e PSN 0xbd024b RKey 0x080258 VAddr 0x007fe62504b000
----------------------------------------------------------------------------------------
- #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
- 8388608    20000            24056.74            24056.72		   0.003007
-************************************
-* Waiting for client to connect... *
-************************************
----------------------------------------------------------------------------------------
-                    RDMA_Write BW Test
- Dual-port       : OFF		Device         : ibP257p0s0
- Number of qps   : 1		Transport type : IB
- Connection type : RC		Using SRQ      : OFF
- PCIe relax order: ON
- CQ Moderation   : 1
- Mtu             : 4096[B]
- Link type       : IB
- Max inline data : 0[B]
- rdma_cm QPs	 : OFF
- Data ex. method : Ethernet
----------------------------------------------------------------------------------------
- local address: LID 0xd06 QPN 0x095e PSN 0xbd024b RKey 0x080258 VAddr 0x007fe62504b000
- remote address: LID 0xd06 QPN 0x095f PSN 0x3c9e82 RKey 0x080359 VAddr 0x007f9fc479c000
----------------------------------------------------------------------------------------
- #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
- 8388608    20000            24056.74            24056.72		   0.003007
----------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------
-"""
         # Test without ib devices
         # Check registry.
         benchmark_name = 'ib-loopback'

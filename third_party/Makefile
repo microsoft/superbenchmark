@@ -63,7 +63,7 @@ endif
 # Build FIO from commit d83ac9 (fio-3.28 tag).
 fio:
 ifneq (,$(wildcard fio/Makefile))
-	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
+	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) --disable-native && make -j && make install
 endif
 
 # Build rccl-tests from commit dc1ad48 of develop branch (default branch).

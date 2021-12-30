@@ -27,7 +27,7 @@ sb deploy -f remote.ini --host-password [password]
 :::note Note
 You should deploy corresponding Docker image to use release version, for example,
 
-`sb deploy -f local.ini -i superbench/superbench:v0.3.0-cuda11.1.1`
+`sb deploy -f local.ini -i superbench/superbench:v0.4.0-cuda11.1.1`
 
 You should note that version of git repo only determines version of sb CLI, and not the sb container. You should define the container version even if you specified a release version for the git clone.
 
