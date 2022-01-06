@@ -243,7 +243,10 @@ class SuperBenchRunner():
                     except Exception:
                         logger.error('Invalid content in JSON file: {}'.format(results_file))
                         continue
-                    if results_file.parts[-3].endswith('_models'):
+                    if (
+                        results_file.parts[-3].endswith('_models')
+                        or results_file.parts[-3].startswith('model-benchmarks:')
+                    ):
                         benchmark_name = '{}/{}'.format(results_file.parts[-3], result['name'])
                     if benchmark_name not in results_summary:
                         results_summary[benchmark_name] = defaultdict(list)

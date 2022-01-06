@@ -210,10 +210,13 @@ class SuperBenchExecutor():
                 else:
                     logger.warning('Monitor can not support ROCM/CPU platform.')
 
+            benchmark_real_name = benchmark_name.split(':')[0]
             for framework in benchmark_config.frameworks or [Framework.NONE.value]:
-                if benchmark_name.endswith('_models'):
+                if benchmark_real_name == 'model-benchmarks' or (
+                    ':' not in benchmark_name and benchmark_name.endswith('_models')
+                ):
                     for model in benchmark_config.models:
-                        log_suffix = 'model-benchmark {}: {}/{}'.format(benchmark_name, framework, model)
+                        log_suffix = f'{benchmark_name} ({framework}/{model})'
                         logger.info('Executor is going to execute %s.', log_suffix)
                         context = BenchmarkRegistry.create_benchmark_context(
                             model,
@@ -224,10 +227,10 @@ class SuperBenchExecutor():
                         result = self.__exec_benchmark(context, log_suffix)
                         benchmark_results.append(result)
                 else:
-                    log_suffix = 'micro-benchmark {}'.format(benchmark_name)
+                    log_suffix = benchmark_name
                     logger.info('Executor is going to execute %s.', log_suffix)
                     context = BenchmarkRegistry.create_benchmark_context(
-                        benchmark_name,
+                        benchmark_real_name,
                         platform=self.__get_platform(),
                         framework=Framework(framework.lower()),
                         parameters=self.__get_arguments(benchmark_config.parameters)
