@@ -12,7 +12,7 @@ from superbench.benchmarks import Platform, BenchmarkRegistry
 
 
 def benchmark_list_command_handler(name=None):
-    """List benchmarks which match the name.
+    """List benchmarks which match the regular expression.
 
     Args:
         name (str, optional): Benchmark name or regular expression. Defaults to None.
@@ -33,7 +33,7 @@ def benchmark_list_command_handler(name=None):
 
 
 def benchmark_list_params_command_handler(name=None):
-    """List parameters for benchmarks which match the name.
+    """List parameters for benchmarks which match the regular expression.
 
     Args:
         name (str, optional): Benchmark name or regular expression. Defaults to None.

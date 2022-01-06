@@ -26,7 +26,7 @@ The following lists `sb` commands usages and examples:
 
 ### `sb benchmark list`
 
-List benchmarks which match the name.
+List benchmarks which match the regular expression.
 ```bash title="SB CLI"
 sb benchmark list [--name]
 ```
@@ -57,7 +57,7 @@ sb benchmark list --name [a-z]+-bw
 
 ### `sb benchmark list-parameters`
 
-List parameters for benchmarks which match the name.
+List parameters for benchmarks which match the regular expression.
 ```bash title="SB CLI"
 sb benchmark list-parameters [--name]
 ```
