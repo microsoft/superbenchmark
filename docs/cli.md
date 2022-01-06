@@ -24,6 +24,68 @@ Welcome to the SB CLI!
 
 The following lists `sb` commands usages and examples:
 
+### `sb benchmark list`
+
+List benchmarks which match the name.
+```bash title="SB CLI"
+sb benchmark list [--name]
+```
+
+#### Optional arguments
+
+| Name          | Default | Description                           |
+|---------------|---------|---------------------------------------|
+| `--name` `-n` | `None`  | Benchmark name or regular expression. |
+
+#### Global arguments
+
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
+
+#### Examples
+
+List all benchmarks:
+```bash title="SB CLI"
+sb benchmark list
+```
+
+List all benchmarks ending with "-bw":
+```bash title="SB CLI"
+sb benchmark list --name [a-z]+-bw
+```
+
+### `sb benchmark list-parameters`
+
+List parameters for benchmarks which match the name.
+```bash title="SB CLI"
+sb benchmark list-parameters [--name]
+```
+
+#### Optional arguments
+
+| Name          | Default | Description                           |
+|---------------|---------|---------------------------------------|
+| `--name` `-n` | `None`  | Benchmark name or regular expression. |
+
+#### Global arguments
+
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
+
+#### Examples
+
+List parameters for all benchmarks:
+```bash title="SB CLI"
+sb benchmark list-parameters
+```
+
+List parameters for all benchmarks which starts with "pytorch-":
+```bash title="SB CLI"
+sb benchmark list-parameters --name pytorch-[a-z]+
+```
+
 ### `sb deploy`
 
 Deploy the SuperBench environments to all managed nodes.
@@ -217,4 +279,3 @@ Print version:
 ```bash title="SB CLI"
 sb version
 ```
-

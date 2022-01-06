@@ -27,7 +27,7 @@ def benchmark_list_command_handler(name=None):
     if name is None:
         return benchmark_list
     filter_list = list(filter(re.compile(name).match, benchmark_list))
-    if filter_list is None:
+    if not filter_list:
         raise CLIError('Benchmark {} does not exist.'.format(name))
     return filter_list
 
