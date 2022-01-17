@@ -156,7 +156,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             else:
                 precision = self._args.precision.value
             metric = '{}_{}_time'.format(precision, model)
-            if not self._process_numeric_result(metric, elapse_times):
+            if not self._process_numeric_result(metric, elapse_times, cal_percentile=True):
                 return False
 
             logger.info(
