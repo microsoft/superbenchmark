@@ -147,26 +147,26 @@ def test_arguments_related_interfaces():
     settings = benchmark.get_configurable_settings()
     expected_settings = (
         """optional arguments:
-  --run_count int       The run count of benchmark.
-  --duration int        The elapsed time of benchmark in seconds.
-  --num_warmup int      The number of warmup step.
-  --num_steps int       The number of test step.
-  --sample_count int    The number of data samples in dataset.
   --batch_size int      The number of batch size.
-  --precision Precision [Precision ...]
-                        Model precision. E.g. float16 float32 float64 bfloat16
-                        uint8 int8 int16 int32 int64.
-  --model_action ModelAction [ModelAction ...]
-                        Benchmark model process. E.g. train inference.
+  --distributed_backend DistributedBackend
+                        Distributed backends. E.g. nccl mpi gloo.
   --distributed_impl DistributedImpl
                         Distributed implementations. E.g. ddp mirrored
                         multiworkermirrored parameterserver horovod.
-  --distributed_backend DistributedBackend
-                        Distributed backends. E.g. nccl mpi gloo.
-  --no_gpu              Disable GPU training.
-  --pin_memory          Enable option to pin memory in data loader.
+  --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
+  --model_action ModelAction [ModelAction ...]
+                        Benchmark model process. E.g. train inference.
+  --no_gpu              Disable GPU training.
+  --num_steps int       The number of test step.
+  --num_warmup int      The number of warmup step.
+  --pin_memory          Enable option to pin memory in data loader.
+  --precision Precision [Precision ...]
+                        Model precision. E.g. float16 float32 float64 bfloat16
+                        uint8 int8 int16 int32 int64.
+  --run_count int       The run count of benchmark.
+  --sample_count int    The number of data samples in dataset.
   --seq_len int         Sequence length."""
     )
     assert (settings == expected_settings)
@@ -181,26 +181,26 @@ def test_preprocess():
     settings = benchmark.get_configurable_settings()
     expected_settings = (
         """optional arguments:
-  --run_count int       The run count of benchmark.
-  --duration int        The elapsed time of benchmark in seconds.
-  --num_warmup int      The number of warmup step.
-  --num_steps int       The number of test step.
-  --sample_count int    The number of data samples in dataset.
   --batch_size int      The number of batch size.
-  --precision Precision [Precision ...]
-                        Model precision. E.g. float16 float32 float64 bfloat16
-                        uint8 int8 int16 int32 int64.
-  --model_action ModelAction [ModelAction ...]
-                        Benchmark model process. E.g. train inference.
+  --distributed_backend DistributedBackend
+                        Distributed backends. E.g. nccl mpi gloo.
   --distributed_impl DistributedImpl
                         Distributed implementations. E.g. ddp mirrored
                         multiworkermirrored parameterserver horovod.
-  --distributed_backend DistributedBackend
-                        Distributed backends. E.g. nccl mpi gloo.
-  --no_gpu              Disable GPU training.
-  --pin_memory          Enable option to pin memory in data loader.
+  --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
+  --model_action ModelAction [ModelAction ...]
+                        Benchmark model process. E.g. train inference.
+  --no_gpu              Disable GPU training.
+  --num_steps int       The number of test step.
+  --num_warmup int      The number of warmup step.
+  --pin_memory          Enable option to pin memory in data loader.
+  --precision Precision [Precision ...]
+                        Model precision. E.g. float16 float32 float64 bfloat16
+                        uint8 int8 int16 int32 int64.
+  --run_count int       The run count of benchmark.
+  --sample_count int    The number of data samples in dataset.
   --seq_len int         Sequence length."""
     )
     assert (settings == expected_settings)

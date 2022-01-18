@@ -23,6 +23,9 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('deploy', 'deploy_command_handler')
             g.command('exec', 'exec_command_handler')
             g.command('run', 'run_command_handler')
+        with CommandGroup(self, 'benchmark', 'superbench.cli._benchmark_handler#{}') as g:
+            g.command('list', 'benchmark_list_command_handler')
+            g.command('list-parameters', 'benchmark_list_params_command_handler')
         with CommandGroup(self, 'node', 'superbench.cli._node_handler#{}') as g:
             g.command('info', 'info_command_handler')
         with CommandGroup(self, 'result', 'superbench.cli._result_handler#{}') as g:
@@ -61,6 +64,10 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 nargs='+',
                 help='Extra arguments to override config_file.'
             )
+
+        with ArgumentsContext(self, 'benchmark') as ac:
+            ac.argument('name', options_list=('--name', '-n'), type=str, help='Benchmark name or regular expression.')
+
         with ArgumentsContext(self, 'result') as ac:
             ac.argument('raw_data_file', options_list=('--data-file', '-d'), type=str, help='Path to raw data file.')
             ac.argument('rule_file', options_list=('--rule-file', '-r'), type=str, help='Path to rule file.')
@@ -73,4 +80,5 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 help='Path to output directory, outputs/{datetime} will be used if not specified.'
             )
             ac.argument('output_file_format', type=str, help='Format of output file, excel or json.')
+
         super().load_arguments(command)

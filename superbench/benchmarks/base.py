@@ -6,11 +6,23 @@
 import argparse
 import numbers
 from datetime import datetime
+from operator import attrgetter
 from abc import ABC, abstractmethod
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.result import BenchmarkResult
+
+
+class SortedMetavarTypeHelpFormatter(argparse.MetavarTypeHelpFormatter):
+    """Custom HelpFormatter class for argparse which sorts option strings."""
+    def add_arguments(self, actions):
+        """Sort option strings before original add_arguments.
+
+        Args:
+            actions (argparse.Action): Argument parser actions.
+        """
+        super(SortedMetavarTypeHelpFormatter, self).add_arguments(sorted(actions, key=attrgetter('option_strings')))
 
 
 class Benchmark(ABC):
@@ -29,7 +41,7 @@ class Benchmark(ABC):
             add_help=False,
             usage=argparse.SUPPRESS,
             allow_abbrev=False,
-            formatter_class=argparse.MetavarTypeHelpFormatter
+            formatter_class=SortedMetavarTypeHelpFormatter,
         )
         self._args = None
         self._curr_run_index = 0
