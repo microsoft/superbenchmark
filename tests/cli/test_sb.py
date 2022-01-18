@@ -6,11 +6,12 @@
 import io
 import contextlib
 from functools import wraps
-from knack.testsdk import ScenarioTest, StringCheck, NoneCheck
+from knack.testsdk import ScenarioTest, StringCheck, NoneCheck, JMESPathCheck
 from pathlib import Path
 
 import superbench
 from superbench.cli import SuperBenchCLI
+from superbench.benchmarks import BenchmarkRegistry
 
 
 def capture_system_exit(func):
@@ -82,6 +83,20 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb run, --host-file does not exist, should fail."""
         result = self.cmd('sb run --host-file ./nonexist.yaml', expect_failure=True)
         self.assertEqual(result.exit_code, 1)
+
+    def test_sb_benchmark_list(self):
+        """Test sb benchmark list."""
+        self.cmd('sb benchmark list', checks=[JMESPathCheck('length(@)', len(BenchmarkRegistry.benchmarks))])
+
+    def test_sb_benchmark_list_nonexist(self):
+        """Test sb benchmark list, give a non-exist benchmark name, should fail."""
+        result = self.cmd('sb benchmark list -n non-exist-name', expect_failure=True)
+        self.assertEqual(result.exit_code, 1)
+
+    def test_sb_benchmark_list_parameters(self):
+        """Test sb benchmark list-parameters."""
+        self.cmd('sb benchmark list-parameters', checks=[NoneCheck()])
+        self.cmd('sb benchmark list-parameters -n pytorch-[a-z]+', checks=[NoneCheck()])
 
     def test_sb_node_info(self):
         """Test sb node info, should fail."""

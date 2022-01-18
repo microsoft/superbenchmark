@@ -113,9 +113,9 @@ def test_get_benchmark_configurable_settings():
     settings = BenchmarkRegistry.get_benchmark_configurable_settings(context)
 
     expected = """optional arguments:
-  --run_count int    The run count of benchmark.
   --duration int     The elapsed time of benchmark in seconds.
   --lower_bound int  The lower bound for accumulation.
+  --run_count int    The run count of benchmark.
   --upper_bound int  The upper bound for accumulation."""
     assert (settings == expected)
 
