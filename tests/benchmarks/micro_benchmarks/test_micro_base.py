@@ -96,6 +96,17 @@ def test_micro_benchmark_base():
     assert (benchmark.result['metric1'] == [3.5])
     assert (benchmark.raw_data['metric1'] == [[1, 2, 3, 4, 5, 6]])
 
+    benchmark._result._BenchmarkResult__result = dict()
+    benchmark._result._BenchmarkResult__raw_data = dict()
+    benchmark._process_numeric_result('metric1', [1, 3, 4, 2, 6, 5], cal_percentile=True)
+    assert (benchmark.result['metric1'] == [3.5])
+    assert (benchmark.result['metric1_50'] == [3])
+    assert (benchmark.result['metric1_90'] == [5])
+    assert (benchmark.result['metric1_95'] == [6])
+    assert (benchmark.result['metric1_99'] == [6])
+    assert (benchmark.result['metric1_99.9'] == [6])
+    assert (benchmark.raw_data['metric1'] == [[1, 3, 4, 2, 6, 5]])
+
 
 def test_micro_benchmark_with_invoke_base():
     """Test MicroBenchmarkWithInvoke."""
