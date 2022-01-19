@@ -22,7 +22,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'gpu_copy'
-        self._mem_types = ['htod', 'dtoh', 'dtod']
+        self._mem_types = ['htod', 'dtoh', 'dtod', 'htod_with_dtoh', 'dtod_bidirectional']
         self._copy_types = ['sm', 'dma']
 
     def add_parser_arguments(self):

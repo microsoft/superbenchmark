@@ -12,11 +12,13 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'gpu-copy-bw', platform=Platform.CUDA, parameters='--mem_type htod dtoh dtod --copy_type sm dma'
+        'gpu-copy-bw', platform=Platform.CUDA,
+        parameters='--mem_type htod dtoh dtod htod_with_dtoh dtod_bidirectional --copy_type sm dma'
     )
     # For ROCm environment, please specify the benchmark name and the platform as the following.
     # context = BenchmarkRegistry.create_benchmark_context(
-    #     'gpu-copy-bw', platform=Platform.ROCM, parameters='--mem_type htod dtoh dtod --copy_type sm dma'
+    #     'gpu-copy-bw', platform=Platform.ROCM,
+    #     parameters='--mem_type htod dtoh dtod htod_with_dtoh dtod_bidirectional --copy_type sm dma'
     # )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

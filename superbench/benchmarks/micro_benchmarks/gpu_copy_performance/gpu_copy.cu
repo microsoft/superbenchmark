@@ -32,8 +32,14 @@ struct BenchArgs {
     // GPU IDs for worker device.
     int worker_gpu_id = 0;
 
+    // GPU IDs for second worker device.
+    int worker_gpu_id_2 = 0;
+
     // Uses SM copy, otherwise DMA copy.
     bool is_sm_copy = false;
+
+    // Perform src-to-dst and dst-to-src simultaneously.
+    bool is_bidirectional = false;
 
     // NUMA node under which the benchmark is done.
     uint64_t numa_id = 0;
@@ -87,6 +93,12 @@ struct Opts {
 
     // Whether device-to-device transfer needs to be evaluated.
     bool dtod_enabled = false;
+
+    // Whether bidirectional transfer between host and device needs to be evaluated.
+    bool htod_with_dtoh_enabled = false;
+
+    // Whether bidirectional transfer between device and device needs to be evaluated.
+    bool dtod_bidirectional_enabled = false;
 };
 
 // Pring usage of this program.
@@ -98,19 +110,33 @@ void PrintUsage() {
            "[--dma_copy] "
            "[--htod] "
            "[--dtoh] "
-           "[--dtod]\n");
+           "[--dtod] "
+           "[--htod_with_dtoh] "
+           "[--dtod_bidirectional]\n");
 }
 
 // Parse options of this program.
 int ParseOpts(int argc, char **argv, Opts *opts) {
-    enum class OptIdx { kSize, kNumIters, kEnableSmCopy, kEnableDmaCopy, kEnableHToD, kEnableDToH, kEnableDToD };
-    const struct option options[] = {{"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
-                                     {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumIters)},
-                                     {"sm_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableSmCopy)},
-                                     {"dma_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDmaCopy)},
-                                     {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
-                                     {"dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToH)},
-                                     {"dtod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToD)}};
+    enum class OptIdx {
+        kSize,
+        kNumIters,
+        kEnableSmCopy,
+        kEnableDmaCopy,
+        kEnableHToD,
+        kEnableDToH,
+        kEnableDToD,
+        kEnableHToDWithDToH,
+        kEnableDToDBidirectional };
+    const struct option options[] = {
+        {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
+        {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumIters)},
+        {"sm_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableSmCopy)},
+        {"dma_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDmaCopy)},
+        {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
+        {"dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToH)},
+        {"dtod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToD)},
+        {"htod_with_dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToDWithDToH)},
+        {"dtod_bidirectional", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToDBidirectional)}};
     int getopt_ret = 0;
     int opt_idx = 0;
     bool size_specified = false;
@@ -159,6 +185,12 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         case static_cast<int>(OptIdx::kEnableDToD):
             opts->dtod_enabled = true;
             break;
+        case static_cast<int>(OptIdx::kEnableHToDWithDToH):
+            opts->htod_with_dtoh_enabled = true;
+            break;
+        case static_cast<int>(OptIdx::kEnableDToDBidirectional):
+            opts->dtod_bidirectional_enabled = true;
+            break;
         default:
             parse_err = true;
         }
@@ -204,9 +236,8 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
         buffers->data_buf[i] = static_cast<uint8_t>(i % uint8_mod);
     }
 
-    // Reset check buffer
+    // Allocate check buffer
     buffers->check_buf = static_cast<uint8_t *>(numa_alloc_onnode(args.size, args.numa_id));
-    memset(buffers->check_buf, 0, args.size);
 
     // Allocate buffers for src/dst devices
     constexpr int num_devices = 2;
@@ -222,7 +253,8 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
                 return -1;
             }
             *(host_buf_ptrs[i]) = nullptr;
-            cuda_err = cudaMalloc(gpu_buf_ptrs[i], args.size);
+            // Allocate 2x sized buffer for bidirectional tests
+            cuda_err = cudaMalloc(gpu_buf_ptrs[i], args.is_bidirectional ? args.size * 2 : args.size);
             if (cuda_err != cudaSuccess) {
                 fprintf(stderr, "PrepareBuf::cudaMalloc error: %d\n", cuda_err);
                 return -1;
@@ -232,8 +264,10 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
             if (SetGpu(args.worker_gpu_id)) {
                 return -1;
             }
-            *(host_buf_ptrs[i]) = static_cast<uint8_t *>(numa_alloc_onnode(args.size, args.numa_id));
-            cuda_err = cudaHostRegister(*(host_buf_ptrs[i]), args.size, cudaHostRegisterMapped);
+            *(host_buf_ptrs[i]) = static_cast<uint8_t *>(numa_alloc_onnode(
+                args.is_bidirectional ? args.size * 2 : args.size, args.numa_id));
+            cuda_err = cudaHostRegister(*(host_buf_ptrs[i]),
+                args.is_bidirectional ? args.size * 2 : args.size, cudaHostRegisterMapped);
             if (cuda_err != cudaSuccess) {
                 fprintf(stderr, "PrepareBuf::cudaHostRegister error: %d\n", cuda_err);
                 return -1;
@@ -255,6 +289,14 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
         fprintf(stderr, "PrepareBuf::cudaMemcpy error: %d\n", cuda_err);
         return -1;
     }
+    if (args.is_bidirectional) {
+        cuda_err = cudaMemcpy(buffers->dst_dev_gpu_buf_ptr + args.size,
+            buffers->data_buf, args.size, cudaMemcpyDefault);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "PrepareBuf::cudaMemcpy error: %d\n", cuda_err);
+            return -1;
+        }
+    }
 
     return 0;
 }
@@ -262,24 +304,44 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
 // Validate the result of data transfer.
 int CheckBuf(const BenchArgs &args, const Buffers &buffers) {
     cudaError_t cuda_err = cudaSuccess;
+    int memcmp_result = 0;
 
     // Copy result
+    memset(buffers.check_buf, 0, args.size);
     if (SetGpu(args.dst_gpu_id)) {
         return -1;
     }
-    cuda_err = cudaMemcpy(buffers.check_buf, buffers.src_dev_gpu_buf_ptr, args.size, cudaMemcpyDefault);
+    cuda_err = cudaMemcpy(buffers.check_buf, buffers.dst_dev_gpu_buf_ptr, args.size, cudaMemcpyDefault);
     if (cuda_err != cudaSuccess) {
         fprintf(stderr, "CheckBuf::cudaMemcpy error: %d\n", cuda_err);
         return -1;
     }
 
     // Validate result
-    int memcmp_result = memcmp(buffers.data_buf, buffers.check_buf, args.size);
+    memcmp_result = memcmp(buffers.data_buf, buffers.check_buf, args.size);
     if (memcmp_result) {
         fprintf(stderr, "CheckBuf: Memory check failed\n");
         return -1;
     }
 
+    // Check another side
+    if (args.is_bidirectional) {
+        memset(buffers.check_buf, 0, args.size);
+        if (SetGpu(args.src_gpu_id)) {
+            return -1;
+        }
+        cuda_err = cudaMemcpy(buffers.check_buf,
+            buffers.src_dev_gpu_buf_ptr + args.size, args.size, cudaMemcpyDefault);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "CheckBuf::cudaMemcpy error: %d\n", cuda_err);
+            return -1;
+        }
+        memcmp_result = memcmp(buffers.data_buf, buffers.check_buf, args.size);
+        if (memcmp_result) {
+            fprintf(stderr, "CheckBuf: Memory check failed\n");
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -329,7 +391,7 @@ int DestroyBuf(const BenchArgs &args, Buffers *buffers) {
                 fprintf(stderr, "DestroyBuf::cudaHostUnregister error: %d\n", cuda_err);
                 ret = -1;
             }
-            numa_free(*(host_buf_ptrs[i]), args.size);
+            numa_free(*(host_buf_ptrs[i]), args.is_bidirectional ? args.size * 2 : args.size);
             *(host_buf_ptrs[i]) = nullptr;
             *(gpu_buf_ptrs[i]) = nullptr;
         }
@@ -400,19 +462,18 @@ void PringResultTag(const BenchArgs &args) {
     } else {
         printf("cpu");
     }
-    printf("_by_gpu%d_using_%s_under_numa%lu", args.worker_gpu_id, args.is_sm_copy ? "sm" : "dma", args.numa_id);
+    printf("_by_gpu%d_using_%s_under_numa%lu_%s",
+        args.worker_gpu_id,
+        args.is_sm_copy ? "sm" : "dma",
+        args.numa_id,
+        args.is_bidirectional ? "bi" : "uni");
 }
 
 // Run copy benchmark.
 int RunCopy(const BenchArgs &args, const Buffers &buffers) {
     cudaError_t cuda_err = cudaSuccess;
-    cudaStream_t stream;
+    cudaStream_t stream, stream_2;
     uint64_t num_thread_blocks;
-
-    // Set to worker device
-    if (SetGpu(args.worker_gpu_id)) {
-        return -1;
-    }
 
     // Validate data size for SM copy
     if (args.is_sm_copy) {
@@ -426,30 +487,72 @@ int RunCopy(const BenchArgs &args, const Buffers &buffers) {
     }
 
     // Create stream to launch kernels
+    if (SetGpu(args.worker_gpu_id)) {
+        return -1;
+    }
     cuda_err = cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
     if (cuda_err != cudaSuccess) {
         fprintf(stderr, "RunCopy::cudaStreamCreate error: %d\n", cuda_err);
         return -1;
+    }
+    // P2P bidirecitonal test, create a second stream
+    if (args.is_bidirectional) {
+        if (SetGpu(args.worker_gpu_id_2)) {
+            return -1;
+        }
+        cuda_err = cudaStreamCreateWithFlags(&stream_2, cudaStreamNonBlocking);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaStreamCreate error: %d\n", cuda_err);
+            return -1;
+        }
     }
 
     // Launch jobs and collect running time
     auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < args.num_loops; i++) {
         if (args.is_sm_copy) {
+            if (SetGpu(args.worker_gpu_id)) {
+                return -1;
+            }
             SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, stream>>>(
                 reinterpret_cast<ulong2 *>(buffers.dst_dev_gpu_buf_ptr),
                 reinterpret_cast<ulong2 *>(buffers.src_dev_gpu_buf_ptr));
+            if (args.is_bidirectional) {
+                if (SetGpu(args.worker_gpu_id_2)) {
+                    return -1;
+                }
+                SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, stream_2>>>(
+                    reinterpret_cast<ulong2 *>(buffers.src_dev_gpu_buf_ptr + args.size),
+                    reinterpret_cast<ulong2 *>(buffers.dst_dev_gpu_buf_ptr + args.size));
+            }
         } else {
-            cudaMemcpyAsync(buffers.dst_dev_gpu_buf_ptr, buffers.src_dev_gpu_buf_ptr, args.size, cudaMemcpyDefault,
-                            stream);
+            if (SetGpu(args.worker_gpu_id)) {
+                return -1;
+            }
+            cudaMemcpyAsync(buffers.dst_dev_gpu_buf_ptr, buffers.src_dev_gpu_buf_ptr,
+                args.size, cudaMemcpyDefault, stream);
+            if (args.is_bidirectional) {
+                if (SetGpu(args.worker_gpu_id_2)) {
+                    return -1;
+                }
+                cudaMemcpyAsync(buffers.src_dev_gpu_buf_ptr + args.size,
+                    buffers.dst_dev_gpu_buf_ptr + args.size, args.size, cudaMemcpyDefault, stream_2);
+            }
         }
     }
     cuda_err = cudaStreamSynchronize(stream);
-    auto end = std::chrono::steady_clock::now();
     if (cuda_err != cudaSuccess) {
         fprintf(stderr, "RunCopy::cudaStreamSynchronize error: %d\n", cuda_err);
         return -1;
     }
+    if (args.is_bidirectional && args.is_src_dev_gpu) {
+        cuda_err = cudaStreamSynchronize(stream_2);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaStreamSynchronize error: %d\n", cuda_err);
+            return -1;
+        }
+    }
+    auto end = std::chrono::steady_clock::now();
 
     // Destroy stream
     cuda_err = cudaStreamDestroy(stream);
@@ -457,12 +560,19 @@ int RunCopy(const BenchArgs &args, const Buffers &buffers) {
         fprintf(stderr, "RunCopy::cudaStreamDestroy error: %d\n", cuda_err);
         return -1;
     }
+    if (args.is_bidirectional && args.is_src_dev_gpu) {
+        cuda_err = cudaStreamDestroy(stream_2);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaStreamDestroy error: %d\n", cuda_err);
+            return -1;
+        }
+    }
 
     // Calculate and display bandwidth if no problem
     double time_in_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
 
     PringResultTag(args);
-    printf(" %g\n", args.size * args.num_loops / time_in_sec / 1e9);
+    printf(" %g\n", args.size * args.num_loops / time_in_sec / 1e9 * (args.is_bidirectional ? 2 : 1));
 
     return 0;
 }
@@ -545,18 +655,33 @@ int main(int argc, char **argv) {
         // Scan all GPUs
         for (int j = 0; j < gpu_count; j++) {
             // Host-to-device benchmark
-            if (opts.htod_enabled) {
+            if (opts.htod_enabled || opts.htod_with_dtoh_enabled) {
                 args.is_src_dev_gpu = false;
                 args.is_dst_dev_gpu = true;
                 args.dst_gpu_id = j;
                 args.worker_gpu_id = j;
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
-                    args_list.push_back(args);
+                    if (opts.htod_enabled) {
+                        args.is_bidirectional = false;
+                        args_list.push_back(args);
+                    }
+                    if (opts.htod_with_dtoh_enabled) {
+                        args.is_bidirectional = true;
+                        args.worker_gpu_id_2 = j;
+                        args_list.push_back(args);
+                    }
                 }
                 if (opts.dma_copy_enabled) {
                     args.is_sm_copy = false;
-                    args_list.push_back(args);
+                    if (opts.htod_enabled) {
+                        args.is_bidirectional = false;
+                        args_list.push_back(args);
+                    }
+                    if (opts.htod_with_dtoh_enabled) {
+                        args.is_bidirectional = true;
+                        args_list.push_back(args);
+                    }
                 }
             }
             // Device-to-host benchmark
@@ -565,6 +690,7 @@ int main(int argc, char **argv) {
                 args.src_gpu_id = j;
                 args.is_dst_dev_gpu = false;
                 args.worker_gpu_id = j;
+                args.is_bidirectional = false;
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
                     args_list.push_back(args);
@@ -575,7 +701,7 @@ int main(int argc, char **argv) {
                 }
             }
             // Device-to-device benchmark
-            if (opts.dtod_enabled) {
+            if (opts.dtod_enabled || opts.dtod_bidirectional_enabled) {
                 args.is_src_dev_gpu = true;
                 args.src_gpu_id = j;
                 args.is_dst_dev_gpu = true;
@@ -591,11 +717,27 @@ int main(int argc, char **argv) {
                         args.worker_gpu_id = j;
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;
-                            args_list.push_back(args);
+                            if (opts.dtod_enabled) {
+                                args.is_bidirectional = false;
+                                args_list.push_back(args);
+                            }
+                            if (opts.dtod_bidirectional_enabled) {
+                                args.is_bidirectional = true;
+                                args.worker_gpu_id_2 = k;
+                                args_list.push_back(args);
+                            }
                         }
                         if (opts.dma_copy_enabled) {
                             args.is_sm_copy = false;
-                            args_list.push_back(args);
+                            if (opts.dtod_enabled) {
+                                args.is_bidirectional = false;
+                                args_list.push_back(args);
+                            }
+                            if (opts.dtod_bidirectional_enabled) {
+                                args.is_bidirectional = true;
+                                args.worker_gpu_id_2 = k;
+                                args_list.push_back(args);
+                            }
                         }
                     }
                     if (j == k) {
@@ -610,11 +752,27 @@ int main(int argc, char **argv) {
                         args.worker_gpu_id = k;
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;
-                            args_list.push_back(args);
+                            if (opts.dtod_enabled) {
+                                args.is_bidirectional = false;
+                                args_list.push_back(args);
+                            }
+                            if (opts.dtod_bidirectional_enabled) {
+                                args.is_bidirectional = true;
+                                args.worker_gpu_id_2 = j;
+                                args_list.push_back(args);
+                            }
                         }
                         if (opts.dma_copy_enabled) {
                             args.is_sm_copy = false;
-                            args_list.push_back(args);
+                            if (opts.dtod_enabled) {
+                                args.is_bidirectional = false;
+                                args_list.push_back(args);
+                            }
+                            if (opts.dtod_bidirectional_enabled) {
+                                args.is_bidirectional = true;
+                                args.worker_gpu_id_2 = j;
+                                args_list.push_back(args);
+                            }
                         }
                     }
                 }
