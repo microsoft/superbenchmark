@@ -9,6 +9,8 @@ from datetime import datetime
 from operator import attrgetter
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkType, ReturnCode
 from superbench.benchmarks.result import BenchmarkResult
@@ -245,6 +247,22 @@ class Benchmark(ABC):
                 return False
 
         return True
+
+    def _process_percentile_result(self, metric, result, reduce_type=None):
+        """Function to process the percentile results.
+
+        Args:
+            metric (str): metric name which is the key.
+            result (List[numbers.Number]): numerical result.
+            reduce_type (ReduceType): The type of reduce function.
+        """
+        if len(result) > 0:
+            percentile_list = ['50', '90', '95', '99', '99.9']
+            for percentile in percentile_list:
+                self._result.add_result(
+                    '{}_{}'.format(metric, percentile),
+                    np.percentile(result, float(percentile), interpolation='nearest'), reduce_type
+                )
 
     def print_env_info(self):
         """Print environments or dependencies information."""

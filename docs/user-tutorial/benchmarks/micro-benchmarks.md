@@ -133,11 +133,15 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 > resnext101_32x8d, wide_resnet50_2, wide_resnet101_2, shufflenet_v2_x0_5, shufflenet_v2_x1_0,
 > squeezenet1_0, squeezenet1_1, vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19_bn, vgg19
 
+The supported percentiles are 50, 90, 95, 99, and 99.9.
+
 #### Metrics
 
-| Name                                          | Unit      | Description                                               |
-|-----------------------------------------------|-----------|-----------------------------------------------------------|
-| ort-inference/{precision}_{model}_time        | time (ms) | The mean latency to execute one batch of inference.       |
+| Name                                                    | Unit      | Description                                                                 |
+|---------------------------------------------------------|-----------|-----------------------------------------------------------------------------|
+| ort-inference/{precision}_{model}_time                  | time (ms) | The mean latency to execute one batch of inference.                         |
+| ort-inference/{precision}_{model}_time_{percentile}     | time (ms) | The {percentile}th percentile latency to execute one batch of inference.    |
+
 
 ## Communication Benchmarks
 
