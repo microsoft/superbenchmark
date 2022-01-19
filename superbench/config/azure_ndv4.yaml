@@ -93,6 +93,7 @@ superbench:
         mem_type:
           - htod
           - dtoh
+          - dtod
         copy_type:
           - sm
           - dma
