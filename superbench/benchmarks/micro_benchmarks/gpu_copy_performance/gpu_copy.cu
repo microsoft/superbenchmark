@@ -718,7 +718,7 @@ int main(int argc, char **argv) {
                                 args.is_bidirectional = false;
                                 args_list.push_back(args);
                             }
-                            if (opts.dtod_bidirectional_enabled) {
+                            if (opts.dtod_bidirectional_enabled && j <= k) {
                                 args.is_bidirectional = true;
                                 args.worker_gpu_id_2 = k;
                                 args_list.push_back(args);
@@ -730,7 +730,7 @@ int main(int argc, char **argv) {
                                 args.is_bidirectional = false;
                                 args_list.push_back(args);
                             }
-                            if (opts.dtod_bidirectional_enabled) {
+                            if (opts.dtod_bidirectional_enabled && j <= k) {
                                 args.is_bidirectional = true;
                                 args.worker_gpu_id_2 = k;
                                 args_list.push_back(args);
@@ -753,7 +753,7 @@ int main(int argc, char **argv) {
                                 args.is_bidirectional = false;
                                 args_list.push_back(args);
                             }
-                            if (opts.dtod_bidirectional_enabled) {
+                            if (opts.dtod_bidirectional_enabled && j <= k) {
                                 args.is_bidirectional = true;
                                 args.worker_gpu_id_2 = j;
                                 args_list.push_back(args);
@@ -765,7 +765,7 @@ int main(int argc, char **argv) {
                                 args.is_bidirectional = false;
                                 args_list.push_back(args);
                             }
-                            if (opts.dtod_bidirectional_enabled) {
+                            if (opts.dtod_bidirectional_enabled && j <= k) {
                                 args.is_bidirectional = true;
                                 args.worker_gpu_id_2 = j;
                                 args_list.push_back(args);
