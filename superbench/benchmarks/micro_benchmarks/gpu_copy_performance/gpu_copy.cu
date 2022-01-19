@@ -126,7 +126,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         kEnableDToH,
         kEnableDToD,
         kEnableHToDWithDToH,
-        kEnableDToDBidirectional };
+        kEnableDToDBidirectional
+    };
     const struct option options[] = {
         {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
         {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumIters)},
@@ -264,10 +265,10 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
             if (SetGpu(args.worker_gpu_id)) {
                 return -1;
             }
-            *(host_buf_ptrs[i]) = static_cast<uint8_t *>(numa_alloc_onnode(
-                args.is_bidirectional ? args.size * 2 : args.size, args.numa_id));
-            cuda_err = cudaHostRegister(*(host_buf_ptrs[i]),
-                args.is_bidirectional ? args.size * 2 : args.size, cudaHostRegisterMapped);
+            *(host_buf_ptrs[i]) = static_cast<uint8_t *>(
+                numa_alloc_onnode(args.is_bidirectional ? args.size * 2 : args.size, args.numa_id));
+            cuda_err = cudaHostRegister(*(host_buf_ptrs[i]), args.is_bidirectional ? args.size * 2 : args.size,
+                                        cudaHostRegisterMapped);
             if (cuda_err != cudaSuccess) {
                 fprintf(stderr, "PrepareBuf::cudaHostRegister error: %d\n", cuda_err);
                 return -1;
@@ -290,8 +291,8 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
         return -1;
     }
     if (args.is_bidirectional) {
-        cuda_err = cudaMemcpy(buffers->dst_dev_gpu_buf_ptr + args.size,
-            buffers->data_buf, args.size, cudaMemcpyDefault);
+        cuda_err =
+            cudaMemcpy(buffers->dst_dev_gpu_buf_ptr + args.size, buffers->data_buf, args.size, cudaMemcpyDefault);
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "PrepareBuf::cudaMemcpy error: %d\n", cuda_err);
             return -1;
@@ -330,8 +331,7 @@ int CheckBuf(const BenchArgs &args, const Buffers &buffers) {
         if (SetGpu(args.src_gpu_id)) {
             return -1;
         }
-        cuda_err = cudaMemcpy(buffers.check_buf,
-            buffers.src_dev_gpu_buf_ptr + args.size, args.size, cudaMemcpyDefault);
+        cuda_err = cudaMemcpy(buffers.check_buf, buffers.src_dev_gpu_buf_ptr + args.size, args.size, cudaMemcpyDefault);
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "CheckBuf::cudaMemcpy error: %d\n", cuda_err);
             return -1;
@@ -462,11 +462,8 @@ void PringResultTag(const BenchArgs &args) {
     } else {
         printf("cpu");
     }
-    printf("_by_gpu%d_using_%s_under_numa%lu_%s",
-        args.worker_gpu_id,
-        args.is_sm_copy ? "sm" : "dma",
-        args.numa_id,
-        args.is_bidirectional ? "bi" : "uni");
+    printf("_by_gpu%d_using_%s_under_numa%lu_%s", args.worker_gpu_id, args.is_sm_copy ? "sm" : "dma", args.numa_id,
+           args.is_bidirectional ? "bi" : "uni");
 }
 
 // Run copy benchmark.
@@ -529,14 +526,14 @@ int RunCopy(const BenchArgs &args, const Buffers &buffers) {
             if (SetGpu(args.worker_gpu_id)) {
                 return -1;
             }
-            cudaMemcpyAsync(buffers.dst_dev_gpu_buf_ptr, buffers.src_dev_gpu_buf_ptr,
-                args.size, cudaMemcpyDefault, stream);
+            cudaMemcpyAsync(buffers.dst_dev_gpu_buf_ptr, buffers.src_dev_gpu_buf_ptr, args.size, cudaMemcpyDefault,
+                            stream);
             if (args.is_bidirectional) {
                 if (SetGpu(args.worker_gpu_id_2)) {
                     return -1;
                 }
-                cudaMemcpyAsync(buffers.src_dev_gpu_buf_ptr + args.size,
-                    buffers.dst_dev_gpu_buf_ptr + args.size, args.size, cudaMemcpyDefault, stream_2);
+                cudaMemcpyAsync(buffers.src_dev_gpu_buf_ptr + args.size, buffers.dst_dev_gpu_buf_ptr + args.size,
+                                args.size, cudaMemcpyDefault, stream_2);
             }
         }
     }
