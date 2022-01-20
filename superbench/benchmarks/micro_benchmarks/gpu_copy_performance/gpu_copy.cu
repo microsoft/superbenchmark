@@ -231,7 +231,7 @@ int PrepareBufAndStream(BenchArgs *args) {
     constexpr int uint8_mod = 256;
 
     for (int i = 0; i < args->num_subs; i++) {
-        SubBenchArgs& sub = args->subs[i];
+        SubBenchArgs &sub = args->subs[i];
 
         // Generate data to copy
         sub.data_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
@@ -312,7 +312,7 @@ int CheckBuf(BenchArgs *args) {
     int memcmp_result = 0;
 
     for (int i = 0; i < args->num_subs; i++) {
-        SubBenchArgs& sub = args->subs[i];
+        SubBenchArgs &sub = args->subs[i];
 
         // Copy result
         memset(sub.check_buf, 0, args->size);
@@ -342,7 +342,7 @@ int DestroyBufAndStream(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
 
     for (int i = 0; i < args->num_subs; i++) {
-        SubBenchArgs& sub = args->subs[i];
+        SubBenchArgs &sub = args->subs[i];
 
         // Destroy original data buffer and check buffer
         if (sub.data_buf != nullptr) {
@@ -505,7 +505,7 @@ int RunCopy(BenchArgs *args) {
     auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < args->num_loops; i++) {
         for (int j = 0; j < args->num_subs; j++) {
-            SubBenchArgs& sub = args->subs[j];
+            SubBenchArgs &sub = args->subs[j];
             if (SetGpu(sub.worker_gpu_id)) {
                 return -1;
             }
@@ -514,13 +514,13 @@ int RunCopy(BenchArgs *args) {
                     reinterpret_cast<ulong2 *>(sub.dst_dev_gpu_buf_ptr),
                     reinterpret_cast<ulong2 *>(sub.src_dev_gpu_buf_ptr));
             } else {
-                cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr,
-                                args->size, cudaMemcpyDefault, sub.stream);
+                cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr, args->size, cudaMemcpyDefault,
+                                sub.stream);
             }
         }
     }
     for (int i = 0; i < args->num_subs; i++) {
-        SubBenchArgs& sub = args->subs[i];
+        SubBenchArgs &sub = args->subs[i];
         cuda_err = cudaStreamSynchronize(sub.stream);
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "RunCopy::cudaStreamSynchronize error: %d\n", cuda_err);
