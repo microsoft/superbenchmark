@@ -22,7 +22,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'gpu_copy'
-        self._mem_types = ['htod', 'dtoh', 'dtod', 'htod_with_dtoh', 'dtod_bidirectional']
+        self._mem_types = ['htod', 'dtoh', 'dtod']
         self._copy_types = ['sm', 'dma']
 
     def add_parser_arguments(self):
@@ -61,6 +61,12 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
             help='Number of data buffer copies performed.',
         )
 
+        self._parser.add_argument(
+            '--bidirectional',
+            action='store_true',
+            help='Enable bidirectional test',
+        )
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -77,6 +83,9 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
             args += ' --%s' % mem_type
         for copy_type in self._args.copy_type:
             args += ' --%s_copy' % copy_type
+
+        if self._args.bidirectional:
+            args += ' --bidirectional'
 
         self._commands = ['%s %s' % (self.__bin_path, args)]
 

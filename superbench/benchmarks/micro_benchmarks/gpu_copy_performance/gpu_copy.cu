@@ -15,8 +15,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-// Arguments for each benchmark run.
-struct BenchArgs {
+// Arguments for each sub benchmark run.
+struct SubBenchArgs {
     // Whether source device is GPU.
     bool is_src_dev_gpu = false;
 
@@ -32,26 +32,6 @@ struct BenchArgs {
     // GPU IDs for worker device.
     int worker_gpu_id = 0;
 
-    // GPU IDs for second worker device.
-    int worker_gpu_id_2 = 0;
-
-    // Uses SM copy, otherwise DMA copy.
-    bool is_sm_copy = false;
-
-    // Perform src-to-dst and dst-to-src simultaneously.
-    bool is_bidirectional = false;
-
-    // NUMA node under which the benchmark is done.
-    uint64_t numa_id = 0;
-
-    // Data buffer size used.
-    uint64_t size = 0;
-
-    // Number of loops to run.
-    uint64_t num_loops = 0;
-};
-
-struct Buffers {
     // Original data buffer.
     uint8_t *data_buf = nullptr;
 
@@ -69,6 +49,34 @@ struct Buffers {
 
     // GPU pointer of the data buffer on destination devices.
     uint8_t *dst_dev_gpu_buf_ptr = nullptr;
+
+    // CUDA stream to be used.
+    cudaStream_t stream;
+};
+
+// Arguments for each benchmark run.
+struct BenchArgs {
+    // Max number of sub benchmarks.
+    static const int kMaxNumSubs = 2;
+
+    // Number of sub benchmarks in this benchmark run.
+    // 1 for unidirectional, 2 for bidirectional.
+    int num_subs = 0;
+
+    // NUMA node under which the benchmark is done.
+    uint64_t numa_id = 0;
+
+    // Data buffer size used.
+    uint64_t size = 0;
+
+    // Number of loops to run.
+    uint64_t num_loops = 0;
+
+    // Uses SM copy, otherwise DMA copy.
+    bool is_sm_copy = false;
+
+    // Sub-benchmarks in parallel.
+    SubBenchArgs subs[kMaxNumSubs];
 };
 
 // Options accepted by this program.
@@ -94,14 +102,11 @@ struct Opts {
     // Whether device-to-device transfer needs to be evaluated.
     bool dtod_enabled = false;
 
-    // Whether bidirectional transfer between host and device needs to be evaluated.
-    bool htod_with_dtoh_enabled = false;
-
-    // Whether bidirectional transfer between device and device needs to be evaluated.
-    bool dtod_bidirectional_enabled = false;
+    // Whether bidirectional transfer is enabled.
+    bool bidirectional_enabled = false;
 };
 
-// Pring usage of this program.
+// Print usage of this program.
 void PrintUsage() {
     printf("Usage: gpu_copy "
            "--size <size> "
@@ -111,8 +116,7 @@ void PrintUsage() {
            "[--htod] "
            "[--dtoh] "
            "[--dtod] "
-           "[--htod_with_dtoh] "
-           "[--dtod_bidirectional]\n");
+           "[--bidirectional]\n");
 }
 
 // Parse options of this program.
@@ -125,8 +129,7 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         kEnableHToD,
         kEnableDToH,
         kEnableDToD,
-        kEnableHToDWithDToH,
-        kEnableDToDBidirectional
+        kEnableBidirectional
     };
     const struct option options[] = {
         {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
@@ -136,8 +139,7 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
         {"dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToH)},
         {"dtod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToD)},
-        {"htod_with_dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToDWithDToH)},
-        {"dtod_bidirectional", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToDBidirectional)}};
+        {"bidirectional", no_argument, nullptr, static_cast<int>(OptIdx::kEnableBidirectional)}};
     int getopt_ret = 0;
     int opt_idx = 0;
     bool size_specified = false;
@@ -186,11 +188,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         case static_cast<int>(OptIdx::kEnableDToD):
             opts->dtod_enabled = true;
             break;
-        case static_cast<int>(OptIdx::kEnableHToDWithDToH):
-            opts->htod_with_dtoh_enabled = true;
-            break;
-        case static_cast<int>(OptIdx::kEnableDToDBidirectional):
-            opts->dtod_bidirectional_enabled = true;
+        case static_cast<int>(OptIdx::kEnableBidirectional):
+            opts->bidirectional_enabled = true;
             break;
         default:
             parse_err = true;
@@ -226,75 +225,80 @@ int SetGpu(int gpu_id) {
     return 0;
 }
 
-// Prepare data buffers to be used.
-int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
+// Prepare data buffers and streams to be used.
+int PrepareBufAndStream(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     constexpr int uint8_mod = 256;
 
-    // Generate data to copy
-    buffers->data_buf = static_cast<uint8_t *>(numa_alloc_onnode(args.size, args.numa_id));
-    for (int i = 0; i < args.size; i++) {
-        buffers->data_buf[i] = static_cast<uint8_t>(i % uint8_mod);
-    }
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs& sub = args->subs[i];
 
-    // Allocate check buffer
-    buffers->check_buf = static_cast<uint8_t *>(numa_alloc_onnode(args.size, args.numa_id));
+        // Generate data to copy
+        sub.data_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
+        for (int j = 0; j < args->size; j++) {
+            sub.data_buf[j] = static_cast<uint8_t>(j % uint8_mod);
+        }
 
-    // Allocate buffers for src/dst devices
-    constexpr int num_devices = 2;
-    bool is_dev_gpu[num_devices] = {args.is_src_dev_gpu, args.is_dst_dev_gpu};
-    int dev_ids[num_devices] = {args.src_gpu_id, args.dst_gpu_id};
-    uint8_t **host_buf_ptrs[num_devices] = {&(buffers->src_dev_host_buf_ptr), &(buffers->dst_dev_host_buf_ptr)};
-    uint8_t **gpu_buf_ptrs[num_devices] = {&(buffers->src_dev_gpu_buf_ptr), &(buffers->dst_dev_gpu_buf_ptr)};
-    for (int i = 0; i < num_devices; i++) {
-        // Allocate buffers
-        if (is_dev_gpu[i]) {
-            // Set to buffer device for GPU buffer
-            if (SetGpu(dev_ids[i])) {
-                return -1;
+        // Allocate check buffer
+        sub.check_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
+
+        // Allocate buffers for src/dst devices
+        constexpr int num_devices = 2;
+        bool is_dev_gpu[num_devices] = {sub.is_src_dev_gpu, sub.is_dst_dev_gpu};
+        int dev_ids[num_devices] = {sub.src_gpu_id, sub.dst_gpu_id};
+        uint8_t **host_buf_ptrs[num_devices] = {&(sub.src_dev_host_buf_ptr), &(sub.dst_dev_host_buf_ptr)};
+        uint8_t **gpu_buf_ptrs[num_devices] = {&(sub.src_dev_gpu_buf_ptr), &(sub.dst_dev_gpu_buf_ptr)};
+        for (int j = 0; j < num_devices; j++) {
+            // Allocate buffers
+            if (is_dev_gpu[j]) {
+                // Set to buffer device for GPU buffer
+                if (SetGpu(dev_ids[j])) {
+                    return -1;
+                }
+                *(host_buf_ptrs[j]) = nullptr;
+                cuda_err = cudaMalloc(gpu_buf_ptrs[j], args->size);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "PrepareBufAndStream::cudaMalloc error: %d\n", cuda_err);
+                    return -1;
+                }
+            } else {
+                // Set to worker device for host memory buffer
+                if (SetGpu(sub.worker_gpu_id)) {
+                    return -1;
+                }
+                *(host_buf_ptrs[j]) = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
+                cuda_err = cudaHostRegister(*(host_buf_ptrs[j]), args->size, cudaHostRegisterMapped);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "PrepareBufAndStream::cudaHostRegister error: %d\n", cuda_err);
+                    return -1;
+                }
+                cuda_err = cudaHostGetDevicePointer((void **)gpu_buf_ptrs[j], *(host_buf_ptrs[j]), 0);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "PrepareBufAndStream::cudaHostGetDevicePointer error: %d\n", cuda_err);
+                    return -1;
+                }
             }
-            *(host_buf_ptrs[i]) = nullptr;
-            // Allocate 2x sized buffer for bidirectional tests
-            cuda_err = cudaMalloc(gpu_buf_ptrs[i], args.is_bidirectional ? args.size * 2 : args.size);
-            if (cuda_err != cudaSuccess) {
-                fprintf(stderr, "PrepareBuf::cudaMalloc error: %d\n", cuda_err);
-                return -1;
-            }
-        } else {
-            // Set to worker device for host memory buffer
-            if (SetGpu(args.worker_gpu_id)) {
-                return -1;
-            }
-            *(host_buf_ptrs[i]) = static_cast<uint8_t *>(
-                numa_alloc_onnode(args.is_bidirectional ? args.size * 2 : args.size, args.numa_id));
-            cuda_err = cudaHostRegister(*(host_buf_ptrs[i]), args.is_bidirectional ? args.size * 2 : args.size,
-                                        cudaHostRegisterMapped);
-            if (cuda_err != cudaSuccess) {
-                fprintf(stderr, "PrepareBuf::cudaHostRegister error: %d\n", cuda_err);
-                return -1;
-            }
-            cuda_err = cudaHostGetDevicePointer((void **)gpu_buf_ptrs[i], *(host_buf_ptrs[i]), 0);
-            if (cuda_err != cudaSuccess) {
-                fprintf(stderr, "PrepareBuf::cudaHostGetDevicePointer error: %d\n", cuda_err);
+        }
+
+        // Initialize source buffer
+        if (sub.is_src_dev_gpu) {
+            if (SetGpu(sub.src_gpu_id)) {
                 return -1;
             }
         }
-    }
-
-    // Initialize source buffer
-    if (SetGpu(args.src_gpu_id)) {
-        return -1;
-    }
-    cuda_err = cudaMemcpy(buffers->src_dev_gpu_buf_ptr, buffers->data_buf, args.size, cudaMemcpyDefault);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "PrepareBuf::cudaMemcpy error: %d\n", cuda_err);
-        return -1;
-    }
-    if (args.is_bidirectional) {
-        cuda_err =
-            cudaMemcpy(buffers->dst_dev_gpu_buf_ptr + args.size, buffers->data_buf, args.size, cudaMemcpyDefault);
+        cuda_err = cudaMemcpy(sub.src_dev_gpu_buf_ptr, sub.data_buf, args->size, cudaMemcpyDefault);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "PrepareBuf::cudaMemcpy error: %d\n", cuda_err);
+            fprintf(stderr, "PrepareBufAndStream::cudaMemcpy error: %d\n", cuda_err);
+            return -1;
+        }
+
+        // Initialize stream on worker device
+        if (SetGpu(sub.worker_gpu_id)) {
+            return -1;
+        }
+        cuda_err = cudaStreamCreateWithFlags(&(sub.stream), cudaStreamNonBlocking);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "PrepareBufAndStream::cudaStreamCreate error: %d\n", cuda_err);
             return -1;
         }
     }
@@ -303,97 +307,100 @@ int PrepareBuf(const BenchArgs &args, Buffers *buffers) {
 }
 
 // Validate the result of data transfer.
-int CheckBuf(const BenchArgs &args, const Buffers &buffers) {
+int CheckBuf(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     int memcmp_result = 0;
 
-    // Copy result
-    memset(buffers.check_buf, 0, args.size);
-    if (SetGpu(args.dst_gpu_id)) {
-        return -1;
-    }
-    cuda_err = cudaMemcpy(buffers.check_buf, buffers.dst_dev_gpu_buf_ptr, args.size, cudaMemcpyDefault);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "CheckBuf::cudaMemcpy error: %d\n", cuda_err);
-        return -1;
-    }
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs& sub = args->subs[i];
 
-    // Validate result
-    memcmp_result = memcmp(buffers.data_buf, buffers.check_buf, args.size);
-    if (memcmp_result) {
-        fprintf(stderr, "CheckBuf: Memory check failed\n");
-        return -1;
-    }
-
-    // Check another side
-    if (args.is_bidirectional) {
-        memset(buffers.check_buf, 0, args.size);
-        if (SetGpu(args.src_gpu_id)) {
+        // Copy result
+        memset(sub.check_buf, 0, args->size);
+        if (SetGpu(sub.dst_gpu_id)) {
             return -1;
         }
-        cuda_err = cudaMemcpy(buffers.check_buf, buffers.src_dev_gpu_buf_ptr + args.size, args.size, cudaMemcpyDefault);
+        cuda_err = cudaMemcpy(sub.check_buf, sub.dst_dev_gpu_buf_ptr, args->size, cudaMemcpyDefault);
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "CheckBuf::cudaMemcpy error: %d\n", cuda_err);
             return -1;
         }
-        memcmp_result = memcmp(buffers.data_buf, buffers.check_buf, args.size);
+
+        // Validate result
+        memcmp_result = memcmp(sub.data_buf, sub.check_buf, args->size);
         if (memcmp_result) {
             fprintf(stderr, "CheckBuf: Memory check failed\n");
             return -1;
         }
     }
+
     return 0;
 }
 
-// Destroy data buffers
-int DestroyBuf(const BenchArgs &args, Buffers *buffers) {
+// Destroy data buffers and streams
+int DestroyBufAndStream(BenchArgs *args) {
     int ret = 0;
     cudaError_t cuda_err = cudaSuccess;
 
-    // Destroy original data buffer and check buffer
-    if (buffers->data_buf != nullptr)
-        numa_free(buffers->data_buf, args.size);
-    if (buffers->check_buf != nullptr)
-        numa_free(buffers->check_buf, args.size);
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs& sub = args->subs[i];
 
-    // Only destroy buffers for src/dst devices
-    constexpr int num_devices = 2;
-    bool is_dev_gpu[num_devices] = {args.is_src_dev_gpu, args.is_dst_dev_gpu};
-    int dev_ids[num_devices] = {args.src_gpu_id, args.dst_gpu_id};
-    uint8_t **host_buf_ptrs[num_devices] = {&(buffers->src_dev_host_buf_ptr), &(buffers->dst_dev_host_buf_ptr)};
-    uint8_t **gpu_buf_ptrs[num_devices] = {&(buffers->src_dev_gpu_buf_ptr), &(buffers->dst_dev_gpu_buf_ptr)};
-    for (int i = 0; i < num_devices; i++) {
-        // Destroy buffers
-        if (is_dev_gpu[i]) {
-            if (*(gpu_buf_ptrs[i]) == nullptr) {
-                continue;
+        // Destroy original data buffer and check buffer
+        if (sub.data_buf != nullptr) {
+            numa_free(sub.data_buf, args->size);
+        }
+        if (sub.check_buf != nullptr) {
+            numa_free(sub.check_buf, args->size);
+        }
+
+        // Only destroy buffers for src/dst devices
+        constexpr int num_devices = 2;
+        bool is_dev_gpu[num_devices] = {sub.is_src_dev_gpu, sub.is_dst_dev_gpu};
+        int dev_ids[num_devices] = {sub.src_gpu_id, sub.dst_gpu_id};
+        uint8_t **host_buf_ptrs[num_devices] = {&(sub.src_dev_host_buf_ptr), &(sub.dst_dev_host_buf_ptr)};
+        uint8_t **gpu_buf_ptrs[num_devices] = {&(sub.src_dev_gpu_buf_ptr), &(sub.dst_dev_gpu_buf_ptr)};
+        for (int i = 0; i < num_devices; i++) {
+            // Destroy buffers
+            if (is_dev_gpu[i]) {
+                if (*(gpu_buf_ptrs[i]) == nullptr) {
+                    continue;
+                }
+                // Set to buffer device for GPU buffer
+                if (SetGpu(dev_ids[i])) {
+                    return -1;
+                }
+                cuda_err = cudaFree(*(gpu_buf_ptrs[i]));
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "DestroyBufAndStream::cudaFree error: %d\n", cuda_err);
+                    ret = -1;
+                }
+                *(gpu_buf_ptrs[i]) = nullptr;
+            } else {
+                if (*(host_buf_ptrs[i]) == nullptr) {
+                    continue;
+                }
+                // Set to worker device for host memory buffer
+                if (SetGpu(sub.worker_gpu_id)) {
+                    return -1;
+                }
+                cuda_err = cudaHostUnregister(*(host_buf_ptrs[i]));
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "DestroyBufAndStream::cudaHostUnregister error: %d\n", cuda_err);
+                    ret = -1;
+                }
+                numa_free(*(host_buf_ptrs[i]), args->size);
+                *(host_buf_ptrs[i]) = nullptr;
+                *(gpu_buf_ptrs[i]) = nullptr;
             }
-            // Set to buffer device for GPU buffer
-            if (SetGpu(dev_ids[i])) {
-                return -1;
-            }
-            cuda_err = cudaFree(*(gpu_buf_ptrs[i]));
-            if (cuda_err != cudaSuccess) {
-                fprintf(stderr, "DestroyBuf::cudaFree error: %d\n", cuda_err);
-                ret = -1;
-            }
-            *(gpu_buf_ptrs[i]) = nullptr;
-        } else {
-            if (*(host_buf_ptrs[i]) == nullptr) {
-                continue;
-            }
-            // Set to worker device for host memory buffer
-            if (SetGpu(args.worker_gpu_id)) {
-                return -1;
-            }
-            cuda_err = cudaHostUnregister(*(host_buf_ptrs[i]));
-            if (cuda_err != cudaSuccess) {
-                fprintf(stderr, "DestroyBuf::cudaHostUnregister error: %d\n", cuda_err);
-                ret = -1;
-            }
-            numa_free(*(host_buf_ptrs[i]), args.is_bidirectional ? args.size * 2 : args.size);
-            *(host_buf_ptrs[i]) = nullptr;
-            *(gpu_buf_ptrs[i]) = nullptr;
+        }
+
+        // Destroy stream on worker device
+        if (SetGpu(sub.worker_gpu_id)) {
+            return -1;
+        }
+        cuda_err = cudaStreamDestroy(sub.stream);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "DestoryBufAndStream::cudaStreamDestroy error: %d\n", cuda_err);
+            return -1;
         }
     }
 
@@ -450,100 +457,71 @@ __global__ void SMCopyKernel(ulong2 *tgt, const ulong2 *src) {
 }
 
 // Print result tag as <src_dev>_to_<dst_dev>_by_<worker_dev>_using_<sm|dma>_under_<numa_node>.
-void PringResultTag(const BenchArgs &args) {
-    if (args.is_src_dev_gpu) {
-        printf("gpu%d", args.src_gpu_id);
+void PrintResultTag(const BenchArgs &args) {
+    if (args.subs[0].is_src_dev_gpu) {
+        printf("gpu%d", args.subs[0].src_gpu_id);
     } else {
         printf("cpu");
     }
     printf("_to_");
-    if (args.is_dst_dev_gpu) {
-        printf("gpu%d", args.dst_gpu_id);
+    if (args.subs[0].is_dst_dev_gpu) {
+        printf("gpu%d", args.subs[0].dst_gpu_id);
     } else {
         printf("cpu");
     }
-    printf("_by_gpu%d_using_%s_under_numa%lu_%s", args.worker_gpu_id, args.is_sm_copy ? "sm" : "dma", args.numa_id,
-           args.is_bidirectional ? "bi" : "uni");
+    if (args.subs[0].is_src_dev_gpu && args.subs[0].is_dst_dev_gpu &&
+        args.subs[0].src_gpu_id != args.subs[0].dst_gpu_id) {
+        if (args.subs[0].src_gpu_id == args.subs[0].worker_gpu_id) {
+            printf("_write");
+        } else {
+            printf("_read");
+        }
+    }
+    printf("_by_%s_under_numa%lu", args.is_sm_copy ? "sm" : "dma", args.numa_id);
+    if (args.num_subs == 1) {
+        printf("_uni");
+    } else {
+        printf("_bi");
+    }
 }
 
 // Run copy benchmark.
-int RunCopy(const BenchArgs &args, const Buffers &buffers) {
+int RunCopy(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
-    cudaStream_t stream, stream_2;
     uint64_t num_thread_blocks;
 
     // Validate data size for SM copy
-    if (args.is_sm_copy) {
+    if (args->is_sm_copy) {
         uint64_t num_elements_in_thread_block = NUM_LOOP_UNROLL * NUM_THREADS_IN_BLOCK;
         uint64_t num_bytes_in_thread_block = num_elements_in_thread_block * sizeof(ulong2);
-        if (args.size % num_bytes_in_thread_block) {
+        if (args->size % num_bytes_in_thread_block) {
             fprintf(stderr, "RunCopy: Data size should be multiple of %lu\n", num_bytes_in_thread_block);
             return -1;
         }
-        num_thread_blocks = args.size / num_bytes_in_thread_block;
-    }
-
-    // Create stream to launch kernels
-    if (SetGpu(args.worker_gpu_id)) {
-        return -1;
-    }
-    cuda_err = cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "RunCopy::cudaStreamCreate error: %d\n", cuda_err);
-        return -1;
-    }
-    // P2P bidirecitonal test, create a second stream
-    if (args.is_bidirectional) {
-        if (SetGpu(args.worker_gpu_id_2)) {
-            return -1;
-        }
-        cuda_err = cudaStreamCreateWithFlags(&stream_2, cudaStreamNonBlocking);
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunCopy::cudaStreamCreate error: %d\n", cuda_err);
-            return -1;
-        }
+        num_thread_blocks = args->size / num_bytes_in_thread_block;
     }
 
     // Launch jobs and collect running time
     auto start = std::chrono::steady_clock::now();
-    for (int i = 0; i < args.num_loops; i++) {
-        if (args.is_sm_copy) {
-            if (SetGpu(args.worker_gpu_id)) {
+    for (int i = 0; i < args->num_loops; i++) {
+        for (int j = 0; j < args->num_subs; j++) {
+            SubBenchArgs& sub = args->subs[j];
+            if (SetGpu(sub.worker_gpu_id)) {
                 return -1;
             }
-            SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, stream>>>(
-                reinterpret_cast<ulong2 *>(buffers.dst_dev_gpu_buf_ptr),
-                reinterpret_cast<ulong2 *>(buffers.src_dev_gpu_buf_ptr));
-            if (args.is_bidirectional) {
-                if (SetGpu(args.worker_gpu_id_2)) {
-                    return -1;
-                }
-                SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, stream_2>>>(
-                    reinterpret_cast<ulong2 *>(buffers.src_dev_gpu_buf_ptr + args.size),
-                    reinterpret_cast<ulong2 *>(buffers.dst_dev_gpu_buf_ptr + args.size));
-            }
-        } else {
-            if (SetGpu(args.worker_gpu_id)) {
-                return -1;
-            }
-            cudaMemcpyAsync(buffers.dst_dev_gpu_buf_ptr, buffers.src_dev_gpu_buf_ptr, args.size, cudaMemcpyDefault,
-                            stream);
-            if (args.is_bidirectional) {
-                if (SetGpu(args.worker_gpu_id_2)) {
-                    return -1;
-                }
-                cudaMemcpyAsync(buffers.src_dev_gpu_buf_ptr + args.size, buffers.dst_dev_gpu_buf_ptr + args.size,
-                                args.size, cudaMemcpyDefault, stream_2);
+            if (args->is_sm_copy) {
+                SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, sub.stream>>>(
+                    reinterpret_cast<ulong2 *>(sub.dst_dev_gpu_buf_ptr),
+                    reinterpret_cast<ulong2 *>(sub.src_dev_gpu_buf_ptr));
+            } else {
+                cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr,
+                                args->size, cudaMemcpyDefault, sub.stream);
             }
         }
     }
-    cuda_err = cudaStreamSynchronize(stream);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "RunCopy::cudaStreamSynchronize error: %d\n", cuda_err);
-        return -1;
-    }
-    if (args.is_bidirectional && args.is_src_dev_gpu) {
-        cuda_err = cudaStreamSynchronize(stream_2);
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs& sub = args->subs[i];
+        cuda_err = cudaStreamSynchronize(sub.stream);
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "RunCopy::cudaStreamSynchronize error: %d\n", cuda_err);
             return -1;
@@ -551,25 +529,11 @@ int RunCopy(const BenchArgs &args, const Buffers &buffers) {
     }
     auto end = std::chrono::steady_clock::now();
 
-    // Destroy stream
-    cuda_err = cudaStreamDestroy(stream);
-    if (cuda_err != cudaSuccess) {
-        fprintf(stderr, "RunCopy::cudaStreamDestroy error: %d\n", cuda_err);
-        return -1;
-    }
-    if (args.is_bidirectional && args.is_src_dev_gpu) {
-        cuda_err = cudaStreamDestroy(stream_2);
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunCopy::cudaStreamDestroy error: %d\n", cuda_err);
-            return -1;
-        }
-    }
-
     // Calculate and display bandwidth if no problem
     double time_in_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
 
-    PringResultTag(args);
-    printf(" %g\n", args.size * args.num_loops / time_in_sec / 1e9 * (args.is_bidirectional ? 2 : 1));
+    PrintResultTag(*args);
+    printf(" %g\n", args->size * args->num_loops * args->num_subs / time_in_sec / 1e9);
 
     return 0;
 }
@@ -599,22 +563,71 @@ int EnablePeerAccess(int src_gpu_id, int dst_gpu_id, int *can_access) {
     return 0;
 }
 
-int RunBench(const BenchArgs &args) {
+int RunBench(BenchArgs *args) {
     int ret = 0;
     int destroy_buf_ret = 0;
-    Buffers buffers;
-    ret = PrepareBuf(args, &buffers);
+    ret = PrepareBufAndStream(args);
     if (ret == 0) {
-        ret = RunCopy(args, buffers);
+        ret = RunCopy(args);
         if (ret == 0) {
-            ret = CheckBuf(args, buffers);
+            ret = CheckBuf(args);
         }
     }
-    destroy_buf_ret = DestroyBuf(args, &buffers);
+    destroy_buf_ret = DestroyBufAndStream(args);
     if (ret == 0) {
         ret = destroy_buf_ret;
     }
     return ret;
+}
+
+void SetSubBenchArgsForHToD(int gpu_id, bool is_bidirectional, BenchArgs *args) {
+    args->subs[0].is_src_dev_gpu = false;
+    args->subs[0].is_dst_dev_gpu = true;
+    args->subs[0].dst_gpu_id = gpu_id;
+    args->subs[0].worker_gpu_id = gpu_id;
+    if (is_bidirectional) {
+        args->num_subs = 2;
+        args->subs[1].is_src_dev_gpu = true;
+        args->subs[1].is_dst_dev_gpu = false;
+        args->subs[1].src_gpu_id = gpu_id;
+        args->subs[1].worker_gpu_id = gpu_id;
+    } else {
+        args->num_subs = 1;
+    }
+}
+
+void SetSubBenchArgsForDToH(int gpu_id, bool is_bidirectional, BenchArgs *args) {
+    args->subs[0].is_src_dev_gpu = true;
+    args->subs[0].is_dst_dev_gpu = false;
+    args->subs[0].src_gpu_id = gpu_id;
+    args->subs[0].worker_gpu_id = gpu_id;
+    if (is_bidirectional) {
+        args->num_subs = 2;
+        args->subs[1].is_src_dev_gpu = false;
+        args->subs[1].is_dst_dev_gpu = true;
+        args->subs[1].dst_gpu_id = gpu_id;
+        args->subs[1].worker_gpu_id = gpu_id;
+    } else {
+        args->num_subs = 1;
+    }
+}
+
+void SetSubBenchArgsForDToD(int src_gpu_id, int dst_gpu_id, bool is_read, bool is_bidirectional, BenchArgs *args) {
+    args->subs[0].is_src_dev_gpu = true;
+    args->subs[0].is_dst_dev_gpu = true;
+    args->subs[0].src_gpu_id = src_gpu_id;
+    args->subs[0].dst_gpu_id = dst_gpu_id;
+    args->subs[0].worker_gpu_id = is_read ? dst_gpu_id : src_gpu_id;
+    if (is_bidirectional) {
+        args->num_subs = 2;
+        args->subs[1].is_src_dev_gpu = true;
+        args->subs[1].is_dst_dev_gpu = true;
+        args->subs[1].src_gpu_id = dst_gpu_id;
+        args->subs[1].dst_gpu_id = src_gpu_id;
+        args->subs[1].worker_gpu_id = is_read ? src_gpu_id : dst_gpu_id;
+    } else {
+        args->num_subs = 1;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -652,89 +665,54 @@ int main(int argc, char **argv) {
         // Scan all GPUs
         for (int j = 0; j < gpu_count; j++) {
             // Host-to-device benchmark
-            if (opts.htod_enabled || opts.htod_with_dtoh_enabled) {
-                args.is_src_dev_gpu = false;
-                args.is_dst_dev_gpu = true;
-                args.dst_gpu_id = j;
-                args.worker_gpu_id = j;
+            if (opts.htod_enabled) {
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
-                    if (opts.htod_enabled) {
-                        args.is_bidirectional = false;
-                        args_list.push_back(args);
-                    }
-                    if (opts.htod_with_dtoh_enabled) {
-                        args.is_bidirectional = true;
-                        args.worker_gpu_id_2 = j;
-                        args_list.push_back(args);
-                    }
+                    SetSubBenchArgsForHToD(j, opts.bidirectional_enabled, &args);
+                    args_list.push_back(args);
                 }
                 if (opts.dma_copy_enabled) {
                     args.is_sm_copy = false;
-                    if (opts.htod_enabled) {
-                        args.is_bidirectional = false;
-                        args_list.push_back(args);
-                    }
-                    if (opts.htod_with_dtoh_enabled) {
-                        args.is_bidirectional = true;
-                        args_list.push_back(args);
-                    }
+                    SetSubBenchArgsForHToD(j, opts.bidirectional_enabled, &args);
+                    args_list.push_back(args);
                 }
             }
             // Device-to-host benchmark
             if (opts.dtoh_enabled) {
-                args.is_src_dev_gpu = true;
-                args.src_gpu_id = j;
-                args.is_dst_dev_gpu = false;
-                args.worker_gpu_id = j;
-                args.is_bidirectional = false;
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
+                    SetSubBenchArgsForDToH(j, opts.bidirectional_enabled, &args);
                     args_list.push_back(args);
                 }
                 if (opts.dma_copy_enabled) {
                     args.is_sm_copy = false;
+                    SetSubBenchArgsForDToH(j, opts.bidirectional_enabled, &args);
                     args_list.push_back(args);
                 }
             }
             // Device-to-device benchmark
-            if (opts.dtod_enabled || opts.dtod_bidirectional_enabled) {
-                args.is_src_dev_gpu = true;
-                args.src_gpu_id = j;
-                args.is_dst_dev_gpu = true;
+            if (opts.dtod_enabled) {
                 // Scan all peers
                 for (int k = 0; k < gpu_count; k++) {
-                    args.dst_gpu_id = k;
+                    // Skip second half for bidirectional test
+                    if (opts.bidirectional_enabled && j > k) {
+                        break;
+                    }
                     // P2P write
                     ret = EnablePeerAccess(j, k, &can_access);
                     if (ret != 0) {
                         return -1;
                     }
                     if (can_access) {
-                        args.worker_gpu_id = j;
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;
-                            if (opts.dtod_enabled) {
-                                args.is_bidirectional = false;
-                                args_list.push_back(args);
-                            }
-                            if (opts.dtod_bidirectional_enabled && j <= k) {
-                                args.is_bidirectional = true;
-                                args.worker_gpu_id_2 = k;
-                                args_list.push_back(args);
-                            }
+                            SetSubBenchArgsForDToD(j, k, false, opts.bidirectional_enabled, &args);
+                            args_list.push_back(args);
                         }
                         if (opts.dma_copy_enabled) {
                             args.is_sm_copy = false;
-                            if (opts.dtod_enabled) {
-                                args.is_bidirectional = false;
-                                args_list.push_back(args);
-                            }
-                            if (opts.dtod_bidirectional_enabled && j <= k) {
-                                args.is_bidirectional = true;
-                                args.worker_gpu_id_2 = k;
-                                args_list.push_back(args);
-                            }
+                            SetSubBenchArgsForDToD(j, k, false, opts.bidirectional_enabled, &args);
+                            args_list.push_back(args);
                         }
                     }
                     if (j == k) {
@@ -746,30 +724,15 @@ int main(int argc, char **argv) {
                         return -1;
                     }
                     if (can_access) {
-                        args.worker_gpu_id = k;
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;
-                            if (opts.dtod_enabled) {
-                                args.is_bidirectional = false;
-                                args_list.push_back(args);
-                            }
-                            if (opts.dtod_bidirectional_enabled && j <= k) {
-                                args.is_bidirectional = true;
-                                args.worker_gpu_id_2 = j;
-                                args_list.push_back(args);
-                            }
+                            SetSubBenchArgsForDToD(j, k, true, opts.bidirectional_enabled, &args);
+                            args_list.push_back(args);
                         }
                         if (opts.dma_copy_enabled) {
                             args.is_sm_copy = false;
-                            if (opts.dtod_enabled) {
-                                args.is_bidirectional = false;
-                                args_list.push_back(args);
-                            }
-                            if (opts.dtod_bidirectional_enabled && j <= k) {
-                                args.is_bidirectional = true;
-                                args.worker_gpu_id_2 = j;
-                                args_list.push_back(args);
-                            }
+                            SetSubBenchArgsForDToD(j, k, true, opts.bidirectional_enabled, &args);
+                            args_list.push_back(args);
                         }
                     }
                 }
@@ -777,13 +740,13 @@ int main(int argc, char **argv) {
         }
     }
 
-    for (const BenchArgs &curr_args : args_list) {
+    for (BenchArgs &curr_args : args_list) {
         ret = numa_run_on_node(curr_args.numa_id);
         if (ret != 0) {
             fprintf(stderr, "main::numa_run_on_node error: %d\n", errno);
             return -1;
         }
-        ret = RunBench(curr_args);
+        ret = RunBench(&curr_args);
         if (ret != 0) {
             return -1;
         }

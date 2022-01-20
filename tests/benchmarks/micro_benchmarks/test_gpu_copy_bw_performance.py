@@ -29,10 +29,10 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         size = 1048576
         num_loops = 10000
-        mem_types = ['htod', 'dtoh', 'dtod', 'htod_with_dtoh', 'dtod_bidirectional']
+        mem_types = ['htod', 'dtoh', 'dtod']
         copy_types = ['sm', 'dma']
 
-        parameters = '--mem_type %s --copy_type %s --size %d --num_loops %d' % \
+        parameters = '--mem_type %s --copy_type %s --size %d --num_loops %d --bidirectional' % \
             (' '.join(mem_types), ' '.join(copy_types), size, num_loops)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
@@ -49,6 +49,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.copy_type == copy_types)
         assert (benchmark._args.size == size)
         assert (benchmark._args.num_loops == num_loops)
+        assert (benchmark._args.bidirectional)
 
         # Check command
         assert (1 == len(benchmark._commands))
@@ -59,6 +60,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             assert ('--%s_copy' % copy_type in benchmark._commands[0])
         assert ('--size %d' % size in benchmark._commands[0])
         assert ('--num_loops %d' % num_loops in benchmark._commands[0])
+        assert ('--bidirectional' in benchmark._commands[0])
 
     @decorator.cuda_test
     def test_gpu_copy_bw_performance_command_generation_cuda(self):
@@ -86,72 +88,67 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Positive case - valid raw output.
         test_raw_output = """
-cpu_to_gpu0_by_gpu0_using_sm_under_numa0_uni 26.1951
-cpu_to_gpu0_by_gpu0_using_sm_under_numa0_bi 8.50481
-cpu_to_gpu0_by_gpu0_using_dma_under_numa0_uni 26.1743
-cpu_to_gpu0_by_gpu0_using_dma_under_numa0_bi 36.4315
-gpu0_to_cpu_by_gpu0_using_sm_under_numa0_uni 5.01717
-gpu0_to_cpu_by_gpu0_using_dma_under_numa0_uni 21.8663
-gpu0_to_gpu0_by_gpu0_using_sm_under_numa0_uni 658.658
-gpu0_to_gpu0_by_gpu0_using_sm_under_numa0_bi 687.988
-gpu0_to_gpu0_by_gpu0_using_dma_under_numa0_uni 632.649
-gpu0_to_gpu0_by_gpu0_using_dma_under_numa0_bi 661.429
-gpu0_to_gpu1_by_gpu0_using_sm_under_numa0_uni 250.051
-gpu0_to_gpu1_by_gpu0_using_sm_under_numa0_bi 426.696
-gpu0_to_gpu1_by_gpu0_using_dma_under_numa0_uni 275.367
-gpu0_to_gpu1_by_gpu0_using_dma_under_numa0_bi 522.122
-gpu0_to_gpu1_by_gpu1_using_sm_under_numa0_uni 253.928
-gpu0_to_gpu1_by_gpu1_using_sm_under_numa0_bi 447.098
-gpu0_to_gpu1_by_gpu1_using_dma_under_numa0_uni 264.811
-gpu0_to_gpu1_by_gpu1_using_dma_under_numa0_bi 503.603
-cpu_to_gpu1_by_gpu1_using_sm_under_numa0_uni 26.1694
-cpu_to_gpu1_by_gpu1_using_sm_under_numa0_bi 8.52593
-cpu_to_gpu1_by_gpu1_using_dma_under_numa0_uni 26.2031
-cpu_to_gpu1_by_gpu1_using_dma_under_numa0_bi 36.4327
-gpu1_to_cpu_by_gpu1_using_sm_under_numa0_uni 5.01487
-gpu1_to_cpu_by_gpu1_using_dma_under_numa0_uni 21.8666
-gpu1_to_gpu0_by_gpu1_using_sm_under_numa0_uni 249.938
-gpu1_to_gpu0_by_gpu1_using_dma_under_numa0_uni 275.359
-gpu1_to_gpu0_by_gpu0_using_sm_under_numa0_uni 253.994
-gpu1_to_gpu0_by_gpu0_using_dma_under_numa0_uni 265.006
-gpu1_to_gpu1_by_gpu1_using_sm_under_numa0_uni 660.328
-gpu1_to_gpu1_by_gpu1_using_sm_under_numa0_bi 690.055
-gpu1_to_gpu1_by_gpu1_using_dma_under_numa0_uni 630.154
-gpu1_to_gpu1_by_gpu1_using_dma_under_numa0_bi 663.159
-cpu_to_gpu0_by_gpu0_using_sm_under_numa1_uni 26.1955
-cpu_to_gpu0_by_gpu0_using_sm_under_numa1_bi 9.45794
-cpu_to_gpu0_by_gpu0_using_dma_under_numa1_uni 26.1965
-cpu_to_gpu0_by_gpu0_using_dma_under_numa1_bi 36.4124
-gpu0_to_cpu_by_gpu0_using_sm_under_numa1_uni 5.67736
-gpu0_to_cpu_by_gpu0_using_dma_under_numa1_uni 21.8603
-gpu0_to_gpu0_by_gpu0_using_sm_under_numa1_uni 654.661
-gpu0_to_gpu0_by_gpu0_using_sm_under_numa1_bi 689.692
-gpu0_to_gpu0_by_gpu0_using_dma_under_numa1_uni 635.206
-gpu0_to_gpu0_by_gpu0_using_dma_under_numa1_bi 661.315
-gpu0_to_gpu1_by_gpu0_using_sm_under_numa1_uni 250.125
-gpu0_to_gpu1_by_gpu0_using_sm_under_numa1_bi 427.628
-gpu0_to_gpu1_by_gpu0_using_dma_under_numa1_uni 275.626
-gpu0_to_gpu1_by_gpu0_using_dma_under_numa1_bi 522.218
-gpu0_to_gpu1_by_gpu1_using_sm_under_numa1_uni 253.628
-gpu0_to_gpu1_by_gpu1_using_sm_under_numa1_bi 447.183
-gpu0_to_gpu1_by_gpu1_using_dma_under_numa1_uni 264.766
-gpu0_to_gpu1_by_gpu1_using_dma_under_numa1_bi 503.57
-cpu_to_gpu1_by_gpu1_using_sm_under_numa1_uni 26.1925
-cpu_to_gpu1_by_gpu1_using_sm_under_numa1_bi 9.44989
-cpu_to_gpu1_by_gpu1_using_dma_under_numa1_uni 26.2136
-cpu_to_gpu1_by_gpu1_using_dma_under_numa1_bi 36.4129
-gpu1_to_cpu_by_gpu1_using_sm_under_numa1_uni 5.67653
-gpu1_to_cpu_by_gpu1_using_dma_under_numa1_uni 21.8599
-gpu1_to_gpu0_by_gpu1_using_sm_under_numa1_uni 249.873
-gpu1_to_gpu0_by_gpu1_using_dma_under_numa1_uni 275.437
-gpu1_to_gpu0_by_gpu0_using_sm_under_numa1_uni 253.876
-gpu1_to_gpu0_by_gpu0_using_dma_under_numa1_uni 264.943
-gpu1_to_gpu1_by_gpu1_using_sm_under_numa1_uni 659.813
-gpu1_to_gpu1_by_gpu1_using_sm_under_numa1_bi 689.295
-gpu1_to_gpu1_by_gpu1_using_dma_under_numa1_uni 634.38
-gpu1_to_gpu1_by_gpu1_using_dma_under_numa1_bi 663.085
+cpu_to_gpu0_by_sm_under_numa0_uni 26.1736
+cpu_to_gpu0_by_dma_under_numa0_uni 26.1878
+gpu0_to_cpu_by_sm_under_numa0_uni 5.01589
+gpu0_to_cpu_by_dma_under_numa0_uni 21.8659
+gpu0_to_gpu0_by_sm_under_numa0_uni 655.759
+gpu0_to_gpu0_by_dma_under_numa0_uni 633.325
+gpu0_to_gpu1_write_by_sm_under_numa0_uni 250.122
+gpu0_to_gpu1_write_by_dma_under_numa0_uni 274.951
+gpu0_to_gpu1_read_by_sm_under_numa0_uni 253.563
+gpu0_to_gpu1_read_by_dma_under_numa0_uni 264.009
+cpu_to_gpu1_by_sm_under_numa0_uni 26.187
+cpu_to_gpu1_by_dma_under_numa0_uni 26.207
+gpu1_to_cpu_by_sm_under_numa0_uni 5.01132
+gpu1_to_cpu_by_dma_under_numa0_uni 21.8635
+gpu1_to_gpu0_write_by_sm_under_numa0_uni 249.824
+gpu1_to_gpu0_write_by_dma_under_numa0_uni 275.123
+gpu1_to_gpu0_read_by_sm_under_numa0_uni 253.469
+gpu1_to_gpu0_read_by_dma_under_numa0_uni 264.908
+gpu1_to_gpu1_by_sm_under_numa0_uni 658.338
+gpu1_to_gpu1_by_dma_under_numa0_uni 631.148
+cpu_to_gpu0_by_sm_under_numa1_uni 26.1542
+cpu_to_gpu0_by_dma_under_numa1_uni 26.2007
+gpu0_to_cpu_by_sm_under_numa1_uni 5.67356
+gpu0_to_cpu_by_dma_under_numa1_uni 21.8599
+gpu0_to_gpu0_by_sm_under_numa1_uni 656.935
+gpu0_to_gpu0_by_dma_under_numa1_uni 631.974
+gpu0_to_gpu1_write_by_sm_under_numa1_uni 250.118
+gpu0_to_gpu1_write_by_dma_under_numa1_uni 274.778
+gpu0_to_gpu1_read_by_sm_under_numa1_uni 253.625
+gpu0_to_gpu1_read_by_dma_under_numa1_uni 264.347
+cpu_to_gpu1_by_sm_under_numa1_uni 26.1905
+cpu_to_gpu1_by_dma_under_numa1_uni 26.2007
+gpu1_to_cpu_by_sm_under_numa1_uni 5.67716
+gpu1_to_cpu_by_dma_under_numa1_uni 21.8579
+gpu1_to_gpu0_write_by_sm_under_numa1_uni 250.064
+gpu1_to_gpu0_write_by_dma_under_numa1_uni 274.924
+gpu1_to_gpu0_read_by_sm_under_numa1_uni 253.746
+gpu1_to_gpu0_read_by_dma_under_numa1_uni 264.256
+gpu1_to_gpu1_by_sm_under_numa1_uni 655.623
+gpu1_to_gpu1_by_dma_under_numa1_uni 634.062
+cpu_to_gpu0_by_sm_under_numa0_bi 8.45975
+cpu_to_gpu0_by_dma_under_numa0_bi 36.4282
+gpu0_to_gpu0_by_sm_under_numa0_bi 689.063
+gpu0_to_gpu0_by_dma_under_numa0_bi 661.7
+gpu0_to_gpu1_write_by_sm_under_numa0_bi 427.446
+gpu0_to_gpu1_write_by_dma_under_numa0_bi 521.577
+gpu0_to_gpu1_read_by_sm_under_numa0_bi 446.835
+gpu0_to_gpu1_read_by_dma_under_numa0_bi 503.158
+cpu_to_gpu1_by_sm_under_numa0_bi 8.4487
+cpu_to_gpu1_by_dma_under_numa0_bi 36.4272
+cpu_to_gpu0_by_sm_under_numa1_bi 9.36164
+cpu_to_gpu0_by_dma_under_numa1_bi 36.411
+gpu0_to_gpu0_by_sm_under_numa1_bi 688.156
+gpu0_to_gpu0_by_dma_under_numa1_bi 662.077
+gpu0_to_gpu1_write_by_sm_under_numa1_bi 427.033
+gpu0_to_gpu1_write_by_dma_under_numa1_bi 521.367
+gpu0_to_gpu1_read_by_sm_under_numa1_bi 446.179
+gpu0_to_gpu1_read_by_dma_under_numa1_bi 503.843
+cpu_to_gpu1_by_sm_under_numa1_bi 9.37368
+cpu_to_gpu1_by_dma_under_numa1_bi 36.4128
 """
-
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
