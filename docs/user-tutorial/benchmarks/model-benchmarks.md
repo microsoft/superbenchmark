@@ -27,15 +27,22 @@ including the following categories:
   * squeezenet: squeezenet1_0, squeezenet1_1
   * others: alexnet, googlenet, inception_v3
 
+For inference, supported percentiles include
+50<sup>th</sup>, 90<sup>th</sup>, 95<sup>th</sup>, 99<sup>th</sup>, and 99.9<sup>th</sup>.
+
 #### Metrics
 
-| Name                                                             | Unit                   | Description                                 |
-|------------------------------------------------------------------|------------------------|---------------------------------------------|
-| model-benchmarks/pytorch-${model_name}/fp32_train_step_time      | time (ms)              | Train step time with single precision.      |
-| model-benchmarks/pytorch-${model_name}/fp32_train_throughput     | throughput (samples/s) | Train throughput with single precision.     |
-| model-benchmarks/pytorch-${model_name}/fp32_inference_step_time  | time (ms)              | Inference step time with single precision.  |
-| model-benchmarks/pytorch-${model_name}/fp32_inference_throughput | throughput (samples/s) | Inference throughput with single precision. |
-| model-benchmarks/pytorch-${model_name}/fp16_train_step_time      | time (ms)              | Train step time with half precision.        |
-| model-benchmarks/pytorch-${model_name}/fp16_train_throughput     | throughput (samples/s) | Train throughput with half precision.       |
-| model-benchmarks/pytorch-${model_name}/fp16_inference_step_time  | time (ms)              | Inference step time with half precision.    |
-| model-benchmarks/pytorch-${model_name}/fp16_inference_throughput | throughput (samples/s) | Inference throughput with half precision.   |
+| Name                                                                            | Unit                   | Description                                                               |
+|---------------------------------------------------------------------------------|------------------------|---------------------------------------------------------------------------|
+| model-benchmarks/pytorch-${model_name}/fp32_train_step_time                     | time (ms)              | The average training step time with single precision.                     |
+| model-benchmarks/pytorch-${model_name}/fp32_train_throughput                    | throughput (samples/s) | The average training throughput with single precision.                    |
+| model-benchmarks/pytorch-${model_name}/fp32_inference_step_time                 | time (ms)              | The average inference step time with single precision.                    |
+| model-benchmarks/pytorch-${model_name}/fp32_inference_throughput                | throughput (samples/s) | The average inference throughput with single precision.                   |
+| model-benchmarks/pytorch-${model_name}/fp32_inference_step_time\_${percentile}  | time (ms)              | The n<sup>th</sup> percentile inference step time with single precision.  |
+| model-benchmarks/pytorch-${model_name}/fp32_inference_throughput\_${percentile} | throughput (samples/s) | The n<sup>th</sup> percentile inference throughput with single precision. |
+| model-benchmarks/pytorch-${model_name}/fp16_train_step_time                     | time (ms)              | The average training step time with half precision.                       |
+| model-benchmarks/pytorch-${model_name}/fp16_train_throughput                    | throughput (samples/s) | The average training throughput with half precision.                      |
+| model-benchmarks/pytorch-${model_name}/fp16_inference_step_time                 | time (ms)              | The average inference step time with half precision.                      |
+| model-benchmarks/pytorch-${model_name}/fp16_inference_throughput                | throughput (samples/s) | The average inference throughput with half precision.                     |
+| model-benchmarks/pytorch-${model_name}/fp16_inference_step_time\_${percentile}  | time (ms)              | The n<sup>th</sup> percentile inference step time with half precision.    |
+| model-benchmarks/pytorch-${model_name}/fp16_inference_throughput\_${percentile} | throughput (samples/s) | The n<sup>th</sup> percentile inference throughput with half precision.   |

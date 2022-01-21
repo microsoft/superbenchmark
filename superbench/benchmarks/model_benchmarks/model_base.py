@@ -377,17 +377,21 @@ class ModelBenchmark(Benchmark):
         if precision.value in precision_metric.keys():
             precision = precision_metric[precision.value]
         metric = '{}_{}_step_time'.format(precision, model_action)
+        reduce_type = ReduceType.MAX if model_action is ModelAction.TRAIN else None
         self._result.add_raw_data(metric, step_times)
-        avg = statistics.mean(step_times)
-        self._result.add_result(metric, avg, reduce_type=ReduceType.MAX if model_action is ModelAction.TRAIN else None)
+        self._result.add_result(metric, statistics.mean(step_times), reduce_type=reduce_type)
+        if model_action == ModelAction.INFERENCE:
+            self._process_percentile_result(metric, step_times, reduce_type=reduce_type)
 
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
         metric = '{}_{}_throughput'.format(precision, model_action)
+        reduce_type = ReduceType.MIN if model_action is ModelAction.TRAIN else None
         self._result.add_raw_data(metric, throughput)
-        avg = statistics.mean(throughput)
-        self._result.add_result(metric, avg, reduce_type=ReduceType.MIN if model_action is ModelAction.TRAIN else None)
+        self._result.add_result(metric, statistics.mean(throughput), reduce_type=reduce_type)
+        if model_action == ModelAction.INFERENCE:
+            self._process_percentile_result(metric, throughput, reduce_type=reduce_type)
 
         return True
 
