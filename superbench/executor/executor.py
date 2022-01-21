@@ -104,15 +104,15 @@ class SuperBenchExecutor():
                 argv.append('--{} {}'.format(name, ' '.join(val)))
         return ' '.join(argv)
 
-    def __exec_benchmark(self, context, log_suffix):
+    def __exec_benchmark(self, benchmark_full_name, context):
         """Launch benchmark for context.
 
         Args:
+            benchmark_full_name (str): Benchmark full name.
             context (BenchmarkContext): Benchmark context to launch.
-            log_suffix (str): Log string suffix.
 
         Return:
-            dict: Benchmark results.
+            dict: Benchmark result.
         """
         try:
             benchmark = BenchmarkRegistry.launch_benchmark(context)
@@ -122,15 +122,17 @@ class SuperBenchExecutor():
                     benchmark.result
                 )
                 if benchmark.return_code.value == 0:
-                    logger.info('Executor succeeded in %s.', log_suffix)
+                    logger.info('Executor succeeded in %s.', benchmark_full_name)
                 else:
-                    logger.error('Executor failed in %s.', log_suffix)
-                return json.loads(benchmark.serialized_result)
+                    logger.error('Executor failed in %s.', benchmark_full_name)
+                result = json.loads(benchmark.serialized_result)
+                result['name'] = benchmark_full_name
+                return result
             else:
-                logger.error('Executor failed in %s, invalid context.', log_suffix)
+                logger.error('Executor failed in %s, invalid context.', benchmark_full_name)
         except Exception as e:
             logger.error(e)
-            logger.error('Executor failed in %s.', log_suffix)
+            logger.error('Executor failed in %s.', benchmark_full_name)
         return None
 
     def __get_rank_id(self):
@@ -216,26 +218,26 @@ class SuperBenchExecutor():
                     ':' not in benchmark_name and benchmark_name.endswith('_models')
                 ):
                     for model in benchmark_config.models:
-                        log_suffix = f'{benchmark_name} ({framework}/{model})'
-                        logger.info('Executor is going to execute %s.', log_suffix)
+                        full_name = f'{benchmark_name}/{framework}-{model}'
+                        logger.info('Executor is going to execute %s.', full_name)
                         context = BenchmarkRegistry.create_benchmark_context(
                             model,
                             platform=self.__get_platform(),
                             framework=Framework(framework.lower()),
                             parameters=self.__get_arguments(benchmark_config.parameters)
                         )
-                        result = self.__exec_benchmark(context, log_suffix)
+                        result = self.__exec_benchmark(full_name, context)
                         benchmark_results.append(result)
                 else:
-                    log_suffix = benchmark_name
-                    logger.info('Executor is going to execute %s.', log_suffix)
+                    full_name = benchmark_name
+                    logger.info('Executor is going to execute %s.', full_name)
                     context = BenchmarkRegistry.create_benchmark_context(
                         benchmark_real_name,
                         platform=self.__get_platform(),
                         framework=Framework(framework.lower()),
                         parameters=self.__get_arguments(benchmark_config.parameters)
                     )
-                    result = self.__exec_benchmark(context, log_suffix)
+                    result = self.__exec_benchmark(full_name, context)
                     benchmark_results.append(result)
 
             if monitor:
