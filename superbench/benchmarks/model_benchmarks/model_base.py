@@ -12,7 +12,6 @@ from superbench.common.utils import logger
 from superbench.benchmarks import Precision, ModelAction, DistributedImpl, DistributedBackend, BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 from superbench.benchmarks.context import Enum
-from superbench.benchmarks.reducer import ReduceType
 
 
 class Optimizer(Enum):
@@ -354,6 +353,17 @@ class ModelBenchmark(Benchmark):
 
         return False
 
+    def _sync_result(self, result):
+        """Function to reduce the result to rank 0.
+
+        Args:
+            result (list): The result data to sync.
+
+        Return:
+            True if reduce result data successfully.
+        """
+        return True
+
     def __process_model_result(self, model_action, precision, step_times):
         """Function to process raw results and save the summarized results.
 
@@ -376,22 +386,26 @@ class ModelBenchmark(Benchmark):
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
         if precision.value in precision_metric.keys():
             precision = precision_metric[precision.value]
-        metric = '{}_{}_step_time'.format(precision, model_action)
-        reduce_type = ReduceType.MAX if model_action is ModelAction.TRAIN else None
-        self._result.add_raw_data(metric, step_times)
-        self._result.add_result(metric, statistics.mean(step_times), reduce_type=reduce_type)
-        if model_action == ModelAction.INFERENCE:
-            self._process_percentile_result(metric, step_times, reduce_type=reduce_type)
-
+        metric_s = '{}_{}_step_time'.format(precision, model_action)
+        metric_t = '{}_{}_throughput'.format(precision, model_action)
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
-        metric = '{}_{}_throughput'.format(precision, model_action)
-        reduce_type = ReduceType.MIN if model_action is ModelAction.TRAIN else None
-        self._result.add_raw_data(metric, throughput)
-        self._result.add_result(metric, statistics.mean(throughput), reduce_type=reduce_type)
-        if model_action == ModelAction.INFERENCE:
-            self._process_percentile_result(metric, throughput, reduce_type=reduce_type)
+        self._result.add_raw_data(metric_s, step_times)
+        self._result.add_raw_data(metric_t, throughput)
+
+        if model_action == ModelAction.TRAIN:
+            if not self._sync_result(step_times):
+                return False
+            if self._local_rank is None or self._local_rank == 0:
+                self._result.add_result(metric_s, statistics.mean(step_times))
+                throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
+                self._result.add_result(metric_t, statistics.mean(throughput))
+        elif model_action == ModelAction.INFERENCE:
+            self._result.add_result(metric_s, statistics.mean(step_times))
+            self._result.add_result(metric_t, statistics.mean(throughput))
+            self._process_percentile_result(metric_s, step_times)
+            self._process_percentile_result(metric_t, throughput)
 
         return True
 
