@@ -3,6 +3,8 @@
 
 """Tests for BenchmarkRegistry module."""
 
+import json
+
 from superbench.benchmarks import Platform, Framework, Precision, BenchmarkRegistry, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks import ModelBenchmark
 
@@ -226,11 +228,11 @@ def test_train():
         '"fp32_train_step_time": [[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]], '
         '"fp32_train_throughput": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
         '"result": {"return_code": [0], "fp32_train_step_time": [2.0], "fp32_train_throughput": [16000.0]}, '
-        '"reduce_op": {"return_code": null, "fp32_train_step_time": "max", "fp32_train_throughput": "min"}}'
+        '"reduce_op": {"return_code": null, "fp32_train_step_time": null, "fp32_train_throughput": null}}'
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32))
-    assert (benchmark.serialized_result == expected_result)
+    assert (json.loads(benchmark.serialized_result) == json.loads(expected_result))
 
     # Step time list is empty (simulate training failure).
     benchmark = create_benchmark('--num_steps 0')
@@ -241,7 +243,7 @@ def test_train():
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__train(Precision.FLOAT32) is False)
-    assert (benchmark.serialized_result == expected_result)
+    assert (json.loads(benchmark.serialized_result) == json.loads(expected_result))
 
 
 def test_inference():
@@ -270,7 +272,7 @@ def test_inference():
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16))
-    assert (benchmark.serialized_result == expected_result)
+    assert (json.loads(benchmark.serialized_result) == json.loads(expected_result))
 
     # Step time list is empty (simulate inference failure).
     benchmark = create_benchmark('--num_steps 0')
@@ -281,7 +283,7 @@ def test_inference():
     )
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16) is False)
-    assert (benchmark.serialized_result == expected_result)
+    assert (json.loads(benchmark.serialized_result) == json.loads(expected_result))
 
 
 def test_benchmark():
@@ -318,10 +320,10 @@ def test_benchmark():
         '"fp16_train_throughput": [[16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0, 16000.0]]}, '
         '"result": {"return_code": [0], "fp32_train_step_time": [2.0], "fp32_train_throughput": [16000.0], '
         '"fp16_train_step_time": [2.0], "fp16_train_throughput": [16000.0]}, '
-        '"reduce_op": {"return_code": null, "fp32_train_step_time": "max", "fp32_train_throughput": "min", '
-        '"fp16_train_step_time": "max", "fp16_train_throughput": "min"}}'
+        '"reduce_op": {"return_code": null, "fp32_train_step_time": null, "fp32_train_throughput": null, '
+        '"fp16_train_step_time": null, "fp16_train_throughput": null}}'
     )
-    assert (benchmark.serialized_result == expected_serialized_result)
+    assert (json.loads(benchmark.serialized_result) == json.loads(expected_serialized_result))
 
     # Negative case for _benchmark() - no supported precision found.
     benchmark = create_benchmark('--precision int16')
