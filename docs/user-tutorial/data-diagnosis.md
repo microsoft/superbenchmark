@@ -148,7 +148,7 @@ True if the current rule is not used alone to filter the defective machine, but 
 
 #### `upper_criteria`
 
-The criteria used for mutliple rules and multiple metrics, which indicate how to use combined results of multiple rules and multiple metrics to label the defective machine. The format should be a lambda function supported by Python. If not set, by default, any metric violates the criteria will be labeled.
+The criteria used for multiple rules and multiple metrics, which indicate how to use combined results of multiple rules and multiple metrics to label the defective machine. The format should be a lambda function supported by Python. If not set, by default, any metric violates the criteria will be labeled.
 
 #### `function`
 
