@@ -55,7 +55,7 @@ class RuleOp:
         return None
 
     @staticmethod
-    def variance(data_row, rule, summary_data_row, details, categories):
+    def variance(data_row, name, rule, summary_data_row, details, categories, label):
         """Rule op function of variance.
 
         Each metric in the rule will calculate the variance (val - baseline / baseline),
@@ -64,15 +64,17 @@ class RuleOp:
 
         Args:
             data_row (pd.Series): raw data of the metrics
+            name (str): the name of the rule
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             summary_data_row (pd.Series): results of the metrics processed after the function
             details (list): defective details including data and rules
             categories (set): categories of violated rules
+            label (dict): the count of the metrics that violate the rule
 
         Returns:
             bool: whether the rule is passed
         """
-        pass_rule = True
+        label_metric_num = 0
         # parse criteria and check if valid
         if not isinstance(eval(rule['criteria'])(0), bool):
             logger.log_and_raise(exception=Exception, msg='invalid criteria format')
@@ -81,7 +83,7 @@ class RuleOp:
             violate_metric = False
             # metric not in raw_data or the value is none, miss test
             if metric not in data_row or pd.isna(data_row[metric]):
-                pass_rule = False
+                label_metric_num += 1
                 details.append(metric + '_miss')
                 categories.add(rule['categories'])
             else:
@@ -95,16 +97,22 @@ class RuleOp:
                 violate_metric = eval(rule['criteria'])(var)
                 # add issued details and categories
                 if violate_metric:
-                    pass_rule = False
+                    label_metric_num += 1
                     info = '(B/L: {:.4f} VAL: {:.4f} VAR: {:.2f}% Rule:{})'.format(
                         baseline, val, var * 100, rule['criteria']
                     )
                     details.append(metric + info)
                     categories.add(rule['categories'])
-        return pass_rule
+        label[name] = label_metric_num
+        if 'upper_criteria' in rule:
+            violate_rule = eval(rule['upper_criteria'])(label)
+            if not isinstance(violate_rule, bool):
+                logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
+            return not violate_rule
+        return False if label_metric_num > 0 else True
 
     @staticmethod
-    def value(data_row, rule, summary_data_row, details, categories):
+    def value(data_row, name, rule, summary_data_row, details, categories, label):
         """Rule op function of value.
 
         Each metric in the rule will use criteria in the rule
@@ -113,15 +121,17 @@ class RuleOp:
 
         Args:
             data_row (pd.Series): raw data of the metrics
+            name (str): the name of the rule
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             summary_data_row (pd.Series): results of the metrics processed after the function
             details (list): defective details including data and rules
             categories (set): categories of violated rules
+            label (dict): the count of the metrics that violate the rule
 
         Returns:
             bool: whether the rule is passed
         """
-        pass_rule = True
+        label_metric_num = 0
         # parse criteria and check if valid
         if not isinstance(eval(rule['criteria'])(0), bool):
             logger.log_and_raise(exception=Exception, msg='invalid criteria format')
@@ -130,7 +140,7 @@ class RuleOp:
             violate_metric = False
             # metric not in raw_data or the value is none, miss test
             if metric not in data_row or pd.isna(data_row[metric]):
-                pass_rule = False
+                label_metric_num += 1
                 details.append(metric + '_miss')
                 categories.add(rule['categories'])
             else:
@@ -140,11 +150,17 @@ class RuleOp:
                 violate_metric = eval(rule['criteria'])(val)
                 # add issued details and categories
                 if violate_metric:
-                    pass_rule = False
+                    label_metric_num += 1
                     info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
                     details.append(metric + info)
                     categories.add(rule['categories'])
-        return pass_rule
+        label[name] = label_metric_num
+        if 'upper_criteria' in rule:
+            violate_rule = eval(rule['upper_criteria'])(label)
+            if not isinstance(violate_rule, bool):
+                logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
+            return not violate_rule
+        return False if label_metric_num > 0 else True
 
 
 RuleOp.add_rule_func(DiagnosisRuleType.VARIANCE)(RuleOp.variance)

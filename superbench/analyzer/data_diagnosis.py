@@ -93,25 +93,23 @@ class DataDiagnosis():
                 logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
                 return -1
 
-    def _get_criteria(self, rule_file, baseline_file):
+    def _get_criteria(self, rules, baseline):    # noqa: C901
         """Get and generate criteria of metrics.
 
-        Read rule file and baseline file. For each rule, use metric with regex
+        For each rule, use metric with regex
         in the metrics of the rule to match the metric full name from raw data
         for each benchmark in the rule, and then merge baseline and rule for
         matched metrics.
 
         Args:
-            rule_file (str): The path of rule yaml file
-            baseline_file (str): The path of baseline json file
+            rules (dict): rules from rule yaml file
+            baseline (dict): baseline of metrics from baseline json file
 
         Returns:
             bool: return True if successfully get the criteria for all rules, otherwise False.
         """
         try:
-            rules = file_handler.read_rules(rule_file)
-            baseline = file_handler.read_baseline(baseline_file)
-            if not rules or not baseline:
+            if not rules:
                 logger.error('DataDiagnosis: get criteria failed')
                 return False
             self._sb_rules = {}
@@ -121,12 +119,19 @@ class DataDiagnosis():
                 benchmark_rules[rule] = self._check_rules(benchmark_rules[rule], rule)
                 self._sb_rules[rule] = {}
                 self._sb_rules[rule]['function'] = benchmark_rules[rule]['function']
+                self._sb_rules[rule][
+                    'store'] = True if 'store' in benchmark_rules[rule] and benchmark_rules[rule]['store'] else False
                 self._sb_rules[rule]['criteria'] = benchmark_rules[rule]['criteria']
+                if 'upper_criteria' in benchmark_rules[rule]:
+                    self._sb_rules[rule]['upper_criteria'] = benchmark_rules[rule]['upper_criteria']
                 self._sb_rules[rule]['categories'] = benchmark_rules[rule]['categories']
                 self._sb_rules[rule]['metrics'] = {}
                 single_rule_metrics = benchmark_rules[rule]['metrics']
                 benchmark_metrics = self._get_metrics_by_benchmarks(single_rule_metrics)
                 for benchmark_name in benchmark_metrics:
+                    if benchmark_name not in self._metrics:
+                        logger.warning('DataDiagnosis: get criteria failed - {}'.format(benchmark_name))
+                        continue
                     # get rules and criteria for each metric
                     for metric in self._metrics[benchmark_name]:
                         # metric full name in baseline
@@ -166,15 +171,16 @@ class DataDiagnosis():
         issue_label = False
         details = []
         categories = set()
+        label = {}
         summary_data_row = pd.Series(index=self._enable_metrics, name=node, dtype=float)
         # Check each rule
         for rule in self._sb_rules:
             # Get rule op function and run the rule
             function_name = self._sb_rules[rule]['function']
             rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
-            pass_rule = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories)
+            pass_rule = rule_op(data_row, rule, self._sb_rules[rule], summary_data_row, details, categories, label)
             # label the node as defective one
-            if not pass_rule:
+            if not self._sb_rules[rule]['store'] and not pass_rule:
                 issue_label = True
         if issue_label:
             # Add category information
@@ -210,7 +216,9 @@ class DataDiagnosis():
                 logger.error('DataDiagnosis: empty raw data')
                 return data_not_accept_df, label_df
             # get criteria
-            if not self._get_criteria(rule_file, baseline_file):
+            rules = file_handler.read_rules(rule_file)
+            baseline = file_handler.read_baseline(baseline_file)
+            if not self._get_criteria(rules, baseline):
                 return data_not_accept_df, label_df
             # run diagnosis rules for each node
             for node in self._raw_data_df.index:

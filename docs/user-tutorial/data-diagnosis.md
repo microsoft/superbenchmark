@@ -17,7 +17,7 @@ This tool is to filter the defective machines automatically from thousands of be
 3. After installing the Superbnech and the files are ready, you can start to filter the defective machines automatically using  `sb result diagnosis` command. The detailed command can be found from [SuperBench CLI](../cli).
 
   ```
-  sb result diagnosis --data-file ./results-summary.jsonl --rule-file ./rule.yaml --baseline-file ./baseline.json --output-file-foramt excel --output-dir ${output-dir}
+  sb result diagnosis --data-file ./results-summary.jsonl --rule-file ./rule.yaml --baseline-file ./baseline.json --output-file-format excel --output-dir ${output-dir}
   ```
 
 4. After the command finished, you can find the output result file named 'diagnosis_summary.xlsx' / 'diagnosis_summary.json' under ${output_dir}.
@@ -54,6 +54,8 @@ superbench:
     ${rule_name}:
       function: string
       criteria: string
+      store: (optional)bool
+      upper_criteria: (optional)string
       categories: string
       metrics:
         - ${benchmark_name}/regex
@@ -108,11 +110,25 @@ superbench:
         - bert_models/pytorch-bert-base/throughput_train_float(32|16)
         - bert_models/pytorch-bert-large/throughput_train_float(32|16)
         - gpt_models/pytorch-gpt-large/throughput_train_float(32|16)
+    rule4:
+      function: variance
+      criteria: "lambda x:x<-0.05"
+      store: True
+      categories: CNN
+      metrics:
+        - resnet_models/pytorch-resnet.*/throughput_train_.*
+    rule5:
+      function: variance
+      criteria: "lambda x:x<-0.05"
+      upper_criteria: 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False'
+      categories: CNN
+      metrics:
+        - vgg_models/pytorch-vgg.*/throughput_train_.*
 ```
 
 This rule file describes the rules used for data diagnosis.
 
-They are firstly organized by the rule name, and each rule mainly includes 4 elements:
+They are firstly organized by the rule name, and each rule mainly includes several elements:
 
 #### `metrics`
 
@@ -124,7 +140,15 @@ The categories belong to this rule.
 
 #### `criteria`
 
-The criteria used for this rule, which indicate how to compare the data with the baseline value. The format should be a lambda function supported by Python.
+The criteria used for this rule, which indicate how to compare the data with the baseline value for each metric. The format should be a lambda function supported by Python.
+
+#### `store`
+
+True if the current rule is not used alone to filter the defective machine, but will be used by other subsequent rules. False(default) if this rule is used to label the defective machine directly.
+
+#### `upper_criteria`
+
+The criteria used for mutliple rules and multiple metrics, which indicate how to use combined results of multiple rules and multiple metrics to label the defective machine. The format should be a lambda function supported by Python. If not set, by default, any metric violates the criteria will be labeled.
 
 #### `function`
 
