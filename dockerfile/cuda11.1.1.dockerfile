@@ -38,6 +38,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    timelimit \
     util-linux \
     vim \
     wget \

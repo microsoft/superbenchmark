@@ -38,6 +38,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     openssh-client \
     openssh-server \
     pciutils \
+    timelimit \
     util-linux \
     vim \
     wget \

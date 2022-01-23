@@ -93,6 +93,7 @@ superbench:
           - dma
     kernel-launch:
       <<: *default_local_mode
+      timeout: 120
     gemm-flops:
       <<: *default_local_mode
     cudnn-function:
