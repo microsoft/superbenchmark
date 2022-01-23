@@ -343,6 +343,15 @@ class ModelBenchmark(Benchmark):
         return True
 
     def _is_finished(self, curr_step, curr_time):
+        """Judge whether the benchmarking should be stopped early or not.
+
+        Args:
+            curr_step (int): the current benchmarking step.
+            curr_time (float): the current time in seconds got from time.time().
+
+        Return:
+            True if the benchmarking should be stopped.
+        """
         total_steps = self._args.num_warmup + self._args.num_steps
 
         if (
