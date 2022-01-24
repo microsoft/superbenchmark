@@ -10,8 +10,8 @@ import transformers
 from torch.utils.data import DataLoader
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Framework, ReturnCode
-from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, ModelBenchmark
+from superbench.benchmarks import Framework, ReturnCode, DistributedBackend, DistributedImpl
+from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBenchmark
 
 
 class PytorchBase(ModelBenchmark):
@@ -186,7 +186,10 @@ class PytorchBase(ModelBenchmark):
 
         try:
             if self._args.distributed_impl == DistributedImpl.DDP:
-                tensor = torch.as_tensor(result)
+                if self._args.distributed_backend == DistributedBackend.NCCL:
+                    tensor = torch.as_tensor(result).cuda()
+                else:
+                    tensor = torch.as_tensor(result)
                 torch.distributed.reduce(tensor, 0, op=torch.distributed.ReduceOp.MAX)
                 result = tensor.tolist()
         except BaseException as e:
