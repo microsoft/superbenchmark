@@ -102,7 +102,7 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
-    def __get_mode_command(self, benchmark_name, mode, timeout):
+    def __get_mode_command(self, benchmark_name, mode, timeout=None):
         """Get runner command for given mode.
 
         Args:
