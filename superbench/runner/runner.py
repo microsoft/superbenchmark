@@ -370,8 +370,7 @@ class SuperBenchRunner():
         if mode.name == 'mpi':
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
 
-        if timeout is not None:
-            ansible_runner_config['timeout'] = timeout
+        ansible_runner_config['timeout'] = timeout
 
         rc = self._ansible_client.run(ansible_runner_config, sudo=True)
         return rc

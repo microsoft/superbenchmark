@@ -197,6 +197,7 @@ Definition for each benchmark, here is an overview of `Benchmark` configuration 
 ```yaml
 ${benchmark_name}:
   enable: bool
+  timeout: int
   modes: [ Mode ]
   frameworks: [ enum ]
   parameters:
@@ -210,6 +211,7 @@ ${benchmark_name}:
 ```yaml
 ${name}_models:
   enable: bool
+  timeout: int
   modes: [ Mode ]
   frameworks: [ enum ]
   models: [ enum ]
@@ -234,6 +236,7 @@ ${name}_models:
 ```yaml
 kernel-launch:
   enable: true
+  timeout: 120
   modes:
     - name: local
       proc_num: 8
@@ -250,6 +253,7 @@ kernel-launch:
 ```yaml
 resnet_models:
   enable: true
+  timeout: 1800
   modes:
     - name: torch.distributed
       proc_num: 8
@@ -280,6 +284,12 @@ resnet_models:
 Enable current benchmark or not, can be overwritten by [`superbench.enable`](#superbenchenable).
 
 * default value: `true`
+
+### `timeout`
+
+Set the timeout value in seconds, the benchmarking will stop early if timeout is triggerred.
+
+* default value: none
 
 ### `modes`
 
