@@ -138,11 +138,11 @@ superbench:
       num_steps: 128
       batch_size: 128
   benchmarks:
-    foo_models:
+    model-benchmarks:foo:
       models:
         - resnet50
       parameters: *param
-    bar_models:
+    model-benchmarks:bar:
       models:
         - vgg19
       parameters: *param
@@ -152,14 +152,14 @@ The above configuration equals to the following:
 ```yaml {6-9,13-16}
 superbench:
   benchmarks:
-    foo_models:
+    model-benchmarks:foo:
       models:
         - resnet50
       parameters:
         num_warmup: 16
         num_steps: 128
         batch_size: 128
-    bar_models:
+    model-benchmarks:bar:
       models:
         - vgg19
       parameters:
@@ -172,10 +172,16 @@ superbench:
 
 Mappings of `${benchmark_name}: Benchmark`.
 
-There are three types of benchmarks, micro-benchmark, model-benchmark and docker-benchmark.
-For micro-benchmark and docker-benchmark, `${benchmark_name}` should be the exact same as provided benchmarks' name.
-For model-benchmark, `${benchmark_name}` should be in `${name}_models` format,
-each model-benchmark can have a customized name while ending with `_models`.
+There are three types of benchmarks,
+[micro-benchmark](./user-tutorial/benchmarks/micro-benchmarks),
+[model-benchmark](./user-tutorial/benchmarks/model-benchmarks),
+and [docker-benchmark](./user-tutorial/benchmarks/docker-benchmarks).
+Each benchmark has its own unique name listed in docs.
+
+`${benchmark_name}` can be one of the followings:
+* `${benchmark_unique_name}`, it can be the exact same as benchmark's own unique name;
+* `${benchmark_unique_name}:${annotation}`, or if there's a need to run one benchmark with different settings,
+  an annotation separated by `:` can be appended after benchmark's unique name.
 
 See [`Benchmark` Schema](#benchmark-schema) for benchmark definition.
 
@@ -208,7 +214,7 @@ ${benchmark_name}:
 #### Model-Benchmark
 
 ```yaml
-${name}_models:
+model-benchmarks:${annotation}:
   enable: bool
   modes: [ Mode ]
   frameworks: [ enum ]
@@ -248,7 +254,7 @@ kernel-launch:
 #### Model-Benchmark
 
 ```yaml
-resnet_models:
+model-benchmarks:resnet:
   enable: true
   modes:
     - name: torch.distributed
