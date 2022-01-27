@@ -55,7 +55,6 @@ superbench:
       function: string
       criteria: string
       store: (optional)bool
-      upper_criteria: (optional)string
       categories: string
       metrics:
         - ${benchmark_name}/regex
@@ -120,10 +119,14 @@ superbench:
     rule5:
       function: variance
       criteria: "lambda x:x<-0.05"
-      upper_criteria: 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False'
+      store: True
       categories: CNN
       metrics:
-        - vgg_models/pytorch-vgg.*/throughput_train_.*
+        - vgg_models/pytorch-vgg.*/throughput_train_.*\
+    rule6:
+      function: multi_rules
+      criteria: 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False'
+      categories: CNN
 ```
 
 This rule file describes the rules used for data diagnosis.
@@ -146,15 +149,11 @@ The criteria used for this rule, which indicate how to compare the data with the
 
 True if the current rule is not used alone to filter the defective machine, but will be used by other subsequent rules. False(default) if this rule is used to label the defective machine directly.
 
-#### `upper_criteria`
-
-The criteria used for multiple rules and multiple metrics, which indicate how to use combined results of multiple rules and multiple metrics to label the defective machine. The format should be a lambda function supported by Python. If not set, by default, any metric violates the criteria will be labeled.
-
 #### `function`
 
 The function used for this rule.
 
-2 types of rules are supported currently:
+3 types of rules are supported currently:
 
 - `variance`: the rule is to check if the variance between raw data and baseline violates the criteria. variance = (raw data - criteria) / criteria
 
@@ -163,6 +162,10 @@ The function used for this rule.
 - `value`: the rule is to check if the raw data violate the criteria.
 
   For example, if the criteria are `lambda x:x>0`, the rule is that if the raw data is larger than the 0, it should be defective.
+
+- `multi_rules`: the rule is to check if the combined results of multiple previous rules and metrics violate the criteria.
+
+  For example, if the criteria are 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False', the rule is that if the sum of labeled metrics in rule4 and rule5 is larger than 2, it should be defective.
 
 `Tips`: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.
 

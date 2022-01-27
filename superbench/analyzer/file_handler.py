@@ -118,7 +118,7 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
 
             for rule in rules:
                 for metric in rules[rule]['metrics']:
-                    col_index = columns.index(metric) + 1
+                    col_index = columns.index(metric)
                     # Apply percent format for the columns whose rules are variance type.
                     if rules[rule]['function'] == 'variance':
                         worksheet.conditional_format(
