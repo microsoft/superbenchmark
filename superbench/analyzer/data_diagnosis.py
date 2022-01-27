@@ -65,10 +65,11 @@ class DataDiagnosis():
             logger.log_and_raise(exception=Exception, msg='invalid criteria format')
         if 'categories' not in rule:
             logger.log_and_raise(exception=Exception, msg='{} lack of category'.format(name))
-        if 'metrics' not in rule:
-            logger.log_and_raise(exception=Exception, msg='{} lack of metrics'.format(name))
-        if isinstance(rule['metrics'], str):
-            rule['metrics'] = [rule['metrics']]
+        if rule['function'] != 'multi_rules':
+            if 'metrics' not in rule:
+                logger.log_and_raise(exception=Exception, msg='{} lack of metrics'.format(name))
+            if isinstance(rule['metrics'], str):
+                rule['metrics'] = [rule['metrics']]
         return rule
 
     def _get_baseline_of_metric(self, baseline, metric):
@@ -122,10 +123,10 @@ class DataDiagnosis():
                 self._sb_rules[rule][
                     'store'] = True if 'store' in benchmark_rules[rule] and benchmark_rules[rule]['store'] else False
                 self._sb_rules[rule]['criteria'] = benchmark_rules[rule]['criteria']
-                if 'upper_criteria' in benchmark_rules[rule]:
-                    self._sb_rules[rule]['upper_criteria'] = benchmark_rules[rule]['upper_criteria']
                 self._sb_rules[rule]['categories'] = benchmark_rules[rule]['categories']
                 self._sb_rules[rule]['metrics'] = {}
+                if self._sb_rules[rule]['function'] == 'multi_rules':
+                    continue
                 single_rule_metrics = benchmark_rules[rule]['metrics']
                 benchmark_metrics = self._get_metrics_by_benchmarks(single_rule_metrics)
                 for benchmark_name in benchmark_metrics:
@@ -178,7 +179,11 @@ class DataDiagnosis():
             # Get rule op function and run the rule
             function_name = self._sb_rules[rule]['function']
             rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
-            pass_rule = rule_op(data_row, rule, self._sb_rules[rule], summary_data_row, details, categories, label)
+            pass_rule = True
+            if rule_op == RuleOp.multi_rules:
+                pass_rule = rule_op(self._sb_rules[rule], label)
+            else:
+                pass_rule = rule_op(data_row, rule, self._sb_rules[rule], summary_data_row, details, categories, label)
             # label the node as defective one
             if not self._sb_rules[rule]['store'] and not pass_rule:
                 issue_label = True

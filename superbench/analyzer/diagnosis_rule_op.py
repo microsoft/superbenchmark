@@ -16,6 +16,7 @@ class DiagnosisRuleType(Enum):
 
     VARIANCE = 'variance'
     VALUE = 'value'
+    MULTI_RULES = 'multi_rules'
 
 
 class RuleOp:
@@ -69,7 +70,7 @@ class RuleOp:
             summary_data_row (pd.Series): results of the metrics processed after the function
             details (list): defective details including data and rules
             categories (set): categories of violated rules
-            label (dict): the count of the metrics that violate the rule
+            label (dict): the count of the metrics that violate the rules
 
         Returns:
             bool: whether the rule is passed
@@ -104,11 +105,6 @@ class RuleOp:
                     details.append(metric + info)
                     categories.add(rule['categories'])
         label[name] = label_metric_num
-        if 'upper_criteria' in rule:
-            violate_rule = eval(rule['upper_criteria'])(label)
-            if not isinstance(violate_rule, bool):
-                logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
-            return not violate_rule
         return False if label_metric_num > 0 else True
 
     @staticmethod
@@ -126,7 +122,7 @@ class RuleOp:
             summary_data_row (pd.Series): results of the metrics processed after the function
             details (list): defective details including data and rules
             categories (set): categories of violated rules
-            label (dict): the count of the metrics that violate the rule
+            label (dict): the count of the metrics that violate the rules
 
         Returns:
             bool: whether the rule is passed
@@ -155,13 +151,28 @@ class RuleOp:
                     details.append(metric + info)
                     categories.add(rule['categories'])
         label[name] = label_metric_num
-        if 'upper_criteria' in rule:
-            violate_rule = eval(rule['upper_criteria'])(label)
-            if not isinstance(violate_rule, bool):
-                logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
-            return not violate_rule
         return False if label_metric_num > 0 else True
+
+    @staticmethod
+    def multi_rules(rule, label):
+        """Rule op function of multi_rules.
+
+        The rule will use criteria in the rule and the stored labebed results of other rules
+        to determine whether the rule is passed.
+
+        Args:
+            rule (dict): rule including function, criteria, metrics with their baseline values and categories
+            label (dict): the count of the metrics that violate the rules
+
+        Returns:
+            bool: whether the rule is passed
+        """
+        violate_rule = eval(rule['criteria'])(label)
+        if not isinstance(violate_rule, bool):
+            logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
+        return not violate_rule
 
 
 RuleOp.add_rule_func(DiagnosisRuleType.VARIANCE)(RuleOp.variance)
 RuleOp.add_rule_func(DiagnosisRuleType.VALUE)(RuleOp.value)
+RuleOp.add_rule_func(DiagnosisRuleType.MULTI_RULES)(RuleOp.multi_rules)

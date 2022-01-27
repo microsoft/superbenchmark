@@ -59,14 +59,6 @@ class TestRuleOp(unittest.TestCase):
                 'metrics': {
                     'kernel-launch/event_overhead:0': 2
                 }
-            }, {
-                'categories': 'KernelLaunch',
-                'criteria': 'lambda x:x<-0.5',
-                'upper_criteria': 'lambda label:True if label["rule2"]>=2 else False',
-                'function': 'variance',
-                'metrics': {
-                    'kernel-launch/event_overhead:0': 2
-                }
             }
         ]
 
@@ -103,22 +95,6 @@ class TestRuleOp(unittest.TestCase):
                 'metrics': {
                     'kernel-launch/event_overhead:0': 0
                 }
-            }, {
-                'categories': 'CNN',
-                'criteria': 'lambda x:x<-0.5',
-                'store': True,
-                'function': 'variance',
-                'metrics': {
-                    'resnet_models/pytorch-resnet152/throughput_train_float32': 300,
-                }
-            }, {
-                'categories': 'CNN',
-                'criteria': 'lambda x:x<-0.5',
-                'upper_criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False',
-                'function': 'variance',
-                'metrics': {
-                    'vgg_models/pytorch-vgg11/throughput_train_float32': 300
-                }
             }
         ]
         # Check results
@@ -146,22 +122,66 @@ class TestRuleOp(unittest.TestCase):
         assert ('kernel-launch/event_overhead:0(VAL: 1.5000 Rule:lambda x:x>0)' in details)
         assert ('kernel-launch/event_overhead:0(B/L: 2.0000 VAL: 3.1000 VAR: 55.00% Rule:lambda x:x>0.5)' in details)
 
-        # multi-rule check
+    def test_multi_rules_op(self):
+        """multi-rule check."""
+        details = []
+        categories = set()
+        data_row = pd.Series()
+        summary_data_row = pd.Series(index=['kernel-launch/event_overhead:0'], dtype=float)
+        false_baselines = [
+            {
+                'categories': 'KernelLaunch',
+                'criteria': 'lambda label:True if label["rule2"]>=2 else False',
+                'function': 'multi_rules'
+            }
+        ]
+        label = {}
+        for rule in false_baselines:
+            self.assertRaises(Exception, RuleOp.multi_rules, rule, label)
+
+        true_baselines = [
+            {
+                'categories': 'CNN',
+                'criteria': 'lambda x:x<-0.5',
+                'store': True,
+                'function': 'variance',
+                'metrics': {
+                    'resnet_models/pytorch-resnet152/throughput_train_float32': 300,
+                }
+            }, {
+                'categories': 'CNN',
+                'criteria': 'lambda x:x<-0.5',
+                'function': 'variance',
+                'metrics': {
+                    'vgg_models/pytorch-vgg11/throughput_train_float32': 300
+                }
+            }, {
+                'categories': 'KernelLaunch',
+                'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False',
+                'function': 'multi_rules'
+            }
+        ]
         data = {
             'resnet_models/pytorch-resnet152/throughput_train_float32': 300,
             'vgg_models/pytorch-vgg11/throughput_train_float32': 100
         }
         data_row = pd.Series(data)
-        pass_rule = rule_op(data_row, 'rule1', true_baselines[3], summary_data_row, details, categories, label)
-        pass_rule = rule_op(data_row, 'rule2', true_baselines[4], summary_data_row, details, categories, label)
+
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
+        pass_rule = rule_op(data_row, 'rule1', true_baselines[0], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, 'rule2', true_baselines[1], summary_data_row, details, categories, label)
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
+        pass_rule = rule_op(true_baselines[2], label)
         assert (pass_rule)
         data = {
             'resnet_models/pytorch-resnet152/throughput_train_float32': 100,
             'vgg_models/pytorch-vgg11/throughput_train_float32': 100
         }
         data_row = pd.Series(data)
-        rule_op = RuleOp.get_rule_func(DiagnosisRuleType.VARIANCE)
-        pass_rule = rule_op(data_row, 'rule1', true_baselines[3], summary_data_row, details, categories, label)
-        pass_rule = rule_op(data_row, 'rule2', true_baselines[4], summary_data_row, details, categories, label)
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
+        pass_rule = rule_op(data_row, 'rule1', true_baselines[0], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, 'rule2', true_baselines[1], summary_data_row, details, categories, label)
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
+        pass_rule = rule_op(true_baselines[2], label)
         assert (not pass_rule)
         assert ('CNN' in categories)

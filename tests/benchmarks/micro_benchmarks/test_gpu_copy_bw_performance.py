@@ -32,7 +32,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         mem_types = ['htod', 'dtoh', 'dtod']
         copy_types = ['sm', 'dma']
 
-        parameters = '--mem_type %s --copy_type %s --size %d --num_loops %d' % \
+        parameters = '--mem_type %s --copy_type %s --size %d --num_loops %d --bidirectional' % \
             (' '.join(mem_types), ' '.join(copy_types), size, num_loops)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
@@ -49,6 +49,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.copy_type == copy_types)
         assert (benchmark._args.size == size)
         assert (benchmark._args.num_loops == num_loops)
+        assert (benchmark._args.bidirectional)
 
         # Check command
         assert (1 == len(benchmark._commands))
@@ -59,6 +60,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             assert ('--%s_copy' % copy_type in benchmark._commands[0])
         assert ('--size %d' % size in benchmark._commands[0])
         assert ('--num_loops %d' % num_loops in benchmark._commands[0])
+        assert ('--bidirectional' in benchmark._commands[0])
 
     @decorator.cuda_test
     def test_gpu_copy_bw_performance_command_generation_cuda(self):
@@ -70,7 +72,8 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test gpu-copy benchmark command generation, ROCm case."""
         self._test_gpu_copy_bw_performance_command_generation(Platform.ROCM)
 
-    def _test_gpu_copy_bw_performance_result_parsing(self, platform):
+    @decorator.load_data('tests/data/gpu_copy_bw_performance.log')
+    def _test_gpu_copy_bw_performance_result_parsing(self, platform, test_raw_output):
         """Test gpu-copy benchmark result parsing."""
         benchmark_name = 'gpu-copy-bw'
         (benchmark_class,
@@ -85,20 +88,6 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Positive case - valid raw output.
-        test_raw_output = """
-cpu_to_gpu0_by_gpu0_using_sm_under_numa0 26.1755
-cpu_to_gpu0_by_gpu0_using_dma_under_numa0 26.1894
-gpu0_to_cpu_by_gpu0_using_sm_under_numa0 5.72584
-gpu0_to_cpu_by_gpu0_using_dma_under_numa0 26.2623
-gpu0_to_gpu0_by_gpu0_using_sm_under_numa0 659.275
-gpu0_to_gpu0_by_gpu0_using_dma_under_numa0 636.401
-cpu_to_gpu0_by_gpu0_using_sm_under_numa1 26.1589
-cpu_to_gpu0_by_gpu0_using_dma_under_numa1 26.18
-gpu0_to_cpu_by_gpu0_using_sm_under_numa1 5.07597
-gpu0_to_cpu_by_gpu0_using_dma_under_numa1 25.2851
-gpu0_to_gpu0_by_gpu0_using_sm_under_numa1 656.825
-gpu0_to_gpu0_by_gpu0_using_dma_under_numa1 634.203
-"""
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 

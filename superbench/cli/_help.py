@@ -114,14 +114,14 @@ helps['result diagnosis'] = """
             --data-file outputs/results-summary.jsonl
             --rule-file rule.yaml
             --baseline-file baseline.json
-            --output-file-format excel
+            --output-file-foramt excel
         - name: run data diagnosis and output the results in jsonl format
           text: >
             {cli_name} result diagnosis
             --data-file outputs/results-summary.jsonl
             --rule-file rule.yaml
             --baseline-file baseline.json
-            --output-file-format json
+            --output-file-foramt json
 """.format(cli_name=CLI_NAME)
 
 
