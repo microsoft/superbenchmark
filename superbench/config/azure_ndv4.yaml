@@ -83,7 +83,21 @@ superbench:
           proc_num: 1
           parallel: no
       parameters:
-        block_devices: []
+        block_devices:
+          - /dev/nvme0n1
+          - /dev/nvme1n1
+          - /dev/nvme2n1
+          - /dev/nvme3n1
+          - /dev/nvme4n1
+          - /dev/nvme5n1
+          - /dev/nvme6n1
+          - /dev/nvme7n1
+        seq_read_runtime: 60
+        seq_write_runtime: 60
+        seq_readwrite_runtime: 60
+        rand_read_runtime: 60
+        rand_write_runtime: 60
+        rand_readwrite_runtime: 60
     gpu-copy-bw:
       enable: true
       modes:
