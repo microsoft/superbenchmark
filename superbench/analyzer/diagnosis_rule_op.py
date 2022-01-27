@@ -56,7 +56,7 @@ class RuleOp:
         return None
 
     @staticmethod
-    def variance(data_row, name, rule, summary_data_row, details, categories, label):
+    def variance(data_row, rule, summary_data_row, details, categories, label):
         """Rule op function of variance.
 
         Each metric in the rule will calculate the variance (val - baseline / baseline),
@@ -65,7 +65,6 @@ class RuleOp:
 
         Args:
             data_row (pd.Series): raw data of the metrics
-            name (str): the name of the rule
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             summary_data_row (pd.Series): results of the metrics processed after the function
             details (list): defective details including data and rules
@@ -104,11 +103,12 @@ class RuleOp:
                     )
                     details.append(metric + info)
                     categories.add(rule['categories'])
-        label[name] = label_metric_num
+        if 'store' in rule and rule['store'] is True:
+            label[rule['name']] = label_metric_num
         return False if label_metric_num > 0 else True
 
     @staticmethod
-    def value(data_row, name, rule, summary_data_row, details, categories, label):
+    def value(data_row, rule, summary_data_row, details, categories, label):
         """Rule op function of value.
 
         Each metric in the rule will use criteria in the rule
@@ -117,7 +117,6 @@ class RuleOp:
 
         Args:
             data_row (pd.Series): raw data of the metrics
-            name (str): the name of the rule
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             summary_data_row (pd.Series): results of the metrics processed after the function
             details (list): defective details including data and rules
@@ -150,7 +149,8 @@ class RuleOp:
                     info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
                     details.append(metric + info)
                     categories.add(rule['categories'])
-        label[name] = label_metric_num
+        if 'store' in rule and rule['store'] is True:
+            label[rule['name']] = label_metric_num
         return False if label_metric_num > 0 else True
 
     @staticmethod

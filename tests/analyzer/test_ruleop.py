@@ -63,12 +63,8 @@ class TestRuleOp(unittest.TestCase):
         ]
 
         for rule in false_rule_and_baselines:
-            self.assertRaises(
-                Exception, RuleOp.variance, data_row, 'rule0', rule, summary_data_row, details, categories, label
-            )
-            self.assertRaises(
-                Exception, RuleOp.value, data_row, 'rule0', rule, summary_data_row, details, categories, label
-            )
+            self.assertRaises(Exception, RuleOp.variance, data_row, rule, summary_data_row, details, categories, label)
+            self.assertRaises(Exception, RuleOp.value, data_row, rule, summary_data_row, details, categories, label)
 
         # Positive case
         true_baselines = [
@@ -104,20 +100,20 @@ class TestRuleOp(unittest.TestCase):
         # variance
         data = {'kernel-launch/event_overhead:0': 3.1, 'kernel-launch/event_overhead:1': 2}
         data_row = pd.Series(data)
-        pass_rule = rule_op(data_row, 'rule0', true_baselines[0], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, label)
         assert (not pass_rule)
         assert (categories == {'KernelLaunch'})
         assert (details == ['kernel-launch/event_overhead:0(B/L: 2.0000 VAL: 3.1000 VAR: 55.00% Rule:lambda x:x>0.5)'])
 
         data = {'kernel-launch/event_overhead:0': 1.5, 'kernel-launch/event_overhead:1': 1.5}
         data_row = pd.Series(data)
-        pass_rule = rule_op(data_row, 'rule0', true_baselines[1], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories, label)
         assert (pass_rule)
         assert (categories == {'KernelLaunch'})
 
         # value
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType.VALUE)
-        pass_rule = rule_op(data_row, 'rule0', true_baselines[2], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, true_baselines[2], summary_data_row, details, categories, label)
         assert (categories == {'KernelLaunch', 'KernelLaunch2'})
         assert ('kernel-launch/event_overhead:0(VAL: 1.5000 Rule:lambda x:x>0)' in details)
         assert ('kernel-launch/event_overhead:0(B/L: 2.0000 VAL: 3.1000 VAR: 55.00% Rule:lambda x:x>0.5)' in details)
@@ -141,6 +137,7 @@ class TestRuleOp(unittest.TestCase):
 
         true_baselines = [
             {
+                'name': 'rule1',
                 'categories': 'CNN',
                 'criteria': 'lambda x:x<-0.5',
                 'store': True,
@@ -149,15 +146,19 @@ class TestRuleOp(unittest.TestCase):
                     'resnet_models/pytorch-resnet152/throughput_train_float32': 300,
                 }
             }, {
+                'name': 'rule2',
                 'categories': 'CNN',
                 'criteria': 'lambda x:x<-0.5',
+                'store': True,
                 'function': 'variance',
                 'metrics': {
                     'vgg_models/pytorch-vgg11/throughput_train_float32': 300
                 }
             }, {
+                'name': 'rule3',
                 'categories': 'KernelLaunch',
                 'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False',
+                'store': False,
                 'function': 'multi_rules'
             }
         ]
@@ -168,8 +169,8 @@ class TestRuleOp(unittest.TestCase):
         data_row = pd.Series(data)
 
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
-        pass_rule = rule_op(data_row, 'rule1', true_baselines[0], summary_data_row, details, categories, label)
-        pass_rule = rule_op(data_row, 'rule2', true_baselines[1], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories, label)
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
         pass_rule = rule_op(true_baselines[2], label)
         assert (pass_rule)
@@ -179,8 +180,8 @@ class TestRuleOp(unittest.TestCase):
         }
         data_row = pd.Series(data)
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
-        pass_rule = rule_op(data_row, 'rule1', true_baselines[0], summary_data_row, details, categories, label)
-        pass_rule = rule_op(data_row, 'rule2', true_baselines[1], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, label)
+        pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories, label)
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
         pass_rule = rule_op(true_baselines[2], label)
         assert (not pass_rule)

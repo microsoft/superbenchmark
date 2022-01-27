@@ -94,13 +94,43 @@ class DataDiagnosis():
                 logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
                 return -1
 
-    def _get_criteria(self, rules, baseline):    # noqa: C901
-        """Get and generate criteria of metrics.
+    def __get_metrics_in_criteria(self, rule, benchmark_rules, baseline):
+        """Get metrics with baseline in the rule.
 
-        For each rule, use metric with regex
-        in the metrics of the rule to match the metric full name from raw data
-        for each benchmark in the rule, and then merge baseline and rule for
-        matched metrics.
+        Use metric with regex in the metrics of the rule to match
+        the metric full name from raw data for each benchmark in the rule,
+        and then merge baseline for each metric.
+
+        Args:
+            rule (str): the name of the rule
+            benchmark_rules (dict): the dict of rules
+            baseline (dict): the dict of baseline of metrics
+        """
+        if self._sb_rules[rule]['function'] == 'multi_rules':
+            return
+        single_rule_metrics = benchmark_rules[rule]['metrics']
+        benchmark_metrics = self._get_metrics_by_benchmarks(single_rule_metrics)
+        for benchmark_name in benchmark_metrics:
+            if benchmark_name not in self._metrics:
+                logger.warning('DataDiagnosis: get criteria failed - {}'.format(benchmark_name))
+                continue
+            # get rules and criteria for each metric
+            for metric in self._metrics[benchmark_name]:
+                # metric full name in baseline
+                if metric in single_rule_metrics:
+                    self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
+                    self._enable_metrics.append(metric)
+                    continue
+                # metric full name not in baseline, use regex to match
+                for metric_regex in benchmark_metrics[benchmark_name]:
+                    if re.search(metric_regex, metric):
+                        self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
+                        self._enable_metrics.append(metric)
+
+    def _get_criteria(self, rules, baseline):
+        """Get and generate criteria for rules.
+
+        Generate and store complete criteria and rules using rules and baseline read from file.
 
         Args:
             rules (dict): rules from rule yaml file
@@ -119,32 +149,14 @@ class DataDiagnosis():
             for rule in benchmark_rules:
                 benchmark_rules[rule] = self._check_rules(benchmark_rules[rule], rule)
                 self._sb_rules[rule] = {}
+                self._sb_rules[rule]['name'] = rule
                 self._sb_rules[rule]['function'] = benchmark_rules[rule]['function']
                 self._sb_rules[rule][
                     'store'] = True if 'store' in benchmark_rules[rule] and benchmark_rules[rule]['store'] else False
                 self._sb_rules[rule]['criteria'] = benchmark_rules[rule]['criteria']
                 self._sb_rules[rule]['categories'] = benchmark_rules[rule]['categories']
                 self._sb_rules[rule]['metrics'] = {}
-                if self._sb_rules[rule]['function'] == 'multi_rules':
-                    continue
-                single_rule_metrics = benchmark_rules[rule]['metrics']
-                benchmark_metrics = self._get_metrics_by_benchmarks(single_rule_metrics)
-                for benchmark_name in benchmark_metrics:
-                    if benchmark_name not in self._metrics:
-                        logger.warning('DataDiagnosis: get criteria failed - {}'.format(benchmark_name))
-                        continue
-                    # get rules and criteria for each metric
-                    for metric in self._metrics[benchmark_name]:
-                        # metric full name in baseline
-                        if metric in single_rule_metrics:
-                            self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
-                            self._enable_metrics.append(metric)
-                            continue
-                        # metric full name not in baseline, use regex to match
-                        for metric_regex in benchmark_metrics[benchmark_name]:
-                            if re.search(metric_regex, metric):
-                                self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
-                                self._enable_metrics.append(metric)
+                self.__get_metrics_in_criteria(rule, benchmark_rules, baseline)
             self._enable_metrics.sort()
         except Exception as e:
             logger.error('DataDiagnosis: get criteria failed - {}'.format(str(e)))
@@ -183,7 +195,7 @@ class DataDiagnosis():
             if rule_op == RuleOp.multi_rules:
                 pass_rule = rule_op(self._sb_rules[rule], label)
             else:
-                pass_rule = rule_op(data_row, rule, self._sb_rules[rule], summary_data_row, details, categories, label)
+                pass_rule = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories, label)
             # label the node as defective one
             if not self._sb_rules[rule]['store'] and not pass_rule:
                 issue_label = True
