@@ -133,7 +133,7 @@ class TestRuleOp(unittest.TestCase):
         ]
         label = {}
         for rule in false_baselines:
-            self.assertRaises(Exception, RuleOp.multi_rules, rule, label)
+            self.assertRaises(Exception, RuleOp.multi_rules, rule, details, categories, label)
 
         true_baselines = [
             {
@@ -162,27 +162,39 @@ class TestRuleOp(unittest.TestCase):
                 'function': 'multi_rules'
             }
         ]
+        # label["rule1"]+label["rule2"]=1, rule3 pass
         data = {
             'resnet_models/pytorch-resnet152/throughput_train_float32': 300,
             'vgg_models/pytorch-vgg11/throughput_train_float32': 100
         }
         data_row = pd.Series(data)
-
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
         pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, label)
         pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories, label)
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
-        pass_rule = rule_op(true_baselines[2], label)
+        pass_rule = rule_op(true_baselines[2], details, categories, label)
         assert (pass_rule)
+        # label["rule1"]+label["rule2"]=2, rule3 not pass
         data = {
             'resnet_models/pytorch-resnet152/throughput_train_float32': 100,
             'vgg_models/pytorch-vgg11/throughput_train_float32': 100
         }
         data_row = pd.Series(data)
+        details = []
+        categories = set()
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
         pass_rule = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, label)
         pass_rule = rule_op(data_row, true_baselines[1], summary_data_row, details, categories, label)
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
-        pass_rule = rule_op(true_baselines[2], label)
+        pass_rule = rule_op(true_baselines[2], details, categories, label)
         assert (not pass_rule)
         assert ('CNN' in categories)
+        assert (
+            details == [
+                'resnet_models/pytorch-resnet152/throughput_train_float32' +
+                '(B/L: 300.0000 VAL: 100.0000 VAR: -66.67% Rule:lambda x:x<-0.5)',
+                'vgg_models/pytorch-vgg11/throughput_train_float32' +
+                '(B/L: 300.0000 VAL: 100.0000 VAR: -66.67% Rule:lambda x:x<-0.5)',
+                'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
+            ]
+        )

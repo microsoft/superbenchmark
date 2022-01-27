@@ -154,7 +154,7 @@ class RuleOp:
         return False if label_metric_num > 0 else True
 
     @staticmethod
-    def multi_rules(rule, label):
+    def multi_rules(rule, details, categories, label):
         """Rule op function of multi_rules.
 
         The rule will use criteria in the rule and the stored labebed results of other rules
@@ -162,6 +162,8 @@ class RuleOp:
 
         Args:
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
+            details (list): defective details including data and rules
+            categories (set): categories of violated rules
             label (dict): the count of the metrics that violate the rules
 
         Returns:
@@ -170,6 +172,9 @@ class RuleOp:
         violate_rule = eval(rule['criteria'])(label)
         if not isinstance(violate_rule, bool):
             logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
+        if violate_rule:
+            categories.add(rule['categories'])
+            details.append('{}:{}'.format(rule['name'], rule['criteria']))
         return not violate_rule
 
 

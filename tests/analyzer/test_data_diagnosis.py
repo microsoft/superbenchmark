@@ -256,3 +256,8 @@ class TestDataDiagnosis(unittest.TestCase):
         (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-05')
         assert (details_row)
         assert ('CNN' in details_row[0])
+        assert (
+            details_row[1] == 'kernel-launch/wall_overhead(B/L: 0.0103 VAL: 0.0050 VAR: -51.27% Rule:lambda x:x<-0.5),'
+            + 'mem-bw/D2H_Mem_BW(B/L: 24.3000 VAL: 10.0000 VAR: -58.85% Rule:lambda x:x<-0.5),' +
+            'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
+        )

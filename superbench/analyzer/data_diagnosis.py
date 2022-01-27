@@ -193,7 +193,7 @@ class DataDiagnosis():
             rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
             pass_rule = True
             if rule_op == RuleOp.multi_rules:
-                pass_rule = rule_op(self._sb_rules[rule], label)
+                pass_rule = rule_op(self._sb_rules[rule], details, categories, label)
             else:
                 pass_rule = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories, label)
             # label the node as defective one
