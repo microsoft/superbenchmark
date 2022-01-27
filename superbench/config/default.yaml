@@ -26,6 +26,7 @@ superbench:
       duration: 0
       num_warmup: 16
       num_steps: 128
+      batch_size: 1
       precision:
         - float32
         - float16
@@ -166,7 +167,6 @@ superbench:
         - gpt2-large
       parameters:
         <<: *common_model_config
-        batch_size: 1
     bert_models:
       <<: *default_pytorch_mode
       models:
@@ -174,14 +174,12 @@ superbench:
         - bert-large
       parameters:
         <<: *common_model_config
-        batch_size: 1
     lstm_models:
       <<: *default_pytorch_mode
       models:
         - lstm
       parameters:
         <<: *common_model_config
-        batch_size: 1
     resnet_models:
       <<: *default_pytorch_mode
       models:
@@ -190,7 +188,6 @@ superbench:
         - resnet152
       parameters:
         <<: *common_model_config
-        batch_size: 1
     densenet_models:
       <<: *default_pytorch_mode
       models:
@@ -198,7 +195,6 @@ superbench:
         - densenet201
       parameters:
         <<: *common_model_config
-        batch_size: 1
     vgg_models:
       <<: *default_pytorch_mode
       models:
@@ -208,4 +204,3 @@ superbench:
         - vgg19
       parameters:
         <<: *common_model_config
-        batch_size: 1
