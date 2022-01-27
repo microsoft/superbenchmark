@@ -13,6 +13,7 @@ from unittest import mock
 import yaml
 from omegaconf import OmegaConf
 
+from superbench.benchmarks import ReturnCode
 from superbench.executor import SuperBenchExecutor
 
 
@@ -135,17 +136,35 @@ class ExecutorTestCase(unittest.TestCase):
         self.executor._sb_enabled = []
         self.executor.exec()
 
-    @mock.patch('superbench.executor.SuperBenchExecutor._SuperBenchExecutor__exec_benchmark')
-    def test_exec_default_benchmarks(self, mock_exec_benchmark):
+    @mock.patch('superbench.benchmarks.BenchmarkRegistry.launch_benchmark')
+    def test_exec_default_benchmarks(self, mock_launch_benchmark):
         """Test execute default benchmarks, mock exec function.
 
         Args:
-            mock_exec_benchmark (function): Mocked __exec_benchmark function.
+            mock_launch_benchmark (function): Mocked BenchmarkRegistry.launch_benchmark function in __exec_benchmark.
         """
-        mock_exec_benchmark.return_value = {}
+        mock_launch_benchmark.return_value = OmegaConf.create(
+            {
+                'name': 'foobar',
+                'return_code': ReturnCode.SUCCESS,
+                'result': {
+                    'return_code': [0],
+                    'metric1': [-1.0],
+                    'metric2': [1.0]
+                },
+                'serialized_result': json.dumps({
+                    'name': 'foobar',
+                    'return_code': 0,
+                }),
+            }
+        )
         self.executor.exec()
 
         self.assertTrue(Path(self.sb_output_dir, 'benchmarks').is_dir())
         for benchmark_name in self.executor._sb_enabled:
-            self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'rank0').is_dir())
-            self.assertTrue(Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'rank0', 'results.json').is_file())
+            p = Path(self.sb_output_dir, 'benchmarks', benchmark_name, 'rank0')
+            self.assertTrue(p.is_dir())
+            self.assertTrue((p / 'results.json').is_file())
+            with (p / 'results.json').open() as f:
+                for result in json.load(f):
+                    self.assertIn(benchmark_name, result['name'])

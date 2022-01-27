@@ -82,7 +82,7 @@ superbench:
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
           parallel: no
     disk-benchmark:
-      enable: true
+      enable: false
       modes:
         - name: local
           proc_num: 1

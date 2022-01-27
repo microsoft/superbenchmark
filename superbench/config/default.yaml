@@ -26,6 +26,7 @@ superbench:
       duration: 0
       num_warmup: 16
       num_steps: 128
+      batch_size: 1
       precision:
         - float32
         - float16
@@ -144,6 +145,8 @@ superbench:
         port: 22
     ort-inference:
       <<: *default_local_mode
+      parameters:
+        batch_size: 1
     tensorrt-inference:
       <<: *default_local_mode
       parameters:
@@ -156,7 +159,7 @@ superbench:
           - bert-base
           - bert-large
         seq_length: 224
-        batch_size: 32
+        batch_size: 1
         precision: int8
     gpt_models:
       <<: *default_pytorch_mode
@@ -165,7 +168,6 @@ superbench:
         - gpt2-large
       parameters:
         <<: *common_model_config
-        batch_size: 4
     bert_models:
       <<: *default_pytorch_mode
       models:
@@ -173,14 +175,12 @@ superbench:
         - bert-large
       parameters:
         <<: *common_model_config
-        batch_size: 8
     lstm_models:
       <<: *default_pytorch_mode
       models:
         - lstm
       parameters:
         <<: *common_model_config
-        batch_size: 128
     resnet_models:
       <<: *default_pytorch_mode
       models:
@@ -189,7 +189,6 @@ superbench:
         - resnet152
       parameters:
         <<: *common_model_config
-        batch_size: 128
     densenet_models:
       <<: *default_pytorch_mode
       models:
@@ -197,7 +196,6 @@ superbench:
         - densenet201
       parameters:
         <<: *common_model_config
-        batch_size: 128
     vgg_models:
       <<: *default_pytorch_mode
       models:
@@ -207,4 +205,3 @@ superbench:
         - vgg19
       parameters:
         <<: *common_model_config
-        batch_size: 128
