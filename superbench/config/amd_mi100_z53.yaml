@@ -38,7 +38,6 @@ superbench:
   benchmarks:
     kernel-launch:
       <<: *default_local_mode
-      timeout: 180
     rccl-bw:
       enable: true
       modes:
