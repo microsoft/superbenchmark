@@ -170,6 +170,17 @@ class RunnerTestCase(unittest.TestCase):
                     ), test_case['expected_command']
                 )
 
+                test_case['timeout'] = 10
+                timeout_str = 'timeout {} '.format(test_case['timeout'])
+                index = test_case['expected_command'].find('sb exec')
+                expected_command = test_case['expected_command'][:index] + timeout_str + test_case['expected_command'][
+                    index:]
+                self.assertEqual(
+                    self.runner._SuperBenchRunner__get_mode_command(
+                        test_case['benchmark_name'], OmegaConf.create(test_case['mode']), test_case['timeout']
+                    ), expected_command
+                )
+
     def test_run_empty_benchmarks(self):
         """Test run empty benchmarks, nothing should happen."""
         self.runner._sb_enabled_benchmarks = []
