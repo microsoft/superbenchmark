@@ -102,12 +102,13 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
-    def __get_mode_command(self, benchmark_name, mode):
+    def __get_mode_command(self, benchmark_name, mode, timeout=None):
         """Get runner command for given mode.
 
         Args:
             benchmark_name (str): Benchmark name.
             mode (DictConfig): Runner mode.
+            timeout (int): The timeout value in seconds.
 
         Return:
             str: Runner command.
@@ -116,6 +117,9 @@ class SuperBenchRunner():
             name=benchmark_name,
             output_dir=self._sb_output_dir,
         )
+        if timeout is not None:
+            exec_command = 'timeout {timeout} {command}'.format(timeout=timeout, command=exec_command)
+
         mode_command = exec_command
         if mode.name == 'local':
             mode_command = '{prefix} {command}'.format(
@@ -353,14 +357,19 @@ class SuperBenchRunner():
         """
         mode.update(vars)
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
+
+        timeout = self._sb_benchmarks[benchmark_name].timeout
         ansible_runner_config = self._ansible_client.get_shell_config(
             (
                 'docker exec sb-workspace bash -c '
                 "'set -o allexport && source sb.env && set +o allexport && {command}'"
-            ).format(command=self.__get_mode_command(benchmark_name, mode))
+            ).format(command=self.__get_mode_command(benchmark_name, mode, timeout))
         )
         if mode.name == 'mpi':
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
+
+        ansible_runner_config['timeout'] = timeout
+
         rc = self._ansible_client.run(ansible_runner_config, sudo=True)
         return rc
 
