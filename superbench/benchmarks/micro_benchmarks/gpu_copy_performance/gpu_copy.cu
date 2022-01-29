@@ -489,6 +489,7 @@ void PrintResultTag(const BenchArgs &args) {
 int RunCopy(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     uint64_t num_thread_blocks;
+    const uint64_t num_warm_up = 10;
 
     // Validate data size for SM copy
     if (args->is_sm_copy) {
@@ -502,8 +503,22 @@ int RunCopy(BenchArgs *args) {
     }
 
     // Launch jobs and collect running time
-    auto start = std::chrono::steady_clock::now();
-    for (int i = 0; i < args->num_loops; i++) {
+    std::vector<cudaEvent_t> start_events(args->num_subs);
+    std::vector<cudaEvent_t> end_events(args->num_subs);
+    for (int i = 0; i < args->num_subs; i++) {
+        cuda_err = cudaEventCreate(&(start_events[i]));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaEventCreate error: %d\n", cuda_err);
+            return -1;
+        }
+        cuda_err = cudaEventCreate(&(end_events[i]));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaEventCreate error: %d\n", cuda_err);
+            return -1;
+        }
+    }
+
+    for (int i = 0; i < args->num_loops + num_warm_up; i++) {
         for (int j = 0; j < args->num_subs; j++) {
             SubBenchArgs &sub = args->subs[j];
             if (SetGpu(sub.worker_gpu_id)) {
@@ -517,6 +532,19 @@ int RunCopy(BenchArgs *args) {
                 cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr, args->size, cudaMemcpyDefault,
                                 sub.stream);
             }
+            if (i + 1 == num_warm_up) {
+                cuda_err = cudaEventRecord(start_events[j], sub.stream);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
+                    return -1;
+                }
+            } else if (i + 1 == args->num_loops + num_warm_up) {
+                cuda_err = cudaEventRecord(end_events[j], sub.stream);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
+                    return -1;
+                }
+            }
         }
     }
     for (int i = 0; i < args->num_subs; i++) {
@@ -527,13 +555,34 @@ int RunCopy(BenchArgs *args) {
             return -1;
         }
     }
-    auto end = std::chrono::steady_clock::now();
 
     // Calculate and display bandwidth if no problem
-    double time_in_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+    float max_time_in_ms = 0;
+    for (int i = 0; i < args->num_subs; i++) {
+        float time_in_ms = 0;
+        cuda_err = cudaEventElapsedTime(&time_in_ms, start_events[i], end_events[i]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaEventElapsedTime error: %d\n", cuda_err);
+            return -1;
+        }
+        max_time_in_ms = time_in_ms > max_time_in_ms ? time_in_ms : max_time_in_ms;
+    }
 
     PrintResultTag(*args);
-    printf(" %g\n", args->size * args->num_loops * args->num_subs / time_in_sec / 1e9);
+    printf(" %g\n", args->size * args->num_loops * args->num_subs / max_time_in_ms / 1e6);
+
+    for (int i = 0; i < args->num_subs; i++) {
+        cuda_err = cudaEventDestroy(start_events[i]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaEventDestroy error: %d\n", cuda_err);
+            return -1;
+        }
+        cuda_err = cudaEventDestroy(end_events[i]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaEventDestroy error: %d\n", cuda_err);
+            return -1;
+        }
+    }
 
     return 0;
 }
