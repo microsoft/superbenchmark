@@ -153,11 +153,13 @@ class RunnerTestCase(unittest.TestCase):
                     'env': {
                         'SB_MICRO_PATH': '/sb',
                         'FOO': 'BAR',
+                        'RANK': '{proc_rank}',
+                        'NUM': '{proc_num}',
                     },
                 },
                 'expected_command': (
                     'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to numa '
-                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR '
+                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
