@@ -390,7 +390,7 @@ class SuperBenchRunner():
         env_list = '--env-file sb.env'
         for k, v in mode.env.items():
             if isinstance(v, str):
-                env_list += ' -e {k}={v}'.format(k=k, v=str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num))
+                env_list += f' -e {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
         ansible_runner_config = self._ansible_client.get_shell_config(
             "docker exec {env_list} sb-workspace bash -c '{command}'".format(
                 env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout)
