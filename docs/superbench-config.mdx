@@ -384,7 +384,7 @@ Some attributes may only be suitable for specific mode.
 | `proc_num` |    ✓    |          ✓          |   ✓   |
 | `node_num` |    ✘    |          ✓          |   ✘   |
 | `prefix`   |    ✓    |          ✘          |   ✘   |
-| `env`      |    ✘    |          ✘          |   ✓   |
+| `env`      |    ✓    |          ✓          |   ✓   |
 | `mca`      |    ✘    |          ✘          |   ✓   |
 | `parallel` |    ✓    |          ✘          |   ✘   |
 
@@ -421,8 +421,12 @@ So `prefix: CUDA_VISIBLE_DEVICES={proc_rank}` will be expressed as `CUDA_VISIBLE
 
 ### `env`
 
-Environment variables to use in the mode,
-in a flatten key-value dictionary.
+Environment variables to use in the mode, in a flatten key-value dictionary.
+The value needs to be string, any integer or boolean values need to be enclosed in quotes.
+
+Formatted string is also supported in value, available variables include:
++ `proc_rank`
++ `proc_num`
 
 ### `mca`
 
