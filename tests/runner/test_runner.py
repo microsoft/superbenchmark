@@ -204,30 +204,24 @@ class RunnerTestCase(unittest.TestCase):
             '{"kernel-launch": {"overhead_event": [[0.00583], [0.00545], [0.00581], [0.00572], [0.00559], [0.00591], '
             '[0.00562], [0.00586]], "overhead_wall": [[0.01018], [0.01039], [0.01067], [0.01079], [0.00978], '
             '[0.01085], [0.01036], [0.01033]]}, "resnet_models/pytorch-resnet50": {"steptime_train_float32": '
-            '[[252.03], [250.53], [253.75], [250.61], [252.86], [252.58], [251.15], [252.83]], '
-            '"throughput_train_float32": [[764.57], [767.83], [762.19], [767.31], [763.41], [764.31], [766.43], '
-            '[763.38]], "steptime_train_float16": [[198.36], [196.85], [200.55], [198.07], [199.41], [199.20], '
-            '[199.07], [199.34]], "throughput_train_float16": [[972.64], [977.31], [969.58], [974.33], [972.87], '
-            '[972.73], [972.46], [972.46]]}, "resnet_models/pytorch-resnet101": {"steptime_train_float32": [[385.53], '
-            '[384.05], [386.98], [385.12], [385.47], [385.81], [384.90], [386.65]], "throughput_train_float32": '
-            '[[499.39], [500.69], [498.57], [499.83], [499.51], [499.27], [499.94], [498.65]], '
-            '"steptime_train_float16": [[307.49], [307.13], [310.31], [307.64], [308.68], [309.61], [307.71], '
-            '[309.95]], "throughput_train_float16": [[627.21], [627.34], [624.85], [626.76], [626.26], [625.12], '
-            '[626.92], [625.02]]}, "pytorch-sharding-matmul": {"allreduce": [[10.56, 10.66], [10.87, 10.32], '
-            '[10.56, 10.45], [10.56, 10.60], [10.56, 10.45], [10.56, 10.38], [10.56, 10.33], [10.56, 10.69]], '
-            '"allgather": [[10.08, 10.10], [10.08, 10.16], [10.08, 10.06], [10.56, 10.04], [10.08, 10.05], '
-            '[10.08, 10.09], [10.08, 10.08], [10.08, 10.06]]}}'
+            '[[252.03]], "throughput_train_float32": [[764.57]], "steptime_train_float16": [[198.36]], '
+            '"throughput_train_float16": [[972.64]]}, "resnet_models/pytorch-resnet101": {"steptime_train_float32": '
+            '[[385.53]], "throughput_train_float32": [[499.39]], "steptime_train_float16": [[307.49]], '
+            '"throughput_train_float16": [[627.21]]}, "pytorch-sharding-matmul": {"allreduce": [[10.56, 10.66], '
+            '[10.87, 10.32], [10.56, 10.45], [10.56, 10.60], [10.56, 10.45], [10.56, 10.38], [10.56, 10.33], '
+            '[10.56, 10.69]], "allgather": [[10.08, 10.10], [10.08, 10.16], [10.08, 10.06], [10.56, 10.04], '
+            '[10.08, 10.05], [10.08, 10.09], [10.08, 10.08], [10.08, 10.06]]}}'
         )
         reduce_ops = json.loads(
             '{"kernel-launch/overhead_event": null, "kernel-launch/overhead_wall": null, '
-            '"resnet_models/pytorch-resnet50/steptime_train_float32": "max", '
-            '"resnet_models/pytorch-resnet50/throughput_train_float32": "min", '
-            '"resnet_models/pytorch-resnet50/steptime_train_float16": "max", '
-            '"resnet_models/pytorch-resnet50/throughput_train_float16": "min", '
-            '"resnet_models/pytorch-resnet101/steptime_train_float32": "max", '
-            '"resnet_models/pytorch-resnet101/throughput_train_float32": "min", '
-            '"resnet_models/pytorch-resnet101/steptime_train_float16": "max", '
-            '"resnet_models/pytorch-resnet101/throughput_train_float16": "min", '
+            '"resnet_models/pytorch-resnet50/steptime_train_float32": null, '
+            '"resnet_models/pytorch-resnet50/throughput_train_float32": null, '
+            '"resnet_models/pytorch-resnet50/steptime_train_float16": null, '
+            '"resnet_models/pytorch-resnet50/throughput_train_float16": null, '
+            '"resnet_models/pytorch-resnet101/steptime_train_float32": null, '
+            '"resnet_models/pytorch-resnet101/throughput_train_float32": null, '
+            '"resnet_models/pytorch-resnet101/steptime_train_float16": null, '
+            '"resnet_models/pytorch-resnet101/throughput_train_float16": null, '
             '"pytorch-sharding-matmul/allreduce": "max", "pytorch-sharding-matmul/allgather": "max"}'
         )
 
@@ -240,14 +234,14 @@ class RunnerTestCase(unittest.TestCase):
             '"kernel-launch/overhead_wall:2": 0.01067, "kernel-launch/overhead_wall:3": 0.01079, '
             '"kernel-launch/overhead_wall:4": 0.00978, "kernel-launch/overhead_wall:5": 0.01085, '
             '"kernel-launch/overhead_wall:6": 0.01036, "kernel-launch/overhead_wall:7": 0.01033, '
-            '"resnet_models/pytorch-resnet50/steptime_train_float32": 253.75, '
-            '"resnet_models/pytorch-resnet50/throughput_train_float32": 762.19, '
-            '"resnet_models/pytorch-resnet50/steptime_train_float16": 200.55, '
-            '"resnet_models/pytorch-resnet50/throughput_train_float16": 969.58, '
-            '"resnet_models/pytorch-resnet101/steptime_train_float32": 386.98, '
-            '"resnet_models/pytorch-resnet101/throughput_train_float32": 498.57, '
-            '"resnet_models/pytorch-resnet101/steptime_train_float16": 310.31, '
-            '"resnet_models/pytorch-resnet101/throughput_train_float16": 624.85, '
+            '"resnet_models/pytorch-resnet50/steptime_train_float32": 252.03, '
+            '"resnet_models/pytorch-resnet50/throughput_train_float32": 764.57, '
+            '"resnet_models/pytorch-resnet50/steptime_train_float16": 198.36, '
+            '"resnet_models/pytorch-resnet50/throughput_train_float16": 972.64, '
+            '"resnet_models/pytorch-resnet101/steptime_train_float32": 385.53, '
+            '"resnet_models/pytorch-resnet101/throughput_train_float32": 499.39, '
+            '"resnet_models/pytorch-resnet101/steptime_train_float16": 307.49, '
+            '"resnet_models/pytorch-resnet101/throughput_train_float16": 627.21, '
             '"pytorch-sharding-matmul/0/allreduce": 10.87, "pytorch-sharding-matmul/1/allreduce": 10.69, '
             '"pytorch-sharding-matmul/0/allgather": 10.56, "pytorch-sharding-matmul/1/allgather": 10.16}'
         )
@@ -291,3 +285,63 @@ class RunnerTestCase(unittest.TestCase):
             'monitor/gpu_uncorrected_ecc:7': 0
         }
         self.assertEqual(self.runner._SuperBenchRunner__merge_monitor_metrics(path), expected)
+
+    def test_generate_metric_name(self):
+        """Test __generate_metric_name."""
+        """(self, benchmark_name, metric, rank_count, run_count, curr_rank, curr_run):"""
+        test_cases = [
+            {
+                'benchmark_name': 'kernel-launch',
+                'metric': 'overhead_event',
+                'rank_count': 8,
+                'run_count': 2,
+                'curr_rank': 0,
+                'curr_run': 0,
+                'expected': 'kernel-launch/0/overhead_event:0',
+            },
+            {
+                'benchmark_name': 'kernel-launch',
+                'metric': 'overhead_event',
+                'rank_count': 8,
+                'run_count': 2,
+                'curr_rank': 2,
+                'curr_run': 1,
+                'expected': 'kernel-launch/1/overhead_event:2',
+            },
+            {
+                'benchmark_name': 'kernel-launch',
+                'metric': 'overhead_event',
+                'rank_count': 1,
+                'run_count': 1,
+                'curr_rank': 0,
+                'curr_run': 0,
+                'expected': 'kernel-launch/overhead_event',
+            },
+            {
+                'benchmark_name': 'resnet_models/pytorch-resnet50',
+                'metric': 'fp32_train_step_time',
+                'rank_count': 1,
+                'run_count': 2,
+                'curr_rank': 0,
+                'curr_run': 1,
+                'expected': 'resnet_models/pytorch-resnet50/1/fp32_train_step_time',
+            },
+            {
+                'benchmark_name': 'resnet_models/pytorch-resnet50',
+                'metric': 'fp32_train_step_time',
+                'rank_count': 1,
+                'run_count': 1,
+                'curr_rank': 0,
+                'curr_run': 0,
+                'expected': 'resnet_models/pytorch-resnet50/fp32_train_step_time',
+            },
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(msg='Testing with case', test_case=test_case):
+                self.assertEqual(
+                    self.runner._SuperBenchRunner__generate_metric_name(
+                        test_case['benchmark_name'], test_case['metric'], test_case['rank_count'],
+                        test_case['run_count'], test_case['curr_rank'], test_case['curr_run']
+                    ), test_case['expected']
+                )
