@@ -19,7 +19,7 @@ class DataDiagnosis():
     def __init__(self):
         """Init function."""
         self._sb_rules = {}
-        self._metrics = {}
+        self._benchmark_metrics_dict = {}
 
     def _get_metrics_by_benchmarks(self, metrics_list):
         """Get mappings of benchmarks:metrics of metrics_list.
@@ -70,6 +70,8 @@ class DataDiagnosis():
                 logger.log_and_raise(exception=Exception, msg='{} lack of metrics'.format(name))
             if isinstance(rule['metrics'], str):
                 rule['metrics'] = [rule['metrics']]
+        if 'store' in rule and not isinstance(rule['store'], bool):
+            logger.log_and_raise(exception=Exception, msg='{} store must be bool type'.format(name))
         return rule
 
     def _get_baseline_of_metric(self, baseline, metric):
@@ -94,12 +96,11 @@ class DataDiagnosis():
                 logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
                 return -1
 
-    def __get_metrics_in_criteria(self, rule, benchmark_rules, baseline):
+    def __get_metrics_and_baseline(self, rule, benchmark_rules, baseline):
         """Get metrics with baseline in the rule.
 
-        Use metric with regex in the metrics of the rule to match
-        the metric full name from raw data for each benchmark in the rule,
-        and then merge baseline for each metric.
+        Parse metric regex in the rule, and store the (baseline, metric) pair
+        in _sb_rules[rule]['metrics'] and metric in _enable_metrics。
 
         Args:
             rule (str): the name of the rule
@@ -108,29 +109,27 @@ class DataDiagnosis():
         """
         if self._sb_rules[rule]['function'] == 'multi_rules':
             return
-        single_rule_metrics = benchmark_rules[rule]['metrics']
-        benchmark_metrics = self._get_metrics_by_benchmarks(single_rule_metrics)
-        for benchmark_name in benchmark_metrics:
-            if benchmark_name not in self._metrics:
+        metrics_in_rule = benchmark_rules[rule]['metrics']
+        benchmark_metrics_dict_in_rule = self._get_metrics_by_benchmarks(metrics_in_rule)
+        for benchmark_name in benchmark_metrics_dict_in_rule:
+            if benchmark_name not in self._benchmark_metrics_dict:
                 logger.warning('DataDiagnosis: get criteria failed - {}'.format(benchmark_name))
                 continue
             # get rules and criteria for each metric
-            for metric in self._metrics[benchmark_name]:
+            for metric in self._benchmark_metrics_dict[benchmark_name]:
                 # metric full name in baseline
-                if metric in single_rule_metrics:
+                if metric in metrics_in_rule:
                     self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
                     self._enable_metrics.append(metric)
                     continue
                 # metric full name not in baseline, use regex to match
-                for metric_regex in benchmark_metrics[benchmark_name]:
+                for metric_regex in benchmark_metrics_dict_in_rule[benchmark_name]:
                     if re.search(metric_regex, metric):
                         self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
                         self._enable_metrics.append(metric)
 
-    def _get_criteria(self, rules, baseline):
-        """Get and generate criteria for rules.
-
-        Generate and store complete criteria and rules using rules and baseline read from file.
+    def _parse_rules_and_baseline(self, rules, baseline):
+        """Parse and merge rules and baseline read from file.
 
         Args:
             rules (dict): rules from rule yaml file
@@ -151,12 +150,12 @@ class DataDiagnosis():
                 self._sb_rules[rule] = {}
                 self._sb_rules[rule]['name'] = rule
                 self._sb_rules[rule]['function'] = benchmark_rules[rule]['function']
-                self._sb_rules[rule][
-                    'store'] = True if 'store' in benchmark_rules[rule] and benchmark_rules[rule]['store'] else False
+                self._sb_rules[rule]['store'] = True if 'store' in benchmark_rules[
+                    rule] and benchmark_rules[rule]['store'] is True else False
                 self._sb_rules[rule]['criteria'] = benchmark_rules[rule]['criteria']
                 self._sb_rules[rule]['categories'] = benchmark_rules[rule]['categories']
                 self._sb_rules[rule]['metrics'] = {}
-                self.__get_metrics_in_criteria(rule, benchmark_rules, baseline)
+                self.__get_metrics_and_baseline(rule, benchmark_rules, baseline)
             self._enable_metrics.sort()
         except Exception as e:
             logger.error('DataDiagnosis: get criteria failed - {}'.format(str(e)))
@@ -184,20 +183,22 @@ class DataDiagnosis():
         issue_label = False
         details = []
         categories = set()
-        label = {}
+        violation = {}
         summary_data_row = pd.Series(index=self._enable_metrics, name=node, dtype=float)
         # Check each rule
         for rule in self._sb_rules:
             # Get rule op function and run the rule
             function_name = self._sb_rules[rule]['function']
             rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
-            pass_rule = True
+            violated_num = 0
             if rule_op == RuleOp.multi_rules:
-                pass_rule = rule_op(self._sb_rules[rule], details, categories, label)
+                violated_num = rule_op(self._sb_rules[rule], details, categories, violation)
             else:
-                pass_rule = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories, label)
+                violated_num = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories)
             # label the node as defective one
-            if not self._sb_rules[rule]['store'] and not pass_rule:
+            if self._sb_rules[rule]['store']:
+                violation[rule] = violated_num
+            elif violated_num:
                 issue_label = True
         if issue_label:
             # Add category information
@@ -235,7 +236,7 @@ class DataDiagnosis():
             # get criteria
             rules = file_handler.read_rules(rule_file)
             baseline = file_handler.read_baseline(baseline_file)
-            if not self._get_criteria(rules, baseline):
+            if not self._parse_rules_and_baseline(rules, baseline):
                 return data_not_accept_df, label_df
             # run diagnosis rules for each node
             for node in self._raw_data_df.index:
@@ -267,7 +268,7 @@ class DataDiagnosis():
         """
         try:
             self._raw_data_df = file_handler.read_raw_data(raw_data_file)
-            self._metrics = self._get_metrics_by_benchmarks(list(self._raw_data_df.columns))
+            self._benchmark_metrics_dict = self._get_metrics_by_benchmarks(list(self._raw_data_df.columns))
             logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(rule_file, baseline_file)
             logger.info('DataDiagnosis: Processed finished')
