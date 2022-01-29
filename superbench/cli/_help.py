@@ -114,19 +114,20 @@ helps['result diagnosis'] = """
             --data-file outputs/results-summary.jsonl
             --rule-file rule.yaml
             --baseline-file baseline.json
-            --output-file-foramt excel
+            --output-file-format excel
         - name: run data diagnosis and output the results in jsonl format
           text: >
             {cli_name} result diagnosis
             --data-file outputs/results-summary.jsonl
             --rule-file rule.yaml
             --baseline-file baseline.json
-            --output-file-foramt json
+            --output-file-format json
 """.format(cli_name=CLI_NAME)
 
 
 class SuperBenchCLIHelp(CLIHelp):
     """SuperBench CLI help loader."""
+
     def __init__(self, cli_ctx=None):
         """Init CLI help loader.
 
