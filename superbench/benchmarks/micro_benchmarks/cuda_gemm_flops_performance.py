@@ -44,6 +44,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
                 'int4_tc': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
             }
         }
+        # Skip FP64 for RTX Turing/Ampere and Tesla T4/GA10x due to very limited FP64 TFLOP rate
         self.__kernel_map[7.5] = {k: self.__kernel_map[7.0][k] for k in self.__kernel_map[7.0] if 'fp64' not in k}
         self.__kernel_map[8.6] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'fp64' not in k}
         self.__parse_logline = [
