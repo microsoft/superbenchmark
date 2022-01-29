@@ -267,6 +267,33 @@ class SuperBenchRunner():
 
         return results_summary
 
+    def __generate_metric_name(self, benchmark_name, metric, rank_count, run_count, curr_rank, curr_run):
+        """Generate the summarized metrics name.
+
+        The format of metric name is:
+               {benchmark_name}/[{run_count}/]{metric_name}[:rank]
+        [run_count] and [rank] parts are optional.
+
+        Args:
+            benchmark_name (str): The benchmark name.
+            metric (str): The metric name.
+            rank_count (int): The total count of rank.
+            run_count (int): The total count of benchmarking.
+            curr_rank (int): The current rank index.
+            curr_run (int): The current run index.
+
+        Returns:
+            dict: Flattened result with metric as key.
+        """
+        metric_name = benchmark_name
+        if run_count > 1:
+            metric_name = '{}/{}'.format(metric_name, curr_run)
+        metric_name = '{}/{}'.format(metric_name, metric)
+        if rank_count > 1:
+            metric_name = '{}:{}'.format(metric_name, curr_rank)
+
+        return metric_name
+
     def __merge_benchmark_metrics(self, results_summary, reduce_ops):
         """Merge metrics of all benchmarks in one node.
 
@@ -290,20 +317,18 @@ class SuperBenchRunner():
                 if reduce_ops[metric_name] is not None:
                     reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
                     values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
-                    for run_count in range(len(values)):
-                        if len(values) > 1:
-                            metric_name = '{}/{}/{}'.format(benchmark_name, run_count, metric)
-                        else:
-                            metric_name = '{}/{}'.format(benchmark_name, metric)
-                        metrics_summary[metric_name] = values[run_count]
+                    for run in range(len(values)):
+                        metric_name = self.__generate_metric_name(benchmark_name, metric, 1, len(values), 0, run)
+                        metrics_summary[metric_name] = values[run]
                 else:
-                    for rank in range(len(results_summary[benchmark_name][metric])):
-                        for run_count in range(len(results_summary[benchmark_name][metric][rank])):
-                            if len(results_summary[benchmark_name][metric][rank]) > 1:
-                                metric_name = '{}/{}/{}:{}'.format(benchmark_name, run_count, metric, rank)
-                            else:
-                                metric_name = '{}/{}:{}'.format(benchmark_name, metric, rank)
-                            metrics_summary[metric_name] = results_summary[benchmark_name][metric][rank][run_count]
+                    rank_count = len(results_summary[benchmark_name][metric])
+                    for rank, rank_value in enumerate(results_summary[benchmark_name][metric]):
+                        run_count = len(rank_value)
+                        for run, run_value in enumerate(rank_value):
+                            metric_name = self.__generate_metric_name(
+                                benchmark_name, metric, rank_count, run_count, rank, run
+                            )
+                            metrics_summary[metric_name] = run_value
 
         return metrics_summary
 
