@@ -86,7 +86,9 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
-        args = '--size %d --num_warm_up %d --num_loops %d' % (self._args.size, self._args.num_warm_up, self._args.num_loops)
+        args = '--size %d --num_warm_up %d --num_loops %d' % (
+            self._args.size, self._args.num_warm_up, self._args.num_loops
+        )
         for mem_type in self._args.mem_type:
             args += ' --%s' % mem_type
         for copy_type in self._args.copy_type:
