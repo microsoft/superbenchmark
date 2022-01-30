@@ -232,7 +232,7 @@ int SetGpu(int gpu_id) {
 }
 
 // Prepare data buffers and streams to be used.
-int PrepareResources(BenchArgs *args) {
+int PrepareBufAndStream(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     constexpr int uint8_mod = 256;
 
@@ -264,7 +264,7 @@ int PrepareResources(BenchArgs *args) {
                 *(host_buf_ptrs[j]) = nullptr;
                 cuda_err = cudaMalloc(gpu_buf_ptrs[j], args->size);
                 if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "PrepareResources::cudaMalloc error: %d\n", cuda_err);
+                    fprintf(stderr, "PrepareBufAndStream::cudaMalloc error: %d\n", cuda_err);
                     return -1;
                 }
             } else {
@@ -275,12 +275,12 @@ int PrepareResources(BenchArgs *args) {
                 *(host_buf_ptrs[j]) = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
                 cuda_err = cudaHostRegister(*(host_buf_ptrs[j]), args->size, cudaHostRegisterMapped);
                 if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "PrepareResources::cudaHostRegister error: %d\n", cuda_err);
+                    fprintf(stderr, "PrepareBufAndStream::cudaHostRegister error: %d\n", cuda_err);
                     return -1;
                 }
                 cuda_err = cudaHostGetDevicePointer((void **)gpu_buf_ptrs[j], *(host_buf_ptrs[j]), 0);
                 if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "PrepareResources::cudaHostGetDevicePointer error: %d\n", cuda_err);
+                    fprintf(stderr, "PrepareBufAndStream::cudaHostGetDevicePointer error: %d\n", cuda_err);
                     return -1;
                 }
             }
@@ -294,7 +294,7 @@ int PrepareResources(BenchArgs *args) {
         }
         cuda_err = cudaMemcpy(sub.src_dev_gpu_buf_ptr, sub.data_buf, args->size, cudaMemcpyDefault);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "PrepareResources::cudaMemcpy error: %d\n", cuda_err);
+            fprintf(stderr, "PrepareBufAndStream::cudaMemcpy error: %d\n", cuda_err);
             return -1;
         }
 
@@ -304,24 +304,30 @@ int PrepareResources(BenchArgs *args) {
         }
         cuda_err = cudaStreamCreateWithFlags(&(sub.stream), cudaStreamNonBlocking);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "PrepareResources::cudaStreamCreate error: %d\n", cuda_err);
-            return -1;
-        }
-
-        // Create events
-        cuda_err = cudaEventCreate(&(sub.start_event));
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "PrepareResources::cudaEventCreate error: %d\n", cuda_err);
-            return -1;
-        }
-        cuda_err = cudaEventCreate(&(sub.end_event));
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "PrepareResources::cudaEventCreate error: %d\n", cuda_err);
+            fprintf(stderr, "PrepareBufAndStream::cudaStreamCreate error: %d\n", cuda_err);
             return -1;
         }
     }
 
     return 0;
+}
+
+// Prepare events to be used.
+int PrepareEvent(BenchArgs *args) {
+    cudaError_t cuda_err = cudaSuccess;
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs &sub = args->subs[i];
+        cuda_err = cudaEventCreate(&(sub.start_event));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "PrepareEvent::cudaEventCreate error: %d\n", cuda_err);
+            return -1;
+        }
+        cuda_err = cudaEventCreate(&(sub.end_event));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "PrepareEvent::cudaEventCreate error: %d\n", cuda_err);
+            return -1;
+        }
+    }
 }
 
 // Validate the result of data transfer.
@@ -355,7 +361,7 @@ int CheckBuf(BenchArgs *args) {
 }
 
 // Destroy data buffers and streams
-int DestroyResources(BenchArgs *args) {
+int DestroyBufAndStream(BenchArgs *args) {
     int ret = 0;
     cudaError_t cuda_err = cudaSuccess;
 
@@ -388,7 +394,7 @@ int DestroyResources(BenchArgs *args) {
                 }
                 cuda_err = cudaFree(*(gpu_buf_ptrs[i]));
                 if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "DestroyResources::cudaFree error: %d\n", cuda_err);
+                    fprintf(stderr, "DestroyBufAndStream::cudaFree error: %d\n", cuda_err);
                     ret = -1;
                 }
                 *(gpu_buf_ptrs[i]) = nullptr;
@@ -402,7 +408,7 @@ int DestroyResources(BenchArgs *args) {
                 }
                 cuda_err = cudaHostUnregister(*(host_buf_ptrs[i]));
                 if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "DestroyResources::cudaHostUnregister error: %d\n", cuda_err);
+                    fprintf(stderr, "DestroyBufAndStream::cudaHostUnregister error: %d\n", cuda_err);
                     ret = -1;
                 }
                 numa_free(*(host_buf_ptrs[i]), args->size);
@@ -417,24 +423,30 @@ int DestroyResources(BenchArgs *args) {
         }
         cuda_err = cudaStreamDestroy(sub.stream);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "DestoryResources::cudaStreamDestroy error: %d\n", cuda_err);
-            return -1;
-        }
-
-        // Destroy events
-        cuda_err = cudaEventDestroy(sub.start_event);
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "DestroyResources::cudaEventDestroy error: %d\n", cuda_err);
-            return -1;
-        }
-        cuda_err = cudaEventDestroy(sub.end_event);
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "DestroyResources::cudaEventDestroy error: %d\n", cuda_err);
+            fprintf(stderr, "DestoryBufAndStream::cudaStreamDestroy error: %d\n", cuda_err);
             return -1;
         }
     }
 
     return ret;
+}
+
+// Destory events
+int DestroyEvent(BenchArgs *args) {
+    cudaError_t cuda_err = cudaSuccess;
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs &sub = args->subs[i];
+        cuda_err = cudaEventDestroy(sub.start_event);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "DestroyEvent::cudaEventDestroy error: %d\n", cuda_err);
+            return -1;
+        }
+        cuda_err = cudaEventDestroy(sub.end_event);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "DestroyEvent::cudaEventDestroy error: %d\n", cuda_err);
+            return -1;
+        }
+    }
 }
 
 // Unroll depth in SM copy kernel
@@ -519,7 +531,7 @@ void PrintResultTag(const BenchArgs &args) {
 int RunCopy(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     uint64_t num_thread_blocks;
-    const uint64_t num_warm_up = 10;
+    const uint64_t num_warm_up = 20;
 
     // Validate data size for SM copy
     if (args->is_sm_copy) {
@@ -617,17 +629,28 @@ int EnablePeerAccess(int src_gpu_id, int dst_gpu_id, int *can_access) {
 
 int RunBench(BenchArgs *args) {
     int ret = 0;
-    int destroy_buf_ret = 0;
-    ret = PrepareResources(args);
-    if (ret == 0) {
-        ret = RunCopy(args);
-        if (ret == 0) {
-            ret = CheckBuf(args);
-        }
+    int destroy_ret = 0;
+    ret = PrepareBufAndStream(args);
+    if (ret != 0) {
+        goto destroy_buf;
     }
-    destroy_buf_ret = DestroyResources(args);
+    ret = PrepareEvent(args);
+    if (ret != 0) {
+        goto destroy_event;
+    }
+    ret = RunCopy(args);
     if (ret == 0) {
-        ret = destroy_buf_ret;
+        ret = CheckBuf(args);
+    }
+destroy_event:
+    destroy_ret = DestroyEvent(args);
+    if (ret == 0) {
+        ret = destroy_ret;
+    }
+destroy_buf:
+    destroy_ret = DestroyBufAndStream(args);
+    if (ret == 0) {
+        ret = destroy_ret;
     }
     return ret;
 }
