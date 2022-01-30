@@ -79,7 +79,24 @@ superbench:
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
           parallel: no
-    gpu-copy-bw:
+    gpu-copy-bw:correctness:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type:
+          - htod
+          - dtoh
+          - dtod
+        copy_type:
+          - sm
+          - dma
+        size: 4096
+        num_warm_up: 0
+        num_loops: 1
+        check_data: true
+    gpu-copy-bw:perf:
       enable: true
       modes:
         - name: local
