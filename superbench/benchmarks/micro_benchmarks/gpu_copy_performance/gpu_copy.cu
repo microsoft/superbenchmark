@@ -423,7 +423,7 @@ int DestroyBufAndStream(BenchArgs *args) {
         }
         cuda_err = cudaStreamDestroy(sub.stream);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "DestoryBufAndStream::cudaStreamDestroy error: %d\n", cuda_err);
+            fprintf(stderr, "DestroyBufAndStream::cudaStreamDestroy error: %d\n", cuda_err);
             return -1;
         }
     }
@@ -431,7 +431,7 @@ int DestroyBufAndStream(BenchArgs *args) {
     return ret;
 }
 
-// Destory events
+// Destroy events
 int DestroyEvent(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     for (int i = 0; i < args->num_subs; i++) {

@@ -56,7 +56,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--num_loops',
             type=int,
-            default=100,
+            default=200,
             required=False,
             help='Number of data buffer copies performed.',
         )
