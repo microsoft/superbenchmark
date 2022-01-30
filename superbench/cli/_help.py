@@ -127,7 +127,6 @@ helps['result diagnosis'] = """
 
 class SuperBenchCLIHelp(CLIHelp):
     """SuperBench CLI help loader."""
-
     def __init__(self, cli_ctx=None):
         """Init CLI help loader.
 
