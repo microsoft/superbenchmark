@@ -7,7 +7,7 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 # NVIDIA:
 #   - CUDA: 11.1.1
 #   - cuDNN: 8.0.5
-#   - NCCL: bootstrap_tag
+#   - NCCL: v2.10.3-1
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 #   - HPC-X: v2.8.3
@@ -92,7 +92,7 @@ RUN cd /tmp && \
 
 # Install NCCL patch
 RUN cd /tmp && \
-    git clone -b bootstrap_tag https://github.com/NVIDIA/nccl.git && \
+    git clone -b v2.10.3-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
     make -j src.build && \
     make install && \
