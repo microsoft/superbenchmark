@@ -35,7 +35,7 @@ class CudaGemmFlopsBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         )
 
         ret = benchmark._preprocess()
-        if dm.device_manager.get_device_compute_capability() not in [7.0, 8.0]:
+        if dm.device_manager.get_device_compute_capability() not in benchmark._CudaGemmFlopsBenchmark__kernel_map:
             assert (ret is False)
             assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
         else:
