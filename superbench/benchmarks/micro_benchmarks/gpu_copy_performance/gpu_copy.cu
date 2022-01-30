@@ -335,6 +335,9 @@ int PrepareEvent(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     for (int i = 0; i < args->num_subs; i++) {
         SubBenchArgs &sub = args->subs[i];
+        if (SetGpu(sub.worker_gpu_id)) {
+            return -1;
+        }
         cuda_err = cudaEventCreate(&(sub.start_event));
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "PrepareEvent::cudaEventCreate error: %d\n", cuda_err);
@@ -455,6 +458,9 @@ int DestroyEvent(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     for (int i = 0; i < args->num_subs; i++) {
         SubBenchArgs &sub = args->subs[i];
+        if (SetGpu(sub.worker_gpu_id)) {
+            return -1;
+        }
         cuda_err = cudaEventDestroy(sub.start_event);
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "DestroyEvent::cudaEventDestroy error: %d\n", cuda_err);
