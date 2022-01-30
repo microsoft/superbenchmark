@@ -575,8 +575,8 @@ int RunCopy(BenchArgs *args) {
                     reinterpret_cast<ulong2 *>(sub.dst_dev_gpu_buf_ptr),
                     reinterpret_cast<ulong2 *>(sub.src_dev_gpu_buf_ptr));
             } else {
-                cuda_err = cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr,
-                    args->size, cudaMemcpyDefault, sub.stream);
+                cuda_err = cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr, args->size,
+                                           cudaMemcpyDefault, sub.stream);
                 if (cuda_err != cudaSuccess) {
                     fprintf(stderr, "RunCopy::cudaMemcpyAsync error: %d\n", cuda_err);
                     return -1;
