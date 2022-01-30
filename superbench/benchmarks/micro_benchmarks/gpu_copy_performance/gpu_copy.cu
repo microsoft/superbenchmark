@@ -75,6 +75,9 @@ struct BenchArgs {
     // Data buffer size used.
     uint64_t size = 0;
 
+    // Number of warm up rounds to run.
+    uint64_t num_warm_up = 0;
+
     // Number of loops to run.
     uint64_t num_loops = 0;
 
@@ -88,10 +91,13 @@ struct BenchArgs {
 // Options accepted by this program.
 struct Opts {
     // Data buffer size for copy benchmark.
-    uint64_t size;
+    uint64_t size = 0;
 
-    // Data buffer size for copy benchmark.
-    uint64_t num_loops;
+    // Number of warm up rounds to run.
+    uint64_t num_warm_up = 0;
+
+    // Number of loops to run.
+    uint64_t num_loops = 0;
 
     // Whether GPU SM copy needs to be evaluated.
     bool sm_copy_enabled = false;
@@ -116,6 +122,7 @@ struct Opts {
 void PrintUsage() {
     printf("Usage: gpu_copy "
            "--size <size> "
+           "--num_warm_up <num_warm_up> "
            "--num_loops <num_loops> "
            "[--sm_copy] "
            "[--dma_copy] "
@@ -129,7 +136,8 @@ void PrintUsage() {
 int ParseOpts(int argc, char **argv, Opts *opts) {
     enum class OptIdx {
         kSize,
-        kNumIters,
+        kNumWarmUp,
+        kNumLoops,
         kEnableSmCopy,
         kEnableDmaCopy,
         kEnableHToD,
@@ -139,7 +147,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
     };
     const struct option options[] = {
         {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
-        {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumIters)},
+        {"num_warm_up", required_argument, nullptr, static_cast<int>(OptIdx::kNumWarmUp)},
+        {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumLoops)},
         {"sm_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableSmCopy)},
         {"dma_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDmaCopy)},
         {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
@@ -149,12 +158,13 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
     int getopt_ret = 0;
     int opt_idx = 0;
     bool size_specified = false;
+    bool num_warm_up_specified = false;
     bool num_loops_specified = false;
     bool parse_err = false;
     while (true) {
         getopt_ret = getopt_long(argc, argv, "", options, &opt_idx);
         if (getopt_ret == -1) {
-            if (!size_specified || !num_loops_specified) {
+            if (!size_specified || !num_warm_up_specified || !num_loops_specified) {
                 parse_err = true;
             }
             break;
@@ -171,7 +181,15 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
                 size_specified = true;
             }
             break;
-        case static_cast<int>(OptIdx::kNumIters):
+        case static_cast<int>(OptIdx::kNumWarmUp):
+            if (1 != sscanf(optarg, "%lu", &(opts->num_warm_up))) {
+                fprintf(stderr, "Invalid num_warm_up: %s\n", optarg);
+                parse_err = true;
+            } else {
+                num_warm_up_specified = true;
+            }
+            break;
+        case static_cast<int>(OptIdx::kNumLoops):
             if (1 != sscanf(optarg, "%lu", &(opts->num_loops))) {
                 fprintf(stderr, "Invalid num_loops: %s\n", optarg);
                 parse_err = true;
@@ -328,6 +346,7 @@ int PrepareEvent(BenchArgs *args) {
             return -1;
         }
     }
+    return 0;
 }
 
 // Validate the result of data transfer.
@@ -447,6 +466,7 @@ int DestroyEvent(BenchArgs *args) {
             return -1;
         }
     }
+    return 0;
 }
 
 // Unroll depth in SM copy kernel
@@ -531,7 +551,6 @@ void PrintResultTag(const BenchArgs &args) {
 int RunCopy(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
     uint64_t num_thread_blocks;
-    const uint64_t num_warm_up = 20;
 
     // Validate data size for SM copy
     if (args->is_sm_copy) {
@@ -545,7 +564,7 @@ int RunCopy(BenchArgs *args) {
     }
 
     // Launch jobs and collect running time
-    for (int i = 0; i < args->num_loops + num_warm_up; i++) {
+    for (int i = 0; i < args->num_loops + args->num_warm_up; i++) {
         for (int j = 0; j < args->num_subs; j++) {
             SubBenchArgs &sub = args->subs[j];
             if (SetGpu(sub.worker_gpu_id)) {
@@ -556,16 +575,20 @@ int RunCopy(BenchArgs *args) {
                     reinterpret_cast<ulong2 *>(sub.dst_dev_gpu_buf_ptr),
                     reinterpret_cast<ulong2 *>(sub.src_dev_gpu_buf_ptr));
             } else {
-                cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr, args->size, cudaMemcpyDefault,
-                                sub.stream);
+                cuda_err = cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr,
+                    args->size, cudaMemcpyDefault, sub.stream);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunCopy::cudaMemcpyAsync error: %d\n", cuda_err);
+                    return -1;
+                }
             }
-            if (i + 1 == num_warm_up) {
+            if (i + 1 == args->num_warm_up) {
                 cuda_err = cudaEventRecord(sub.start_event, sub.stream);
                 if (cuda_err != cudaSuccess) {
                     fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
                     return -1;
                 }
-            } else if (i + 1 == args->num_loops + num_warm_up) {
+            } else if (i + 1 == args->num_loops + args->num_warm_up) {
                 cuda_err = cudaEventRecord(sub.end_event, sub.stream);
                 if (cuda_err != cudaSuccess) {
                     fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
@@ -718,6 +741,7 @@ int main(int argc, char **argv) {
     if (ret != 0) {
         return ret;
     }
+    args.num_warm_up = opts.num_warm_up;
     args.num_loops = opts.num_loops;
     args.size = opts.size;
 

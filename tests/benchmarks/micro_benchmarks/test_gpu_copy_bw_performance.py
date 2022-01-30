@@ -28,12 +28,13 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark_class)
 
         size = 1048576
+        num_warm_up = 20
         num_loops = 10000
         mem_types = ['htod', 'dtoh', 'dtod']
         copy_types = ['sm', 'dma']
 
-        parameters = '--mem_type %s --copy_type %s --size %d --num_loops %d --bidirectional' % \
-            (' '.join(mem_types), ' '.join(copy_types), size, num_loops)
+        parameters = '--mem_type %s --copy_type %s --size %d --num_warm_up %d --num_loops %d --bidirectional' % \
+            (' '.join(mem_types), ' '.join(copy_types), size, num_warm_up, num_loops)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -48,6 +49,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.mem_type == mem_types)
         assert (benchmark._args.copy_type == copy_types)
         assert (benchmark._args.size == size)
+        assert (benchmark._args.num_warm_up == num_warm_up)
         assert (benchmark._args.num_loops == num_loops)
         assert (benchmark._args.bidirectional)
 
@@ -59,6 +61,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         for copy_type in copy_types:
             assert ('--%s_copy' % copy_type in benchmark._commands[0])
         assert ('--size %d' % size in benchmark._commands[0])
+        assert ('--num_warm_up %d' % num_warm_up in benchmark._commands[0])
         assert ('--num_loops %d' % num_loops in benchmark._commands[0])
         assert ('--bidirectional' in benchmark._commands[0])
 
