@@ -48,7 +48,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--size',
             type=int,
-            default=64 * 1024**2,
+            default=256 * 1024**2,
             required=False,
             help='Size of data buffer in bytes.',
         )
@@ -64,7 +64,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--num_loops',
             type=int,
-            default=200,
+            default=100,
             required=False,
             help='Number of data buffer copies performed.',
         )
@@ -73,6 +73,12 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
             '--bidirectional',
             action='store_true',
             help='Enable bidirectional test',
+        )
+
+        self._parser.add_argument(
+            '--check_data',
+            action='store_true',
+            help='Enable data checking',
         )
 
     def _preprocess(self):
@@ -96,6 +102,9 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.bidirectional:
             args += ' --bidirectional'
+
+        if self._args.check_data:
+            args += ' --check_data'
 
         self._commands = ['%s %s' % (self.__bin_path, args)]
 

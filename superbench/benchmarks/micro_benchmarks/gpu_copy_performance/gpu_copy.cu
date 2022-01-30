@@ -3,7 +3,6 @@
 
 // GPU copy benchmark tests dtoh/htod/dtod data transfer bandwidth by GPU SM/DMA.
 
-#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -84,6 +83,9 @@ struct BenchArgs {
     // Uses SM copy, otherwise DMA copy.
     bool is_sm_copy = false;
 
+    // Whether check data after copy.
+    bool check_data = false;
+
     // Sub-benchmarks in parallel.
     SubBenchArgs subs[kMaxNumSubs];
 };
@@ -116,6 +118,9 @@ struct Opts {
 
     // Whether bidirectional transfer is enabled.
     bool bidirectional_enabled = false;
+
+    // Whether check data after copy.
+    bool check_data = false;
 };
 
 // Print usage of this program.
@@ -129,7 +134,8 @@ void PrintUsage() {
            "[--htod] "
            "[--dtoh] "
            "[--dtod] "
-           "[--bidirectional]\n");
+           "[--bidirectional] "
+           "[--check_data]\n");
 }
 
 // Parse options of this program.
@@ -143,7 +149,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         kEnableHToD,
         kEnableDToH,
         kEnableDToD,
-        kEnableBidirectional
+        kEnableBidirectional,
+        kEnableCheckData
     };
     const struct option options[] = {
         {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
@@ -154,7 +161,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
         {"dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToH)},
         {"dtod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToD)},
-        {"bidirectional", no_argument, nullptr, static_cast<int>(OptIdx::kEnableBidirectional)}};
+        {"bidirectional", no_argument, nullptr, static_cast<int>(OptIdx::kEnableBidirectional)},
+        {"check_data", no_argument, nullptr, static_cast<int>(OptIdx::kEnableCheckData)}};
     int getopt_ret = 0;
     int opt_idx = 0;
     bool size_specified = false;
@@ -215,6 +223,9 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         case static_cast<int>(OptIdx::kEnableBidirectional):
             opts->bidirectional_enabled = true;
             break;
+        case static_cast<int>(OptIdx::kEnableCheckData):
+            opts->check_data = true;
+            break;
         default:
             parse_err = true;
         }
@@ -259,12 +270,14 @@ int PrepareBufAndStream(BenchArgs *args) {
 
         // Generate data to copy
         sub.data_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
-        for (int j = 0; j < args->size; j++) {
-            sub.data_buf[j] = static_cast<uint8_t>(j % uint8_mod);
-        }
 
-        // Allocate check buffer
-        sub.check_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
+        if (args->check_data) {
+            for (int j = 0; j < args->size; j++) {
+                sub.data_buf[j] = static_cast<uint8_t>(j % uint8_mod);
+            }
+            // Allocate check buffer
+            sub.check_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
+        }
 
         // Allocate buffers for src/dst devices
         constexpr int num_devices = 2;
@@ -576,6 +589,13 @@ int RunCopy(BenchArgs *args) {
             if (SetGpu(sub.worker_gpu_id)) {
                 return -1;
             }
+            if (i == args->num_warm_up) {
+                cuda_err = cudaEventRecord(sub.start_event, sub.stream);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
+                    return -1;
+                }
+            }
             if (args->is_sm_copy) {
                 SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, sub.stream>>>(
                     reinterpret_cast<ulong2 *>(sub.dst_dev_gpu_buf_ptr),
@@ -588,13 +608,7 @@ int RunCopy(BenchArgs *args) {
                     return -1;
                 }
             }
-            if (i + 1 == args->num_warm_up) {
-                cuda_err = cudaEventRecord(sub.start_event, sub.stream);
-                if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
-                    return -1;
-                }
-            } else if (i + 1 == args->num_loops + args->num_warm_up) {
+            if (i + 1 == args->num_loops + args->num_warm_up) {
                 cuda_err = cudaEventRecord(sub.end_event, sub.stream);
                 if (cuda_err != cudaSuccess) {
                     fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
@@ -668,7 +682,7 @@ int RunBench(BenchArgs *args) {
         goto destroy_event;
     }
     ret = RunCopy(args);
-    if (ret == 0) {
+    if (ret == 0 && args->check_data) {
         ret = CheckBuf(args);
     }
 destroy_event:
@@ -750,6 +764,7 @@ int main(int argc, char **argv) {
     args.num_warm_up = opts.num_warm_up;
     args.num_loops = opts.num_loops;
     args.size = opts.size;
+    args.check_data = opts.check_data;
 
     // Get number of NUMA nodes
     if (numa_available()) {
