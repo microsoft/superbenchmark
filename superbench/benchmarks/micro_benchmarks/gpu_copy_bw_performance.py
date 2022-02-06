@@ -75,12 +75,6 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
             help='Enable bidirectional test',
         )
 
-        self._parser.add_argument(
-            '--check_data',
-            action='store_true',
-            help='Enable data checking',
-        )
-
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -102,9 +96,6 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.bidirectional:
             args += ' --bidirectional'
-
-        if self._args.check_data:
-            args += ' --check_data'
 
         self._commands = ['%s %s' % (self.__bin_path, args)]
 

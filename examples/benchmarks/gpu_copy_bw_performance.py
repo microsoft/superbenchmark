@@ -20,7 +20,6 @@ if __name__ == '__main__':
     # )
     # For bidirectional test, please specify parameters as the following.
     # parameters='--mem_type htod dtod --copy_type sm dma --bidirectional'
-    # To enable data checking, please add '--check_data'.
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:
