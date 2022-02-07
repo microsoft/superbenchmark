@@ -138,11 +138,11 @@ superbench:
       num_steps: 128
       batch_size: 128
   benchmarks:
-    foo_models:
+    model-benchmarks:foo:
       models:
         - resnet50
       parameters: *param
-    bar_models:
+    model-benchmarks:bar:
       models:
         - vgg19
       parameters: *param
@@ -152,14 +152,14 @@ The above configuration equals to the following:
 ```yaml {6-9,13-16}
 superbench:
   benchmarks:
-    foo_models:
+    model-benchmarks:foo:
       models:
         - resnet50
       parameters:
         num_warmup: 16
         num_steps: 128
         batch_size: 128
-    bar_models:
+    model-benchmarks:bar:
       models:
         - vgg19
       parameters:
@@ -172,10 +172,16 @@ superbench:
 
 Mappings of `${benchmark_name}: Benchmark`.
 
-There are three types of benchmarks, micro-benchmark, model-benchmark and docker-benchmark.
-For micro-benchmark and docker-benchmark, `${benchmark_name}` should be the exact same as provided benchmarks' name.
-For model-benchmark, `${benchmark_name}` should be in `${name}_models` format,
-each model-benchmark can have a customized name while ending with `_models`.
+There are three types of benchmarks,
+[micro-benchmark](./user-tutorial/benchmarks/micro-benchmarks),
+[model-benchmark](./user-tutorial/benchmarks/model-benchmarks),
+and [docker-benchmark](./user-tutorial/benchmarks/docker-benchmarks).
+Each benchmark has its own unique name listed in docs.
+
+`${benchmark_name}` can be one of the followings:
+* `${benchmark_unique_name}`, it can be the exact same as benchmark's own unique name;
+* `${benchmark_unique_name}:${annotation}`, or if there's a need to run one benchmark with different settings,
+  an annotation separated by `:` can be appended after benchmark's unique name.
 
 See [`Benchmark` Schema](#benchmark-schema) for benchmark definition.
 
@@ -197,6 +203,7 @@ Definition for each benchmark, here is an overview of `Benchmark` configuration 
 ```yaml
 ${benchmark_name}:
   enable: bool
+  timeout: int
   modes: [ Mode ]
   frameworks: [ enum ]
   parameters:
@@ -208,8 +215,9 @@ ${benchmark_name}:
 #### Model-Benchmark
 
 ```yaml
-${name}_models:
+model-benchmarks:${annotation}:
   enable: bool
+  timeout: int
   modes: [ Mode ]
   frameworks: [ enum ]
   models: [ enum ]
@@ -234,6 +242,7 @@ ${name}_models:
 ```yaml
 kernel-launch:
   enable: true
+  timeout: 120
   modes:
     - name: local
       proc_num: 8
@@ -248,8 +257,9 @@ kernel-launch:
 #### Model-Benchmark
 
 ```yaml
-resnet_models:
+model-benchmarks:resnet:
   enable: true
+  timeout: 1800
   modes:
     - name: torch.distributed
       proc_num: 8
@@ -280,6 +290,12 @@ resnet_models:
 Enable current benchmark or not, can be overwritten by [`superbench.enable`](#superbenchenable).
 
 * default value: `true`
+
+### `timeout`
+
+Set the timeout value in seconds, the benchmarking will stop early if timeout is triggerred.
+
+* default value: none
 
 ### `modes`
 
@@ -368,7 +384,7 @@ Some attributes may only be suitable for specific mode.
 | `proc_num` |    ✓    |          ✓          |   ✓   |
 | `node_num` |    ✘    |          ✓          |   ✘   |
 | `prefix`   |    ✓    |          ✘          |   ✘   |
-| `env`      |    ✘    |          ✘          |   ✓   |
+| `env`      |    ✓    |          ✓          |   ✓   |
 | `mca`      |    ✘    |          ✘          |   ✓   |
 | `parallel` |    ✓    |          ✘          |   ✘   |
 
@@ -405,8 +421,12 @@ So `prefix: CUDA_VISIBLE_DEVICES={proc_rank}` will be expressed as `CUDA_VISIBLE
 
 ### `env`
 
-Environment variables to use in the mode,
-in a flatten key-value dictionary.
+Environment variables to use in the mode, in a flatten key-value dictionary.
+The value needs to be string, any integer or boolean values need to be enclosed in quotes.
+
+Formatted string is also supported in value, available variables include:
++ `proc_rank`
++ `proc_num`
 
 ### `mca`
 

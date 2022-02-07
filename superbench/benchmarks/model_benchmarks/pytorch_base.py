@@ -10,8 +10,8 @@ import transformers
 from torch.utils.data import DataLoader
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Framework, ReturnCode
-from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, ModelBenchmark
+from superbench.benchmarks import Framework, ReturnCode, DistributedBackend, DistributedImpl
+from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBenchmark
 
 
 class PytorchBase(ModelBenchmark):
@@ -169,6 +169,36 @@ class PytorchBase(ModelBenchmark):
             )
             hvd.broadcast_parameters(self._model.state_dict(), root_rank=0)
             hvd.broadcast_optimizer_state(self._optimizer, root_rank=0)
+
+        return True
+
+    def _sync_result(self, result):
+        """Function to reduce the result to rank 0.
+
+        Args:
+            result (list): The result data to sync.
+
+        Return:
+            True if reduce result data successfully.
+        """
+        if not super()._sync_result(result):
+            return False
+
+        try:
+            if self._args.distributed_impl == DistributedImpl.DDP:
+                if self._args.distributed_backend == DistributedBackend.NCCL:
+                    tensor = torch.as_tensor(result).cuda()
+                else:
+                    tensor = torch.as_tensor(result)
+                torch.distributed.reduce(tensor, 0, op=torch.distributed.ReduceOp.MAX)
+                result = tensor.tolist()
+        except BaseException as e:
+            logger.error(
+                'Sync train result failed - model: {}, distributed implementation: {}, message: {}.'.format(
+                    self._name, self._args.distributed_impl, str(e)
+                )
+            )
+            return False
 
         return True
 

@@ -68,6 +68,8 @@ class SuperBenchRunner():
             if not self._sb_benchmarks[name].modes:
                 self._sb_benchmarks[name].modes = []
             for idx, mode in enumerate(self._sb_benchmarks[name].modes):
+                if not mode.env:
+                    self._sb_benchmarks[name].modes[idx].env = {}
                 if mode.name == 'local':
                     if not mode.proc_num:
                         self._sb_benchmarks[name].modes[idx].proc_num = 1
@@ -84,8 +86,6 @@ class SuperBenchRunner():
                             'btl_tcp_if_exclude': 'lo,docker0',
                             'coll_hcoll_enable': 0,
                         }
-                    if not mode.env:
-                        self._sb_benchmarks[name].modes[idx].env = {}
                     for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
 
@@ -102,12 +102,13 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
-    def __get_mode_command(self, benchmark_name, mode):
+    def __get_mode_command(self, benchmark_name, mode, timeout=None):
         """Get runner command for given mode.
 
         Args:
             benchmark_name (str): Benchmark name.
             mode (DictConfig): Runner mode.
+            timeout (int): The timeout value in seconds.
 
         Return:
             str: Runner command.
@@ -116,6 +117,9 @@ class SuperBenchRunner():
             name=benchmark_name,
             output_dir=self._sb_output_dir,
         )
+        if timeout is not None:
+            exec_command = 'timeout {timeout} {command}'.format(timeout=timeout, command=exec_command)
+
         mode_command = exec_command
         if mode.name == 'local':
             mode_command = '{prefix} {command}'.format(
@@ -146,7 +150,10 @@ class SuperBenchRunner():
             ).format(
                 proc_num=mode.proc_num,
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
-                env_list=' '.join(f'-x {k}={v}' if v else f'-x {k}' for k, v in mode.env.items()),
+                env_list=' '.join(
+                    f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
+                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()
+                ),
                 command=exec_command,
             )
         else:
@@ -243,8 +250,6 @@ class SuperBenchRunner():
                     except Exception:
                         logger.error('Invalid content in JSON file: {}'.format(results_file))
                         continue
-                    if results_file.parts[-3].endswith('_models'):
-                        benchmark_name = '{}/{}'.format(results_file.parts[-3], result['name'])
                     if benchmark_name not in results_summary:
                         results_summary[benchmark_name] = defaultdict(list)
                     for metric in result['result']:
@@ -264,6 +269,33 @@ class SuperBenchRunner():
             json.dump(results_summary, f, indent=2)
 
         return results_summary
+
+    def __generate_metric_name(self, benchmark_name, metric, rank_count, run_count, curr_rank, curr_run):
+        """Generate the summarized metrics name.
+
+        The format of metric name is:
+               {benchmark_name}/[{run_count}/]{metric_name}[:rank]
+        [run_count] and [rank] parts are optional.
+
+        Args:
+            benchmark_name (str): The benchmark name.
+            metric (str): The metric name.
+            rank_count (int): The total count of rank.
+            run_count (int): The total count of benchmarking.
+            curr_rank (int): The current rank index.
+            curr_run (int): The current run index.
+
+        Returns:
+            dict: Flattened result with metric as key.
+        """
+        metric_name = benchmark_name
+        if run_count > 1:
+            metric_name = '{}/{}'.format(metric_name, curr_run)
+        metric_name = '{}/{}'.format(metric_name, metric)
+        if rank_count > 1:
+            metric_name = '{}:{}'.format(metric_name, curr_rank)
+
+        return metric_name
 
     def __merge_benchmark_metrics(self, results_summary, reduce_ops):
         """Merge metrics of all benchmarks in one node.
@@ -288,20 +320,18 @@ class SuperBenchRunner():
                 if reduce_ops[metric_name] is not None:
                     reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
                     values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
-                    for run_count in range(len(values)):
-                        if len(values) > 1:
-                            metric_name = '{}/{}/{}'.format(benchmark_name, run_count, metric)
-                        else:
-                            metric_name = '{}/{}'.format(benchmark_name, metric)
-                        metrics_summary[metric_name] = values[run_count]
+                    for run in range(len(values)):
+                        metric_name = self.__generate_metric_name(benchmark_name, metric, 1, len(values), 0, run)
+                        metrics_summary[metric_name] = values[run]
                 else:
-                    for rank in range(len(results_summary[benchmark_name][metric])):
-                        for run_count in range(len(results_summary[benchmark_name][metric][rank])):
-                            if len(results_summary[benchmark_name][metric][rank]) > 1:
-                                metric_name = '{}/{}/{}:{}'.format(benchmark_name, run_count, metric, rank)
-                            else:
-                                metric_name = '{}/{}:{}'.format(benchmark_name, metric, rank)
-                            metrics_summary[metric_name] = results_summary[benchmark_name][metric][rank][run_count]
+                    rank_count = len(results_summary[benchmark_name][metric])
+                    for rank, rank_value in enumerate(results_summary[benchmark_name][metric]):
+                        run_count = len(rank_value)
+                        for run, run_value in enumerate(rank_value):
+                            metric_name = self.__generate_metric_name(
+                                benchmark_name, metric, rank_count, run_count, rank, run
+                            )
+                            metrics_summary[metric_name] = run_value
 
         return metrics_summary
 
@@ -355,14 +385,22 @@ class SuperBenchRunner():
         """
         mode.update(vars)
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
+
+        timeout = self._sb_benchmarks[benchmark_name].timeout
+        env_list = '--env-file sb.env'
+        for k, v in mode.env.items():
+            if isinstance(v, str):
+                env_list += f' -e {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
         ansible_runner_config = self._ansible_client.get_shell_config(
-            (
-                'docker exec sb-workspace bash -c '
-                "'set -o allexport && source sb.env && set +o allexport && {command}'"
-            ).format(command=self.__get_mode_command(benchmark_name, mode))
+            "docker exec {env_list} sb-workspace bash -c '{command}'".format(
+                env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout)
+            )
         )
         if mode.name == 'mpi':
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
+
+        ansible_runner_config['timeout'] = timeout
+
         rc = self._ansible_client.run(ansible_runner_config, sudo=True)
         return rc
 

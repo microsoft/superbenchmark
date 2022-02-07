@@ -24,7 +24,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
 
         self._bin_name = 'cutlass_profiler'
 
-        # TODO - To support more architecutres, currently only support compute capability = 7.0 and 8.0
+        # TODO - To support more architecutres, currently only support compute capability = 7.0, 7.5, 8.0, 8.6
         self.__kernel_map = {
             7.0: {
                 'fp64': 'cutlass_simt_dgemm_128x128_8x2_*',
@@ -44,6 +44,9 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
                 'int4_tc': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
             }
         }
+        # Skip FP64 for RTX Turing/Ampere and Tesla T4/GA10x due to very limited FP64 TFLOP rate
+        self.__kernel_map[7.5] = {k: self.__kernel_map[7.0][k] for k in self.__kernel_map[7.0] if 'fp64' not in k}
+        self.__kernel_map[8.6] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'fp64' not in k}
         self.__parse_logline = [
             'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
             'gemm,cutlass_simt_hgemm_256x128_8x2', 'gemm,cutlass_tensorop_d884gemm_128x128_16x3',
@@ -70,8 +73,8 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             super()._preprocess()
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
             logger.error(
-                'Unsupported architecture - benchmark: {}, compute capability: {}, expected: 7.0 or 8.0'.format(
-                    self._name, capability
+                'Unsupported architecture - benchmark: {}, compute capability: {}, supports {}'.format(
+                    self._name, capability, ' '.join(sorted([str(k) for k in self.__kernel_map]))
                 )
             )
             return False

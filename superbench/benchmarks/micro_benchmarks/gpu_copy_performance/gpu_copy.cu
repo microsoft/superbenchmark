@@ -695,7 +695,7 @@ int main(int argc, char **argv) {
                 // Scan all peers
                 for (int k = 0; k < gpu_count; k++) {
                     // Skip second half for bidirectional test
-                    if (opts.bidirectional_enabled && j > k) {
+                    if (opts.bidirectional_enabled && k > j) {
                         break;
                     }
                     // P2P write
