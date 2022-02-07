@@ -3,7 +3,6 @@
 
 // GPU copy benchmark tests dtoh/htod/dtod data transfer bandwidth by GPU SM/DMA.
 
-#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -52,6 +51,12 @@ struct SubBenchArgs {
 
     // CUDA stream to be used.
     cudaStream_t stream;
+
+    // CUDA event to record start time.
+    cudaEvent_t start_event;
+
+    // CUDA event to record end time.
+    cudaEvent_t end_event;
 };
 
 // Arguments for each benchmark run.
@@ -69,6 +74,9 @@ struct BenchArgs {
     // Data buffer size used.
     uint64_t size = 0;
 
+    // Number of warm up rounds to run.
+    uint64_t num_warm_up = 0;
+
     // Number of loops to run.
     uint64_t num_loops = 0;
 
@@ -82,10 +90,13 @@ struct BenchArgs {
 // Options accepted by this program.
 struct Opts {
     // Data buffer size for copy benchmark.
-    uint64_t size;
+    uint64_t size = 0;
 
-    // Data buffer size for copy benchmark.
-    uint64_t num_loops;
+    // Number of warm up rounds to run.
+    uint64_t num_warm_up = 0;
+
+    // Number of loops to run.
+    uint64_t num_loops = 0;
 
     // Whether GPU SM copy needs to be evaluated.
     bool sm_copy_enabled = false;
@@ -110,6 +121,7 @@ struct Opts {
 void PrintUsage() {
     printf("Usage: gpu_copy "
            "--size <size> "
+           "--num_warm_up <num_warm_up> "
            "--num_loops <num_loops> "
            "[--sm_copy] "
            "[--dma_copy] "
@@ -123,7 +135,8 @@ void PrintUsage() {
 int ParseOpts(int argc, char **argv, Opts *opts) {
     enum class OptIdx {
         kSize,
-        kNumIters,
+        kNumWarmUp,
+        kNumLoops,
         kEnableSmCopy,
         kEnableDmaCopy,
         kEnableHToD,
@@ -133,7 +146,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
     };
     const struct option options[] = {
         {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
-        {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumIters)},
+        {"num_warm_up", required_argument, nullptr, static_cast<int>(OptIdx::kNumWarmUp)},
+        {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumLoops)},
         {"sm_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableSmCopy)},
         {"dma_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDmaCopy)},
         {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
@@ -143,12 +157,13 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
     int getopt_ret = 0;
     int opt_idx = 0;
     bool size_specified = false;
+    bool num_warm_up_specified = false;
     bool num_loops_specified = false;
     bool parse_err = false;
     while (true) {
         getopt_ret = getopt_long(argc, argv, "", options, &opt_idx);
         if (getopt_ret == -1) {
-            if (!size_specified || !num_loops_specified) {
+            if (!size_specified || !num_warm_up_specified || !num_loops_specified) {
                 parse_err = true;
             }
             break;
@@ -165,7 +180,15 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
                 size_specified = true;
             }
             break;
-        case static_cast<int>(OptIdx::kNumIters):
+        case static_cast<int>(OptIdx::kNumWarmUp):
+            if (1 != sscanf(optarg, "%lu", &(opts->num_warm_up))) {
+                fprintf(stderr, "Invalid num_warm_up: %s\n", optarg);
+                parse_err = true;
+            } else {
+                num_warm_up_specified = true;
+            }
+            break;
+        case static_cast<int>(OptIdx::kNumLoops):
             if (1 != sscanf(optarg, "%lu", &(opts->num_loops))) {
                 fprintf(stderr, "Invalid num_loops: %s\n", optarg);
                 parse_err = true;
@@ -306,6 +329,28 @@ int PrepareBufAndStream(BenchArgs *args) {
     return 0;
 }
 
+// Prepare events to be used.
+int PrepareEvent(BenchArgs *args) {
+    cudaError_t cuda_err = cudaSuccess;
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs &sub = args->subs[i];
+        if (SetGpu(sub.worker_gpu_id)) {
+            return -1;
+        }
+        cuda_err = cudaEventCreate(&(sub.start_event));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "PrepareEvent::cudaEventCreate error: %d\n", cuda_err);
+            return -1;
+        }
+        cuda_err = cudaEventCreate(&(sub.end_event));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "PrepareEvent::cudaEventCreate error: %d\n", cuda_err);
+            return -1;
+        }
+    }
+    return 0;
+}
+
 // Validate the result of data transfer.
 int CheckBuf(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
@@ -399,12 +444,34 @@ int DestroyBufAndStream(BenchArgs *args) {
         }
         cuda_err = cudaStreamDestroy(sub.stream);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "DestoryBufAndStream::cudaStreamDestroy error: %d\n", cuda_err);
+            fprintf(stderr, "DestroyBufAndStream::cudaStreamDestroy error: %d\n", cuda_err);
             return -1;
         }
     }
 
     return ret;
+}
+
+// Destroy events
+int DestroyEvent(BenchArgs *args) {
+    cudaError_t cuda_err = cudaSuccess;
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs &sub = args->subs[i];
+        if (SetGpu(sub.worker_gpu_id)) {
+            return -1;
+        }
+        cuda_err = cudaEventDestroy(sub.start_event);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "DestroyEvent::cudaEventDestroy error: %d\n", cuda_err);
+            return -1;
+        }
+        cuda_err = cudaEventDestroy(sub.end_event);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "DestroyEvent::cudaEventDestroy error: %d\n", cuda_err);
+            return -1;
+        }
+    }
+    return 0;
 }
 
 // Unroll depth in SM copy kernel
@@ -502,20 +569,37 @@ int RunCopy(BenchArgs *args) {
     }
 
     // Launch jobs and collect running time
-    auto start = std::chrono::steady_clock::now();
-    for (int i = 0; i < args->num_loops; i++) {
+    for (int i = 0; i < args->num_loops + args->num_warm_up; i++) {
         for (int j = 0; j < args->num_subs; j++) {
             SubBenchArgs &sub = args->subs[j];
             if (SetGpu(sub.worker_gpu_id)) {
                 return -1;
+            }
+            if (i == args->num_warm_up) {
+                cuda_err = cudaEventRecord(sub.start_event, sub.stream);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
+                    return -1;
+                }
             }
             if (args->is_sm_copy) {
                 SMCopyKernel<<<num_thread_blocks, NUM_THREADS_IN_BLOCK, 0, sub.stream>>>(
                     reinterpret_cast<ulong2 *>(sub.dst_dev_gpu_buf_ptr),
                     reinterpret_cast<ulong2 *>(sub.src_dev_gpu_buf_ptr));
             } else {
-                cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr, args->size, cudaMemcpyDefault,
-                                sub.stream);
+                cuda_err = cudaMemcpyAsync(sub.dst_dev_gpu_buf_ptr, sub.src_dev_gpu_buf_ptr, args->size,
+                                           cudaMemcpyDefault, sub.stream);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunCopy::cudaMemcpyAsync error: %d\n", cuda_err);
+                    return -1;
+                }
+            }
+            if (i + 1 == args->num_loops + args->num_warm_up) {
+                cuda_err = cudaEventRecord(sub.end_event, sub.stream);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunCopy::cudaEventRecord error: %d\n", cuda_err);
+                    return -1;
+                }
             }
         }
     }
@@ -527,13 +611,22 @@ int RunCopy(BenchArgs *args) {
             return -1;
         }
     }
-    auto end = std::chrono::steady_clock::now();
 
     // Calculate and display bandwidth if no problem
-    double time_in_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+    float max_time_in_ms = 0;
+    for (int i = 0; i < args->num_subs; i++) {
+        SubBenchArgs &sub = args->subs[i];
+        float time_in_ms = 0;
+        cuda_err = cudaEventElapsedTime(&time_in_ms, sub.start_event, sub.end_event);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunCopy::cudaEventElapsedTime error: %d\n", cuda_err);
+            return -1;
+        }
+        max_time_in_ms = time_in_ms > max_time_in_ms ? time_in_ms : max_time_in_ms;
+    }
 
     PrintResultTag(*args);
-    printf(" %g\n", args->size * args->num_loops * args->num_subs / time_in_sec / 1e9);
+    printf(" %g\n", args->size * args->num_loops * args->num_subs / max_time_in_ms / 1e6);
 
     return 0;
 }
@@ -565,17 +658,28 @@ int EnablePeerAccess(int src_gpu_id, int dst_gpu_id, int *can_access) {
 
 int RunBench(BenchArgs *args) {
     int ret = 0;
-    int destroy_buf_ret = 0;
+    int destroy_ret = 0;
     ret = PrepareBufAndStream(args);
-    if (ret == 0) {
-        ret = RunCopy(args);
-        if (ret == 0) {
-            ret = CheckBuf(args);
-        }
+    if (ret != 0) {
+        goto destroy_buf;
     }
-    destroy_buf_ret = DestroyBufAndStream(args);
+    ret = PrepareEvent(args);
+    if (ret != 0) {
+        goto destroy_event;
+    }
+    ret = RunCopy(args);
     if (ret == 0) {
-        ret = destroy_buf_ret;
+        ret = CheckBuf(args);
+    }
+destroy_event:
+    destroy_ret = DestroyEvent(args);
+    if (ret == 0) {
+        ret = destroy_ret;
+    }
+destroy_buf:
+    destroy_ret = DestroyBufAndStream(args);
+    if (ret == 0) {
+        ret = destroy_ret;
     }
     return ret;
 }
@@ -643,6 +747,7 @@ int main(int argc, char **argv) {
     if (ret != 0) {
         return ret;
     }
+    args.num_warm_up = opts.num_warm_up;
     args.num_loops = opts.num_loops;
     args.size = opts.size;
 
