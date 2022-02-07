@@ -67,11 +67,11 @@ class RuleOp:
             data_row (pd.Series): raw data of the metrics
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             summary_data_row (pd.Series): results of the metrics processed after the function
-            details (list): defective details including data and rules
+            details (list): details about violated rules and related data
             categories (set): categories of violated rules
 
         Returns:
-            Number: the number of the metrics that violate the rule if the rule is passed, otherwise 0
+            number: the number of the metrics that violate the rule if the rule is passed, otherwise 0
         """
         violated_metric_num = 0
         # parse criteria and check if valid
@@ -116,11 +116,11 @@ class RuleOp:
             data_row (pd.Series): raw data of the metrics
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             summary_data_row (pd.Series): results of the metrics processed after the function
-            details (list): defective details including data and rules
+            details (list): details about violated rules and related data
             categories (set): categories of violated rules
 
         Returns:
-            Number: the number of the metrics that violate the rule if the rule is passed, otherwise 0
+            number: the number of the metrics that violate the rule if the rule is passed, otherwise 0
         """
         violated_metric_num = 0
         # parse criteria and check if valid
@@ -151,24 +151,24 @@ class RuleOp:
     def multi_rules(rule, details, categories, violation):
         """Rule op function of multi_rules.
 
-        The rule will use criteria in the rule and the stored labebed results of other rules
-        to determine whether the rule is passed.
+        The criteria in this rule will use the combined results of multiple previous rules and their metrics
+        which has been stored in advance to determine whether this rule is passed.
 
         Args:
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
-            details (list): defective details including data and rules
+            details (list): details about violated rules and related data
             categories (set): categories of violated rules
             violation (dict): the number of the metrics that violate the rules
         Returns:
-            Number: 0 if the rule is passed, otherwise 1
+            number: 0 if the rule is passed, otherwise 1
         """
-        violate_rule = eval(rule['criteria'])(violation)
-        if not isinstance(violate_rule, bool):
+        violated = eval(rule['criteria'])(violation)
+        if not isinstance(violated, bool):
             logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
-        if violate_rule:
+        if violated:
             categories.add(rule['categories'])
             details.append('{}:{}'.format(rule['name'], rule['criteria']))
-        return 1 if violate_rule else 0
+        return 1 if violated else 0
 
 
 RuleOp.add_rule_func(DiagnosisRuleType.VARIANCE)(RuleOp.variance)

@@ -120,13 +120,13 @@ class DataDiagnosis():
                 # metric full name in baseline
                 if metric in metrics_in_rule:
                     self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
-                    self._enable_metrics.append(metric)
+                    self._enable_metrics.add(metric)
                     continue
                 # metric full name not in baseline, use regex to match
                 for metric_regex in benchmark_metrics_dict_in_rule[benchmark_name]:
                     if re.search(metric_regex, metric):
                         self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
-                        self._enable_metrics.append(metric)
+                        self._enable_metrics.add(metric)
 
     def _parse_rules_and_baseline(self, rules, baseline):
         """Parse and merge rules and baseline read from file.
@@ -143,7 +143,7 @@ class DataDiagnosis():
                 logger.error('DataDiagnosis: get criteria failed')
                 return False
             self._sb_rules = {}
-            self._enable_metrics = []
+            self._enable_metrics = set()
             benchmark_rules = rules['superbench']['rules']
             for rule in benchmark_rules:
                 benchmark_rules[rule] = self._check_rules(benchmark_rules[rule], rule)
@@ -156,7 +156,7 @@ class DataDiagnosis():
                 self._sb_rules[rule]['categories'] = benchmark_rules[rule]['categories']
                 self._sb_rules[rule]['metrics'] = {}
                 self.__get_metrics_and_baseline(rule, benchmark_rules, baseline)
-            self._enable_metrics.sort()
+            self._enable_metrics = sorted(list(self._enable_metrics))
         except Exception as e:
             logger.error('DataDiagnosis: get criteria failed - {}'.format(str(e)))
             return False
