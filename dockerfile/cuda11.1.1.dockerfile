@@ -94,7 +94,7 @@ RUN cd /tmp && \
 RUN cd /tmp && \
     git clone -b v2.10.3-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
-    make -j src.build && \
+    make -j8 src.build && \
     make install && \
     cd /tmp && \
     rm -rf nccl
