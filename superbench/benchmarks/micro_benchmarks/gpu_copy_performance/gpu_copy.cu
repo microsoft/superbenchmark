@@ -544,7 +544,7 @@ void PrintResultTag(const BenchArgs &args) {
     } else {
         printf("cpu");
     }
-    printf("_to_");
+    printf("%s", args.num_subs == 1 ? "_to_" : "_and_");
     if (args.subs[0].is_dst_dev_gpu) {
         printf("gpu%d", args.subs[0].dst_gpu_id);
     } else {
@@ -558,11 +558,9 @@ void PrintResultTag(const BenchArgs &args) {
             printf("_read");
         }
     }
-    printf("_by_%s_under_numa%lu", args.is_sm_copy ? "sm" : "dma", args.numa_id);
-    if (args.num_subs == 1) {
-        printf("_uni");
-    } else {
-        printf("_bi");
+    printf("_by_%s", args.is_sm_copy ? "sm" : "dma");
+    if (!args.subs[0].is_src_dev_gpu || !args.subs[0].is_dst_dev_gpu) {
+        printf("_under_numa%lu", args.numa_id);
     }
 }
 
@@ -797,8 +795,8 @@ int main(int argc, char **argv) {
                     args_list.push_back(args);
                 }
             }
-            // Device-to-host benchmark
-            if (opts.dtoh_enabled) {
+            // Device-to-host benchmark, only used in unidirectional mode.
+            if (opts.dtoh_enabled && !opts.bidirectional_enabled) {
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
                     SetSubBenchArgsForDToH(j, opts.bidirectional_enabled, &args);
@@ -810,13 +808,16 @@ int main(int argc, char **argv) {
                     args_list.push_back(args);
                 }
             }
+            if (args.numa_id != 0) {
+                continue;
+            }
             // Device-to-device benchmark
             if (opts.dtod_enabled) {
                 // Scan all peers
                 for (int k = 0; k < gpu_count; k++) {
-                    // Skip second half for bidirectional test
-                    if (opts.bidirectional_enabled && k > j) {
-                        break;
+                    // src_dev_id always < dst_dev_id for bidirectional test
+                    if (opts.bidirectional_enabled && j >= k) {
+                        continue;
                     }
                     // P2P write
                     ret = EnablePeerAccess(j, k, &can_access);

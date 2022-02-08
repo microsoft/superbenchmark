@@ -186,16 +186,14 @@ Measure the memory copy bandwidth performed by GPU SM/DMA engine, including devi
 
 #### Metrics
 
-| Name                                                                               | Unit             | Description                                                                                                                              |
-|------------------------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| cpu\_to\_gpu[0-9]+\_by\_(sm\|dma)\_under\_numa[0-9]+\_uni\_bw                      | bandwidth (GB/s) | The unidirectional bandwidth of one GPU reading one NUMA node's host memory using DMA engine or GPU SM.                                  |
-| gpu[0-9]+\_to\_cpu\_by\_(sm\|dma)\_under\_numa[0-9]+\_uni\_bw                      | bandwidth (GB/s) | The unidirectional bandwidth of one GPU writing one NUMA node's host memory using DMA engine or GPU SM.                                  |
-| gpu[0-9]+\_to\_gpu[0-9]+\_by\_(sm\|dma)\_under\_numa[0-9]+\_uni\_bw                | bandwidth (GB/s) | The unidirectional bandwidth of one GPU reading or writing self's memory using DMA engine or GPU SM with peer communication enabled.     |
-| gpu[0-9]+\_to\_gpu[0-9]+\_(read\|write)\_by\_(sm\|dma)\_under\_numa[0-9]+\_uni\_bw | bandwidth (GB/s) | The unidirectional bandwidth of one GPU reading or writing peer GPU's memory using DMA engine or GPU SM with peer communication enabled. |
-| cpu\_to\_gpu[0-9]+\_by\_(sm\|dma)\_under\_numa[0-9]+\_bi\_bw                       | bandwidth (GB/s) | The bidirectional bandwidth of one GPU reading and writing one NUMA node's host memory using DMA engine or GPU SM.                       |
-| gpu[0-9]+\_to\_cpu\_by\_(sm\|dma)\_under\_numa[0-9]+\_bi\_bw                       | bandwidth (GB/s) | Same as above.                                                                                                                           |
-| gpu[0-9]+\_to\_gpu[0-9]+\_by\_(sm\|dma)\_under\_numa[0-9]+\_bi\_bw                 | bandwidth (GB/s) | The bidirectional bandwidth of one GPU reading and writing self's memory using DMA engine or GPU SM with peer communication enabled.     |
-| gpu[0-9]+\_to\_gpu[0-9]+\_(read\|write)\_by\_(sm\|dma)\_under\_numa[0-9]+\_bi\_bw  | bandwidth (GB/s) | The bidirectional bandwidth of one GPU reading and writing peer GPU's memory using DMA engine or GPU SM with peer communication enabled. |
+| Name                                                        | Unit             | Description                                                                                                                              |
+|-------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| cpu\_to\_gpu[0-9]+\_by\_(sm\|dma)\_under\_numa[0-9]+\_bw    | bandwidth (GB/s) | The unidirectional bandwidth of one GPU reading one NUMA node's host memory using DMA engine or GPU SM.                                  |
+| gpu[0-9]+\_to\_cpu\_by\_(sm\|dma)\_under\_numa[0-9]+\_bw    | bandwidth (GB/s) | The unidirectional bandwidth of one GPU writing one NUMA node's host memory using DMA engine or GPU SM.                                  |
+| gpu[0-9]+\_to\_gpu[0-9]+\_by\_(sm\|dma)\_bw                 | bandwidth (GB/s) | The unidirectional bandwidth of one GPU reading or writing self's memory using DMA engine or GPU SM with peer communication enabled.     |
+| gpu[0-9]+\_to\_gpu[0-9]+\_(read\|write)\_by\_(sm\|dma)\_bw  | bandwidth (GB/s) | The unidirectional bandwidth of one GPU reading or writing peer GPU's memory using DMA engine or GPU SM with peer communication enabled. |
+| cpu\_and\_gpu[0-9]+\_by\_(sm\|dma)\_under\_numa[0-9]+\_bw   | bandwidth (GB/s) | The bidirectional bandwidth of one GPU reading and writing one NUMA node's host memory using DMA engine or GPU SM.                       |
+| gpu[0-9]+\_and\_gpu[0-9]+\_(read\|write)\_by\_(sm\|dma)\_bw | bandwidth (GB/s) | The bidirectional bandwidth of one GPU reading and writing peer GPU's memory using DMA engine or GPU SM with peer communication enabled. |
 
 ### `ib-loopback`
 
