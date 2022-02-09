@@ -263,3 +263,17 @@ def test_pytorch_empty_cache():
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     assert (benchmark)
     assert (torch.cuda.memory_stats()['reserved_bytes.all.current'] == 0)
+
+
+def test_pytorch_version_compare():
+    """Test pytorch version compare."""
+    # Register mnist benchmark.
+    BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
+
+    # Launch benchmark with --no_gpu for testing.
+    parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train inference --no_gpu --force_fp32'
+    benchmark = PytorchMNIST('pytorch-mnist', parameters=parameters)
+    assert (benchmark)
+    assert (benchmark.version_larger('1.8.0a0+1606899', '1.9.0') is False)
+    assert (benchmark.version_larger('1.9.0', '1.9.0'))
+    assert (benchmark.version_larger('1.10.0', '1.9.0'))

@@ -4,10 +4,13 @@
 """Module of the Pytorch model-benchmark base class."""
 
 import os
+from datetime import timedelta
+import re
 
 import torch
 import transformers
 from torch.utils.data import DataLoader
+from torch.distributed import TCPStore, PrefixStore
 
 from superbench.common.utils import logger
 from superbench.benchmarks import Framework, ReturnCode, DistributedBackend, DistributedImpl
@@ -66,7 +69,22 @@ class PytorchBase(ModelBenchmark):
                     )
                     return False
 
-                torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
+                if self.version_larger(str(torch.__version__), '1.9.0'):
+                    port = int(os.environ['MASTER_PORT']) + 1
+                    addr = os.environ['MASTER_ADDR']
+                    rank = int(os.environ['RANK'])
+                    world_size = int(os.environ['WORLD_SIZE'])
+                    logger.debug('ip:{},port:{},rank:{},world:{}'.format(addr, str(port), str(rank), str(world_size)))
+                    store = PrefixStore(self._name, TCPStore(addr, port, world_size, rank == 0, timedelta(seconds=300)))
+                    torch.distributed.init_process_group(
+                        backend=self._args.distributed_backend.value,
+                        timeout=timedelta(seconds=300),
+                        rank=rank,
+                        world_size=world_size,
+                        store=store
+                    )
+                else:
+                    torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
                 self._world_size = int(os.environ['WORLD_SIZE'])
                 self._local_rank = int(os.environ['LOCAL_RANK'])
             else:
@@ -241,3 +259,20 @@ class PytorchBase(ModelBenchmark):
             The count of trainable parameters.
         """
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
+
+    def version_larger(self, x, y):
+        """Detect if pytorch version x >= y.
+
+        Args:
+            x (str): pytorch version
+            y (str): pytorch version
+
+        Returns:
+            bool: True if x >= y, otherwise False
+        """
+        x = [int(i) for i in re.match(r'\d+.\d+.\d+', x).group().split('.')]
+        y = [int(i) for i in re.match(r'\d+.\d+.\d+', y).group().split('.')]
+        if x[0] > y[0] or (x[0] == y[0] and x[1] > y[1]) \
+                or (x[0] == y[0] and x[1] == y[1] and x[2] >= y[2]):
+            return True
+        return False
