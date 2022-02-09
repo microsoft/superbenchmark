@@ -795,8 +795,8 @@ int main(int argc, char **argv) {
                     args_list.push_back(args);
                 }
             }
-            // Device-to-host benchmark, only used in unidirectional mode.
-            if (opts.dtoh_enabled && !opts.bidirectional_enabled) {
+            // Device-to-host benchmark
+            if (opts.dtoh_enabled) {
                 if (opts.sm_copy_enabled) {
                     args.is_sm_copy = true;
                     SetSubBenchArgsForDToH(j, opts.bidirectional_enabled, &args);
@@ -815,8 +815,8 @@ int main(int argc, char **argv) {
             if (opts.dtod_enabled) {
                 // Scan all peers
                 for (int k = 0; k < gpu_count; k++) {
-                    // src_dev_id always < dst_dev_id for bidirectional test
-                    if (opts.bidirectional_enabled && j >= k) {
+                    // src_dev_id always <= dst_dev_id for bidirectional test
+                    if (opts.bidirectional_enabled && j > k) {
                         continue;
                     }
                     // P2P write
