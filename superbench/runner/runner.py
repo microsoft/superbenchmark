@@ -386,6 +386,5 @@ class SuperBenchRunner():
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
-            self.fetch_results()
 
         self.__create_results_summary()
