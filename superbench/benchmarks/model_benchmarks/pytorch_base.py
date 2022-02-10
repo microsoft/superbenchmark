@@ -67,27 +67,24 @@ class PytorchBase(ModelBenchmark):
                         ' distributed implementation: {}.'.format(self._name, self._args.distributed_impl)
                     )
                     return False
-                try:
-                    from torch.distributed import elastic    # noqa F401
-                    # >= 1.9.0a0
-                    port = int(os.environ['MASTER_PORT']) + 1
-                    addr = os.environ['MASTER_ADDR']
-                    rank = int(os.environ['RANK'])
-                    world_size = int(os.environ['WORLD_SIZE'])
-                    logger.debug('ip:{},port:{},rank:{},world:{}'.format(addr, port, rank, world_size))
-                    store = PrefixStore(self._name, TCPStore(addr, port, world_size, rank == 0, timedelta(seconds=300)))
-                    torch.distributed.init_process_group(
-                        backend=self._args.distributed_backend.value,
-                        timeout=timedelta(seconds=300),
-                        rank=rank,
-                        world_size=world_size,
-                        store=store
-                    )
-                except ImportError:
-                    # < 1.9.0a0
-                    torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
-                self._world_size = int(os.environ['WORLD_SIZE'])
+                # torch >= 1.9.0a0 torch.distributed.elastic is used by default
+                port = int(os.environ['MASTER_PORT']) + 1
+                addr = os.environ['MASTER_ADDR']
+                gloabl_rank = int(os.environ['RANK'])
                 self._local_rank = int(os.environ['LOCAL_RANK'])
+                self._world_size = int(os.environ['WORLD_SIZE'])
+                logger.debug('ip:{},port:{},rank:{},world:{}'.format(addr, port, gloabl_rank, self._world_size))
+                store = PrefixStore(
+                    self._name, TCPStore(addr, port, self._world_size, gloabl_rank == 0, timedelta(seconds=300))
+                )
+                torch.distributed.init_process_group(
+                    backend=self._args.distributed_backend.value,
+                    timeout=timedelta(seconds=300),
+                    rank=gloabl_rank,
+                    world_size=self._world_size,
+                    store=store
+                )
+
             else:
                 logger.error(
                     'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
