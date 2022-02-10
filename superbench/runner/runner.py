@@ -39,7 +39,7 @@ class SuperBenchRunner():
         self._ansible_client = AnsibleClient(ansible_config)
         self._sb_config_file = sb_config_file or "sb.config.yaml"
 
-        self.__set_logger(f'{self._output_path}/sb-run.log')
+        self.__set_logger(f'sb-run.log')
         logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
         logger.info('Runner writes to: %s.', str(self._output_path))
 
