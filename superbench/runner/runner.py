@@ -359,13 +359,12 @@ class SuperBenchRunner():
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
         ansible_runner_config = self._ansible_client.get_shell_config(
             (
-                'docker exec sb-workspace bash -c '
                 "'set -o allexport && source sb.env && set +o allexport && {command}'"
             ).format(command=self.__get_mode_command(benchmark_name, mode))
         )
         if mode.name == 'mpi':
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
-        rc = self._ansible_client.run(ansible_runner_config, sudo=True)
+        rc = self._ansible_client.run(ansible_runner_config)
         return rc
 
     def run(self):
