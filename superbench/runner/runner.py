@@ -39,7 +39,7 @@ class SuperBenchRunner():
         self._ansible_client = AnsibleClient(ansible_config)
         self._sb_config_file = sb_config_file or "sb.config.yaml"
 
-        self.__set_logger(f'sb-run.log')
+        self.__set_logger('sb-run.log')
         logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
         logger.info('Runner writes to: %s.', str(self._output_path))
 
@@ -174,53 +174,50 @@ class SuperBenchRunner():
         self._ansible_client.run(self._ansible_client.get_playbook_config('deploy.yaml', extravars=extravars))
 
     def check_env(self):    # pragma: no cover
-        pass
-        # """Check SuperBench environment."""
-        # logger.info('Checking SuperBench environment.')
-        # OmegaConf.save(config=self._sb_config, f=str(self._output_path / 'sb.config.yaml'))
-        # self._ansible_client.run(
-        #     self._ansible_client.get_playbook_config(
-        #         'check_env.yaml',
-        #         extravars={
-        #             'output_dir': str(self._output_path),
-        #             'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
-        #         }
-        #     )
-        # )
+        """Check SuperBench environment."""
+        logger.info('Checking SuperBench environment.')
+        OmegaConf.save(config=self._sb_config, f=str(self._output_path / 'sb.config.yaml'))
+        self._ansible_client.run(
+            self._ansible_client.get_playbook_config(
+                'check_env.yaml',
+                extravars={
+                    'output_dir': str(self._output_path),
+                    'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
+                }
+            )
+        )
 
     def fetch_results(self):    # pragma: no cover
-        pass
-        # """Fetch benchmark results on all nodes."""
-        # try:
-        #     (self._output_path / 'nodes').mkdir(mode=0o755, parents=True, exist_ok=True)
-        # except Exception:
-        #     logger.exception('Failed to create directory %s.', str(self._output_path / 'nodes'))
-        #     raise
-        # self._ansible_client.run(
-        #     self._ansible_client.get_playbook_config(
-        #         'fetch_results.yaml',
-        #         extravars={
-        #             'sb_output_dir': self._sb_output_dir,
-        #             'absolute_output_dir': str(self._output_path),
-        #         }
-        #     )
-        # )
+        """Fetch benchmark results on all nodes."""
+        try:
+            (self._output_path / 'nodes').mkdir(mode=0o755, parents=True, exist_ok=True)
+        except Exception:
+            logger.exception('Failed to create directory %s.', str(self._output_path / 'nodes'))
+            raise
+        self._ansible_client.run(
+            self._ansible_client.get_playbook_config(
+                'fetch_results.yaml',
+                extravars={
+                    'sb_output_dir': self._sb_output_dir,
+                    'absolute_output_dir': str(self._output_path),
+                }
+            )
+        )
 
     def __create_results_summary(self):    # pragma: no cover
-        pass
-        # """Create the result summary file of all nodes."""
-        # all_results = list()
-        # for node_path in (self._output_path / 'nodes').glob('*'):
-        #     if not node_path.is_dir():
-        #         continue
-        #     results_summary = self.__create_single_node_summary(node_path)
-        #     results_summary['node'] = node_path.name
-        #     all_results.append(results_summary)
-        #
-        # with (self._output_path / 'results-summary.jsonl').open(mode='w') as f:
-        #     for result in all_results:
-        #         json.dump(result, f)
-        #         f.write('\n')
+        """Create the result summary file of all nodes."""
+        all_results = list()
+        for node_path in (self._output_path / 'nodes').glob('*'):
+            if not node_path.is_dir():
+                continue
+            results_summary = self.__create_single_node_summary(node_path)
+            results_summary['node'] = node_path.name
+            all_results.append(results_summary)
+
+        with (self._output_path / 'results-summary.jsonl').open(mode='w') as f:
+            for result in all_results:
+                json.dump(result, f)
+                f.write('\n')
 
     def __create_single_node_summary(self, node_path):    # pragma: no cover # noqa: C901
         """Create the result summary file of single node.
@@ -281,7 +278,6 @@ class SuperBenchRunner():
             dict: Flattened result with metric as key.
         """
         metrics_summary = dict()
-        return metrics_summary
         for benchmark_name in results_summary:
             for metric in results_summary[benchmark_name]:
                 metric_name = '{}/{}'.format(benchmark_name, metric)
@@ -373,6 +369,7 @@ class SuperBenchRunner():
 
     def run(self):
         """Run the SuperBench benchmarks distributedly."""
+        self.check_env()
         for benchmark_name in self._sb_benchmarks:
             if benchmark_name not in self._sb_enabled_benchmarks:
                 continue
@@ -388,3 +385,4 @@ class SuperBenchRunner():
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
+        self.__create_results_summary()
