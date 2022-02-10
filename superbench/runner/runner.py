@@ -39,7 +39,7 @@ class SuperBenchRunner():
         self._ansible_client = AnsibleClient(ansible_config)
         self._sb_config_file = sb_config_file or "sb.config.yaml"
 
-        self.__set_logger('sb-run.log')
+        self.__set_logger(f'{self._output_path}/sb-run.log')
         logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
         logger.info('Runner writes to: %s.', str(self._output_path))
 
@@ -359,7 +359,7 @@ class SuperBenchRunner():
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
         ansible_runner_config = self._ansible_client.get_shell_config(
             (
-                "'set -o allexport && source sb.env && set +o allexport && {command}'"
+                "'set -o allexport && source /superbench/sb.env && set +o allexport && {command}'"
             ).format(command=self.__get_mode_command(benchmark_name, mode))
         )
         if mode.name == 'mpi':
