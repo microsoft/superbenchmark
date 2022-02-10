@@ -369,7 +369,6 @@ class SuperBenchRunner():
 
     def run(self):
         """Run the SuperBench benchmarks distributedly."""
-        self.check_env()
         for benchmark_name in self._sb_benchmarks:
             if benchmark_name not in self._sb_enabled_benchmarks:
                 continue
@@ -385,5 +384,4 @@ class SuperBenchRunner():
                     self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
-
         self.__create_results_summary()
