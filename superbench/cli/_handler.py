@@ -294,5 +294,5 @@ def run_command_handler(
         config_override=config_override,
     )
 
-    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
+    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir, config_file)
     runner.run()

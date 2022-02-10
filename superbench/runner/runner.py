@@ -22,7 +22,7 @@ from superbench.monitor import MonitorRecord
 
 class SuperBenchRunner():
     """SuperBench runner class."""
-    def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir):
+    def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir, sb_config_file=None):
         """Initilize.
 
         Args:
@@ -37,6 +37,7 @@ class SuperBenchRunner():
         self._sb_output_dir = sb_output_dir
         self._output_path = Path(sb_output_dir).expanduser().resolve()
         self._ansible_client = AnsibleClient(ansible_config)
+        self._sb_config_file = sb_config_file or "sb.config.yaml"
 
         self.__set_logger('sb-run.log')
         logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
@@ -112,8 +113,9 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
-        exec_command = ('sb exec --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name}').format(
+        exec_command = ('sb exec --output-dir {output_dir} -c {config} -C superbench.enable={name}').format(
             name=benchmark_name,
+            config=self._sb_config_file,
             output_dir=self._sb_output_dir,
         )
         mode_command = exec_command
