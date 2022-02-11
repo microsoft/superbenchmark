@@ -359,7 +359,7 @@ class SuperBenchRunner():
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
         ansible_runner_config = self._ansible_client.get_shell_config(
             (
-                "set -o allexport && source /superbench/sb.env && set +o allexport && {command}"
+                "set -o allexport && source sb.env && set +o allexport && {command}"
             ).format(command=self.__get_mode_command(benchmark_name, mode))
         )
         if mode.name == 'mpi':
