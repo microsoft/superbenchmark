@@ -2,8 +2,7 @@
   hosts: all
   gather_facts: true
   vars:
-    workspace: '{{ ansible_user_dir }}/sb-workspace'
-    container: sb-workspace
+    workspace: '/superbench'
     sb_nodes: '{{ hostvars.values() | map(attribute="ansible_hostname") | sort }}'
     sb_env: |
       # pytorch env
@@ -15,12 +14,6 @@
       # config env
       {{ env | default('') }}
   tasks:
-    - name: Updating Config
-      copy:
-        src: '{{ output_dir }}/sb.config.yaml'
-        dest: '{{ workspace }}/sb.config.yaml'
-        mode: 0644
-      become: yes
     - name: Updating Env Variables
       copy:
         content: '{{ sb_env }}'
