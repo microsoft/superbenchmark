@@ -2,7 +2,7 @@
   hosts: all
   gather_facts: true
   vars:
-    workspace: '{{ ansible_user_dir }}/sb-workspace'
+    workspace: '/superbench'
   tasks:
     - name: Synchronize Output Directory
       ansible.posix.synchronize:
