@@ -17,7 +17,7 @@ This tool is to filter the defective machines automatically from thousands of be
 3. After installing the Superbnech and the files are ready, you can start to filter the defective machines automatically using  `sb result diagnosis` command. The detailed command can be found from [SuperBench CLI](../cli).
 
   ```
-  sb result diagnosis --data-file ./results-summary.jsonl --rule-file ./rule.yaml --baseline-file ./baseline.json --output-file-foramt excel --output-dir ${output-dir}
+  sb result diagnosis --data-file ./results-summary.jsonl --rule-file ./rule.yaml --baseline-file ./baseline.json --output-file-format excel --output-dir ${output-dir}
   ```
 
 4. After the command finished, you can find the output result file named 'diagnosis_summary.xlsx' / 'diagnosis_summary.json' under ${output_dir}.

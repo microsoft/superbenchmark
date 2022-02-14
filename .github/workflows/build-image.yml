@@ -103,6 +103,8 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           cache-from: ${{ steps.metadata.outputs.cache_from }}
           cache-to: ${{ steps.metadata.outputs.cache_to }}
+          build-args: |
+            NUM_MAKE_JOBS=8
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ github.event.repository.pushed_at }}
