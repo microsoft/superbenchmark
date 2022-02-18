@@ -33,12 +33,27 @@ superbench:
       model_action:
         - train
   benchmarks:
-    nccl-bw:
+    nccl-bw:default:
       enable: true
       modes:
         - name: local
           proc_num: 1
           parallel: no
+      parameters:
+        ngpus: 8
+    nccl-bw:gdr-only:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+          env:
+            NCCL_IB_PCI_RELAXED_ORDERING: '1'
+            NCCL_NET_GDR_LEVEL: '5'
+            NCCL_P2P_DISABLE: '1'
+            NCCL_SHM_DISABLE: '1'
+            NCCL_MIN_NCHANNELS: '16'
+            NCCL_IB_DISABLE: '0'
       parameters:
         ngpus: 8
     ib-loopback:
@@ -79,7 +94,24 @@ superbench:
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
           parallel: no
-    gpu-copy-bw:
+    gpu-copy-bw:correctness:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type:
+          - htod
+          - dtoh
+          - dtod
+        copy_type:
+          - sm
+          - dma
+        size: 4096
+        num_warm_up: 0
+        num_loops: 1
+        check_data: true
+    gpu-copy-bw:perf:
       enable: true
       modes:
         - name: local

@@ -48,9 +48,17 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--size',
             type=int,
-            default=64 * 1024**2,
+            default=256 * 1024**2,
             required=False,
             help='Size of data buffer in bytes.',
+        )
+
+        self._parser.add_argument(
+            '--num_warm_up',
+            type=int,
+            default=20,
+            required=False,
+            help='Number of warm up rounds',
         )
 
         self._parser.add_argument(
@@ -67,6 +75,12 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
             help='Enable bidirectional test',
         )
 
+        self._parser.add_argument(
+            '--check_data',
+            action='store_true',
+            help='Enable data checking',
+        )
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -78,7 +92,9 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
-        args = '--size %d --num_loops %d' % (self._args.size, self._args.num_loops)
+        args = '--size %d --num_warm_up %d --num_loops %d' % (
+            self._args.size, self._args.num_warm_up, self._args.num_loops
+        )
         for mem_type in self._args.mem_type:
             args += ' --%s' % mem_type
         for copy_type in self._args.copy_type:
@@ -86,6 +102,9 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.bidirectional:
             args += ' --bidirectional'
+
+        if self._args.check_data:
+            args += ' --check_data'
 
         self._commands = ['%s %s' % (self.__bin_path, args)]
 

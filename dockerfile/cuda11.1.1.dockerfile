@@ -7,7 +7,7 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 # NVIDIA:
 #   - CUDA: 11.1.1
 #   - cuDNN: 8.0.5
-#   - NCCL: bootstrap_tag
+#   - NCCL: v2.10.3-1
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 #   - HPC-X: v2.8.3
@@ -45,6 +45,8 @@ RUN apt-get update && \
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
+
+ARG NUM_MAKE_JOBS=
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -85,16 +87,16 @@ RUN cd /tmp && \
     git reset --hard 7cccbc1 && \
     ./autogen.sh && \
     ./configure --prefix=/usr/local --with-cuda=/usr/local/cuda && \
-    make -j && \
+    make -j ${NUM_MAKE_JOBS} && \
     make install && \
     cd /tmp && \
     rm -rf nccl-rdma-sharp-plugins
 
 # Install NCCL patch
 RUN cd /tmp && \
-    git clone -b bootstrap_tag https://github.com/NVIDIA/nccl.git && \
+    git clone -b v2.10.3-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
-    make -j src.build && \
+    make -j ${NUM_MAKE_JOBS} src.build && \
     make install && \
     cd /tmp && \
     rm -rf nccl
@@ -117,7 +119,7 @@ ENV PATH="${PATH}" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -j -C third_party cuda
+RUN make -j ${NUM_MAKE_JOBS} -C third_party cuda
 
 ADD . .
 RUN python3 -m pip install .[nvidia,torch,ort] && \
