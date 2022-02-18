@@ -143,7 +143,7 @@ The categories belong to this rule.
 
 #### `criteria`
 
-The criteria used for this rule, which indicate how to compare the data with the baseline value for each metric. The format should be a lambda function supported by Python.
+The criterion used for this rule, which indicates how to compare the data with the baseline value for each metric. The format should be a lambda function supported by Python.
 
 #### `store`
 
@@ -157,11 +157,11 @@ The function used for this rule.
 
 - `variance`: the rule is to check if the variance between raw data and baseline violates the criteria. variance = (raw data - criteria) / criteria
 
-  For example, if the criteria are `lambda x:x>0.05`, the rule is that if the variance is larger than 5%, it should be defective.
+  For example, if the 'criteria' is `lambda x:x>0.05`, the rule is that if the variance is larger than 5%, it should be defective.
 
 - `value`: the rule is to check if the raw data violate the criteria.
 
-  For example, if the criteria are `lambda x:x>0`, the rule is that if the raw data is larger than the 0, it should be defective.
+  For example, if the 'criteria' is `lambda x:x>0`, the rule is that if the raw data is larger than the 0, it should be defective.
 
 - `multi_rules`: the rule is to check if the combined results of multiple previous rules and metrics violate the criteria.
 
