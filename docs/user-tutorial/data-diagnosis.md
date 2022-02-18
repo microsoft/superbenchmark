@@ -165,7 +165,7 @@ The function used for this rule.
 
 - `multi_rules`: the rule is to check if the combined results of multiple previous rules and metrics violate the criteria.
 
-  For example, if the criteria are 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False', the rule is that if the sum of labeled metrics in rule4 and rule5 is larger than 2, it should be defective.
+  For example, if the 'criteria' is 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False', the rule is that if the sum of labeled metrics in rule4 and rule5 is larger than 2, it should be defective.
 
 `Tips`: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.
 
