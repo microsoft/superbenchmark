@@ -1,0 +1,317 @@
+version: v0.4
+superbench:
+  enable: null
+  monitor:
+    enable: true
+    sample_duration: 1
+    sample_interval: 10
+  var:
+    default_local_mode: &default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 4
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+          parallel: yes
+    default_pytorch_mode: &default_pytorch_mode
+      enable: true
+      modes:
+        - name: torch.distributed
+          proc_num: 4
+          node_num: 1
+      frameworks:
+        - pytorch
+    offline_inference_config: &offline_inference_config
+      duration: 0
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 32
+      precision:
+        - float32
+        - float16
+      model_action:
+        - inference
+      pin_memory: yes
+    online_inference_config: &online_inference_config
+      duration: 0
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 1
+      precision:
+        - float32
+        - float16
+      model_action:
+        - inference
+      pin_memory: yes
+  benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
+      parameters:
+        precision: [fp32, fp16, fp16_tc]
+    nccl-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        ngpus: 4
+        maxbytes: 4G
+    cpu-memory-bw-latency:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        tests:
+          - bandwidth_matrix
+          - latency_matrix
+          - max_bandwidth
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 4
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N {proc_rank}
+          parallel: no
+    gpu-copy-bw:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type:
+          - htod
+          - dtoh
+        copy_type:
+          - sm
+          - dma
+    cudnn-function:
+      <<: *default_local_mode
+    cublas-function:
+      <<: *default_local_mode
+    matmul:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+    sharding-matmul:
+      <<: *default_pytorch_mode
+    computation-communication-overlap:
+      <<: *default_pytorch_mode
+    ort-inference:fp16-offline:
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+        batch_size: 32
+        precision: float16
+    ort-inference:fp16-online:
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+        batch_size: 1
+        precision: float16
+    tensorrt-inference:fp16-offline:
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+          - bert-base
+          # - bert-large
+        seq_length: 224
+        batch_size: 32
+        precision: fp16
+    tensorrt-inference:fp16-online:
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+          - bert-base
+          - bert-large
+        seq_length: 224
+        batch_size: 1
+        precision: fp16
+    tensorrt-inference:int8-offline:
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+          - bert-base
+          # - bert-large
+        seq_length: 224
+        batch_size: 32
+        precision: int8
+    tensorrt-inference:int8-online:
+      <<: *default_local_mode
+      parameters:
+        pytorch_models:
+          - resnet50
+          - resnet101
+          - resnet152
+          - densenet169
+          - densenet201
+          - bert-base
+          - bert-large
+        seq_length: 224
+        batch_size: 1
+        precision: int8
+    # PyTorch offline inference
+    model-benchmarks:gpt-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - gpt2-small
+        - gpt2-large
+      parameters:
+        <<: *offline_inference_config
+        batch_size: 8
+        seq_len: 224
+    model-benchmarks:bert-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        <<: *offline_inference_config
+        seq_len: 224
+    model-benchmarks:lstm-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - lstm
+      parameters:
+        <<: *offline_inference_config
+        batch_size: 224
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
+    model-benchmarks:resnet-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - resnet50
+        - resnet101
+        - resnet152
+      parameters:
+        <<: *offline_inference_config
+        batch_size: 192
+        num_steps: 512
+    model-benchmarks:densenet-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - densenet169
+        - densenet201
+      parameters:
+        <<: *offline_inference_config
+        pin_memory: no
+    model-benchmarks:vgg-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - vgg11
+        - vgg13
+        - vgg16
+        - vgg19
+      parameters:
+        <<: *offline_inference_config
+        pin_memory: no
+    # PyTorch online inference
+    model-benchmarks:gpt-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - gpt2-small
+        - gpt2-large
+      parameters:
+        <<: *online_inference_config
+        seq_len: 224
+    model-benchmarks:bert-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        <<: *online_inference_config
+        seq_len: 224
+    model-benchmarks:lstm-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - lstm
+      parameters:
+        <<: *online_inference_config
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
+    model-benchmarks:resnet-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - resnet50
+        - resnet101
+        - resnet152
+      parameters:
+        <<: *online_inference_config
+    model-benchmarks:densenet-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - densenet169
+        - densenet201
+      parameters:
+        <<: *online_inference_config
+        pin_memory: no
+    model-benchmarks:vgg-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - vgg11
+        - vgg13
+        - vgg16
+        - vgg19
+      parameters:
+        <<: *online_inference_config
+        pin_memory: no
