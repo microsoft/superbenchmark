@@ -1,0 +1,204 @@
+# SuperBench Config
+#
+# Server:
+#   - Product: HPE Apollo 6500
+
+version: v0.4
+superbench:
+  enable: null
+  var:
+    default_local_mode: &default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: HIP_VISIBLE_DEVICES={proc_rank}
+          parallel: yes
+    default_pytorch_mode: &default_pytorch_mode
+      enable: true
+      modes:
+        - name: torch.distributed
+          proc_num: 8
+          node_num: 1
+      frameworks:
+        - pytorch
+    common_model_config: &common_model_config
+      duration: 0
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 32
+      precision:
+        - float32
+        - float16
+      model_action:
+        - train
+      pin_memory: yes
+  benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    rccl-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        maxbytes: 8G
+        ngpus: 8
+        operation: allreduce
+    cpu-memory-bw-latency:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        tests:
+          - bandwidth_matrix
+          - latency_matrix
+          - max_bandwidth
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: HIP_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
+          parallel: no
+    gemm-flops:
+      <<: *default_local_mode
+      parameters:
+        m: 7680
+        n: 8192
+        k: 8192
+    ib-loopback:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 4
+          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,1,2,3
+          parallel: no
+    disk-benchmark:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        block_devices: []
+    gpu-copy-bw:correctness:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type:
+          - htod
+          - dtoh
+          - dtod
+        copy_type:
+          - sm
+          - dma
+        size: 4096
+        num_warm_up: 0
+        num_loops: 1
+        check_data: true
+    gpu-copy-bw:perf:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type:
+          - htod
+          - dtoh
+          - dtod
+        copy_type:
+          - sm
+          - dma
+    ib-traffic:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            btl: tcp,self
+            pml: ob1
+            btl_tcp_if_include: ens17f0
+    gpcnet-network-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: ens17f0
+    tcp-connectivity:
+      enable: false
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        port: 22
+    ort-models:
+      enable: false
+      modes:
+        - name: local
+      frameworks:
+        - onnxruntime
+    gpt_models:
+      <<: *default_pytorch_mode
+      models:
+        - gpt2-small
+        - gpt2-large
+      parameters:
+        <<: *common_model_config
+        batch_size: 8
+        seq_len: 224
+    bert_models:
+      <<: *default_pytorch_mode
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        <<: *common_model_config
+        seq_len: 224
+    lstm_models:
+      <<: *default_pytorch_mode
+      models:
+        - lstm
+      parameters:
+        <<: *common_model_config
+        batch_size: 224
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
+    resnet_models:
+      <<: *default_pytorch_mode
+      models:
+        - resnet50
+        - resnet101
+        - resnet152
+      parameters:
+        <<: *common_model_config
+        pin_memory: no
+    densenet_models:
+      <<: *default_pytorch_mode
+      models:
+        - densenet169
+        - densenet201
+      parameters:
+        <<: *common_model_config
+        pin_memory: no
+    vgg_models:
+      <<: *default_pytorch_mode
+      models:
+        - vgg11
+        - vgg13
+        - vgg16
+        - vgg19
+      parameters:
+        <<: *common_model_config
+        pin_memory: no
