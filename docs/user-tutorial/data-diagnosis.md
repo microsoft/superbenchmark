@@ -54,6 +54,7 @@ superbench:
     ${rule_name}:
       function: string
       criteria: string
+      store: (optional)bool
       categories: string
       metrics:
         - ${benchmark_name}/regex
@@ -108,11 +109,29 @@ superbench:
         - bert_models/pytorch-bert-base/throughput_train_float(32|16)
         - bert_models/pytorch-bert-large/throughput_train_float(32|16)
         - gpt_models/pytorch-gpt-large/throughput_train_float(32|16)
+    rule4:
+      function: variance
+      criteria: "lambda x:x<-0.05"
+      store: True
+      categories: CNN
+      metrics:
+        - resnet_models/pytorch-resnet.*/throughput_train_.*
+    rule5:
+      function: variance
+      criteria: "lambda x:x<-0.05"
+      store: True
+      categories: CNN
+      metrics:
+        - vgg_models/pytorch-vgg.*/throughput_train_.*\
+    rule6:
+      function: multi_rules
+      criteria: 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False'
+      categories: CNN
 ```
 
 This rule file describes the rules used for data diagnosis.
 
-They are firstly organized by the rule name, and each rule mainly includes 4 elements:
+They are firstly organized by the rule name, and each rule mainly includes several elements:
 
 #### `metrics`
 
@@ -124,21 +143,29 @@ The categories belong to this rule.
 
 #### `criteria`
 
-The criteria used for this rule, which indicate how to compare the data with the baseline value. The format should be a lambda function supported by Python.
+The criterion used for this rule, which indicates how to compare the data with the baseline value for each metric. The format should be a lambda function supported by Python.
+
+#### `store`
+
+True if the current rule is not used alone to filter the defective machine, but will be used by other subsequent rules. False(default) if this rule is used to label the defective machine directly.
 
 #### `function`
 
 The function used for this rule.
 
-2 types of rules are supported currently:
+3 types of rules are supported currently:
 
 - `variance`: the rule is to check if the variance between raw data and baseline violates the criteria. variance = (raw data - criteria) / criteria
 
-  For example, if the criteria are `lambda x:x>0.05`, the rule is that if the variance is larger than 5%, it should be defective.
+  For example, if the 'criteria' is `lambda x:x>0.05`, the rule is that if the variance is larger than 5%, it should be defective.
 
 - `value`: the rule is to check if the raw data violate the criteria.
 
-  For example, if the criteria are `lambda x:x>0`, the rule is that if the raw data is larger than the 0, it should be defective.
+  For example, if the 'criteria' is `lambda x:x>0`, the rule is that if the raw data is larger than the 0, it should be defective.
+
+- `multi_rules`: the rule is to check if the combined results of multiple previous rules and metrics violate the criteria.
+
+  For example, if the 'criteria' is 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False', the rule is that if the sum of labeled metrics in rule4 and rule5 is larger than 2, it should be defective.
 
 `Tips`: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.
 
