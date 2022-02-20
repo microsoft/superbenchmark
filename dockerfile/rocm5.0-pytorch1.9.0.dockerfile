@@ -1,9 +1,25 @@
 FROM rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
 
+# OS:
+#   - Ubuntu: 18.04
+#   - OpenMPI: 4.0.5
+#   - Docker Client: 20.10.8
+# ROCm:
+#   - ROCm: 5.0.0
+#   - RCCL: 2.10.3
+#   - RCCL RDMA SHARP plugins: rocm-rel-5.0
+#   - hipify: 5.0.0
+# Mellanox:
+#   - OFED: 5.2-2.2.3.0
+#   - HPC-X: v2.8.3
+# Intel:
+#   - mlc: v3.9a
+
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && \
+RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
     automake \
@@ -19,7 +35,7 @@ RUN apt-get update && \
     libtool \
     lshw \
     net-tools \
-    numactl \
+    libnuma-dev \
     openssh-client \
     openssh-server \
     pciutils \
@@ -57,13 +73,14 @@ RUN cd /tmp && \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install ucx
-RUN cd /tmp && wget https://github.com/openucx/ucx/releases/download/v1.12.0/ucx-1.12.0.tar.gz && \
-    tar xzf ucx-1.12.0.tar.gz && \
-    cd ucx-1.12.0 && \
+ENV UCX_VERSION=1.12.0
+RUN cd /tmp && wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx-${UCX_VERSION}.tar.gz && \
+    tar xzf ucx-${UCX_VERSION}.tar.gz && \
+    cd ucx-${UCX_VERSION} && \
     mkdir build && cd build/ && \
     ../contrib/configure-release --prefix=/opt/ucx && \
     make -j $(nproc) && make install && \
-    rm -rf /tmp/ucx-1.12.0
+    rm -rf /tmp/ucx-${UCX_VERSION}
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.0.5
@@ -71,7 +88,7 @@ RUN cd /tmp && \
     wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
     cd openmpi-${OPENMPI_VERSION} && \
-    ./configure --enable-orterun-prefix-by-default && \
+    ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct && \
     make -j $(nproc) all && \
     make install && \
     ldconfig && \
@@ -127,8 +144,8 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/hipify/" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN echo gfx90a >> /opt/rocm/bin/target.lst && ROCM_VERSION=${ROCM_VER} make -j -C third_party rocm
+RUN ROCM_VERSION=${ROCM_VER} make -j -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install .[torch] && \
+RUN python3 -m pip install .[torch,ort]  && \
     make cppbuild
