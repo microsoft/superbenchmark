@@ -68,7 +68,7 @@ class RuleOp:
 
     @staticmethod
     def miss_test(metric, rule, data_row, details, categories):
-        """Check if the metric in the rule missed test and if so add detailes and categories.
+        """Check if the metric in the rule missed test and if so add details and categories.
 
         Args:
             metric (str): the name of the metric
