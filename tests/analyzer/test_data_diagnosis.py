@@ -39,16 +39,16 @@ class TestDataDiagnosis(unittest.TestCase):
         test_baseline_file = str(self.parent_path / 'test_baseline.json')
         diag1 = DataDiagnosis()
         diag1._raw_data_df = file_handler.read_raw_data(test_raw_data)
-        diag1._metrics = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df))
+        diag1._benchmark_metrics_dict = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df))
         assert (len(diag1._raw_data_df) == 3)
         # Negative case
         test_raw_data_fake = str(self.parent_path / 'test_results_fake.jsonl')
         test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         diag2 = DataDiagnosis()
         diag2._raw_data_df = file_handler.read_raw_data(test_raw_data_fake)
-        diag2._metrics = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
+        diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
         assert (len(diag2._raw_data_df) == 0)
-        assert (len(diag2._metrics) == 0)
+        assert (len(diag2._benchmark_metrics_dict) == 0)
         metric_list = [
             'gpu_temperature', 'gpu_power_limit', 'gemm-flops/FP64',
             'bert_models/pytorch-bert-base/steptime_train_float32'
@@ -124,21 +124,24 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (diag1._get_baseline_of_metric(baseline, 'kernel-launch/event_overhead:0') == 0.00596)
         assert (diag1._get_baseline_of_metric(baseline, 'kernel-launch/return_code') == 0)
         assert (diag1._get_baseline_of_metric(baseline, 'mem-bw/H2D:0') == -1)
-        # Test - _get_criteria
+        # Test - _parse_rules_and_baseline
         # Negative case
-        assert (diag2._get_criteria(test_rule_file_fake, test_baseline_file) is False)
+        fake_rules = file_handler.read_rules(test_rule_file_fake)
+        baseline = file_handler.read_baseline(test_baseline_file)
+        assert (diag2._parse_rules_and_baseline(fake_rules, baseline) is False)
         diag2 = DataDiagnosis()
         diag2._raw_data_df = file_handler.read_raw_data(test_raw_data)
-        diag2._metrics = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
+        diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
         p = Path(test_rule_file)
         with p.open() as f:
             rules = yaml.load(f, Loader=yaml.SafeLoader)
         rules['superbench']['rules']['fake'] = false_rules[0]
         with open(test_rule_file_fake, 'w') as f:
             yaml.dump(rules, f)
-        assert (diag1._get_criteria(test_rule_file_fake, test_baseline_file) is False)
+        assert (diag1._parse_rules_and_baseline(fake_rules, baseline) is False)
         # Positive case
-        assert (diag1._get_criteria(test_rule_file, test_baseline_file))
+        rules = file_handler.read_rules(test_rule_file)
+        assert (diag1._parse_rules_and_baseline(rules, baseline))
         # Test - _run_diagnosis_rules_for_single_node
         (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-01')
         assert (details_row)
@@ -211,3 +214,80 @@ class TestDataDiagnosis(unittest.TestCase):
         with Path(expect_result_file).open() as f:
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
+
+    def test_mutli_rules(self):
+        """Test multi rules check feature."""
+        diag1 = DataDiagnosis()
+        # test _check_rules
+        false_rules = [
+            {
+                'criteria': 'lambda x:x>0',
+                'categories': 'KernelLaunch',
+                'store': 'true',
+                'metrics': ['kernel-launch/event_overhead:\\d+']
+            }
+        ]
+        metric = 'kernel-launch/event_overhead:0'
+        for rules in false_rules:
+            self.assertRaises(Exception, diag1._check_rules, rules, metric)
+        # Positive case
+        true_rules = [
+            {
+                'categories': 'KernelLaunch',
+                'criteria': 'lambda x:x>0.05',
+                'store': True,
+                'function': 'variance',
+                'metrics': ['kernel-launch/event_overhead:\\d+']
+            }, {
+                'categories': 'CNN',
+                'function': 'multi_rules',
+                'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
+            }
+        ]
+        for rules in true_rules:
+            assert (diag1._check_rules(rules, metric))
+        # test _run_diagnosis_rules_for_single_node
+        rules = {
+            'superbench': {
+                'rules': {
+                    'rule1': {
+                        'categories': 'CNN',
+                        'criteria': 'lambda x:x<-0.5',
+                        'store': True,
+                        'function': 'variance',
+                        'metrics': ['mem-bw/D2H_Mem_BW']
+                    },
+                    'rule2': {
+                        'categories': 'CNN',
+                        'criteria': 'lambda x:x<-0.5',
+                        'function': 'variance',
+                        'store': True,
+                        'metrics': ['kernel-launch/wall_overhead']
+                    },
+                    'rule3': {
+                        'categories': 'CNN',
+                        'function': 'multi_rules',
+                        'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
+                    }
+                }
+            }
+        }
+        baseline = {
+            'kernel-launch/wall_overhead': 0.01026,
+            'mem-bw/D2H_Mem_BW': 24.3,
+        }
+
+        data = {'kernel-launch/wall_overhead': [0.005, 0.005], 'mem-bw/D2H_Mem_BW': [25, 10]}
+        diag1._raw_data_df = pd.DataFrame(data, index=['sb-validation-04', 'sb-validation-05'])
+        diag1._benchmark_metrics_dict = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df.columns))
+        diag1._parse_rules_and_baseline(rules, baseline)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-04')
+        assert (not details_row)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-05')
+        assert (details_row)
+        assert ('CNN' in details_row[0])
+        assert (
+            details_row[1] == 'kernel-launch/wall_overhead(B/L: 0.0103 VAL: 0.0050 VAR: -51.27% Rule:lambda x:x<-0.5),'
+            + 'mem-bw/D2H_Mem_BW(B/L: 24.3000 VAL: 10.0000 VAR: -58.85% Rule:lambda x:x<-0.5),' +
+            'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
+        )
