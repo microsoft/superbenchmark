@@ -95,24 +95,29 @@ RUN cd /tmp && \
     rm -rf mlc
 
 # Install rccl-rdma-sharp-plugins
+ENV SHARP_VERSION=5.0
 RUN cd /opt/rocm && \
-    git clone -b release/rocm-rel-5.0 https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
+    git clone -b release/rocm-rel-${SHARP_VERSION} https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
     cd rccl-rdma-sharp-plugins && \
     ./autogen.sh && ./configure && make -j64
 
 # Install llvm+clang, required by hipify
-RUN cd /tmp && git clone -b llvmorg-13.0.0 https://github.com/llvm/llvm-project.git && \
+ENV LLVM_VERSION=13.0.0
+RUN cd /tmp && git clone -b llvmorg-${LLVM_VERSION} https://github.com/llvm/llvm-project.git && \
     cd llvm-project/&& \
-    mkdir build && cd build &&  \
-    cmake -DCMAKE_INSTALL_PREFIX=/usr/lib/llvm-13 -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" -DLLVM_ENABLE_PROJECTS="clang"  -DCMAKE_BUILD_TYPE=Release ../llvm && \
-    make -j $(nproc) install
+    mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/lib/llvm-${LLVM_VERSION} -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" -DLLVM_ENABLE_PROJECTS="clang"  -DCMAKE_BUILD_TYPE=Release ../llvm && \
+    make -j $(nproc) install && \
+    cd /tmp && rm -rf llvm-project
 
 # Install hipify
-RUN cd /tmp && git clone -b rocm-5.0.0 https://github.com/ROCm-Developer-Tools/HIPIFY.git && \
+ENV ROCM_VER=rocm-5.0.0
+RUN cd /tmp && git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/HIPIFY.git && \
     cd HIPIFY && \
-    mkdir build && cd build &&\
-    cmake -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_PREFIX=/opt/rocm/hipify -DCMAKE_PREFIX_PATH=/usr/lib/llvm-13 ..  && \
-    make -j $(nproc) install
+    mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_PREFIX=/opt/rocm/hipify -DCMAKE_PREFIX_PATH=/usr/lib/llvm-${LLVM_VERSION} ..  && \
+    make -j $(nproc) install && \
+    cd /tmp && rm -rf HIPIFY
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/hipify/" \
     LD_LIBRARY_PATH="/opt/rocm/rccl-rdma-sharp-plugins/src/.libs:/usr/local/lib/:${LD_LIBRARY_PATH}" \
@@ -122,7 +127,7 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/hipify/" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN echo gfx90a >> /opt/rocm/bin/target.lst && ROCM_VERSION=rocm-5.0.0 make -j -C third_party rocm
+RUN echo gfx90a >> /opt/rocm/bin/target.lst && ROCM_VERSION=${ROCM_VER} make -j -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install .[torch] && \
