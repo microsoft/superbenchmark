@@ -14,6 +14,9 @@ FROM rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
 #   - HPC-X: v2.8.3
 # Intel:
 #   - mlc: v3.9a
+# Others:
+#   - ucx: 1.12.0
+#   - llvm+clang: 1.13.0
 
 LABEL maintainer="SuperBench"
 
@@ -47,6 +50,8 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
+ARG NUM_MAKE_JOBS=
+
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
 RUN cd /tmp && \
@@ -79,7 +84,7 @@ RUN cd /tmp && wget https://github.com/openucx/ucx/releases/download/v${UCX_VERS
     cd ucx-${UCX_VERSION} && \
     mkdir build && cd build/ && \
     ../contrib/configure-release --prefix=/opt/ucx && \
-    make -j $(nproc) && make install && \
+    make -j ${NUM_MAKE_JOBS} && make install && \
     rm -rf /tmp/ucx-${UCX_VERSION}
 
 # Install OpenMPI
@@ -89,7 +94,7 @@ RUN cd /tmp && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
     cd openmpi-${OPENMPI_VERSION} && \
     ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct && \
-    make -j $(nproc) all && \
+    make -j ${NUM_MAKE_JOBS} all && \
     make install && \
     ldconfig && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
@@ -105,7 +110,7 @@ RUN cd /opt && \
 RUN cd /tmp && \
     mkdir -p mlc && \
     cd mlc && \
-    wget --user-agent="Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0" https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz && \
+    curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc_v3.9a.tgz && \
     tar xvf mlc_v3.9a.tgz && \
     cp ./Linux/mlc /usr/local/bin/ && \
     cd /tmp && \
@@ -116,7 +121,7 @@ ENV SHARP_VERSION=5.0
 RUN cd /opt/rocm && \
     git clone -b release/rocm-rel-${SHARP_VERSION} https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
     cd rccl-rdma-sharp-plugins && \
-    ./autogen.sh && ./configure && make -j64
+    ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS}
 
 # Install llvm+clang, required by hipify
 ENV LLVM_VERSION=13.0.0
@@ -124,7 +129,7 @@ RUN cd /tmp && git clone -b llvmorg-${LLVM_VERSION} https://github.com/llvm/llvm
     cd llvm-project/&& \
     mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr/lib/llvm-${LLVM_VERSION} -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" -DLLVM_ENABLE_PROJECTS="clang"  -DCMAKE_BUILD_TYPE=Release ../llvm && \
-    make -j $(nproc) install && \
+    make -j ${NUM_MAKE_JOBS} install && \
     cd /tmp && rm -rf llvm-project
 
 # Install hipify
@@ -133,18 +138,18 @@ RUN cd /tmp && git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/
     cd HIPIFY && \
     mkdir build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_PREFIX=/opt/rocm/hipify -DCMAKE_PREFIX_PATH=/usr/lib/llvm-${LLVM_VERSION} ..  && \
-    make -j $(nproc) install && \
+    make -j ${NUM_MAKE_JOBS} install && \
     cd /tmp && rm -rf HIPIFY
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/hipify/" \
-    LD_LIBRARY_PATH="/opt/rocm/rccl-rdma-sharp-plugins/src/.libs:/usr/local/lib/:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
     SB_MICRO_PATH="/opt/superbench"
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=${ROCM_VER} make -j -C third_party rocm
+RUN ROCM_VERSION=${ROCM_VER} make -j ${NUM_MAKE_JOBS} -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install .[torch,ort]  && \
