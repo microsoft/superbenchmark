@@ -15,6 +15,12 @@ else()
     set(HIP_PATH $ENV{HIP_PATH})
 endif()
 
+# Turn off CMAKE_HIP_ARCHITECTURES Feature if cmake version is 3.21+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
+    set(CMAKE_HIP_ARCHITECTURES OFF)
+endif()
+message(STATUS "CMAKE HIP ARCHITECTURES: ${CMAKE_HIP_ARCHITECTURES}")
+
 if(EXISTS ${HIP_PATH})
     # Search for hip in common locations
     list(APPEND CMAKE_PREFIX_PATH ${HIP_PATH} ${ROCM_PATH})
