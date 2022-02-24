@@ -86,13 +86,6 @@ RUN cd /tmp && \
     ldconfig && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
 
-# Install HPC-X
-RUN cd /opt && \
-    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
-    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
-    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64 hpcx && \
-    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz
-
 # Install Intel MLC
 RUN cd /tmp && \
     mkdir -p mlc && \
@@ -110,7 +103,7 @@ RUN cd /opt/rocm && \
     cd rccl-rdma-sharp-plugins && \
     ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS}
 
-ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/hipify/" \
+ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
     LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
     SB_MICRO_PATH="/opt/superbench"
