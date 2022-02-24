@@ -14,9 +14,9 @@ HPCX_HOME ?= /opt/hpcx
 
 # Build all targets.
 all: cuda rocm
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
-common: fio gpcnet
+common: fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:

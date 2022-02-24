@@ -655,7 +655,7 @@ int EnablePeerAccess(int src_gpu_id, int dst_gpu_id, int *can_access) {
         fprintf(stderr, "EnablePeerAccess::cudaDeviceCanAccessPeer error: %d\n", cuda_err);
         return -1;
     }
-    if (can_access) {
+    if (*can_access) {
         if (SetGpu(src_gpu_id)) {
             return -1;
         }
