@@ -11,18 +11,13 @@ FROM rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
 #   - hipify: 5.0.0
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
-#   - HPC-X: v2.8.3
 # Intel:
 #   - mlc: v3.9a
-# Others:
-#   - ucx: 1.12.0
-#   - llvm+clang: 1.13.0
 
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
     automake \
@@ -30,6 +25,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     curl \
     dmidecode \
     git \
+    hipify-clang \
     jq \
     libaio-dev \
     libcap2 \
@@ -39,6 +35,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     lshw \
     net-tools \
     libnuma-dev \
+    numactl \
     openssh-client \
     openssh-server \
     pciutils \
@@ -77,16 +74,6 @@ RUN cd /tmp && \
     PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
 
-# Install ucx
-ENV UCX_VERSION=1.12.0
-RUN cd /tmp && wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx-${UCX_VERSION}.tar.gz && \
-    tar xzf ucx-${UCX_VERSION}.tar.gz && \
-    cd ucx-${UCX_VERSION} && \
-    mkdir build && cd build/ && \
-    ../contrib/configure-release --prefix=/opt/ucx && \
-    make -j ${NUM_MAKE_JOBS} && make install && \
-    rm -rf /tmp/ucx-${UCX_VERSION}
-
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.0.5
 RUN cd /tmp && \
@@ -123,24 +110,6 @@ RUN cd /opt/rocm && \
     cd rccl-rdma-sharp-plugins && \
     ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS}
 
-# Install llvm+clang, required by hipify
-ENV LLVM_VERSION=13.0.0
-RUN cd /tmp && git clone -b llvmorg-${LLVM_VERSION} https://github.com/llvm/llvm-project.git && \
-    cd llvm-project/&& \
-    mkdir build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/usr/lib/llvm-${LLVM_VERSION} -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" -DLLVM_ENABLE_PROJECTS="clang"  -DCMAKE_BUILD_TYPE=Release ../llvm && \
-    make -j ${NUM_MAKE_JOBS} install && \
-    cd /tmp && rm -rf llvm-project
-
-# Install hipify
-ENV ROCM_VER=rocm-5.0.0
-RUN cd /tmp && git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/HIPIFY.git && \
-    cd HIPIFY && \
-    mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_PREFIX=/opt/rocm/hipify -DCMAKE_PREFIX_PATH=/usr/lib/llvm-${LLVM_VERSION} ..  && \
-    make -j ${NUM_MAKE_JOBS} install && \
-    cd /tmp && rm -rf HIPIFY
-
 ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/hipify/" \
     LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME="/opt/superbench" \
@@ -149,7 +118,7 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/hipify/" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=${ROCM_VER} make -j ${NUM_MAKE_JOBS} -C third_party rocm
+RUN ROCM_VERSION=rocm-5.0.0 make -j ${NUM_MAKE_JOBS} -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install .[torch,ort]  && \
