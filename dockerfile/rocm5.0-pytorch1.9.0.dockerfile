@@ -101,7 +101,7 @@ ENV SHARP_VERSION=5.0
 RUN cd /opt/rocm && \
     git clone -b release/rocm-rel-${SHARP_VERSION} https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
     cd rccl-rdma-sharp-plugins && \
-    ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS}
+    ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS} && make install
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
     LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
