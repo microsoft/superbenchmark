@@ -148,7 +148,8 @@ class TestDataDiagnosis(unittest.TestCase):
         (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-02')
         assert (not details_row)
         # Test - _run_diagnosis_rules
-        data_not_accept_df, label_df = diag1.run_diagnosis_rules(test_rule_file, test_baseline_file)
+        baseline = file_handler.read_baseline(test_baseline_file)
+        data_not_accept_df, label_df = diag1.run_diagnosis_rules(rules, baseline)
         assert (len(label_df) == 3)
         assert (label_df.loc['sb-validation-01']['label'] == 1)
         assert (label_df.loc['sb-validation-02']['label'] == 0)

@@ -3,7 +3,8 @@
 
 """Exposes interfaces of SuperBench Analyzer."""
 
+from superbench.analyzer.rule_base import RuleBase
 from superbench.analyzer.data_diagnosis import DataDiagnosis
 from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
 
-__all__ = ['DataDiagnosis', 'DiagnosisRuleType', 'RuleOp']
+__all__ = ['DataDiagnosis', 'DiagnosisRuleType', 'RuleOp', 'RuleBase']
