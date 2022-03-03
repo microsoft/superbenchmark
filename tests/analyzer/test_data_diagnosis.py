@@ -64,7 +64,7 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (not rules)
         rules = file_handler.read_rules(test_rule_file)
         assert (rules)
-        # Test - _check_rules
+        # Test - _check_and_format_rules
         # Negative case
         false_rules = [
             {
@@ -97,7 +97,7 @@ class TestDataDiagnosis(unittest.TestCase):
         ]
         metric = 'kernel-launch/event_overhead:0'
         for rules in false_rules:
-            self.assertRaises(Exception, diag1._check_rules, rules, metric)
+            self.assertRaises(Exception, diag1._check_and_format_rules, rules, metric)
         # Positive case
         true_rules = [
             {
@@ -118,7 +118,7 @@ class TestDataDiagnosis(unittest.TestCase):
             }
         ]
         for rules in true_rules:
-            assert (diag1._check_rules(rules, metric))
+            assert (diag1._check_and_format_rules(rules, metric))
         # Test - _get_baseline_of_metric
         baseline = file_handler.read_baseline(test_baseline_file)
         assert (diag1._get_baseline_of_metric(baseline, 'kernel-launch/event_overhead:0') == 0.00596)
@@ -205,7 +205,7 @@ class TestDataDiagnosis(unittest.TestCase):
         data_not_accept_read_from_excel = excel_file.parse(data_sheet_name)
         expect_result_file = pd.ExcelFile(str(self.parent_path / '../data/diagnosis_summary.xlsx'), engine='openpyxl')
         expect_result = expect_result_file.parse(data_sheet_name)
-        pd.util.testing.assert_frame_equal(data_not_accept_read_from_excel, expect_result)
+        pd.testing.assert_frame_equal(data_not_accept_read_from_excel, expect_result)
         # Test - output in json
         DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'json')
         assert (Path(self.output_json_file).is_file())
@@ -219,7 +219,7 @@ class TestDataDiagnosis(unittest.TestCase):
     def test_mutli_rules(self):
         """Test multi rules check feature."""
         diag1 = DataDiagnosis()
-        # test _check_rules
+        # test _check_and_format_rules
         false_rules = [
             {
                 'criteria': 'lambda x:x>0',
@@ -230,7 +230,7 @@ class TestDataDiagnosis(unittest.TestCase):
         ]
         metric = 'kernel-launch/event_overhead:0'
         for rules in false_rules:
-            self.assertRaises(Exception, diag1._check_rules, rules, metric)
+            self.assertRaises(Exception, diag1._check_and_format_rules, rules, metric)
         # Positive case
         true_rules = [
             {
@@ -246,7 +246,7 @@ class TestDataDiagnosis(unittest.TestCase):
             }
         ]
         for rules in true_rules:
-            assert (diag1._check_rules(rules, metric))
+            assert (diag1._check_and_format_rules(rules, metric))
         # test _run_diagnosis_rules_for_single_node
         rules = {
             'superbench': {

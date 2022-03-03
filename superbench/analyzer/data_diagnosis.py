@@ -19,7 +19,7 @@ class DataDiagnosis(RuleBase):
         """Init function."""
         super().__init__()
 
-    def _check_rules(self, rule, name):
+    def _check_and_format_rules(self, rule, name):
         """Check the rule of the metric whether the formart is valid.
 
         Args:
@@ -30,7 +30,7 @@ class DataDiagnosis(RuleBase):
             dict: the rule for the metric
         """
         # check if rule is supported
-        super()._check_rules(rule, name)
+        super()._check_and_format_rules(rule, name)
         if 'function' not in rule:
             logger.log_and_raise(exception=Exception, msg='{} lack of function'.format(name))
         if not isinstance(DiagnosisRuleType(rule['function']), DiagnosisRuleType):
@@ -82,7 +82,7 @@ class DataDiagnosis(RuleBase):
         """
         if 'function' in self._sb_rules[rule] and self._sb_rules[rule]['function'] == 'multi_rules':
             return
-        super()._get_metrics(rule, benchmark_rules)
+        self._get_metrics(rule, benchmark_rules)
         for metric in self._sb_rules[rule]['metrics']:
             self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
 
@@ -104,7 +104,7 @@ class DataDiagnosis(RuleBase):
             self._enable_metrics = set()
             benchmark_rules = rules['superbench']['rules']
             for rule in benchmark_rules:
-                benchmark_rules[rule] = self._check_rules(benchmark_rules[rule], rule)
+                benchmark_rules[rule] = self._check_and_format_rules(benchmark_rules[rule], rule)
                 self._sb_rules[rule] = {}
                 self._sb_rules[rule]['name'] = rule
                 self._sb_rules[rule]['function'] = benchmark_rules[rule]['function']
@@ -218,7 +218,7 @@ class DataDiagnosis(RuleBase):
             output_format (str): the format of the output, 'excel' or 'json'
         """
         try:
-            rules = super().preprocess(raw_data_file, rule_file)
+            rules = self._preprocess(raw_data_file, rule_file)
             # read baseline
             baseline = file_handler.read_baseline(baseline_file)
             logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))

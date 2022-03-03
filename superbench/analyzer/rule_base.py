@@ -17,7 +17,7 @@ class RuleBase():
         self._benchmark_metrics_dict = {}
 
     def _get_metrics_by_benchmarks(self, metrics_list):
-        """Get mappings of benchmarks:metrics of metrics_list.
+        """Get mappings of benchmarks:metrics from metrics_list.
 
         Args:
             metrics_list (list): list of metrics
@@ -36,8 +36,8 @@ class RuleBase():
                 benchmarks_metrics[benchmark].add(metric)
         return benchmarks_metrics
 
-    def _check_rules(self, rule, name):
-        """Check the rule of the metric whether the formart is valid.
+    def _check_and_format_rules(self, rule, name):
+        """Check the rule of the metric whether the format is valid.
 
         Args:
             rule (dict): the rule
@@ -83,7 +83,7 @@ class RuleBase():
                         self._sb_rules[rule]['metrics'][metric] = -1
                         self._enable_metrics.add(metric)
 
-    def preprocess(self, raw_data_file, rule_file):
+    def _preprocess(self, raw_data_file, rule_file):
         """Preprocess/preparation operations for the rules.
 
         Args:
