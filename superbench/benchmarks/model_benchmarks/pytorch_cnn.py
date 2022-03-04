@@ -14,12 +14,14 @@ from superbench.benchmarks.model_benchmarks.model_base import Optimizer
 from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
 
+
 def _keep_BatchNorm_as_float(module):
     if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
         module.float()
     for child in module.children():
         _keep_BatchNorm_as_float(child)
     return module
+
 
 class PytorchCNN(PytorchBase):
     """The CNN benchmark class."""
