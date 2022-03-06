@@ -15,6 +15,14 @@ from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
 
 
+def _keep_BatchNorm_as_float(module):
+    if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
+        module.float()
+    for child in module.children():
+        _keep_BatchNorm_as_float(child)
+    return module
+
+
 class PytorchCNN(PytorchBase):
     """The CNN benchmark class."""
     def __init__(self, name, parameters=''):
@@ -63,6 +71,7 @@ class PytorchCNN(PytorchBase):
         try:
             self._model = getattr(models, self._args.model_type)()
             self._model = self._model.to(dtype=getattr(torch, precision.value))
+            self._model = _keep_BatchNorm_as_float(self._model)
             if self._gpu_available:
                 self._model = self._model.cuda()
         except BaseException as e:
