@@ -15,6 +15,7 @@ class RuleBase():
         """Init function."""
         self._sb_rules = {}
         self._benchmark_metrics_dict = {}
+        self._enable_metrics = set()
 
     def _get_metrics_by_benchmarks(self, metrics_list):
         """Get mappings of benchmarks:metrics from metrics_list.
