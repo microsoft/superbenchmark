@@ -129,6 +129,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                     self._result.add_raw_data('GPU-Burn_result',res)
             else:
                 self._result.add_raw_data('GPU Burn Failure: ', failure_msg)
+                self._result.add_result('GPU-Burn_Fail', 1 )
                 return False 
         except BaseException as e:
             logger.error(
