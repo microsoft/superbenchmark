@@ -1,7 +1,7 @@
 # SuperBench Config
 version: v0.4
 superbench:
-  enable: null
+  enable: ['gpu-burn']
   monitor:
     enable: true
     sample_duration: 1

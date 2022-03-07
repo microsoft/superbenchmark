@@ -18,3 +18,6 @@
 [submodule "third_party/GPCNET"]
 	path = third_party/GPCNET
 	url = https://github.com/netbench/GPCNET.git
+[submodule "third_party/gpu-burn"]
+	path = third_party/gpu-burn
+	url = https://github.com/wilicc/gpu-burn.git

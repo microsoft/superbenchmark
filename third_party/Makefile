@@ -98,3 +98,11 @@ gpcnet: sb_micro_path
 	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
+
+#Build GPU burn from main branch (only branch that exists)
+cuda_gpuburn: sb_micro_path
+ifneq (,$(wildcard gpu-burn/Makefile))
+        cd ./gpu-burn && make
+        cp -v ./gpu_burn $(SB_MICRO_PATH)/bin/
+        cp -v ./compare.ptx $(SB_MICRO_PATH)/bin/
+endif
