@@ -10,6 +10,7 @@ import json
 import jsonlines
 import pandas as pd
 import yaml
+import markdown
 
 from superbench.common.utils import logger
 
@@ -26,7 +27,7 @@ def read_raw_data(raw_data_path):
     p = Path(raw_data_path)
     raw_data_df = pd.DataFrame()
     if not p.is_file():
-        logger.error('DataDiagnosis: invalid raw data path - {}'.format(raw_data_path))
+        logger.error('FileHandler: invalid raw data path - {}'.format(raw_data_path))
         return raw_data_df
 
     try:
@@ -52,7 +53,7 @@ def read_rules(rule_file=None):
     default_rule_file = Path(__file__).parent / 'rule/default_rule.yaml'
     p = Path(rule_file) if rule_file else default_rule_file
     if not p.is_file():
-        logger.error('DataDiagnosis: invalid rule file path - {}'.format(str(p.resolve())))
+        logger.error('FileHandler: invalid rule file path - {}'.format(str(p.resolve())))
         return None
     baseline = None
     with p.open() as f:
@@ -71,7 +72,7 @@ def read_baseline(baseline_file):
     """
     p = Path(baseline_file)
     if not p.is_file():
-        logger.error('DataDiagnosis: invalid baseline file path - {}'.format(str(p.resolve())))
+        logger.error('FileHandler: invalid baseline file path - {}'.format(str(p.resolve())))
         return None
     baseline = None
     with p.open() as f:
@@ -91,7 +92,7 @@ def output_excel_raw_data(writer, raw_data_df, sheet_name):
     if isinstance(raw_data_df, pd.DataFrame) and not raw_data_df.empty:
         raw_data_df.to_excel(writer, sheet_name, index=True)
     else:
-        logger.warning('DataDiagnosis: excel_data_output - {} data_df is empty.'.format(sheet_name))
+        logger.warning('FileHandler: excel_data_output - {} data_df is empty.'.format(sheet_name))
 
 
 def output_excel_data_not_accept(writer, data_not_accept_df, rules):
@@ -152,55 +153,71 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
                         )
 
         else:
-            logger.warning('DataDiagnosis: excel_data_output - data_not_accept_df is empty.')
+            logger.warning('FileHandler: excel_data_output - data_not_accept_df is empty.')
     else:
-        logger.warning('DataDiagnosis: excel_data_output - data_not_accept_df is not DataFrame.')
+        logger.warning('FileHandler: excel_data_output - data_not_accept_df is not DataFrame.')
 
 
-def output_excel(raw_data_df, data_not_accept_df, output_path, rules):
-    """Output the raw_data_df and data_not_accept_df results into excel file.
+def gen_md_table(data_df, header):
+    """Generate table text in markdown format.
 
-    Args:
-        raw_data_df (DataFrame): raw data
-        data_not_accept_df (DataFrame): defective nodes's detailed information
-        output_path (str): the path of output excel file
-        rules (dict): the rules of DataDiagnosis
-    """
-    try:
-        writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
-        # Check whether writer is valiad
-        if not isinstance(writer, pd.ExcelWriter):
-            logger.error('DataDiagnosis: excel_data_output - invalid file path.')
-            return
-        output_excel_raw_data(writer, raw_data_df, 'Raw Data')
-        output_excel_data_not_accept(writer, data_not_accept_df, rules)
-        writer.save()
-    except Exception as e:
-        logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
-
-
-def output_json_data_not_accept(data_not_accept_df, output_path):
-    """Output data_not_accept_df into jsonl file.
+    | header[0] | header[1] |
+    |     ----  | ----      |
+    |     data  | data      |
+    |     data  | data      |
 
     Args:
-        data_not_accept_df (DataFrame): the DataFrame to output
-        output_path (str): the path of output jsonl file
+        data (DataFrame): the data in table
+        header (list): the header of table
+
+    Returns:
+        list: lines of markdown table
     """
-    p = Path(output_path)
+    lines = []
+    data = data_df.values.tolist()
+    max_width = len(max(data, key=len))
+    header[len(header):max_width] = [' ' for i in range(max_width - len(header))]
+    align = ['---' for i in range(max_width)]
+    lines.append('| {} |\n'.format(' | '.join(header)))
+    lines.append('| {} |\n'.format(' | '.join(align)))
+    for line in data:
+        full_line = [' ' for i in range(max_width)]
+        full_line[0:len(line)] = [str(line[i]) for i in range(len(line))]
+        lines.append('| {} |\n'.format(' | '.join(full_line)))
+    return lines
+
+
+def output_lines_in_md(lines, output_path):
+    """Output lines in markdown format into a markdown file.
+
+    Args:
+        lines (list): lines in markdown format
+        output_path (str): the path of output file
+    """
     try:
-        data_not_accept_json = data_not_accept_df.to_json(orient='index')
-        data_not_accept = json.loads(data_not_accept_json)
-        if not isinstance(data_not_accept_df, pd.DataFrame):
-            logger.warning('DataDiagnosis: output json data - data_not_accept_df is not DataFrame.')
+        if len(lines) == 0:
+            logger.error('FileHandler: md_data_output failed')
             return
-        if data_not_accept_df.empty:
-            logger.warning('DataDiagnosis: output json data - data_not_accept_df is empty.')
-            return
-        with p.open('w') as f:
-            for node in data_not_accept:
-                line = data_not_accept[node]
-                line['Index'] = node
-                json_str = json.dumps(line)
-                f.write(json_str + '\n')
+        with open(output_path, 'w') as f:
+            f.writelines(lines)
     except Exception as e:
-        logger.error('DataDiagnosis: output json data failed, msg: {}'.format(str(e)))
+        logger.error('FileHandler: md_data_output - {}'.format(str(e)))
+
+
+def output_lines_in_html(lines, output_path):
+    """Output markdown lines in html format file.
+
+    Args:
+        lines (list): lines in markdown format
+        output_path (str): the path of output file
+    """
+    try:
+        if len(lines) == 0:
+            logger.error('FileHandler: html_data_output failed')
+            return
+        lines = ''.join(lines)
+        html_str = markdown.markdown(lines, extensions=['markdown.extensions.tables'])
+        with open(output_path, 'w') as f:
+            f.writelines(html_str)
+    except Exception as e:
+        logger.error('FileHandler: html_data_output - {}'.format(str(e)))

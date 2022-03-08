@@ -22,10 +22,15 @@ class TestDataDiagnosis(unittest.TestCase):
         self.output_excel_file = str(self.parent_path / 'diagnosis_summary.xlsx')
         self.test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         self.output_json_file = str(self.parent_path / 'diagnosis_summary.jsonl')
+        self.output_md_file = str(self.parent_path / 'diagnosis_summary.md')
+        self.output_html_file = str(self.parent_path / 'diagnosis_summary.html')
 
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
-        for file in [self.output_excel_file, self.output_json_file, self.test_rule_file_fake]:
+        for file in [
+            self.output_excel_file, self.output_json_file, self.test_rule_file_fake, self.output_md_file,
+            self.output_html_file
+        ]:
             p = Path(file)
             if p.is_file():
                 p.unlink()
@@ -170,7 +175,7 @@ class TestDataDiagnosis(unittest.TestCase):
         assert ('mem-bw/H2D_Mem_BW:0_miss' in row['Defective Details'])
         assert (len(data_not_accept_df) == 2)
         # Test - output in excel
-        file_handler.output_excel(diag1._raw_data_df, data_not_accept_df, self.output_excel_file, diag1._sb_rules)
+        diag1.output_diagnosis_in_excel(diag1._raw_data_df, data_not_accept_df, self.output_excel_file, diag1._sb_rules)
         excel_file = pd.ExcelFile(self.output_excel_file, engine='openpyxl')
         data_sheet_name = 'Raw Data'
         raw_data_df = excel_file.parse(data_sheet_name)
@@ -181,7 +186,7 @@ class TestDataDiagnosis(unittest.TestCase):
         assert ('Category' in data_not_accept_read_from_excel)
         assert ('Defective Details' in data_not_accept_read_from_excel)
         # Test - output in json
-        file_handler.output_json_data_not_accept(data_not_accept_df, self.output_json_file)
+        diag1.output_diagnosis_in_json(data_not_accept_df, self.output_json_file)
         assert (Path(self.output_json_file).is_file())
         with Path(self.output_json_file).open() as f:
             data_not_accept_read_from_json = f.readlines()
@@ -191,6 +196,13 @@ class TestDataDiagnosis(unittest.TestCase):
             assert ('Category' in line)
             assert ('Defective Details' in line)
             assert ('Index' in line)
+        # Test - gen_md_lines
+        lines = diag1.gen_md_lines(data_not_accept_df)
+        assert (lines)
+        expected_md_file = str(self.parent_path / '../data/diagnosis_summary.md')
+        with open(expected_md_file, 'r') as f:
+            expect_result = f.readlines()
+        assert (lines == expect_result)
 
     def test_data_diagnosis_run(self):
         """Test for the run process of rule-based data diagnosis."""
@@ -215,6 +227,24 @@ class TestDataDiagnosis(unittest.TestCase):
         with Path(expect_result_file).open() as f:
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
+        # Test - output in md
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md')
+        assert (Path(self.output_md_file).is_file())
+        expected_md_file = str(self.parent_path / '../data/diagnosis_summary.md')
+        with open(expected_md_file, 'r') as f:
+            expect_result = f.read()
+        with open(self.output_md_file, 'r') as f:
+            summary = f.read()
+        assert (summary == expect_result)
+        # Test - output in html
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'html')
+        assert (Path(self.output_html_file).is_file())
+        expected_html_file = str(self.parent_path / '../data/diagnosis_summary.html')
+        with open(expected_html_file, 'r') as f:
+            expect_result = f.read()
+        with open(self.output_html_file, 'r') as f:
+            summary = f.read()
+        assert (summary == expect_result)
 
     def test_mutli_rules(self):
         """Test multi rules check feature."""

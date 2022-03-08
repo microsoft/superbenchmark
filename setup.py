@@ -141,6 +141,7 @@ setup(
         'jsonlines>=2.0.0',
         'knack>=0.7.2',
         'matplotlib>=3.0.0',
+        'markdown>=3.3.0',
         'natsort>=7.1.1',
         'numpy>=1.19.2',
         'openpyxl>=3.0.7',
@@ -149,6 +150,7 @@ setup(
         'pyyaml>=5.3',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
+        'types-Markdown>=3.3.0'
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
