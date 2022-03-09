@@ -387,7 +387,7 @@ class SuperBenchRunner():
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
 
         timeout = self._sb_benchmarks[benchmark_name].timeout
-        env_list = '--env-file sb-workspace/sb.env'
+        env_list = '--env-file /tmp/sb.env'
         for k, v in mode.env.items():
             if isinstance(v, str):
                 env_list += f' -e {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
