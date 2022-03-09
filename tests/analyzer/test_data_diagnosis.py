@@ -197,6 +197,7 @@ class TestDataDiagnosis(unittest.TestCase):
             assert ('Defective Details' in line)
             assert ('Index' in line)
         # Test - gen_md_lines
+        data_not_accept_df = data_not_accept_df.round(6)
         lines = diag1.gen_md_lines(data_not_accept_df)
         assert (lines)
         expected_md_file = str(self.parent_path / '../data/diagnosis_summary.md')
@@ -228,7 +229,7 @@ class TestDataDiagnosis(unittest.TestCase):
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
         # Test - output in md
-        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md')
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md', 6)
         assert (Path(self.output_md_file).is_file())
         expected_md_file = str(self.parent_path / '../data/diagnosis_summary.md')
         with open(expected_md_file, 'r') as f:

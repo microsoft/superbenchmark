@@ -264,14 +264,13 @@ class DataDiagnosis(RuleBase):
             list: lines in markdown format
         """
         data_not_accept_df['machine'] = data_not_accept_df.index
-        cols = data_not_accept_df.columns.tolist()
-        cols = cols[-1:] + cols[:-1]
-        data_not_accept_df = data_not_accept_df[cols]
-        header = list(data_not_accept_df.columns)
+        header = data_not_accept_df.columns.tolist()
+        header = header[-1:] + header[:-1]
+        data_not_accept_df = data_not_accept_df[header]
         lines = file_handler.gen_md_table(data_not_accept_df, header)
         return lines
 
-    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel'):
+    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel', round=None):
         """Run the data diagnosis and output the results.
 
         Args:
@@ -280,6 +279,7 @@ class DataDiagnosis(RuleBase):
             baseline_file (str): The path of baseline json file
             output_dir (str): the directory of output file
             output_format (str): the format of the output, 'excel' or 'json'
+            round (int): the number of decimal digits
         """
         try:
             rules = self._preprocess(raw_data_file, rule_file)
@@ -288,6 +288,9 @@ class DataDiagnosis(RuleBase):
             logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(rules, baseline)
             logger.info('DataDiagnosis: Processed finished')
+            # format precision of values to n decimal digits
+            if round and isinstance(round, int):
+                data_not_accept_df = data_not_accept_df.round(round)
             output_path = ''
             if output_format == 'excel':
                 output_path = str(Path(output_dir) / 'diagnosis_summary.xlsx')
