@@ -120,16 +120,16 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                     if 'GPU' in line:
                         gpu_res.append(line.strip('\n').strip('\t'))
 
-                self._result.add_result('GPU_Burn_Time',self._args.time)
+                self._result.add_result('time',self._args.time)
                 for res in gpu_res:
                     if 'OK' in res:
-                        self._result.add_result(res.split(':')[0].replace(' ','_') + '_Pass', 1 )
+                        self._result.add_result(res.split(':')[0].replace(' ','_').lower() + '_pass', 1 )
                     else:
-                        self._result.add_result(res.split(':')[0].replace(' ','_') + '_Fail', 1 )
+                        self._result.add_result(res.split(':')[0].replace(' ','_').lower() + '_pass', 0 )
                     self._result.add_raw_data('GPU-Burn_result',res)
             else:
                 self._result.add_raw_data('GPU Burn Failure: ', failure_msg)
-                self._result.add_result('GPU-Burn_Fail', 1 )
+                self._result.add_result('fail', 1 )
                 return False 
         except BaseException as e:
             logger.error(
