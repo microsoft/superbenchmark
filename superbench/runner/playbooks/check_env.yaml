@@ -40,8 +40,11 @@
     - name: Updating Env Variables
       copy:
         content: '{{ sb_env }}'
-        dest: '{{ workspace }}/sb.env'
+        dest: '{{ item }}'
         mode: 0644
+      with_items:
+        - '{{ workspace }}/sb.env'
+        - /tmp/sb.env
       become: yes
     - name: Updating Hostfile
       copy:
