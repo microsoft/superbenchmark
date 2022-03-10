@@ -21,7 +21,7 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         cls.createMockFiles(cls, ['bin/gpu_burn'])
 
     @decorator.load_data('tests/data/gpu_burn.log')
-    def _test_gpu_burn(self,results):
+    def test_gpu_burn(self,results):
         """Test gpu-burn benchmark command generation."""
         benchmark_name = 'gpu-burn'
         (benchmark_class,
@@ -42,18 +42,18 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check parameters specified in BenchmarkContext.
-        assert (benchmark._args.mem_type == time)
+        assert (benchmark._args.time == time)
         assert (benchmark._args.doubles)
         assert (benchmark._args.tensor_core)
 
         # Check command
-        compare_copy="cp " + benchmark._GpuBurnBenchmark__bin_path + "/compare.ptx ./"
+        compare_copy="cp " + benchmark._args.bin_dir + "/compare.ptx ./"
         compare_rm="rm " + "compare.ptx"
         assert (1 == len(benchmark._commands))
         assert (benchmark._commands[0].startswith(compare_copy))
         assert ('-d' in benchmark._commands[0])
         assert ('-tc' in benchmark._commands[0])
-        assert (time in benchmark._commands[0])
+        assert (str(time) in benchmark._commands[0])
         assert (compare_rm in benchmark._commands[0])
        
         #Check results
