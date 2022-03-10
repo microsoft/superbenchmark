@@ -67,3 +67,9 @@ class TestDataAnalysis(unittest.TestCase):
         assert (len(data_analysis.statistic(raw_data_dict)) == 0)
         assert (len(data_analysis.interquartile_range(raw_data_dict)) == 0)
         assert (len(data_analysis.correlation(raw_data_dict)) == 0)
+        # Test round_significant_decimal_places
+        df = pd.DataFrame([[0.0045678, 500.6789], [1.5314, 100.7424]], columns=['a', 'b'])
+        df = data_analysis.round_significant_decimal_places(df, 2, 'a')
+        pd.testing.assert_frame_equal(df, pd.DataFrame([[0.0046, 500.6789], [1.53, 100.7424]], columns=['a', 'b']))
+        df = data_analysis.round_significant_decimal_places(df, 2, 'b')
+        pd.testing.assert_frame_equal(df, pd.DataFrame([[0.0046, 500.68], [1.53, 100.74]], columns=['a', 'b']))

@@ -12,6 +12,7 @@ from superbench.common.utils import logger
 from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
 from superbench.analyzer import file_handler
 from superbench.analyzer import RuleBase
+from superbench.analyzer import data_analysis
 
 
 class DataDiagnosis(RuleBase):
@@ -255,11 +256,14 @@ class DataDiagnosis(RuleBase):
         except Exception as e:
             logger.error('DataDiagnosis: output json data failed, msg: {}'.format(str(e)))
 
-    def gen_md_lines(self, data_not_accept_df):
+    def gen_md_lines(self, data_not_accept_df, rules, round):
         """Convert DataFrame into markdown lines.
 
         Args:
             data_not_accept_df (DataFrame): the DataFrame to output
+            rules (dict): the rules of DataDiagnosis
+            round (int): the number of decimal digits
+
         Returns:
             list: lines in markdown format
         """
@@ -267,6 +271,25 @@ class DataDiagnosis(RuleBase):
         header = data_not_accept_df.columns.tolist()
         header = header[-1:] + header[:-1]
         data_not_accept_df = data_not_accept_df[header]
+        # format precision of values to n decimal digits
+        for rule in rules:
+            for metric in rules[rule]['metrics']:
+                if rules[rule]['function'] == 'variance':
+                    if round and isinstance(round, int):
+                        data_not_accept_df[metric] = data_not_accept_df[metric].map(
+                            lambda x: x * 100, na_action='ignore'
+                        )
+                        data_not_accept_df = data_analysis.round_significant_decimal_places(
+                            data_not_accept_df, round, [metric]
+                        )
+                    data_not_accept_df[metric] = data_not_accept_df[metric].map(
+                        lambda x: '{}%'.format(x), na_action='ignore'
+                    )
+                elif rules[rule]['function'] == 'value':
+                    if round and isinstance(round, int):
+                        data_not_accept_df = data_analysis.round_significant_decimal_places(
+                            data_not_accept_df, round, [metric]
+                        )
         lines = file_handler.gen_md_table(data_not_accept_df, header)
         return lines
 
@@ -288,9 +311,6 @@ class DataDiagnosis(RuleBase):
             logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))
             data_not_accept_df, label_df = self.run_diagnosis_rules(rules, baseline)
             logger.info('DataDiagnosis: Processed finished')
-            # format precision of values to n decimal digits
-            if round and isinstance(round, int):
-                data_not_accept_df = data_not_accept_df.round(round)
             output_path = ''
             if output_format == 'excel':
                 output_path = str(Path(output_dir) / 'diagnosis_summary.xlsx')
@@ -299,7 +319,7 @@ class DataDiagnosis(RuleBase):
                 output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
                 self.output_diagnosis_in_json(data_not_accept_df, output_path)
             elif output_format == 'md' or output_format == 'html':
-                lines = self.gen_md_lines(data_not_accept_df)
+                lines = self.gen_md_lines(data_not_accept_df, self._sb_rules, round)
                 if output_format == 'md':
                     output_path = str(Path(output_dir) / 'diagnosis_summary.md')
                     file_handler.output_lines_in_md(lines, output_path)
