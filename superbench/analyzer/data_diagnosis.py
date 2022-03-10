@@ -293,7 +293,7 @@ class DataDiagnosis(RuleBase):
         lines = file_handler.gen_md_table(data_not_accept_df, header)
         return lines
 
-    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel', round=None):
+    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel', round=2):
         """Run the data diagnosis and output the results.
 
         Args:
