@@ -129,7 +129,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                     self._result.add_raw_data('GPU-Burn_result',res)
             else:
                 self._result.add_raw_data('GPU Burn Failure: ', failure_msg)
-                self._result.add_result('fail', 1 )
+                self._result.add_result('abort', 1 )
                 return False 
         except BaseException as e:
             logger.error(
@@ -138,6 +138,6 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                 )
             )
             return False
-
+        self._result.add_result('abort', 0 )
         return True
 BenchmarkRegistry.register_benchmark('gpu-burn', GpuBurnBenchmark, platform=Platform.CUDA)
