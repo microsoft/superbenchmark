@@ -137,6 +137,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, self._name, raw_output, str(e)
                 )
             )
+            self._result.add_result('abort', 1 )
             return False
         self._result.add_result('abort', 0 )
         return True

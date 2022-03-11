@@ -60,13 +60,7 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._process_raw_result(0, results))
         assert (benchmark.result['return_code'][0] == 0)
         assert (benchmark.result['time'][0] == time)
-        assert (benchmark.result['gpu_0_pass'][0] == 1)
-        assert (benchmark.result['gpu_1_pass'][0] == 1)
-        assert (benchmark.result['gpu_2_pass'][0] == 1)
-        assert (benchmark.result['gpu_3_pass'][0] == 1)
-        assert (benchmark.result['gpu_4_pass'][0] == 1)
-        assert (benchmark.result['gpu_5_pass'][0] == 1)
-        assert (benchmark.result['gpu_6_pass'][0] == 1)
-        assert (benchmark.result['gpu_7_pass'][0] == 1)
+        for device in range(8):
+            assert (benchmark.result['gpu_'+str(device)+'_pass'][0] == 1)
         assert (benchmark.result['abort'][0] == 0)
                 
