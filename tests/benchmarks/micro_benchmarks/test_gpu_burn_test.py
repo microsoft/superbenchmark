@@ -3,7 +3,6 @@
 
 """Tests for gpu-burn benchmark."""
 
-import numbers
 import unittest
 
 from tests.helper import decorator
@@ -21,14 +20,14 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         cls.createMockFiles(cls, ['bin/gpu_burn'])
 
     @decorator.load_data('tests/data/gpu_burn.log')
-    def test_gpu_burn(self,results):
+    def test_gpu_burn(self, results):
         """Test gpu-burn benchmark command generation."""
         benchmark_name = 'gpu-burn'
         (benchmark_class,
-         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name,Platform.CUDA)
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        time= 10
+        time = 10
 
         parameters = '--doubles --tensor_core --time ' + str(time)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
@@ -47,20 +46,19 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.tensor_core)
 
         # Check command
-        compare_copy="cp " + benchmark._args.bin_dir + "/compare.ptx ./"
-        compare_rm="rm " + "compare.ptx"
+        compare_copy = 'cp ' + benchmark._args.bin_dir + '/compare.ptx ./'
+        compare_rm = 'rm ' + 'compare.ptx'
         assert (1 == len(benchmark._commands))
         assert (benchmark._commands[0].startswith(compare_copy))
         assert ('-d' in benchmark._commands[0])
         assert ('-tc' in benchmark._commands[0])
         assert (str(time) in benchmark._commands[0])
         assert (compare_rm in benchmark._commands[0])
-       
-        #Check results
+
+        # Check results
         assert (benchmark._process_raw_result(0, results))
         assert (benchmark.result['return_code'][0] == 0)
         assert (benchmark.result['time'][0] == time)
         for device in range(8):
-            assert (benchmark.result['gpu_'+str(device)+'_pass'][0] == 1)
+            assert (benchmark.result['gpu_' + str(device) + '_pass'][0] == 1)
         assert (benchmark.result['abort'][0] == 0)
-                

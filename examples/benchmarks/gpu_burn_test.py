@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 """Micro benchmark example for GPU-Burn.
+
 Commands to run:
   python3 examples/benchmarks/gpu_burn_test.py
 """
@@ -21,4 +22,3 @@ if __name__ == '__main__':
                 benchmark.name, benchmark.return_code, benchmark.result
             )
         )
-    
