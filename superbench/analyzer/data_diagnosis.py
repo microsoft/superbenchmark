@@ -4,6 +4,7 @@
 """A module for baseline-based data diagnosis."""
 from typing import Callable
 from pathlib import Path
+import json
 
 import pandas as pd
 
@@ -11,6 +12,7 @@ from superbench.common.utils import logger
 from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
 from superbench.analyzer import file_handler
 from superbench.analyzer import RuleBase
+from superbench.analyzer import data_analysis
 
 
 class DataDiagnosis(RuleBase):
@@ -207,7 +209,91 @@ class DataDiagnosis(RuleBase):
             logger.error('DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e)))
         return data_not_accept_df, label_df
 
-    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel'):
+    def output_diagnosis_in_excel(self, raw_data_df, data_not_accept_df, output_path, rules):
+        """Output the raw_data_df and data_not_accept_df results into excel file.
+
+        Args:
+            raw_data_df (DataFrame): raw data
+            data_not_accept_df (DataFrame): defective nodes's detailed information
+            output_path (str): the path of output excel file
+            rules (dict): the rules of DataDiagnosis
+        """
+        try:
+            writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
+            # Check whether writer is valiad
+            if not isinstance(writer, pd.ExcelWriter):
+                logger.error('DataDiagnosis: excel_data_output - invalid file path.')
+                return
+            file_handler.output_excel_raw_data(writer, raw_data_df, 'Raw Data')
+            file_handler.output_excel_data_not_accept(writer, data_not_accept_df, rules)
+            writer.save()
+        except Exception as e:
+            logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
+
+    def output_diagnosis_in_json(self, data_not_accept_df, output_path):
+        """Output data_not_accept_df into jsonl file.
+
+        Args:
+            data_not_accept_df (DataFrame): the DataFrame to output
+            output_path (str): the path of output jsonl file
+        """
+        p = Path(output_path)
+        try:
+            data_not_accept_json = data_not_accept_df.to_json(orient='index')
+            data_not_accept = json.loads(data_not_accept_json)
+            if not isinstance(data_not_accept_df, pd.DataFrame):
+                logger.warning('DataDiagnosis: output json data - data_not_accept_df is not DataFrame.')
+                return
+            if data_not_accept_df.empty:
+                logger.warning('DataDiagnosis: output json data - data_not_accept_df is empty.')
+                return
+            with p.open('w') as f:
+                for node in data_not_accept:
+                    line = data_not_accept[node]
+                    line['Index'] = node
+                    json_str = json.dumps(line)
+                    f.write(json_str + '\n')
+        except Exception as e:
+            logger.error('DataDiagnosis: output json data failed, msg: {}'.format(str(e)))
+
+    def gen_md_lines(self, data_not_accept_df, rules, round):
+        """Convert DataFrame into markdown lines.
+
+        Args:
+            data_not_accept_df (DataFrame): the DataFrame to output
+            rules (dict): the rules of DataDiagnosis
+            round (int): the number of decimal digits
+
+        Returns:
+            list: lines in markdown format
+        """
+        data_not_accept_df['machine'] = data_not_accept_df.index
+        header = data_not_accept_df.columns.tolist()
+        header = header[-1:] + header[:-1]
+        data_not_accept_df = data_not_accept_df[header]
+        # format precision of values to n decimal digits
+        for rule in rules:
+            for metric in rules[rule]['metrics']:
+                if rules[rule]['function'] == 'variance':
+                    if round and isinstance(round, int):
+                        data_not_accept_df[metric] = data_not_accept_df[metric].map(
+                            lambda x: x * 100, na_action='ignore'
+                        )
+                        data_not_accept_df = data_analysis.round_significant_decimal_places(
+                            data_not_accept_df, round, [metric]
+                        )
+                    data_not_accept_df[metric] = data_not_accept_df[metric].map(
+                        lambda x: '{}%'.format(x), na_action='ignore'
+                    )
+                elif rules[rule]['function'] == 'value':
+                    if round and isinstance(round, int):
+                        data_not_accept_df = data_analysis.round_significant_decimal_places(
+                            data_not_accept_df, round, [metric]
+                        )
+        lines = file_handler.gen_md_table(data_not_accept_df, header)
+        return lines
+
+    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel', round=2):
         """Run the data diagnosis and output the results.
 
         Args:
@@ -216,6 +302,7 @@ class DataDiagnosis(RuleBase):
             baseline_file (str): The path of baseline json file
             output_dir (str): the directory of output file
             output_format (str): the format of the output, 'excel' or 'json'
+            round (int): the number of decimal digits
         """
         try:
             rules = self._preprocess(raw_data_file, rule_file)
@@ -227,10 +314,18 @@ class DataDiagnosis(RuleBase):
             output_path = ''
             if output_format == 'excel':
                 output_path = str(Path(output_dir) / 'diagnosis_summary.xlsx')
-                file_handler.output_excel(self._raw_data_df, data_not_accept_df, output_path, self._sb_rules)
+                self.output_diagnosis_in_excel(self._raw_data_df, data_not_accept_df, output_path, self._sb_rules)
             elif output_format == 'json':
                 output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
-                file_handler.output_json_data_not_accept(data_not_accept_df, output_path)
+                self.output_diagnosis_in_json(data_not_accept_df, output_path)
+            elif output_format == 'md' or output_format == 'html':
+                lines = self.gen_md_lines(data_not_accept_df, self._sb_rules, round)
+                if output_format == 'md':
+                    output_path = str(Path(output_dir) / 'diagnosis_summary.md')
+                    file_handler.output_lines_in_md(lines, output_path)
+                else:
+                    output_path = str(Path(output_dir) / 'diagnosis_summary.html')
+                    file_handler.output_lines_in_html(lines, output_path)
             else:
                 logger.error('DataDiagnosis: output failed - unsupported output format')
             logger.info('DataDiagnosis: Output results to {}'.format(output_path))
