@@ -190,3 +190,23 @@ def generate_baseline(raw_data_df, output_dir):
         mean_df.to_json(output_dir + '/baseline.json')
     except Exception as e:
         logger.error('DataAnalyzer: generate baseline failed, msg: {}'.format(str(e)))
+
+
+def round_significant_decimal_places(df, digit, cols):
+    """Format the numbers in selected columns of DataFrame n significant decimal places.
+
+    Args:
+        df (DataFrame): the DataFrame to format
+        digit (int): the number of decimal places
+        cols (list): the selected columns
+
+    Returns:
+        DataFrame: the DataFrame after format
+    """
+    format_significant_str = '%.{}g'.format(digit)
+    for col in cols:
+        if np.issubdtype(df[col], np.number):
+            df[col] = df[col].map(
+                lambda x: float(format_significant_str % x) if abs(x) < 1 else round(x, digit), na_action='ignore'
+            )
+    return df
