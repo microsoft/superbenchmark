@@ -33,6 +33,16 @@ superbench:
       model_action:
         - train
   benchmarks:
+    gpu-burn:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        time: 300
+        doubles: true
+        tensor_core: true
     nccl-bw:default:
       enable: true
       modes:

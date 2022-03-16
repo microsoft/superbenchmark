@@ -10,11 +10,11 @@ RCCL_HOME ?= /opt/rocm/rccl
 ROCM_VERSION ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 HPCX_HOME ?= /opt/hpcx
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn
 
 # Build all targets.
 all: cuda rocm
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
 common: fio
 
@@ -98,3 +98,11 @@ gpcnet: sb_micro_path
 	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
+
+#Build GPU burn from main branch (only branch that exists)
+cuda_gpuburn: sb_micro_path
+ifneq (,$(wildcard gpu-burn/Makefile))
+	cd ./gpu-burn && make
+	cp -v ./gpu-burn/gpu_burn $(SB_MICRO_PATH)/bin/
+	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
+endif

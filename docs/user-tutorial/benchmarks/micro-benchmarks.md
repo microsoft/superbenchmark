@@ -142,6 +142,20 @@ The supported percentiles are 50, 90, 95, 99, and 99.9.
 | ort-inference/{precision}_{model}_time                  | time (ms) | The mean latency to execute one batch of inference.                         |
 | ort-inference/{precision}_{model}_time_{percentile}     | time (ms) | The {percentile}th percentile latency to execute one batch of inference.    |
 
+### `gpu-burn`
+
+#### Introduction
+
+Multi-GPU CUDA stress test for GPU compute and memory utilization, performed by [gpu-burn](https://github.com/wilicc/gpu-burn).
+Supports the use of double unit types and the use of tensor cores.
+
+#### Metrics
+
+| Name                     | Unit       | Description                                                                         |
+|--------------------------|------------|-------------------------------------------------------------------------------------|
+| gpu-burn/time            | time (s)   | The runtime for gpu-burn test.                                                      |
+| gpu-burn/gpu_[0-9]_pass  | yes/no  	  | The result of the gpu-burn test for each GPU (1: yes, 0: no).                       |
+| gpu-burn/abort           | yes/no  	  | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no).  |
 
 ## Communication Benchmarks
 

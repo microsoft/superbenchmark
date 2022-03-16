@@ -39,6 +39,16 @@ superbench:
       <<: *default_local_mode
     gemm-flops:
       <<: *default_local_mode
+    gpu-burn:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        time: 900
+        doubles: true
+        tensor_core: true
     nccl-bw:default:
       enable: true
       modes:
