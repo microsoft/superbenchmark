@@ -141,7 +141,7 @@ class SuperBenchExecutor():
         Return:
             int: Rank ID.
         """
-        for rank_env in ['PROC_RANK', 'LOCAL_RANK']:
+        for rank_env in ['PROC_RANK', 'LOCAL_RANK', 'OMPI_COMM_WORLD_LOCAL_RANK']:
             if os.getenv(rank_env):
                 return int(os.getenv(rank_env))
 
