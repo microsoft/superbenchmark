@@ -10,6 +10,7 @@ import json
 import jsonlines
 import pandas as pd
 import yaml
+from openpyxl.styles import Alignment
 import markdown
 
 from superbench.common.utils import logger
@@ -221,3 +222,29 @@ def output_lines_in_html(lines, output_path):
             f.writelines(html_str)
     except Exception as e:
         logger.error('FileHandler: html_data_output - {}'.format(str(e)))
+
+
+def merge_column_in_excel(ws, row, column):
+    """Merge cells in the selected index of column with continuous same contents.
+
+    Args:
+        ws (worksheet): the worksheet of the excel to process
+        row (int): the max row index to merge
+        column (int): the index of the column to merge
+    """
+    dict_from = {}
+    aligncenter = Alignment(horizontal='center', vertical='center')
+    # record continuous row index (start, end) with the same content
+    for row_index in range(1, row + 1):
+        value = str(ws.cell(row_index, column).value)
+        if value not in dict_from:
+            dict_from[value] = [row_index, row_index]
+        else:
+            dict_from[value][1] = dict_from[value][1] + 1
+    # merge the cells
+    for value in dict_from.values():
+        if value[0] != value[1]:
+            ws.merge_cells(start_row=value[0], start_column=column, end_row=value[1], end_column=column)
+    # align center for merged cells
+    for i in range(1, row + 1):
+        ws.cell(row=i, column=column).alignment = aligncenter
