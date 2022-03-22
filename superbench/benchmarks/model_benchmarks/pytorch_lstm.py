@@ -174,8 +174,8 @@ class PytorchLSTM(PytorchBase):
             self._model.eval()
             while True:
                 for idx, sample in enumerate(self._dataloader):
-                    start = time.time()
                     sample = sample.to(dtype=getattr(torch, precision.value))
+                    start = time.time()
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
