@@ -101,8 +101,8 @@ class PytorchCNN(PytorchBase):
         curr_step = 0
         while True:
             for idx, sample in enumerate(self._dataloader):
-                start = time.time()
                 sample = sample.to(dtype=getattr(torch, precision.value))
+                start = time.time()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
