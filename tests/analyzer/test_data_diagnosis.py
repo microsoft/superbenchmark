@@ -196,8 +196,8 @@ class TestDataDiagnosis(unittest.TestCase):
             assert ('Category' in line)
             assert ('Defective Details' in line)
             assert ('Index' in line)
-        # Test - gen_md_lines
-        lines = diag1.gen_md_lines(data_not_accept_df, diag1._sb_rules, 2)
+        # Test - generate_md_lines
+        lines = diag1.generate_md_lines(data_not_accept_df, diag1._sb_rules, 2)
         assert (lines)
         expected_md_file = str(self.parent_path / '../data/diagnosis_summary.md')
         with open(expected_md_file, 'r') as f:

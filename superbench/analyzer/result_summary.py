@@ -38,8 +38,15 @@ class ResultSummary(RuleBase):
             rule['statistics'] = [rule['statistics']]
         # check statistics format, should be SummaryType or p\d\d?
         for function in rule['statistics']:
-            if not (re.fullmatch(r'p\d\d?', function) or isinstance(SummaryType(function), SummaryType)):
-                logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
+            try:
+                if not (re.fullmatch(r'p\d\d?', function) or isinstance(SummaryType(function), SummaryType)):
+                    logger.log_and_raise(
+                        exception=Exception, msg='{} has invalid statistics name {}'.format(name, function)
+                    )
+            except Exception:
+                logger.log_and_raise(
+                    exception=Exception, msg='{} has invalid statistics name {}'.format(name, function)
+                )
         # check aggregate format, should be None or bool or pattern in regex with () group
         if 'aggregate' in rule and not isinstance(rule['aggregate'],
                                                   bool) and not re.search(r'\(.*\)', rule['aggregate']):
@@ -155,7 +162,7 @@ class ResultSummary(RuleBase):
 
         return summary
 
-    def gen_md_lines(self, summary):
+    def generate_md_lines(self, summary):
         """Generate text in markdown foramt.
 
         Use category to be the 2nd-header, use tables to show the data
@@ -172,7 +179,7 @@ class ResultSummary(RuleBase):
             summary_df = pd.DataFrame(summary[category])
             summary_df = summary_df.drop(columns=0, axis=1)
             header = ['metric', 'statistics', 'values']
-            table_lines = file_handler.gen_md_table(summary_df, header)
+            table_lines = file_handler.generate_md_table(summary_df, header)
             lines.extend(table_lines)
             lines.append('\n')
         return lines
@@ -231,11 +238,11 @@ class ResultSummary(RuleBase):
                 self.output_summary_in_excel(self._raw_data_df, summary_df, output_path)
             elif output_format == 'md':
                 output_path = str(Path(output_dir) / 'results_summary.md')
-                lines = self.gen_md_lines(summary)
+                lines = self.generate_md_lines(summary)
                 file_handler.output_lines_in_md(lines, output_path)
             elif output_format == 'html':
                 output_path = str(Path(output_dir) / 'results_summary.html')
-                lines = self.gen_md_lines(summary)
+                lines = self.generate_md_lines(summary)
                 file_handler.output_lines_in_html(lines, output_path)
             else:
                 logger.error('ResultSummary: output failed - unsupported output format')

@@ -159,7 +159,7 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
         logger.warning('FileHandler: excel_data_output - data_not_accept_df is not DataFrame.')
 
 
-def gen_md_table(data_df, header):
+def generate_md_table(data_df, header):
     """Generate table text in markdown format.
 
     | header[0] | header[1] |
