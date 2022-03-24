@@ -48,8 +48,8 @@ class TestFileHandler(unittest.TestCase):
         assert (not baseline)
         baseline = file_handler.read_baseline(test_baseline_file)
         assert (baseline)
-        # Test - gen_md_table
+        # Test - generate_md_table
         data_df = pd.DataFrame([[1, 2], [3, 4]])
-        lines = file_handler.gen_md_table(data_df, header=['A', 'B'])
+        lines = file_handler.generate_md_table(data_df, header=['A', 'B'])
         expected_lines = ['| A | B |\n', '| --- | --- |\n', '| 1 | 2 |\n', '| 3 | 4 |\n']
         assert (lines == expected_lines)

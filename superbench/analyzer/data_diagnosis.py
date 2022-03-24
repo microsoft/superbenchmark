@@ -256,7 +256,7 @@ class DataDiagnosis(RuleBase):
         except Exception as e:
             logger.error('DataDiagnosis: output json data failed, msg: {}'.format(str(e)))
 
-    def gen_md_lines(self, data_not_accept_df, rules, round):
+    def generate_md_lines(self, data_not_accept_df, rules, round):
         """Convert DataFrame into markdown lines.
 
         Args:
@@ -290,7 +290,7 @@ class DataDiagnosis(RuleBase):
                         data_not_accept_df = data_analysis.round_significant_decimal_places(
                             data_not_accept_df, round, [metric]
                         )
-        lines = file_handler.gen_md_table(data_not_accept_df, header)
+        lines = file_handler.generate_md_table(data_not_accept_df, header)
         return lines
 
     def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel', round=2):
@@ -319,7 +319,7 @@ class DataDiagnosis(RuleBase):
                 output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
                 self.output_diagnosis_in_json(data_not_accept_df, output_path)
             elif output_format == 'md' or output_format == 'html':
-                lines = self.gen_md_lines(data_not_accept_df, self._sb_rules, round)
+                lines = self.generate_md_lines(data_not_accept_df, self._sb_rules, round)
                 if output_format == 'md':
                     output_path = str(Path(output_dir) / 'diagnosis_summary.md')
                     file_handler.output_lines_in_md(lines, output_path)

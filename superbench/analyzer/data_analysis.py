@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import re
 
 from superbench.common.utils import logger
 
@@ -210,3 +211,42 @@ def round_significant_decimal_places(df, digit, cols):
                 lambda x: float(format_significant_str % x) if abs(x) < 1 else round(x, digit), na_action='ignore'
             )
     return df
+
+
+def aggregate(raw_data_df, pattern=None):
+    r"""Aggregate data of multiple ranks or multiple devices.
+
+    By default, aggregate results of multiple ranks like 'metric:\\d+' for most metrics.
+    For example, aggregate the results of kernel-launch overhead
+    from 8 GPU devices into one collection.
+    If pattern is given, use pattern to match metric and replace matched part in metric to *
+    to generate a aggregated metric name and then aggpregate these metrics' data.
+
+    Args:
+        raw_data_df (DataFrame): raw data
+
+    Returns:
+        DataFrame: the dataframe of aggregated data
+    """
+    try:
+        metric_store = {}
+        metrics = list(raw_data_df.columns)
+        for metric in metrics:
+            short = metric.strip(metric.split(':')[-1]).strip(':')
+            if pattern:
+                match = re.search(pattern, metric)
+                if match:
+                    metric_in_list = list(metric)
+                    for i in range(1, len(match.groups()) + 1):
+                        metric_in_list[match.start(i):match.end(i)] = '*'
+                    short = ''.join(metric_in_list)
+            if short not in metric_store:
+                metric_store[short] = []
+            metric_store[short].extend(raw_data_df[metric].tolist())
+        df = pd.DataFrame()
+        for short in metric_store:
+            df = pd.concat([df, pd.DataFrame(metric_store[short], columns=[short])], axis=1)
+        return df
+    except Exception as e:
+        logger.error('DataAnalyzer: aggregate failed, msg: {}'.format(str(e)))
+        return None

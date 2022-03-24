@@ -73,3 +73,10 @@ class TestDataAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(df, pd.DataFrame([[0.0046, 500.6789], [1.53, 100.7424]], columns=['a', 'b']))
         df = data_analysis.round_significant_decimal_places(df, 2, 'b')
         pd.testing.assert_frame_equal(df, pd.DataFrame([[0.0046, 500.68], [1.53, 100.74]], columns=['a', 'b']))
+        # Test aggregate
+        df = pd.DataFrame([[1, 2], [3, 4]], columns=['a:0', 'a:1'])
+        df = data_analysis.aggregate(df)
+        pd.testing.assert_frame_equal(df, pd.DataFrame({'a': [1, 3, 2, 4]}))
+        df = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8]], columns=['ib_1_a', 'ib_2_a', 'ib_1_b', 'ib_2_b'])
+        df = data_analysis.aggregate(df, pattern='ib_(.)_.')
+        pd.testing.assert_frame_equal(df, pd.DataFrame({'ib_*_a': [1, 5, 2, 6], 'ib_*_b': [3, 7, 4, 8]}))

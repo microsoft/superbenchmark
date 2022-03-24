@@ -1,0 +1,26 @@
+# SuperBench rules
+version: v0.4
+superbench:
+  rules:
+    kernel_launch:
+      statistics:
+        - mean
+        - p90
+        - min
+        - max
+      aggregate: True
+      categories: KernelLaunch
+      metrics:
+        - kernel-launch/event_overhead
+        - kernel-launch/wall_overhead
+    nccl:
+      statistics: mean
+      categories: NCCL
+      metrics:
+        - nccl-bw/allreduce_8388608_busbw
+    ib-loopback:
+      statistics: mean
+      categories: RDMA
+      metrics:
+        - ib-loopback/IB_write_8388608_Avg_\d+
+      aggregate: ib-loopback/IB_write_.*_Avg_(\d+)
