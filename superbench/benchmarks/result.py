@@ -3,6 +3,7 @@
 
 """A module for unified result of benchmarks."""
 
+import os
 import json
 from enum import Enum
 
@@ -64,9 +65,22 @@ class BenchmarkResult():
             )
             return False
 
-        if metric not in self.__raw_data:
-            self.__raw_data[metric] = list()
-        self.__raw_data[metric].append(value)
+        export_raw_data = 1
+        try:
+            export_raw_data = int(os.getenv('EXPORT_RAW_DATA', '1'))
+        except Exception as e:
+            logger.error(
+                'EXPORT_RAW_DATA is invalid: {}'.format(os.getenv('EXPORT_RAW_DATA', '1'))
+            )
+
+        if export_raw_data != 0:
+            if metric not in self.__raw_data:
+                self.__raw_data[metric] = list()
+            self.__raw_data[metric].append(value)
+        else:
+            with open('./rawdata.log', 'a') as f:
+                f.write('metric:{}\n'.format(metric))
+                f.write('rawdata:{}\n\n'.format(value))
 
         return True
 

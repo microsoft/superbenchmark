@@ -3,6 +3,8 @@
 
 """Tests for BenchmarkResult module."""
 
+import os
+
 from superbench.benchmarks import BenchmarkType, ReturnCode, ReduceType
 from superbench.benchmarks.result import BenchmarkResult
 
@@ -20,11 +22,22 @@ def test_add_raw_data():
     result = BenchmarkResult('model', BenchmarkType.MODEL, ReturnCode.SUCCESS)
     result.add_raw_data('metric1', [1, 2, 3])
     result.add_raw_data('metric1', [4, 5, 6])
-
     assert (result.raw_data['metric1'][0] == [1, 2, 3])
     assert (result.raw_data['metric1'][1] == [4, 5, 6])
     assert (result.type == BenchmarkType.MODEL)
     assert (result.return_code == ReturnCode.SUCCESS)
+
+    assert (int(os.getenv('EXPORT_RAW_DATA', '1')) == 1)
+    os.environ['EXPORT_RAW_DATA'] = '0'
+    result = BenchmarkResult('micro', BenchmarkType.MICRO, ReturnCode.SUCCESS)
+    result.add_raw_data('metric1', 'raw log 1')
+    result.add_raw_data('metric1', 'raw log 2')
+    assert (result.type == BenchmarkType.MICRO)
+    assert (result.return_code == ReturnCode.SUCCESS)
+    assert (os.path.isfile('./rawdata.log'))
+    os.remove('./rawdata.log')
+    os.environ['EXPORT_RAW_DATA'] = '1'
+
 
 
 def test_add_result():
