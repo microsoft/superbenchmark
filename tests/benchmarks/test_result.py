@@ -34,8 +34,9 @@ def test_add_raw_data():
     result.add_raw_data('metric1', 'raw log 2')
     assert (result.type == BenchmarkType.MICRO)
     assert (result.return_code == ReturnCode.SUCCESS)
-    assert (os.path.isfile('./rawdata.log'))
-    os.remove('./rawdata.log')
+    raw_data_file = os.path.join(os.getcwd(), 'rawdata.log')
+    assert (os.path.isfile(raw_data_file))
+    os.remove(raw_data_file)
     os.environ['EXPORT_RAW_DATA'] = '1'
 
 

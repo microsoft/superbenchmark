@@ -200,6 +200,7 @@ class SuperBenchExecutor():
             benchmark_config = self._sb_benchmarks[benchmark_name]
             benchmark_results = list()
             self.__create_benchmark_dir(benchmark_name)
+            os.chdir(self.__get_benchmark_dir(benchmark_name))
 
             monitor = None
             if self.__get_rank_id() == 0 and self._sb_monitor_config and self._sb_monitor_config.enable:

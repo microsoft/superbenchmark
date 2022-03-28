@@ -78,7 +78,7 @@ class BenchmarkResult():
                 self.__raw_data[metric] = list()
             self.__raw_data[metric].append(value)
         else:
-            with open('./rawdata.log', 'a') as f:
+            with open(os.path.join(os.getcwd(), 'rawdata.log'), 'a') as f:
                 f.write('metric:{}\n'.format(metric))
                 f.write('rawdata:{}\n\n'.format(value))
 
