@@ -154,7 +154,7 @@ class TCPConnectivityBenchmark(MicroBenchmark):
             True if the raw output string is valid and result can be extracted.
         """
         host = self.__hosts[idx]
-        self._result.add_raw_data('raw_output_' + host, raw_output)
+        self._result.add_raw_data('raw_output_' + host, raw_output, self._args.log_raw_data)
 
         try:
             # If socket error or exception happens on TCPing, add result values as failed

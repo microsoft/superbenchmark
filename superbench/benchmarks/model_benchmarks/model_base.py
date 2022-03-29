@@ -400,8 +400,8 @@ class ModelBenchmark(Benchmark):
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
         millisecond_per_second = 1000
         throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
-        self._result.add_raw_data(metric_s, step_times)
-        self._result.add_raw_data(metric_t, throughput)
+        self._result.add_raw_data(metric_s, step_times, self._args.log_raw_data)
+        self._result.add_raw_data(metric_t, throughput, self._args.log_raw_data)
 
         if model_action == ModelAction.TRAIN:
             if not self._sync_result(step_times):

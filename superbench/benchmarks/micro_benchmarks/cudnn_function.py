@@ -402,7 +402,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output)
+        self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
 
         try:
             lines = raw_output.splitlines()
@@ -426,7 +426,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     raw_data.pop()
                     raw_data = [float(item) for item in raw_data]
                     self._result.add_result(metric.lower() + '_time', statistics.mean(raw_data) * 1000)
-                    self._result.add_raw_data(metric.lower() + '_time', raw_data)
+                    self._result.add_raw_data(metric.lower() + '_time', raw_data, self._args.log_raw_data)
                 if 'Error' in line:
                     error = True
         except BaseException as e:

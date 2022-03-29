@@ -68,7 +68,7 @@ class CudaMemBwBenchmark(MemBwBenchmark):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + self._args.mem_type[cmd_idx], raw_output)
+        self._result.add_raw_data('raw_output_' + self._args.mem_type[cmd_idx], raw_output, self._args.log_raw_data)
 
         mem_bw = -1
         valid = True

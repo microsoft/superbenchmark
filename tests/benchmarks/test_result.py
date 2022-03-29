@@ -12,33 +12,30 @@ from superbench.benchmarks.result import BenchmarkResult
 def test_add_raw_data():
     """Test interface BenchmarkResult.add_raw_data()."""
     result = BenchmarkResult('micro', BenchmarkType.MICRO, ReturnCode.SUCCESS)
-    result.add_raw_data('metric1', 'raw log 1')
-    result.add_raw_data('metric1', 'raw log 2')
+    result.add_raw_data('metric1', 'raw log 1', False)
+    result.add_raw_data('metric1', 'raw log 2', False)
     assert (result.raw_data['metric1'][0] == 'raw log 1')
     assert (result.raw_data['metric1'][1] == 'raw log 2')
     assert (result.type == BenchmarkType.MICRO)
     assert (result.return_code == ReturnCode.SUCCESS)
 
     result = BenchmarkResult('model', BenchmarkType.MODEL, ReturnCode.SUCCESS)
-    result.add_raw_data('metric1', [1, 2, 3])
-    result.add_raw_data('metric1', [4, 5, 6])
+    result.add_raw_data('metric1', [1, 2, 3], False)
+    result.add_raw_data('metric1', [4, 5, 6], False)
     assert (result.raw_data['metric1'][0] == [1, 2, 3])
     assert (result.raw_data['metric1'][1] == [4, 5, 6])
     assert (result.type == BenchmarkType.MODEL)
     assert (result.return_code == ReturnCode.SUCCESS)
 
-    assert (int(os.getenv('EXPORT_RAW_DATA', '1')) == 1)
-    os.environ['EXPORT_RAW_DATA'] = '0'
+    # Test log_raw_data = True.
     result = BenchmarkResult('micro', BenchmarkType.MICRO, ReturnCode.SUCCESS)
-    result.add_raw_data('metric1', 'raw log 1')
-    result.add_raw_data('metric1', 'raw log 2')
+    result.add_raw_data('metric1', 'raw log 1', True)
+    result.add_raw_data('metric1', 'raw log 2', True)
     assert (result.type == BenchmarkType.MICRO)
     assert (result.return_code == ReturnCode.SUCCESS)
     raw_data_file = os.path.join(os.getcwd(), 'rawdata.log')
     assert (os.path.isfile(raw_data_file))
     os.remove(raw_data_file)
-    os.environ['EXPORT_RAW_DATA'] = '1'
-
 
 
 def test_add_result():
@@ -87,9 +84,9 @@ def test_serialize_deserialize():
     result.add_result('metric1', 300, ReduceType.MAX)
     result.add_result('metric1', 200, ReduceType.MAX)
     result.add_result('metric2', 100, ReduceType.AVG)
-    result.add_raw_data('metric1', [1, 2, 3])
-    result.add_raw_data('metric1', [4, 5, 6])
-    result.add_raw_data('metric1', [7, 8, 9])
+    result.add_raw_data('metric1', [1, 2, 3], False)
+    result.add_raw_data('metric1', [4, 5, 6], False)
+    result.add_raw_data('metric1', [7, 8, 9], False)
     start_time = '2021-02-03 16:59:49'
     end_time = '2021-02-03 17:00:08'
     result.set_timestamp(start_time, end_time)

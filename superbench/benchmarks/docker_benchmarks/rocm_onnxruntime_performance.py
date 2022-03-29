@@ -59,7 +59,7 @@ class RocmOnnxRuntimeModelBenchmark(RocmDockerBenchmark):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output', raw_output)
+        self._result.add_raw_data('raw_output', raw_output, self._args.log_raw_data)
 
         content = raw_output.splitlines(False)
         try:

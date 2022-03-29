@@ -127,7 +127,7 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
             True if the raw output string is valid and result can be extracted.
         """
         precision = self._precision_need_to_run[cmd_idx]
-        self._result.add_raw_data('raw_output_' + precision, raw_output)
+        self._result.add_raw_data('raw_output_' + precision, raw_output, self._args.log_raw_data)
 
         content = raw_output.splitlines()
         gflops_index = None

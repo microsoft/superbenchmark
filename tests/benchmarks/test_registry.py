@@ -49,7 +49,7 @@ class AccumulationBenchmark(MicroBenchmark):
             raw_data.append(str(result))
 
         metric = 'accumulation_result'
-        self._result.add_raw_data(metric, ','.join(raw_data))
+        self._result.add_raw_data(metric, ','.join(raw_data), self._args.log_raw_data)
         self._result.add_result(metric, result)
 
         return True

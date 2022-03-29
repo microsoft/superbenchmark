@@ -123,9 +123,9 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                         self._result.add_result(res.split(':')[0].replace(' ', '_').lower() + '_pass', 1)
                     else:
                         self._result.add_result(res.split(':')[0].replace(' ', '_').lower() + '_pass', 0)
-                    self._result.add_raw_data('GPU-Burn_result', res)
+                    self._result.add_raw_data('GPU-Burn_result', res, self._args.log_raw_data)
             else:
-                self._result.add_raw_data('GPU Burn Failure: ', failure_msg)
+                self._result.add_raw_data('GPU Burn Failure: ', failure_msg, self._args.log_raw_data)
                 self._result.add_result('abort', 1)
                 return False
         except BaseException as e:

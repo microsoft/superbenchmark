@@ -69,7 +69,7 @@ class MicroBenchmark(Benchmark):
             )
             return False
 
-        self._result.add_raw_data(metric, result)
+        self._result.add_raw_data(metric, result, self._args.log_raw_data)
         self._result.add_result(metric, statistics.mean(result), reduce_type)
         if cal_percentile:
             self._process_percentile_result(metric, result, reduce_type)

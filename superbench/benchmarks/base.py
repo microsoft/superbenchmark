@@ -65,6 +65,12 @@ class Benchmark(ABC):
             required=False,
             help='The elapsed time of benchmark in seconds.',
         )
+        self._parser.add_argument(
+            '--log_raw_data',
+            action='store_true',
+            default=False,
+            help='Log raw data into file instead of saving it into result object.',
+        )
 
     def get_configurable_settings(self):
         """Get all the configurable settings.
