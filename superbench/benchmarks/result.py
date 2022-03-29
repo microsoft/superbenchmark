@@ -67,7 +67,7 @@ class BenchmarkResult():
             return False
 
         if log_raw_data:
-            with ('./rawdata.log').open(mode='a') as f:
+            with open(os.path.join(os.getcwd(), 'rawdata.log'), 'a') as f:
                 f.write('metric:{}\n'.format(metric))
                 f.write('rawdata:{}\n\n'.format(value))
         else:
