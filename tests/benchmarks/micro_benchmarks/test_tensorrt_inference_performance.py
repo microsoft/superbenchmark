@@ -121,7 +121,7 @@ class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         """Test tensorrt-inference benchmark result parsing."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
         benchmark = benchmark_cls(self.benchmark_name, parameters='')
-        benchmark._args = SimpleNamespace(pytorch_models=['model_0', 'model_1'])
+        benchmark._args = SimpleNamespace(pytorch_models=['model_0', 'model_1'], log_raw_data=False)
         benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
 
         # Positive case - valid raw output

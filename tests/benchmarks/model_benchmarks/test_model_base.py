@@ -158,6 +158,8 @@ def test_arguments_related_interfaces():
   --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
+  --log_raw_data        Log raw data into file instead of saving it into
+                        result object.
   --model_action ModelAction [ModelAction ...]
                         Benchmark model process. E.g. train inference.
   --no_gpu              Disable GPU training.
@@ -192,6 +194,8 @@ def test_preprocess():
   --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
+  --log_raw_data        Log raw data into file instead of saving it into
+                        result object.
   --model_action ModelAction [ModelAction ...]
                         Benchmark model process. E.g. train inference.
   --no_gpu              Disable GPU training.
