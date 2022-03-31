@@ -200,6 +200,7 @@ class SuperBenchExecutor():
             benchmark_config = self._sb_benchmarks[benchmark_name]
             benchmark_results = list()
             self.__create_benchmark_dir(benchmark_name)
+            pwd = os.pwd()
             os.chdir(self.__get_benchmark_dir(benchmark_name))
 
             monitor = None
@@ -244,3 +245,4 @@ class SuperBenchExecutor():
             if monitor:
                 monitor.stop()
             self.__write_benchmark_results(benchmark_name, benchmark_results)
+            os.chdir(pwd)

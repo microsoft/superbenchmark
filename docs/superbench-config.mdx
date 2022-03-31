@@ -336,8 +336,9 @@ A list of models to run, only supported in model-benchmark.
 
 Parameters for benchmark to use, varying for different benchmarks.
 
-There have two common parameters that work for all benchmarks:
+There have three common parameters for all benchmarks:
 * run_count: how many times do user want to run this benchmark, default value is 1.
+* duration: the elapsed time of benchmark in seconds. It can work for all model-benchmark. But for micro-benchmark, benchmark authors should consume it by themselves.
 * log_raw_data: log raw data into file instead of saving it into result object, default value is `False`.  Benchmarks who have large raw output may want to set it as `True`, such as `nccl-bw`/`rccl-bw`.
 
 For Model-Benchmark, there have some parameters that can control the elapsed time.
