@@ -3,6 +3,7 @@
 
 """A module for unified result of benchmarks."""
 
+import os
 import json
 from enum import Enum
 
@@ -46,7 +47,7 @@ class BenchmarkResult():
         """
         return self.__dict__ == rhs.__dict__
 
-    def add_raw_data(self, metric, value):
+    def add_raw_data(self, metric, value, log_raw_data):
         """Add raw benchmark data into result.
 
         Args:
@@ -54,6 +55,7 @@ class BenchmarkResult():
             value (str or list): raw benchmark data.
               For e2e model benchmarks, its type is list.
               For micro-benchmarks or docker-benchmarks, its type is string.
+            log_raw_data (bool): whether to log raw data into file instead of saving it into result object.
 
         Return:
             True if succeed to add the raw data.
@@ -64,9 +66,14 @@ class BenchmarkResult():
             )
             return False
 
-        if metric not in self.__raw_data:
-            self.__raw_data[metric] = list()
-        self.__raw_data[metric].append(value)
+        if log_raw_data:
+            with open(os.path.join(os.getcwd(), 'rawdata.log'), 'a') as f:
+                f.write('metric:{}\n'.format(metric))
+                f.write('rawdata:{}\n\n'.format(value))
+        else:
+            if metric not in self.__raw_data:
+                self.__raw_data[metric] = list()
+            self.__raw_data[metric].append(value)
 
         return True
 

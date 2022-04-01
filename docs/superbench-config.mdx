@@ -209,6 +209,7 @@ ${benchmark_name}:
   parameters:
     run_count: int
     duration: int
+    log_raw_data: bool
     ${argument}: bool | str | int | float | list
 ```
 
@@ -224,6 +225,7 @@ model-benchmarks:${annotation}:
   parameters:
     run_count: int
     duration: int
+    log_raw_data: bool
     num_warmup: int
     num_steps: int
     sample_count: int
@@ -333,6 +335,18 @@ A list of models to run, only supported in model-benchmark.
 ### `parameters`
 
 Parameters for benchmark to use, varying for different benchmarks.
+
+There have three common parameters for all benchmarks:
+* run_count: how many times do user want to run this benchmark, default value is 1.
+* duration: the elapsed time of benchmark in seconds. It can work for all model-benchmark. But for micro-benchmark, benchmark authors should consume it by themselves.
+* log_raw_data: log raw data into file instead of saving it into result object, default value is `False`.  Benchmarks who have large raw output may want to set it as `True`, such as `nccl-bw`/`rccl-bw`.
+
+For Model-Benchmark, there have some parameters that can control the elapsed time.
+* duration: the elapsed time of benchmark in seconds.
+* num_warmup: the number of warmup step.
+* num_steps: the number of test step.
+
+If `duration > 0` and `num_warmup + num_steps > 0`, then benchmark will take the least as the elapsed time. Otherwise only one of them will take effect.
 
 ## `Mode` Schema
 

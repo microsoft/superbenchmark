@@ -143,7 +143,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             if rank > 0:
                 return True
 
-        self._result.add_raw_data('raw_output_' + self._args.operation, raw_output)
+        self._result.add_raw_data('raw_output_' + self._args.operation, raw_output, self._args.log_raw_data)
 
         content = raw_output.splitlines()
         size = -1

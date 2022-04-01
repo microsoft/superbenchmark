@@ -3,6 +3,8 @@
 
 """Tests for RocmOnnxRuntimeModelBenchmark modules."""
 
+from types import SimpleNamespace
+
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, Platform, ReturnCode
 from superbench.benchmarks.result import BenchmarkResult
 
@@ -20,6 +22,7 @@ def test_rocm_onnxruntime_performance():
     assert (benchmark._entrypoint == '/stage/onnxruntime-training-examples/huggingface/azureml/run_benchmark.sh')
     assert (benchmark._cmd is None)
     benchmark._result = BenchmarkResult(benchmark._name, benchmark._benchmark_type, ReturnCode.SUCCESS)
+    benchmark._args = SimpleNamespace(log_raw_data=False)
 
     raw_output = """
 __superbench__ begin bert-large-uncased ngpu=1

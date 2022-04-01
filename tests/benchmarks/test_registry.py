@@ -49,7 +49,7 @@ class AccumulationBenchmark(MicroBenchmark):
             raw_data.append(str(result))
 
         metric = 'accumulation_result'
-        self._result.add_raw_data(metric, ','.join(raw_data))
+        self._result.add_raw_data(metric, ','.join(raw_data), self._args.log_raw_data)
         self._result.add_result(metric, result)
 
         return True
@@ -114,6 +114,8 @@ def test_get_benchmark_configurable_settings():
 
     expected = """optional arguments:
   --duration int     The elapsed time of benchmark in seconds.
+  --log_raw_data     Log raw data into file instead of saving it into result
+                     object.
   --lower_bound int  The lower bound for accumulation.
   --run_count int    The run count of benchmark.
   --upper_bound int  The upper bound for accumulation."""
