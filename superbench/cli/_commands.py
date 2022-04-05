@@ -30,6 +30,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('info', 'info_command_handler')
         with CommandGroup(self, 'result', 'superbench.cli._result_handler#{}') as g:
             g.command('diagnosis', 'diagnosis_command_handler')
+            g.command('summary', 'summary_command_handler')
         return super().load_command_table(args)
 
     def load_arguments(self, command):
