@@ -360,7 +360,7 @@ class DataDiagnosis(RuleBase):
             rule_file (str): The path of baseline yaml file
             baseline_file (str): The path of baseline json file
             output_dir (str): the directory of output file
-            print_all (bool): output diagnosis results for all nodes
+            output_all (bool): output diagnosis results for all nodes
             output_format (str): the format of the output, 'excel' or 'json'
             round (int): the number of decimal digits
         """
