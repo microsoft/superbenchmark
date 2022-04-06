@@ -24,12 +24,13 @@ class TestDataDiagnosis(unittest.TestCase):
         self.output_json_file = str(self.parent_path / 'diagnosis_summary.jsonl')
         self.output_md_file = str(self.parent_path / 'diagnosis_summary.md')
         self.output_html_file = str(self.parent_path / 'diagnosis_summary.html')
+        self.output_all_json_file = str(self.parent_path / 'diagnosis_summary.json')
 
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
         for file in [
             self.output_excel_file, self.output_json_file, self.test_rule_file_fake, self.output_md_file,
-            self.output_html_file
+            self.output_html_file, self.output_all_json_file
         ]:
             p = Path(file)
             if p.is_file():
@@ -185,8 +186,8 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (len(data_not_accept_read_from_excel) == 2)
         assert ('Category' in data_not_accept_read_from_excel)
         assert ('Defective Details' in data_not_accept_read_from_excel)
-        # Test - output in json
-        diag1.output_diagnosis_in_json(data_not_accept_df, self.output_json_file)
+        # Test - output in jsonl
+        diag1.output_diagnosis_in_jsonl(data_not_accept_df, self.output_json_file)
         assert (Path(self.output_json_file).is_file())
         with Path(self.output_json_file).open() as f:
             data_not_accept_read_from_json = f.readlines()
@@ -203,6 +204,30 @@ class TestDataDiagnosis(unittest.TestCase):
         with open(expected_md_file, 'r') as f:
             expect_result = f.readlines()
         assert (lines == expect_result)
+        # Test - output_all_nodes_results
+        # case 1: 1 accept, 2 not accept
+        data_df = diag1.output_all_nodes_results(diag1._raw_data_df, data_not_accept_df)
+        assert (len(data_df) == 3)
+        assert (not data_df.loc['sb-validation-01']['Accept'])
+        assert (data_df.loc['sb-validation-02']['Accept'])
+        assert (not data_df.loc['sb-validation-03']['Accept'])
+        assert ('Category' in data_df)
+        assert ('Issue_Details' in data_df)
+        # case 1: 3 accept, 0 not accept
+        data_df_all_accept = diag1.output_all_nodes_results(diag1._raw_data_df, pd.DataFrame())
+        assert (len(data_df_all_accept) == 3)
+        assert (data_df_all_accept.loc['sb-validation-01']['Accept'])
+        assert (data_df_all_accept.loc['sb-validation-02']['Accept'])
+        assert (data_df_all_accept.loc['sb-validation-03']['Accept'])
+        # Test - output in json
+        diag1.output_diagnosis_in_json(data_df, self.output_all_json_file)
+        assert (Path(self.output_all_json_file).is_file())
+        expected_result_file = str(self.parent_path / '../data/diagnosis_summary.json')
+        with Path(self.output_all_json_file).open() as f:
+            data_not_accept_read_from_json = f.read()
+        with Path(expected_result_file).open() as f:
+            expect_result = f.read()
+        assert (data_not_accept_read_from_json == expect_result)
 
     def test_data_diagnosis_run(self):
         """Test for the run process of rule-based data diagnosis."""
@@ -228,7 +253,7 @@ class TestDataDiagnosis(unittest.TestCase):
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
         # Test - output in md
-        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md', 2)
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md', round=2)
         assert (Path(self.output_md_file).is_file())
         expected_md_file = str(self.parent_path / '../data/diagnosis_summary.md')
         with open(expected_md_file, 'r') as f:
@@ -237,7 +262,7 @@ class TestDataDiagnosis(unittest.TestCase):
             summary = f.read()
         assert (summary == expect_result)
         # Test - output in html
-        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'html', 2)
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'html', round=2)
         assert (Path(self.output_html_file).is_file())
         expected_html_file = str(self.parent_path / '../data/diagnosis_summary.html')
         with open(expected_html_file, 'r') as f:
@@ -245,6 +270,17 @@ class TestDataDiagnosis(unittest.TestCase):
         with open(self.output_html_file, 'r') as f:
             summary = f.read()
         assert (summary == expect_result)
+        # Test - output all nodes results
+        DataDiagnosis().run(
+            test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'json', output_all=True
+        )
+        assert (Path(self.output_all_json_file).is_file())
+        expected_result_file = str(self.parent_path / '../data/diagnosis_summary.json')
+        with Path(self.output_all_json_file).open() as f:
+            data_not_accept_read_from_json = f.read()
+        with Path(expected_result_file).open() as f:
+            expect_result = f.read()
+        assert (data_not_accept_read_from_json == expect_result)
 
     def test_mutli_rules(self):
         """Test multi rules check feature."""

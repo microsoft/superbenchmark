@@ -7,6 +7,7 @@ from pathlib import Path
 import json
 
 import pandas as pd
+import numpy as np
 
 from superbench.common.utils import logger
 from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
@@ -209,6 +210,48 @@ class DataDiagnosis(RuleBase):
             logger.error('DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e)))
         return data_not_accept_df, label_df
 
+    def output_all_nodes_results(self, raw_data_df, data_not_accept_df):
+        """Output diagnosis results of all nodes.
+
+        Args:
+            raw_data_df (DataFrame): raw data
+            data_not_accept_df (DataFrame): defective nodes's detailed information
+
+        Returns:
+            DataFrame: all nodes' detailed information inluding ['Accept','#Issues','Category','Issue_Details']
+        """
+        append_columns = ['Accept', '#Issues', 'Category', 'Issue_Details']
+        all_data_df = (raw_data_df[self._enable_metrics]).copy()
+
+        if data_not_accept_df.shape[0] == 0:
+            all_data_df['Accept'] = [True for i in range(len(all_data_df))]
+            all_data_df['#Issues'] = [0 for i in range(len(all_data_df))]
+            all_data_df['Category'] = [None for i in range(len(all_data_df))]
+            all_data_df['Issue_Details'] = [None for i in range(len(all_data_df))]
+
+        elif data_not_accept_df.shape[0] > 0:
+            data_not_accept_df['Accept'] = [False for i in range(len(data_not_accept_df))]
+            data_not_accept_df['#Issues'] = data_not_accept_df['Defective Details'].map(lambda x: len(x.split(',')))
+            data_not_accept_df = data_not_accept_df.rename(columns={'Defective Details': 'Issue_Details'})
+            for index in range(len(append_columns)):
+                if append_columns[index] not in data_not_accept_df:
+                    logger.warning(
+                        'DataDiagnosis: output_all_nodes_results - column {} not found in data_not_accept_df.'.format(
+                            append_columns[index]
+                        )
+                    )
+                    all_data_df[append_columns[index]] = None
+                else:
+                    all_data_df = all_data_df.merge(
+                        data_not_accept_df[[append_columns[index]]], left_index=True, right_index=True, how='left'
+                    )
+            all_data_df['Accept'] = all_data_df['Accept'].replace(np.nan, True)
+            all_data_df['#Issues'] = all_data_df['#Issues'].replace(np.nan, 0)
+
+        all_data_df = all_data_df.replace(np.nan, '')
+
+        return all_data_df
+
     def output_diagnosis_in_excel(self, raw_data_df, data_not_accept_df, output_path, rules):
         """Output the raw_data_df and data_not_accept_df results into excel file.
 
@@ -230,7 +273,7 @@ class DataDiagnosis(RuleBase):
         except Exception as e:
             logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
 
-    def output_diagnosis_in_json(self, data_not_accept_df, output_path):
+    def output_diagnosis_in_jsonl(self, data_not_accept_df, output_path):
         """Output data_not_accept_df into jsonl file.
 
         Args:
@@ -255,6 +298,20 @@ class DataDiagnosis(RuleBase):
                     f.write(json_str + '\n')
         except Exception as e:
             logger.error('DataDiagnosis: output json data failed, msg: {}'.format(str(e)))
+
+    def output_diagnosis_in_json(self, data_not_accept_df, output_path):
+        """Output data_not_accept_df into json file.
+
+        Args:
+            data_not_accept_df (DataFrame): the DataFrame to output
+            output_path (str): the path of output jsonl file
+        """
+        data_not_accept_df['Index'] = data_not_accept_df.index
+        data_not_accept_json = data_not_accept_df.to_json(orient='records')
+        data_not_accept = json.loads(data_not_accept_json)
+        p = Path(output_path)
+        with p.open('w') as f:
+            json.dump(data_not_accept, f, indent=4)
 
     def generate_md_lines(self, data_not_accept_df, rules, round):
         """Convert DataFrame into markdown lines.
@@ -293,7 +350,9 @@ class DataDiagnosis(RuleBase):
         lines = file_handler.generate_md_table(data_not_accept_df, header)
         return lines
 
-    def run(self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel', round=2):
+    def run(
+        self, raw_data_file, rule_file, baseline_file, output_dir, output_format='excel', output_all=False, round=2
+    ):
         """Run the data diagnosis and output the results.
 
         Args:
@@ -301,6 +360,7 @@ class DataDiagnosis(RuleBase):
             rule_file (str): The path of baseline yaml file
             baseline_file (str): The path of baseline json file
             output_dir (str): the directory of output file
+            print_all (bool): output diagnosis results for all nodes
             output_format (str): the format of the output, 'excel' or 'json'
             round (int): the number of decimal digits
         """
@@ -312,12 +372,21 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df, label_df = self.run_diagnosis_rules(rules, baseline)
             logger.info('DataDiagnosis: Processed finished')
             output_path = ''
+            # generate all nodes' info
+            if output_all:
+                output_path = str(Path(output_dir) / 'diagnosis_summary.json')
+                data_not_accept_df = self.output_all_nodes_results(self._raw_data_df, data_not_accept_df)
+            # output according format
             if output_format == 'excel':
                 output_path = str(Path(output_dir) / 'diagnosis_summary.xlsx')
                 self.output_diagnosis_in_excel(self._raw_data_df, data_not_accept_df, output_path, self._sb_rules)
             elif output_format == 'json':
-                output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
-                self.output_diagnosis_in_json(data_not_accept_df, output_path)
+                if output_all:
+                    output_path = str(Path(output_dir) / 'diagnosis_summary.json')
+                    self.output_diagnosis_in_json(data_not_accept_df, output_path)
+                else:
+                    output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
+                    self.output_diagnosis_in_jsonl(data_not_accept_df, output_path)
             elif output_format == 'md' or output_format == 'html':
                 lines = self.generate_md_lines(data_not_accept_df, self._sb_rules, round)
                 if output_format == 'md':
