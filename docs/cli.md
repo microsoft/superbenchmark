@@ -186,11 +186,11 @@ sb result diagnosis [--baseline-file]
 
 #### Optional arguments
 
-| Name                   | Default | Description                                                                 |
-|------------------------|---------|-----------------------------------------------------------------------------|
-| `--output-dir`         | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--output-file-format` | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
-| `--decimal-place-value`              | 2       | Number of valid decimal places to show in output. Default: 2.               |
+| Name                    | Default | Description                                                                 |
+|-------------------------|---------|-----------------------------------------------------------------------------|
+| `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
+| `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
+| `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 
 #### Global arguments
 
@@ -236,11 +236,11 @@ sb result summary [--data-file]
 
 #### Optional arguments
 
-| Name                   | Default | Description                                                                 |
-|------------------------|---------|-----------------------------------------------------------------------------|
-| `--output-dir`         | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--output-file-format` | `md`    | Format of output file, 'excel', 'md' or 'html'. Default: md.                |
-| `--decimal-place-value`              | 2       | Number of valid decimal places to show in output. Default: 2.               |
+| Name                    | Default | Description                                                                 |
+|-------------------------|---------|-----------------------------------------------------------------------------|
+| `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
+| `--output-file-format`  | `md`    | Format of output file, 'excel', 'md' or 'html'. Default: md.                |
+| `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 
 #### Global arguments
 
