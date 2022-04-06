@@ -173,7 +173,7 @@ sb result diagnosis [--baseline-file]
        [--rule-file]
        [--output-dir]
        [--output-file-format]
-       [--round]
+       [--decimal-place-value]
 ```
 
 #### Required arguments
@@ -189,8 +189,8 @@ sb result diagnosis [--baseline-file]
 | Name                   | Default | Description                                                                 |
 |------------------------|---------|-----------------------------------------------------------------------------|
 | `--output-dir`         | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--output-file-format` | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.                       |
-| `--round` | 2 | Number of valid decimal places to show in output. Default: 2.                       |
+| `--output-file-format` | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
+| `--decimal-place-value`              | 2       | Number of valid decimal places to show in output. Default: 2.               |
 
 #### Global arguments
 
@@ -212,7 +212,7 @@ sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.y
 
 Run data diagnosis and output the results in markdown format with 2 valid decimal places:
 ```bash title="SB CLI"
-sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format md --round 2
+sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format md --decimal-place-value 2
 ```
 
 ### `sb result summary`
@@ -224,23 +224,23 @@ sb result summary [--data-file]
        [--rule-file]
        [--output-dir]
        [--output-file-format]
-       [--round]
+       [--decimal-place-value]
 ```
 
 #### Required arguments
 
-| Name                   | Description            |
-|------------------------|------------------------|
-| `--data-file` `-d`     | Path to raw data file. |
-| `--rule-file` `-r`     | Path to rule file.     |
+| Name               | Description            |
+|--------------------|------------------------|
+| `--data-file` `-d` | Path to raw data file. |
+| `--rule-file` `-r` | Path to rule file.     |
 
 #### Optional arguments
 
 | Name                   | Default | Description                                                                 |
 |------------------------|---------|-----------------------------------------------------------------------------|
 | `--output-dir`         | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--output-file-format` | `md` | Format of output file, 'excel', 'md' or 'html'. Default: md.                       |
-| `--round` | 2 | Number of valid decimal places to show in output. Default: 2.                       |
+| `--output-file-format` | `md`    | Format of output file, 'excel', 'md' or 'html'. Default: md.                |
+| `--decimal-place-value`              | 2       | Number of valid decimal places to show in output. Default: 2.               |
 
 #### Global arguments
 
@@ -252,7 +252,7 @@ sb result summary [--data-file]
 
 Run data summary and output the results in markdown format with 2 valid decimal places:
 ```bash title="SB CLI"
-sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yaml --output-file-format md --round 2
+sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yaml --output-file-format md --decimal-place-value 2
 ```
 
 Run data diagnosis and output the results in html format:

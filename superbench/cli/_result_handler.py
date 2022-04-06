@@ -12,7 +12,7 @@ from superbench.cli._handler import check_argument_file
 
 
 def diagnosis_command_handler(
-    raw_data_file, rule_file, baseline_file, output_dir=None, output_file_format='excel', round=2
+    raw_data_file, rule_file, baseline_file, output_dir=None, output_file_format='excel', decimal_place_value=2
 ):
     """Run data diagnosis.
 
@@ -22,7 +22,7 @@ def diagnosis_command_handler(
         baseline_file (str): Path to baseline json file.
         output_dir (str): Path to output directory.
         output_file_format (str): Format of the output file, 'excel', 'json', 'md' or 'html'. Defaults to 'excel'.
-        round (int): Number of decimal places to show in output.
+        decimal_place_value (int): Number of decimal places to show in output.
     """
     try:
         # Create output directory
@@ -35,12 +35,14 @@ def diagnosis_command_handler(
         check_argument_file('rule_file', rule_file)
         check_argument_file('baseline_file', baseline_file)
         # Run data diagnosis
-        DataDiagnosis().run(raw_data_file, rule_file, baseline_file, sb_output_dir, output_file_format, round)
+        DataDiagnosis().run(
+            raw_data_file, rule_file, baseline_file, sb_output_dir, output_file_format, decimal_place_value
+        )
     except Exception as ex:
         raise RuntimeError('Failed to run diagnosis command.') from ex
 
 
-def summary_command_handler(raw_data_file, rule_file, output_dir=None, output_file_format='md', round=2):
+def summary_command_handler(raw_data_file, rule_file, output_dir=None, output_file_format='md', decimal_place_value=2):
     """Run result summary.
 
     Args:
@@ -48,7 +50,7 @@ def summary_command_handler(raw_data_file, rule_file, output_dir=None, output_fi
         rule_file (str): Path to baseline yaml file.
         output_dir (str): Path to output directory.
         output_file_format (str): Format of the output file, 'excel', 'md' or 'html'. Defaults to 'md'.
-        round (int): Number of decimal places to show in output.
+        decimal_place_value (int): Number of decimal places to show in output.
     """
     try:
         # Create output directory
@@ -60,6 +62,6 @@ def summary_command_handler(raw_data_file, rule_file, output_dir=None, output_fi
         check_argument_file('raw_data_file', raw_data_file)
         check_argument_file('rule_file', rule_file)
         # Run result summary
-        ResultSummary().run(raw_data_file, rule_file, sb_output_dir, output_file_format, round)
+        ResultSummary().run(raw_data_file, rule_file, sb_output_dir, output_file_format, decimal_place_value)
     except Exception as ex:
         raise RuntimeError('Failed to run summary command.') from ex

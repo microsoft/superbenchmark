@@ -127,7 +127,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         )
         self.cmd(
             'sb result summary -d {dir}/test_results.jsonl -r {dir}/test_summary_rules.yaml'.
-            format(dir=test_analyzer_dir) + ' --output-dir /tmp/outputs/test-summary/ --round 4'
+            format(dir=test_analyzer_dir) + ' --output-dir /tmp/outputs/test-summary/ --decimal-place-value 4'
         )
         # test invalid output format
         self.cmd(

@@ -81,6 +81,6 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 help='Path to output directory, outputs/{datetime} will be used if not specified.'
             )
             ac.argument('output_file_format', type=str, help='Format of output file, excel or json.')
-            ac.argument('round', type=int, help='Number of decimal places to show in output.')
+            ac.argument('decimal_place_value', type=int, help='Number of decimal places to show in output.')
 
         super().load_arguments(command)
