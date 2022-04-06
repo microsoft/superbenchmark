@@ -28,7 +28,7 @@ steps:
       SB_MICRO_PATH=$PWD make cppbuild
     displayName: Build benchmarks
   - script: |
-      SB_MICRO_PATH=$PWD python3 setup.py test -vv
+      SB_MICRO_PATH=$PWD python3 setup.py test
     displayName: Run unit tests
     timeoutInMinutes: 15
   - script: |
