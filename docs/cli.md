@@ -170,10 +170,10 @@ Filter the defective machines automatically from benchmarking results according 
 ```bash title="SB CLI"
 sb result diagnosis [--baseline-file]
        [--data-file]
+       [--decimal-place-value]
        [--rule-file]
        [--output-dir]
        [--output-file-format]
-       [--decimal-place-value]
 ```
 
 #### Required arguments
@@ -188,9 +188,9 @@ sb result diagnosis [--baseline-file]
 
 | Name                    | Default | Description                                                                 |
 |-------------------------|---------|-----------------------------------------------------------------------------|
+| `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 | `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
-| `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 
 #### Global arguments
 
@@ -221,10 +221,10 @@ Generate the readable summary report automatically from benchmarking results acc
 
 ```bash title="SB CLI"
 sb result summary [--data-file]
+       [--decimal-place-value]
        [--rule-file]
        [--output-dir]
        [--output-file-format]
-       [--decimal-place-value]
 ```
 
 #### Required arguments
@@ -238,9 +238,9 @@ sb result summary [--data-file]
 
 | Name                    | Default | Description                                                                 |
 |-------------------------|---------|-----------------------------------------------------------------------------|
+| `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 | `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--output-file-format`  | `md`    | Format of output file, 'excel', 'md' or 'html'. Default: md.                |
-| `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 
 #### Global arguments
 
