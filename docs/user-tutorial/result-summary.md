@@ -30,7 +30,7 @@ The input includes 2 files:
 
     `Tips`: this file can be found at ${output-dir}/results-summary.jsonl after each successful run.
 
- - **rule file**: It uses YAML format and defines how to generate the result summary including how to classify the metrics and what statistical methods (P50, mean, etc.) is applied.
+ - **rule file**: It uses YAML format and defines how to generate the result summary including how to classify the metrics and what statistical methods (P50, mean, etc.) are applied.
 
 ### rule file
 
@@ -106,7 +106,7 @@ The value of this item should be bool or pattern string with regex​:
 
  - bool:
     - `False`(default): if no aggregation.
-    - `True`: aggregate the results of multiple ranks. In detail, the metric names in `metrics' like 'metric:\\d+' will be aggregated and turned into 'metric' for most microbenchmark metrics.
+    - `True`: aggregate the results of multiple ranks. In detail, the metric names in `metrics` like 'metric:\\d+' will be aggregated and turned into 'metric' for most microbenchmark metrics.
  - pattern string with regex: aggregate the results using the pattern string, which is used to match the metric names in `metrics`. In detail, the part of the metric that matches the contents of () in the pattern string will be turned into *, other parts of the metric remain unchanged.
 
 #### `statistics`
