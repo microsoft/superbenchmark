@@ -30,6 +30,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('info', 'info_command_handler')
         with CommandGroup(self, 'result', 'superbench.cli._result_handler#{}') as g:
             g.command('diagnosis', 'diagnosis_command_handler')
+            g.command('summary', 'summary_command_handler')
         return super().load_command_table(args)
 
     def load_arguments(self, command):
@@ -80,5 +81,6 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 help='Path to output directory, outputs/{datetime} will be used if not specified.'
             )
             ac.argument('output_file_format', type=str, help='Format of output file, excel or json.')
+            ac.argument('decimal_place_value', type=int, help='Number of decimal places to show in output.')
 
         super().load_arguments(command)

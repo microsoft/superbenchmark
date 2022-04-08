@@ -122,6 +122,46 @@ helps['result diagnosis'] = """
             --rule-file rule.yaml
             --baseline-file baseline.json
             --output-file-format json
+        - name: run data diagnosis and output the results in markdown format
+          text: >
+            {cli_name} result diagnosis
+            --data-file outputs/results-summary.jsonl
+            --rule-file rule.yaml
+            --baseline-file baseline.json
+            --output-file-format md
+        - name: run data diagnosis and output the results in html format
+          text: >
+            {cli_name} result diagnosis
+            --data-file outputs/results-summary.jsonl
+            --rule-file rule.yaml
+            --baseline-file baseline.json
+            --output-file-format html
+""".format(cli_name=CLI_NAME)
+
+helps['result summary'] = """
+    type: command
+    short-summary: >
+        Generate the readable summary of benchmarking results
+        according to rules defined in rule file.
+    examples:
+        - name: run result summary and output the results in excel format
+          text: >
+            {cli_name} result summary
+            --data-file outputs/results-summary.jsonl
+            --rule-file rule.yaml
+            --output-file-format excel
+        - name: run result summary and output the results in markdown format
+          text: >
+            {cli_name} result summary
+            --data-file outputs/results-summary.jsonl
+            --rule-file rule.yaml
+            --output-file-format md
+        - name: run result summary and output the results in html format
+          text: >
+            {cli_name} result summary
+            --data-file outputs/results-summary.jsonl
+            --rule-file rule.yaml
+            --output-file-format html
 """.format(cli_name=CLI_NAME)
 
 
