@@ -120,5 +120,5 @@ The following illustrates all statistical functions:
 - `max`
 - `mean`
 - `min`
-- `p{value}`: {value} can be 1-99. For example, 'p50', 'p90', etc.
+- `p${value}`: ${value} can be 1-99. For example, p50, p90, etc.
 - `std`
