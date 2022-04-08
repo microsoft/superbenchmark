@@ -116,3 +116,22 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
             format(dir=test_analyzer_dir) + ' --output-dir outputs/test-diagnosis/ --output-file-format abb',
             expect_failure=True
         )
+
+    def test_sb_result_summary(self):
+        """Test sb result summary."""
+        test_analyzer_dir = str(Path(__file__).parent.resolve() / '../analyzer/')
+        # test positive case
+        self.cmd(
+            'sb result summary -d {dir}/test_results.jsonl -r {dir}/test_summary_rules.yaml'.
+            format(dir=test_analyzer_dir) + ' --output-dir /tmp/outputs/test-summary/'
+        )
+        self.cmd(
+            'sb result summary -d {dir}/test_results.jsonl -r {dir}/test_summary_rules.yaml'.
+            format(dir=test_analyzer_dir) + ' --output-dir /tmp/outputs/test-summary/ --decimal-place-value 4'
+        )
+        # test invalid output format
+        self.cmd(
+            'sb result summary -d {dir}/test_results.jsonl -r {dir}/test_rules.yaml'.format(dir=test_analyzer_dir) +
+            ' --output-dir /tmp/outputs/test-summary/ --output-file-format abb',
+            expect_failure=True
+        )
