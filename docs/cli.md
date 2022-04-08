@@ -168,12 +168,13 @@ sb exec --config-override superbench.enable="['gpt2_models']"
 Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
 
 ```bash title="SB CLI"
-sb result diagnosis [--baseline-file]
-       [--data-file]
-       [--decimal-place-value]
-       [--rule-file]
-       [--output-dir]
-       [--output-file-format]
+sb result diagnosis --baseline-file
+                    --data-file
+                    --rule-file
+                    [--decimal-place-value]
+                    [--rule-file]
+                    [--output-dir]
+                    [--output-file-format {excel, json, md, html}]
 ```
 
 #### Required arguments
@@ -220,11 +221,11 @@ sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.y
 Generate the readable summary report automatically from benchmarking results according to rules defined in rule file.
 
 ```bash title="SB CLI"
-sb result summary [--data-file]
-       [--decimal-place-value]
-       [--rule-file]
-       [--output-dir]
-       [--output-file-format]
+sb result summary --data-file
+                  --rule-file
+                  [--decimal-place-value]
+                  [--output-dir]
+                  [--output-file-format {md, excel, html}]
 ```
 
 #### Required arguments
