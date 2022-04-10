@@ -13,7 +13,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.docker_benchmarks.docker_base import CudaDockerBenchmark
 
 
-class FAMBench(CudaDockerBenchmark):
+class FAMBenchBenchmark(CudaDockerBenchmark):
     """The FAMBench E2E model benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -79,4 +79,4 @@ class FAMBench(CudaDockerBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark('fambench', FAMBench, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('fambench', FAMBenchBenchmark, platform=Platform.CUDA)
