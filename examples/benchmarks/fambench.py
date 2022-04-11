@@ -7,7 +7,7 @@ Commands to run:
   python3 examples/benchmarks/fambench.py
 """
 
-from superbench.benchmarks import BenchmarkRegistry, Framework, Platform
+from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.common.utils import logger
 
 if __name__ == '__main__':
