@@ -218,6 +218,11 @@ Run data diagnosis and output the results in markdown format with 2 valid decima
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format md --decimal-place-value 2
 ```
 
+run data diagnosis and output the results of all nodes in json format:
+```bash title="SB CLI"
+sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format json --output-all
+```
+
 ### `sb result summary`
 
 Generate the readable summary report automatically from benchmarking results according to rules defined in rule file.
