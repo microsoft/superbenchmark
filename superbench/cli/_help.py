@@ -136,6 +136,14 @@ helps['result diagnosis'] = """
             --rule-file rule.yaml
             --baseline-file baseline.json
             --output-file-format html
+        - name: run data diagnosis and output the results of all nodes in json format
+          text: >
+            {cli_name} result diagnosis
+            --data-file outputs/results-summary.jsonl
+            --rule-file rule.yaml
+            --baseline-file baseline.json
+            --output-file-format json
+            --output-all
 """.format(cli_name=CLI_NAME)
 
 helps['result summary'] = """

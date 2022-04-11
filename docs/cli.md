@@ -173,6 +173,7 @@ sb result diagnosis --baseline-file
                     --rule-file
                     [--decimal-place-value]
                     [--rule-file]
+                    [--output-all]
                     [--output-dir]
                     [--output-file-format {excel, json, md, html}]
 ```
@@ -190,6 +191,7 @@ sb result diagnosis --baseline-file
 | Name                    | Default | Description                                                                 |
 |-------------------------|---------|-----------------------------------------------------------------------------|
 | `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
+| `--output-all`          | N/A     | Output diagnosis results for all nodes.                                     |
 | `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
 
