@@ -8,4 +8,7 @@ from superbench.benchmarks.docker_benchmarks.docker_base import DockerBenchmark,
 from superbench.benchmarks.docker_benchmarks.rocm_onnxruntime_performance import RocmOnnxRuntimeModelBenchmark
 from superbench.benchmarks.docker_benchmarks.fambench import FAMBenchBenchmark
 
-__all__ = ['DockerBenchmark', 'CudaDockerBenchmark', 'RocmDockerBenchmark', 'RocmOnnxRuntimeModelBenchmark', 'FAMBenchBenchmark']
+__all__ = [
+    'DockerBenchmark', 'CudaDockerBenchmark', 'RocmDockerBenchmark', 'RocmOnnxRuntimeModelBenchmark',
+    'FAMBenchBenchmark'
+]
