@@ -82,5 +82,6 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             )
             ac.argument('output_file_format', type=str, help='Format of output file, excel or json.')
             ac.argument('decimal_place_value', type=int, help='Number of decimal places to show in output.')
+            ac.argument('output_all', action='store_true', help='Output results of all nodes.')
 
         super().load_arguments(command)

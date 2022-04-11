@@ -173,6 +173,7 @@ sb result diagnosis --baseline-file
                     --rule-file
                     [--decimal-place-value]
                     [--rule-file]
+                    [--output-all]
                     [--output-dir]
                     [--output-file-format {excel, json, md, html}]
 ```
@@ -190,6 +191,7 @@ sb result diagnosis --baseline-file
 | Name                    | Default | Description                                                                 |
 |-------------------------|---------|-----------------------------------------------------------------------------|
 | `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
+| `--output-all`          | N/A     | Output diagnosis results for all nodes.                                     |
 | `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
 
@@ -214,6 +216,11 @@ sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.y
 Run data diagnosis and output the results in markdown format with 2 valid decimal places:
 ```bash title="SB CLI"
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format md --decimal-place-value 2
+```
+
+run data diagnosis and output the results of all nodes in json format:
+```bash title="SB CLI"
+sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format json --output-all
 ```
 
 ### `sb result summary`
@@ -251,12 +258,12 @@ sb result summary --data-file
 
 #### Examples
 
-Run data summary and output the results in markdown format with 2 valid decimal places:
+Run result summary and output the results in markdown format with 2 valid decimal places:
 ```bash title="SB CLI"
 sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yaml --output-file-format md --decimal-place-value 2
 ```
 
-Run data diagnosis and output the results in html format:
+Run result summary and output the results in html format:
 ```bash title="SB CLI"
 sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yaml --output-file-format html
 ```
