@@ -253,12 +253,12 @@ sb result summary --data-file
 
 #### Examples
 
-Run data summary and output the results in markdown format with 2 valid decimal places:
+Run result summary and output the results in markdown format with 2 valid decimal places:
 ```bash title="SB CLI"
 sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yaml --output-file-format md --decimal-place-value 2
 ```
 
-Run data diagnosis and output the results in html format:
+Run result summary and output the results in html format:
 ```bash title="SB CLI"
 sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yaml --output-file-format html
 ```
