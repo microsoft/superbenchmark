@@ -35,6 +35,7 @@ class ModelBenchmark(Benchmark):
         self._benchmark_type = BenchmarkType.MODEL
         self._world_size = 1
         self._local_rank = None
+        self._global_rank = None
         self._dataset = None
         self._dataloader = None
         self._model = None
@@ -406,7 +407,7 @@ class ModelBenchmark(Benchmark):
         if model_action == ModelAction.TRAIN:
             if not self._sync_result(step_times):
                 return False
-            if self._local_rank is None or self._local_rank == 0:
+            if self._local_rank is None or self._global_rank == 0:
                 self._result.add_result(metric_s, statistics.mean(step_times))
                 throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
                 self._result.add_result(metric_t, statistics.mean(throughput))
