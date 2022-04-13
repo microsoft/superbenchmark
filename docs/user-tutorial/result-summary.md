@@ -14,7 +14,7 @@ This tool is to generate a readable summary report based on the raw benchmark re
 
 2. Prepare the raw data and rule file on the local machine.
 
-3. Generate the result summary automatically using `sb result summary` command. The detailed command can be found from [SuperBench CLI](../cli).
+3. Generate the result summary automatically using `sb result summary` command. The detailed command can be found from [SuperBench CLI](../cli.md).
 
   ```bash
   sb result summary --data-file ./results-summary.jsonl --rule-file ./rule.yaml --output-file-format md --output-dir ${output-dir}
