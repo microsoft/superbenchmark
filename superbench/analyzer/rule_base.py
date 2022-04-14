@@ -32,6 +32,9 @@ class RuleBase():
                 logger.warning('RuleBase: get_metrics_by_benchmarks - {} does not have benchmark_name'.format(metric))
             else:
                 benchmark = metric.split('/')[0]
+                # support annotations in benchmark naming
+                if ':' in benchmark:
+                    benchmark = metric.split(':')[0]
                 if benchmark not in benchmarks_metrics:
                     benchmarks_metrics[benchmark] = set()
                 benchmarks_metrics[benchmark].add(metric)
