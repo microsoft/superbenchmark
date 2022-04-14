@@ -129,6 +129,10 @@ class ResultSummary(RuleBase):
         """
         summary = {}
         for rule in self._sb_rules:
+            # skip the rule with no matched metrics
+            if len(self._sb_rules[rule]['metrics']) == 0:
+                logger.warning('ResultSummary: No matched metrics - {}'.format(rule))
+                continue
             metrics = list(self._sb_rules[rule]['metrics'].keys())
             category = self._sb_rules[rule]['categories']
             data_df_of_rule = self._raw_data_df[metrics]
@@ -233,15 +237,15 @@ class ResultSummary(RuleBase):
             # output result summary to file
             output_path = ''
             if output_format == 'excel':
-                output_path = str(Path(output_dir) / 'results_summary.xlsx')
+                output_path = str(Path(output_dir) / 'results-summary.xlsx')
                 summary_df = self._merge_summary(summary)
                 self.output_summary_in_excel(self._raw_data_df, summary_df, output_path)
             elif output_format == 'md':
-                output_path = str(Path(output_dir) / 'results_summary.md')
+                output_path = str(Path(output_dir) / 'results-summary.md')
                 lines = self.generate_md_lines(summary)
                 file_handler.output_lines_in_md(lines, output_path)
             elif output_format == 'html':
-                output_path = str(Path(output_dir) / 'results_summary.html')
+                output_path = str(Path(output_dir) / 'results-summary.html')
                 lines = self.generate_md_lines(summary)
                 file_handler.output_lines_in_html(lines, output_path)
             else:

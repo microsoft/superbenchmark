@@ -18,9 +18,9 @@ class TestResultSummary(unittest.TestCase):
     def setUp(self):
         """Method called to prepare the test fixture."""
         self.parent_path = Path(__file__).parent
-        self.output_excel_file = str(self.parent_path / 'results_summary.xlsx')
-        self.output_md_file = str(self.parent_path / 'results_summary.md')
-        self.output_html_file = str(self.parent_path / 'results_summary.html')
+        self.output_excel_file = str(self.parent_path / 'results-summary.xlsx')
+        self.output_md_file = str(self.parent_path / 'results-summary.md')
+        self.output_html_file = str(self.parent_path / 'results-summary.html')
         self.test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         self.test_raw_data = str(self.parent_path / 'test_results.jsonl')
         self.test_rule_file = str(self.parent_path / 'test_summary_rules.yaml')
