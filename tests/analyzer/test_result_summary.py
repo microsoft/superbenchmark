@@ -119,6 +119,29 @@ class TestResultSummary(unittest.TestCase):
         summary_merge_df = rs1._merge_summary(summary)
         pd.testing.assert_frame_equal(expected_summary_merge_df, summary_merge_df)
 
+    def test_no_matched_rule(self):
+        """Test for support no matching rules."""
+        # Positive case
+        rules = {
+            'superbench': {
+                'rules': {
+                    'fake': {
+                        'categories': 'FAKE',
+                        'statistics': ['mean', 'max'],
+                        'metrics': ['abb/fake:\\d+'],
+                        'aggregate': True
+                    }
+                }
+            }
+        }
+        rs1 = ResultSummary()
+        rs1._raw_data_df = file_handler.read_raw_data(self.test_raw_data)
+        rs1._benchmark_metrics_dict = rs1._get_metrics_by_benchmarks(list(rs1._raw_data_df))
+        assert (rs1._parse_rules(rules))
+        summary = rs1._generate_summary(round=2)
+        assert (len(summary) == 1)
+        assert (summary['FAKE'] == [['FAKE', '', 'mean', ''], ['FAKE', '', 'max', '']])
+
     def test_result_summary_run(self):
         """Test for the run process of result summary."""
         # Test - output in excel

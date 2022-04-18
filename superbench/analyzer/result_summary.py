@@ -84,19 +84,23 @@ class ResultSummary(RuleBase):
             logger.error('ResultSummary: parse rules failed - {}'.format(str(e)))
             return False
 
-    def _format_summary_of_rule(self, category, summary_df_of_rule):
+    def _format_summary_of_rule(self, category, summary_df_of_rule, statistics):
         """Format summary_df of a rule info list of lines.
 
         Args:
             category (str): category in the rule
             summary_df_of_rule ([type]): summary df of a rule, the columns are metrics, the index are statistics
+            statistics (list): statistics in the rule
         Returns:
             list: list of summary lines like [category, metric, statistic, value]
         """
         summary = []
         metrics = summary_df_of_rule.columns
+        if metrics.empty is True:
+            for statistic in statistics:
+                summary.append([category, '', statistic, ''])
         for metric in metrics:
-            for statistic in summary_df_of_rule.index:
+            for statistic in statistics:
                 summary.append([category, metric, statistic, summary_df_of_rule.loc[statistic, metric]])
         return summary
 
@@ -129,39 +133,38 @@ class ResultSummary(RuleBase):
         """
         summary = {}
         for rule in self._sb_rules:
-            # skip the rule with no matched metrics
-            if len(self._sb_rules[rule]['metrics']) == 0:
-                logger.warning('ResultSummary: No matched metrics - {}'.format(rule))
-                continue
             metrics = list(self._sb_rules[rule]['metrics'].keys())
             category = self._sb_rules[rule]['categories']
             data_df_of_rule = self._raw_data_df[metrics]
-            if self._sb_rules[rule]['aggregate']:
-                # if aggregate is True, aggregate in ranks
-                if self._sb_rules[rule]['aggregate'] is True:
-                    data_df_of_rule = data_analysis.aggregate(data_df_of_rule)
-                # if aggregate is not empty and is a pattern in regex, aggregate according to pattern
-                else:
-                    data_df_of_rule = data_analysis.aggregate(data_df_of_rule, self._sb_rules[rule]['aggregate'])
             statistics = self._sb_rules[rule]['statistics']
-            summary_df_of_rule = pd.DataFrame(columns=sorted(data_df_of_rule.columns))
-            for statistic_name in statistics:
-                # get SummaryOp and calculate statistics
-                # if statistic_name is 'p\d\d?', SummaryOp should be pencentile
-                if str.startswith(statistic_name, 'p'):
-                    rule_op = SummaryOp.get_summary_func(SummaryType('percentile'))
-                    val = int(statistic_name.strip('p'))
-                    summary_df_of_rule.loc[statistic_name] = rule_op(data_df_of_rule, val)
-                else:
-                    rule_op = SummaryOp.get_summary_func(SummaryType(statistic_name))
-                    summary_df_of_rule.loc[statistic_name] = rule_op(data_df_of_rule)
-            # format values to n significant decimal digits
-            if round and isinstance(round, int):
-                summary_df_of_rule = data_analysis.round_significant_decimal_places(
-                    summary_df_of_rule, round, list(summary_df_of_rule.columns)
-                )
+            summary_df_of_rule = pd.DataFrame()
+            # skip metrics aggregation and statistics calculation fot the rule with no matched metrics
+            if len(metrics) != 0:
+                if self._sb_rules[rule]['aggregate']:
+                    # if aggregate is True, aggregate in ranks
+                    if self._sb_rules[rule]['aggregate'] is True:
+                        data_df_of_rule = data_analysis.aggregate(data_df_of_rule)
+                    # if aggregate is not empty and is a pattern in regex, aggregate according to pattern
+                    else:
+                        data_df_of_rule = data_analysis.aggregate(data_df_of_rule, self._sb_rules[rule]['aggregate'])
+                summary_df_of_rule = pd.DataFrame(columns=sorted(data_df_of_rule.columns))
+                for statistic_name in statistics:
+                    # get SummaryOp and calculate statistics
+                    # if statistic_name is 'p\d\d?', SummaryOp should be pencentile
+                    if str.startswith(statistic_name, 'p'):
+                        rule_op = SummaryOp.get_summary_func(SummaryType('percentile'))
+                        val = int(statistic_name.strip('p'))
+                        summary_df_of_rule.loc[statistic_name] = rule_op(data_df_of_rule, val)
+                    else:
+                        rule_op = SummaryOp.get_summary_func(SummaryType(statistic_name))
+                        summary_df_of_rule.loc[statistic_name] = rule_op(data_df_of_rule)
+                # format values to n significant decimal digits
+                if round and isinstance(round, int):
+                    summary_df_of_rule = data_analysis.round_significant_decimal_places(
+                        summary_df_of_rule, round, list(summary_df_of_rule.columns)
+                    )
             # format summary_df of a rule to list of lines
-            summary_lines_of_rule = self._format_summary_of_rule(category, summary_df_of_rule)
+            summary_lines_of_rule = self._format_summary_of_rule(category, summary_df_of_rule, statistics)
             summary[category] = summary_lines_of_rule
 
         return summary
