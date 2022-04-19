@@ -10,11 +10,11 @@ This tool is to filter the defective machines automatically from thousands of be
 
 ## Usage
 
-1. [Install SuperBench](../getting-started/installation) on the local machine.
+1. [Install SuperBench](../getting-started/installation.mdx) on the local machine.
 
 2. Prepare the raw data, rule file, baseline file under current path or somewhere on the local machine.
 
-3. After installing the Superbnech and the files are ready, you can start to filter the defective machines automatically using  `sb result diagnosis` command. The detailed command can be found from [SuperBench CLI](../cli).
+3. After installing the Superbnech and the files are ready, you can start to filter the defective machines automatically using  `sb result diagnosis` command. The detailed command can be found from [SuperBench CLI](../cli.md).
 
   ```
   sb result diagnosis --data-file ./results-summary.jsonl --rule-file ./rule.yaml --baseline-file ./baseline.json --output-file-format excel --output-dir ${output-dir}
@@ -40,7 +40,7 @@ The input mainly includes 3 files:
 
 This section describes how to write rules in **rule file**.
 
-The convention is the same with [SuperBench Config File](https://microsoft.github.io/superbenchmark/docs/superbench-config), please view it first.
+The convention is the same with [SuperBench Config File](../superbench-config.mdx), please view it first.
 
 Here is an overview of the rule file structure:
 
