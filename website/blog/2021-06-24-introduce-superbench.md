@@ -20,7 +20,7 @@ Empowered by SuperBench CLI, user can deploy and run their benchmarks with only 
 to help user easily evaluate the performance of AI workload.
 
 Below is a simple example to show how to deploy and run benchmarks locally. For more information,
-please view [CLI Document](../../docs/cli.md)
+please view [CLI Document](https://microsoft.github.io/superbenchmark/docs/cli)
 
 1. Deploy
 
@@ -42,7 +42,7 @@ localhost ansible_connection=local
 ```
 `config.yaml` is a config file to configure the details of benchmarkings. You can customize your benchmarks by modified this file.
 
-For more information, please view [configuration](../../docs/getting-started/configuration.md)
+For more information, please view [configuration](https://microsoft.github.io/superbenchmark/docs/getting-started/configuration)
 
 ### Modular and Extensible Framework
 
@@ -88,8 +88,8 @@ SuperBench supports a set of benchmarks listed as below.
   * BERT models
   * GPT-2 models
 
-For the details of each benchmark, please view [micro-benchmarks](../../docs/benchmarks/micro-benchmarks.md)
-and [model-benchmarks](../../docs/benchmarks/model-benchmarks.md).
+For the details of each benchmark, please view [micro-benchmarks](https://microsoft.github.io/superbenchmark/docs/benchmarks/micro-benchmarks.md)
+and [model-benchmarks](https://microsoft.github.io/superbenchmark/docs/benchmarks/model-benchmarks.md).
 
 
 ## What's next?
