@@ -370,9 +370,9 @@ class ModelBenchmark(Benchmark):
             result (list): The result data to sync.
 
         Return:
-            True if reduce result data successfully.
+            Result if reduce result data successfully, otherwise None.
         """
-        return True
+        return result
 
     def __process_model_result(self, model_action, precision, step_times):
         """Function to process raw results and save the summarized results.
@@ -405,7 +405,8 @@ class ModelBenchmark(Benchmark):
         self._result.add_raw_data(metric_t, throughput, self._args.log_raw_data)
 
         if model_action == ModelAction.TRAIN:
-            if not self._sync_result(step_times):
+            step_times = self._sync_result(step_times)
+            if not step_times:
                 return False
             if self._local_rank is None or self._global_rank == 0:
                 self._result.add_result(metric_s, statistics.mean(step_times))

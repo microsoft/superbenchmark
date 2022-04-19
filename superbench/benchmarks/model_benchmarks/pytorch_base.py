@@ -196,10 +196,11 @@ class PytorchBase(ModelBenchmark):
             result (list): The result data to sync.
 
         Return:
-            True if reduce result data successfully.
+            Result if reduce result data successfully, otherwise None.
         """
-        if not super()._sync_result(result):
-            return False
+        result = super()._sync_result(result)
+        if not result:
+            return None
 
         try:
             if self._args.distributed_impl == DistributedImpl.DDP:
@@ -208,18 +209,16 @@ class PytorchBase(ModelBenchmark):
                 else:
                     tensor = torch.as_tensor(result)
                 torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
-                sync_result = tensor.tolist()
-                for i in range(len(result)):
-                    result[i] = sync_result[i]
+                result = tensor.tolist()
         except BaseException as e:
             logger.error(
                 'Sync train result failed - model: {}, distributed implementation: {}, message: {}.'.format(
                     self._name, self._args.distributed_impl, str(e)
                 )
             )
-            return False
+            return None
 
-        return True
+        return result
 
     def _postprocess(self):
         """Postprocess/cleanup operations after the benchmarking.
