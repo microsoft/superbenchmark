@@ -105,7 +105,7 @@ sb deploy [--docker-image]
 
 | Name                  | Default                 | Description                                                                   |
 |-----------------------|-------------------------|-------------------------------------------------------------------------------|
-| `--docker-image` `-i` | `superbench/superbench` | Docker image URI, [here](./user-tutorial/container-images) listed all images. |
+| `--docker-image` `-i` | `superbench/superbench` | Docker image URI, [here](./user-tutorial/container-images.mdx) listed all images. |
 | `--docker-password`   | `None`                  | Docker registry password if authentication is needed.                         |
 | `--docker-username`   | `None`                  | Docker registry username if authentication is needed.                         |
 | `--host-file` `-f`    | `None`                  | Path to Ansible inventory host file.                                          |

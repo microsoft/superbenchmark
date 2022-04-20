@@ -10,7 +10,7 @@ This tool is to generate a readable summary report based on the raw benchmark re
 
 ## Usage
 
-1. [Install SuperBench](../getting-started/installation) on the local machine.
+1. [Install SuperBench](../getting-started/installation.mdx) on the local machine.
 
 2. Prepare the raw data and rule file on the local machine.
 
@@ -40,7 +40,7 @@ Raw data file can be found at ${output-dir}/results-summary.jsonl after each suc
 
 This section describes how to write rules in **rule file**.
 
-The convention is the same as [SuperBench Config File](../superbench-config), please view it first.
+The convention is the same as [SuperBench Config File](../superbench-config.mdx), please view it first.
 
 Here is an overview of the rule file structure:
 
