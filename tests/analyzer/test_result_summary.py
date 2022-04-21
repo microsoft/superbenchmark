@@ -18,9 +18,9 @@ class TestResultSummary(unittest.TestCase):
     def setUp(self):
         """Method called to prepare the test fixture."""
         self.parent_path = Path(__file__).parent
-        self.output_excel_file = str(self.parent_path / 'results_summary.xlsx')
-        self.output_md_file = str(self.parent_path / 'results_summary.md')
-        self.output_html_file = str(self.parent_path / 'results_summary.html')
+        self.output_excel_file = str(self.parent_path / 'results-summary.xlsx')
+        self.output_md_file = str(self.parent_path / 'results-summary.md')
+        self.output_html_file = str(self.parent_path / 'results-summary.html')
         self.test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         self.test_raw_data = str(self.parent_path / 'test_results.jsonl')
         self.test_rule_file = str(self.parent_path / 'test_summary_rules.yaml')
@@ -118,6 +118,29 @@ class TestResultSummary(unittest.TestCase):
         expected_summary_merge_df = pd.DataFrame(expected_summary_merge)
         summary_merge_df = rs1._merge_summary(summary)
         pd.testing.assert_frame_equal(expected_summary_merge_df, summary_merge_df)
+
+    def test_no_matched_rule(self):
+        """Test for support no matching rules."""
+        # Positive case
+        rules = {
+            'superbench': {
+                'rules': {
+                    'fake': {
+                        'categories': 'FAKE',
+                        'statistics': ['mean', 'max'],
+                        'metrics': ['abb/fake:\\d+'],
+                        'aggregate': True
+                    }
+                }
+            }
+        }
+        rs1 = ResultSummary()
+        rs1._raw_data_df = file_handler.read_raw_data(self.test_raw_data)
+        rs1._benchmark_metrics_dict = rs1._get_metrics_by_benchmarks(list(rs1._raw_data_df))
+        assert (rs1._parse_rules(rules))
+        summary = rs1._generate_summary(round=2)
+        assert (len(summary) == 1)
+        assert (summary['FAKE'] == [['FAKE', '', 'mean', ''], ['FAKE', '', 'max', '']])
 
     def test_result_summary_run(self):
         """Test for the run process of result summary."""
