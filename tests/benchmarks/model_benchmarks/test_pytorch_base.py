@@ -233,6 +233,13 @@ def test_pytorch_base():
     benchmark._optimizer_type = None
     assert (benchmark._create_optimizer() is False)
 
+    # Test _sync_result().
+    step_time = [2.0, 2.0]
+    benchmark._args.distributed_impl = DistributedImpl.DDP
+    step_time = benchmark._sync_result(step_time)
+    assert (not step_time)
+    benchmark._args.distributed_impl = None
+
     # Test _postprocess().
     assert (benchmark._postprocess())
 

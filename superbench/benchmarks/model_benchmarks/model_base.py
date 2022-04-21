@@ -35,6 +35,7 @@ class ModelBenchmark(Benchmark):
         self._benchmark_type = BenchmarkType.MODEL
         self._world_size = 1
         self._local_rank = None
+        self._global_rank = None
         self._dataset = None
         self._dataloader = None
         self._model = None
@@ -242,7 +243,8 @@ class ModelBenchmark(Benchmark):
 
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
-        if not self.__process_model_result(ModelAction.TRAIN, precision, step_times):
+        step_times = self.__process_model_result(ModelAction.TRAIN, precision, step_times)
+        if not step_times:
             self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
             return False
 
@@ -266,7 +268,8 @@ class ModelBenchmark(Benchmark):
         self._create_model(precision)
         # The unit of step time should be millisecond.
         step_times = self._inference_step(precision)
-        if not self.__process_model_result(ModelAction.INFERENCE, precision, step_times):
+        step_times = self.__process_model_result(ModelAction.INFERENCE, precision, step_times)
+        if not step_times:
             self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
             return False
 
@@ -369,9 +372,9 @@ class ModelBenchmark(Benchmark):
             result (list): The result data to sync.
 
         Return:
-            True if reduce result data successfully.
+            Result if reduce result data successfully, otherwise None.
         """
-        return True
+        return result
 
     def __process_model_result(self, model_action, precision, step_times):
         """Function to process raw results and save the summarized results.
@@ -382,7 +385,7 @@ class ModelBenchmark(Benchmark):
             step_times (list): The step time list of every training/inference step, unit is millisecond.
 
         Return:
-            True if step_times list is not empty.
+            step_times if step_times list is not empty, otherwise None.
         """
         if len(step_times) == 0:
             logger.error(
@@ -390,7 +393,7 @@ class ModelBenchmark(Benchmark):
                     self._curr_run_index, self._name, model_action, precision
                 )
             )
-            return False
+            return None
 
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
         if precision.value in precision_metric.keys():
@@ -404,9 +407,10 @@ class ModelBenchmark(Benchmark):
         self._result.add_raw_data(metric_t, throughput, self._args.log_raw_data)
 
         if model_action == ModelAction.TRAIN:
-            if not self._sync_result(step_times):
-                return False
-            if self._local_rank is None or self._local_rank == 0:
+            step_times = self._sync_result(step_times)
+            if not step_times:
+                return None
+            if self._local_rank is None or self._global_rank == 0:
                 self._result.add_result(metric_s, statistics.mean(step_times))
                 throughput = [millisecond_per_second / step_time * self._args.batch_size for step_time in step_times]
                 self._result.add_result(metric_t, statistics.mean(throughput))
@@ -416,7 +420,7 @@ class ModelBenchmark(Benchmark):
             self._process_percentile_result(metric_s, step_times)
             self._process_percentile_result(metric_t, throughput)
 
-        return True
+        return step_times
 
     @abstractmethod
     def _cal_params_count(self):
