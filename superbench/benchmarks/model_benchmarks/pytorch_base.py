@@ -189,6 +189,32 @@ class PytorchBase(ModelBenchmark):
 
         return True
 
+    def _is_finished(self, curr_step, curr_time):
+        """Judge whether the benchmarking should be stopped early or not.
+
+        Args:
+            curr_step (int): the current benchmarking step.
+            curr_time (float): the current time in seconds got from time.time().
+
+        Return:
+            True if the benchmarking should be stopped.
+        """
+        is_finished = super()._is_finished(curr_step, curr_time)
+        is_finished = 1 if is_finished is True else 0
+        if self._args.duration > 0:
+            # sync is_finished in distributed mode
+            # if any rank is_finished is True, all ranks should be finished
+            if self._args.distributed_impl == DistributedImpl.DDP:
+                result = [is_finished]
+                if self._args.distributed_backend == DistributedBackend.NCCL:
+                    tensor = torch.as_tensor(result).cuda()
+                else:
+                    tensor = torch.as_tensor(result)
+                torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
+                is_finished = tensor.tolist()[0]
+
+        return True if is_finished == 1 else False
+
     def _sync_result(self, result):
         """Function to reduce the result to rank 0.
 

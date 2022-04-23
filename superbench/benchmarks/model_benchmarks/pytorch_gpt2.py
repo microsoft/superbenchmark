@@ -141,6 +141,8 @@ class PytorchGPT2(PytorchBase):
                 loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
                 loss.backward()
                 self._optimizer.step()
+                if self._gpu_available:
+                    torch.cuda.synchronize()
                 end = time.time()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
