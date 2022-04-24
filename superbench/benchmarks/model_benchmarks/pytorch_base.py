@@ -201,8 +201,7 @@ class PytorchBase(ModelBenchmark):
         Return:
             True if the benchmarking should be stopped.
         """
-        is_finished = super()._is_finished(curr_step, curr_time)
-        is_finished = 1 if is_finished is True else 0
+        is_finished = int(super()._is_finished(curr_step, curr_time))
         if self._args.duration > 0:
             if curr_step % check_frequency == 0:
                 # sync is_finished in distributed mode
@@ -218,7 +217,7 @@ class PytorchBase(ModelBenchmark):
             else:
                 is_finished = 0
 
-        return True if is_finished == 1 else False
+        return (is_finished == 1)
 
     def _sync_result(self, result):
         """Function to reduce the result to rank 0.
