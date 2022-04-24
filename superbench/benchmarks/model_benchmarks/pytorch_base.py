@@ -5,6 +5,7 @@
 
 import os
 from datetime import timedelta
+import time
 
 import torch
 import transformers
@@ -289,3 +290,16 @@ class PytorchBase(ModelBenchmark):
             The count of trainable parameters.
         """
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
+
+    def timer(self):
+        """Returns the current time which ensures all previous CUDA events have been finished.
+
+           If there is no GPU present, this defaults to`time.time()`; otherwise it will synchronize
+           CUDA before measuring the time.
+
+        Returns:
+            Current time in second.
+        """
+        if self._gpu_available:
+            torch.cuda.synchronize()
+        return time.time()

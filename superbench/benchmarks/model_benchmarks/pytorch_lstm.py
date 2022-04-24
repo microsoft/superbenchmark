@@ -3,8 +3,6 @@
 
 """Module of the Pytorch LSTM model."""
 
-import time
-
 import torch
 
 from superbench.common.utils import logger
@@ -142,9 +140,7 @@ class PytorchLSTM(PytorchBase):
         while True:
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
-                if self._gpu_available:
-                    torch.cuda.synchronize()
-                start = time.time()
+                start = self.timer()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
@@ -152,9 +148,7 @@ class PytorchLSTM(PytorchBase):
                 loss = self._loss_fn(output, self._target)
                 loss.backward()
                 self._optimizer.step()
-                if self._gpu_available:
-                    torch.cuda.synchronize()
-                end = time.time()
+                end = self.timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
@@ -179,15 +173,11 @@ class PytorchLSTM(PytorchBase):
             while True:
                 for idx, sample in enumerate(self._dataloader):
                     sample = sample.to(dtype=getattr(torch, precision.value))
-                    if self._gpu_available:
-                        torch.cuda.synchronize()
-                    start = time.time()
+                    start = self.timer()
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
-                    if self._gpu_available:
-                        torch.cuda.synchronize()
-                    end = time.time()
+                    end = self.timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
                         # Save the step time of every training/inference step, unit is millisecond.
