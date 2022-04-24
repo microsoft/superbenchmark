@@ -3,7 +3,6 @@
 
 """Tests for BenchmarkRegistry module."""
 
-import time
 import numbers
 
 import torch

@@ -207,11 +207,9 @@ class PytorchBase(ModelBenchmark):
                 # sync is_finished in distributed mode
                 # if any rank is_finished is True, all ranks should be finished
                 if self._args.distributed_impl == DistributedImpl.DDP:
-                    result = [is_finished]
+                    tensor = torch.IntTensor([is_finished])
                     if self._args.distributed_backend == DistributedBackend.NCCL:
-                        tensor = torch.as_tensor(result).cuda()
-                    else:
-                        tensor = torch.as_tensor(result)
+                        tensor = tensor.cuda()
                     torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
                     is_finished = tensor.tolist()[0]
             else:
@@ -293,8 +291,8 @@ class PytorchBase(ModelBenchmark):
     def timer(self):
         """Returns the current time which ensures all previous CUDA events have been finished.
 
-           If there is no GPU present, this defaults to`time.time()`; otherwise it will synchronize
-           CUDA before measuring the time.
+        If there is no GPU present, this defaults to `time.time()`; otherwise it will
+        synchronize CUDA before measuring the time.
 
         Returns:
             Current time in second.
