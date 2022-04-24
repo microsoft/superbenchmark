@@ -142,6 +142,8 @@ class PytorchLSTM(PytorchBase):
         while True:
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
+                if self._gpu_available:
+                    torch.cuda.synchronize()
                 start = time.time()
                 if self._gpu_available:
                     sample = sample.cuda()
@@ -157,7 +159,7 @@ class PytorchLSTM(PytorchBase):
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                if self._is_finished(curr_step, end):
+                if self._is_finished(curr_step, end, 100):
                     return duration
 
     def _inference_step(self, precision):
@@ -177,6 +179,8 @@ class PytorchLSTM(PytorchBase):
             while True:
                 for idx, sample in enumerate(self._dataloader):
                     sample = sample.to(dtype=getattr(torch, precision.value))
+                    if self._gpu_available:
+                        torch.cuda.synchronize()
                     start = time.time()
                     if self._gpu_available:
                         sample = sample.cuda()

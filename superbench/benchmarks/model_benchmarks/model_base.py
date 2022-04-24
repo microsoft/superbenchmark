@@ -361,8 +361,6 @@ class ModelBenchmark(Benchmark):
             (self._args.duration > 0 and (curr_time - self._sub_benchmark_start_time) >= self._args.duration)
             or (total_steps > 0 and curr_step >= total_steps)
         ):
-            if self._args.duration > 0:
-                logger.info('Duration end - curr_step:{}, rank:{}.'.format(curr_step, self._local_rank))
             return True
 
         return False

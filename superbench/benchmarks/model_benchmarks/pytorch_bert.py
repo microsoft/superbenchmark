@@ -139,6 +139,8 @@ class PytorchBERT(PytorchBase):
         curr_step = 0
         while True:
             for idx, sample in enumerate(self._dataloader):
+                if self._gpu_available:
+                    torch.cuda.synchronize()
                 start = time.time()
                 if self._gpu_available:
                     sample = sample.cuda()
@@ -154,7 +156,7 @@ class PytorchBERT(PytorchBase):
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                if self._is_finished(curr_step, end):
+                if self._is_finished(curr_step, end, 100):
                     return duration
 
     def _inference_step(self, precision):
@@ -173,6 +175,8 @@ class PytorchBERT(PytorchBase):
             self._model.eval()
             while True:
                 for idx, sample in enumerate(self._dataloader):
+                    if self._gpu_available:
+                        torch.cuda.synchronize()
                     start = time.time()
                     if self._gpu_available:
                         sample = sample.cuda()
