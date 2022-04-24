@@ -137,6 +137,7 @@ class PytorchLSTM(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = 100
         while True:
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
@@ -153,7 +154,7 @@ class PytorchLSTM(PytorchBase):
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                if self._is_finished(curr_step, end, 100):
+                if self._is_finished(curr_step, end, check_frequency):
                     return duration
 
     def _inference_step(self, precision):
