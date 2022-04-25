@@ -288,7 +288,7 @@ class PytorchBase(ModelBenchmark):
         """
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
-    def timer(self):
+    def _timer(self):
         """Returns the current time which ensures all previous CUDA events have been finished.
 
         If there is no GPU present, this defaults to `time.time()`; otherwise it will

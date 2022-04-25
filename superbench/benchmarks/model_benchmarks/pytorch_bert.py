@@ -138,7 +138,7 @@ class PytorchBERT(PytorchBase):
         check_frequency = 100
         while True:
             for idx, sample in enumerate(self._dataloader):
-                start = self.timer()
+                start = self._timer()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
@@ -146,7 +146,7 @@ class PytorchBERT(PytorchBase):
                 loss = self._loss_fn(output, self._target)
                 loss.backward()
                 self._optimizer.step()
-                end = self.timer()
+                end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
@@ -170,11 +170,11 @@ class PytorchBERT(PytorchBase):
             self._model.eval()
             while True:
                 for idx, sample in enumerate(self._dataloader):
-                    start = self.timer()
+                    start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
-                    end = self.timer()
+                    end = self._timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
                         # Save the step time of every training/inference step, unit is millisecond.
