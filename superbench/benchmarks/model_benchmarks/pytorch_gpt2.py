@@ -3,8 +3,6 @@
 
 """Module of the Pytorch GPT2 model."""
 
-import time
-
 import torch
 from transformers import GPT2Model, GPT2Config
 
@@ -131,9 +129,10 @@ class PytorchGPT2(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = 100
         while True:
             for idx, sample in enumerate(self._dataloader):
-                start = time.time()
+                start = self._timer()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
@@ -141,12 +140,12 @@ class PytorchGPT2(PytorchBase):
                 loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
                 loss.backward()
                 self._optimizer.step()
-                end = time.time()
+                end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                if self._is_finished(curr_step, end):
+                if self._is_finished(curr_step, end, check_frequency):
                     return duration
 
     def _inference_step(self, precision):
@@ -165,13 +164,11 @@ class PytorchGPT2(PytorchBase):
             self._model.eval()
             while True:
                 for idx, sample in enumerate(self._dataloader):
-                    start = time.time()
+                    start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
-                    if self._gpu_available:
-                        torch.cuda.synchronize()
-                    end = time.time()
+                    end = self._timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
                         # Save the step time of every training/inference step, unit is millisecond.

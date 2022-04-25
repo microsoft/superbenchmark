@@ -3,8 +3,6 @@
 
 """Module of the Pytorch CNN models."""
 
-import time
-
 import torch
 from torchvision import models
 
@@ -99,10 +97,11 @@ class PytorchCNN(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = 100
         while True:
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
-                start = time.time()
+                start = self._timer()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
@@ -110,12 +109,12 @@ class PytorchCNN(PytorchBase):
                 loss = self._loss_fn(output, self._target)
                 loss.backward()
                 self._optimizer.step()
-                end = time.time()
+                end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                if self._is_finished(curr_step, end):
+                if self._is_finished(curr_step, end, check_frequency):
                     return duration
 
     def _inference_step(self, precision):
@@ -135,13 +134,11 @@ class PytorchCNN(PytorchBase):
             while True:
                 for idx, sample in enumerate(self._dataloader):
                     sample = sample.to(dtype=getattr(torch, precision.value))
-                    start = time.time()
+                    start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
-                    if self._gpu_available:
-                        torch.cuda.synchronize()
-                    end = time.time()
+                    end = self._timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
                         # Save the step time of every training/inference step, unit is millisecond.
