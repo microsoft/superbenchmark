@@ -5,6 +5,7 @@
 
 import os
 from datetime import timedelta
+import time
 
 import torch
 import transformers
@@ -189,6 +190,33 @@ class PytorchBase(ModelBenchmark):
 
         return True
 
+    def _is_finished(self, curr_step, curr_time, check_frequency=100):
+        """Judge whether the benchmarking should be stopped early or not.
+
+        Args:
+            curr_step (int): the current benchmarking step.
+            curr_time (float): the current time in seconds got from time.time().
+            check_frequency (int): the frequency (step numbers) to check if benchmark should be stopped.
+
+        Return:
+            True if the benchmarking should be stopped.
+        """
+        is_finished = int(super()._is_finished(curr_step, curr_time))
+        if self._args.duration > 0:
+            if curr_step % check_frequency == 0:
+                # sync is_finished in distributed mode
+                # if any rank is_finished is True, all ranks should be finished
+                if self._args.distributed_impl == DistributedImpl.DDP:
+                    tensor = torch.IntTensor([is_finished])
+                    if self._args.distributed_backend == DistributedBackend.NCCL:
+                        tensor = tensor.cuda()
+                    torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
+                    is_finished = tensor.tolist()[0]
+            else:
+                is_finished = 0
+
+        return (is_finished == 1)
+
     def _sync_result(self, result):
         """Function to reduce the result to rank 0.
 
@@ -259,3 +287,16 @@ class PytorchBase(ModelBenchmark):
             The count of trainable parameters.
         """
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
+
+    def _timer(self):
+        """Returns the current time which ensures all previous CUDA events have been finished.
+
+        If there is no GPU present, this defaults to `time.time()`; otherwise it will
+        synchronize CUDA before measuring the time.
+
+        Returns:
+            Current time in second.
+        """
+        if self._gpu_available:
+            torch.cuda.synchronize()
+        return time.time()

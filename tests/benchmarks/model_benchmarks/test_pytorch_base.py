@@ -3,7 +3,6 @@
 
 """Tests for BenchmarkRegistry module."""
 
-import time
 import numbers
 
 import torch
@@ -118,7 +117,7 @@ class PytorchMNIST(PytorchBase):
         duration = []
         for idx, sample in enumerate(self._dataloader):
             sample = sample.to(dtype=getattr(torch, precision.value))
-            start = time.time()
+            start = self._timer()
             if self._gpu_available:
                 sample = sample.cuda()
             self._optimizer.zero_grad()
@@ -126,7 +125,7 @@ class PytorchMNIST(PytorchBase):
             loss = self._loss_fn(output, self._target)
             loss.backward()
             self._optimizer.step()
-            end = time.time()
+            end = self._timer()
             if idx % 10 == 0:
                 logger.info(
                     'Train step [{}/{} ({:.0f}%)]'.format(
@@ -153,13 +152,13 @@ class PytorchMNIST(PytorchBase):
             self._model.eval()
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
-                start = time.time()
+                start = self._timer()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._model(sample)
                 if self._gpu_available:
                     torch.cuda.synchronize()
-                end = time.time()
+                end = self._timer()
                 if idx % 10 == 0:
                     logger.info(
                         'Inference step [{}/{} ({:.0f}%)]'.format(
