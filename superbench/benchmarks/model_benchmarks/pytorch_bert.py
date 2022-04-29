@@ -3,8 +3,6 @@
 
 """Module of the Pytorch BERT model."""
 
-import time
-
 import torch
 from transformers import BertModel, BertConfig
 
@@ -137,9 +135,10 @@ class PytorchBERT(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = 100
         while True:
             for idx, sample in enumerate(self._dataloader):
-                start = time.time()
+                start = self._timer()
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
@@ -147,12 +146,12 @@ class PytorchBERT(PytorchBase):
                 loss = self._loss_fn(output, self._target)
                 loss.backward()
                 self._optimizer.step()
-                end = time.time()
+                end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                if self._is_finished(curr_step, end):
+                if self._is_finished(curr_step, end, check_frequency):
                     return duration
 
     def _inference_step(self, precision):
@@ -171,13 +170,11 @@ class PytorchBERT(PytorchBase):
             self._model.eval()
             while True:
                 for idx, sample in enumerate(self._dataloader):
-                    start = time.time()
+                    start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
                     self._model(sample)
-                    if self._gpu_available:
-                        torch.cuda.synchronize()
-                    end = time.time()
+                    end = self._timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
                         # Save the step time of every training/inference step, unit is millisecond.
