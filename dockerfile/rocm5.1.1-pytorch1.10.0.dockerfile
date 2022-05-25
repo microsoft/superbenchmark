@@ -110,20 +110,20 @@ RUN cd /tmp && \
     cd /tmp && \
     rm -rf mlc
 
-# Install rccl with commitid 700b47321180341ec2e9144e0cbb584bc1f65ec2
+# Install rccl with commitid 700b473
 RUN cd /tmp && \
     git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
-    cd rccl && git checkout 700b47321180341ec2e9144e0cbb584bc1f65ec2 && \
+    cd rccl && git checkout 700b473 && \
     mkdir build && cd build && \
     CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_INSTALL_PREFIX=/opt/rocm/rccl .. && \
     make -j ${NUM_MAKE_JOBS} && make install && \
     cd /tmp && \
     rm -rf rccl
 
-# Install rccl-rdma-sharp-plugins with commitid 34611d3e3b1e9f596c22db41557147f1b1212c86
+# Install rccl-rdma-sharp-plugins with commitid 34611d3
 RUN cd /opt/rocm && \
     git clone https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
-    cd rccl-rdma-sharp-plugins && git checkout 34611d3e3b1e9f596c22db41557147f1b1212c86 && \
+    cd rccl-rdma-sharp-plugins && git checkout 34611d3 && \
     ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS} && make install
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
