@@ -111,13 +111,12 @@ RUN cd /tmp && \
     rm -rf mlc
 
 # Install rccl with commitid 6707a27
-ARG NUM_MAKE_RCCL=2
 RUN cd /tmp && \
     git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && git checkout 6707a27 && \
     mkdir build && cd build && \
     CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
-    make -j ${NUM_MAKE_RCCL} && make install && \
+    make && make install && \
     cd /tmp && \
     rm -rf rccl
 
