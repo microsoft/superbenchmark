@@ -111,7 +111,7 @@ RUN cd /tmp && \
     rm -rf mlc
 
 # Install rccl with commitid 6707a27
-ARG NUM_MAKE_RCCL=4
+ARG NUM_MAKE_RCCL=2
 RUN cd /tmp && \
     git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && git checkout 6707a27 && \
