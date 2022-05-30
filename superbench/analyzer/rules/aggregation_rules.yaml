@@ -1,0 +1,102 @@
+# SuperBench rules
+version: v0.5
+superbench:
+  rules:
+    model-benchmarks-FP32:
+      statistics:
+        - mean
+      categories: model:FP32
+      metrics:
+        - model-benchmarks:vgg:float/.*/fp32_train_throughput
+        - model-benchmarks:gpt2-large:float/.*/fp32_train_throughput
+        - model-benchmarks:bert-base:float/.*/fp32_train_throughput
+        - model-benchmarks:bert-large:float/.*/fp32_train_throughput
+        - model-benchmarks:lstm:float/.*/fp32_train_throughput
+        - model-benchmarks:resnet50:float/.*/fp32_train_throughput
+        - model-benchmarks:resnet101:float/.*/fp32_train_throughput
+        - model-benchmarks:resnet152:float/.*/fp32_train_throughput
+        - model-benchmarks:densenet169:float/.*/fp32_train_throughput
+        - model-benchmarks:densenet201:float/.*/fp32_train_throughput
+        - model-benchmarks:LongRun_BERTL_models/pytorch-bert-large/fp32_train_throughput
+        - model-benchmarks:vgg:float/.*/fp32_train_throughput
+        - gpt_models/.*/fp32_train_throughput
+        - lstm_models/pytorch-lstm/fp32_train_throughput
+        - bert_models/pytorch-bert-.*/fp32_train_throughput
+        - resnet_models/pytorch-resnet\d*/fp32_train_throughput
+        - vgg_models/pytorch-vgg\d*/fp32_train_throughput
+        - densenet_models/.*/fp32_train_throughput
+    model-benchmarks-FP16:
+      statistics: mean
+      categories: model:FP16
+      metrics:
+        - model-benchmarks:gpt2-large:half/.*/fp16_train_throughput
+        - model-benchmarks:bert-base:half/.*/fp16_train_throughput
+        - model-benchmarks:bert-large:half/.*/fp16_train_throughput
+        - model-benchmarks:lstm:half/.*/fp16_train_throughput
+        - model-benchmarks:resnet50:half/.*/fp16_train_throughput
+        - model-benchmarks:resnet101:half/.*/fp16_train_throughput
+        - model-benchmarks:resnet152:half/.*/fp16_train_throughput
+        - model-benchmarks:densenet169:half/.*/fp16_train_throughput
+        - model-benchmarks:densenet201:half/.*/fp16_train_throughput
+        - model-benchmarks:LongRun_BERTL_models/pytorch-bert-large/fp16_train_throughput
+        - model-benchmarks:vgg:half/.*/fp16_train_throughput
+        - gpt_models/.*/fp16_train_throughput
+        - lstm_models/pytorch-lstm/fp16_train_throughput
+        - bert_models/pytorch-bert-.*/fp16_train_throughput
+        - resnet_models/pytorch-resnet\d*/fp16_train_throughput
+        - vgg_models/pytorch-vgg\d*/fp16_train_throughput
+        - densenet_models/.*/fp16_train_throughput
+    micro-aggregation:
+      statistics: mean
+      categories: MICRO
+      aggregate: True
+      metrics:
+        - gemm-flops:*.*/.*ops
+        - mem-bw:*.*/.*_bw
+        - kernel-launch:*.*/.*_time
+        - computation-communication-overlap:*.*/.*_time
+        - cublas-function:*.*/.*_time
+        - cudnn-function:*.*/.*_time
+    micro-nonaggregation:
+      statistics: mean
+      categories: MICRO
+      metrics:
+        - nccl-bw:*.*/allreduce_.*_busbw
+        - rccl-bw:*.*/allreduce_.*_busbw
+        - sharding-matmul:*.*/.*_time
+        - matmul:*.*/.*_time
+        - gpu-burn/.*
+        - cpu-memory-bw-latency/.*_bw
+        - cpu-memory-bw-latency/.*_lat
+    ib-loopback:
+      statistics: mean
+      categories: RDMA
+      metrics:
+        #- ib-loopback/ib_write_8388608_ib.*_bw
+        - ib-loopback/ib_write_.*_ib.*_bw
+      aggregate: ib-loopback/ib_write_.*_ib(.*)_bw
+    disk:
+      statistics: mean
+      categories: DISK
+      aggregate: disk-benchmark/nvme(.*)_[seq|rand]_.*
+      metrics:
+        - disk-benchmark/nvme.*
+    # ib-loopback1:
+    #   statistics: mean
+    #   categories: RDMA1
+    #   metrics:
+    #     - ib-loopback/ib_write_8388608_ib[0|1|2|3]_bw:([0|1])
+    #     - ib-loopback/ib_write_8388608_ib[4|5|6|7]_bw:([2|3])
+    #   aggregate: ib-loopback/ib_write_.*_ib.*_bw:([0|1|2|3])
+    # ib-loopback2:
+    #   statistics: mean
+    #   categories: RDMA2
+    #   metrics:
+    #     - ib-loopback/ib_write_8388608_ib[4|5|6|7]_bw:([2|3])
+    #   aggregate: ib-loopback/ib_write_.*_ib[4|5|6|7]_bw:([2|3])
+    #   statistics: mean
+    #   categories: RCCL:4nodes
+    #   metrics:
+    #    - rccl-bw:4nodealltoall/alltoall_8589934592_busbw
+    #    - rccl-bw:4node/allreduce_17179869184_busbw
+

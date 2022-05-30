@@ -1,0 +1,106 @@
+# SuperBench rules
+version: v0.5
+superbench:
+  rules:
+  # Rule 0: If one test fails, label it as Not acceptable
+    falure_rule:
+      function: value
+      criteria: 'lambda x:x>0'
+      categories: FailedTest
+      metrics:
+        - kernel-launch:*.*/return_code
+        - mem-bw:*.*/return_code
+        - gemm-flops:*.*/return_code
+        - ib-loopback:*.*/return_code
+        - nccl-bw:*.*/return_code
+        - gpt_models/.*/return_code
+        - lstm_models/.*/return_code
+        - bert_models/.*/return_code
+        - resnet_models/.*/return_code
+        - vgg_models/.*/return_code
+        - densenet_models/.*/return_code
+        - model-benchmarks:.*/return_code
+  # Rule 1: If TensorCore test suffers > 5% downgrade, label it as Not acceptable
+    tensor_core_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: TensorCore 
+      metrics:
+        - gemm-flops:*.*/.*ops
+  # Rule 2: If H2D_Mem_BW or D2H_Mem_BW test suffers > 5% downgrade, label it as Not acceptable
+    mem_bw_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: Mem
+      metrics:
+        - mem-bw:*.*/h2d_bw
+        - mem-bw:*.*/d2h_bw
+  # Rule 3: If ib-loopback test with 8M suffers > 5% downgrade, label it as Not acceptable
+    rdma_loopback_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: RDMA
+      metrics:
+        - ib-loopback:*.*/ib_write_8388608_.*_bw    
+  # Rule 4: If nccl-bw:default with 8GB suffers > 5% downgrade, label it as Not acceptable
+    nccl_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: NCCL
+      metrics:
+        - nccl-bw:default/allreduce_8589934592_busbw
+  # Rule 5,6,7: If BERT or GPT-2 or LSTM suffers > 5% downgrade, label it as Not acceptable
+    model_throughput_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: Model
+      metrics:
+        - gpt_models/.*/.*_train_throughput
+        - lstm_models/pytorch-lstm/.*_train_throughput
+        - bert_models/pytorch-bert-.*/.*_train_throughput
+        - model-benchmarks:.*/pytorch-bert.*/.*_train_throughput
+        - model-benchmarks:.*/pytorch-gpt.*/.*_train_throughput
+        - model-benchmarks:.*/pytorch-lstm.*/.*_train_throughput
+  # Rule 8: If 2+ CNN models suffer > 5% downgrade, label it as Not acceptable
+    resnet_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+        - resnet_models/pytorch-resnet\d*/.*_train_throughput
+        - model-benchmarks:.*/pytorch-resnet.*/.*_train_throughput
+    vgg_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+        - vgg_models/pytorch-vgg\d*/.*_train_throughput
+        - model-benchmarks:.*/pytorch-vgg.*/.*_train_throughput
+    densenet_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+        - densenet_models/pytorch-densenet\d*/.*_train_throughput
+        - model-benchmarks:.*/pytorch-densenet.*/.*_train_throughput
+    cnn_throughput_rule:
+      categories: CNN
+      function: multi_rules
+      criteria: 'lambda label:True if label["resnet_throughput"]+label["vgg_throughput"]+label["densenet_throughput"]>=2 else False'
+  # Rule 10: If temperature of one GPU is > 85 °C, label it as Not acceptable
+    temperature_rule:
+      function: value
+      categories: TEMP 
+      criteria: 'lambda x:x>85'
+      metrics:
+        - monitor/gpu_temperature
+  # Rule 11: If DBE > 0, label it as Not acceptable (Not Support)
+    dbe_rule:
+      function: value
+      categories: TEMP 
+      criteria: 'lambda x:x>85'
+      metrics:   
+         - monitor/gpu_uncorrected_ecc
