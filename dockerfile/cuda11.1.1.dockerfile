@@ -123,5 +123,4 @@ RUN make -j ${NUM_MAKE_JOBS} -C third_party cuda
 
 ADD . .
 RUN python3 -m pip install .[nvidia,torch,ort] && \
-    make cppbuild && \
-    make postinstall
+    make cppbuild
