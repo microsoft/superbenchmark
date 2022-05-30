@@ -63,8 +63,8 @@ class DataDiagnosis(RuleBase):
         if metric in baseline:
             return baseline[metric]
         else:
-            # exclude rank info
-            short = metric.split(':')[0]
+            # exclude rank info, for example, '.*:\d+'->'.*'
+            short = metric.strip(metric.split(':')[-1]).strip(':')
             if short in baseline:
                 return baseline[short]
             # baseline not defined
@@ -221,7 +221,7 @@ class DataDiagnosis(RuleBase):
             DataFrame: all nodes' detailed information inluding ['Accept','#Issues','Category','Issue_Details']
         """
         append_columns = ['Accept', '#Issues', 'Category', 'Issue_Details']
-        all_data_df = (raw_data_df[self._enable_metrics]).astype('float64')
+        all_data_df = (raw_data_df).astype('float64')
 
         if data_not_accept_df.shape[0] == 0:
             all_data_df['Accept'] = [True for i in range(len(all_data_df))]
