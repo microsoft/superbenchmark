@@ -138,4 +138,5 @@ RUN ROCM_VERSION=release/rocm-rel-5.1 make -j ${NUM_MAKE_JOBS} -C third_party ro
 
 ADD . .
 RUN python3 -m pip install .[torch,ort]  && \
-    make cppbuild
+    make cppbuild && \
+    make postinstall
