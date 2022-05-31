@@ -117,4 +117,5 @@ RUN mv /root/.local/bin/* /opt/conda/bin/ && \
 
 ADD . .
 RUN python3 -m pip install .[torch,ort] && \
-    make cppbuild
+    make cppbuild && \
+    make postinstall
