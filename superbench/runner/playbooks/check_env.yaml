@@ -6,16 +6,15 @@
     container: sb-workspace
     skip: '{{ no_docker | default(false) }}'
   tasks:
-    when: not skip
-    block:
-      - name: Checking container status
-        shell: docker inspect --format={{ '{{.State.Running}}' }} {{ container }}
-        register: result
-        ignore_errors: true
-        become: yes
-      - fail:
-          msg: Container {{ container }} is not running.
-        when: result is failed or result.stdout != "true"
+    - name: Checking container status
+      shell: docker inspect --format={{ '{{.State.Running}}' }} {{ container }}
+      register: result
+      ignore_errors: true
+      become: yes
+      when: not skip
+    - fail:
+        msg: Container {{ container }} is not running.
+      when: (not skip) and (result is failed or result.stdout != "true")
 
 - name: Runtime Environment Update
   hosts: all
