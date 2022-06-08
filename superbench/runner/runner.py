@@ -186,6 +186,7 @@ class SuperBenchRunner():
             self._ansible_client.get_playbook_config(
                 'check_env.yaml',
                 extravars={
+                    'no_docker': self._docker.skip,
                     'output_dir': str(self._output_path),
                     'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
                 }
@@ -388,13 +389,18 @@ class SuperBenchRunner():
 
         timeout = self._sb_benchmarks[benchmark_name].timeout
         env_list = '--env-file /tmp/sb.env'
+        if self._docker_config.skip:
+            env_list = 'set -o allexport && source /tmp/sb.env && set +o allexport'
         for k, v in mode.env.items():
             if isinstance(v, str):
-                env_list += f' -e {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
+                envvar = f'{k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
+                env_list += f' -e {envvar}' if not self._docker_config.skip else f' && export {envvar}'
+
+        fcmd = "docker exec {env_list} sb-workspace bash -c '{command}'"
+        if self._docker_config.skip:
+            fcmd = "bash -c '{env_list} && cd $HOST_WS && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
-            "docker exec {env_list} sb-workspace bash -c '{command}'".format(
-                env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout)
-            )
+            fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout))
         )
         if mode.name == 'mpi':
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)

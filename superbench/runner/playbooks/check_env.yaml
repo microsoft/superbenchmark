@@ -4,15 +4,18 @@
   max_fail_percentage: 0
   vars:
     container: sb-workspace
+    skip: '{{ no_docker | default(false) }}'
   tasks:
-    - name: Checking container status
-      shell: docker inspect --format={{ '{{.State.Running}}' }} {{ container }}
-      register: result
-      ignore_errors: true
-      become: yes
-    - fail:
-        msg: Container {{ container }} is not running.
-      when: result is failed or result.stdout != "true"
+    when: not skip
+    block:
+      - name: Checking container status
+        shell: docker inspect --format={{ '{{.State.Running}}' }} {{ container }}
+        register: result
+        ignore_errors: true
+        become: yes
+      - fail:
+          msg: Container {{ container }} is not running.
+        when: result is failed or result.stdout != "true"
 
 - name: Runtime Environment Update
   hosts: all
@@ -22,6 +25,8 @@
     container: sb-workspace
     sb_nodes: '{{ hostvars.values() | map(attribute="ansible_hostname") | sort }}'
     sb_env: |
+      # sb env
+      HOST_WS={{ ansible_user_dir }}/sb-workspace
       # pytorch env
       NNODES={{ sb_nodes | length }}
       NODE_RANK={{ lookup('ansible.utils.index_of', sb_nodes, 'eq', ansible_hostname) }}
