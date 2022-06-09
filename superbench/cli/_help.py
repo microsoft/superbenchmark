@@ -59,6 +59,10 @@ helps['run'] = """
         - name: run all benchmarks on all nodes in ./host.ini using image "superbench/cuda:11.1"
             and default benchmarking configuration
           text: {cli_name} run --docker-image superbench/cuda:11.1 --host-file ./host.ini
+        - name: run kernel launch benchmarks on host directly without using Docker
+          text: >
+            {cli_name} run --no-docker --host-list localhost
+            --config-override superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
 """.format(cli_name=CLI_NAME)
 
 helps['benchmark'] = """
