@@ -77,7 +77,7 @@ class Linter(Command):
             ' && '.join(
                 [
                     'python3 -m yapf --diff --recursive --exclude .git .',
-                    'python3 -m mypy .',
+                    'python3 -m mypy --install-types --non-interactive .',
                     'python3 -m flake8',
                 ]
             )
@@ -157,7 +157,6 @@ setup(
         'pyyaml>=5.3',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
-        'types-Markdown>=3.3.0'
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
@@ -173,7 +172,6 @@ setup(
             'pytest-cov>=2.11.1',
             'pytest-subtests>=0.4.0',
             'pytest>=6.2.2',
-            'types-pyyaml',
             'vcrpy>=4.1.1',
             'yapf==0.31.0',
         ],
