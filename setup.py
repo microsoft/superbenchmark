@@ -12,9 +12,16 @@ import sys
 import pathlib
 from typing import List, Tuple
 
+import pkg_resources
 from setuptools import setup, find_packages, Command
 
 import superbench
+
+try:
+    pkg_resources.require(['pip>=18'])
+except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
+    print('Try upgrade pip to latest version, for example, python3 -m pip install --upgrade pip')
+    raise
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
