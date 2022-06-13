@@ -102,13 +102,10 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    mkdir -p mlc && \
-    cd mlc && \
-    curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc_v3.9a.tgz && \
-    tar xvf mlc_v3.9a.tgz && \
+    curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc.tgz && \
+    tar xzvf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
-    cd /tmp && \
-    rm -rf mlc
+    rm -rf ./Linux mlc.tgz
 
 # Install rccl with commitid 6707a27
 RUN cd /tmp && \
@@ -134,7 +131,7 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=release/rocm-rel-5.1 make -j ${NUM_MAKE_JOBS} -C third_party rocm
+RUN ROCM_VERSION=release/rocm-rel-5.1 make -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install .[torch,ort]  && \

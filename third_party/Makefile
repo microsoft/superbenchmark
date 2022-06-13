@@ -1,4 +1,3 @@
-
 # Copyright (c) Microsoft Corporation - All rights reserved
 # Licensed under the MIT License
 
@@ -28,7 +27,7 @@ cuda_cutlass:
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
 	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
 		-DCUTLASS_NVCC_ARCHS='70;75;80;86' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
-	cmake --build ./cutlass/build -j 8 --target install
+	cmake --build ./cutlass/build -j --target install
 endif
 
 # Build cuda-samples/Samples/bandwidthTest.
