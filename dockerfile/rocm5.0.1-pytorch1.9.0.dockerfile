@@ -28,6 +28,7 @@ RUN apt-get update && \
     hipify-clang \
     jq \
     libaio-dev \
+    libboost-program-options-dev \
     libcap2 \
     libpci-dev \
     libtinfo5 \

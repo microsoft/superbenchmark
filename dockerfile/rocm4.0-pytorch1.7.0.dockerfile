@@ -28,6 +28,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     git \
     jq \
     libaio-dev \
+    libboost-program-options-dev \
     libcap2 \
     libnuma-dev \
     libpci-dev \
