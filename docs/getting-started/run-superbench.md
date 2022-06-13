@@ -40,3 +40,10 @@ After deployment, you can start to run the SuperBench benchmarks on all managed 
 ```bash
 sb run -f local.ini -c resnet.yaml
 ```
+
+:::tip TIP
+For environments that cannot start containers through `sb deploy`, e.g., a Kubernetes cluster.
+You can create a privileged container with `superbench/superbench` image, skip `sb deploy`, and run `sb run` directly inside the container with `--no-docker` argument:
+`sb run --no-docker -l localhost -c resnet.yaml`.
+
+:::

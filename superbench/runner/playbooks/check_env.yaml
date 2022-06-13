@@ -35,6 +35,11 @@
       # config env
       {{ env | default('') }}
   tasks:
+    - name: Ensure Workspace
+      file:
+        path: '{{ workspace }}'
+        state: directory
+        mode: 0755
     - name: Updating Config
       copy:
         src: '{{ output_dir }}/sb.config.yaml'
