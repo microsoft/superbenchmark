@@ -69,6 +69,10 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb run."""
         self.cmd('sb run --host-list localhost --config-override superbench.enable=none', checks=[NoneCheck()])
 
+    def test_sb_run_skipdocker(self):
+        """Test sb run without docker."""
+        self.cmd('sb run -l localhost -C superbench.enable=none --no-docker', checks=[NoneCheck()])
+
     def test_sb_run_no_docker_auth(self):
         """Test sb run, only --docker-username argument, should fail."""
         result = self.cmd('sb run --docker-username test-user', expect_failure=True)

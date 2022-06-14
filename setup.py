@@ -12,9 +12,16 @@ import sys
 import pathlib
 from typing import List, Tuple
 
+import pkg_resources
 from setuptools import setup, find_packages, Command
 
 import superbench
+
+try:
+    pkg_resources.require(['pip>=18'])
+except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
+    print('Try upgrade pip to latest version, for example, python3 -m pip install --upgrade pip')
+    raise
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
@@ -150,7 +157,6 @@ setup(
         'pyyaml>=5.3',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
-        'types-Markdown>=3.3.0'
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
@@ -166,6 +172,8 @@ setup(
             'pytest-cov>=2.11.1',
             'pytest-subtests>=0.4.0',
             'pytest>=6.2.2',
+            'types-markdown',
+            'types-pkg_resources',
             'types-pyyaml',
             'vcrpy>=4.1.1',
             'yapf==0.31.0',

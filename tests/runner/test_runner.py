@@ -25,7 +25,12 @@ class RunnerTestCase(unittest.TestCase):
             self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
         self.sb_output_dir = tempfile.mkdtemp()
 
-        self.runner = SuperBenchRunner(self.default_config, None, None, self.sb_output_dir)
+        self.runner = SuperBenchRunner(
+            self.default_config,
+            OmegaConf.create({}),
+            OmegaConf.create({}),
+            self.sb_output_dir,
+        )
 
     def tearDown(self):
         """Hook method for deconstructing the test fixture after testing it."""
