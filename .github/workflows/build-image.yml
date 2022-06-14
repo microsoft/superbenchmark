@@ -28,11 +28,11 @@ jobs:
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
         - name: rocm5.1.x
           tags: superbench/main:rocm5.1.3
-          extra_args: |
+          extra_args: >-
             BASE_IMAGE=rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
         - name: rocm5.1.x
           tags: superbench/main:rocm5.1.1
-          extra_args: |
+          extra_args: >-
             BASE_IMAGE=rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
         - name: rocm5.0.1-pytorch1.9.0
           tags: superbench/main:rocm5.0.1-pytorch1.9.0
@@ -76,10 +76,10 @@ jobs:
           DOCKERFILE=dockerfile/${{ matrix.name }}.dockerfile
 
           BUILD_ARGS="NUM_MAKE_JOBS=8"
-          if [[ ! "${{ matrix.extra_args }}" ]]; then
-            BUILD_ARGS="${BUILD_ARGS}\n${{ matrix.extra_args }}"
+          if [[ "${{ matrix.extra_args }}" ]]; then
+            BUILD_ARGS="${BUILD_ARGS} ${{ matrix.extra_args }}"
           fi
-          BUILD_ARGS="${BUILD_ARGS//$'\n'/'%0A'}"
+          BUILD_ARGS="${BUILD_ARGS// /'%0A'}"
 
           CACHE_FROM="type=registry,ref=$(cut -d, -f1 <<< ${TAGS})"
           CACHE_TO=""
@@ -92,6 +92,8 @@ jobs:
           echo ::set-output name=tags::${TAGS}
           echo ::set-output name=cache_from::${CACHE_FROM}
           echo ::set-output name=cache_to::${CACHE_TO}
+      - name: Echo build args
+        run: echo ${{ steps.metadata.outputs.build_args }}
       - name: Echo image tag
         run: echo ${{ steps.metadata.outputs.tags }}
       - name: Set up QEMU
