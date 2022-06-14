@@ -1,14 +1,18 @@
-FROM rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
+ARG BASE_IMAGE=rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
+FROM ${BASE_IMAGE}
+
+# 5.1.x base images:
+# rocm5.1.1 - rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
+# rocm5.1.3 - rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
 
 # OS:
 #   - Ubuntu: 20.04
 #   - OpenMPI: 4.0.5
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 5.1.1
-#   - RCCL: 2.11.4
-#   - RCCL RDMA SHARP plugins: rocm-rel-5.1
-#   - hipify: 5.1.1
+#   - ROCm: 5.1.x
+#   - RCCL: 2.12.10+6707a27
+#   - hipify: 5.1.x
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
@@ -119,12 +123,6 @@ RUN cd /tmp && \
     make && make install && \
     cd /tmp && \
     rm -rf rccl
-
-# Install rccl-rdma-sharp-plugins with commitid 34611d3
-RUN cd /opt/rocm && \
-    git clone https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
-    cd rccl-rdma-sharp-plugins && git checkout 34611d3 && \
-    ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS} && make install
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
     LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
