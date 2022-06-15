@@ -1,14 +1,20 @@
-FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.7.0
+ARG BASE_IMAGE=rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
+ARG ROCM_VERSION=5.0.1
+FROM ${BASE_IMAGE}
+
+# 5.1.x base images:
+# rocm5.0   - rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
+# rocm5.0.1 - rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
 
 # OS:
 #   - Ubuntu: 18.04
 #   - OpenMPI: 4.0.5
 #   - Docker Client: 20.10.8
-# AMD:
-#   - ROCm: 4.2
-#   - HIP: 3.27.5
-#   - MIOpen: 2.11.0
-#   - RCCL: 2.8.4
+# ROCm:
+#   - ROCm: 5.0.x
+#   - RCCL: 2.10.3
+#   - RCCL RDMA SHARP plugins: rocm-rel-5.0
+#   - hipify: 5.0.x
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
@@ -17,8 +23,7 @@ FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.7.0
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
     automake \
@@ -26,16 +31,18 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     curl \
     dmidecode \
     git \
+    hipify-clang \
     jq \
     libaio-dev \
     libboost-program-options-dev \
     libcap2 \
-    libnuma-dev \
     libpci-dev \
     libtinfo5 \
     libtool \
     lshw \
     net-tools \
+    libnuma-dev \
+    numactl \
     openssh-client \
     openssh-server \
     pciutils \
@@ -46,6 +53,8 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
+
+ARG NUM_MAKE_JOBS=
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -64,18 +73,6 @@ RUN mkdir -p /root/.ssh && \
     echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
     echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
-# Install OpenMPI
-ENV OPENMPI_VERSION=4.0.5
-RUN cd /tmp && \
-    wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
-    tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
-    cd openmpi-${OPENMPI_VERSION} && \
-    ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct && \
-    make -j $(nproc) all && \
-    make install && \
-    ldconfig && \
-    rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
-
 # Install OFED
 ENV OFED_VERSION=5.2-2.2.3.0
 RUN cd /tmp && \
@@ -84,12 +81,17 @@ RUN cd /tmp && \
     PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
 
-# Install HPC-X
-RUN cd /opt && \
-    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
-    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
-    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64 hpcx && \
-    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz
+# Install OpenMPI
+ENV OPENMPI_VERSION=4.0.5
+RUN cd /tmp && \
+    wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
+    tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
+    cd openmpi-${OPENMPI_VERSION} && \
+    ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct && \
+    make -j ${NUM_MAKE_JOBS} all && \
+    make install && \
+    ldconfig && \
+    rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -98,8 +100,15 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
-ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
+# Install rccl-rdma-sharp-plugins
+ENV SHARP_VERSION=5.0
+RUN cd /opt/rocm && \
+    git clone -b release/rocm-rel-${SHARP_VERSION} https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
+    cd rccl-rdma-sharp-plugins && \
+    ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS} && make install
+
+ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
+    LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -108,9 +117,9 @@ ENV PATH="${PATH}" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-4.2.0 make -C third_party rocm
+RUN ROCM_VERSION=rocm-${ROCM_VERSION} make -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install .[torch,ort] && \
+RUN python3 -m pip install .[torch,ort]  && \
     make cppbuild && \
     make postinstall
