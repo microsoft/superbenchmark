@@ -132,7 +132,7 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=release/rocm-rel-5.1 make -C third_party rocm
+RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install .[torch,ort]  && \

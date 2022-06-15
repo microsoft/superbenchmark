@@ -1,5 +1,4 @@
 ARG BASE_IMAGE=rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
-ARG ROCM_VERSION=5.0.1
 FROM ${BASE_IMAGE}
 
 # 5.1.x base images:
@@ -117,7 +116,7 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-${ROCM_VERSION} make -C third_party rocm
+RUN make -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install .[torch,ort]  && \
