@@ -28,6 +28,7 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     git \
     jq \
     libaio-dev \
+    libboost-program-options-dev \
     libcap2 \
     libnuma-dev \
     libpci-dev \
@@ -92,23 +93,22 @@ RUN cd /opt && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    mkdir -p mlc && \
-    cd mlc && \
-    wget --user-agent="Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0" https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz && \
-    tar xvf mlc_v3.9a.tgz && \
+    curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc.tgz && \
+    tar xzvf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
-    cd /tmp && \
-    rm -rf mlc
+    rm -rf ./Linux mlc.tgz
 
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
-    SB_HOME="/opt/superbench" \
-    SB_MICRO_PATH="/opt/superbench"
+    SB_HOME=/opt/superbench \
+    SB_MICRO_PATH=/opt/superbench \
+    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-4.0.0 make -j -C third_party -o rocm_rocblas rocm
+RUN ROCM_VERSION=rocm-4.0.0 make -C third_party -o rocm_rocblas rocm
 
 # Workaround for image having package installed in user path
 RUN mv /root/.local/bin/* /opt/conda/bin/ && \
