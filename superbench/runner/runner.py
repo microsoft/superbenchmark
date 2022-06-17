@@ -407,7 +407,7 @@ class SuperBenchRunner():
 
         ansible_runner_config['timeout'] = timeout
 
-        rc = self._ansible_client.run(ansible_runner_config, sudo=True)
+        rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
         return rc
 
     def run(self):
