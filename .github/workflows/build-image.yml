@@ -25,17 +25,28 @@ jobs:
       matrix:
         include:
         - name: cuda11.1.1
+          dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
-        - name: rocm5.1.1-pytorch1.10.0
-          tags: superbench/main:rocm5.1.1-pytorch1.10.0
-        - name: rocm5.0.1-pytorch1.9.0
+        - name: rocm5.1.3
+          dockerfile: rocm5.1.x
+          tags: superbench/main:rocm5.1.3
+          extra_args: >-
+            BASE_IMAGE=rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
+        - name: rocm5.1.1
+          dockerfile: rocm5.1.x
+          tags: superbench/main:rocm5.1.1
+          extra_args: >-
+            BASE_IMAGE=rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
+        - name: rocm5.0.1
+          dockerfile: rocm5.0.x
           tags: superbench/main:rocm5.0.1-pytorch1.9.0
-        - name: rocm5.0-pytorch1.9.0
+          extra_args: >-
+            BASE_IMAGE=rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
+        - name: rocm5.0
+          dockerfile: rocm5.0.x
           tags: superbench/main:rocm5.0-pytorch1.9.0
-        - name: rocm4.2-pytorch1.7.0
-          tags: superbench/main:rocm4.2-pytorch1.7.0
-        - name: rocm4.0-pytorch1.7.0
-          tags: superbench/main:rocm4.0-pytorch1.7.0
+          extra_args: >-
+            BASE_IMAGE=rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -67,7 +78,13 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             TAGS=$(sed "s/main:/dev:/g" <<< ${TAGS})
           fi
-          DOCKERFILE=dockerfile/${{ matrix.name }}.dockerfile
+          DOCKERFILE=dockerfile/${{ matrix.dockerfile }}.dockerfile
+
+          BUILD_ARGS="NUM_MAKE_JOBS=8"
+          if [[ "${{ matrix.extra_args }}" ]]; then
+            BUILD_ARGS="${BUILD_ARGS} ${{ matrix.extra_args }}"
+          fi
+          BUILD_ARGS="${BUILD_ARGS// /'%0A'}"
 
           CACHE_FROM="type=registry,ref=$(cut -d, -f1 <<< ${TAGS})"
           CACHE_TO=""
@@ -76,9 +93,12 @@ jobs:
           fi
 
           echo ::set-output name=dockerfile::${DOCKERFILE}
+          echo ::set-output name=build_args::${BUILD_ARGS}
           echo ::set-output name=tags::${TAGS}
           echo ::set-output name=cache_from::${CACHE_FROM}
           echo ::set-output name=cache_to::${CACHE_TO}
+      - name: Echo build args
+        run: echo ${{ steps.metadata.outputs.build_args }}
       - name: Echo image tag
         run: echo ${{ steps.metadata.outputs.tags }}
       - name: Set up QEMU
@@ -110,7 +130,7 @@ jobs:
           cache-from: ${{ steps.metadata.outputs.cache_from }}
           cache-to: ${{ steps.metadata.outputs.cache_to }}
           build-args: |
-            NUM_MAKE_JOBS=8
+            ${{ steps.metadata.outputs.build_args }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ github.event.repository.pushed_at }}

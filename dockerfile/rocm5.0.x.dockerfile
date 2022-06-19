@@ -1,14 +1,19 @@
-FROM rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
+ARG BASE_IMAGE=rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
+FROM ${BASE_IMAGE}
+
+# 5.1.x base images:
+# rocm5.0   - rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
+# rocm5.0.1 - rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
 
 # OS:
-#   - Ubuntu: 20.04
+#   - Ubuntu: 18.04
 #   - OpenMPI: 4.0.5
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 5.1.1
-#   - RCCL: 2.11.4
-#   - RCCL RDMA SHARP plugins: rocm-rel-5.1
-#   - hipify: 5.1.1
+#   - ROCm: 5.0.x
+#   - RCCL: 2.10.3
+#   - RCCL RDMA SHARP plugins: rocm-rel-5.0
+#   - hipify: 5.0.x
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
@@ -36,7 +41,6 @@ RUN apt-get update && \
     lshw \
     net-tools \
     libnuma-dev \
-    libssl-dev \
     numactl \
     openssh-client \
     openssh-server \
@@ -50,18 +54,6 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 ARG NUM_MAKE_JOBS=
-
-# Upgrade CMake from 3.16 to 3.23
-ENV CMAKE_VERSION=3.23.1
-ENV CMAKE_REPO="https://github.com/Kitware/CMake/releases/download/v3.23.1/"
-RUN wget -nv ${CMAKE_REPO}/cmake-${CMAKE_VERSION}.tar.gz && \
-    tar -xvf cmake-${CMAKE_VERSION}.tar.gz && \
-    cd cmake-${CMAKE_VERSION} && \
-    ./bootstrap --prefix=/usr --no-system-curl --parallel=16  && \
-    make -j16 && \
-    sudo make install && \
-    cd .. && \
-    rm -rf cmake-${CMAKE_VERSION}.tar.gz cmake-${CMAKE_VERSION}
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -82,11 +74,10 @@ RUN mkdir -p /root/.ssh && \
 
 # Install OFED
 ENV OFED_VERSION=5.2-2.2.3.0
-ENV UBUNTU_VERSION=20.04
 RUN cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
-    PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
+    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
+    PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install OpenMPI
@@ -108,20 +99,11 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
-# Install rccl with commitid 6707a27
-RUN cd /tmp && \
-    git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
-    cd rccl && git checkout 6707a27 && \
-    mkdir build && cd build && \
-    CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
-    make && make install && \
-    cd /tmp && \
-    rm -rf rccl
-
-# Install rccl-rdma-sharp-plugins with commitid 34611d3
+# Install rccl-rdma-sharp-plugins
+ENV SHARP_VERSION=5.0
 RUN cd /opt/rocm && \
-    git clone https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
-    cd rccl-rdma-sharp-plugins && git checkout 34611d3 && \
+    git clone -b release/rocm-rel-${SHARP_VERSION} https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
+    cd rccl-rdma-sharp-plugins && \
     ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS} && make install
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
@@ -134,7 +116,7 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=release/rocm-rel-5.1 make -C third_party rocm
+RUN make -C third_party rocm
 
 ADD . .
 RUN python3 -m pip install .[torch,ort]  && \

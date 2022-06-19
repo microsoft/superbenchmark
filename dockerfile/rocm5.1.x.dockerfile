@@ -1,14 +1,18 @@
-FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.7.0
+ARG BASE_IMAGE=rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
+FROM ${BASE_IMAGE}
+
+# 5.1.x base images:
+# rocm5.1.1 - rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
+# rocm5.1.3 - rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
 
 # OS:
-#   - Ubuntu: 18.04
+#   - Ubuntu: 20.04
 #   - OpenMPI: 4.0.5
 #   - Docker Client: 20.10.8
-# AMD:
-#   - ROCm: 4.2
-#   - HIP: 3.27.5
-#   - MIOpen: 2.11.0
-#   - RCCL: 2.8.4
+# ROCm:
+#   - ROCm: 5.1.x
+#   - RCCL: 2.12.10+6707a27
+#   - hipify: 5.1.x
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
@@ -17,8 +21,7 @@ FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.7.0
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
     automake \
@@ -26,16 +29,19 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     curl \
     dmidecode \
     git \
+    hipify-clang \
     jq \
     libaio-dev \
     libboost-program-options-dev \
     libcap2 \
-    libnuma-dev \
     libpci-dev \
     libtinfo5 \
     libtool \
     lshw \
     net-tools \
+    libnuma-dev \
+    libssl-dev \
+    numactl \
     openssh-client \
     openssh-server \
     pciutils \
@@ -46,6 +52,20 @@ RUN wget -qO - http://repo.radeon.com/rocm/rocm.gpg.key | APT_KEY_DONT_WARN_ON_D
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
+
+ARG NUM_MAKE_JOBS=
+
+# Upgrade CMake from 3.16 to 3.23
+ENV CMAKE_VERSION=3.23.1
+ENV CMAKE_REPO="https://github.com/Kitware/CMake/releases/download/v3.23.1/"
+RUN wget -nv ${CMAKE_REPO}/cmake-${CMAKE_VERSION}.tar.gz && \
+    tar -xvf cmake-${CMAKE_VERSION}.tar.gz && \
+    cd cmake-${CMAKE_VERSION} && \
+    ./bootstrap --prefix=/usr --no-system-curl --parallel=16  && \
+    make -j16 && \
+    sudo make install && \
+    cd .. && \
+    rm -rf cmake-${CMAKE_VERSION}.tar.gz cmake-${CMAKE_VERSION}
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -64,6 +84,15 @@ RUN mkdir -p /root/.ssh && \
     echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
     echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
+# Install OFED
+ENV OFED_VERSION=5.2-2.2.3.0
+ENV UBUNTU_VERSION=20.04
+RUN cd /tmp && \
+    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
+    PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
+    rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
+
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.0.5
 RUN cd /tmp && \
@@ -71,25 +100,10 @@ RUN cd /tmp && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
     cd openmpi-${OPENMPI_VERSION} && \
     ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct && \
-    make -j $(nproc) all && \
+    make -j ${NUM_MAKE_JOBS} all && \
     make install && \
     ldconfig && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
-
-# Install OFED
-ENV OFED_VERSION=5.2-2.2.3.0
-RUN cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tgz && \
-    PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
-    rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
-
-# Install HPC-X
-RUN cd /opt && \
-    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
-    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz && \
-    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64 hpcx && \
-    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu18.04-x86_64.tbz
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -98,8 +112,18 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
-ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
+# Install rccl with commitid 6707a27
+RUN cd /tmp && \
+    git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    cd rccl && git checkout 6707a27 && \
+    mkdir build && cd build && \
+    CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    make && make install && \
+    cd /tmp && \
+    rm -rf rccl
+
+ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
+    LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -108,9 +132,9 @@ ENV PATH="${PATH}" \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-4.2.0 make -C third_party rocm
+RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install .[torch,ort] && \
+RUN python3 -m pip install .[torch,ort]  && \
     make cppbuild && \
     make postinstall
