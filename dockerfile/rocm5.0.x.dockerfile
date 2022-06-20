@@ -35,16 +35,17 @@ RUN apt-get update && \
     libaio-dev \
     libboost-program-options-dev \
     libcap2 \
+    libnuma-dev \
     libpci-dev \
     libtinfo5 \
     libtool \
     lshw \
     net-tools \
-    libnuma-dev \
     numactl \
     openssh-client \
     openssh-server \
     pciutils \
+    rsync \
     util-linux \
     vim \
     wget \
@@ -112,6 +113,10 @@ ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 WORKDIR ${SB_HOME}
 
