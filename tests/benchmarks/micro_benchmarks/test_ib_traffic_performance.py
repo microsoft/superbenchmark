@@ -26,9 +26,9 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Hook method for deconstructing the class fixture after running all tests in the class."""
-        p = Path('hostfile')
-        if p.is_file():
-            p.unlink()
+        for p in [Path('hostfile'), Path('config.txt')]:
+            if p.is_file():
+                p.unlink()
         super().tearDownClass()
 
     def test_generate_config(self):    # noqa: C901
@@ -118,8 +118,7 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         Path(test_config_file).unlink()
 
     @mock.patch('superbench.common.devices.GPU.vendor', new_callable=mock.PropertyMock)
-    @mock.patch('superbench.common.utils.network.get_ib_devices')
-    def test_ib_traffic_performance(self, mock_ib_devices, mock_gpu):
+    def test_ib_traffic_performance(self, mock_gpu):
         """Test ib-traffic benchmark."""
         # Test without ib devices
         # Check registry.
@@ -130,58 +129,50 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Check preprocess
         # Negative cases
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
+        parameters = '--ib_dev 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
-        mock_ib_devices.return_value = None
         ret = benchmark._preprocess()
         assert (ret is False)
-        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_MPI_INIT_FAILURE)
+        # no hostfile
+        assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
 
         hosts = ['node0\n', 'node1\n', 'node2\n', 'node3\n']
         with open('hostfile', 'w') as f:
             f.writelines(hosts)
-        os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
-        benchmark = benchmark_class(benchmark_name, parameters=parameters)
-        mock_ib_devices.return_value = None
-        ret = benchmark._preprocess()
-        assert (ret is False)
-        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
 
         # Positive cases
         os.environ['OMPI_COMM_WORLD_SIZE'] = '3'
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
+        parameters = '--ib_dev 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
-        mock_ib_devices.return_value = ['mlx5_0']
         ret = benchmark._preprocess()
         assert (ret is True)
 
         # Generate config
-        parameters = '--ib_index 0 --iters 2000 --msg_size 33554432 --hostfile hostfile'
+        parameters = '--ib_dev mlx5_0 --iters 2000 --msg_size 33554432 --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
-        mock_ib_devices.return_value = ['mlx5_0']
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_validation --hostfile hostfile --cmd_prefix "ib_write_bw -F ' + \
-            '--iters=2000 -d mlx5_0 -s 33554432" --input_config ' + os.getcwd() + '/config.txt'
+        expect_command = "ib_validation --hostfile hostfile --cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' --input_config " + \
+            os.getcwd() + '/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
-        parameters = '--ib_index 0 --iters 2000 --pattern one-to-one --hostfile hostfile --gpu_index 0'
+        parameters = '--ib_dev mlx5_0 --iters 2000 --pattern one-to-one --hostfile hostfile --gpu_dev 0'
         mock_gpu.return_value = 'nvidia'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         ret = benchmark._preprocess()
-        expect_command = 'ib_validation --hostfile hostfile --cmd_prefix "ib_write_bw -F ' + \
-            '--iters=2000 -d mlx5_0 -a --use_cuda=0" --input_config ' + os.getcwd() + '/config.txt'
+        expect_command = "ib_validation --hostfile hostfile --cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -a --use_cuda=0 --report_gbits' --input_config " + \
+            os.getcwd() + '/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
         mock_gpu.return_value = 'amd'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         ret = benchmark._preprocess()
-        expect_command = 'ib_validation --hostfile hostfile --cmd_prefix "ib_write_bw -F ' + \
-            '--iters=2000 -d mlx5_0 -a --use_rocm=0" --input_config ' + os.getcwd() + '/config.txt'
+        expect_command = expect_command.replace('cuda', 'rocm')
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -190,20 +181,19 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         with open('test_config.txt', 'w') as f:
             for line in config:
                 f.write(line + '\n')
-        parameters = '--ib_index 0 --iters 2000 --msg_size 33554432 --config test_config.txt --hostfile hostfile'
+        parameters = '--ib_dev mlx5_0 --iters 2000 --msg_size 33554432 --config test_config.txt --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '2'
-        mock_ib_devices.return_value = ['mlx5_0']
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-        expect_command = 'ib_validation --hostfile hostfile --cmd_prefix "ib_write_bw -F ' + \
-            '--iters=2000 -d mlx5_0 -s 33554432" --input_config test_config.txt'
+        expect_command = "ib_validation --hostfile hostfile --cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' --input_config test_config.txt"
 
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
         raw_output_0 = """
-The predix of cmd to run is: ib_write_bw -a -d ibP257p0s0
+The prefix of cmd to run is: ib_write_bw -a -d ibP257p0s0
 Load the config file from: config.txt
 Output will be saved to:
 config:
@@ -219,7 +209,7 @@ results from rank ROOT_RANK:
 23435.3,22766.5
 """
         raw_output_1 = """
-The predix of cmd to run is: ib_write_bw -F --iters=2000 -d mlx5_0 -s 33554432
+The prefix of cmd to run is: ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432
 Load the config file from: config.txt
 Output will be saved to:
 config:
@@ -263,7 +253,7 @@ while attempting to start process rank 0.
         assert (benchmark._bin_name == 'ib_validation')
 
         # Check parameters specified in BenchmarkContext.
-        assert (benchmark._args.ib_index == 0)
+        assert (benchmark._args.ib_dev == 'mlx5_0')
         assert (benchmark._args.iters == 2000)
         assert (benchmark._args.msg_size == 33554432)
-        assert (benchmark._args.commands == ['ib_write_bw'])
+        assert (benchmark._args.command == 'ib_write_bw')
