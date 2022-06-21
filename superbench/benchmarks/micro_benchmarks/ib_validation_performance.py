@@ -211,7 +211,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         try:
             # Read the hostfile
             if not self._args.hostfile:
-                self._args.hostfile = os.path.expanduser('~/sb-workspace/hostfile')
+                self._args.hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
             with open(self._args.hostfile, 'r') as f:
                 hosts = f.readlines()
             # Generate the config file if not define
