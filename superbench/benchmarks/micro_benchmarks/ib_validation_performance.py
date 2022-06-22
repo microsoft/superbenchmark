@@ -262,15 +262,16 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         if self._args.gpu_dev is not None:
             gpu = GPU()
             if gpu.vendor == 'nvidia':
-                gpu_dev = f' --use_cuda={self._args.gpu_dev}'
+                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
             elif gpu.vendor == 'amd':
-                gpu_dev = f' --use_rocm={self._args.gpu_dev}'
+                gpu_dev = f'--use_rocm={self._args.gpu_dev}'
             else:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error('No GPU found - benchmark: {}'.format(self._name))
                 return False
         # Generate ib command params
-        command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size}{gpu_dev} --report_gbits'
+        command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size} {gpu_dev}'
+        command_params = f'{command_params.strip()} --report_gbits'
         return command_params
 
     def _preprocess(self):
