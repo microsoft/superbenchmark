@@ -6,12 +6,20 @@
 import os
 import numbers
 import unittest
+import uuid
 from pathlib import Path
 from unittest import mock
 from collections import defaultdict
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
+
+
+def gen_hostlist(hostlist, num):
+    """Generate a fake list of specified number of hosts."""
+    hostlist.clear()
+    for i in range(0, num):
+        hostlist.append(str(uuid.uuid4()))
 
 
 class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
@@ -34,6 +42,7 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     def test_generate_config(self):    # noqa: C901
         """Test util functions ."""
         test_config_file = 'test_gen_config.txt'
+        hostlist = []
 
         def read_config(filename):
             config = []
@@ -59,16 +68,18 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_class(benchmark_name)
         # Small scale test
         node_num = 4
+        gen_hostlist(hostlist, node_num)
         for m in ['one-to-one', 'one-to-many', 'many-to-one']:
-            benchmark.gen_traffic_pattern(node_num, m, test_config_file)
+            benchmark.gen_traffic_pattern(hostlist, m, test_config_file)
             config = read_config(test_config_file)
             assert (config == expected_config[m])
         # Large scale test
         node_num = 1000
+        gen_hostlist(hostlist, node_num)
         # check for 'one-to-many' and 'many-to-one'
         # In Nth step, the count of N is (N-1), others are all 1
         for m in ['one-to-many', 'many-to-one']:
-            benchmark.gen_traffic_pattern(node_num, m, test_config_file)
+            benchmark.gen_traffic_pattern(hostlist, m, test_config_file)
             config = read_config(test_config_file)
             assert (len(config) == node_num)
             assert (len(config[0]) == node_num - 1)
@@ -93,7 +104,7 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         # check for 'one-to-one'
         # Each index appears 1 time in each step
         # Each index has been combined once with all the remaining indexes
-        benchmark.gen_traffic_pattern(node_num, 'one-to-one', test_config_file)
+        benchmark.gen_traffic_pattern(hostlist, 'one-to-one', test_config_file)
         config = read_config(test_config_file)
         if node_num % 2 == 1:
             assert (len(config) == node_num)
