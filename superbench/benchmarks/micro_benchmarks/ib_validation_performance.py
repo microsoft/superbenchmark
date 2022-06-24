@@ -39,21 +39,21 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             type=str,
             default='mlx5_0',
             required=False,
-            help='The IB device, could be mlx5_0 or mlx5_$LOCAL_RANK.',
+            help='The IB device, e.g., mlx5_0, mlx5_$LOCAL_RANK, mlx5_$((LOCAL_RANK/2)), etc.',
         )
         self._parser.add_argument(
             '--gpu_dev',
             type=str,
             default=None,
             required=False,
-            help='The GPU device, could be 0 or $LOCAL_RANK',
+            help='The GPU device, e.g., 0, $LOCAL_RANK, $((LOCAL_RANK/2)), etc.',
         )
         self._parser.add_argument(
             '--numa_dev',
             type=str,
             default=None,
             required=False,
-            help='The NUMA node to bind, could be 0 or $((LOCAL_RANK/2))',
+            help='The NUMA node to bind, e.g., 0, $LOCAL_RANK, $((LOCAL_RANK/2)), etc.',
         )
         # perftest configurations
         self._parser.add_argument(
