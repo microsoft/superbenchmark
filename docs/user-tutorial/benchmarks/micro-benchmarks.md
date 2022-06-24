@@ -137,10 +137,10 @@ The supported percentiles are 50, 90, 95, 99, and 99.9.
 
 #### Metrics
 
-| Name                                                    | Unit      | Description                                                                 |
-|---------------------------------------------------------|-----------|-----------------------------------------------------------------------------|
-| ort-inference/{precision}_{model}_time                  | time (ms) | The mean latency to execute one batch of inference.                         |
-| ort-inference/{precision}_{model}_time_{percentile}     | time (ms) | The {percentile}th percentile latency to execute one batch of inference.    |
+| Name                                                | Unit      | Description                                                              |
+|-----------------------------------------------------|-----------|--------------------------------------------------------------------------|
+| ort-inference/{precision}_{model}_time              | time (ms) | The mean latency to execute one batch of inference.                      |
+| ort-inference/{precision}_{model}_time_{percentile} | time (ms) | The {percentile}th percentile latency to execute one batch of inference. |
 
 ### `gpu-burn`
 
@@ -151,11 +151,11 @@ Supports the use of double unit types and the use of tensor cores.
 
 #### Metrics
 
-| Name                     | Unit       | Description                                                                         |
-|--------------------------|------------|-------------------------------------------------------------------------------------|
-| gpu-burn/time            | time (s)   | The runtime for gpu-burn test.                                                      |
-| gpu-burn/gpu_[0-9]_pass  | yes/no  	  | The result of the gpu-burn test for each GPU (1: yes, 0: no).                       |
-| gpu-burn/abort           | yes/no  	  | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no).  |
+| Name                    | Unit     | Description                                                                        |
+|-------------------------|----------|------------------------------------------------------------------------------------|
+| gpu-burn/time           | time (s) | The runtime for gpu-burn test.                                                     |
+| gpu-burn/gpu_[0-9]_pass | yes/no   | The result of the gpu-burn test for each GPU (1: yes, 0: no).                      |
+| gpu-burn/abort          | yes/no   | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no). |
 
 ## Communication Benchmarks
 
@@ -304,10 +304,10 @@ Each row in the config is one round, and all pairs of nodes in a row run ib comm
 
 #### Metrics
 
-| Metrics                                                       | Unit             | Description                                                                                                                                                                                                                         |
-|---------------------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ib-traffic/${command}_${line}_${pair}_${server}_${client}_bw  | bandwidth (GB/s) | The max bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client  |
-| ib-traffic/${command}_${line}_${pair}_${server}_${client}_lat | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client |
+| Metrics                                                          | Unit             | Description                                                                                                                                                                                                                        |
+|------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ib-traffic/ib\_write\_bw\_${line}\_${pair}:${server}\_${client}  | bandwidth (GB/s) | The max bandwidth of perftest (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client.  |
+| ib-traffic/ib\_write\_lat\_${line}\_${pair}:${server}\_${client} | time (us)        | The max latency of perftest (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client. |
 
 
 ## Computation-communication Benchmarks

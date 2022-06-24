@@ -6,7 +6,6 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.common.utils import network
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.common.devices import GPU
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
@@ -28,7 +27,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             'ib_write_bw', 'ib_read_bw', 'ib_send_bw', 'ib_write_lat', 'ib_read_lat', 'ib_send_lat'
         ]
         self.__patterns = ['one-to-one', 'one-to-many', 'many-to-one']
-        self.__config_path = os.getcwd() + '/config.txt'
+        self.__config_path = os.path.join(os.getcwd(), 'config.txt')
         self.__config = []
 
     def add_parser_arguments(self):
@@ -36,59 +35,71 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--ib_index',
-            type=int,
-            default=0,
+            '--ib_dev',
+            type=str,
+            default='mlx5_0',
             required=False,
-            help='The index of ib device.',
+            help='The IB device, e.g., mlx5_0, mlx5_$LOCAL_RANK, mlx5_$((LOCAL_RANK/2)), etc.',
         )
+        self._parser.add_argument(
+            '--gpu_dev',
+            type=str,
+            default=None,
+            required=False,
+            help='The GPU device, e.g., 0, $LOCAL_RANK, $((LOCAL_RANK/2)), etc.',
+        )
+        self._parser.add_argument(
+            '--numa_dev',
+            type=str,
+            default=None,
+            required=False,
+            help='The NUMA node to bind, e.g., 0, $LOCAL_RANK, $((LOCAL_RANK/2)), etc.',
+        )
+        # perftest configurations
         self._parser.add_argument(
             '--iters',
             type=int,
             default=5000,
             required=False,
-            help='The iterations of running ib command',
+            help='The iterations of perftest command',
         )
         self._parser.add_argument(
             '--msg_size',
             type=int,
             default=None,
             required=False,
-            help='The message size of running ib command, e.g., 8388608.',
+            help='The message size of perftest command, e.g., 8388608.',
         )
         self._parser.add_argument(
-            '--commands',
-            type=str,
-            nargs='+',
-            default=['ib_write_bw'],
-            help='The ib command used to run, e.g., {}.'.format(' '.join(self.__support_ib_commands)),
+            '--bidirectional', action='store_true', default=False, help='Measure bidirectional bandwidth.'
         )
+        self._parser.add_argument(
+            '--command',
+            type=str,
+            default='ib_write_bw',
+            required=False,
+            help='The perftest command to use, e.g., {}.'.format(' '.join(self.__support_ib_commands)),
+        )
+        # customized configurations
         self._parser.add_argument(
             '--pattern',
             type=str,
             default='one-to-one',
-            required=False,
-            help='Test IB traffic pattern type, e.g., {}.'.format(''.join(self.__patterns)),
+            help='IB traffic pattern type, e.g., {}.'.format(''.join(self.__patterns)),
         )
         self._parser.add_argument(
             '--config',
             type=str,
             default=None,
             required=False,
-            help='The path of config file on the target machines',
-        )
-        self._parser.add_argument(
-            '--bidirectional', action='store_true', default=False, help='Measure bidirectional bandwidth.'
-        )
-        self._parser.add_argument(
-            '--gpu_index', type=int, default=None, required=False, help='Test Use GPUDirect with the gpu index.'
+            help='The path of config file on the target machines.',
         )
         self._parser.add_argument(
             '--hostfile',
             type=str,
-            default='/root/hostfile',
+            default=None,
             required=False,
-            help='The path of hostfile on the target machines',
+            help='The path of hostfile on the target machines.',
         )
 
     def __one_to_many(self, n):
@@ -191,25 +202,24 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             for line in config:
                 f.write(line + '\n')
 
-    def __prepare_config(self, node_num):
+    def __prepare_config(self):
         """Prepare and read config file.
-
-        Args:
-            node_num (int): the number of nodes.
 
         Returns:
             True if the config is not empty and valid.
         """
         try:
+            # Read the hostfile
+            if not self._args.hostfile:
+                self._args.hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
+            with open(self._args.hostfile, 'r') as f:
+                hosts = f.readlines()
             # Generate the config file if not define
             if self._args.config is None:
-                self.gen_traffic_pattern(node_num, self._args.pattern, self.__config_path)
+                self.gen_traffic_pattern(len(hosts), self._args.pattern, self.__config_path)
             # Use the config file defined in args
             else:
                 self.__config_path = self._args.config
-            # Read the hostfile
-            with open(self._args.hostfile, 'r') as f:
-                hosts = f.readlines()
             # Read the config file and check if it's empty and valid
             with open(self.__config_path, 'r') as f:
                 lines = f.readlines()
@@ -240,7 +250,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             Str of ib command params if arguments are valid, otherwise False.
         """
         # Format the ib command type
-        self._args.commands = [command.lower() for command in self._args.commands]
+        self._args.command = self._args.command.lower()
         # Add message size for ib command
         msg_size = ''
         if self._args.msg_size is None:
@@ -248,29 +258,20 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         else:
             msg_size = '-s ' + str(self._args.msg_size)
         # Add GPUDirect for ib command
-        gpu_enable = ''
-        if self._args.gpu_index is not None:
+        gpu_dev = ''
+        if self._args.gpu_dev is not None:
             gpu = GPU()
             if gpu.vendor == 'nvidia':
-                gpu_enable = ' --use_cuda={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
+                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
             elif gpu.vendor == 'amd':
-                gpu_enable = ' --use_rocm={gpu_index}'.format(gpu_index=str(self._args.gpu_index))
+                gpu_dev = f'--use_rocm={self._args.gpu_dev}'
             else:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error('No GPU found - benchmark: {}'.format(self._name))
                 return False
         # Generate ib command params
-        try:
-            command_params = '-F --iters={iter} -d {device} {size}{gpu}'.format(
-                iter=str(self._args.iters),
-                device=network.get_ib_devices()[self._args.ib_index].split(':')[0],
-                size=msg_size,
-                gpu=gpu_enable
-            )
-        except BaseException as e:
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
-            logger.error('Getting ib devices failure - benchmark: {}, message: {}.'.format(self._name, str(e)))
-            return False
+        command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size} {gpu_dev}'
+        command_params = f'{command_params.strip()} --report_gbits'
         return command_params
 
     def _preprocess(self):
@@ -282,17 +283,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        # Check MPI environment
-        self._args.pattern = self._args.pattern.lower()
-        if os.getenv('OMPI_COMM_WORLD_SIZE'):
-            node_num = int(os.getenv('OMPI_COMM_WORLD_SIZE'))
-        else:
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_MPI_INIT_FAILURE)
-            logger.error('No MPI environment - benchmark: {}.'.format(self._name))
-            return False
-
         # Generate and check config
-        if not self.__prepare_config(node_num):
+        if not self.__prepare_config():
             return False
 
         # Prepare general params for ib commands
@@ -300,27 +292,26 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         if not command_params:
             return False
         # Generate commands
-        for ib_command in self._args.commands:
-            if ib_command not in self.__support_ib_commands:
-                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                logger.error(
-                    'Unsupported ib command - benchmark: {}, command: {}, expected: {}.'.format(
-                        self._name, ib_command, ' '.join(self.__support_ib_commands)
-                    )
+        if self._args.command not in self.__support_ib_commands:
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            logger.error(
+                'Unsupported ib command - benchmark: {}, command: {}, expected: {}.'.format(
+                    self._name, self._args.command, ' '.join(self.__support_ib_commands)
                 )
-                return False
-            else:
-                ib_command_prefix = '{command} {command_params}'.format(
-                    command=ib_command, command_params=command_params
-                )
-                if 'bw' in ib_command and self._args.bidirectional:
-                    ib_command_prefix += ' -b'
+            )
+            return False
+        else:
+            ib_command_prefix = f'{os.path.join(self._args.bin_dir, self._args.command)} {command_params}'
+            if self._args.numa_dev is not None:
+                ib_command_prefix = f'numactl -N {self._args.numa_dev} {ib_command_prefix}'
+            if 'bw' in self._args.command and self._args.bidirectional:
+                ib_command_prefix += ' -b'
 
-                command = os.path.join(self._args.bin_dir, self._bin_name)
-                command += ' --hostfile ' + self._args.hostfile
-                command += ' --cmd_prefix ' + '\"' + ib_command_prefix + '\"'
-                command += ' --input_config ' + self.__config_path
-                self._commands.append(command)
+            command = os.path.join(self._args.bin_dir, self._bin_name)
+            command += ' --hostfile ' + self._args.hostfile
+            command += ' --cmd_prefix ' + "'" + ib_command_prefix + "'"
+            command += ' --input_config ' + self.__config_path
+            self._commands.append(command)
 
         return True
 
@@ -336,7 +327,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + self._args.commands[cmd_idx], raw_output, self._args.log_raw_data)
+        self._result.add_raw_data('raw_output_' + self._args.command, raw_output, self._args.log_raw_data)
 
         # If it's invoked by MPI and rank is not 0, no result is expected
         if os.getenv('OMPI_COMM_WORLD_RANK'):
@@ -346,10 +337,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
 
         valid = False
         content = raw_output.splitlines()
-        line_index = 0
         config_index = 0
-        command = self._args.commands[cmd_idx]
-        suffix = command.split('_')[-1]
+        command = self._args.command
         try:
             result_index = -1
             for index, line in enumerate(content):
@@ -360,25 +349,18 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                 valid = False
             else:
                 content = content[result_index:]
-                for line in content:
-                    line = list(filter(None, line.strip().split(',')))
-                    pair_index = 0
-                    for item in line:
-                        metric = '{command}_{line}_{pair}_{host}_{suffix}'.format(
-                            command=command,
-                            line=str(line_index),
-                            pair=pair_index,
-                            host=self.__config[config_index],
-                            suffix=suffix
-                        )
-                        value = float(item)
-                        if 'bw' in command:
-                            value = value / 1000
-                        self._result.add_result(metric, value)
-                        valid = True
+                for line_index, line in enumerate(content):
+                    line_result = list(filter(None, line.strip().split(',')))
+                    for pair_index, pair_result in enumerate(line_result):
+                        rank_results = list(filter(None, pair_result.strip().split(' ')))
+                        for rank_index, rank_result in enumerate(rank_results):
+                            metric = f'{command}_{line_index}_{pair_index}:{self.__config[config_index]}:{rank_index}'
+                            value = float(rank_result)
+                            if 'bw' in command:
+                                value = value / 8.0
+                            self._result.add_result(metric, value)
+                            valid = True
                         config_index += 1
-                        pair_index += 1
-                    line_index += 1
         except Exception:
             valid = False
         if valid is False or config_index != len(self.__config):

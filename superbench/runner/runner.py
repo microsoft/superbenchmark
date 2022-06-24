@@ -398,7 +398,7 @@ class SuperBenchRunner():
 
         fcmd = "docker exec {env_list} sb-workspace bash -c '{command}'"
         if self._docker_config.skip:
-            fcmd = "bash -c '{env_list} && cd $HOST_WS && {command}'"
+            fcmd = "bash -c '{env_list} && cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
             fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout))
         )
