@@ -157,6 +157,7 @@ setup(
         'pyyaml>=5.3',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
+        'urllib3>=1.26.9',
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',

@@ -67,7 +67,7 @@ def get_sb_config(config_file):
     """
     p = Path(str(config_file))
     if not config_file:
-        config_path = Path(__file__).parent / '../../config'
+        config_path = (Path(__file__).parent / '../../config').resolve()
         p = config_path / 'default.yaml'
         vm_size = get_vm_size().replace('Standard_', '').lower()
         if vm_size:
