@@ -48,8 +48,8 @@
     - name: Print GPU Checking Result
       debug:
         msg:
-          - "NVIDIA GPU {{ 'detected' if nvidia_gpu_exist else 'not detected, pls confirm nvidia_uvm kernel module is loaded and /dev/nvidia-uvm exists' }}"
-          - "AMD GPU {{ 'detected' if amd_gpu_exist else 'not detected, pls confirm amdgpu kernel module is loaded' }}"
+          - "NVIDIA GPU {{ 'detected' if nvidia_gpu_exist else 'not operational, pls confirm nvidia_uvm kernel module is loaded and /dev/nvidia-uvm exists' }}"
+          - "AMD GPU {{ 'detected' if amd_gpu_exist else 'not operational, pls confirm amdgpu kernel module is loaded' }}"
 
 - name: Remote Deployment
   hosts: all
