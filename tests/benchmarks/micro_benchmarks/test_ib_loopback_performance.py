@@ -76,7 +76,8 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret)
 
-        expect_command = 'run_perftest_loopback 3 1 ib_write_bw -a -F --iters=2000 -d mlx5_0 -p 10000 -x 0'
+        expect_command = 'run_perftest_loopback 3 1 ' + benchmark._args.bin_dir + \
+            '/ib_write_bw -a -F --iters=2000 -d mlx5_0 -p 10000 -x 0 --report_gbits'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -87,7 +88,7 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         metric_list = []
         for ib_command in benchmark._args.commands:
             for size in ['8388608', '4194304', '1024', '2']:
-                metric = 'ib_{}_{}_ib{}_bw'.format(ib_command, size, str(benchmark._args.ib_index))
+                metric = 'ib_{}_bw_{}:{}'.format(ib_command, size, str(benchmark._args.ib_index))
                 metric_list.append(metric)
         for metric in metric_list:
             assert (metric in benchmark.result)
@@ -145,7 +146,8 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret)
 
-        expect_command = 'run_perftest_loopback 3 1 ib_write_bw -s 8388608 -F --iters=2000 -d mlx5_0 -p 10000 -x 0'
+        expect_command = 'run_perftest_loopback 3 1 ' + benchmark._args.bin_dir + \
+            '/ib_write_bw -s 8388608 -F --iters=2000 -d mlx5_0 -p 10000 -x 0 --report_gbits'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -155,7 +157,7 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         # Positive case - valid raw output.
         metric_list = []
         for ib_command in benchmark._args.commands:
-            metric = 'ib_{}_8388608_ib{}_bw'.format(ib_command, str(benchmark._args.ib_index))
+            metric = 'ib_{}_bw_8388608:{}'.format(ib_command, str(benchmark._args.ib_index))
             metric_list.append(metric)
         for metric in metric_list:
             assert (metric in benchmark.result)
