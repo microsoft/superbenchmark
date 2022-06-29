@@ -161,12 +161,13 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
                         server_core = int(numa_cores[-1])
                         client_core = int(numa_cores[-2])
                     command += ' ' + str(server_core) + ' ' + str(client_core)
-                    command += ' ' + self.__support_ib_commands[ib_command]
+                    command += ' ' + os.path.join(self._args.bin_dir, self.__support_ib_commands[ib_command])
                     command += command_mode + ' -F'
                     command += ' --iters=' + str(self._args.iters)
                     command += ' -d ' + network.get_ib_devices()[self._args.ib_index].split(':')[0]
                     command += ' -p ' + str(network.get_free_port())
                     command += ' -x ' + str(self._args.gid_index)
+                    command += ' --report_gbits'
                     self._commands.append(command)
                 except BaseException as e:
                     self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
@@ -197,13 +198,13 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         metric_set = set()
         for line in content:
             try:
-                values = list(filter(None, line.split(' ')))
+                values = list(filter(None, line.split()))
                 if len(values) != 5:
                     continue
                 # Extract value from the line
                 size = int(values[0])
-                avg_bw = float(values[-2]) / 1000
-                metric = 'ib_{}_{}_ib{}_bw'.format(self._args.commands[cmd_idx], size, str(self._args.ib_index))
+                avg_bw = float(values[-2]) / 8.0
+                metric = f'{self.__support_ib_commands[self._args.commands[cmd_idx]]}_{size}:{self._args.ib_index}'
                 # Filter useless value in client output
                 if metric not in metric_set:
                     metric_set.add(metric)
