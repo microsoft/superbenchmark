@@ -169,7 +169,12 @@ superbench:
       enable: false
       modes:
         - name: mpi
-          proc_num: 1
+          proc_num: 8
+      parameters:
+        msg_size: 8388608
+        ib_dev: mlx5_$LOCAL_RANK
+        gpu_dev: $LOCAL_RANK
+        numa_dev: $((LOCAL_RANK/2))
     gpcnet-network-test:
       enable: false
       modes:

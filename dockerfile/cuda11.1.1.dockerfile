@@ -62,8 +62,8 @@ RUN mkdir -p /root/.ssh && \
     sed -i "s/[# ]*PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*PermitUserEnvironment no/PermitUserEnvironment yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*Port.*/Port 22/" /etc/ssh/sshd_config && \
-    echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
-    echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
+    echo "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
+    echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
 ENV OFED_VERSION=5.2-2.2.3.0
@@ -114,6 +114,10 @@ ENV PATH="${PATH}" \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 WORKDIR ${SB_HOME}
 

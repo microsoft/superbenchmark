@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 // IB validation tool is a tool to validate IB traffic of different pattern in multi nodes flexibly
-// input：
+// input:
 //  cmd_prefix: the prefix of command to run
 //  input_config: the path of input config file, the format of config file is as the following,
 //    each row will run in parallel, different rows will run in sequence, each pair is (server index, client index)
@@ -46,6 +46,8 @@ int g_world_size;
 int g_world_rank;
 char g_processor_name[MPI_MAX_PROCESSOR_NAME];
 
+int local_size;
+
 // The struct to store command line arguments
 struct Args {
     // The prefix of command to run
@@ -68,10 +70,10 @@ void load_args(int argc, char *argv[], Args &args) {
         "ib command prefix")(
         "input_config,i", boost::program_options::value<std::string>(&args.input_config)->default_value("config.txt"),
         "the path of input config file")(
-        "hostfile,h", boost::program_options::value<std::string>(&args.hostfile)->default_value("/root/hostfile"),
-        "the path of hostfile")("output_path,o",
-                                boost::program_options::value<std::string>(&args.output_path)->default_value(""),
-                                "custom the path of the output csv file")("help", "print help info");
+        "hostfile,h", boost::program_options::value<std::string>(&args.hostfile)->default_value("hostfile"),
+        "the path of hostfile")(
+        "output_path,o", boost::program_options::value<std::string>(&args.output_path)->default_value("output.csv"),
+        "custom the path of the output csv file")("help", "print help info");
 
     boost::program_options::variables_map vm;
     boost::program_options::store(parse_command_line(argc, argv, opt), vm);
@@ -82,7 +84,7 @@ void load_args(int argc, char *argv[], Args &args) {
         return;
     }
     if (g_world_rank == ROOT_RANK) {
-        printf("The predix of cmd to run is: %s\n", args.cmd_prefix.c_str());
+        printf("The prefix of cmd to run is: %s\n", args.cmd_prefix.c_str());
         printf("Load the config file from: %s\n", args.input_config.c_str());
         printf("Output will be saved to: %s\n", args.output_path.c_str());
     }
@@ -113,10 +115,10 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
             vector<std::pair<int, int>> run_pairs_in_parallel;
             // split line to pair by ";"
             boost::split(run_in_parallel, single_line, boost::is_any_of(";"), boost::token_compress_on);
-            vector<int> s_occurrence(g_world_size, 0), occurrence(g_world_size, 0);
+            vector<int> s_occurrence(g_world_size / local_size, 0), occurrence(g_world_size / local_size, 0);
             for (const auto &pair : run_in_parallel) {
                 // split pair by ","
-                int quote = pair.find(',');
+                size_t quote = pair.find(',');
                 if (quote == pair.npos) {
                     throw std::runtime_error("Error: Invalid config format.");
                 }
@@ -126,16 +128,16 @@ vector<vector<std::pair<int, int>>> load_config(string filename = "config.txt") 
                 occurrence[first]++;
                 occurrence[second]++;
                 s_occurrence[first]++;
-                // limit the maximum threads of each rank no more than 65535 and server threads no more than 25000 at
-                // the same time because by default a server can use (32768-60999) ports
-                if (s_occurrence[first] == SERVER_MAX_THREADS || occurrence[second] == MAX_THREADS ||
-                    occurrence[first] == MAX_THREADS) {
+                // limit the maximum threads of each node no more than 65535 and server threads no more than 25000 at
+                // the same time because by default a node can use (32768-60999) ports
+                if (s_occurrence[first] * local_size >= SERVER_MAX_THREADS ||
+                    occurrence[second] * local_size >= MAX_THREADS || occurrence[first] * local_size >= MAX_THREADS) {
                     if (g_world_rank == ROOT_RANK)
                         std::cout << "Warning: split the line due to the limit of maximum threads nums" << std::endl;
                     run_in_total.emplace_back(run_pairs_in_parallel);
                     run_pairs_in_parallel.clear();
-                    occurrence.assign(g_world_size, 0);
-                    s_occurrence.assign(g_world_size, 0);
+                    occurrence.assign(g_world_size / local_size, 0);
+                    s_occurrence.assign(g_world_size / local_size, 0);
                 }
                 run_pairs_in_parallel.emplace_back(first, second);
             }
@@ -213,25 +215,27 @@ int get_available_port() {
 
 // Get and broadcast ports for each run
 vector<int> prepare_ports(const vector<std::pair<int, int>> &run_pairs_in_parallel) {
-    int pair_count = run_pairs_in_parallel.size();
-    vector<int> ports(pair_count);
+    vector<int> ports(run_pairs_in_parallel.size() * local_size);
 
-    for (int index = 0; index < run_pairs_in_parallel.size(); index++) {
+    for (size_t index = 0; index < run_pairs_in_parallel.size(); index++) {
         int server_index = run_pairs_in_parallel[index].first;
-        // server get a free port and send to rank ROOT_RANK
-        if (server_index == g_world_rank) {
-            int port = get_available_port();
-            MPI_Send(&port, 1, MPI_INT, ROOT_RANK, index, MPI_COMM_WORLD);
-        }
-        // rank ROOT_RANK recv port from server
-        if (g_world_rank == ROOT_RANK) {
-            int port;
-            MPI_Recv(&port, 1, MPI_INT, server_index, index, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            ports[index] = port;
+        for (int rank = 0; rank < local_size; rank++) {
+            // server get a free port and send to rank ROOT_RANK
+            if (server_index * local_size + rank == g_world_rank) {
+                int port = get_available_port();
+                MPI_Send(&port, 1, MPI_INT, ROOT_RANK, index * local_size + rank, MPI_COMM_WORLD);
+            }
+            // rank ROOT_RANK recv port from server
+            if (g_world_rank == ROOT_RANK) {
+                int port;
+                MPI_Recv(&port, 1, MPI_INT, server_index * local_size + rank, index * local_size + rank, MPI_COMM_WORLD,
+                         MPI_STATUS_IGNORE);
+                ports[index * local_size + rank] = port;
+            }
         }
     }
     // rank ROOT_RANK broadcast ports to all ranks
-    MPI_Bcast(ports.data(), pair_count, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+    MPI_Bcast(ports.data(), ports.size(), MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
     return ports;
 }
 
@@ -248,12 +252,13 @@ void gather_hostnames(vector<string> &hostnames, string filename) {
     } else {
         throw std::runtime_error("Error: Failed to open hostfile.");
     }
-    if (hostnames.size() != g_world_size) {
+    if (int(hostnames.size()) < g_world_size / local_size) {
         throw std::runtime_error("Error: Invalid hostfile.");
     }
 }
 
 // Parse raw output of ib command
+// TODO: does not work latency tests
 float process_raw_output(string output) {
     float res = -1.0;
     try {
@@ -298,30 +303,29 @@ float run_cmd(string cmd_prefix, int port, bool server, string hostname) {
 // The ranks in vector of (server, client) run commands parallel
 vector<float> run_cmd_parallel(string cmd_prefix, const vector<std::pair<int, int>> &run_pairs_in_parallel,
                                const vector<int> &ports, const vector<string> &hostnames) {
-    int size = run_pairs_in_parallel.size();
     // invoke function to run cmd in multi threads mode for each rank in the pairs
     unordered_map<int, std::future<float>> threads;
     int flag;
-    for (int index = 0; index < size; index++) {
-        int server_index = run_pairs_in_parallel[index].first;
-        int client_index = run_pairs_in_parallel[index].second;
-        if (server_index == g_world_rank) {
-            flag = index;
-            MPI_Send(&flag, 1, MPI_INT, client_index, index + 2 * size, MPI_COMM_WORLD);
-            threads[2 * index] =
-                (std::async(std::launch::async, run_cmd, cmd_prefix, ports[index], true, hostnames[server_index]));
+    for (size_t index = 0; index < run_pairs_in_parallel.size(); index++) {
+        for (int rank = 0; rank < local_size; rank++) {
+            int rank_index = index * local_size + rank,
+                server_index = run_pairs_in_parallel[index].first * local_size + rank,
+                client_index = run_pairs_in_parallel[index].second * local_size + rank;
+            if (server_index == g_world_rank) {
+                flag = index;
+                MPI_Send(&flag, 1, MPI_INT, client_index, rank_index, MPI_COMM_WORLD);
+                threads[2 * rank_index] = (std::async(std::launch::async, run_cmd, cmd_prefix, ports[rank_index], true,
+                                                      hostnames[server_index / local_size]));
+            }
+            if (client_index == g_world_rank) {
+                // in case that client starts before server
+                MPI_Recv(&flag, 1, MPI_INT, server_index, rank_index, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                threads[2 * rank_index + 1] = (std::async(std::launch::async, run_cmd, cmd_prefix, ports[rank_index],
+                                                          false, hostnames[server_index / local_size]));
+            }
         }
     }
-    for (int index = 0; index < size; index++) {
-        int server_index = run_pairs_in_parallel[index].first;
-        int client_index = run_pairs_in_parallel[index].second;
-        if (client_index == g_world_rank) {
-            // in case that client starts before server
-            MPI_Recv(&flag, 1, MPI_INT, server_index, index + 2 * size, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            threads[2 * index + 1] =
-                (std::async(std::launch::async, run_cmd, cmd_prefix, ports[index], false, hostnames[server_index]));
-        }
-    }
+
     // send the result of client to rank ROOT_RANK
     for (auto &thread : threads) {
         std::future_status status;
@@ -341,10 +345,14 @@ vector<float> run_cmd_parallel(string cmd_prefix, const vector<std::pair<int, in
     // rank ROOT_RANK recv results
     vector<float> results;
     if (g_world_rank == ROOT_RANK) {
-        results.resize(size);
-        for (int index = 0; index < size; index++) {
-            int client_index = run_pairs_in_parallel[index].second;
-            MPI_Recv(&results[index], 1, MPI_INT, client_index, index * 2 + 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        results.resize(run_pairs_in_parallel.size() * local_size);
+        for (size_t index = 0; index < run_pairs_in_parallel.size(); index++) {
+            for (int rank = 0; rank < local_size; rank++) {
+                int rank_index = index * local_size + rank,
+                    client_index = run_pairs_in_parallel[index].second * local_size + rank;
+                MPI_Recv(&results[rank_index], 1, MPI_FLOAT, client_index, 2 * rank_index + 1, MPI_COMM_WORLD,
+                         MPI_STATUS_IGNORE);
+            }
         }
     }
     return results;
@@ -366,9 +374,9 @@ vector<vector<float>> run_benchmark(const Args &args, vector<vector<std::pair<in
     // output the results to stdout of ROOT_RANK by default
     if (g_world_rank == ROOT_RANK) {
         std::cout << "results from rank ROOT_RANK: " << std::endl;
-        for (vector<float> results_single_line : results) {
-            for (float res : results_single_line) {
-                std::cout << res << ",";
+        for (vector<float> line : results) {
+            for (size_t i = 0; i < line.size(); i++) {
+                std::cout << line[i] << ((i + 1) % local_size ? " " : ",");
             }
             std::cout << endl;
         }
@@ -383,7 +391,7 @@ void output_to_file(const std::string cmd_prefix, const vector<vector<std::pair<
     if (!out) {
         throw std::runtime_error("Error: failed to open output file.");
     }
-    // output command predix
+    // output command prefix
     out << "command prefix: " << cmd_prefix << std::endl;
     // output config file contents
     out << "config:" << std::endl;
@@ -396,8 +404,8 @@ void output_to_file(const std::string cmd_prefix, const vector<vector<std::pair<
     // output results
     out << "results:" << std::endl;
     for (auto &line : results) {
-        for (int i = 0; i < line.size(); i++) {
-            out << line[i] << ",";
+        for (size_t i = 0; i < line.size(); i++) {
+            out << line[i] << ((i + 1) % local_size ? " " : ",");
         }
         out << std::endl;
     }
@@ -422,6 +430,18 @@ int main(int argc, char **argv) {
         // Get and parse command line arguments
         Args args;
         load_args(argc, argv, args);
+
+        // Handle local size and rank
+#if defined(OPEN_MPI)
+        local_size = atoi(getenv("OMPI_COMM_WORLD_LOCAL_SIZE"));
+        boost::replace_all(args.cmd_prefix, "LOCAL_RANK", "OMPI_COMM_WORLD_LOCAL_RANK");
+#elif defined(MPICH)
+        local_size = atoi(getenv("MPI_LOCALNRANKS"));
+        boost::replace_all(args.cmd_prefix, "LOCAL_RANK", "MPI_LOCALRANKID");
+#else
+        local_size = atoi(getenv("LOCAL_SIZE"));
+        std::cout << "Warning: unknown mpi used." << std::endl;
+#endif
 
         // Load and parse running config from file
         vector<vector<std::pair<int, int>>> config = load_config(args.input_config);
