@@ -34,7 +34,7 @@ class FileHandlerUtilsTestCase(unittest.TestCase):
             mock_get_azure_imds (function): Mock get_azure_imds function.
         """
         mock_get_azure_imds.return_value = 'Standard_NC96ads_A100_v4'
-        with (Path.cwd() / 'superbench/config/azure/inference/nc96ads_a100_v4.yaml').open() as fp:
+        with (Path.cwd() / 'superbench/config/azure/inference/standard_nc96ads_a100_v4.yaml').open() as fp:
             self.assertEqual(get_sb_config(None), OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader)))
 
     @mock.patch('superbench.common.utils.azure.get_azure_imds')
