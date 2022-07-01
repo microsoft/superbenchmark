@@ -20,8 +20,6 @@
 #include <iostream>
 #include <regex>
 #include <stdexcept>
-#include <stdio.h>
-#include <string.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -50,6 +48,8 @@ int local_size;
 
 // The struct to store command line arguments
 struct Args {
+    // Timeout for each command
+    int timeout;
     // The prefix of command to run
     std::string cmd_prefix;
     // The path of input config file
@@ -64,7 +64,8 @@ struct Args {
 void load_args(int argc, char *argv[], Args &args) {
     // Get and parse command line arguments
     boost::program_options::options_description opt("all options");
-    opt.add_options()(
+    opt.add_options()("timeout,t", boost::program_options::value<int>(&args.timeout)->default_value(120),
+                      "timeout of each command")(
         "cmd_prefix,c",
         boost::program_options::value<std::string>(&args.cmd_prefix)->default_value("ib_write_bw -s 33554432 -d ib0"),
         "ib command prefix")(
@@ -84,9 +85,10 @@ void load_args(int argc, char *argv[], Args &args) {
         return;
     }
     if (g_world_rank == ROOT_RANK) {
-        printf("The prefix of cmd to run is: %s\n", args.cmd_prefix.c_str());
-        printf("Load the config file from: %s\n", args.input_config.c_str());
-        printf("Output will be saved to: %s\n", args.output_path.c_str());
+        std::cout << "Timeout for each command is: " << args.timeout << std::endl;
+        std::cout << "The prefix of cmd to run is: " << args.cmd_prefix << std::endl;
+        std::cout << "Load the config file from: " << args.input_config << std::endl;
+        std::cout << "Output will be saved to: " << args.output_path << std::endl;
     }
 }
 
@@ -278,7 +280,7 @@ float process_raw_output(string output) {
 }
 
 // Run ib command on server/client with server hostname
-float run_cmd(string cmd_prefix, int port, bool server, string hostname) {
+float run_cmd(string cmd_prefix, int timeout, int port, bool server, string hostname) {
     // client sleep 1s in case that client starts before server
     if (!server) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -287,7 +289,7 @@ float run_cmd(string cmd_prefix, int port, bool server, string hostname) {
     string command, output;
     try {
         // exec command in termimal
-        command = cmd_prefix + " -p " + to_string(port);
+        command = "timeout " + to_string(timeout) + " " + cmd_prefix + " -p " + to_string(port);
         command = server ? command : command + " " + hostname;
         output = exec(command.c_str());
     } catch (const std::exception &e) {
@@ -301,7 +303,7 @@ float run_cmd(string cmd_prefix, int port, bool server, string hostname) {
 }
 
 // The ranks in vector of (server, client) run commands parallel
-vector<float> run_cmd_parallel(string cmd_prefix, const vector<std::pair<int, int>> &run_pairs_in_parallel,
+vector<float> run_cmd_parallel(string cmd_prefix, int timeout, const vector<std::pair<int, int>> &run_pairs_in_parallel,
                                const vector<int> &ports, const vector<string> &hostnames) {
     // invoke function to run cmd in multi threads mode for each rank in the pairs
     unordered_map<int, std::future<float>> threads;
@@ -314,14 +316,15 @@ vector<float> run_cmd_parallel(string cmd_prefix, const vector<std::pair<int, in
             if (server_index == g_world_rank) {
                 flag = index;
                 MPI_Send(&flag, 1, MPI_INT, client_index, rank_index, MPI_COMM_WORLD);
-                threads[2 * rank_index] = (std::async(std::launch::async, run_cmd, cmd_prefix, ports[rank_index], true,
-                                                      hostnames[server_index / local_size]));
+                threads[2 * rank_index] = (std::async(std::launch::async, run_cmd, cmd_prefix, timeout,
+                                                      ports[rank_index], true, hostnames[server_index / local_size]));
             }
             if (client_index == g_world_rank) {
                 // in case that client starts before server
                 MPI_Recv(&flag, 1, MPI_INT, server_index, rank_index, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                threads[2 * rank_index + 1] = (std::async(std::launch::async, run_cmd, cmd_prefix, ports[rank_index],
-                                                          false, hostnames[server_index / local_size]));
+                threads[2 * rank_index + 1] =
+                    (std::async(std::launch::async, run_cmd, cmd_prefix, timeout, ports[rank_index], false,
+                                hostnames[server_index / local_size]));
             }
         }
     }
@@ -330,10 +333,9 @@ vector<float> run_cmd_parallel(string cmd_prefix, const vector<std::pair<int, in
     for (auto &thread : threads) {
         std::future_status status;
         float client_result = -1.0;
-        status = thread.second.wait_for(std::chrono::seconds(300));
+        status = thread.second.wait_for(std::chrono::seconds(timeout));
         if (status == std::future_status::timeout) {
-            cout << "Error: thread timeout" << endl;
-            throw "Error: thread timeout";
+            std::cout << "Error: thread timeout" << std::endl;
         } else if (status == std::future_status::ready) {
             client_result = thread.second.get();
         }
@@ -367,7 +369,7 @@ vector<vector<float>> run_benchmark(const Args &args, vector<vector<std::pair<in
         // Insert barrier to sync before each run
         MPI_Barrier(MPI_COMM_WORLD);
         // run commands parallel for single line of config
-        vector<float> results_single_line = run_cmd_parallel(args.cmd_prefix, line, ports, hostnames);
+        vector<float> results_single_line = run_cmd_parallel(args.cmd_prefix, args.timeout, line, ports, hostnames);
         // collect results for each run
         results.push_back(results_single_line);
     }

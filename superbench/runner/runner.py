@@ -86,7 +86,7 @@ class SuperBenchRunner():
                             'btl_tcp_if_exclude': 'lo,docker0',
                             'coll_hcoll_enable': 0,
                         }
-                    for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH']:
+                    for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH', 'SB_WORKSPACE']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
 
     def __get_enabled_benchmarks(self):

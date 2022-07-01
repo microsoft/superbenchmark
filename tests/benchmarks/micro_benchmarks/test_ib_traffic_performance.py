@@ -154,19 +154,19 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-        expect_command = "ib_validation --hostfile hostfile --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' --input_config " + \
-            os.getcwd() + '/config.txt'
+        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' " + \
+            f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
-        parameters = '--ib_dev mlx5_0 --iters 2000 --pattern one-to-one --hostfile hostfile --gpu_dev 0'
+        parameters = '--ib_dev mlx5_0 --msg_size 0 --iters 2000 --pattern one-to-one --hostfile hostfile --gpu_dev 0'
         mock_gpu.return_value = 'nvidia'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         ret = benchmark._preprocess()
-        expect_command = "ib_validation --hostfile hostfile --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_write_bw -F -n 2000 -d mlx5_0 -a --use_cuda=0 --report_gbits' --input_config " + \
-            os.getcwd() + '/config.txt'
+        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -a --use_cuda=0 --report_gbits' " + \
+            f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
         mock_gpu.return_value = 'amd'
@@ -187,8 +187,9 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-        expect_command = "ib_validation --hostfile hostfile --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' --input_config test_config.txt"
+        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' " + \
+            '--timeout 120 --hostfile hostfile --input_config test_config.txt'
 
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
