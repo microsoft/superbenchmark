@@ -3,6 +3,7 @@
 
 """Exposes the interface of SuperBench common utilities."""
 
+from superbench.common.utils.azure import get_vm_size
 from superbench.common.utils.logging import SuperBenchLogger, logger
 from superbench.common.utils.file_handler import rotate_dir, create_sb_output_dir, get_sb_config
 from superbench.common.utils.lazy_import import LazyImport
@@ -14,10 +15,11 @@ __all__ = [
     'LazyImport',
     'SuperBenchLogger',
     'create_sb_output_dir',
+    'device_manager',
     'get_sb_config',
+    'get_vm_size',
     'logger',
     'network',
-    'device_manager',
     'rotate_dir',
     'run_command',
 ]
