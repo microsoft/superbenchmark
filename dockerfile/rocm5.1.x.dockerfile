@@ -59,7 +59,7 @@ ARG NUM_MAKE_JOBS=
 # Upgrade CMake from 3.16 to 3.23
 ENV CMAKE_VERSION=3.23.1
 RUN cd /tmp && \
-    wget -q https://github.com/Kitware/CMake/releases/download/${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
+    wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
     tar xzf cmake-${CMAKE_VERSION}.tar.gz && \
     cd cmake-${CMAKE_VERSION} && \
     ./bootstrap --prefix=/usr --no-system-curl --parallel=16 && \
