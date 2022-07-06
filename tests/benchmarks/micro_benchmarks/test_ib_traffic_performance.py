@@ -140,6 +140,12 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         with open('hostfile', 'w') as f:
             f.writelines(hosts)
 
+        parameters = '--ib_dev 0 --msg_size invalid --pattern one-to-one --hostfile hostfile'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+
         # Positive cases
         os.environ['OMPI_COMM_WORLD_SIZE'] = '3'
         parameters = '--ib_dev 0 --iters 2000 --pattern one-to-one --hostfile hostfile'
@@ -181,7 +187,7 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         with open('test_config.txt', 'w') as f:
             for line in config:
                 f.write(line + '\n')
-        parameters = '--ib_dev mlx5_0 --timeout 180 --iters 2000 --msg_size 33554432' + \
+        parameters = '--ib_dev mlx5_0 --timeout 180 --iters 2000 --msg_size 33554432 ' + \
             '--config test_config.txt --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '2'
