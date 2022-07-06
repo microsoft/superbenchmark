@@ -59,7 +59,7 @@ ARG NUM_MAKE_JOBS=
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
 RUN cd /tmp && \
-    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz
 
@@ -95,8 +95,8 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc.tgz && \
-    tar xzvf mlc.tgz Linux/mlc && \
+    wget -q https://downloadmirror.intel.com/736634/mlc_v3.9a.tgz -O mlc.tgz && \
+    tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
