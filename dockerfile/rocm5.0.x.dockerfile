@@ -59,7 +59,7 @@ ARG NUM_MAKE_JOBS=
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
 RUN cd /tmp && \
-    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz
 

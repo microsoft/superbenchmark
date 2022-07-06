@@ -58,20 +58,19 @@ ARG NUM_MAKE_JOBS=
 
 # Upgrade CMake from 3.16 to 3.23
 ENV CMAKE_VERSION=3.23.1
-ENV CMAKE_REPO="https://github.com/Kitware/CMake/releases/download/v3.23.1/"
-RUN wget -nv ${CMAKE_REPO}/cmake-${CMAKE_VERSION}.tar.gz && \
-    tar -xvf cmake-${CMAKE_VERSION}.tar.gz && \
+RUN cd /tmp && \
+    wget -q https://github.com/Kitware/CMake/releases/download/${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
+    tar xzf cmake-${CMAKE_VERSION}.tar.gz && \
     cd cmake-${CMAKE_VERSION} && \
-    ./bootstrap --prefix=/usr --no-system-curl --parallel=16  && \
-    make -j16 && \
-    sudo make install && \
-    cd .. && \
-    rm -rf cmake-${CMAKE_VERSION}.tar.gz cmake-${CMAKE_VERSION}
+    ./bootstrap --prefix=/usr --no-system-curl --parallel=16 && \
+    make -j ${NUM_MAKE_JOBS} && \
+    make install && \
+    rm -rf /tmp/cmake-${CMAKE_VERSION}*
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
 RUN cd /tmp && \
-    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz
 
@@ -109,7 +108,7 @@ RUN cd /tmp && \
 # Install Intel MLC
 RUN cd /tmp && \
     curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc.tgz && \
-    tar xzvf mlc.tgz Linux/mlc && \
+    tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
