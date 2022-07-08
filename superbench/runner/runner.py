@@ -143,12 +143,12 @@ class SuperBenchRunner():
                 'mpirun '    # use default OpenMPI in image
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
-                '-hostfile hostfile '    # use prepared hostfile
-                '-map-by ppr:{proc_num}:node '    # launch {proc_num} processes on each node
+                '{host_list} '    # use prepared hostfile and launch {proc_num} processes on each node
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                proc_num=mode.proc_num,
+                host_list=f'-host localhost:{mode.proc_num}'
+                if mode.node_num == 1 else f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node',
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
@@ -402,7 +402,7 @@ class SuperBenchRunner():
         ansible_runner_config = self._ansible_client.get_shell_config(
             fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout))
         )
-        if mode.name == 'mpi':
+        if mode.name == 'mpi' and mode.node_num != 1:
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
 
         ansible_runner_config['timeout'] = timeout

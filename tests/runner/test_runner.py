@@ -168,6 +168,30 @@ class RunnerTestCase(unittest.TestCase):
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
+                    'node_num': 1,
+                    'proc_num': 8,
+                    'proc_rank': 2,
+                    'mca': {
+                        'coll_hcoll_enable': 0,
+                    },
+                    'env': {
+                        'SB_MICRO_PATH': '/sb',
+                        'FOO': 'BAR',
+                        'RANK': '{proc_rank}',
+                        'NUM': '{proc_num}',
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -host localhost:8 -bind-to numa '
+                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
         ]
         for test_case in test_cases:
             with self.subTest(msg='Testing with case', test_case=test_case):
