@@ -55,6 +55,13 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help='The NUMA node to bind, e.g., 0, $LOCAL_RANK, $((LOCAL_RANK/2)), etc.',
         )
+        self._parser.add_argument(
+            '--timeout',
+            type=int,
+            default=120,
+            required=False,
+            help='Timeout in seconds for each perftest command in case ib is too slow.',
+        )
         # perftest configurations
         self._parser.add_argument(
             '--iters',
@@ -66,7 +73,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--msg_size',
             type=int,
-            default=None,
+            default=8388608,
             required=False,
             help='The message size of perftest command, e.g., 8388608.',
         )
@@ -252,11 +259,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         # Format the ib command type
         self._args.command = self._args.command.lower()
         # Add message size for ib command
-        msg_size = ''
-        if self._args.msg_size is None:
-            msg_size = '-a'
-        else:
-            msg_size = '-s ' + str(self._args.msg_size)
+        msg_size = f'-s {self._args.msg_size}' if self._args.msg_size > 0 else '-a'
         # Add GPUDirect for ib command
         gpu_dev = ''
         if self._args.gpu_dev is not None:
@@ -308,9 +311,9 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                 ib_command_prefix += ' -b'
 
             command = os.path.join(self._args.bin_dir, self._bin_name)
-            command += ' --hostfile ' + self._args.hostfile
             command += ' --cmd_prefix ' + "'" + ib_command_prefix + "'"
-            command += ' --input_config ' + self.__config_path
+            command += f' --timeout {self._args.timeout} ' + \
+                f'--hostfile {self._args.hostfile} --input_config {self.__config_path}'
             self._commands.append(command)
 
         return True
