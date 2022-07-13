@@ -155,6 +155,7 @@ setup(
         'omegaconf==2.0.6',
         'pandas>=1.1.5',
         'pyyaml>=5.3',
+        'requests>=2.28.1',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
         'urllib3>=1.26.9',
