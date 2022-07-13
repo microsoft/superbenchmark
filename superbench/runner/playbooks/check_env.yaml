@@ -26,7 +26,7 @@
     sb_nodes: '{{ hostvars.values() | map(attribute="ansible_hostname") | sort }}'
     sb_env: |
       # sb env
-      SB_WORKSPACE='{{ workspace if skip_docker else "/root" }}'
+      SB_WORKSPACE={{ workspace if skip_docker else '/root' }}
       # pytorch env
       NNODES={{ sb_nodes | length }}
       NODE_RANK={{ lookup('ansible.utils.index_of', sb_nodes, 'eq', ansible_hostname) }}
