@@ -119,6 +119,9 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
+# Add config files
+ADD dockerfile/etc /opt/microsoft/
+
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
