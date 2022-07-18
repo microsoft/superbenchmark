@@ -20,13 +20,40 @@ superbench:
         - vgg_models/.*/return_code
         - densenet_models/.*/return_code
         - model-benchmarks:.*/return_code
+    kernel_launch_rule:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: INVESTIGATING
+      metrics:
+        - kernel-launch:*.*/.*_time
   # Rule 1: If TensorCore test suffers > 5% downgrade, label it as Not acceptable
     tensor_core_rule:
       function: variance
       criteria: 'lambda x:x<-0.05'
-      categories: TensorCore 
+      categories: TensorCore
       metrics:
         - gemm-flops:*.*/.*ops
+    cudnn_cublas:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: TensorCore
+      metrics:
+        - cublas-function:*.*/.*_time
+        - cudnn-function:*.*/.*_time
+    matmul:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: TensorCore
+      metrics:
+        - matmul:*.*/.*_time
+        - gpu-burn/.*
+        - cpu-memory-bw-latency/.*_lat
+    cpu:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: TensorCore
+      metrics:
+        - cpu-memory-bw-latency/.*_bw
   # Rule 2: If H2D_Mem_BW or D2H_Mem_BW test suffers > 5% downgrade, label it as Not acceptable
     mem_bw_rule:
       function: variance
@@ -35,21 +62,42 @@ superbench:
       metrics:
         - mem-bw:*.*/h2d_bw
         - mem-bw:*.*/d2h_bw
+    gpu-copy:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: Mem
+      metrics:
+        - gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
   # Rule 3: If ib-loopback test with 8M suffers > 5% downgrade, label it as Not acceptable
     rdma_loopback_rule:
       function: variance
       criteria: 'lambda x:x<-0.05'
       categories: RDMA
       metrics:
-        - ib-loopback:*.*/ib_write_8388608_.*_bw    
+        - ib-loopback:*.*/ib_write_bw_8388608
+        #- ib-loopback:*.*/ib_write_bw_.*
   # Rule 4: If nccl-bw:default with 8GB suffers > 5% downgrade, label it as Not acceptable
     nccl_rule:
       function: variance
       criteria: 'lambda x:x<-0.05'
       categories: NCCL
       metrics:
-        - nccl-bw:default/allreduce_8589934592_busbw
-  # Rule 5,6,7: If BERT or GPT-2 or LSTM suffers > 5% downgrade, label it as Not acceptable
+        - nccl-bw:.*/allreduce_8589934592_busbw
+    investigating_rules:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: INVESTIGATING
+      metrics:
+        - computation-communication-overlap:*.*/.*_time
+        - sharding-matmul:*.*/.*_time
+        - ort-inference/.*_time.*
+    disk_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: NCCL
+      metrics:
+        - disk-benchmark/nvme(\d+n1)_.*_iops
+  #Rule 5,6,7: If BERT or GPT-2 or LSTM suffers > 5% downgrade, label it as Not acceptable
     model_throughput_rule:
       function: variance
       criteria: 'lambda x:x<-0.05'
@@ -90,17 +138,4 @@ superbench:
       categories: CNN
       function: multi_rules
       criteria: 'lambda label:True if label["resnet_throughput"]+label["vgg_throughput"]+label["densenet_throughput"]>=2 else False'
-  # Rule 10: If temperature of one GPU is > 85 °C, label it as Not acceptable
-    temperature_rule:
-      function: value
-      categories: TEMP 
-      criteria: 'lambda x:x>85'
-      metrics:
-        - monitor/gpu_temperature
-  # Rule 11: If DBE > 0, label it as Not acceptable (Not Support)
-    dbe_rule:
-      function: value
-      categories: TEMP 
-      criteria: 'lambda x:x>85'
-      metrics:   
-         - monitor/gpu_uncorrected_ecc
+
