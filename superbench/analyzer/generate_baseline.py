@@ -4,10 +4,10 @@
 """A module for baseline generation."""
 
 import argparse
+from copy import deepcopy
 import json
 from pathlib import Path
 import re
-
 
 from joblib import Parallel, delayed
 import pandas as pd
@@ -40,35 +40,36 @@ class GenerateBaseline(DataDiagnosis):
         Step 3: Use the baseline and fix threshold for Outlier Detection
 
         Args:
-            data_series (pd.Series): data the the metric
+            data_series (pd.Series): data of the metric
             single_metric_with_baseline (dict): baseline of the single metric in 'metrics' in 2-layer dict format
             metric (str): the name of the metric to execute the algorithm
             rule_op (function): diagnosis rule op function
 
         Returns:
-            number: the baseline of the metric
+            tuple: the baseline of the metric, normal data of the metric
         """
         if single_metric_with_baseline['metrics'][metric] != -1:
             return single_metric_with_baseline['metrics'][metric]
-        single_metric_with_baseline['metrics'] = {}
+        tmp_single_metric_with_baseline = deepcopy(single_metric_with_baseline)
+        tmp_single_metric_with_baseline['metrics'] = {}
         clean = False
         while clean is False:
             clean = True
             baseline_val = data_series.mean()
             for val in data_series.index:
-                single_metric_with_baseline['metrics'][metric] = baseline_val
+                tmp_single_metric_with_baseline['metrics'][metric] = baseline_val
                 if baseline_val == 0:
                     break
                 data_row = pd.Series([data_series[val]], index=[metric])
                 details = []
                 categories = set()
                 summary_data_row = pd.Series(index=[metric], dtype=float)
-                violated_num = rule_op(data_row, single_metric_with_baseline, summary_data_row, details, categories)
+                violated_num = rule_op(data_row, tmp_single_metric_with_baseline, summary_data_row, details, categories)
                 if violated_num:
                     data_series = data_series.drop(val)
                     clean = False
-        baseline = single_metric_with_baseline['metrics'][metric]
-        return baseline
+        baseline = tmp_single_metric_with_baseline['metrics'][metric]
+        return baseline, data_series
 
     def get_aggregate_data(self, raw_data_file, summary_rule_file):
         """Aggregate raw data according to the summary rule file.
@@ -152,10 +153,11 @@ class GenerateBaseline(DataDiagnosis):
                             aggregated_df[metric], single_metric_rule, metric, rule_op)
                         for metric in metrics)
                     for index, out in enumerate(outputs):
-                        baseline[metrics[index]] = out
+                        baseline[metrics[index]] = out[0]
+                        aggregated_df[metrics[index]] = out[1]
         return baseline
 
-    def run(self, raw_data_file,  summary_rule_file,  output_dir, algorithm='mean', diagnosis_rule_file=None, baseline_file=None):
+    def run(self, raw_data_file,  summary_rule_file,  output_dir, algorithm='mean', diagnosis_rule_file=None, baseline_file=None, digit=2):
         """Export baseline to json file.
 
         If diagnosis_rule_file is None, use mean of the data as baseline.
@@ -174,9 +176,18 @@ class GenerateBaseline(DataDiagnosis):
                 baseline = file_handler.read_baseline()
             # generate baseline accordint to rules in diagnosis and fix threshold outlier detection method
             baseline = self.generate_baseline(algorithm, self._raw_data_df, diagnosis_rule_file, baseline)
-            # output baseline to json file
+            for metric in baseline:
+                val = baseline[metric]
+                if isinstance(self._raw_data_df[metric].iloc[0], float):
+                    baseline[metric] = f'%.{digit}g' % val if abs(val) < 1 else f'%.{digit}f' % val
+                elif isinstance(self._raw_data_df[metric].iloc[0], int):
+                    baseline[metric] = int(val)
+            print(self._raw_data_df["gpu-burn/gpu_0_pass"].iloc[0])
+            print(self._raw_data_df["gpu-burn/gpu_0_pass"].iloc[0].type)
+            baseline = json.dumps(baseline, indent=2, sort_keys=True)
+            baseline = re.sub(r': \"(\d+.?\d*)\"', r': \1', baseline)
             with open(output_dir+'/baseline.json', mode='w') as f:
-                json.dump(baseline, f, indent=2)
+                f.write(baseline)
 
         except Exception as e:
             logger.error('Analyzer: generate baseline failed, msg: {}'.format(str(e)))
@@ -186,20 +197,20 @@ if __name__ == '__main__':
     global args
     parser = argparse.ArgumentParser()
     parser.add_argument(
-            '--algo', type=str, default='mean', required=False, help='Algorithm to generate baseline, eg, mean/fix_threshold.'
-        )
+        '--algo', type=str, default='mean', required=False, help='Algorithm to generate baseline, eg, mean/fix_threshold.'
+    )
     parser.add_argument(
-            '--input_dir', type=str, default=None, required=False, help='Input directory which stores the results-summary.jsonl.'
-        )
+        '--input_dir', type=str, default=None, required=False, help='Input directory which stores the results-summary.jsonl.'
+    )
     args = parser.parse_args()
-    folder=args.input_dir
+    folder = args.input_dir
     #folder = '/Users/jiangyt/Documents/000-workspace/raw-data/ndv4/0.5-ndv41'
-    if args.algo=='mean':
+    if args.algo == 'mean':
         # simply use mean, need result_summary rules to define how to aggregate the metrics.
         print('Generate baseine using mean of the data.')
         GenerateBaseline().run(folder+'/results-summary.jsonl', 'rules/aggregation_rules.yaml', folder)
-    elif args.algo=='fix_threshold':
+    elif args.algo == 'fix_threshold':
         # use fix threshold method, need result_summary rules to define how to aggregate the metrics and diagnosis_rules.yaml to define the rules for the metrics.
         print('Generate baseine using fix threshold algorithm, the threshold is defined in rules/diagnosis_rules.yaml.')
         GenerateBaseline().run(folder+'/results-summary.jsonl', 'rules/aggregation_rules.yaml',
-                            folder, 'fix_threshold', 'rules/diagnosis_rules.yaml')
+                               folder, 'fix_threshold', 'rules/diagnosis_rules.yaml')
