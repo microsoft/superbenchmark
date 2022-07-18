@@ -37,10 +37,9 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             assert (isinstance(numa_cores[i], numbers.Number))
 
     @decorator.load_data('tests/data/ib_loopback_all_sizes.log')
-    @mock.patch('superbench.common.utils.network.get_free_port')
     @mock.patch('superbench.benchmarks.micro_benchmarks.ib_loopback_performance.get_numa_cores')
     @mock.patch('superbench.common.utils.network.get_ib_devices')
-    def test_ib_loopback_all_sizes(self, raw_output, mock_ib_devices, mock_numa_cores, mock_port):
+    def test_ib_loopback_all_sizes(self, raw_output, mock_ib_devices, mock_numa_cores):
         """Test ib-loopback benchmark for all sizes."""
         # Test without ib devices
         # Check registry.
@@ -69,15 +68,15 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         mock_ib_devices.return_value = ['mlx5_0']
         mock_numa_cores.return_value = [0, 1, 2, 3]
-        mock_port.return_value = 10000
         os.environ['PROC_RANK'] = '0'
         os.environ['IB_DEVICES'] = '0,2,4,6'
         os.environ['NUMA_NODES'] = '1,0,3,2'
         ret = benchmark._preprocess()
         assert (ret)
 
+        port = benchmark._IBLoopbackBenchmark__sock_fds[-1].getsockname()[1]
         expect_command = 'run_perftest_loopback 3 1 ' + benchmark._args.bin_dir + \
-            '/ib_write_bw -a -F --iters=2000 -d mlx5_0 -p 10000 -x 0 --report_gbits'
+            f'/ib_write_bw -a -F --iters=2000 -d mlx5_0 -p {port} -x 0 --report_gbits'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
@@ -110,10 +109,9 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.commands == ['write'])
 
     @decorator.load_data('tests/data/ib_loopback_8M_size.log')
-    @mock.patch('superbench.common.utils.network.get_free_port')
     @mock.patch('superbench.benchmarks.micro_benchmarks.ib_loopback_performance.get_numa_cores')
     @mock.patch('superbench.common.utils.network.get_ib_devices')
-    def test_ib_loopback_8M_size(self, raw_output, mock_ib_devices, mock_numa_cores, mock_port):
+    def test_ib_loopback_8M_size(self, raw_output, mock_ib_devices, mock_numa_cores):
         """Test ib-loopback benchmark for 8M size."""
         # Test without ib devices
         # Check registry.
@@ -142,12 +140,12 @@ class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         mock_ib_devices.return_value = ['mlx5_0']
         mock_numa_cores.return_value = [0, 1, 2, 3]
-        mock_port.return_value = 10000
         ret = benchmark._preprocess()
         assert (ret)
 
+        port = benchmark._IBLoopbackBenchmark__sock_fds[-1].getsockname()[1]
         expect_command = 'run_perftest_loopback 3 1 ' + benchmark._args.bin_dir + \
-            '/ib_write_bw -s 8388608 -F --iters=2000 -d mlx5_0 -p 10000 -x 0 --report_gbits'
+            f'/ib_write_bw -s 8388608 -F --iters=2000 -d mlx5_0 -p {port} -x 0 --report_gbits'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 

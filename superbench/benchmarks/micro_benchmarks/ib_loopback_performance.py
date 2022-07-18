@@ -168,7 +168,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
                 logger.error('Getting ib devices failure - benchmark: {}, message: {}.'.format(self._name, str(e)))
                 return False
             numa_cores = get_numa_cores(self._args.numa)
-            if len(numa_cores) < 2:
+            if not numa_cores or len(numa_cores) < 2:
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
                 logger.error('Getting numa core devices failure - benchmark: {}.'.format(self._name))
                 return False
