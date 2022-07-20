@@ -10,7 +10,9 @@ import uuid
 from pathlib import Path
 from unittest import mock
 from collections import defaultdict
+from superbench.common.utils import gen_topo_aware_config
 
+from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 
@@ -39,7 +41,9 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 p.unlink()
         super().tearDownClass()
 
-    def test_generate_config(self):    # noqa: C901
+    @decorator.load_data('tests/data/ib_traffic_topo_aware_hostfile')
+    @decorator.load_data('tests/data/ib_traffic_topo_aware_expected_config')
+    def test_generate_config(self, tp_hosts, tp_expected_config):    # noqa: C901
         """Test util functions ."""
         test_config_file = 'test_gen_config.txt'
         hostlist = []
@@ -125,6 +129,15 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 assert (node[index] == 1)
         for node in range(node_num):
             assert (sorted(test_pairs[node]) == [(i) for i in range(node_num) if i != node])
+
+        # check for 'topo-aware'
+        # compare generated config file with pre-saved expected config file
+        tp_ibstat_path = 'tests/data/ib_traffic_topo_aware_ibstat.txt'
+        tp_ibnetdiscover_path = 'tests/data/ib_traffic_topo_aware_ibnetdiscover.txt'
+        hostlist = tp_hosts.split()
+        expected_config = tp_expected_config.split()
+        config = gen_topo_aware_config(hostlist, tp_ibstat_path, tp_ibnetdiscover_path, 2, 6)
+        assert (config == expected_config)
 
         Path(test_config_file).unlink()
 
