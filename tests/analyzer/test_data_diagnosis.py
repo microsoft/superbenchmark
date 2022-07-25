@@ -358,3 +358,49 @@ class TestDataDiagnosis(unittest.TestCase):
             + 'mem-bw/D2H_Mem_BW(B/L: 24.3000 VAL: 10.0000 VAR: -58.85% Rule:lambda x:x<-0.5),' +
             'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
         )
+
+    def test_failure_check(self):
+        """Test failure test check feature."""
+        diag1 = DataDiagnosis()
+        # test _run_diagnosis_rules_for_single_node
+        rules = {
+            'superbench': {
+                'rules': {
+                    'rule1': {
+                        'categories':
+                        'FailedTest',
+                        'criteria':
+                        'lambda x:x!=0',
+                        'function':
+                        'failure_check',
+                        'metrics': [
+                            'gemm-flops/return_code:0', 'gemm-flops/return_code:1', 'gemm-flops/return_code:2',
+                            'resnet_models/pytorch-resnet152/return_code'
+                        ]
+                    }
+                }
+            }
+        }
+
+        baseline = {}
+
+        data = {
+            'gemm-flops/return_code:0': [0, -1],
+            'gemm-flops/return_code:1': [0, pd.NA],
+            'resnet_models/pytorch-resnet152/return_code': [0, -1]
+        }
+        diag1._raw_data_df = pd.DataFrame(data, index=['sb-validation-04', 'sb-validation-05'])
+        diag1._benchmark_metrics_dict = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df.columns))
+        diag1._parse_rules_and_baseline(rules, baseline)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-04')
+        assert (details_row)
+        assert ('FailedTest' in details_row[0])
+        assert (details_row[1] == 'gemm-flops/return_code:2_miss')
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-05')
+        assert (details_row)
+        assert ('FailedTest' in details_row[0])
+        assert (
+            details_row[1] == 'gemm-flops/return_code:0(VAL: -1.0000 Rule:lambda x:x!=0),' +
+            'gemm-flops/return_code:1_miss,' + 'gemm-flops/return_code:2_miss,' +
+            'resnet_models/pytorch-resnet152/return_code(VAL: -1.0000 Rule:lambda x:x!=0)'
+        )

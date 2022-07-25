@@ -62,9 +62,15 @@ class DataDiagnosis(RuleBase):
         """
         if metric in baseline:
             return baseline[metric]
+        elif 'return_code' in metric:
+            return 0
         else:
+            short = metric
             # exclude rank info, for example, '.*:\d+'->'.*'
-            short = metric.strip(metric.split(':')[-1]).strip(':')
+            if ':' in metric:
+                short = metric.strip(metric.split(':')[-1]).strip(':')
+            else:
+                short = metric.split('/')[0]
             if short in baseline:
                 return baseline[short]
             # baseline not defined
@@ -106,6 +112,7 @@ class DataDiagnosis(RuleBase):
             self._sb_rules = {}
             self._enable_metrics = set()
             benchmark_rules = rules['superbench']['rules']
+            self._raw_rules = benchmark_rules
             for rule in benchmark_rules:
                 benchmark_rules[rule] = self._check_and_format_rules(benchmark_rules[rule], rule)
                 self._sb_rules[rule] = {}
@@ -154,6 +161,10 @@ class DataDiagnosis(RuleBase):
             violated_num = 0
             if rule_op == RuleOp.multi_rules:
                 violated_num = rule_op(self._sb_rules[rule], details, categories, violation)
+            elif rule_op == RuleOp.failure_check:
+                violated_num = rule_op(
+                    data_row, self._sb_rules[rule], summary_data_row, details, categories, self._raw_rules[rule]
+                )
             else:
                 violated_num = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories)
             # label the node as defective one
@@ -197,7 +208,7 @@ class DataDiagnosis(RuleBase):
                 details_row, summary_data_row = self._run_diagnosis_rules_for_single_node(node)
                 if details_row:
                     data_not_accept_df.loc[node] = details_row
-                    summary_details_df = summary_details_df.append(summary_data_row)
+                    summary_details_df = pd.concat([summary_details_df, pd.DataFrame([summary_data_row.to_dict()])])
                     label_df.loc[node] = 1
                 else:
                     label_df.loc[node] = 0
