@@ -137,7 +137,7 @@ class TestRuleOp(unittest.TestCase):
         true_baselines = [
             {
                 'name': 'rule1',
-                'categories': 'CNN',
+                'categories': 'TMP',
                 'criteria': 'lambda x:x<-0.5',
                 'store': True,
                 'function': 'variance',
@@ -146,7 +146,7 @@ class TestRuleOp(unittest.TestCase):
                 }
             }, {
                 'name': 'rule2',
-                'categories': 'CNN',
+                'categories': 'TMP',
                 'criteria': 'lambda x:x<-0.5',
                 'store': True,
                 'function': 'variance',
@@ -155,7 +155,7 @@ class TestRuleOp(unittest.TestCase):
                 }
             }, {
                 'name': 'rule3',
-                'categories': 'KernelLaunch',
+                'categories': 'CNN',
                 'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False',
                 'store': False,
                 'function': 'multi_rules'
@@ -187,6 +187,7 @@ class TestRuleOp(unittest.TestCase):
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
         violated_metric_num = rule_op(true_baselines[2], details, categories, label)
         assert (violated_metric_num)
+        assert ('TMP' not in categories)
         assert ('CNN' in categories)
         assert (
             details == [

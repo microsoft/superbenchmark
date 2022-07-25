@@ -208,7 +208,10 @@ class DataDiagnosis(RuleBase):
                 details_row, summary_data_row = self._run_diagnosis_rules_for_single_node(node)
                 if details_row:
                     data_not_accept_df.loc[node] = details_row
-                    summary_details_df = pd.concat([summary_details_df, pd.DataFrame([summary_data_row.to_dict()])])
+                    summary_details_df = pd.concat(
+                        [summary_details_df,
+                         pd.DataFrame([summary_data_row.to_dict()], index=[summary_data_row.name])]
+                    )
                     label_df.loc[node] = 1
                 else:
                     label_df.loc[node] = 0

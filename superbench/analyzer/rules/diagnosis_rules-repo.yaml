@@ -1,0 +1,163 @@
+version: v0.5
+superbench:
+  rules:
+    # Rule 0: If one test fails, label it as Not acceptable.
+    failure_rule:
+      function: failure_check
+      criteria: 'lambda x:x!=0'
+      categories: FailedTest
+      metrics:
+      - kernel-launch/.*return_code:0
+      - kernel-launch/.*return_code:1
+      - kernel-launch/.*return_code:2
+      - kernel-launch/.*return_code:3
+      - kernel-launch/.*return_code:4
+      - kernel-launch/.*return_code:5
+      - kernel-launch/.*return_code:6
+      - kernel-launch/.*return_code:7
+      - gemm-flops/return_code:0
+      - gemm-flops/return_code:1
+      - gemm-flops/return_code:2
+      - gemm-flops/return_code:3
+      - gemm-flops/return_code:4
+      - gemm-flops/return_code:5
+      - gemm-flops/return_code:6
+      - gemm-flops/return_code:7
+      - cublas-function/return_code:0
+      - cublas-function/return_code:1
+      - cublas-function/return_code:2
+      - cublas-function/return_code:3
+      - cublas-function/return_code:4
+      - cublas-function/return_code:5
+      - cublas-function/return_code:6
+      - cublas-function/return_code:7
+      - cudnn-function/return_code:0
+      - cudnn-function/return_code:1
+      - cudnn-function/return_code:2
+      - cudnn-function/return_code:3
+      - cudnn-function/return_code:4
+      - cudnn-function/return_code:5
+      - cudnn-function/return_code:6
+      - cudnn-function/return_code:7
+      - matmul/return_code:0
+      - matmul/return_code:1
+      - matmul/return_code:2
+      - matmul/return_code:3
+      - matmul/return_code:4
+      - matmul/return_code:5
+      - matmul/return_code:6
+      - matmul/return_code:7
+      - gpu-burn/return_code
+      - cpu-memory-bw-latency/return_code
+      - mem-bw/.*return_code
+      - gpu-copy-bw:perf/return_code
+      - gpu-copy-bw:correctness/return_code
+      - ib-loopback/return_code:0
+      - ib-loopback/return_code:1
+      - ib-loopback/return_code:2
+      - ib-loopback/return_code:3
+      - ib-loopback/return_code:4
+      - ib-loopback/return_code:5
+      - ib-loopback/return_code:6
+      - ib-loopback/return_code:7
+      - nccl-bw:nvlink/.*return_code:\d+
+      - nccl-bw:ib/.*return_code:\d+
+      - computation-communication-overlap/return_code:\d+
+      - sharding-matmul/.*return_code:\d+
+      - disk-benchmark/return_code
+      - ort-inference/return_code:0
+      - ort-inference/return_code:1
+      - ort-inference/return_code:2
+      - ort-inference/return_code:3
+      - ort-inference/return_code:4
+      - ort-inference/return_code:5
+      - ort-inference/return_code:6
+      - ort-inference/return_code:7
+      #- tensorrt-inference/.*return_code
+      - model-benchmarks:gpt/pytorch-gpt2-small/return_code:\d+
+      - model-benchmarks:gpt/pytorch-gpt2-large/return_code:\d+
+      - model-benchmarks:bert/pytorch-bert-large/return_code:\d+
+      - model-benchmarks:bert/pytorch-bert-base/return_code:\d+
+      - model-benchmarks:lstm/pytorch-lstm/return_code:\d+
+      - model-benchmarks:resnet/pytorch-resnet50/return_code:\d+
+      - model-benchmarks:resnet/pytorch-resnet101/return_code:\d+
+      - model-benchmarks:resnet/pytorch-resnet152/return_code:\d+
+      - model-benchmarks:densenet/pytorch-densenet201/return_code:\d+
+      - model-benchmarks:densenet/pytorch-densenet169/return_code:\d+
+      - model-benchmarks:vgg/pytorch-vgg11/return_code:\d+
+      - model-benchmarks:vgg/pytorch-vgg13/return_code:\d+
+      - model-benchmarks:vgg/pytorch-vgg16/return_code:\d+
+      - model-benchmarks:vgg/pytorch-vgg19/return_code:\d+
+      #- model-benchmarks:stress/.*return_code:\d+
+    # Rule 1: If TensorCore test suffers > 5% downgrade, label it as Not acceptable.
+    tensor_core_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: TensorCore
+      metrics:
+      - gemm-flops/.*ops
+    # Rule 2: If H2D_Mem_BW or D2H_Mem_BW test suffers > 5% downgrade, label it as Not acceptable.
+    mem_bw_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: Mem
+      metrics:
+      - mem-bw/h2d_bw
+      - mem-bw/d2h_bw
+    # Rule 3: If RDMA_Avg test suffers > 5% downgrade, label it as Not acceptable.
+    # rdma_loopback_rule:
+    #   function: variance
+    #   criteria: 'lambda x:x<-0.05'
+    #   categories: RDMA
+    #   metrics:
+    #   - ib-loopback/ib_write_bw_8388608
+    # Rule 4: If NCCL_BW suffers > 5% downgrade, label it as Not acceptable.
+    nccl_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: NCCL
+      metrics:
+      - nccl-bw:nvlink/allreduce_8589934592_busbw
+      - nccl-bw:ib/allreduce_8589934592_busbw
+    # Rule 5,6,7: If GPT or BERT or LSTM suffers > 5% downgrade, label it as Not acceptable.
+    model_throughput_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: Model
+      metrics:
+      - model-benchmarks:gpt/.*_train_throughput
+      - model-benchmarks:bert/.*_train_throughput
+      - model-benchmarks:lstm/.*_train_throughput
+    # Rule 8: If 2+ CNN models suffer > 5% downgrade, label it as Not acceptable
+    resnet_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+      - model-benchmarks:resnet/.*_train_throughput
+    vgg_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+      - model-benchmarks:vgg/.*_train_throughput
+    densenet_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+      - model-benchmarks:densenet/.*_train_throughput
+    cnn_throughput_rule:
+      categories: CNN
+      function: multi_rules
+      criteria: 'lambda label:True if label["resnet_throughput"]+label["vgg_throughput"]+label["densenet_throughput"]>=2 else False'
+    # Rule 9: If temperature of one GPU > 85 °C, label it as Not acceptable.
+    temperature_rule:
+      function: value
+      categories: TEMP
+      criteria: 'lambda x:x>85'
+      metrics:
+       - monitor/gpu_temperature

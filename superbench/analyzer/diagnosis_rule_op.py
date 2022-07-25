@@ -141,7 +141,7 @@ class RuleOp:
                     info = '(B/L: {:.4f} VAL: {:.4f} VAR: {:.2f}% Rule:{})'.format(
                         baseline, val, var * 100, rule['criteria']
                     )
-                    if not rule['store']:
+                    if 'store' not in rule or not rule['store']:
                         RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
                     else:
                         RuleOp.add_categories_and_details(metric + info, None, details, categories)
@@ -181,7 +181,7 @@ class RuleOp:
                 if violate_metric:
                     violated_metric_num += 1
                     info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
-                    if not rule['store']:
+                    if 'store' not in rule or not rule['store']:
                         RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
                     else:
                         RuleOp.add_categories_and_details(metric + info, None, details, categories)

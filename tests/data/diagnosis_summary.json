@@ -1402,7 +1402,7 @@
         "vgg_models/pytorch-vgg19/throughput_train_float16": 709.1127328377,
         "Accept": false,
         "#Issues": 17.0,
-        "Category": "FailedTest,Mem",
+        "Category": "FailedTest",
         "Issue_Details": "mem-bw/D2H_Mem_BW:0_miss,mem-bw/D2H_Mem_BW:1_miss,mem-bw/D2H_Mem_BW:2_miss,mem-bw/D2H_Mem_BW:3_miss,mem-bw/D2H_Mem_BW:4_miss,mem-bw/D2H_Mem_BW:5_miss,mem-bw/D2H_Mem_BW:6_miss,mem-bw/D2H_Mem_BW:7_miss,mem-bw/H2D_Mem_BW:0_miss,mem-bw/H2D_Mem_BW:1_miss,mem-bw/H2D_Mem_BW:2_miss,mem-bw/H2D_Mem_BW:3_miss,mem-bw/H2D_Mem_BW:4_miss,mem-bw/H2D_Mem_BW:5_miss,mem-bw/H2D_Mem_BW:6_miss,mem-bw/H2D_Mem_BW:7_miss,mem-bw/return_code(VAL: 1.0000 Rule:lambda x:x>0)",
         "Index": "sb-validation-03"
     }
