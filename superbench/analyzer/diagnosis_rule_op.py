@@ -84,7 +84,7 @@ class RuleOp:
         """
         # metric not in raw_data or the value is none, miss test
         if metric not in data_row or pd.isna(data_row[metric]):
-            RuleOp.add_categories_and_details(metric + '_miss', rule['categories'], details, categories)
+            RuleOp.add_categories_and_details(metric + '_miss', 'FailedTest', details, categories)
             return True
         return False
 
@@ -99,7 +99,8 @@ class RuleOp:
             categories (set): set of categories of violated rules
         """
         details.append(detail)
-        categories.add(category)
+        if category:
+            categories.add(category)
 
     @staticmethod
     def variance(data_row, rule, summary_data_row, details, categories):
@@ -140,7 +141,10 @@ class RuleOp:
                     info = '(B/L: {:.4f} VAL: {:.4f} VAR: {:.2f}% Rule:{})'.format(
                         baseline, val, var * 100, rule['criteria']
                     )
-                    RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    if not rule['store']:
+                        RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    else:
+                        RuleOp.add_categories_and_details(metric + info, None, details, categories)
         return violated_metric_num
 
     @staticmethod
@@ -177,7 +181,10 @@ class RuleOp:
                 if violate_metric:
                     violated_metric_num += 1
                     info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
-                    RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    if not rule['store']:
+                        RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    else:
+                        RuleOp.add_categories_and_details(metric + info, None, details, categories)
         return violated_metric_num
 
     @staticmethod
