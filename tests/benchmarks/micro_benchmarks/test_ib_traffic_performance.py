@@ -200,7 +200,24 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
+        # suppose gpu driver mismatch issue or other traffic issue cause -1 result
         raw_output_0 = """
+The prefix of cmd to run is: ib_write_bw -a -d ibP257p0s0
+Load the config file from: config.txt
+Output will be saved to:
+config:
+0,1
+1,0;0,1
+0,1;1,0
+1,0;0,1
+config end
+results from rank ROOT_RANK:
+-1,
+-1,-1
+-1,-1
+-1,-1
+"""
+        raw_output_1 = """
 The prefix of cmd to run is: ib_write_bw -a -d ibP257p0s0
 Load the config file from: config.txt
 Output will be saved to:
@@ -216,7 +233,7 @@ results from rank ROOT_RANK:
 22798.8,23436.3
 23435.3,22766.5
 """
-        raw_output_1 = """
+        raw_output_2 = """
 The prefix of cmd to run is: ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432
 Load the config file from: config.txt
 Output will be saved to:
@@ -231,7 +248,7 @@ results from rank ROOT_RANK:
 22212.6,22433,
 22798.8,23436.3,
 """
-        raw_output_2 = """
+        raw_output_3 = """
 --------------------------------------------------------------------------
 mpirun was unable to launch the specified application as it could not access
 or execute an executable:
@@ -242,17 +259,25 @@ while attempting to start process rank 0.
 """
 
         # Check function process_raw_data.
-        # Positive case - valid raw output.
+        # Positive cases - valid raw output.
         os.environ['OMPI_COMM_WORLD_RANK'] = '0'
         assert (benchmark._process_raw_result(0, raw_output_0))
-
         for metric in benchmark.result:
             assert (metric in benchmark.result)
             assert (len(benchmark.result[metric]) == 1)
             assert (isinstance(benchmark.result[metric][0], numbers.Number))
-        # Negative case - valid raw output.
-        assert (benchmark._process_raw_result(0, raw_output_1) is False)
+        values = list(benchmark.result.values())[1:]
+        assert (all(value == [-1.0] for value in values))
+
+        assert (benchmark._process_raw_result(0, raw_output_1))
+        for index, metric in enumerate(benchmark.result):
+            assert (metric in benchmark.result)
+            assert (len(benchmark.result[metric]) == 1 if index == 0 else len(benchmark.result[metric]) == 2)
+            assert (isinstance(benchmark.result[metric][0], numbers.Number))
+
+        # Negative cases - invalid raw output.
         assert (benchmark._process_raw_result(0, raw_output_2) is False)
+        assert (benchmark._process_raw_result(0, raw_output_3) is False)
         os.environ.pop('OMPI_COMM_WORLD_RANK')
 
         # Check basic information.

@@ -359,7 +359,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                         for rank_index, rank_result in enumerate(rank_results):
                             metric = f'{command}_{line_index}_{pair_index}:{self.__config[config_index]}:{rank_index}'
                             value = float(rank_result)
-                            if 'bw' in command:
+                            # Check if the value is valid before the base conversion
+                            if 'bw' in command and value >= 0.0:
                                 value = value / 8.0
                             self._result.add_result(metric, value)
                             valid = True
