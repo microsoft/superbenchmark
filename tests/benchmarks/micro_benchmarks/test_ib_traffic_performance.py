@@ -41,7 +41,7 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 p.unlink()
         super().tearDownClass()
 
-    @decorator.load_data('tests/data/ib_traffic_topo_aware_hostfile')
+    @decorator.load_data('tests/data/ib_traffic_topo_aware_hostfile')    # noqa: C901
     @decorator.load_data('tests/data/ib_traffic_topo_aware_expected_config')
     def test_generate_config(self, tp_hosts, tp_expected_config):    # noqa: C901
         """Test util functions ."""
