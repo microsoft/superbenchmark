@@ -198,8 +198,8 @@ class TestRuleOp(unittest.TestCase):
             ]
         )
 
-    def test_check_op(self):
-        """check op test."""
+    def test_failure_check_op(self):
+        """Test for failure_check op."""
         details = []
         categories = set()
         data_row = pd.Series()

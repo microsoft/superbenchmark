@@ -212,6 +212,19 @@ class RuleOp:
 
     @staticmethod
     def failure_check(data_row, rule, summary_data_row, details, categories, raw_rule):
+        """Rule op function of failure_check.
+
+        Args:
+            data_row (pd.Series): raw data of the metrics
+            rule (dict): rule including function, criteria, metrics with their baseline values and categories
+            summary_data_row (pd.Series): results of the metrics processed after the function
+            details (list): details about violated rules and related data
+            categories (set): categories of violated rules
+            raw_rule (dict): raw rule read from rule file
+
+        Returns:
+            number: the number of the metrics that violate the rule if the rule is not passed, otherwise 0
+        """
         violated_metric_num = 0
         for metric_regex in raw_rule['metrics']:
             match = False
