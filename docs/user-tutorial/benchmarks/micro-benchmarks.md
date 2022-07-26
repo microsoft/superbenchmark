@@ -302,6 +302,17 @@ Measure the InfiniBand performance under multi nodes' traffic pattern.
 The traffic pattern is defined in a config file, which is pre-defined for one-to-many, many-to-one and all-to-all patterns.
 Each row in the config is one round, and all pairs of nodes in a row run ib command simultaneously.
 
+Besides the above three patterns, ib-traffic also supports topology-aware traffic pattern. To run ib-traffic with topology-aware
+pattern, the user needs to specify 3 required (and 2 optional) parameters in YAML config file:
+   - --pattern	&emsp;**topo-aware**
+   - --ibstat	&emsp;**path to ibstat output**
+   - --ibnetdiscover	&emsp;**path to ibnetdiscover output**
+   - --min_dist	&emsp;**minimum distance of VM pairs (optional, default 2)**
+   - --max_dist	&emsp;**maximum distance of VM pairs (optional, default 6)**
+
+Each row in the config file has all VM pairs with a fixed distance (#hops). That's by default, 1st, 2nd, 3rd row has all VM pairs
+with topology distance of 2, 4, 6, respectively.
+
 #### Metrics
 
 | Metrics                                                          | Unit             | Description                                                                                                                                                                                                                        |

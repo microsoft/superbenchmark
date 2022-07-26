@@ -6,12 +6,22 @@
 import os
 import numbers
 import unittest
+import uuid
 from pathlib import Path
 from unittest import mock
 from collections import defaultdict
+from superbench.common.utils import gen_topo_aware_config
 
+from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
+
+
+def gen_hostlist(hostlist, num):
+    """Generate a fake list of specified number of hosts."""
+    hostlist.clear()
+    for i in range(0, num):
+        hostlist.append(str(uuid.uuid4()))
 
 
 class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
@@ -31,9 +41,12 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 p.unlink()
         super().tearDownClass()
 
-    def test_generate_config(self):    # noqa: C901
+    @decorator.load_data('tests/data/ib_traffic_topo_aware_hostfile')    # noqa: C901
+    @decorator.load_data('tests/data/ib_traffic_topo_aware_expected_config')
+    def test_generate_config(self, tp_hosts, tp_expected_config):    # noqa: C901
         """Test util functions ."""
         test_config_file = 'test_gen_config.txt'
+        hostlist = []
 
         def read_config(filename):
             config = []
@@ -59,16 +72,18 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_class(benchmark_name)
         # Small scale test
         node_num = 4
+        gen_hostlist(hostlist, node_num)
         for m in ['one-to-one', 'one-to-many', 'many-to-one']:
-            benchmark.gen_traffic_pattern(node_num, m, test_config_file)
+            benchmark.gen_traffic_pattern(hostlist, m, test_config_file)
             config = read_config(test_config_file)
             assert (config == expected_config[m])
         # Large scale test
         node_num = 1000
+        gen_hostlist(hostlist, node_num)
         # check for 'one-to-many' and 'many-to-one'
         # In Nth step, the count of N is (N-1), others are all 1
         for m in ['one-to-many', 'many-to-one']:
-            benchmark.gen_traffic_pattern(node_num, m, test_config_file)
+            benchmark.gen_traffic_pattern(hostlist, m, test_config_file)
             config = read_config(test_config_file)
             assert (len(config) == node_num)
             assert (len(config[0]) == node_num - 1)
@@ -93,7 +108,7 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         # check for 'one-to-one'
         # Each index appears 1 time in each step
         # Each index has been combined once with all the remaining indexes
-        benchmark.gen_traffic_pattern(node_num, 'one-to-one', test_config_file)
+        benchmark.gen_traffic_pattern(hostlist, 'one-to-one', test_config_file)
         config = read_config(test_config_file)
         if node_num % 2 == 1:
             assert (len(config) == node_num)
@@ -114,6 +129,15 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 assert (node[index] == 1)
         for node in range(node_num):
             assert (sorted(test_pairs[node]) == [(i) for i in range(node_num) if i != node])
+
+        # check for 'topo-aware'
+        # compare generated config file with pre-saved expected config file
+        tp_ibstat_path = 'tests/data/ib_traffic_topo_aware_ibstat.txt'
+        tp_ibnetdiscover_path = 'tests/data/ib_traffic_topo_aware_ibnetdiscover.txt'
+        hostlist = tp_hosts.split()
+        expected_config = tp_expected_config.split()
+        config = gen_topo_aware_config(hostlist, tp_ibstat_path, tp_ibnetdiscover_path, 2, 6)
+        assert (config == expected_config)
 
         Path(test_config_file).unlink()
 
