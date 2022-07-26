@@ -396,7 +396,7 @@ Some attributes may only be suitable for specific mode.
 |            | `local` | `torch.distributed` | `mpi` |
 | ---------: | :-----: | :-----------------: | :---: |
 | `proc_num` |    ✓    |          ✓          |   ✓   |
-| `node_num` |    ✘    |          ✓          |   ✘   |
+| `node_num` |    ✘    |          ✓          |   ✓   |
 | `prefix`   |    ✓    |          ✘          |   ✘   |
 | `env`      |    ✓    |          ✓          |   ✓   |
 | `mca`      |    ✘    |          ✘          |   ✓   |
@@ -414,7 +414,7 @@ Each process will run an individual benchmark, how processes communicate depends
 
 ### `node_num`
 
-Node number to run in the mode. Defaults to all nodes in the run.
+Node number to run in the mode. Defaults to all nodes provided by host file in the run.
 Will be ignored in `local` mode.
 
 For example, assuming you are running model benchmark on 4 nodes,

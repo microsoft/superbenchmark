@@ -39,12 +39,12 @@ jobs:
             BASE_IMAGE=rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
         - name: rocm5.0.1
           dockerfile: rocm5.0.x
-          tags: superbench/main:rocm5.0.1-pytorch1.9.0
+          tags: superbench/main:rocm5.0.1
           extra_args: >-
             BASE_IMAGE=rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
         - name: rocm5.0
           dockerfile: rocm5.0.x
-          tags: superbench/main:rocm5.0-pytorch1.9.0
+          tags: superbench/main:rocm5.0
           extra_args: >-
             BASE_IMAGE=rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
     steps:

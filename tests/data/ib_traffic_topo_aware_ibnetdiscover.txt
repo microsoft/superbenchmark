@@ -1,0 +1,165 @@
+# Faked topology file (ibnetdiscover output)
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xb8599f0300c2f06a
+switchguid=0xff08c43213b3f30(ff08c43213b3f30)
+Switch  41 "S-0ff08c43213b3f30"         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/S01/U1" enhanced port 0 lid 387 lmc 0
+[1]     "S-0ff08c432172aa1a"[21]                # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L01/U1" lid 226 4xHDR s=4 w=2 v=4 e=4
+[2]     "S-0ff08c432172a97a"[21]                # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L02/U1" lid 969 4xHDR s=4 w=2 v=4 e=4
+[41]    "H-0ff08c43213b3f38"[1](ff08c43213b3f38)                # "Mellanox Technologies Aggregation Node" lid 2152 4xHDR s=4 w=2 v=2 e=4
+
+
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xb8599f0300c2f06a
+switchguid=0xff08c432172aa1a(ff08c432172aa1a)
+Switch  41 "S-0ff08c432172aa1a"         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L01/U1" base port 0 lid 226 lmc 0
+[1]     "S-0ff08c43215bae48"[25]                # "MF0;rmd70-0101-0919-01ib0:MQM8700/U1" lid 556 4xHDR s=4 w=2 v=4 e=4
+[2]     "S-0ff08c4321407312"[25]                # "MF0;rmd70-0101-0919-02ib0:MQM8700/U1" lid 164 4xHDR s=4 w=2 v=4 e=4
+[3]     "S-0ff08c43214073f2"[25]                # "MF0;rmd70-0101-0919-03ib0:MQM8700/U1" lid 1913 4xHDR s=4 w=2 v=4 e=4
+[21]    "S-0ff08c43213b3f30"[1]         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/S01/U1" lid 387 4xHDR s=4 w=2 v=4 e=4
+
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xb8599f0300c2f06a
+switchguid=0xff08c432172a97a(ff08c432172a97a)
+Switch  41 "S-0ff08c432172a97a"         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L02/U1" base port 0 lid 969 lmc 0
+[11]    "S-0ff08c432154169c"[26]                # "MF0;rmd70-0101-0919-11ib0:MQM8700/U1" lid 1229 4xHDR s=4 w=2 v=4 e=4
+[12]    "S-0ff08c43215bae68"[26]                # "MF0;rmd70-0101-0919-12ib0:MQM8700/U1" lid 825 4xHDR s=4 w=2 v=4 e=4
+[21]    "S-0ff08c43213b3f30"[2]         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/S01/U1" lid 387 4xHDR s=4 w=2 v=4 e=4
+
+
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xff08c43215bae48
+switchguid=0xff08c43215bae48(ff08c43215bae48)
+Switch  41 "S-0ff08c43215bae48"         # "MF0;rmd70-0101-0919-01ib0:MQM8700/U1" enhanced port 0 lid 556 lmc 0
+[1]     "H-0ff08c4321664e96"[1](ff08c4321664e96)                # "RMD701091901003 ibp11s0f0" lid 1181 4xHDR s=4 w=2 v=4 e=4
+[9]     "H-0ff08c43217299f2"[1](ff08c43217299f2)                # "RMD701091901019 ibp11s0f0" lid 3191 4xHDR s=4 w=2 v=4 e=4
+[25]    "S-0ff08c432172aa1a"[1]         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L01/U1" lid 226 4xHDR s=4 w=2 v=4 e=4
+
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xff08c4321407312
+switchguid=0xff08c4321407312(ff08c4321407312)
+Switch  41 "S-0ff08c4321407312"         # "MF0;rmd70-0101-0919-02ib0:MQM8700/U1" enhanced port 0 lid 164 lmc 0
+[1]     "H-0ff08c4321729742"[1](ff08c4321729742)                # "RMD701091901053 ibp11s0f0" lid 516 4xHDR s=4 w=2 v=4 e=4
+[9]     "H-0ff08c4321729986"[1](ff08c4321729986)                # "RMD701091901037 ibp11s0f0" lid 1062 4xHDR s=4 w=2 v=4 e=4
+[25]    "S-0ff08c432172aa1a"[2]         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L01/U1" lid 226 4xHDR s=4 w=2 v=4 e=4
+
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xff08c43214073f2
+switchguid=0xff08c43214073f2(ff08c43214073f2)
+Switch  41 "S-0ff08c43214073f2"         # "MF0;rmd70-0101-0919-03ib0:MQM8700/U1" enhanced port 0 lid 1913 lmc 0
+[1]     "H-1c34da03005baca4"[1](1c34da03005baca4)               # "RMD701091902003 ibp11s0f0" lid 1294 4xHDR s=4 w=2 v=4 e=4
+[9]     "H-0ff08c432166275a"[1](ff08c432166275a)                # "RMD701091902019 ibp11s0f0" lid 698 4xHDR s=4 w=2 v=4 e=4
+[25]    "S-0ff08c432172aa1a"[3]         # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L01/U1" lid 226 4xHDR s=4 w=2 v=4 e=4
+
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xff08c432154169c
+switchguid=0xff08c432154169c(ff08c432154169c)
+Switch  41 "S-0ff08c432154169c"         # "MF0;rmd70-0101-0919-11ib0:MQM8700/U1" enhanced port 0 lid 1229 lmc 0
+[1]     "H-0ff08c4321664b66"[1](ff08c4321664b66)                # "RMD701091906003 ibp11s0f0" lid 806 4xHDR s=4 w=2 v=4 e=4
+[9]     "H-0ff08c432166274e"[1](ff08c432166274e)                # "RMD701091906019 ibp11s0f0" lid 600 4xHDR s=4 w=2 v=4 e=4
+[26]    "S-0ff08c432172a97a"[11]                # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L02/U1" lid 969 4xHDR s=4 w=2 v=4 e=4
+
+
+vendid=0x2c9
+devid=0xd2f0
+sysimgguid=0xff08c43215bae68
+switchguid=0xff08c43215bae68(ff08c43215bae68)
+Switch  41 "S-0ff08c43215bae68"         # "MF0;rmd70-0101-0919-12ib0:MQM8700/U1" enhanced port 0 lid 825 lmc 0
+[1]     "H-0ff08c4321664f2a"[1](ff08c4321664f2a)                # "RMD701091906053 ibp11s0f0" lid 329 4xHDR s=4 w=2 v=4 e=4
+[9]     "H-043f720300e61112"[1](43f720300e61112)                # "RMD701091906037 ibp11s0f0" lid 150 4xHDR s=4 w=2 v=4 e=4
+[26]    "S-0ff08c432172a97a"[12]                # "MF0;rmd70-0101-0908-01ib1-A:MCS8500/L02/U1" lid 969 4xHDR s=4 w=2 v=4 e=4
+
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c4321664e96
+caguid=0xff08c4321664e96
+Ca      1 "H-0ff08c4321664e96"          # "RMD701091901003 ibp11s0f0"
+[1](ff08c4321664e96)    "S-0ff08c43215bae48"[1]         # lid 1181 lmc 0 "MF0;rmd70-0101-0919-01ib0:MQM8700/U1" lid 556 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c43217299f2
+caguid=0xff08c43217299f2
+Ca      1 "H-0ff08c43217299f2"          # "RMD701091901019 ibp11s0f0"
+[1](ff08c43217299f2)    "S-0ff08c43215bae48"[9]         # lid 3191 lmc 0 "MF0;rmd70-0101-0919-01ib0:MQM8700/U1" lid 556 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c4321729742
+caguid=0xff08c4321729742
+Ca      1 "H-0ff08c4321729742"          # "RMD701091901053 ibp11s0f0"
+[1](ff08c4321729742)    "S-0ff08c4321407312"[1]         # lid 516 lmc 0 "MF0;rmd70-0101-0919-02ib0:MQM8700/U1" lid 164 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c4321729986
+caguid=0xff08c4321729986
+Ca      1 "H-0ff08c4321729986"          # "RMD701091901037 ibp11s0f0"
+[1](ff08c4321729986)    "S-0ff08c4321407312"[9]         # lid 1062 lmc 0 "MF0;rmd70-0101-0919-02ib0:MQM8700/U1" lid 164 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0x1c34da03005baca4
+caguid=0x1c34da03005baca4
+Ca      1 "H-1c34da03005baca4"          # "RMD701091902003 ibp11s0f0"
+[1](1c34da03005baca4)   "S-0ff08c43214073f2"[1]         # lid 1294 lmc 0 "MF0;rmd70-0101-0919-03ib0:MQM8700/U1" lid 1913 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c432166275a
+caguid=0xff08c432166275a
+Ca      1 "H-0ff08c432166275a"          # "RMD701091902019 ibp11s0f0"
+[1](ff08c432166275a)    "S-0ff08c43214073f2"[9]         # lid 698 lmc 0 "MF0;rmd70-0101-0919-03ib0:MQM8700/U1" lid 1913 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c4321664b66
+caguid=0xff08c4321664b66
+Ca      1 "H-0ff08c4321664b66"          # "RMD701091906003 ibp11s0f0"
+[1](ff08c4321664b66)    "S-0ff08c432154169c"[1]         # lid 806 lmc 0 "MF0;rmd70-0101-0919-11ib0:MQM8700/U1" lid 1229 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c432166274e
+caguid=0xff08c432166274e
+Ca      1 "H-0ff08c432166274e"          # "RMD701091906019 ibp11s0f0"
+[1](ff08c432166274e)    "S-0ff08c432154169c"[9]         # lid 600 lmc 0 "MF0;rmd70-0101-0919-11ib0:MQM8700/U1" lid 1229 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0xff08c4321664f2a
+caguid=0xff08c4321664f2a
+Ca      1 "H-0ff08c4321664f2a"          # "RMD701091906053 ibp11s0f0"
+[1](ff08c4321664f2a)    "S-0ff08c43215bae68"[1]         # lid 329 lmc 0 "MF0;rmd70-0101-0919-12ib0:MQM8700/U1" lid 825 4xHDR s=4 w=2 v=3 e=4
+
+
+vendid=0x2c9
+devid=0x101b
+sysimgguid=0x43f720300e61112
+caguid=0x43f720300e61112
+Ca      1 "H-043f720300e61112"          # "RMD701091906037 ibp11s0f0"
+[1](43f720300e61112)    "S-0ff08c43215bae68"[9]         # lid 150 lmc 0 "MF0;rmd70-0101-0919-12ib0:MQM8700/U1" lid 825 4xHDR s=4 w=2 v=3 e=4
+
