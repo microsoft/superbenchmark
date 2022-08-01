@@ -34,7 +34,7 @@ def read_raw_data(raw_data_path):
     try:
         with p.open(encoding='utf-8') as f:
             for single_node_summary in jsonlines.Reader(f):
-                raw_data_df = raw_data_df.append(single_node_summary, ignore_index=True)
+                raw_data_df = pd.concat([raw_data_df, pd.DataFrame([single_node_summary])], axis=0, ignore_index=True)
         raw_data_df = raw_data_df.rename(raw_data_df['node'])
         raw_data_df = raw_data_df.drop(columns=['node'])
     except Exception as e:

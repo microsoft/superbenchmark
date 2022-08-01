@@ -4,6 +4,7 @@
 """A module for data diagnosis rule ops."""
 
 from typing import Dict, Callable
+import re
 
 import pandas as pd
 
@@ -17,6 +18,7 @@ class DiagnosisRuleType(Enum):
     VARIANCE = 'variance'
     VALUE = 'value'
     MULTI_RULES = 'multi_rules'
+    FAILURE_CHECK = 'failure_check'
 
 
 class RuleOp:
@@ -82,7 +84,7 @@ class RuleOp:
         """
         # metric not in raw_data or the value is none, miss test
         if metric not in data_row or pd.isna(data_row[metric]):
-            RuleOp.add_categories_and_details(metric + '_miss', rule['categories'], details, categories)
+            RuleOp.add_categories_and_details(metric + '_miss', 'FailedTest', details, categories)
             return True
         return False
 
@@ -97,7 +99,8 @@ class RuleOp:
             categories (set): set of categories of violated rules
         """
         details.append(detail)
-        categories.add(category)
+        if category:
+            categories.add(category)
 
     @staticmethod
     def variance(data_row, rule, summary_data_row, details, categories):
@@ -122,9 +125,7 @@ class RuleOp:
         # every metric should pass the rule
         for metric in rule['metrics']:
             # metric not in raw_data or the value is none, miss test
-            if RuleOp.miss_test(metric, rule, data_row, details, categories):
-                violated_metric_num += 1
-            else:
+            if not RuleOp.miss_test(metric, rule, data_row, details, categories):
                 violate_metric = False
                 # check if metric pass the rule
                 val = data_row[metric]
@@ -140,7 +141,10 @@ class RuleOp:
                     info = '(B/L: {:.4f} VAL: {:.4f} VAR: {:.2f}% Rule:{})'.format(
                         baseline, val, var * 100, rule['criteria']
                     )
-                    RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    if 'store' not in rule or not rule['store']:
+                        RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    else:
+                        RuleOp.add_categories_and_details(metric + info, None, details, categories)
         return violated_metric_num
 
     @staticmethod
@@ -167,9 +171,7 @@ class RuleOp:
         # every metric should pass the rule
         for metric in rule['metrics']:
             # metric not in raw_data or the value is none, miss test
-            if RuleOp.miss_test(metric, rule, data_row, details, categories):
-                violated_metric_num += 1
-            else:
+            if not RuleOp.miss_test(metric, rule, data_row, details, categories):
                 violate_metric = False
                 # check if metric pass the rule
                 val = data_row[metric]
@@ -179,7 +181,10 @@ class RuleOp:
                 if violate_metric:
                     violated_metric_num += 1
                     info = '(VAL: {:.4f} Rule:{})'.format(val, rule['criteria'])
-                    RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    if 'store' not in rule or not rule['store']:
+                        RuleOp.add_categories_and_details(metric + info, rule['categories'], details, categories)
+                    else:
+                        RuleOp.add_categories_and_details(metric + info, None, details, categories)
         return violated_metric_num
 
     @staticmethod
@@ -205,7 +210,41 @@ class RuleOp:
             RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
         return 1 if violated else 0
 
+    @staticmethod
+    def failure_check(data_row, rule, summary_data_row, details, categories, raw_rule):
+        """Rule op function of failure_check.
+
+        Args:
+            data_row (pd.Series): raw data of the metrics
+            rule (dict): rule including function, criteria, metrics with their baseline values and categories
+            summary_data_row (pd.Series): results of the metrics processed after the function
+            details (list): details about violated rules and related data
+            categories (set): categories of violated rules
+            raw_rule (dict): raw rule read from rule file
+
+        Returns:
+            number: the number of the metrics that violate the rule if the rule is not passed, otherwise 0
+        """
+        violated_metric_num = 0
+        for metric_regex in raw_rule['metrics']:
+            match = False
+            for metric in rule['metrics']:
+                if re.search(metric_regex, metric):
+                    match = True
+                    # metric not in raw_data or the value is none, miss test
+                    if metric not in data_row or pd.isna(data_row[metric]):
+                        violated_metric_num += 1
+                    break
+            # metric_regex written in rules is not matched by any metric, miss test
+            if not match:
+                violated_metric_num += 1
+                RuleOp.add_categories_and_details(metric_regex + '_miss', rule['categories'], details, categories)
+        # return code != 0, failed test
+        violated_metric_num += RuleOp.value(data_row, rule, summary_data_row, details, categories)
+        return violated_metric_num
+
 
 RuleOp.add_rule_func(DiagnosisRuleType.VARIANCE)(RuleOp.variance)
 RuleOp.add_rule_func(DiagnosisRuleType.VALUE)(RuleOp.value)
 RuleOp.add_rule_func(DiagnosisRuleType.MULTI_RULES)(RuleOp.multi_rules)
+RuleOp.add_rule_func(DiagnosisRuleType.FAILURE_CHECK)(RuleOp.failure_check)
