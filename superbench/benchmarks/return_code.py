@@ -14,6 +14,7 @@ class ReturnCode(Enum):
     INVALID_BENCHMARK_TYPE = 2
     INVALID_BENCHMARK_RESULT = 3
     RUNTIME_EXCEPTION_ERROR = 4
+    KILLED_BY_TIMEOUT = 124
     # Return codes related to model benchmarks.
     NO_SUPPORTED_PRECISION = 10
     DISTRIBUTED_SETTING_INIT_FAILURE = 13
