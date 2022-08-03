@@ -155,11 +155,11 @@ class Benchmark(ABC):
             True if run benchmark successfully.
         """
         ret = True
+        self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         try:
             ret &= self._preprocess()
             if ret:
                 signal.signal(signal.SIGTERM, self.__signal_handler)
-                self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
                 for self._curr_run_index in range(self._args.run_count):
                     ret &= self._benchmark()
                 if ret:
