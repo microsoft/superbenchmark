@@ -3,6 +3,8 @@
 
 """Module of the base class."""
 
+import signal
+import traceback
 import argparse
 import numbers
 from datetime import datetime
@@ -153,24 +155,39 @@ class Benchmark(ABC):
             True if run benchmark successfully.
         """
         ret = True
+        self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         try:
             ret &= self._preprocess()
             if ret:
-                self._start_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                signal.signal(signal.SIGTERM, self.__signal_handler)
                 for self._curr_run_index in range(self._args.run_count):
                     ret &= self._benchmark()
-                self._end_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-                self._result.set_timestamp(self._start_time, self._end_time)
-
                 if ret:
                     ret &= self.__check_result_format()
+        except TimeoutError as e:
+            self._result.set_return_code(ReturnCode.KILLED_BY_TIMEOUT)
+            logger.error('Run benchmark failed - benchmark: %s, message: %s', self._name, e)
         except BaseException as e:
             self._result.set_return_code(ReturnCode.RUNTIME_EXCEPTION_ERROR)
             logger.error('Run benchmark failed - benchmark: {}, message: {}'.format(self._name, str(e)))
         finally:
+            self._end_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            self._result.set_timestamp(self._start_time, self._end_time)
             ret &= self._postprocess()
 
         return ret
+
+    def __signal_handler(self, signum, frame):
+        """Signal handler for benchmark.
+
+        Args:
+            signum (int): Signal number.
+            frame (FrameType): Timeout frame.
+        """
+        logger.debug('Killed by %s', signal.Signals(signum).name)
+        logger.debug(''.join(traceback.format_stack(frame, 5)))
+        if signum == signal.SIGTERM:
+            raise TimeoutError('Killed by SIGTERM or timeout!')
 
     def __check_result_format(self):
         """Check the validation of result object.

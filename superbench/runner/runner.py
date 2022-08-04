@@ -388,6 +388,9 @@ class SuperBenchRunner():
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
 
         timeout = self._sb_benchmarks[benchmark_name].timeout
+        if isinstance(timeout, int):
+            timeout = min(timeout, 60)
+
         env_list = '--env-file /tmp/sb.env'
         if self._docker_config.skip:
             env_list = 'set -o allexport && source /tmp/sb.env && set +o allexport'
@@ -405,7 +408,9 @@ class SuperBenchRunner():
         if mode.name == 'mpi' and mode.node_num != 1:
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
 
-        ansible_runner_config['timeout'] = timeout
+        if isinstance(timeout, int):
+            # we do not expect timeout in ansible unless subprocess hangs
+            ansible_runner_config['timeout'] = timeout + 300
 
         rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
         return rc
