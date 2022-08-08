@@ -128,6 +128,6 @@ ADD third_party third_party
 RUN make -C third_party cuda
 
 ADD . .
-RUN python3 -m pip install .[nvidia,torch,ort] && \
+RUN python3 -m pip install .[nvidia,torch,ort,mpi] && \
     make cppbuild && \
     make postinstall

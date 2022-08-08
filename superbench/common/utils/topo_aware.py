@@ -4,7 +4,11 @@
 """Topology Aware Utilities."""
 
 import re
+import os
+from pathlib import Path
+
 import networkx as nx
+
 from superbench.common.utils import logger
 
 
@@ -31,6 +35,39 @@ class quick_regexp(object):
         return self.matched
 
 
+def gen_ibstat_file(ibstat_file):
+    """Generate ibstat file for each node with specified path.
+
+    Args:
+        ibstat_file (str): path of ibstat output.
+    """
+    from mpi4py import MPI
+
+    if not MPI.Is_initialized():
+        MPI.Init()
+
+    comm = MPI.COMM_WORLD
+    name = MPI.Get_processor_name()
+
+    # The command to fetch ibstat info
+    cmd = r"ibstat | grep -Po 'System image GUID: \K\S+$'"
+    output = os.popen(cmd)
+    ibstat = 'VM_hostname ' + name + '\n' + str(output.read())
+
+    # Fetch all ibstate from each node
+    ibstats = comm.allgather(ibstat)
+
+    ibstate_file_path = Path(ibstat_file)
+
+    # Filter the duplicate info
+    ibstat_infos = set(ibstats)
+
+    with ibstate_file_path.open(mode='w') as f:
+        for ibstat_info in ibstat_infos:
+            f.write(ibstat_info)
+    MPI.Finalize()
+
+
 def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, max_dist):    # noqa: C901
     """Generate topology aware config list in specified distance range.
 
@@ -47,15 +84,24 @@ def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, 
         topology distance (#hops).
     """
     config = []
-    if not ibstat_file or not ibnetdiscover_file:
-        logger.error('Either ibstat or ibnetdiscover not specified.')
+    # Check validity of input parameters
+    if not ibnetdiscover_file:
+        logger.error('ibnetdiscover file is not specified.')
+        return config
+
+    if not ibstat_file:
+        ibstat_file = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'ib_traffic_topo_aware_ibstat.txt')
+        gen_ibstat_file(ibstat_file)
+
+    if not Path(ibstat_file).exists():
+        logger.error('ibstat file does not exist.')
         return config
 
     if min_dist > max_dist:
         logger.error('Specified minimum distane ({}) is larger than maximum distance ({}).'.format(min_dist, max_dist))
         return config
 
-    # index each hostname in hostfile
+    # Index each hostname in hostfile
     host_idx = dict()
     idx = 0
     for h in host_list:
