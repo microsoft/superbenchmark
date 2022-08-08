@@ -232,20 +232,22 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): defective nodes's detailed information
 
         Returns:
-            DataFrame: all nodes' detailed information inluding ['Accept','Issue_num','Category','Issue_Details']
+            DataFrame: all nodes' detailed information inluding ['Accept','Number_Of_Issues','Category','Issue_Details']
         """
-        append_columns = ['Accept', 'Issue_num', 'Category', 'Issue_Details']
+        append_columns = ['Accept', 'Number_Of_Issues', 'Category', 'Issue_Details']
         all_data_df = (raw_data_df).astype('float64')
 
         if data_not_accept_df.shape[0] == 0:
             all_data_df['Accept'] = [True for i in range(len(all_data_df))]
-            all_data_df['Issue_num'] = [0 for i in range(len(all_data_df))]
+            all_data_df['Number_Of_Issues'] = [0 for i in range(len(all_data_df))]
             all_data_df['Category'] = [None for i in range(len(all_data_df))]
             all_data_df['Issue_Details'] = [None for i in range(len(all_data_df))]
 
         elif data_not_accept_df.shape[0] > 0:
             data_not_accept_df['Accept'] = [False for i in range(len(data_not_accept_df))]
-            data_not_accept_df['Issue_num'] = data_not_accept_df['Defective Details'].map(lambda x: len(x.split(',')))
+            data_not_accept_df['Number_Of_Issues'] = data_not_accept_df['Defective Details'].map(
+                lambda x: len(x.split(','))
+            )
             data_not_accept_df = data_not_accept_df.rename(columns={'Defective Details': 'Issue_Details'})
             for index in range(len(append_columns)):
                 if append_columns[index] not in data_not_accept_df:
@@ -260,8 +262,8 @@ class DataDiagnosis(RuleBase):
                         data_not_accept_df[[append_columns[index]]], left_index=True, right_index=True, how='left'
                     )
             all_data_df['Accept'] = all_data_df['Accept'].replace(np.nan, True)
-            all_data_df['Issue_num'] = all_data_df['Issue_num'].replace(np.nan, 0)
-            all_data_df['Issue_num'] = all_data_df['Issue_num'].astype(int)
+            all_data_df['Number_Of_Issues'] = all_data_df['Number_Of_Issues'].replace(np.nan, 0)
+            all_data_df['Number_Of_Issues'] = all_data_df['Number_Of_Issues'].astype(int)
 
         all_data_df = all_data_df.replace(np.nan, '')
 
@@ -326,7 +328,7 @@ class DataDiagnosis(RuleBase):
             columns={
                 'Issue_Details': 'diagnosis/issue_details',
                 'Category': 'diagnosis/category',
-                'Issue_num': 'diagnosis/issue_num',
+                'Number_Of_Issues': 'diagnosis/issue_num',
                 'Accept': 'diagnosis/accept'
             }
         )
