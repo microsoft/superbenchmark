@@ -389,7 +389,7 @@ class SuperBenchRunner():
 
         timeout = self._sb_benchmarks[benchmark_name].timeout
         if isinstance(timeout, int):
-            timeout = min(timeout, 60)
+            timeout = max(timeout, 60)
 
         env_list = '--env-file /tmp/sb.env'
         if self._docker_config.skip:
