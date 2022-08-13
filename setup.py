@@ -191,6 +191,7 @@ setup(
             'torchvision>=0.8.0a0',
             'transformers>=4.3.3',
         ],
+        'mpi': ['mpi4py>=3.1.3'],
     },
     include_package_data=True,
     entry_points={
