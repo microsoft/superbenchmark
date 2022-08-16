@@ -326,6 +326,7 @@ class DataDiagnosis(RuleBase):
         data_not_accept_df['Index'] = data_not_accept_df.index
         data_not_accept_df = data_not_accept_df.rename(
             columns={
+                'Defective Details': 'diagnosis/issue_details',
                 'Issue_Details': 'diagnosis/issue_details',
                 'Category': 'diagnosis/category',
                 'Number_Of_Issues': 'diagnosis/issue_num',
@@ -406,12 +407,11 @@ class DataDiagnosis(RuleBase):
                 output_path = str(Path(output_dir) / 'diagnosis_summary.xlsx')
                 self.output_diagnosis_in_excel(self._raw_data_df, data_not_accept_df, output_path, self._sb_rules)
             elif output_format == 'json':
-                if output_all:
-                    output_path = str(Path(output_dir) / 'diagnosis_summary.json')
-                    self.output_diagnosis_in_json(data_not_accept_df, output_path)
-                else:
-                    output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
-                    self.output_diagnosis_in_jsonl(data_not_accept_df, output_path)
+                output_path = str(Path(output_dir) / 'diagnosis_summary.json')
+                self.output_diagnosis_in_json(data_not_accept_df, output_path)
+            elif output_format == 'jsonl':
+                output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
+                self.output_diagnosis_in_jsonl(data_not_accept_df, output_path)
             elif output_format == 'md' or output_format == 'html':
                 lines = self.generate_md_lines(data_not_accept_df, self._sb_rules, round)
                 if output_format == 'md':

@@ -171,12 +171,18 @@ The function used for this rule.
 
 ## Output
 
-We support different output formats for filtering the defective machines including jsonl, excel, etc. The output includes all defective machines' information including index, failure category, failure details, and detailed metrics.
+We support different output formats for filtering the defective machines including json, jsonl, excel, md and html.
+
+The output includes all defective machines' information including index, failure category, failure details, and detailed metrics by default.
 
 - index: the name of defective machines.
 
-- Category: categories defined in the rule.
+- Category (diagnosis/category in json format): categories defined in the rule.
 
-- Defective Details: all violated metrics including metric data and related rule.
+- Defective Details (diagnosis/issue_details in json format): all violated metrics including metric data and related rule.
 
 - ${metric}: the data of the metrics defined in the rule file. If the rule is `variance`, the form of the data is variance in percentage; if the rule is `value`, the form of the data is raw data.
+
+If you specify '--output-all' in the command, the output includes all machines' information and an extra field to indicate if the machines is defective.
+
+- Accept (diagnosis/accept in json format): False if the machine is defective, otherwise True.

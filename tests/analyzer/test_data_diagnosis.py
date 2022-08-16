@@ -21,7 +21,8 @@ class TestDataDiagnosis(unittest.TestCase):
         self.parent_path = Path(__file__).parent
         self.output_excel_file = str(self.parent_path / 'diagnosis_summary.xlsx')
         self.test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
-        self.output_json_file = str(self.parent_path / 'diagnosis_summary.jsonl')
+        self.output_json_file = str(self.parent_path / 'diagnosis_summary.json')
+        self.output_jsonl_file = str(self.parent_path / 'diagnosis_summary.jsonl')
         self.output_md_file = str(self.parent_path / 'diagnosis_summary.md')
         self.output_html_file = str(self.parent_path / 'diagnosis_summary.html')
         self.output_all_json_file = str(self.parent_path / 'diagnosis_summary.json')
@@ -29,8 +30,8 @@ class TestDataDiagnosis(unittest.TestCase):
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
         for file in [
-            self.output_excel_file, self.output_json_file, self.test_rule_file_fake, self.output_md_file,
-            self.output_html_file, self.output_all_json_file
+            self.output_excel_file, self.output_json_file, self.output_jsonl_file, self.test_rule_file_fake,
+            self.output_md_file, self.output_html_file, self.output_all_json_file
         ]:
             p = Path(file)
             if p.is_file():
@@ -248,10 +249,19 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (Path(self.output_json_file).is_file())
         with Path(self.output_json_file).open() as f:
             data_not_accept_read_from_json = f.read()
-        expect_result_file = self.parent_path / '../data/diagnosis_summary.jsonl'
+        expect_result_file = self.parent_path / '../data/diagnosis_summary_json.json'
         with Path(expect_result_file).open() as f:
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
+        # Test - output in jsonl
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'jsonl')
+        assert (Path(self.output_jsonl_file).is_file())
+        with Path(self.output_jsonl_file).open() as f:
+            data_not_accept_read_from_jsonl = f.read()
+        expect_result_file = self.parent_path / '../data/diagnosis_summary.jsonl'
+        with Path(expect_result_file).open() as f:
+            expect_result = f.read()
+        assert (data_not_accept_read_from_jsonl == expect_result)
         # Test - output in md
         DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md', round=2)
         assert (Path(self.output_md_file).is_file())
