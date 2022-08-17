@@ -152,11 +152,11 @@ setup(
         'natsort>=7.1.1',
         'networkx>=1.11',
         'numpy>=1.19.2',
-        'openpyxl>=3.0.7',
         'omegaconf==2.0.6',
+        'openpyxl>=3.0.7',
         'pandas>=1.1.5',
         'pyyaml>=5.3',
-        'requests>=2.28.1',
+        'requests>=2.27.1',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
         'urllib3>=1.26.9',
@@ -164,35 +164,45 @@ setup(
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
     ],
-    extras_require={
-        'dev': ['pre-commit>=2.10.0'],
-        'test': [
-            'flake8-docstrings>=1.5.0',
-            'flake8-quotes>=3.2.0',
-            'flake8>=3.8.4',
-            'mypy>=0.800',
-            'pydocstyle>=5.1.1',
-            'pytest-cov>=2.11.1',
-            'pytest-subtests>=0.4.0',
-            'pytest>=6.2.2',
-            'types-markdown',
-            'types-pkg_resources',
-            'types-pyyaml',
-            'vcrpy>=4.1.1',
-            'yapf==0.31.0',
-        ],
-        'nvidia': ['py3nvml>=0.2.6'],
-        'ort': [
-            'onnx>=1.10.2',
-            'onnxruntime-gpu==1.10.0',
-        ],
-        'torch': [
-            'torch>=1.7.0a0',
-            'torchvision>=0.8.0a0',
-            'transformers>=4.3.3',
-        ],
-        'mpi': ['mpi4py>=3.1.3'],
-    },
+    extras_require=(
+        lambda x: {
+            **x,
+            'develop': x['dev'] + x['test'],
+            'cpuworker': x['torch'],
+            'amdworker': x['torch'] + x['ort'] + x['mpi'],
+            'nvworker': x['torch'] + x['ort'] + x['mpi'] + x['nvidia'],
+        }
+    )(
+        {
+            'dev': ['pre-commit>=2.10.0'],
+            'test': [
+                'flake8-docstrings>=1.5.0',
+                'flake8-quotes>=3.2.0',
+                'flake8>=3.8.4',
+                'mypy>=0.800',
+                'pydocstyle>=5.1.1',
+                'pytest-cov>=2.11.1',
+                'pytest-subtests>=0.4.0',
+                'pytest>=6.2.2',
+                'types-markdown',
+                'types-pkg_resources',
+                'types-pyyaml',
+                'vcrpy>=4.1.1',
+                'yapf==0.31.0',
+            ],
+            'torch': [
+                'torch>=1.7.0a0',
+                'torchvision>=0.8.0a0',
+                'transformers>=4.3.3',
+            ],
+            'ort': [
+                'onnx>=1.10.2',
+                'onnxruntime-gpu==1.10.0',
+            ],
+            'mpi': ['mpi4py>=3.1.3'],
+            'nvidia': ['py3nvml>=0.2.6'],
+        }
+    ),
     include_package_data=True,
     entry_points={
         'console_scripts': [

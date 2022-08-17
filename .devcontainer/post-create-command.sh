@@ -4,7 +4,7 @@ set -e
 export PATH=${HOME}/.local/bin:${PATH}
 
 # install python packages
-pip install .[dev,test,torch] --user --no-cache-dir --progress-bar=off --use-feature=in-tree-build
+pip install .[develop,cpuworker] --user --no-cache-dir --progress-bar=off --use-feature=in-tree-build
 pre-commit install --install-hooks
 
 # install nodejs packages
