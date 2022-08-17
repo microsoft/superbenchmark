@@ -5,18 +5,29 @@ trigger:
   - main
   - release/*
 
+strategy:
+  matrix:
+    python-3.6:
+      imageTag: '3.6'
+    python-3.7:
+      imageTag: '3.7'
+    # TODO
+    #python-latest:
+    #  imageTag: '3'
+  maxParallel: 3
+
 pool:
   vmImage: ubuntu-latest
 
 container:
-  image: python:3.7
+  image: python:$(imageTag)
 
 steps:
   - script: |
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      python3 -m pip install .[test,torch]
+      python3 -m pip install .[test,cpuworker]
       make postinstall
     displayName: Install dependencies
   - script: |
@@ -29,7 +40,7 @@ steps:
     env:
       SB_TEST_CUDA: '0'
   - script: |
-      bash <(curl -s https://codecov.io/bash) -cF cpu-unit-test
+      bash <(curl -s https://codecov.io/bash) -cF cpu-python$(imageTag)-unit-test
     displayName: Report coverage results
     env:
       CODECOV_TOKEN: $(codecovToken)
