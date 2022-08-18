@@ -213,7 +213,7 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (data_df.loc['sb-validation-02']['Accept'])
         assert (not data_df.loc['sb-validation-03']['Accept'])
         assert ('Category' in data_df)
-        assert ('Issue_Details' in data_df)
+        assert ('Defective Details' in data_df)
         # case 1: 3 accept, 0 not accept
         data_df_all_accept = diag1.output_all_nodes_results(diag1._raw_data_df, pd.DataFrame())
         assert (len(data_df_all_accept) == 3)
