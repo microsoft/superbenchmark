@@ -212,9 +212,7 @@ class RuleOp:
                 RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
             return 1 if violated else 0
         except Exception as e:
-            logger.error(
-                'Analyzer: invalid criteria or citation - rule:{}, error message:{}'.format(rule, str(e))
-            )
+            logger.error('Analyzer: invalid criteria or citation - rule:{}, error message:{}'.format(rule, str(e)))
             return 0
 
     @staticmethod
