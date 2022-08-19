@@ -198,8 +198,8 @@ class RuleOp:
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             details (list): details about violated rules and related data
             categories (set): categories of violated rules
-            violation (dict): including the number of the metrics that violate the rule, and the values of the metrics
-                              for the rules with 'store' True
+            store_values (dict): including the number of the metrics that violate the rule, and the values of
+            the metrics for the rules with 'store' True
         Returns:
             number: 0 if the rule is passed, otherwise 1
         """
