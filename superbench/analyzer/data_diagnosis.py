@@ -151,7 +151,7 @@ class DataDiagnosis(RuleBase):
         issue_label = False
         details = []
         categories = set()
-        violation = {}
+        store_values = {}
         summary_data_row = pd.Series(index=self._enable_metrics, name=node, dtype=float)
         # Check each rule
         for rule in self._sb_rules:
@@ -160,7 +160,7 @@ class DataDiagnosis(RuleBase):
             rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
             violated_num = 0
             if rule_op == RuleOp.multi_rules:
-                violated_num = rule_op(self._sb_rules[rule], details, categories, violation)
+                violated_num = rule_op(self._sb_rules[rule], details, categories, store_values)
             elif rule_op == RuleOp.failure_check:
                 violated_num = rule_op(
                     data_row, self._sb_rules[rule], summary_data_row, details, categories, self._raw_rules[rule]
@@ -169,7 +169,11 @@ class DataDiagnosis(RuleBase):
                 violated_num = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories)
             # label the node as defective one
             if self._sb_rules[rule]['store']:
-                violation[rule] = violated_num
+                store_values[rule] = {}
+                store_values[rule]['metrics'] = {}
+                for metric in self._sb_rules[rule]['metrics']:
+                    store_values[rule]['metrics'][metric] = data_row[metric]
+                store_values[rule]['violated'] = violated_num
             elif violated_num:
                 issue_label = True
         if issue_label:

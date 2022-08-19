@@ -188,7 +188,7 @@ class RuleOp:
         return violated_metric_num
 
     @staticmethod
-    def multi_rules(rule, details, categories, violation):
+    def multi_rules(rule, details, categories, store_values):
         """Rule op function of multi_rules.
 
         The criteria in this rule will use the combined results of multiple previous rules and their metrics
@@ -198,17 +198,24 @@ class RuleOp:
             rule (dict): rule including function, criteria, metrics with their baseline values and categories
             details (list): details about violated rules and related data
             categories (set): categories of violated rules
-            violation (dict): the number of the metrics that violate the rules
+            violation (dict): including the number of the metrics that violate the rule, and the values of the metrics
+                              for the rules with 'store' True
         Returns:
             number: 0 if the rule is passed, otherwise 1
         """
-        violated = eval(rule['criteria'])(violation)
-        if not isinstance(violated, bool):
-            logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
-        if violated:
-            info = '{}:{}'.format(rule['name'], rule['criteria'])
-            RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
-        return 1 if violated else 0
+        try:
+            violated = eval(rule['criteria'])(store_values)
+            if not isinstance(violated, bool):
+                logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
+            if violated:
+                info = '{}:{}'.format(rule['name'], rule['criteria'])
+                RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
+            return 1 if violated else 0
+        except Exception as e:
+            logger.error(
+                'Analyzer: invalid criteria or citation - rule:{}, error message:{}'.format(rule, str(e))
+            )
+            return 0
 
     @staticmethod
     def failure_check(data_row, rule, summary_data_row, details, categories, raw_rule):
