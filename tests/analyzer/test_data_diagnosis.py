@@ -333,12 +333,9 @@ class TestDataDiagnosis(unittest.TestCase):
                         'metrics': ['kernel-launch/wall_overhead']
                     },
                     'rule3': {
-                        'categories':
-                        'CNN',
-                        'function':
-                        'multi_rules',
-                        'criteria':
-                        'lambda label:True if label["rule1"]["violated"]+label["rule2"]["violated"]>=2 else False'
+                        'categories': 'CNN',
+                        'function': 'multi_rules',
+                        'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
                     }
                 }
             }
@@ -360,7 +357,7 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (
             details_row[1] == 'kernel-launch/wall_overhead(B/L: 0.0103 VAL: 0.0050 VAR: -51.27% Rule:lambda x:x<-0.5),'
             + 'mem-bw/D2H_Mem_BW(B/L: 24.3000 VAL: 10.0000 VAR: -58.85% Rule:lambda x:x<-0.5),' +
-            'rule3:lambda label:True if label["rule1"]["violated"]+label["rule2"]["violated"]>=2 else False'
+            'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
         )
 
         # Test multi-rule using values of metrics in criteria lambda expression
@@ -372,10 +369,6 @@ class TestDataDiagnosis(unittest.TestCase):
                     'rule1': {
                         'categories':
                         'NCCL_DIS',
-                        'criteria':
-                        'lambda x:x==0',
-                        'function':
-                        'value',
                         'store':
                         True,
                         'metrics': [
@@ -386,9 +379,9 @@ class TestDataDiagnosis(unittest.TestCase):
                     },
                     'rule2': {
                         'categories': 'NCCL_DIS',
-                        'criteria': 'lambda label:True if min(label["rule1"]["metrics"].values())' + '/' +
-                        'max(label["rule1"]["metrics"].values())<0.95 else False',
-                        'function': 'multi_rules',
+                        'criteria': 'lambda label:True if min(label["rule1"].values())' + '/' +
+                        'max(label["rule1"].values())<0.95 else False',
+                        'function': 'multi_rules'
                     }
                 }
             }
