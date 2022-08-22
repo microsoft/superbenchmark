@@ -156,7 +156,7 @@ class TestRuleOp(unittest.TestCase):
             }, {
                 'name': 'rule3',
                 'categories': 'CNN',
-                'criteria': 'lambda label:True if label["rule1"]["violated"]+label["rule2"]["violated"]>=2 else False',
+                'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False',
                 'store': False,
                 'function': 'multi_rules'
             }
@@ -195,7 +195,7 @@ class TestRuleOp(unittest.TestCase):
                 '(B/L: 300.0000 VAL: 100.0000 VAR: -66.67% Rule:lambda x:x<-0.5)',
                 'vgg_models/pytorch-vgg11/throughput_train_float32' +
                 '(B/L: 300.0000 VAL: 100.0000 VAR: -66.67% Rule:lambda x:x<-0.5)',
-                'rule3:lambda label:True if label["rule1"]["violated"]+label["rule2"]["violated"]>=2 else False'
+                'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
             ]
         )
 
