@@ -232,23 +232,23 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): defective nodes's detailed information
 
         Returns:
-            DataFrame: all nodes' detailed information inluding ['Accept','Number_Of_Issues','Category','Issue_Details']
+            DataFrame: all nodes' detailed information inluding ['Accept','Number Of Issues',
+            'Category','Defective Details']
         """
-        append_columns = ['Accept', 'Number_Of_Issues', 'Category', 'Issue_Details']
+        append_columns = ['Accept', 'Number Of Issues', 'Category', 'Defective Details']
         all_data_df = (raw_data_df).astype('float64')
 
         if data_not_accept_df.shape[0] == 0:
             all_data_df['Accept'] = [True for i in range(len(all_data_df))]
-            all_data_df['Number_Of_Issues'] = [0 for i in range(len(all_data_df))]
+            all_data_df['Number Of Issues'] = [0 for i in range(len(all_data_df))]
             all_data_df['Category'] = [None for i in range(len(all_data_df))]
-            all_data_df['Issue_Details'] = [None for i in range(len(all_data_df))]
+            all_data_df['Defective Details'] = [None for i in range(len(all_data_df))]
 
         elif data_not_accept_df.shape[0] > 0:
             data_not_accept_df['Accept'] = [False for i in range(len(data_not_accept_df))]
-            data_not_accept_df['Number_Of_Issues'] = data_not_accept_df['Defective Details'].map(
+            data_not_accept_df['Number Of Issues'] = data_not_accept_df['Defective Details'].map(
                 lambda x: len(x.split(','))
             )
-            data_not_accept_df = data_not_accept_df.rename(columns={'Defective Details': 'Issue_Details'})
             for index in range(len(append_columns)):
                 if append_columns[index] not in data_not_accept_df:
                     logger.warning(
@@ -262,8 +262,8 @@ class DataDiagnosis(RuleBase):
                         data_not_accept_df[[append_columns[index]]], left_index=True, right_index=True, how='left'
                     )
             all_data_df['Accept'] = all_data_df['Accept'].replace(np.nan, True)
-            all_data_df['Number_Of_Issues'] = all_data_df['Number_Of_Issues'].replace(np.nan, 0)
-            all_data_df['Number_Of_Issues'] = all_data_df['Number_Of_Issues'].astype(int)
+            all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].replace(np.nan, 0)
+            all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].astype(int)
 
         all_data_df = all_data_df.replace(np.nan, '')
 
@@ -326,9 +326,9 @@ class DataDiagnosis(RuleBase):
         data_not_accept_df['Index'] = data_not_accept_df.index
         data_not_accept_df = data_not_accept_df.rename(
             columns={
-                'Issue_Details': 'diagnosis/issue_details',
+                'Defective Details': 'diagnosis/issue_details',
                 'Category': 'diagnosis/category',
-                'Number_Of_Issues': 'diagnosis/issue_num',
+                'Number Of Issues': 'diagnosis/issue_num',
                 'Accept': 'diagnosis/accept'
             }
         )
@@ -394,31 +394,25 @@ class DataDiagnosis(RuleBase):
             # read baseline
             baseline = file_handler.read_baseline(baseline_file)
             logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))
-            data_not_accept_df, label_df = self.run_diagnosis_rules(rules, baseline)
+            output_df, label_df = self.run_diagnosis_rules(rules, baseline)
             logger.info('DataDiagnosis: Processed finished')
-            output_path = ''
+            output_path = str(Path(output_dir) / f'diagnosis_summary.{output_format}')
             # generate all nodes' info
             if output_all:
-                output_path = str(Path(output_dir) / 'diagnosis_summary.json')
-                data_not_accept_df = self.output_all_nodes_results(self._raw_data_df, data_not_accept_df)
+                output_df = self.output_all_nodes_results(self._raw_data_df, output_df)
             # output according format
             if output_format == 'excel':
                 output_path = str(Path(output_dir) / 'diagnosis_summary.xlsx')
-                self.output_diagnosis_in_excel(self._raw_data_df, data_not_accept_df, output_path, self._sb_rules)
+                self.output_diagnosis_in_excel(self._raw_data_df, output_df, output_path, self._sb_rules)
             elif output_format == 'json':
-                if output_all:
-                    output_path = str(Path(output_dir) / 'diagnosis_summary.json')
-                    self.output_diagnosis_in_json(data_not_accept_df, output_path)
-                else:
-                    output_path = str(Path(output_dir) / 'diagnosis_summary.jsonl')
-                    self.output_diagnosis_in_jsonl(data_not_accept_df, output_path)
+                self.output_diagnosis_in_json(output_df, output_path)
+            elif output_format == 'jsonl':
+                self.output_diagnosis_in_jsonl(output_df, output_path)
             elif output_format == 'md' or output_format == 'html':
-                lines = self.generate_md_lines(data_not_accept_df, self._sb_rules, round)
+                lines = self.generate_md_lines(output_df, self._sb_rules, round)
                 if output_format == 'md':
-                    output_path = str(Path(output_dir) / 'diagnosis_summary.md')
                     file_handler.output_lines_in_md(lines, output_path)
                 else:
-                    output_path = str(Path(output_dir) / 'diagnosis_summary.html')
                     file_handler.output_lines_in_html(lines, output_path)
             else:
                 logger.error('DataDiagnosis: output failed - unsupported output format')

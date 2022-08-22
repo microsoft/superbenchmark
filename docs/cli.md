@@ -193,7 +193,7 @@ sb result diagnosis --baseline-file
 | `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 | `--output-all`          | N/A     | Output diagnosis results for all nodes.                                     |
 | `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
+| `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'jsonl', 'md' or 'html'. Default: excel.     |
 
 #### Global arguments
 
@@ -208,9 +208,14 @@ Run data diagnosis and output the results in excel format:
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format excel
 ```
 
-Run data diagnosis and output the results in jsonl format:
+Run data diagnosis and output the results in json format:
 ```bash title="SB CLI"
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format json
+```
+
+Run data diagnosis and output the results in jsonl format:
+```bash title="SB CLI"
+sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format jsonl
 ```
 
 Run data diagnosis and output the results in markdown format with 2 valid decimal places:

@@ -35,7 +35,7 @@ def diagnosis_command_handler(
         # Create output directory
         sb_output_dir = create_sb_output_dir(output_dir)
         # Check arguments
-        supported_output_format = ['excel', 'json', 'md', 'html']
+        supported_output_format = ['excel', 'json', 'md', 'html', 'jsonl']
         if output_file_format not in supported_output_format:
             raise CLIError('Output format must be in {}.'.format(str(supported_output_format)))
         check_argument_file('raw_data_file', raw_data_file)
