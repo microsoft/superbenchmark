@@ -9,6 +9,7 @@ import yaml
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from superbench.analyzer import DataDiagnosis
 import superbench.analyzer.file_handler as file_handler
@@ -368,6 +369,50 @@ class TestDataDiagnosis(unittest.TestCase):
             + 'mem-bw/D2H_Mem_BW(B/L: 24.3000 VAL: 10.0000 VAR: -58.85% Rule:lambda x:x<-0.5),' +
             'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
         )
+
+        # Test multi-rule using values of metrics in criteria lambda expression
+        diag1 = DataDiagnosis()
+        # test _run_diagnosis_rules_for_single_node
+        rules = {
+            'superbench': {
+                'rules': {
+                    'rule1': {
+                        'categories':
+                        'NCCL_DIS',
+                        'store':
+                        True,
+                        'metrics': [
+                            'nccl-bw:allreduce-run0/allreduce_1073741824_busbw',
+                            'nccl-bw:allreduce-run1/allreduce_1073741824_busbw',
+                            'nccl-bw:allreduce-run2/allreduce_1073741824_busbw'
+                        ]
+                    },
+                    'rule2': {
+                        'categories': 'NCCL_DIS',
+                        'criteria': 'lambda label:True if min(label["rule1"].values())' + '/' +
+                        'max(label["rule1"].values())<0.95 else False',
+                        'function': 'multi_rules'
+                    }
+                }
+            }
+        }
+
+        baseline = {}
+        data = {
+            'nccl-bw:allreduce-run0/allreduce_1073741824_busbw': [10, 22, 10],
+            'nccl-bw:allreduce-run1/allreduce_1073741824_busbw': [23, 23, np.nan],
+            'nccl-bw:allreduce-run2/allreduce_1073741824_busbw': [22, 22, np.nan]
+        }
+        diag1._raw_data_df = pd.DataFrame(data, index=['sb-validation-04', 'sb-validation-05', 'sb-validation-06'])
+        diag1._benchmark_metrics_dict = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df.columns))
+        diag1._parse_rules_and_baseline(rules, baseline)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-04')
+        assert (details_row)
+        assert ('NCCL_DIS' in details_row[0])
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-05')
+        assert (not details_row)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-06')
+        assert (not details_row)
 
     def test_failure_check(self):
         """Test failure test check feature."""

@@ -34,18 +34,19 @@ class DataDiagnosis(RuleBase):
         """
         # check if rule is supported
         super()._check_and_format_rules(rule, name)
-        if 'function' not in rule:
-            logger.log_and_raise(exception=Exception, msg='{} lack of function'.format(name))
-        if not isinstance(DiagnosisRuleType(rule['function']), DiagnosisRuleType):
-            logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
-        # check rule format
-        if 'criteria' not in rule:
-            logger.log_and_raise(exception=Exception, msg='{} lack of criteria'.format(name))
-        if not isinstance(eval(rule['criteria']), Callable):
-            logger.log_and_raise(exception=Exception, msg='invalid criteria format')
-        if rule['function'] != 'multi_rules':
-            if 'metrics' not in rule:
-                logger.log_and_raise(exception=Exception, msg='{} lack of metrics'.format(name))
+        if 'store' not in rule:
+            if 'function' not in rule:
+                logger.log_and_raise(exception=Exception, msg='{} lack of function'.format(name))
+            if not isinstance(DiagnosisRuleType(rule['function']), DiagnosisRuleType):
+                logger.log_and_raise(exception=Exception, msg='{} invalid function name'.format(name))
+            # check rule format
+            if 'criteria' not in rule:
+                logger.log_and_raise(exception=Exception, msg='{} lack of criteria'.format(name))
+            if not isinstance(eval(rule['criteria']), Callable):
+                logger.log_and_raise(exception=Exception, msg='invalid criteria format')
+            if rule['function'] != 'multi_rules':
+                if 'metrics' not in rule:
+                    logger.log_and_raise(exception=Exception, msg='{} lack of metrics'.format(name))
         if 'store' in rule and not isinstance(rule['store'], bool):
             logger.log_and_raise(exception=Exception, msg='{} store must be bool type'.format(name))
         return rule
@@ -117,10 +118,12 @@ class DataDiagnosis(RuleBase):
                 benchmark_rules[rule] = self._check_and_format_rules(benchmark_rules[rule], rule)
                 self._sb_rules[rule] = {}
                 self._sb_rules[rule]['name'] = rule
-                self._sb_rules[rule]['function'] = benchmark_rules[rule]['function']
+                if 'function' in benchmark_rules[rule]:
+                    self._sb_rules[rule]['function'] = benchmark_rules[rule]['function']
                 self._sb_rules[rule]['store'] = True if 'store' in benchmark_rules[
                     rule] and benchmark_rules[rule]['store'] is True else False
-                self._sb_rules[rule]['criteria'] = benchmark_rules[rule]['criteria']
+                if 'criteria' in benchmark_rules[rule]:
+                    self._sb_rules[rule]['criteria'] = benchmark_rules[rule]['criteria']
                 self._sb_rules[rule]['categories'] = benchmark_rules[rule]['categories']
                 self._sb_rules[rule]['metrics'] = {}
                 self.__get_metrics_and_baseline(rule, benchmark_rules, baseline)
@@ -151,16 +154,22 @@ class DataDiagnosis(RuleBase):
         issue_label = False
         details = []
         categories = set()
-        violation = {}
+        store_values = {}
         summary_data_row = pd.Series(index=self._enable_metrics, name=node, dtype=float)
         # Check each rule
         for rule in self._sb_rules:
+            # if no criteria and store is True in a rule, store the value of metrics in the rule
+            if self._sb_rules[rule]['store'] and 'criteria' not in self._sb_rules[rule]:
+                store_values[rule] = {}
+                for metric in self._sb_rules[rule]['metrics']:
+                    store_values[rule][metric] = data_row[metric]
+                continue
             # Get rule op function and run the rule
             function_name = self._sb_rules[rule]['function']
             rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
             violated_num = 0
             if rule_op == RuleOp.multi_rules:
-                violated_num = rule_op(self._sb_rules[rule], details, categories, violation)
+                violated_num = rule_op(self._sb_rules[rule], details, categories, store_values)
             elif rule_op == RuleOp.failure_check:
                 violated_num = rule_op(
                     data_row, self._sb_rules[rule], summary_data_row, details, categories, self._raw_rules[rule]
@@ -169,7 +178,7 @@ class DataDiagnosis(RuleBase):
                 violated_num = rule_op(data_row, self._sb_rules[rule], summary_data_row, details, categories)
             # label the node as defective one
             if self._sb_rules[rule]['store']:
-                violation[rule] = violated_num
+                store_values[rule] = violated_num
             elif violated_num:
                 issue_label = True
         if issue_label:
