@@ -125,6 +125,13 @@ helps['result diagnosis'] = """
             --data-file outputs/results-summary.jsonl
             --rule-file rule.yaml
             --baseline-file baseline.json
+            --output-file-format jsonl
+        - name: run data diagnosis and output the results in json format
+          text: >
+            {cli_name} result diagnosis
+            --data-file outputs/results-summary.jsonl
+            --rule-file rule.yaml
+            --baseline-file baseline.json
             --output-file-format json
         - name: run data diagnosis and output the results in markdown format
           text: >
