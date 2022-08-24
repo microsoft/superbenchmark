@@ -260,7 +260,6 @@ void gather_hostnames(vector<string> &hostnames, string filename) {
 }
 
 // Parse raw output of ib command
-// TODO: does not work latency tests
 float process_raw_output(string output) {
     float res = -1.0;
     try {
