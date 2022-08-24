@@ -299,7 +299,9 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         if self._args.gpu_dev is not None:
             gpu = GPU()
             if gpu.vendor == 'nvidia':
-                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
+                # Perftest supports CUDA only in BW tests
+                if 'bw' in self._args.command:
+                    gpu_dev = f'--use_cuda={self._args.gpu_dev}'
             elif gpu.vendor == 'amd':
                 gpu_dev = f'--use_rocm={self._args.gpu_dev}'
             else:
