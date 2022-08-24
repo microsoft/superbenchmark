@@ -296,12 +296,11 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         msg_size = f'-s {self._args.msg_size}' if self._args.msg_size > 0 else '-a'
         # Add GPUDirect for ib command
         gpu_dev = ''
-        if self._args.gpu_dev is not None:
+        # Perftest supports CUDA/ROCM only in BW tests
+        if self._args.gpu_dev is not None and 'bw' in self._args.command:
             gpu = GPU()
             if gpu.vendor == 'nvidia':
-                # Perftest supports CUDA only in BW tests
-                if 'bw' in self._args.command:
-                    gpu_dev = f'--use_cuda={self._args.gpu_dev}'
+                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
             elif gpu.vendor == 'amd':
                 gpu_dev = f'--use_rocm={self._args.gpu_dev}'
             else:
