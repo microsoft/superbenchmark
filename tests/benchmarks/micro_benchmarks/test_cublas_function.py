@@ -46,7 +46,7 @@ def test_cublas_functions():
             assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
 
     # Test for custom configuration
-    custom_config_str = '{"name":"cublasCgemm","m":512,"n":512,"k":32,"transa":1,"transb":0}'
+    custom_config_str = '\'{"name":"cublasCgemm","m":512,"n":512,"k":32,"transa":1,"transb":0}\''
     context = BenchmarkRegistry.create_benchmark_context(
         'cublas-function',
         platform=Platform.CUDA,
