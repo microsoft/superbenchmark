@@ -296,17 +296,19 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         msg_size = f'-s {self._args.msg_size}' if self._args.msg_size > 0 else '-a'
         # Add GPUDirect for ib command
         gpu_dev = ''
-        # Perftest supports CUDA/ROCM only in BW tests
-        if self._args.gpu_dev is not None and 'bw' in self._args.command:
-            gpu = GPU()
-            if gpu.vendor == 'nvidia':
-                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
-            elif gpu.vendor == 'amd':
-                gpu_dev = f'--use_rocm={self._args.gpu_dev}'
-            else:
-                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                logger.error('No GPU found - benchmark: {}'.format(self._name))
-                return False
+        if self._args.gpu_dev is not None:
+            if 'bw' in self._args.command:
+                gpu = GPU()
+                if gpu.vendor == 'nvidia':
+                    gpu_dev = f'--use_cuda={self._args.gpu_dev}'
+                elif gpu.vendor == 'amd':
+                    gpu_dev = f'--use_rocm={self._args.gpu_dev}'
+                else:
+                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                    logger.error('No GPU found - benchmark: {}'.format(self._name))
+                    return False
+            elif 'lat' in self._args.command:
+                logger.warning('Wrong configuration: Perftest supports CUDA/ROCM only in BW tests')
         # Generate ib command params
         command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size} {gpu_dev}'
         command_params = f'{command_params.strip()} --report_gbits'
