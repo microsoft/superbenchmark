@@ -206,6 +206,17 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
+        parameters = '--command ib_read_lat --ib_dev mlx5_0 --iters 2000 --msg_size 33554432 ' + \
+            '--pattern one-to-one --hostfile hostfile --gpu_dev 0'
+        mock_gpu.return_value = 'nvidia'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        ret = benchmark._preprocess()
+        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_read_lat -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' " + \
+            f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
+        command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
+        assert (command == expect_command)
+
         # Custom config
         config = ['0,1', '1,0;0,1', '0,1;1,0', '1,0;0,1']
         with open('test_config.txt', 'w') as f:
