@@ -267,7 +267,7 @@ void gather_hostnames(vector<string> &hostnames, string filename) {
 // #bytes  #iterations    t_min    t_max  t_typical   t_avg    t_stdev  99% percentile   99.9% percentile
 // 8388608    5000        581.27   876.26   594.87    595.50     3.33       601.65          621.14
 // parsed result:
-// 196.08 (BW peak)
+// 195.76 (BW average)
 // 595.50 (t_avg)
 float process_raw_output(string output) {
     float res = -1.0;
