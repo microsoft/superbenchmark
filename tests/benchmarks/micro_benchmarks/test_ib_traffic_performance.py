@@ -178,14 +178,14 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (ret is True)
 
         # Generate config
-        parameters = '--ib_dev mlx5_0 --iters 2000 --msg_size 33554432 --hostfile hostfile'
+        parameters = '--ib_dev "$(echo mlx5_0)" --iters 2000 --msg_size 33554432 --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '4'
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
         expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' " + \
+            "/ib_write_bw -F -n 2000 -d $(echo mlx5_0) -s 33554432 --report_gbits' " + \
             f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
