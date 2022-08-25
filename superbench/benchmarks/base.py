@@ -3,6 +3,7 @@
 
 """Module of the base class."""
 
+import shlex
 import signal
 import traceback
 import argparse
@@ -39,7 +40,7 @@ class Benchmark(ABC):
             parameters (str): benchmark parameters.
         """
         self._name = name
-        self._argv = list(filter(None, parameters.split(' '))) if parameters is not None else list()
+        self._argv = list(filter(None, shlex.split(parameters))) if parameters is not None else list()
         self._benchmark_type = None
         self._parser = argparse.ArgumentParser(
             add_help=False,
