@@ -63,8 +63,6 @@ class DataDiagnosis(RuleBase):
         """
         if metric in baseline:
             return baseline[metric]
-        elif 'return_code' in metric:
-            return 0
         else:
             short = metric
             # exclude rank info, for example, '.*:\d+'->'.*'
@@ -76,7 +74,6 @@ class DataDiagnosis(RuleBase):
                 return baseline[short]
             # baseline not defined
             else:
-                logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
                 return -1
 
     def __get_metrics_and_baseline(self, rule, benchmark_rules, baseline):
@@ -95,6 +92,8 @@ class DataDiagnosis(RuleBase):
         self._get_metrics(rule, benchmark_rules)
         for metric in self._sb_rules[rule]['metrics']:
             self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
+            if self._sb_rules[rule]['metrics'][metric] == -1 and 'function' in self._sb_rules[rule] and self._sb_rules[rule]['function'] == 'variance':
+                logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
 
     def _parse_rules_and_baseline(self, rules, baseline):
         """Parse and merge rules and baseline read from file.
@@ -401,7 +400,7 @@ class DataDiagnosis(RuleBase):
         try:
             rules = self._preprocess(raw_data_file, rule_file)
             # read baseline
-            baseline = file_handler.read_baseline(baseline_file)
+            baseline = file_handler.read_baseline(baseline_file) if baseline_file is not None else {}
             logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))
             output_df, label_df = self.run_diagnosis_rules(rules, baseline)
             logger.info('DataDiagnosis: Processed finished')

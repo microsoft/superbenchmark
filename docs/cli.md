@@ -180,16 +180,16 @@ sb result diagnosis --baseline-file
 
 #### Required arguments
 
-| Name                   | Description            |
-|------------------------|------------------------|
-| `--baseline-file` `-b` | Path to baseline file. |
-| `--data-file` `-d`     | Path to raw data file. |
-| `--rule-file` `-r`     | Path to rule file.     |
+| Name               | Description            |
+|--------------------|------------------------|
+| `--data-file` `-d` | Path to raw data file. |
+| `--rule-file` `-r` | Path to rule file.     |
 
 #### Optional arguments
 
 | Name                    | Default | Description                                                                 |
 |-------------------------|---------|-----------------------------------------------------------------------------|
+| `--baseline-file` `-b` | Path to baseline file. |
 | `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 | `--output-all`          | N/A     | Output diagnosis results for all nodes.                                     |
 | `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
