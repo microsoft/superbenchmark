@@ -26,6 +26,7 @@ RUN apt-get update && \
     curl \
     dmidecode \
     git \
+    iproute2 \
     jq \
     libaio-dev \
     libcap2 \
@@ -38,6 +39,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    sudo \
     util-linux \
     vim \
     wget \

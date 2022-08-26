@@ -30,6 +30,7 @@ RUN apt-get update && \
     dmidecode \
     git \
     hipify-clang \
+    iproute2 \
     jq \
     libaio-dev \
     libboost-program-options-dev \
@@ -46,6 +47,7 @@ RUN apt-get update && \
     openssh-server \
     pciutils \
     rsync \
+    sudo \
     util-linux \
     vim \
     wget \
