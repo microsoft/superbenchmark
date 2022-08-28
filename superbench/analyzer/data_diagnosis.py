@@ -92,7 +92,8 @@ class DataDiagnosis(RuleBase):
         self._get_metrics(rule, benchmark_rules)
         for metric in self._sb_rules[rule]['metrics']:
             self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
-            if self._sb_rules[rule]['metrics'][metric] == -1 and 'function' in self._sb_rules[rule] and self._sb_rules[rule]['function'] == 'variance':
+            if self._sb_rules[rule]['metrics'][metric] == -1 and 'function' in self._sb_rules[rule] \
+                    and self._sb_rules[rule]['function'] == 'variance':
                 logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
 
     def _parse_rules_and_baseline(self, rules, baseline):
@@ -363,23 +364,24 @@ class DataDiagnosis(RuleBase):
         data_not_accept_df = data_not_accept_df[header]
         # format precision of values to n decimal digits
         for rule in rules:
-            for metric in rules[rule]['metrics']:
-                if rules[rule]['function'] == 'variance':
-                    if round and isinstance(round, int):
+            if 'function' in rules[rule]:
+                for metric in rules[rule]['metrics']:
+                    if rules[rule]['function'] == 'variance':
+                        if round and isinstance(round, int):
+                            data_not_accept_df[metric] = data_not_accept_df[metric].map(
+                                lambda x: x * 100, na_action='ignore'
+                            )
+                            data_not_accept_df = data_analysis.round_significant_decimal_places(
+                                data_not_accept_df, round, [metric]
+                            )
                         data_not_accept_df[metric] = data_not_accept_df[metric].map(
-                            lambda x: x * 100, na_action='ignore'
+                            lambda x: '{}%'.format(x), na_action='ignore'
                         )
-                        data_not_accept_df = data_analysis.round_significant_decimal_places(
-                            data_not_accept_df, round, [metric]
-                        )
-                    data_not_accept_df[metric] = data_not_accept_df[metric].map(
-                        lambda x: '{}%'.format(x), na_action='ignore'
-                    )
-                elif rules[rule]['function'] == 'value':
-                    if round and isinstance(round, int):
-                        data_not_accept_df = data_analysis.round_significant_decimal_places(
-                            data_not_accept_df, round, [metric]
-                        )
+                    elif rules[rule]['function'] == 'value':
+                        if round and isinstance(round, int):
+                            data_not_accept_df = data_analysis.round_significant_decimal_places(
+                                data_not_accept_df, round, [metric]
+                            )
         lines = file_handler.generate_md_table(data_not_accept_df, header)
         return lines
 

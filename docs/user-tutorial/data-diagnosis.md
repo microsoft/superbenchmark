@@ -147,7 +147,12 @@ The criterion used for this rule, which indicates how to compare the data with t
 
 #### `store`
 
-True if the current rule is not used alone to filter the defective machine, but will be used by other subsequent rules. False(default) if this rule is used to label the defective machine directly.
+ - True: the current rule is not used alone to filter the defective machine, but will store some temporary data which will be used by other subsequent rules.
+
+    - If store is True and criteria/function are not None in the rule, it will store how many metrics in this rule meet the criteria into lable["rule_name"], for example lable["rule_name"]=2 means 2 metrics are identified as defective in this rule;
+    - If store is True and criteria/function are None, it will store the dict of {metric_name: values} of the metrics into lable["rule_name"]
+
+ - False (default): this rule is used to label the defective machine directly.
 
 #### `function`
 
@@ -166,6 +171,11 @@ The function used for this rule.
 - `multi_rules`: the rule is to check if the combined results of multiple previous rules and metrics violate the criteria.
 
   For example, if the 'criteria' is 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False', the rule is that if the sum of labeled metrics in rule4 and rule5 is larger than 2, it should be defective.
+
+- `failure_check`: the rule is to check if each item defined in `metrics` of this rule failed the test. The metrics defined in `metrics` of this rule should be metrics with return_code used to identify the failure.
+
+   - If any item is never matched with the metrics of the raw data, the rule will identify it as miss test.
+   - If any metric violate the `value` criteria which means return_code is not success(0), the rule will identify it as failed test.
 
 `Tips`: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.
 

@@ -293,6 +293,38 @@ class TestDataDiagnosis(unittest.TestCase):
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
 
+    def test_data_diagnosis_run_without_baseline(self):
+        """Test for the run process of rule-based data diagnosis."""
+        test_raw_data = str(self.parent_path / 'test_results.jsonl')
+        test_rule_file = str(self.parent_path / 'test_rules_without_baseline.yaml')
+        test_baseline_file = None
+
+        # Test - output in excel
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'excel')
+        assert (Path(self.output_excel_file).is_file())
+
+        # Test - output in json
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'json')
+        assert (Path(self.output_json_file).is_file())
+
+        # Test - output in jsonl
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'jsonl')
+        assert (Path(self.output_jsonl_file).is_file())
+
+        # Test - output in md
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md', round=2)
+        assert (Path(self.output_md_file).is_file())
+
+        # Test - output in html
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'html', round=2)
+        assert (Path(self.output_html_file).is_file())
+
+        # Test - output all nodes results
+        DataDiagnosis().run(
+            test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'json', output_all=True
+        )
+        assert (Path(self.output_all_json_file).is_file())
+
     def test_mutli_rules(self):
         """Test multi rules check feature."""
         diag1 = DataDiagnosis()

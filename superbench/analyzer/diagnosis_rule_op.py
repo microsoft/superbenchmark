@@ -203,13 +203,21 @@ class RuleOp:
         Returns:
             number: 0 if the rule is passed, otherwise 1
         """
-        violated = eval(rule['criteria'])(store_values)
-        if not isinstance(violated, bool):
-            logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
-        if violated:
-            info = '{}:{}'.format(rule['name'], rule['criteria'])
-            RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
-        return 1 if violated else 0
+        try:
+            violated = eval(rule['criteria'])(store_values)
+            if not isinstance(violated, bool):
+                logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
+            if violated:
+                info = '{}:{}'.format(rule['name'], rule['criteria'])
+                RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
+            return 1 if violated else 0
+        # the key defined in criteria is not found
+        except KeyError as e:
+            logger.log_and_raise(exception=Exception, msg='invalid criteria format - {}'.format(str(e)))
+        # miss/failed test
+        except Exception as e:
+            logger.warning('DataDiagnosis: exception raised in multi_rules - {}'.format(str(e)))
+            return 0
 
     @staticmethod
     def failure_check(data_row, rule, summary_data_row, details, categories, raw_rule):
