@@ -275,6 +275,8 @@ class DataDiagnosis(RuleBase):
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].astype(int)
 
         all_data_df = all_data_df.replace(np.nan, '')
+        cols = append_columns + all_data_df.columns.tolist()[0:-len(append_columns)]
+        all_data_df = all_data_df[cols].copy()
 
         return all_data_df
 
@@ -332,7 +334,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
-        data_not_accept_df['Index'] = data_not_accept_df.index
+        data_not_accept_df = data_not_accept_df.reset_index()
         data_not_accept_df = data_not_accept_df.rename(
             columns={
                 'Defective Details': 'diagnosis/issue_details',
@@ -358,10 +360,9 @@ class DataDiagnosis(RuleBase):
         Returns:
             list: lines in markdown format
         """
-        data_not_accept_df['machine'] = data_not_accept_df.index
+        data_not_accept_df = data_not_accept_df.reset_index()
+        data_not_accept_df = data_not_accept_df.rename(columns={'index': 'machine'})
         header = data_not_accept_df.columns.tolist()
-        header = header[-1:] + header[:-1]
-        data_not_accept_df = data_not_accept_df[header]
         # format precision of values to n decimal digits
         for rule in rules:
             if 'function' in rules[rule]:
