@@ -131,7 +131,7 @@ class TestDataDiagnosis(unittest.TestCase):
         baseline = file_handler.read_baseline(test_baseline_file)
         assert (diag1._get_baseline_of_metric(baseline, 'kernel-launch/event_overhead:0') == 0.00596)
         assert (diag1._get_baseline_of_metric(baseline, 'kernel-launch/return_code') == 0)
-        assert (diag1._get_baseline_of_metric(baseline, 'mem-bw/H2D:0') == -1)
+        assert (diag1._get_baseline_of_metric(baseline, 'mem-bw/H2D:0') is None)
         # Test - _parse_rules_and_baseline
         # Negative case
         fake_rules = file_handler.read_rules(test_rule_file_fake)

@@ -65,6 +65,29 @@ class TestRuleOp(unittest.TestCase):
             self.assertRaises(Exception, RuleOp.variance, data_row, rule, summary_data_row, details, categories)
             self.assertRaises(Exception, RuleOp.value, data_row, rule, summary_data_row, details, categories)
 
+        # Negative case, if baseline is 0 or None in 'variance' function, raise error
+        true_baselines = [
+            {
+                'categories': 'KernelLaunch',
+                'criteria': 'lambda x:x>0.5',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 0,
+                }
+            },
+            {
+                'categories': 'KernelLaunch',
+                'criteria': 'lambda x:x>0.5',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:1': None,
+                }
+            },
+        ]
+
+        for rule in false_rule_and_baselines:
+            self.assertRaises(Exception, RuleOp.variance, data_row, rule, summary_data_row, details, categories)
+
         # Positive case
         true_baselines = [
             {

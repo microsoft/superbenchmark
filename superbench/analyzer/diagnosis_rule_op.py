@@ -130,8 +130,10 @@ class RuleOp:
                 # check if metric pass the rule
                 val = data_row[metric]
                 baseline = rule['metrics'][metric]
-                if baseline == 0:
-                    logger.log_and_raise(exception=Exception, msg='invalid baseline 0 in variance rule')
+                if baseline is None or baseline == 0:
+                    logger.log_and_raise(
+                        exception=Exception, msg='invalid baseline 0 or baseline not found in variance rule'
+                    )
                 var = (val - baseline) / baseline
                 summary_data_row[metric] = var
                 violate_metric = eval(rule['criteria'])(var)
@@ -215,8 +217,7 @@ class RuleOp:
         except KeyError as e:
             logger.log_and_raise(exception=Exception, msg='invalid criteria format - {}'.format(str(e)))
         # miss/failed test
-        except Exception as e:
-            logger.warning('DataDiagnosis: exception raised in multi_rules - {}'.format(str(e)))
+        except Exception:
             return 0
 
     @staticmethod

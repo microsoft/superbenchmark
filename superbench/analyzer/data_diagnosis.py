@@ -74,7 +74,7 @@ class DataDiagnosis(RuleBase):
                 return baseline[short]
             # baseline not defined
             else:
-                return -1
+                return None
 
     def __get_metrics_and_baseline(self, rule, benchmark_rules, baseline):
         """Get metrics with baseline in the rule.
@@ -92,9 +92,6 @@ class DataDiagnosis(RuleBase):
         self._get_metrics(rule, benchmark_rules)
         for metric in self._sb_rules[rule]['metrics']:
             self._sb_rules[rule]['metrics'][metric] = self._get_baseline_of_metric(baseline, metric)
-            if self._sb_rules[rule]['metrics'][metric] == -1 and 'function' in self._sb_rules[rule] \
-                    and self._sb_rules[rule]['function'] == 'variance':
-                logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
 
     def _parse_rules_and_baseline(self, rules, baseline):
         """Parse and merge rules and baseline read from file.
@@ -258,7 +255,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df['Number Of Issues'] = data_not_accept_df['Defective Details'].map(
                 lambda x: len(x.split(','))
             )
-            for index in range(len(append_columns)):
+            for index in range(len(append_columns) - 1, -1, -1):
                 if append_columns[index] not in data_not_accept_df:
                     logger.warning(
                         'DataDiagnosis: output_all_nodes_results - column {} not found in data_not_accept_df.'.format(
@@ -267,16 +264,14 @@ class DataDiagnosis(RuleBase):
                     )
                     all_data_df[append_columns[index]] = None
                 else:
-                    all_data_df = all_data_df.merge(
-                        data_not_accept_df[[append_columns[index]]], left_index=True, right_index=True, how='left'
-                    )
+                    all_data_df = data_not_accept_df[[
+                        append_columns[index]
+                    ]].merge(all_data_df, left_index=True, right_index=True, how='right')
             all_data_df['Accept'] = all_data_df['Accept'].replace(np.nan, True)
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].replace(np.nan, 0)
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].astype(int)
 
         all_data_df = all_data_df.replace(np.nan, '')
-        cols = append_columns + all_data_df.columns.tolist()[0:-len(append_columns)]
-        all_data_df = all_data_df[cols].copy()
 
         return all_data_df
 
