@@ -187,6 +187,7 @@ setup(
                 'pytest-subtests>=0.4.0',
                 'pytest>=6.2.2',
                 'types-markdown',
+                'types-paramiko',
                 'types-pkg_resources',
                 'types-pyyaml',
                 'vcrpy>=4.1.1',
