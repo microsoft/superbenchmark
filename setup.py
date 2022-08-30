@@ -155,6 +155,8 @@ setup(
         'omegaconf==2.0.6',
         'openpyxl>=3.0.7',
         'pandas>=1.1.5',
+        'parallel-ssh>=2.12.0',
+        'paramiko>=2.11.0',
         'pyyaml>=5.3',
         'requests>=2.27.1',
         'seaborn>=0.11.2',
@@ -169,8 +171,8 @@ setup(
             **x,
             'develop': x['dev'] + x['test'],
             'cpuworker': x['torch'],
-            'amdworker': x['torch'] + x['ort'] + x['mpi'],
-            'nvworker': x['torch'] + x['ort'] + x['mpi'] + x['nvidia'],
+            'amdworker': x['torch'] + x['ort'],
+            'nvworker': x['torch'] + x['ort'] + x['nvidia'],
         }
     )(
         {
@@ -199,7 +201,6 @@ setup(
                 'onnx>=1.10.2',
                 'onnxruntime-gpu==1.10.0',
             ],
-            'mpi': ['mpi4py>=3.1.3'],
             'nvidia': ['py3nvml>=0.2.6'],
         }
     ),

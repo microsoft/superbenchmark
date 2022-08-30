@@ -8,6 +8,9 @@ import os
 from pathlib import Path
 
 import networkx as nx
+from paramiko import SSHConfig
+from pssh.clients import ParallelSSHClient
+from pssh.config import HostConfig
 
 from superbench.common.utils import logger
 
@@ -35,37 +38,41 @@ class quick_regexp(object):
         return self.matched
 
 
-def gen_ibstat_file(ibstat_file):
-    """Generate ibstat file for each node with specified path.
+def gen_ibstat_file(host_list, ibstat_file):
+    """Generate ibstat file in each node with specified path.
 
     Args:
+        host_list (list): list of VM read from hostfile.
         ibstat_file (str): path of ibstat output.
     """
-    from mpi4py import MPI
+    try:
+        # Parse ssh config
+        config = SSHConfig.from_path('/root/.ssh/config')
 
-    if not MPI.Is_initialized():
-        MPI.Init()
+        # Append each host config into host_config
+        host_config = []
+        for hostx in host_list:
+            hostx_config = config.lookup(hostx)
+            port = hostx_config['port']
+            private_key = hostx_config['identityfile'][0]
+            host_config.append(HostConfig(port=int(port), private_key=private_key))
+        # Fetch ibstat info from each host
+        client = ParallelSSHClient(host_list, host_config=host_config)
+        cmd = r"ibstat | grep -Po 'System image GUID: \K\S+$'"
+        output = client.run_command(cmd)
+        client.join()
 
-    comm = MPI.COMM_WORLD
-    name = MPI.Get_processor_name()
-
-    # The command to fetch ibstat info
-    cmd = r"ibstat | grep -Po 'System image GUID: \K\S+$'"
-    output = os.popen(cmd)
-    ibstat = 'VM_hostname ' + name + '\n' + str(output.read())
-
-    # Fetch all ibstate from each node
-    ibstats = comm.allgather(ibstat)
-
-    ibstate_file_path = Path(ibstat_file)
-
-    # Filter the duplicate info
-    ibstat_infos = set(ibstats)
-
-    with ibstate_file_path.open(mode='w') as f:
-        for ibstat_info in ibstat_infos:
-            f.write(ibstat_info)
-    MPI.Finalize()
+        # Generate ib stat file and distribute to each host
+        ibstate_file_path = Path(ibstat_file)
+        with ibstate_file_path.open(mode='w') as f:
+            for host_output in output:
+                hostname = host_output.host
+                ibstat = 'VM_hostname ' + str(hostname) + '\n'
+                f.write(ibstat)
+                for line in host_output.stdout:
+                    f.write(line + '\n')
+    except BaseException as e:
+        logger.error('Failed to generate ibstate file, message: {}.'.format(str(e)))
 
 
 def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, max_dist):    # noqa: C901
@@ -91,7 +98,7 @@ def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, 
 
     if not ibstat_file:
         ibstat_file = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'ib_traffic_topo_aware_ibstat.txt')
-        gen_ibstat_file(ibstat_file)
+        gen_ibstat_file(host_list, ibstat_file)
 
     if not Path(ibstat_file).exists():
         logger.error('ibstat file does not exist.')
