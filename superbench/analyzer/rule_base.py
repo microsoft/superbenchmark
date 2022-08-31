@@ -103,8 +103,7 @@ class RuleBase():
         self._benchmark_metrics_dict = self._get_metrics_by_benchmarks(list(self._raw_data_df.columns))
         # check raw data whether empty
         if len(self._raw_data_df) == 0:
-            logger.error('RuleBase: empty raw data')
-            return None
+            logger.log_and_raise(exception=Exception, msg=('RuleBase: empty raw data'))
         # read rules
         rules = file_handler.read_rules(rule_file)
         return rules

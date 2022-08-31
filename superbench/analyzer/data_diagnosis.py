@@ -108,8 +108,7 @@ class DataDiagnosis(RuleBase):
         """
         try:
             if not rules:
-                logger.error('DataDiagnosis: get criteria failed')
-                return False
+                logger.log_and_raise(exception=Exception, msg='DataDiagnosis: get criteria failed')
             self._sb_rules = {}
             self._enable_metrics = set()
             benchmark_rules = rules['superbench']['rules']
@@ -129,8 +128,7 @@ class DataDiagnosis(RuleBase):
                 self.__get_metrics_and_baseline(rule, benchmark_rules, baseline)
             self._enable_metrics = sorted(list(self._enable_metrics))
         except Exception as e:
-            logger.error('DataDiagnosis: get criteria failed - {}'.format(str(e)))
-            return False
+            logger.log_and_raise(exception=Exception, msg='DataDiagnosis: get criteria failed - {}'.format(str(e)))
 
         return True
 
@@ -230,7 +228,9 @@ class DataDiagnosis(RuleBase):
                 data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
 
         except Exception as e:
-            logger.error('DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e)))
+            logger.log_and_raise(
+                exception=Exception, msg='DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e))
+            )
         return data_not_accept_df, label_df
 
     def output_all_nodes_results(self, raw_data_df, data_not_accept_df):
@@ -260,12 +260,11 @@ class DataDiagnosis(RuleBase):
             )
             for index in range(len(append_columns)):
                 if append_columns[index] not in data_not_accept_df:
-                    logger.warning(
-                        'DataDiagnosis: output_all_nodes_results - column {} not found in data_not_accept_df.'.format(
-                            append_columns[index]
-                        )
+                    logger.log_and_raise(
+                        Exception,
+                        msg='DataDiagnosis: output_all_nodes_results - column {} not found in data_not_accept_df.'.
+                        format(append_columns[index])
                     )
-                    all_data_df[append_columns[index]] = None
                 else:
                     all_data_df = all_data_df.merge(
                         data_not_accept_df[[append_columns[index]]], left_index=True, right_index=True, how='left'
@@ -291,13 +290,12 @@ class DataDiagnosis(RuleBase):
             writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
             # Check whether writer is valiad
             if not isinstance(writer, pd.ExcelWriter):
-                logger.error('DataDiagnosis: excel_data_output - invalid file path.')
-                return
+                logger.log_and_raise(exception=IOError, msg='DataDiagnosis: excel_data_output - invalid file path.')
             file_handler.output_excel_raw_data(writer, raw_data_df, 'Raw Data')
             file_handler.output_excel_data_not_accept(writer, data_not_accept_df, rules)
             writer.save()
         except Exception as e:
-            logger.error('DataDiagnosis: excel_data_output - {}'.format(str(e)))
+            logger.log_and_raise(exception=Exception, msg='DataDiagnosis: excel_data_output - {}'.format(str(e)))
 
     def output_diagnosis_in_jsonl(self, data_not_accept_df, output_path):
         """Output data_not_accept_df into jsonl file.
@@ -311,10 +309,12 @@ class DataDiagnosis(RuleBase):
             data_not_accept_json = data_not_accept_df.to_json(orient='index')
             data_not_accept = json.loads(data_not_accept_json)
             if not isinstance(data_not_accept_df, pd.DataFrame):
-                logger.warning('DataDiagnosis: output json data - data_not_accept_df is not DataFrame.')
-                return
+                logger.log_and_raise(
+                    Exception, msg='DataDiagnosis: output json data - data_not_accept_df is not DataFrame.'
+                )
             if data_not_accept_df.empty:
-                logger.warning('DataDiagnosis: output json data - data_not_accept_df is empty.')
+                with p.open('w') as f:
+                    pass
                 return
             with p.open('w') as f:
                 for node in data_not_accept:
@@ -323,7 +323,9 @@ class DataDiagnosis(RuleBase):
                     json_str = json.dumps(line)
                     f.write(json_str + '\n')
         except Exception as e:
-            logger.error('DataDiagnosis: output json data failed, msg: {}'.format(str(e)))
+            logger.log_and_raise(
+                exception=Exception, msg='DataDiagnosis: output json data failed, msg: {}'.format(str(e))
+            )
 
     def output_diagnosis_in_json(self, data_not_accept_df, output_path):
         """Output data_not_accept_df into json file.
@@ -358,6 +360,8 @@ class DataDiagnosis(RuleBase):
         Returns:
             list: lines in markdown format
         """
+        if len(data_not_accept_df) == 0:
+            return []
         data_not_accept_df['machine'] = data_not_accept_df.index
         header = data_not_accept_df.columns.tolist()
         header = header[-1:] + header[:-1]
@@ -424,7 +428,9 @@ class DataDiagnosis(RuleBase):
                 else:
                     file_handler.output_lines_in_html(lines, output_path)
             else:
-                logger.error('DataDiagnosis: output failed - unsupported output format')
+                logger.log_and_raise(
+                    exception=Exception, msg='DataDiagnosis: output failed - unsupported output format'
+                )
             logger.info('DataDiagnosis: Output results to {}'.format(output_path))
         except Exception as e:
-            logger.error('DataDiagnosis: run failed - {}'.format(str(e)))
+            logger.log_and_raise(exception=Exception, msg='DataDiagnosis: run failed - {}'.format(str(e)))
