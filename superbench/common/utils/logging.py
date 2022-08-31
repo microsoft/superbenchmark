@@ -8,6 +8,13 @@ import logging
 import sys
 
 import colorlog
+# workaround to get rid of isatty from
+# colorama StreamWrapper in WSL2
+try:
+    from colorama import deinit
+    deinit()
+except Exception:
+    pass
 
 
 class LoggerAdapter(logging.LoggerAdapter):
