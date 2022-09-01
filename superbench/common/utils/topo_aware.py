@@ -8,9 +8,6 @@ import os
 from pathlib import Path
 
 import networkx as nx
-from paramiko import SSHConfig
-from pssh.clients import ParallelSSHClient
-from pssh.config import HostConfig
 
 from superbench.common.utils import logger
 
@@ -46,31 +43,13 @@ def gen_ibstat_file(host_list, ibstat_file):
         ibstat_file (str): path of ibstat output.
     """
     try:
-        # Parse ssh config
-        config = SSHConfig.from_path('/root/.ssh/config')
-
-        # Append each host config into host_config
-        host_config = []
-        for hostx in host_list:
-            hostx_config = config.lookup(hostx)
-            port = hostx_config['port']
-            private_key = hostx_config['identityfile'][0]
-            host_config.append(HostConfig(port=int(port), private_key=private_key))
-        # Fetch ibstat info from each host
-        client = ParallelSSHClient(host_list, host_config=host_config)
-        cmd = r"ibstat | grep -Po 'System image GUID: \K\S+$'"
-        output = client.run_command(cmd)
-        client.join()
-
-        # Generate ib stat file and distribute to each host
+        pssh_cmd = "pssh -i -t 5 -H '{}' ".format(' '.join(host_list))
+        cmd = "'cat /sys/class/infiniband/*/sys_image_guid | tr -d :' | sed 's/^.*SUCCESS]/VM_hostname/g' | uniq"
+        output = os.popen(pssh_cmd + cmd)
+        # Generate ibstat file
         ibstate_file_path = Path(ibstat_file)
         with ibstate_file_path.open(mode='w') as f:
-            for host_output in output:
-                hostname = host_output.host
-                ibstat = 'VM_hostname ' + str(hostname) + '\n'
-                f.write(ibstat)
-                for line in host_output.stdout:
-                    f.write(line + '\n')
+            f.writelines(output.read())
     except BaseException as e:
         logger.error('Failed to generate ibstate file, message: {}.'.format(str(e)))
 
@@ -132,8 +111,8 @@ def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, 
                     r = quick_regexp()
                     if r.search(r'^(VM_hostname)\s+(.+)', line):
                         vmhost = r.groups[1]
-                    elif r.search(r'^(0x)(.+)', line):
-                        sysimgguid = r.groups[1]
+                    elif r.search(r'^([a-z0-9]{16})$', line):
+                        sysimgguid = r.groups[0]
                         sysimgguid_to_vmhost[sysimgguid] = vmhost
     except BaseException as e:
         logger.error('Failed to read ibstate file, message: {}.'.format(str(e)))
