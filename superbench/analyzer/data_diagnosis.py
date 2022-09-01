@@ -203,34 +203,29 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): defective nodes's detailed information
             label_df (DataFrame): labels for all nodes
         """
-        try:
-            summary_columns = ['Category', 'Defective Details']
-            data_not_accept_df = pd.DataFrame(columns=summary_columns)
-            summary_details_df = pd.DataFrame()
-            label_df = pd.DataFrame(columns=['label'])
-            if not self._parse_rules_and_baseline(rules, baseline):
-                return data_not_accept_df, label_df
-            # run diagnosis rules for each node
-            for node in self._raw_data_df.index:
-                details_row, summary_data_row = self._run_diagnosis_rules_for_single_node(node)
-                if details_row:
-                    data_not_accept_df.loc[node] = details_row
-                    summary_details_df = pd.concat(
-                        [summary_details_df,
-                         pd.DataFrame([summary_data_row.to_dict()], index=[summary_data_row.name])]
-                    )
-                    label_df.loc[node] = 1
-                else:
-                    label_df.loc[node] = 0
-            # combine details for defective nodes
-            if len(data_not_accept_df) != 0:
-                data_not_accept_df = data_not_accept_df.join(summary_details_df)
-                data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
+        summary_columns = ['Category', 'Defective Details']
+        data_not_accept_df = pd.DataFrame(columns=summary_columns)
+        summary_details_df = pd.DataFrame()
+        label_df = pd.DataFrame(columns=['label'])
+        if not self._parse_rules_and_baseline(rules, baseline):
+            return data_not_accept_df, label_df
+        # run diagnosis rules for each node
+        for node in self._raw_data_df.index:
+            details_row, summary_data_row = self._run_diagnosis_rules_for_single_node(node)
+            if details_row:
+                data_not_accept_df.loc[node] = details_row
+                summary_details_df = pd.concat(
+                    [summary_details_df,
+                     pd.DataFrame([summary_data_row.to_dict()], index=[summary_data_row.name])]
+                )
+                label_df.loc[node] = 1
+            else:
+                label_df.loc[node] = 0
+        # combine details for defective nodes
+        if len(data_not_accept_df) != 0:
+            data_not_accept_df = data_not_accept_df.join(summary_details_df)
+            data_not_accept_df = data_not_accept_df.sort_values(by=summary_columns, ascending=False)
 
-        except Exception as e:
-            logger.log_and_raise(
-                exception=Exception, msg='DataDiagnosis: run diagnosis rules failed, message: {}'.format(str(e))
-            )
         return data_not_accept_df, label_df
 
     def output_all_nodes_results(self, raw_data_df, data_not_accept_df):
