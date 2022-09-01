@@ -125,7 +125,7 @@ superbench:
         - vgg_models/pytorch-vgg.*/throughput_train_.*\
     rule6:
       function: multi_rules
-      criteria: 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False'
+      criteria: 'lambda label: bool(label["rule4"]+label["rule5"]>=2)'
       categories: CNN
     rule7:
       categories: MODEL_DIST
