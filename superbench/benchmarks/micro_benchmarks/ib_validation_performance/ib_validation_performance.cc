@@ -260,13 +260,28 @@ void gather_hostnames(vector<string> &hostnames, string filename) {
 }
 
 // Parse raw output of ib command
-// TODO: does not work latency tests
+// Sample of ib bw command raw
+// #bytes     #iterations BW peak[Gb/sec]    BW average[Gb/sec]  MsgRate[Mpps]
+// 8388608    5000            196.08             195.76            0.002917
+// Sample of ib latency command raw output
+// #bytes  #iterations    t_min    t_max  t_typical   t_avg    t_stdev  99% percentile   99.9% percentile
+// 8388608    5000        581.27   876.26   594.87    595.50     3.33       601.65          621.14
+// parsed result:
+// 195.76 (BW average)
+// 595.50 (t_avg)
 float process_raw_output(string output) {
     float res = -1.0;
     try {
+        string pattern;
         vector<string> lines;
         boost::split(lines, output, boost::is_any_of("\n"), boost::token_compress_on);
-        regex re("\\d+\\s+\\d+\\s+\\d+\\.\\d+\\s+(\\d+\\.\\d+)\\s+\\d+\\.\\d+");
+        if (output.find("BW") != string::npos) {
+            pattern = "\\d+\\s+\\d+\\s+\\d+\\.\\d+\\s+(\\d+\\.\\d+)\\s+\\d+\\.\\d+";
+        } else {
+            pattern = "\\d+\\s+\\d+\\s+\\d+\\.\\d+\\s+\\d+\\.\\d+\\s+\\d+\\.\\d+"
+                      "\\s+(\\d+\\.\\d+)\\s+\\d+\\.\\d+\\s+\\d+\\.\\d+\\s+\\d+\\.\\d+";
+        }
+        regex re(pattern);
         for (string line : lines) {
             smatch m;
             if (regex_search(line, m, re))
