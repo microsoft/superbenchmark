@@ -305,7 +305,8 @@ class DataDiagnosis(RuleBase):
                     Exception, msg='DataDiagnosis: output json data - data_not_accept_df is not DataFrame.'
                 )
             if data_not_accept_df.empty:
-                p.touch(mode=0o664, exist_ok=True)
+                with p.open('w') as f:
+                    pass
                 return
             with p.open('w') as f:
                 for node in data_not_accept:
