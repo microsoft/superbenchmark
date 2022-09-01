@@ -177,10 +177,10 @@ The supported functions are listed as follows:
 
 - `multi_rules`: the rule is to check if the combined results of multiple previous rules and metrics violate the criteria.
   We would like to list several examples as follows:
-  - 'criteria: lambda label:True if label["rule4"]+label["rule5"]>=2 else False' means that this rule will be triggered if the sum of labeled metrics in rule4 and rule5 is larger than 2
-  - 'criteria: lambda label: bool(min(label["rule7"].values()))<1)' means that if the minimum of the metrics' values in rule6 is smaller than 1, it should be defective.
-    - If you reference a non-existent rule, it will raise exception
-    - If the test in the referenced rule failed or not run resulting in exception in creteria, it will not raise exception since it will be checked in failure_rule
+  - `criteria: lambda label: bool(label["rule4"]+label["rule5"]>=2)` means that this rule will be triggered if the sum of labeled metrics in rule4 and rule5 is larger than 2
+  - `criteria: lambda label: bool(min(label["rule7"].values()))<1)` means that if the minimum of the metrics' values in rule6 is smaller than 1, it should be defective.
+    - If you reference a non-existent rule, it will raise exception.
+    - If the test in the referenced rule failed or not run resulting in exception in creteria, it will not raise exception since it will be checked in failure_rule.
 
 - `failure_check`: the rule is to check if any metric in this rule fail or miss the test. The metrics in this rule should be like `{benchmark_name}/.*:return_code` used to identify the failure.
 

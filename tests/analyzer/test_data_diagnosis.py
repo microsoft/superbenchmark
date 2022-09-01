@@ -53,7 +53,7 @@ class TestDataDiagnosis(unittest.TestCase):
         test_raw_data_fake = str(self.parent_path / 'test_results_fake.jsonl')
         test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         diag2 = DataDiagnosis()
-        self.assertRaises(Exception, file_handler.read_raw_data, test_raw_data_fake)
+        self.assertRaises(FileNotFoundError, file_handler.read_raw_data, test_raw_data_fake)
         diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks([])
         assert (len(diag2._benchmark_metrics_dict) == 0)
         metric_list = [
@@ -67,7 +67,7 @@ class TestDataDiagnosis(unittest.TestCase):
             }
         )
         # Test - read rules
-        self.assertRaises(Exception, file_handler.read_rules, test_rule_file_fake)
+        self.assertRaises(FileNotFoundError, file_handler.read_rules, test_rule_file_fake)
         rules = file_handler.read_rules(test_rule_file)
         assert (rules)
         # Test - _check_and_format_rules
