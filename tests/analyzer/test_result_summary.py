@@ -83,8 +83,7 @@ class TestResultSummary(unittest.TestCase):
         # Test - _parse_rules
         # Negative case
         rs2 = ResultSummary()
-        fake_rules = file_handler.read_rules(self.test_rule_file_fake)
-        assert (rs2._parse_rules(fake_rules) is False)
+        self.assertRaises(Exception, file_handler.read_rules, self.test_rule_file_fake)
         rs2._raw_data_df = file_handler.read_raw_data(self.test_raw_data)
         rs2._benchmark_metrics_dict = rs2._get_metrics_by_benchmarks(list(rs2._raw_data_df))
         p = Path(self.test_rule_file)
@@ -93,7 +92,7 @@ class TestResultSummary(unittest.TestCase):
         rules['superbench']['rules']['fake'] = false_rules[0]
         with open(self.test_rule_file_fake, 'w') as f:
             yaml.dump(rules, f)
-        assert (rs1._parse_rules(fake_rules) is False)
+        assert (rs1._parse_rules([]) is False)
         # Positive case
         rules = file_handler.read_rules(self.test_rule_file)
         assert (rs1._parse_rules(rules))
