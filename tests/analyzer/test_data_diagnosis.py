@@ -53,9 +53,8 @@ class TestDataDiagnosis(unittest.TestCase):
         test_raw_data_fake = str(self.parent_path / 'test_results_fake.jsonl')
         test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         diag2 = DataDiagnosis()
-        diag2._raw_data_df = file_handler.read_raw_data(test_raw_data_fake)
-        diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
-        assert (len(diag2._raw_data_df) == 0)
+        self.assertRaises(Exception, file_handler.read_raw_data, test_raw_data_fake)
+        diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks([])
         assert (len(diag2._benchmark_metrics_dict) == 0)
         metric_list = [
             'gpu_temperature', 'gpu_power_limit', 'gemm-flops/FP64',
@@ -68,8 +67,7 @@ class TestDataDiagnosis(unittest.TestCase):
             }
         )
         # Test - read rules
-        rules = file_handler.read_rules(test_rule_file_fake)
-        assert (not rules)
+        self.assertRaises(Exception, file_handler.read_rules, test_rule_file_fake)
         rules = file_handler.read_rules(test_rule_file)
         assert (rules)
         # Test - _check_and_format_rules
@@ -134,9 +132,9 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (diag1._get_baseline_of_metric(baseline, 'mem-bw/H2D:0') is None)
         # Test - _parse_rules_and_baseline
         # Negative case
-        fake_rules = file_handler.read_rules(test_rule_file_fake)
+        fake_rules = []
         baseline = file_handler.read_baseline(test_baseline_file)
-        assert (diag2._parse_rules_and_baseline(fake_rules, baseline) is False)
+        self.assertRaises(Exception, diag2._parse_rules_and_baseline, fake_rules, baseline)
         diag2 = DataDiagnosis()
         diag2._raw_data_df = file_handler.read_raw_data(test_raw_data)
         diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
@@ -146,7 +144,7 @@ class TestDataDiagnosis(unittest.TestCase):
         rules['superbench']['rules']['fake'] = false_rules[0]
         with open(test_rule_file_fake, 'w') as f:
             yaml.dump(rules, f)
-        assert (diag1._parse_rules_and_baseline(fake_rules, baseline) is False)
+        self.assertRaises(Exception, diag1._parse_rules_and_baseline, fake_rules, baseline)
         # Positive case
         rules = file_handler.read_rules(test_rule_file)
         assert (diag1._parse_rules_and_baseline(rules, baseline))

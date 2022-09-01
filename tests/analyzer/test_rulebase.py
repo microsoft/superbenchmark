@@ -28,11 +28,11 @@ class TestRuleBase(unittest.TestCase):
         assert (len(rulebase1._raw_data_df) == 3)
         # Negative case
         test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
+
         test_raw_data_fake = str(self.parent_path / 'test_results_fake.jsonl')
         rulebase2 = RuleBase()
-        rulebase2._raw_data_df = file_handler.read_raw_data(test_raw_data_fake)
-        rulebase2._benchmark_metrics_dict = rulebase2._get_metrics_by_benchmarks(list(rulebase2._raw_data_df))
-        assert (len(rulebase2._raw_data_df) == 0)
+        self.assertRaises(Exception, file_handler.read_raw_data, test_raw_data_fake)
+        rulebase2._benchmark_metrics_dict = rulebase2._get_metrics_by_benchmarks([])
         assert (len(rulebase2._benchmark_metrics_dict) == 0)
         metric_list = [
             'gpu_temperature', 'gpu_power_limit', 'gemm-flops/FP64',
@@ -46,10 +46,8 @@ class TestRuleBase(unittest.TestCase):
         )
 
         # Test - _preprocess
-        rules = rulebase1._preprocess(test_raw_data_fake, test_rule_file)
-        assert (not rules)
-        rules = rulebase1._preprocess(test_raw_data, test_rule_file_fake)
-        assert (not rules)
+        self.assertRaises(Exception, rulebase1._preprocess, test_raw_data_fake, test_rule_file)
+        self.assertRaises(Exception, rulebase1._preprocess, test_raw_data, test_rule_file_fake)
         rules = rulebase1._preprocess(test_raw_data, test_rule_file)
         assert (rules)
 

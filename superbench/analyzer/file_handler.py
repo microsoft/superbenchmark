@@ -28,8 +28,9 @@ def read_raw_data(raw_data_path):
     p = Path(raw_data_path)
     raw_data_df = pd.DataFrame()
     if not p.is_file():
-        logger.error('FileHandler: invalid raw data path - {}'.format(raw_data_path))
-        return raw_data_df
+        logger.log_and_raise(
+            exception=FileNotFoundError, msg='FileHandler: invalid raw data path - {}'.format(raw_data_path)
+        )
 
     try:
         with p.open(encoding='utf-8') as f:
@@ -38,7 +39,7 @@ def read_raw_data(raw_data_path):
         raw_data_df = raw_data_df.rename(raw_data_df['node'])
         raw_data_df = raw_data_df.drop(columns=['node'])
     except Exception as e:
-        logger.error('Analyzer: invalid raw data fomat - {}'.format(str(e)))
+        logger.log_and_raise(exception=IOError, msg='Analyzer: invalid raw data fomat - {}'.format(str(e)))
     return raw_data_df
 
 
@@ -54,8 +55,9 @@ def read_rules(rule_file=None):
     default_rule_file = Path(__file__).parent / 'rule/default_rule.yaml'
     p = Path(rule_file) if rule_file else default_rule_file
     if not p.is_file():
-        logger.error('FileHandler: invalid rule file path - {}'.format(str(p.resolve())))
-        return None
+        logger.log_and_raise(
+            exception=FileNotFoundError, msg='FileHandler: invalid rule file path - {}'.format(str(p.resolve()))
+        )
     baseline = None
     with p.open() as f:
         baseline = yaml.load(f, Loader=yaml.SafeLoader)
@@ -73,8 +75,9 @@ def read_baseline(baseline_file):
     """
     p = Path(baseline_file)
     if not p.is_file():
-        logger.error('FileHandler: invalid baseline file path - {}'.format(str(p.resolve())))
-        return None
+        logger.log_and_raise(
+            exception=FileNotFoundError, msg='FileHandler: invalid baseline file path - {}'.format(str(p.resolve()))
+        )
     baseline = None
     with p.open() as f:
         baseline = json.load(f)
@@ -158,7 +161,7 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
         else:
             logger.warning('FileHandler: excel_data_output - data_not_accept_df is empty.')
     else:
-        logger.warning('FileHandler: excel_data_output - data_not_accept_df is not DataFrame.')
+        logger.log_and_raise(RuntimeError, msg='FileHandler: excel_data_output - data_not_accept_df is not DataFrame.')
 
 
 def generate_md_table(data_df, header):
@@ -199,12 +202,11 @@ def output_lines_in_md(lines, output_path):
     """
     try:
         if len(lines) == 0:
-            logger.error('FileHandler: md_data_output failed')
-            return
+            logger.warning('FileHandler: md_data_output is empty')
         with open(output_path, 'w') as f:
             f.writelines(lines)
     except Exception as e:
-        logger.error('FileHandler: md_data_output - {}'.format(str(e)))
+        logger.log_and_raise(exception=IOError, msg='FileHandler: md_data_output - {}'.format(str(e)))
 
 
 def output_lines_in_html(lines, output_path):
@@ -216,14 +218,13 @@ def output_lines_in_html(lines, output_path):
     """
     try:
         if len(lines) == 0:
-            logger.error('FileHandler: html_data_output failed')
-            return
+            logger.warning('FileHandler: html_data_output is empty')
         lines = ''.join(lines)
         html_str = markdown.markdown(lines, extensions=['markdown.extensions.tables'])
         with open(output_path, 'w') as f:
             f.writelines(html_str)
     except Exception as e:
-        logger.error('FileHandler: html_data_output - {}'.format(str(e)))
+        logger.log_and_raise(exception=IOError, msg='FileHandler: html_data_output - {}'.format(str(e)))
 
 
 def merge_column_in_excel(ws, row, column):
