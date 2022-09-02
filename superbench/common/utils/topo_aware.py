@@ -44,12 +44,14 @@ def gen_ibstat_file(host_list, ibstat_file):
     """
     try:
         pssh_cmd = "pssh -i -t 5 -H '{}' ".format(' '.join(host_list))
-        cmd = "'cat /sys/class/infiniband/*/sys_image_guid | tr -d :' | sed 's/^.*SUCCESS]/VM_hostname/g' | uniq"
-        output = os.popen(pssh_cmd + cmd)
+        cmd = "'cat /sys/class/infiniband/*/sys_image_guid | tr -d :' | sed 's/^.*[[[:upper:]]\{7\}]/VM_hostname/g'"
+        output = os.popen(pssh_cmd + cmd).read()
+        if 'error code' in output:
+            logger.error('Failed to fetch guid info with specified hostlist')
         # Generate ibstat file
         ibstate_file_path = Path(ibstat_file)
         with ibstate_file_path.open(mode='w') as f:
-            f.writelines(output.read())
+            f.writelines(output)
     except BaseException as e:
         logger.error('Failed to generate ibstate file, message: {}.'.format(str(e)))
 
@@ -111,7 +113,7 @@ def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, 
                     r = quick_regexp()
                     if r.search(r'^(VM_hostname)\s+(.+)', line):
                         vmhost = r.groups[1]
-                    elif r.search(r'^([a-z0-9]{16})$', line):
+                    elif r.search(r'^(?!0{16})([a-z0-9]{16})$', line):
                         sysimgguid = r.groups[0]
                         sysimgguid_to_vmhost[sysimgguid] = vmhost
     except BaseException as e:
