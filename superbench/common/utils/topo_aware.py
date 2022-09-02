@@ -43,9 +43,9 @@ def gen_ibstat_file(host_list, ibstat_file):
         ibstat_file (str): path of ibstat output.
     """
     try:
-        pssh_cmd = "pssh -i -t 5 -H '{}' ".format(' '.join(host_list))
+        pssh_cmd = "pssh -i -H '{}' ".format(' '.join(host_list))
         cmd = "'cat /sys/class/infiniband/*/sys_image_guid" \
-            r"| tr -d :' | sed 's/^.*[[[:upper:]]\{7\}]/VM_hostname/g' | cut -d ' ' -f 1,2"
+            r"| tr -d :' | sed -e 's/^.*\[SUCCESS\]/VM_hostname/g;s/^.*\[FAILURE\]/VM_hostname/g' | cut -d ' ' -f 1,2"
         output = os.popen(pssh_cmd + cmd).read()
         # Generate ibstat file
         ibstate_file_path = Path(ibstat_file)
