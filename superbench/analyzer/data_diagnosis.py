@@ -265,8 +265,6 @@ class DataDiagnosis(RuleBase):
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].replace(np.nan, 0)
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].astype(int)
 
-        all_data_df = all_data_df.replace(np.nan, '')
-
         return all_data_df
 
     def output_diagnosis_in_excel(self, raw_data_df, data_not_accept_df, output_path, rules):
@@ -279,6 +277,7 @@ class DataDiagnosis(RuleBase):
             rules (dict): the rules of DataDiagnosis
         """
         try:
+            data_not_accept_df = data_not_accept_df.convert_dtypes(convert_integer=True).astype('object').fillna('')
             writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
             # Check whether writer is valiad
             if not isinstance(writer, pd.ExcelWriter):
@@ -296,6 +295,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
+        data_not_accept_df = data_not_accept_df.convert_dtypes(convert_integer=True).astype('object').fillna('')
         p = Path(output_path)
         try:
             data_not_accept_json = data_not_accept_df.to_json(orient='index')
@@ -326,6 +326,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
+        data_not_accept_df = data_not_accept_df.convert_dtypes(convert_integer=True).astype('object').fillna('')
         data_not_accept_df = data_not_accept_df.reset_index()
         data_not_accept_df = data_not_accept_df.rename(
             columns={
@@ -376,6 +377,7 @@ class DataDiagnosis(RuleBase):
                             data_not_accept_df = data_analysis.round_significant_decimal_places(
                                 data_not_accept_df, round, [metric]
                             )
+        data_not_accept_df = data_not_accept_df.convert_dtypes(convert_integer=True).astype('object').fillna('')
         lines = file_handler.generate_md_table(data_not_accept_df, header)
         return lines
 
