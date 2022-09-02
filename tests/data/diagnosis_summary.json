@@ -1,5 +1,10 @@
 [
     {
+        "index": "sb-validation-01",
+        "diagnosis/accept": false,
+        "diagnosis/issue_num": 1,
+        "diagnosis/category": "KernelLaunch",
+        "diagnosis/issue_details": "kernel-launch/event_overhead:0(B/L: 0.0060 VAL: 0.1000 VAR: 1577.85% Rule:lambda x:x>0.05)",
         "bert_models/pytorch-bert-base/steptime_train_float32": 114.5916701062,
         "bert_models/pytorch-bert-base/throughput_train_float32": 279.8794623591,
         "bert_models/pytorch-bert-base/steptime_train_float16": 83.8895108318,
@@ -461,14 +466,14 @@
         "vgg_models/pytorch-vgg19/steptime_train_float32": 74.9348710524,
         "vgg_models/pytorch-vgg19/throughput_train_float32": 429.8092158311,
         "vgg_models/pytorch-vgg19/steptime_train_float16": 45.2033062465,
-        "vgg_models/pytorch-vgg19/throughput_train_float16": 709.1127328377,
-        "diagnosis/accept": false,
-        "diagnosis/issue_num": 1,
-        "diagnosis/category": "KernelLaunch",
-        "diagnosis/issue_details": "kernel-launch/event_overhead:0(B/L: 0.0060 VAL: 0.1000 VAR: 1577.85% Rule:lambda x:x>0.05)",
-        "Index": "sb-validation-01"
+        "vgg_models/pytorch-vgg19/throughput_train_float16": 709.1127328377
     },
     {
+        "index": "sb-validation-02",
+        "diagnosis/accept": true,
+        "diagnosis/issue_num": 0,
+        "diagnosis/category": "",
+        "diagnosis/issue_details": "",
         "bert_models/pytorch-bert-base/steptime_train_float32": 114.5916701062,
         "bert_models/pytorch-bert-base/throughput_train_float32": 279.8794623591,
         "bert_models/pytorch-bert-base/steptime_train_float16": 83.8895108318,
@@ -930,14 +935,14 @@
         "vgg_models/pytorch-vgg19/steptime_train_float32": 74.9348710524,
         "vgg_models/pytorch-vgg19/throughput_train_float32": 429.8092158311,
         "vgg_models/pytorch-vgg19/steptime_train_float16": 45.2033062465,
-        "vgg_models/pytorch-vgg19/throughput_train_float16": 709.1127328377,
-        "diagnosis/accept": true,
-        "diagnosis/issue_num": 0,
-        "diagnosis/category": "",
-        "diagnosis/issue_details": "",
-        "Index": "sb-validation-02"
+        "vgg_models/pytorch-vgg19/throughput_train_float16": 709.1127328377
     },
     {
+        "index": "sb-validation-03",
+        "diagnosis/accept": false,
+        "diagnosis/issue_num": 17,
+        "diagnosis/category": "FailedTest",
+        "diagnosis/issue_details": "mem-bw/D2H_Mem_BW:0_miss,mem-bw/D2H_Mem_BW:1_miss,mem-bw/D2H_Mem_BW:2_miss,mem-bw/D2H_Mem_BW:3_miss,mem-bw/D2H_Mem_BW:4_miss,mem-bw/D2H_Mem_BW:5_miss,mem-bw/D2H_Mem_BW:6_miss,mem-bw/D2H_Mem_BW:7_miss,mem-bw/H2D_Mem_BW:0_miss,mem-bw/H2D_Mem_BW:1_miss,mem-bw/H2D_Mem_BW:2_miss,mem-bw/H2D_Mem_BW:3_miss,mem-bw/H2D_Mem_BW:4_miss,mem-bw/H2D_Mem_BW:5_miss,mem-bw/H2D_Mem_BW:6_miss,mem-bw/H2D_Mem_BW:7_miss,mem-bw/return_code(VAL: 1.0000 Rule:lambda x:x>0)",
         "bert_models/pytorch-bert-base/steptime_train_float32": 114.5916701062,
         "bert_models/pytorch-bert-base/throughput_train_float32": 279.8794623591,
         "bert_models/pytorch-bert-base/steptime_train_float16": 83.8895108318,
@@ -1399,11 +1404,6 @@
         "vgg_models/pytorch-vgg19/steptime_train_float32": 74.9348710524,
         "vgg_models/pytorch-vgg19/throughput_train_float32": 429.8092158311,
         "vgg_models/pytorch-vgg19/steptime_train_float16": 45.2033062465,
-        "vgg_models/pytorch-vgg19/throughput_train_float16": 709.1127328377,
-        "diagnosis/accept": false,
-        "diagnosis/issue_num": 17,
-        "diagnosis/category": "FailedTest",
-        "diagnosis/issue_details": "mem-bw/D2H_Mem_BW:0_miss,mem-bw/D2H_Mem_BW:1_miss,mem-bw/D2H_Mem_BW:2_miss,mem-bw/D2H_Mem_BW:3_miss,mem-bw/D2H_Mem_BW:4_miss,mem-bw/D2H_Mem_BW:5_miss,mem-bw/D2H_Mem_BW:6_miss,mem-bw/D2H_Mem_BW:7_miss,mem-bw/H2D_Mem_BW:0_miss,mem-bw/H2D_Mem_BW:1_miss,mem-bw/H2D_Mem_BW:2_miss,mem-bw/H2D_Mem_BW:3_miss,mem-bw/H2D_Mem_BW:4_miss,mem-bw/H2D_Mem_BW:5_miss,mem-bw/H2D_Mem_BW:6_miss,mem-bw/H2D_Mem_BW:7_miss,mem-bw/return_code(VAL: 1.0000 Rule:lambda x:x>0)",
-        "Index": "sb-validation-03"
+        "vgg_models/pytorch-vgg19/throughput_train_float16": 709.1127328377
     }
 ]
