@@ -122,40 +122,41 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
             worksheet = writer.sheets['Not Accept']
 
             for rule in rules:
-                for metric in rules[rule]['metrics']:
-                    # The column index of the metrics should start from 1
-                    col_index = columns.index(metric) + 1
-                    # Apply percent format for the columns whose rules are variance type.
-                    if rules[rule]['function'] == 'variance':
-                        worksheet.conditional_format(
-                            row_start,
-                            col_index,
-                            row_end,
-                            col_index,    # start_row, start_col, end_row, end_col
-                            {
-                                'type': 'no_blanks',
-                                'format': percent_format
-                            }
-                        )
-                    # Apply red format if the value violates the rule.
-                    if rules[rule]['function'] == 'value' or rules[rule]['function'] == 'variance':
-                        match = re.search(r'(>|<|<=|>=|==|!=)(.+)', rules[rule]['criteria'])
-                        if not match:
-                            continue
-                        symbol = match.group(1)
-                        condition = float(match.group(2))
-                        worksheet.conditional_format(
-                            row_start,
-                            col_index,
-                            row_end,
-                            col_index,    # start_row, start_col, end_row, end_col
-                            {
-                                'type': 'cell',
-                                'criteria': symbol,
-                                'value': condition,
-                                'format': color_format_red
-                            }
-                        )
+                if 'function' in rules[rule]:
+                    for metric in rules[rule]['metrics']:
+                        # The column index of the metrics should start from 1
+                        col_index = columns.index(metric) + 1
+                        # Apply percent format for the columns whose rules are variance type.
+                        if rules[rule]['function'] == 'variance':
+                            worksheet.conditional_format(
+                                row_start,
+                                col_index,
+                                row_end,
+                                col_index,    # start_row, start_col, end_row, end_col
+                                {
+                                    'type': 'no_blanks',
+                                    'format': percent_format
+                                }
+                            )
+                        # Apply red format if the value violates the rule.
+                        if rules[rule]['function'] == 'value' or rules[rule]['function'] == 'variance':
+                            match = re.search(r'(>|<|<=|>=|==|!=)(.+)', rules[rule]['criteria'])
+                            if not match:
+                                continue
+                            symbol = match.group(1)
+                            condition = float(match.group(2))
+                            worksheet.conditional_format(
+                                row_start,
+                                col_index,
+                                row_end,
+                                col_index,    # start_row, start_col, end_row, end_col
+                                {
+                                    'type': 'cell',
+                                    'criteria': symbol,
+                                    'value': condition,
+                                    'format': color_format_red
+                                }
+                            )
 
         else:
             logger.warning('FileHandler: excel_data_output - data_not_accept_df is empty.')

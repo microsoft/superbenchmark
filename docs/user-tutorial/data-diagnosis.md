@@ -32,7 +32,7 @@ The input mainly includes 3 files:
 
  - **rule file**: It uses YAML format and includes each metrics' rules to filter defective machines for diagnosis.
 
- - **baseline file**: json file including the baseline values for the metrics.
+ - **baseline file (optional)**: json file including the baseline values for the metrics.
 
     `Tips`: this file for some representative machine types will be published in [SuperBench Results Repo](https://github.com/microsoft/superbench-results/tree/main) with the release of Superbench.
 
@@ -52,8 +52,8 @@ superbench:
     ${var_name}: dict
   rules:
     ${rule_name}:
-      function: string
-      criteria: string
+      function: (optional)string
+      criteria: (optional)string
       store: (optional)bool
       categories: string
       metrics:
@@ -69,7 +69,7 @@ version: v0.5
 superbench:
   rules:
     failure-rule:
-      function: value
+      function: failure_check
       criteria: lambda x:x>0
       categories: Failed
       metrics:
@@ -125,8 +125,17 @@ superbench:
         - vgg_models/pytorch-vgg.*/throughput_train_.*\
     rule6:
       function: multi_rules
-      criteria: 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False'
+      criteria: 'lambda label: bool(label["rule4"]+label["rule5"]>=2)'
       categories: CNN
+    rule7:
+      categories: MODEL_DIST
+      store: True
+      metrics:
+        - model-benchmarks:stress-run.*/pytorch-gpt2-large/fp32_train_throughput
+    rule8:
+      function: multi_rules
+      criteria: 'lambda label: bool(min(label["rule7"].values()))<1)'
+      categories: MODEL_DIST
 ```
 
 This rule file describes the rules used for data diagnosis.
@@ -147,15 +156,18 @@ The criterion used for this rule, which indicates how to compare the data with t
 
 #### `store`
 
-True if the current rule is not used alone to filter the defective machine, but will be used by other subsequent rules. False(default) if this rule is used to label the defective machine directly.
+- True: this rule is used to store metrics which will be used by other subsequent rules.
+  - If store is True and criteria/function are not None in the rule, it will store how many metrics in this rule meet the criteria into lable["rule_name"], for example lable["rule_name"]=2 means 2 metrics are identified as defective in this rule;
+  - If store is True and criteria/function are None, it will store the dict of {metric_name: values} of the metrics into lable["rule_name"]
+- False (default): this rule is used to label the defective machine directly.
 
 #### `function`
 
 The function used for this rule.
 
-3 types of rules are supported currently:
+The supported functions are listed as follows:
 
-- `variance`: the rule is to check if the variance between raw data and baseline violates the criteria. variance = (raw data - criteria) / criteria
+- `variance`: the rule is to check if the variance between raw data and baseline violates the criteria. variance = (raw data - baseline) / baseline
 
   For example, if the 'criteria' is `lambda x:x>0.05`, the rule is that if the variance is larger than 5%, it should be defective.
 
@@ -164,8 +176,16 @@ The function used for this rule.
   For example, if the 'criteria' is `lambda x:x>0`, the rule is that if the raw data is larger than the 0, it should be defective.
 
 - `multi_rules`: the rule is to check if the combined results of multiple previous rules and metrics violate the criteria.
+  We would like to list several examples as follows:
+  - `criteria: lambda label: bool(label["rule4"]+label["rule5"]>=2)` means that this rule will be triggered if the sum of labeled metrics in rule4 and rule5 is larger than 2
+  - `criteria: lambda label: bool(min(label["rule7"].values()))<1)` means that if the minimum of the metrics' values in rule6 is smaller than 1, it should be defective.
+    - If you reference a non-existent rule, it will raise exception.
+    - If the test in the referenced rule failed or not run resulting in exception in creteria, it will not raise exception since it will be checked in failure_rule.
 
-  For example, if the 'criteria' is 'lambda label:True if label["rule4"]+label["rule5"]>=2 else False', the rule is that if the sum of labeled metrics in rule4 and rule5 is larger than 2, it should be defective.
+- `failure_check`: the rule is to check if any metric in this rule fail or miss the test. The metrics in this rule should be like `{benchmark_name}/.*:return_code` used to identify the failure.
+
+  - If any item is never matched with the metrics of the raw data, the rule will identify it as miss test.
+  - If any metric violate the `value` criteria which means return_code is not success(0), the rule will identify it as failed test.
 
 `Tips`: you must contain a default rule for ${benchmark_name}/return_code as the above in the example, which is used to identify failed tests.
 

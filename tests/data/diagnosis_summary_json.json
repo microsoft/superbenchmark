@@ -1,5 +1,6 @@
 [
     {
+        "index": "sb-validation-01",
         "diagnosis/category": "KernelLaunch",
         "diagnosis/issue_details": "kernel-launch/event_overhead:0(B/L: 0.0060 VAL: 0.1000 VAR: 1577.85% Rule:lambda x:x>0.05)",
         "kernel-launch/event_overhead:0": 15.7785234899,
@@ -35,10 +36,10 @@
         "mem-bw/H2D_Mem_BW:5": 0.0078125,
         "mem-bw/H2D_Mem_BW:6": -0.01171875,
         "mem-bw/H2D_Mem_BW:7": 0.01953125,
-        "mem-bw/return_code": 0.0,
-        "Index": "sb-validation-01"
+        "mem-bw/return_code": 0.0
     },
     {
+        "index": "sb-validation-03",
         "diagnosis/category": "FailedTest",
         "diagnosis/issue_details": "mem-bw/D2H_Mem_BW:0_miss,mem-bw/D2H_Mem_BW:1_miss,mem-bw/D2H_Mem_BW:2_miss,mem-bw/D2H_Mem_BW:3_miss,mem-bw/D2H_Mem_BW:4_miss,mem-bw/D2H_Mem_BW:5_miss,mem-bw/D2H_Mem_BW:6_miss,mem-bw/D2H_Mem_BW:7_miss,mem-bw/H2D_Mem_BW:0_miss,mem-bw/H2D_Mem_BW:1_miss,mem-bw/H2D_Mem_BW:2_miss,mem-bw/H2D_Mem_BW:3_miss,mem-bw/H2D_Mem_BW:4_miss,mem-bw/H2D_Mem_BW:5_miss,mem-bw/H2D_Mem_BW:6_miss,mem-bw/H2D_Mem_BW:7_miss,mem-bw/return_code(VAL: 1.0000 Rule:lambda x:x>0)",
         "kernel-launch/event_overhead:0": 0.0,
@@ -74,7 +75,6 @@
         "mem-bw/H2D_Mem_BW:5": null,
         "mem-bw/H2D_Mem_BW:6": null,
         "mem-bw/H2D_Mem_BW:7": null,
-        "mem-bw/return_code": 1.0,
-        "Index": "sb-validation-03"
+        "mem-bw/return_code": 1.0
     }
 ]

@@ -1,0 +1,21 @@
+# SuperBench rules
+version: v0.6
+superbench:
+  rules:
+    rule0:
+      function: value
+      criteria: lambda x:x>0
+      categories: KernelLaunch
+      metrics:
+        - kernel-launch/event_overhead:\d+
+        - kernel-launch/wall_overhead:\d+
+    rule1:
+      categories: Mem
+      store: True
+      metrics:
+        - mem-bw/H2D_Mem_BW:\d+
+        - mem-bw/D2H_Mem_BW:\d+
+    rule2:
+      function: multi_rules
+      criteria: 'lambda label: bool(min(label["rule1"].values())/max(label["rule1"].values())<0.95)'
+      categories: Mem

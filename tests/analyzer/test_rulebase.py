@@ -31,7 +31,7 @@ class TestRuleBase(unittest.TestCase):
 
         test_raw_data_fake = str(self.parent_path / 'test_results_fake.jsonl')
         rulebase2 = RuleBase()
-        self.assertRaises(Exception, file_handler.read_raw_data, test_raw_data_fake)
+        self.assertRaises(FileNotFoundError, file_handler.read_raw_data, test_raw_data_fake)
         rulebase2._benchmark_metrics_dict = rulebase2._get_metrics_by_benchmarks([])
         assert (len(rulebase2._benchmark_metrics_dict) == 0)
         metric_list = [
