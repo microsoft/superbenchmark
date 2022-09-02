@@ -63,8 +63,6 @@ class DataDiagnosis(RuleBase):
         """
         if metric in baseline:
             return baseline[metric]
-        elif 'return_code' in metric:
-            return 0
         else:
             short = metric
             # exclude rank info, for example, '.*:\d+'->'.*'
@@ -76,8 +74,7 @@ class DataDiagnosis(RuleBase):
                 return baseline[short]
             # baseline not defined
             else:
-                logger.warning('DataDiagnosis: get baseline - {} baseline not found'.format(metric))
-                return -1
+                return None
 
     def __get_metrics_and_baseline(self, rule, benchmark_rules, baseline):
         """Get metrics with baseline in the rule.
@@ -253,7 +250,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df['Number Of Issues'] = data_not_accept_df['Defective Details'].map(
                 lambda x: len(x.split(','))
             )
-            for index in range(len(append_columns)):
+            for index in range(len(append_columns) - 1, -1, -1):
                 if append_columns[index] not in data_not_accept_df:
                     logger.log_and_raise(
                         Exception,
@@ -261,9 +258,9 @@ class DataDiagnosis(RuleBase):
                         format(append_columns[index])
                     )
                 else:
-                    all_data_df = all_data_df.merge(
-                        data_not_accept_df[[append_columns[index]]], left_index=True, right_index=True, how='left'
-                    )
+                    all_data_df = data_not_accept_df[[
+                        append_columns[index]
+                    ]].merge(all_data_df, left_index=True, right_index=True, how='right')
             all_data_df['Accept'] = all_data_df['Accept'].replace(np.nan, True)
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].replace(np.nan, 0)
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].astype(int)
@@ -329,7 +326,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
-        data_not_accept_df['Index'] = data_not_accept_df.index
+        data_not_accept_df = data_not_accept_df.reset_index()
         data_not_accept_df = data_not_accept_df.rename(
             columns={
                 'Defective Details': 'diagnosis/issue_details',
@@ -357,29 +354,28 @@ class DataDiagnosis(RuleBase):
         """
         if len(data_not_accept_df) == 0:
             return []
-        data_not_accept_df['machine'] = data_not_accept_df.index
+        data_not_accept_df = data_not_accept_df.reset_index()
         header = data_not_accept_df.columns.tolist()
-        header = header[-1:] + header[:-1]
-        data_not_accept_df = data_not_accept_df[header]
         # format precision of values to n decimal digits
         for rule in rules:
-            for metric in rules[rule]['metrics']:
-                if rules[rule]['function'] == 'variance':
-                    if round and isinstance(round, int):
+            if 'function' in rules[rule]:
+                for metric in rules[rule]['metrics']:
+                    if rules[rule]['function'] == 'variance':
+                        if round and isinstance(round, int):
+                            data_not_accept_df[metric] = data_not_accept_df[metric].map(
+                                lambda x: x * 100, na_action='ignore'
+                            )
+                            data_not_accept_df = data_analysis.round_significant_decimal_places(
+                                data_not_accept_df, round, [metric]
+                            )
                         data_not_accept_df[metric] = data_not_accept_df[metric].map(
-                            lambda x: x * 100, na_action='ignore'
+                            lambda x: '{}%'.format(x), na_action='ignore'
                         )
-                        data_not_accept_df = data_analysis.round_significant_decimal_places(
-                            data_not_accept_df, round, [metric]
-                        )
-                    data_not_accept_df[metric] = data_not_accept_df[metric].map(
-                        lambda x: '{}%'.format(x), na_action='ignore'
-                    )
-                elif rules[rule]['function'] == 'value':
-                    if round and isinstance(round, int):
-                        data_not_accept_df = data_analysis.round_significant_decimal_places(
-                            data_not_accept_df, round, [metric]
-                        )
+                    elif rules[rule]['function'] == 'value':
+                        if round and isinstance(round, int):
+                            data_not_accept_df = data_analysis.round_significant_decimal_places(
+                                data_not_accept_df, round, [metric]
+                            )
         lines = file_handler.generate_md_table(data_not_accept_df, header)
         return lines
 
@@ -400,7 +396,7 @@ class DataDiagnosis(RuleBase):
         try:
             rules = self._preprocess(raw_data_file, rule_file)
             # read baseline
-            baseline = file_handler.read_baseline(baseline_file)
+            baseline = file_handler.read_baseline(baseline_file) if baseline_file is not None else {}
             logger.info('DataDiagnosis: Begin to process {} nodes'.format(len(self._raw_data_df)))
             output_df, label_df = self.run_diagnosis_rules(rules, baseline)
             logger.info('DataDiagnosis: Processed finished')
