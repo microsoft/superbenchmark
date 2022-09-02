@@ -193,6 +193,10 @@ class SuperBenchRunner():
             )
         )
 
+    def cleanup(self):    # pragma: no cover
+        """Cleanup remaining processes on all nodes."""
+        self._ansible_client.run(self._ansible_client.get_playbook_config('cleanup.yaml'))
+
     def fetch_results(self):    # pragma: no cover
         """Fetch benchmark results on all nodes."""
         try:
@@ -410,7 +414,7 @@ class SuperBenchRunner():
 
         if isinstance(timeout, int):
             # we do not expect timeout in ansible unless subprocess hangs
-            ansible_runner_config['timeout'] = timeout + 300
+            ansible_runner_config['timeout'] = timeout + 60
 
         rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
         return rc
@@ -423,16 +427,20 @@ class SuperBenchRunner():
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
             for mode in benchmark_config.modes:
+                ansible_rc = 0
                 if mode.name == 'local':
-                    Parallel(n_jobs=mode.proc_num if mode.parallel else 1)(
+                    rc_list = Parallel(n_jobs=mode.proc_num if mode.parallel else 1)(
                         delayed(self._run_proc)(benchmark_name, mode, {
                             'proc_rank': proc_rank
                         }) for proc_rank in range(mode.proc_num)
                     )
+                    ansible_rc = sum(rc_list)
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
-                    self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                    ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
+                if ansible_rc != 0:
+                    self.cleanup()
             self.fetch_results()
 
         self.__create_results_summary()
