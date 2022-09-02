@@ -91,7 +91,7 @@ def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, 
         ibstat_file = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'ib_traffic_topo_aware_ibstat.txt')
         gen_ibstat_file(host_list, ibstat_file)
         # sync all the rank
-        sleep(2)
+        sleep(5)
 
     if not Path(ibstat_file).exists():
         logger.error('ibstat file does not exist.')
