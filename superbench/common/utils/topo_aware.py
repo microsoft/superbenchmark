@@ -46,7 +46,7 @@ def gen_ibstat_file(host_list, ibstat_file):
     try:
         # Only exec on rank0
         if os.environ.get('OMPI_COMM_WORLD_NODE_RANK') == '0' and os.environ.get('OMPI_COMM_WORLD_LOCAL_RANK') == '0':
-            pssh_cmd = "pssh -i -t 5 -x '-o StrictHostKeyChecking=no' -H '{}' ".format(' '.join(host_list))
+            pssh_cmd = "pssh -i -t 5 -p 512 -x '-o StrictHostKeyChecking=no' -H '{}' ".format(' '.join(host_list))
             cmd = "'cat /sys/class/infiniband/*/sys_image_guid | tr -d :'" \
                 r"| sed -e 's/^.*\[SUCCESS\]/VM_hostname/g;s/^.*\[FAILURE\]/VM_hostname/g' | cut -d ' ' -f 1,2"
             output = os.popen(pssh_cmd + cmd).read()
@@ -54,7 +54,7 @@ def gen_ibstat_file(host_list, ibstat_file):
             ibstate_file_path = Path(ibstat_file)
             with ibstate_file_path.open(mode='w') as f:
                 f.write(output)
-            scp_cmd = "pscp -t 5 -H '{0}' {1} {1}".format(' '.join(host_list), ibstat_file)
+            scp_cmd = "pscp -t 5 -p 512 -H '{0}' {1} {1}".format(' '.join(host_list), ibstat_file)
             # Distribute ibstat file for others
             errorn = os.system(scp_cmd)
             if errorn != 0:
