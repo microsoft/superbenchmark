@@ -196,7 +196,7 @@ class TestDataDiagnosis(unittest.TestCase):
             json.loads(line)
             assert ('Category' in line)
             assert ('Defective Details' in line)
-            assert ('Index' in line)
+            assert ('index' in line)
         # Test - generate_md_lines
         lines = diag1.generate_md_lines(data_not_accept_df, diag1._sb_rules, 2)
         assert (lines)
