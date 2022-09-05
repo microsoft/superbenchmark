@@ -202,6 +202,8 @@ The output includes all defective machines' information including index, failure
 - Defective Details (diagnosis/issue_details in json format): all violated metrics including metric data and related rule.
 
 - ${metric}: the data of the metrics defined in the rule file. If the rule is `variance`, the form of the data is variance in percentage; if the rule is `value`, the form of the data is raw data.
+  - `'N/A'` indicates a empty value for the metric in output files.
+
 
 If you specify '--output-all' in the command, the output includes all machines' information and an extra field to indicate if the machines is defective.
 

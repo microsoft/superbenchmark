@@ -21,6 +21,7 @@ class DataDiagnosis(RuleBase):
     def __init__(self):
         """Init function."""
         super().__init__()
+        self.na = 'N/A'
 
     def _check_and_format_rules(self, rule, name):
         """Check the rule of the metric whether the formart is valid.
@@ -265,8 +266,6 @@ class DataDiagnosis(RuleBase):
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].replace(np.nan, 0)
             all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].astype(int)
 
-        all_data_df = all_data_df.replace(np.nan, '')
-
         return all_data_df
 
     def output_diagnosis_in_excel(self, raw_data_df, data_not_accept_df, output_path, rules):
@@ -279,6 +278,7 @@ class DataDiagnosis(RuleBase):
             rules (dict): the rules of DataDiagnosis
         """
         try:
+            data_not_accept_df = data_not_accept_df.convert_dtypes()
             writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
             # Check whether writer is valiad
             if not isinstance(writer, pd.ExcelWriter):
@@ -296,6 +296,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
+        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').fillna(self.na)
         p = Path(output_path)
         try:
             data_not_accept_json = data_not_accept_df.to_json(orient='index')
@@ -311,7 +312,7 @@ class DataDiagnosis(RuleBase):
             with p.open('w') as f:
                 for node in data_not_accept:
                     line = data_not_accept[node]
-                    line['Index'] = node
+                    line['index'] = node
                     json_str = json.dumps(line)
                     f.write(json_str + '\n')
         except Exception as e:
@@ -326,6 +327,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
+        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').fillna(self.na)
         data_not_accept_df = data_not_accept_df.reset_index()
         data_not_accept_df = data_not_accept_df.rename(
             columns={
@@ -376,6 +378,7 @@ class DataDiagnosis(RuleBase):
                             data_not_accept_df = data_analysis.round_significant_decimal_places(
                                 data_not_accept_df, round, [metric]
                             )
+        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').fillna(self.na)
         lines = file_handler.generate_md_table(data_not_accept_df, header)
         return lines
 
