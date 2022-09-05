@@ -254,7 +254,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             if not self._args.hostfile:
                 self._args.hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
             with open(self._args.hostfile, 'r') as f:
-                hosts = f.readlines()
+                hosts = f.read().splitlines()
             # Generate the config file if not define
             if self._args.config is None:
                 self.gen_traffic_pattern(hosts, self._args.pattern, self.__config_path)

@@ -6,6 +6,7 @@
 import re
 import os
 from pathlib import Path
+from time import sleep
 
 import networkx as nx
 
@@ -35,37 +36,34 @@ class quick_regexp(object):
         return self.matched
 
 
-def gen_ibstat_file(ibstat_file):
-    """Generate ibstat file for each node with specified path.
+def gen_ibstat_file(host_list, ibstat_file):
+    """Generate ibstat file in each node with specified path.
 
     Args:
+        host_list (list): list of VM read from hostfile.
         ibstat_file (str): path of ibstat output.
     """
-    from mpi4py import MPI
-
-    if not MPI.Is_initialized():
-        MPI.Init()
-
-    comm = MPI.COMM_WORLD
-    name = MPI.Get_processor_name()
-
-    # The command to fetch ibstat info
-    cmd = r"ibstat | grep -Po 'System image GUID: \K\S+$'"
-    output = os.popen(cmd)
-    ibstat = 'VM_hostname ' + name + '\n' + str(output.read())
-
-    # Fetch all ibstate from each node
-    ibstats = comm.allgather(ibstat)
-
-    ibstate_file_path = Path(ibstat_file)
-
-    # Filter the duplicate info
-    ibstat_infos = set(ibstats)
-
-    with ibstate_file_path.open(mode='w') as f:
-        for ibstat_info in ibstat_infos:
-            f.write(ibstat_info)
-    MPI.Finalize()
+    try:
+        # Only exec on rank0
+        if os.environ.get('OMPI_COMM_WORLD_NODE_RANK') == '0' and os.environ.get('OMPI_COMM_WORLD_LOCAL_RANK') == '0':
+            pssh_cmd = "pssh -i -t 5 -p 512 -x '-o StrictHostKeyChecking=no' -H '{}' ".format(' '.join(host_list))
+            cmd = "'cat /sys/class/infiniband/*/sys_image_guid | tr -d :'" \
+                r"| sed -e 's/^.*\[SUCCESS\]/VM_hostname/g;s/^.*\[FAILURE\]/VM_hostname/g' | cut -d ' ' -f 1,2"
+            output = os.popen(pssh_cmd + cmd).read()
+            # Generate ibstat file
+            ibstate_file_path = Path(ibstat_file)
+            with ibstate_file_path.open(mode='w') as f:
+                f.write(output)
+            scp_cmd = "pscp -t 5 -p 512 -H '{0}' {1} {1}".format(' '.join(host_list), ibstat_file)
+            # Distribute ibstat file for others
+            errorn = os.system(scp_cmd)
+            if errorn != 0:
+                logger.error('Failed to distribute ibstate file')
+        else:
+            # Wait for rank0 done
+            sleep(5)
+    except BaseException as e:
+        logger.error('Failed to generate ibstate file, message: {}.'.format(str(e)))
 
 
 def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, max_dist):    # noqa: C901
@@ -91,7 +89,9 @@ def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, 
 
     if not ibstat_file:
         ibstat_file = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'ib_traffic_topo_aware_ibstat.txt')
-        gen_ibstat_file(ibstat_file)
+        gen_ibstat_file(host_list, ibstat_file)
+        # sync all the rank
+        sleep(5)
 
     if not Path(ibstat_file).exists():
         logger.error('ibstat file does not exist.')
@@ -125,8 +125,8 @@ def gen_topo_aware_config(host_list, ibstat_file, ibnetdiscover_file, min_dist, 
                     r = quick_regexp()
                     if r.search(r'^(VM_hostname)\s+(.+)', line):
                         vmhost = r.groups[1]
-                    elif r.search(r'^(0x)(.+)', line):
-                        sysimgguid = r.groups[1]
+                    elif r.search(r'^(?!0{16})([a-f0-9]{16})$', line):
+                        sysimgguid = r.groups[0]
                         sysimgguid_to_vmhost[sysimgguid] = vmhost
     except BaseException as e:
         logger.error('Failed to read ibstate file, message: {}.'.format(str(e)))

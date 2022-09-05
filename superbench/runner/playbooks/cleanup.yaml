@@ -1,0 +1,8 @@
+- name: Runtime Environment Cleanup
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Killing sb exec processes
+      shell: |
+        pgrep -ax sb | grep 'sb exec' | awk '{print $1}' | xargs kill -9 ||:
+      become: yes
