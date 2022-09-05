@@ -14,7 +14,7 @@ from superbench.cli._handler import check_argument_file
 def diagnosis_command_handler(
     raw_data_file,
     rule_file,
-    baseline_file,
+    baseline_file=None,
     output_dir=None,
     output_file_format='excel',
     output_all=False,
@@ -40,7 +40,8 @@ def diagnosis_command_handler(
             raise CLIError('Output format must be in {}.'.format(str(supported_output_format)))
         check_argument_file('raw_data_file', raw_data_file)
         check_argument_file('rule_file', rule_file)
-        check_argument_file('baseline_file', baseline_file)
+        if baseline_file:
+            check_argument_file('baseline_file', baseline_file)
         # Run data diagnosis
         DataDiagnosis().run(
             raw_data_file, rule_file, baseline_file, sb_output_dir, output_file_format, output_all, decimal_place_value

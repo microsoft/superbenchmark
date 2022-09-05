@@ -142,7 +142,7 @@ setup(
     install_requires=[
         'ansible_base>=2.10.9;os_name=="posix"',
         'ansible_runner>=2.0.0rc1',
-        'colorlog>=4.7.2',
+        'colorlog>=6.7.0',
         'jinja2>=2.10.1',
         'joblib>=1.0.1',
         'jsonlines>=2.0.0',

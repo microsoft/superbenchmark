@@ -54,7 +54,7 @@ def test_cudnn_functions():
     context = BenchmarkRegistry.create_benchmark_context(
         'cudnn-function',
         platform=Platform.CUDA,
-        parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --config_json_str ' + custom_config_str
+        parameters=f"--num_warmup 10 --num_steps 10 --num_in_step 100 --config_json_str '{custom_config_str}'"
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
