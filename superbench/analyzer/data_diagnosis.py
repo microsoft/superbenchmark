@@ -312,7 +312,7 @@ class DataDiagnosis(RuleBase):
             with p.open('w') as f:
                 for node in data_not_accept:
                     line = data_not_accept[node]
-                    line['Index'] = node
+                    line['index'] = node
                     json_str = json.dumps(line)
                     f.write(json_str + '\n')
         except Exception as e:
