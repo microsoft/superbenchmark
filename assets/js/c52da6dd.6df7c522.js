@@ -1,1 +1,0 @@
-(self.webpackChunksuperbench_website=self.webpackChunksuperbench_website||[]).push([[2030],{5567:function(e){"use strict";e.exports=JSON.parse('{"allTagsPath":"/superbenchmark/blog/tags","slug":"announcement","name":"announcement","count":5,"permalink":"/superbenchmark/blog/tags/announcement"}')}}]);
