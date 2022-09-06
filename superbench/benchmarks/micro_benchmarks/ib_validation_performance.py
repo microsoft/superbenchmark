@@ -254,7 +254,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             if not self._args.hostfile:
                 self._args.hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
             with open(self._args.hostfile, 'r') as f:
-                hosts = f.readlines()
+                hosts = f.read().splitlines()
             # Generate the config file if not define
             if self._args.config is None:
                 self.gen_traffic_pattern(hosts, self._args.pattern, self.__config_path)
@@ -297,15 +297,18 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         # Add GPUDirect for ib command
         gpu_dev = ''
         if self._args.gpu_dev is not None:
-            gpu = GPU()
-            if gpu.vendor == 'nvidia':
-                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
-            elif gpu.vendor == 'amd':
-                gpu_dev = f'--use_rocm={self._args.gpu_dev}'
-            else:
-                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                logger.error('No GPU found - benchmark: {}'.format(self._name))
-                return False
+            if 'bw' in self._args.command:
+                gpu = GPU()
+                if gpu.vendor == 'nvidia':
+                    gpu_dev = f'--use_cuda={self._args.gpu_dev}'
+                elif gpu.vendor == 'amd':
+                    gpu_dev = f'--use_rocm={self._args.gpu_dev}'
+                else:
+                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                    logger.error('No GPU found - benchmark: {}'.format(self._name))
+                    return False
+            elif 'lat' in self._args.command:
+                logger.warning('Wrong configuration: Perftest supports CUDA/ROCM only in BW tests')
         # Generate ib command params
         command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size} {gpu_dev}'
         command_params = f'{command_params.strip()} --report_gbits'

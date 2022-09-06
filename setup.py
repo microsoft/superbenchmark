@@ -142,7 +142,7 @@ setup(
     install_requires=[
         'ansible_base>=2.10.9;os_name=="posix"',
         'ansible_runner>=2.0.0rc1',
-        'colorlog>=4.7.2',
+        'colorlog>=6.7.0',
         'jinja2>=2.10.1',
         'joblib>=1.0.1',
         'jsonlines>=2.0.0',
@@ -155,6 +155,7 @@ setup(
         'omegaconf==2.0.6',
         'openpyxl>=3.0.7',
         'pandas>=1.1.5',
+        'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
         'requests>=2.27.1',
         'seaborn>=0.11.2',
@@ -169,8 +170,8 @@ setup(
             **x,
             'develop': x['dev'] + x['test'],
             'cpuworker': x['torch'],
-            'amdworker': x['torch'] + x['ort'] + x['mpi'],
-            'nvworker': x['torch'] + x['ort'] + x['mpi'] + x['nvidia'],
+            'amdworker': x['torch'] + x['ort'],
+            'nvworker': x['torch'] + x['ort'] + x['nvidia'],
         }
     )(
         {
@@ -199,7 +200,6 @@ setup(
                 'onnx>=1.10.2',
                 'onnxruntime-gpu==1.10.0',
             ],
-            'mpi': ['mpi4py>=3.1.3'],
             'nvidia': ['py3nvml>=0.2.6'],
         }
     ),

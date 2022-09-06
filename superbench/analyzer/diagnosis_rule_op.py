@@ -66,7 +66,7 @@ class RuleOp:
         """
         # parse criteria and check if valid
         if not isinstance(eval(rule['criteria'])(0), bool):
-            logger.log_and_raise(exception=Exception, msg='invalid criteria format')
+            logger.log_and_raise(exception=ValueError, msg='invalid criteria format')
 
     @staticmethod
     def miss_test(metric, rule, data_row, details, categories):
@@ -130,8 +130,10 @@ class RuleOp:
                 # check if metric pass the rule
                 val = data_row[metric]
                 baseline = rule['metrics'][metric]
-                if baseline == 0:
-                    logger.log_and_raise(exception=Exception, msg='invalid baseline 0 in variance rule')
+                if baseline is None or baseline == 0:
+                    logger.log_and_raise(
+                        exception=ValueError, msg='invalid baseline 0 or baseline not found in variance rule'
+                    )
                 var = (val - baseline) / baseline
                 summary_data_row[metric] = var
                 violate_metric = eval(rule['criteria'])(var)
@@ -203,13 +205,20 @@ class RuleOp:
         Returns:
             number: 0 if the rule is passed, otherwise 1
         """
-        violated = eval(rule['criteria'])(store_values)
-        if not isinstance(violated, bool):
-            logger.log_and_raise(exception=Exception, msg='invalid upper criteria format')
-        if violated:
-            info = '{}:{}'.format(rule['name'], rule['criteria'])
-            RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
-        return 1 if violated else 0
+        try:
+            violated = eval(rule['criteria'])(store_values)
+            if not isinstance(violated, bool):
+                logger.log_and_raise(exception=ValueError, msg='invalid criteria format')
+            if violated:
+                info = '{}:{}'.format(rule['name'], rule['criteria'])
+                RuleOp.add_categories_and_details(info, rule['categories'], details, categories)
+            return 1 if violated else 0
+        # the key defined in criteria is not found
+        except KeyError as e:
+            logger.log_and_raise(exception=KeyError, msg='invalid criteria format - {}'.format(str(e)))
+        # miss/failed test
+        except Exception:
+            return 0
 
     @staticmethod
     def failure_check(data_row, rule, summary_data_row, details, categories, raw_rule):
