@@ -87,9 +87,9 @@ endif
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 rocm_bandwidthTest: sb_micro_path
-	cp -r -v $(shell hipconfig -p)/samples/1_Utils/hipBusBandwidth ./
-	cd ./hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
-	cp -v ./hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
+	git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCm-Developer-Tools/HIP.git
+	cd ./HIP/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
+	cp -v ./HIP/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
