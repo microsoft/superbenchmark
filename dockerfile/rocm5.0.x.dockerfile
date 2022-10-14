@@ -126,6 +126,6 @@ ADD third_party third_party
 RUN make -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install .[amdworker]  && \
+RUN python3 -m pip insatll -U .[amdworker]  && \
     make cppbuild && \
     make postinstall
