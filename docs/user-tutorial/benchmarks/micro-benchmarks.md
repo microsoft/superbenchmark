@@ -230,11 +230,16 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 
 #### Introduction
 
-Measure the performance of NCCL/RCCL operations,
+Measure the performance of NCCL/RCCL operations under multi nodes' traffic pattern,
 performed by [nccl-tests](https://github.com/NVIDIA/nccl-tests/tree/44df0bf010dcc95e840ca0fb7466c67cff3f1f0f)
 or [rccl-tests](https://github.com/ROCmSoftwarePlatform/rccl-tests/tree/dc1ad4853d7ec738387d42a75a58a98d7af00c7b).
 Support the following operations currently: allreduce, allgather, broadcast, reduce, reducescatter, alltoall.
 
+Support the following traffic patterns:
+* `all-nodes`, validate the NCCL/RCCL performance across all VM nodes simultaneously
+* `pair-wise`, validate the NCCL/RCCL performance across VM pairs with all possible combinations by parallelizing
+* `k-batch`, validate the NCCL/RCCL performance across VM groups with a specified batch scale
+* `topo-aware`, validate the NCCL/RCCL performance across VM pairs with different distances/hops as a quick test
 #### Metrics
 
 | Name                                   | Unit             | Description                                                 |
