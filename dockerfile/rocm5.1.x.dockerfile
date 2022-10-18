@@ -141,7 +141,6 @@ ADD third_party third_party
 RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install -U .[amdworker]  && \
+RUN python3 -m pip install .[amdworker]  && \
     make cppbuild && \
     make postinstall

@@ -130,7 +130,6 @@ ADD third_party third_party
 RUN make -C third_party cuda
 
 ADD . .
-RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install -U .[nvworker] && \
+RUN python3 -m pip install .[nvworker] && \
     make cppbuild && \
     make postinstall
