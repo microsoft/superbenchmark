@@ -3,6 +3,7 @@
 
 """SuperBench CLI command handler."""
 
+import sys
 from pathlib import Path
 
 from knack.util import CLIError
@@ -248,6 +249,8 @@ def deploy_command_handler(
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
     runner.deploy()
+    if runner.get_failure_count() != 0:
+        sys.exit(runner.get_failure_count())
 
 
 def run_command_handler(
@@ -303,3 +306,5 @@ def run_command_handler(
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
     runner.run()
+    if runner.get_failure_count() != 0:
+        sys.exit(runner.get_failure_count())

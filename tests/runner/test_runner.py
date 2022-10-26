@@ -41,6 +41,10 @@ class RunnerTestCase(unittest.TestCase):
         expected_log_file = Path(self.runner._sb_output_dir) / 'sb-run.log'
         self.assertTrue(expected_log_file.is_file())
 
+    def test_get_failure_count(self):
+        """Test get_failure_count."""
+        self.assertEqual(0, self.runner.get_failure_count())
+
     def test_get_mode_command(self):
         """Test __get_mode_command."""
         test_cases = [
