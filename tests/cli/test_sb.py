@@ -8,6 +8,7 @@ import contextlib
 from functools import wraps
 from knack.testsdk import ScenarioTest, StringCheck, NoneCheck, JMESPathCheck
 from pathlib import Path
+from unittest import mock
 
 import superbench
 from superbench.cli import SuperBenchCLI
@@ -53,8 +54,10 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb version."""
         self.cmd('sb version', checks=[StringCheck(superbench.__version__)])
 
-    def test_sb_deploy(self):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_deploy(self, mocked_failure_count):
         """Test sb deploy."""
+        mocked_failure_count.return_value = 0
         self.cmd('sb deploy --host-list localhost', checks=[NoneCheck()])
 
     def test_sb_deploy_no_host(self):
@@ -65,12 +68,16 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb exec."""
         self.cmd('sb exec --config-override superbench.enable=["none"]', checks=[NoneCheck()])
 
-    def test_sb_run(self):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_run(self, mocked_failure_count):
         """Test sb run."""
+        mocked_failure_count.return_value = 0
         self.cmd('sb run --host-list localhost --config-override superbench.enable=none', checks=[NoneCheck()])
 
-    def test_sb_run_skipdocker(self):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_run_skipdocker(self, mocked_failure_count):
         """Test sb run without docker."""
+        mocked_failure_count.return_value = 0
         self.cmd('sb run -l localhost -C superbench.enable=none --no-docker', checks=[NoneCheck()])
 
     def test_sb_run_no_docker_auth(self):
