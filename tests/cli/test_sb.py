@@ -6,7 +6,7 @@
 import io
 import contextlib
 from functools import wraps
-from knack.testsdk import ScenarioTest, StringCheck, NoneCheck, JMESPathCheck
+from knack.testsdk import ScenarioTest, StringContainCheck, NoneCheck, JMESPathCheck
 from pathlib import Path
 
 import superbench
@@ -51,7 +51,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_version(self):
         """Test sb version."""
-        self.cmd('sb version', checks=[StringCheck(superbench.__version__)])
+        self.cmd('sb version', checks=[StringContainCheck(superbench.__version__)])
 
     def test_sb_deploy(self):
         """Test sb deploy."""

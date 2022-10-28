@@ -4,6 +4,7 @@
 """SuperBench CLI command handler."""
 
 from pathlib import Path
+from importlib.metadata import version, PackageNotFoundError
 
 from knack.util import CLIError
 from omegaconf import OmegaConf
@@ -170,12 +171,15 @@ def process_runner_arguments(
 
 
 def version_command_handler():
-    """Print the current SuperBench tool version.
+    """Print the current SuperBench tool version in "{last tag}+g{git hash}.d{date}" format.
 
     Returns:
         str: current SuperBench tool version.
     """
-    return superbench.__version__
+    try:
+        return version('superbench')
+    except PackageNotFoundError:
+        return superbench.__version__
 
 
 def exec_command_handler(config_file=None, config_override=None, output_dir=None):

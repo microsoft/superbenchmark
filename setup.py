@@ -139,6 +139,13 @@ setup(
     keywords='benchmark, AI systems',
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
+    use_scm_version={
+        'local_scheme': 'node-and-date',
+        'version_scheme': lambda _: superbench.__version__,
+    },
+    setup_requires=[
+        'setuptools_scm==7.0.5',
+    ],
     install_requires=[
         'ansible_base>=2.10.9;os_name=="posix"',
         'ansible_runner>=2.0.0rc1',
