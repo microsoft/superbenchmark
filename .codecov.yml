@@ -3,7 +3,7 @@ codecov:
 
 flag_management:
   default_rules:
-    carryforward: false
+    carryforward: true
     paths:
       - superbench/
 
@@ -16,9 +16,6 @@ coverage:
         flags:
           - cpu-unit-test
           - cuda-unit-test
-        branches:
-          - main
-          - release/*
     patch:
       default:
         target: 80%
@@ -26,6 +23,3 @@ coverage:
         flags:
           - cpu-unit-test
           - cuda-unit-test
-        branches:
-          - main
-          - release/*
