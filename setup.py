@@ -144,7 +144,7 @@ setup(
         'version_scheme': lambda _: superbench.__version__,
     },
     setup_requires=[
-        'setuptools_scm==7.0.5',
+        'setuptools_scm',
     ],
     install_requires=[
         'ansible_base>=2.10.9;os_name=="posix"',

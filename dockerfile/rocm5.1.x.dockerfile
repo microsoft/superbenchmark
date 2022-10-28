@@ -142,6 +142,6 @@ RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm
 
 ADD . .
 RUN --mount=source=.git,target=.git,type=bind \
-    python3 -m pip install .[amdworker]  && \
+    python3 -m pip install --no-cache-dir .[amdworker] && \
     make cppbuild && \
     make postinstall

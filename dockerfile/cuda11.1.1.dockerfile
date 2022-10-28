@@ -131,6 +131,6 @@ RUN make -C third_party cuda
 
 ADD . .
 RUN --mount=source=.git,target=.git,type=bind \
-    python3 -m pip install .[nvworker] && \
+    python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall
