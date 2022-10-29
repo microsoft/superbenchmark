@@ -4,7 +4,7 @@
 """SuperBench CLI command handler."""
 
 from pathlib import Path
-from importlib.metadata import version, PackageNotFoundError
+from importlib_metadata import version, PackageNotFoundError
 
 from knack.util import CLIError
 from omegaconf import OmegaConf
