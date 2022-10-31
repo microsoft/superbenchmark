@@ -10,6 +10,7 @@ outputs/
 
 # Git
 **/.git
+!/.git
 **/.gitmodules
 **/.dockerignore
 .github/

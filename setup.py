@@ -18,9 +18,9 @@ from setuptools import setup, find_packages, Command
 import superbench
 
 try:
-    pkg_resources.require(['pip>=18'])
+    pkg_resources.require(['pip>=18', 'setuptools>=45'])
 except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
-    print('Try upgrade pip to latest version, for example, python3 -m pip install --upgrade pip')
+    print('Try upgrade pip/setuptools to latest version, for example, python3 -m pip install --upgrade pip setuptools')
     raise
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -48,7 +48,7 @@ class Formatter(Command):
 
     def run(self):
         """Fromat the code using yapf."""
-        errno = os.system('python3 -m yapf --in-place --recursive --exclude .git .')
+        errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
         sys.exit(0 if errno == 0 else 1)
 
 
@@ -76,7 +76,7 @@ class Linter(Command):
         errno = os.system(
             ' && '.join(
                 [
-                    'python3 -m yapf --diff --recursive --exclude .git .',
+                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .',
                     'python3 -m mypy .',
                     'python3 -m flake8',
                 ]
@@ -139,10 +139,19 @@ setup(
     keywords='benchmark, AI systems',
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
+    use_scm_version={
+        'local_scheme': 'node-and-date',
+        'version_scheme': lambda _: superbench.__version__,
+        'fallback_version': f'{superbench.__version__}+unknown',
+    },
+    setup_requires=[
+        'setuptools_scm',
+    ],
     install_requires=[
         'ansible_base>=2.10.9;os_name=="posix"',
         'ansible_runner>=2.0.0rc1',
         'colorlog>=6.7.0',
+        'importlib_metadata',
         'jinja2>=2.10.1',
         'joblib>=1.0.1',
         'jsonlines>=2.0.0',
