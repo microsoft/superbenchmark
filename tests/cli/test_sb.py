@@ -6,7 +6,7 @@
 import io
 import contextlib
 from functools import wraps
-from knack.testsdk import ScenarioTest, StringCheck, NoneCheck, JMESPathCheck
+from knack.testsdk import ScenarioTest, StringContainCheck, NoneCheck, JMESPathCheck
 from pathlib import Path
 from unittest import mock
 
@@ -52,7 +52,7 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_version(self):
         """Test sb version."""
-        self.cmd('sb version', checks=[StringCheck(superbench.__version__)])
+        self.cmd('sb version', checks=[StringContainCheck(superbench.__version__)])
 
     @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
     def test_sb_deploy(self, mocked_failure_count):
