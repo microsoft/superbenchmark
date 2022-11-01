@@ -160,6 +160,14 @@ class SuperBenchRunner():
             logger.warning('Unknown mode %s.', mode.name)
         return mode_command.strip()
 
+    def get_failure_count(self):
+        """Get failure count during Ansible run.
+
+        Return:
+            int: Failure count.
+        """
+        return self._ansible_client.failure_count
+
     def deploy(self):    # pragma: no cover
         """Deploy SuperBench environment."""
         logger.info('Preparing SuperBench environment.')
