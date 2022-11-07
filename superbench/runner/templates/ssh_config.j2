@@ -1,4 +1,4 @@
-{% for host in hostvars.values() | map(attribute='ansible_hostname') | sort %}
+{% for host in hostvars.values() | map(attribute='ansible_default_ipv4.address') | sort %}
 Host {{ host }}
     Port {{ ssh_port }}
     IdentityFile /root/.ssh/key
