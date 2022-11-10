@@ -110,6 +110,7 @@ class PytorchCNN(PytorchBase):
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
+                torch.distributed.barrier()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
