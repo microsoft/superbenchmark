@@ -207,7 +207,7 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to numa '
+                    'mpirun -tag-output -allow-run-as-root -map-by ppr:8:node --host node0:8,node1:8 -bind-to numa '
                     ' -x PATH -x LD_LIBRARY_PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
@@ -218,7 +218,9 @@ class RunnerTestCase(unittest.TestCase):
             with self.subTest(msg='Testing with case', test_case=test_case):
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode'])
+                        test_case['benchmark_name'],
+                        OmegaConf.create(test_case['mode']),
+                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallels' else None
                     ), test_case['expected_command']
                 )
 
@@ -229,29 +231,12 @@ class RunnerTestCase(unittest.TestCase):
                     index:]
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode']), test_case['timeout']
+                        test_case['benchmark_name'],
+                        OmegaConf.create(test_case['mode']),
+                        test_case['timeout'],
+                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallels' else None
                     ), expected_command
                 )
-
-                if test_case['mode']['name'] == 'mpi-parallels':
-                    test_case['hostx'] = ['node0', 'node1', 'node2', 'node3']
-                    proc_num = test_case['mode']['proc_num']
-                    host_str = '--host ' + ','.join(f'{host}:{proc_num}' for host in test_case['hostx']) + ' '
-                    print(
-                        self.runner._SuperBenchRunner__get_mode_command(
-                            test_case['benchmark_name'], OmegaConf.create(test_case['mode']), hostx=test_case['hostx']
-                        )
-                    )
-
-                    index = test_case['expected_command'].find('-bind-to numa')
-                    expected_command = test_case['expected_command'][:index] + host_str + test_case['expected_command'][
-                        index:]
-                    print(expected_command)
-                    self.assertEqual(
-                        self.runner._SuperBenchRunner__get_mode_command(
-                            test_case['benchmark_name'], OmegaConf.create(test_case['mode']), hostx=test_case['hostx']
-                        ), expected_command
-                    )
 
     def test_run_empty_benchmarks(self):
         """Test run empty benchmarks, nothing should happen."""
