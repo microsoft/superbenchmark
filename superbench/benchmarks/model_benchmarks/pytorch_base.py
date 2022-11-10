@@ -159,10 +159,10 @@ class PytorchBase(ModelBenchmark):
             self._model = torch.nn.parallel.DistributedDataParallel(
                 self._model, device_ids=[self._local_rank], output_device=self._local_rank, bucket_cap_mb=81920, broadcast_buffers=False
             )
-        from torch.distributed.algorithms.ddp_comm_hooks.debugging_hooks import noop_hook
-        self._model.register_comm_hook(None, noop_hook)
-        #from superbench.benchmarks.model_benchmarks.sync_hooks import noop_barrier_hook
-        #self._model.register_comm_hook(None, noop_barrier_hook)
+            from torch.distributed.algorithms.ddp_comm_hooks.debugging_hooks import noop_hook
+            self._model.register_comm_hook(None, noop_hook)
+            #from superbench.benchmarks.model_benchmarks.sync_hooks import noop_barrier_hook
+            #self._model.register_comm_hook(None, noop_barrier_hook)
         if self._optimizer_type == Optimizer.SGD:
             self._optimizer = torch.optim.SGD(
                 self._model.parameters(), lr=1e-5, momentum=0.9, weight_decay=1e-4, nesterov=True
