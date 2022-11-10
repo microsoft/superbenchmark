@@ -218,6 +218,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--config_json_str',
             type=str,
+            nargs='+',
             default=None,
             required=False,
             help='The custom json string defining the params in a cublas function.',
@@ -246,10 +247,13 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._commands.append(complete_command)
 
             else:
-                custom_config_str = yaml.safe_load(self._args.config_json_str)
-                config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
-                complete_command = command + (' --config_json ') + config_json_str
-                self._commands.append(complete_command)
+                if not isinstance(self._args.config_json_str, list):
+                    self._args.config_json_str = [self._args.config_json_str]
+                for config_json_str in self._args.config_json_str:
+                    custom_config_str = yaml.safe_load(config_json_str)
+                    config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
+                    complete_command = command + (' --config_json ') + config_json_str
+                    self._commands.append(complete_command)
         except BaseException as e:
             logger.error('Invalid input params - benchmark: {},  message: {}'.format(self._name, str(e)))
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
