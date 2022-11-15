@@ -196,12 +196,35 @@ class RunnerTestCase(unittest.TestCase):
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi-parallels',
+                    'proc_num': 8,
+                    'proc_rank': 1,
+                    'mca': {},
+                    'patterns': 'all-nodes',
+                    'env': {
+                        'PATH': None,
+                        'LD_LIBRARY_PATH': None,
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -map-by ppr:8:node --host node0:8,node1:8 -bind-to numa '
+                    ' -x PATH -x LD_LIBRARY_PATH '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
         ]
+
         for test_case in test_cases:
             with self.subTest(msg='Testing with case', test_case=test_case):
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode'])
+                        test_case['benchmark_name'],
+                        OmegaConf.create(test_case['mode']),
+                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallels' else None
                     ), test_case['expected_command']
                 )
 
@@ -212,7 +235,10 @@ class RunnerTestCase(unittest.TestCase):
                     index:]
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode']), test_case['timeout']
+                        test_case['benchmark_name'],
+                        OmegaConf.create(test_case['mode']),
+                        test_case['timeout'],
+                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallels' else None
                     ), expected_command
                 )
 

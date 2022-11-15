@@ -112,11 +112,11 @@ Here're the related concepts, nccl benchmark is used as an example.
 
 2. Mode
 
-    One module may have several modes when running, each mode has corresponding method to run, e.g., local mode is running inside one node, mpi mode is running on all nodes but the command is only executed on one node, pair mode is running between two nodes for every combination, etc. The nccl module may have local mode and mpi mode.
+    One module may have several modes when running, each mode has corresponding method to run, e.g., local mode is running inside one node, mpi mode is running on all nodes but the command is only executed on one node, mpi-parallels mode is running nodes for between specified nodes group according to different pattern combination in parallel, etc. The nccl module may have local mode, mpi mode and mpi-parallels mode.
 
 3. Task Group
 
-    One mode may have several task groups to run, each task group has a barrier when running. So only until the task group has finished on all nodes will the next task group start. The mpi mode of nccl module will run all reduce, all gather, etc., each should be treated as one task group.
+    One mode may have several task groups to run, each task group has a barrier when running. So only until the task group has finished on all nodes will the next task group start. The mpi mode of nccl module will run all reduce, all gather, etc., each should be treated as one task group. In mpi-parallels mode, nodes combinations will have no overleap which can be regarded as one task group, will run all-redice in parallel, each task group will run in serial. 
 
 4. Task
 

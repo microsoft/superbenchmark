@@ -5,6 +5,7 @@
 
 import tempfile
 from pathlib import Path
+import re
 
 import ansible_runner
 from ansible.parsing.dataloader import DataLoader
@@ -27,6 +28,7 @@ class AnsibleClient():
             'cmdline': '--forks 128',
         }
         self._head_host = None
+        self._host_list = []
         self.failure_count = 0
         if config:
             inventory_file = getattr(config, 'host_file', None)
@@ -36,10 +38,10 @@ class AnsibleClient():
             if inventory_file or inventory_list:
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
-                host_list = inventory.get_hosts(pattern='all', order='sorted')
-                if len(host_list) > 0:
-                    self._config['cmdline'] = '--forks {}'.format(len(host_list))
-                    self._head_host = host_list[0].get_name()
+                self._host_list = inventory.get_hosts(pattern='all', order='sorted')
+                if len(self._host_list) > 0:
+                    self._config['cmdline'] = '--forks {}'.format(len(self._host_list))
+                    self._head_host = self._host_list[0].get_name()
                 if inventory_list in ['localhost', '127.0.0.1']:
                     self._config['cmdline'] += ' --connection local'
                 self._config['cmdline'] += ' --inventory {}'.format(inventory_file or f'{inventory_list},')
@@ -59,15 +61,17 @@ class AnsibleClient():
                 self._config['cmdline'] += ' --ask-pass --ask-become-pass'
         logger.info(self._config)
 
-    def run(self, ansible_config, sudo=False):    # pragma: no cover
+    def run(self, ansible_config, sudo=False, stdout=False):    # pragma: no cover
         """Run Ansible runner.
 
         Args:
             ansible_config (dict): Ansible config dict.
             sudo (bool): Run as sudo or not. Defaults to False.
+            stdout (bool): return stdout or not. Defaults to False.
 
         Returns:
             int: Ansible return code.
+            outputs: Ansible stdout if stdout is True.
         """
         if sudo:
             logger.info('Run as sudo ...')
@@ -75,11 +79,16 @@ class AnsibleClient():
         with tempfile.TemporaryDirectory(prefix='ansible') as tmpdir:
             r = ansible_runner.run(private_data_dir=tmpdir, **ansible_config)
             logger.debug(r.stats)
+            raw_outputs = r.stdout.read()
         if r.rc == 0:
             logger.info('Run succeed, return code {}.'.format(r.rc))
         else:
             self.failure_count += 1
             logger.warning('Run failed, return code {}.'.format(r.rc))
+        if stdout:
+            # Filter the color info of raw_outputs
+            outputs = re.sub(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))', '', raw_outputs)
+            return outputs
         return r.rc
 
     def update_mpi_config(self, ansible_config):
