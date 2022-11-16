@@ -200,7 +200,7 @@ class RunnerTestCase(unittest.TestCase):
                 'benchmark_name':
                 'foo',
                 'mode': {
-                    'name': 'mpi-parallels',
+                    'name': 'mpi-parallel',
                     'proc_num': 8,
                     'proc_rank': 1,
                     'mca': {},
@@ -211,7 +211,7 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -map-by ppr:8:node --host node0:8,node1:8 -bind-to numa '
+                    'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -map-by ppr:8:node -bind-to numa '
                     ' -x PATH -x LD_LIBRARY_PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
@@ -224,7 +224,7 @@ class RunnerTestCase(unittest.TestCase):
                     self.runner._SuperBenchRunner__get_mode_command(
                         test_case['benchmark_name'],
                         OmegaConf.create(test_case['mode']),
-                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallels' else None
+                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallel' else None
                     ), test_case['expected_command']
                 )
 
@@ -238,7 +238,7 @@ class RunnerTestCase(unittest.TestCase):
                         test_case['benchmark_name'],
                         OmegaConf.create(test_case['mode']),
                         test_case['timeout'],
-                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallels' else None
+                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallel' else None
                     ), expected_command
                 )
 

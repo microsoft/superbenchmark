@@ -2,25 +2,30 @@
 # Licensed under the MIT License.
 
 """Tests for traffic config generation module."""
+import argparse
 import unittest
-import uuid
 
-from superbench.common.utils import gen_all_nodes_config
-
-
-def gen_hostlist(hostlist, num):
-    """Generate a fake list of specified number of hosts."""
-    hostlist.clear()
-    for i in range(0, num):
-        hostlist.append(str(uuid.uuid4()))
+from superbench.common.utils import gen_pattern_host
 
 
 class GenConfigTest(unittest.TestCase):
     """Test the utils for generating config."""
-    def test_generate_config(self):
-        """Test the function of generating traffic pattern config."""
-        hostlist = []
+    def test_gen_pattern_host(self):
+        """Test the function of generating traffic pattern config from specified mode."""
         # test under 8 nodes
-        gen_hostlist(hostlist, 8)
-        expected_all_node_config = ['0,1,2,3,4,5,6,7']
-        self.assertEqual(gen_all_nodes_config(len(hostlist)), expected_all_node_config)
+        hostx = ['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            usage=argparse.SUPPRESS,
+            allow_abbrev=False,
+        )
+        parser.add_argument(
+            '--pattern',
+            type=str,
+            default='all-nodes',
+            required=False,
+        )
+        args, _ = parser.parse_known_args()
+        print(args)
+        expected_host_group = [[['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']]]
+        self.assertEqual(gen_pattern_host(hostx, args), expected_host_group)

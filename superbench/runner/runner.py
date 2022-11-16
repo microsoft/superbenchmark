@@ -78,7 +78,7 @@ class SuperBenchRunner():
                 elif mode.name == 'torch.distributed':
                     if not mode.proc_num:
                         self._sb_benchmarks[name].modes[idx].proc_num = 8
-                elif 'mpi' in mode.name:
+                elif mode.name == 'mpi' or mode.name == 'mpi-parallel':
                     if not mode.mca:
                         self._sb_benchmarks[name].modes[idx].mca = {
                             'pml': 'ob1',
@@ -139,19 +139,35 @@ class SuperBenchRunner():
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_impl=ddp'
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_backend=nccl'
             )
-        elif 'mpi' in mode.name:
+        elif mode.name == 'mpi':
             mode_command = (
                 'mpirun '    # use default OpenMPI in image
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
                 '{host_list} '    # use prepared hostfile and launch {proc_num} processes on each node
-                '{host}'    # specify the hosts for mpirun
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else
-                ('-hostfile hostfile ' if hostx is None else '') + f'-map-by ppr:{mode.proc_num}:node',
-                host='' if hostx is None else '--host ' + ','.join(f'{host}:{mode.proc_num}' for host in hostx) + ' ',
+                host_list=f'-host localhost:{mode.proc_num}'
+                if mode.node_num == 1 else f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node',
+                mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
+                env_list=' '.join(
+                    f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
+                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()
+                ),
+                command=exec_command,
+            )
+        elif mode.name == 'mpi-parallel':
+            mode_command = (
+                'mpirun '    # use default OpenMPI in image
+                '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
+                '-allow-run-as-root '    # allow mpirun to run when executed by root user
+                '{host} '    # specify the hosts for mpirun
+                '-bind-to numa '    # bind processes to numa
+                '{mca_list} {env_list} {command}'
+            ).format(
+                host='-host ' + ','.join(f'{host}:{mode.proc_num}'
+                                         for host in hostx) + f' -map-by ppr:{mode.proc_num}:node',
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
@@ -388,8 +404,8 @@ class SuperBenchRunner():
 
         return metrics_summary
 
-    def _prepare_config(self, args):
-        """Prepare and update config for benchmarking.
+    def _update_config(self, args):
+        """Validate and update config for benchmarking.
 
         Args:
             args (dict): the arguments from config yaml.
@@ -397,9 +413,9 @@ class SuperBenchRunner():
         Returns:
             args (dict): updated arguments from config yaml.
         """
-        if args.name == 'mpi-parallels':
+        if args.name == 'mpi-parallel':
             if not args.pattern:
-                logger.error('pattern is required for mpi-parallels mode.')
+                logger.error('pattern is required for mpi-parallel mode.')
                 return args
 
         return args
@@ -434,9 +450,9 @@ class SuperBenchRunner():
         if self._docker_config.skip:
             fcmd = "bash -c '{env_list} && cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
-            fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout))
+            fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout, hostx))
         )
-        if 'mpi' in mode.name and mode.node_num != 1:
+        if (mode.name == 'mpi' or mode.name == 'mpi-parallel') and mode.node_num != 1:
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
 
         if isinstance(timeout, int):
@@ -464,9 +480,9 @@ class SuperBenchRunner():
                     ansible_rc = sum(rc_list)
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
                     ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
-                elif mode.name == 'mpi-parallels':
+                elif mode.name == 'mpi-parallel':
                     # prepare the config for specific benchmark
-                    mode = self._prepare_config(mode)
+                    mode = self._update_config(mode)
                     hostx = self._ansible_client._host_list
                     pattern_hostx = gen_pattern_host(list(map(str, hostx)), mode)
                     rc_list = []
