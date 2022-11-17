@@ -417,6 +417,7 @@ class SuperBenchRunner():
             if not args.pattern:
                 logger.error('pattern is required for mpi-parallel mode.')
                 return args
+        # TODO: add more validation and pre-config for other modes.
 
         return args
 
@@ -471,6 +472,8 @@ class SuperBenchRunner():
             benchmark_config = self._sb_benchmarks[benchmark_name]
             for mode in benchmark_config.modes:
                 ansible_rc = 0
+                # prepare the config for specific benchmark
+                mode = self._update_config(mode)
                 if mode.name == 'local':
                     rc_list = Parallel(n_jobs=mode.proc_num if mode.parallel else 1)(
                         delayed(self._run_proc)(benchmark_name, mode, {
@@ -481,8 +484,6 @@ class SuperBenchRunner():
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
                     ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                 elif mode.name == 'mpi-parallel':
-                    # prepare the config for specific benchmark
-                    mode = self._update_config(mode)
                     hostx = self._ansible_client._host_list
                     pattern_hostx = gen_pattern_host(list(map(str, hostx)), mode)
                     rc_list = []

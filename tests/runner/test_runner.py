@@ -7,6 +7,7 @@ import json
 import unittest
 import shutil
 import tempfile
+import argparse
 from pathlib import Path
 from unittest import mock
 
@@ -44,6 +45,28 @@ class RunnerTestCase(unittest.TestCase):
     def test_get_failure_count(self):
         """Test get_failure_count."""
         self.assertEqual(0, self.runner.get_failure_count())
+
+    def test_update_config(self):
+        """Test _update_config."""
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            usage=argparse.SUPPRESS,
+            allow_abbrev=False,
+        )
+        parser.add_argument(
+            '--name',
+            type=str,
+            default='mpi-parallel',
+            required=False,
+        )
+        parser.add_argument(
+            '--pattern',
+            type=str,
+            default='all-nodes',
+            required=False,
+        )
+        args, _ = parser.parse_known_args()
+        self.runner._update_config(args)
 
     def test_get_mode_command(self):
         """Test __get_mode_command."""

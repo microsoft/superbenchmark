@@ -26,7 +26,7 @@ def covert_config_to_host(config, hostx):
     """Convert config format to host node.
 
     Args:
-        hosts (list): the list of VM hostnames read from hostfile.
+        hostx (list): the list of VM hostnames read from hostfile.
         config (list): the traffic pattern config.
 
     Returns:
@@ -45,21 +45,21 @@ def covert_config_to_host(config, hostx):
     return host_group
 
 
-def gen_pattern_host(hosts, args):
+def gen_pattern_host(hostx, args):
     """Generate traffic pattern config from specified mode.
 
     Args:
-        hosts (list): the list of VM hostnames read from hostfile.
+        hostx (list): the list of VM hostnames read from hostfile.
         args (dir): the arguments from config yaml.
 
     Returns:
         list: the host group from traffic pattern config.
     """
     config = []
-    n = len(hosts)
+    n = len(hostx)
     if args.pattern == 'all-nodes':
         config = gen_all_nodes_config(n)
     else:
         logger.error('Unsupported traffic pattern: {}'.format(args.pattern))
-    host_group = covert_config_to_host(config, hosts)
+    host_group = covert_config_to_host(config, hostx)
     return host_group
