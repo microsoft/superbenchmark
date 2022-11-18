@@ -5,7 +5,6 @@
 
 import tempfile
 from pathlib import Path
-import re
 
 import ansible_runner
 from ansible.parsing.dataloader import DataLoader
@@ -63,9 +62,11 @@ class AnsibleClient():
 
     def run(self, ansible_config, sudo=False):    # pragma: no cover
         """Run Ansible runner.
+
         Args:
             ansible_config (dict): Ansible config dict.
             sudo (bool): Run as sudo or not. Defaults to False.
+
         Returns:
             int: Ansible return code.
         """
