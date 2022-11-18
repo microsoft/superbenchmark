@@ -9,7 +9,7 @@ from superbench.common.utils.file_handler import rotate_dir, create_sb_output_di
 from superbench.common.utils.lazy_import import LazyImport
 from superbench.common.utils.process import run_command
 from superbench.common.utils.topo_aware import gen_topo_aware_config
-from superbench.common.utils.gen_config import gen_pattern_host
+from superbench.common.utils.gen_traffic_pattern_config import gen_tarffic_pattern_host_group
 
 device_manager = LazyImport('superbench.common.utils.device_manager')
 
@@ -25,5 +25,5 @@ __all__ = [
     'rotate_dir',
     'run_command',
     'gen_topo_aware_config',
-    'gen_pattern_host',
+    'gen_tarffic_pattern_host_group',
 ]

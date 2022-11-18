@@ -14,7 +14,7 @@ from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
-from superbench.common.utils import SuperBenchLogger, logger, gen_pattern_host
+from superbench.common.utils import SuperBenchLogger, logger, gen_tarffic_pattern_host_group
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
@@ -485,7 +485,7 @@ class SuperBenchRunner():
                     ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                 elif mode.name == 'mpi-parallel':
                     hostx = self._ansible_client._host_list
-                    pattern_hostx = gen_pattern_host(list(map(str, hostx)), mode)
+                    pattern_hostx = gen_tarffic_pattern_host_group(list(map(str, hostx)), mode)
                     rc_list = []
                     for host_groups in pattern_hostx:
                         para_rc_list = Parallel(n_jobs=len(host_groups))(
