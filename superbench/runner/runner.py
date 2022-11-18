@@ -78,7 +78,7 @@ class SuperBenchRunner():
                 elif mode.name == 'torch.distributed':
                     if not mode.proc_num:
                         self._sb_benchmarks[name].modes[idx].proc_num = 8
-                elif mode.name == 'mpi' or mode.name == 'mpi-parallel':
+                elif mode.name == 'mpi':
                     if not mode.mca:
                         self._sb_benchmarks[name].modes[idx].mca = {
                             'pml': 'ob1',
@@ -145,29 +145,13 @@ class SuperBenchRunner():
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
                 '{host_list} '    # use prepared hostfile and launch {proc_num} processes on each node
+                '{host}'    # specify the hosts for mpirun
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                host_list=f'-host localhost:{mode.proc_num}'
-                if mode.node_num == 1 else f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node',
-                mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
-                env_list=' '.join(
-                    f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
-                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()
-                ),
-                command=exec_command,
-            )
-        elif mode.name == 'mpi-parallel':
-            mode_command = (
-                'mpirun '    # use default OpenMPI in image
-                '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
-                '-allow-run-as-root '    # allow mpirun to run when executed by root user
-                '{host} '    # specify the hosts for mpirun
-                '-bind-to numa '    # bind processes to numa
-                '{mca_list} {env_list} {command}'
-            ).format(
-                host='-host ' + ','.join(f'{host}:{mode.proc_num}'
-                                         for host in hostx) + f' -map-by ppr:{mode.proc_num}:node',
+                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else
+                ('-hostfile hostfile ' if hostx is None else '') + f'-map-by ppr:{mode.proc_num}:node',
+                host='' if hostx is None else '-host ' + ','.join(f'{host}:{mode.proc_num}' for host in hostx) + ' ',
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
@@ -404,23 +388,6 @@ class SuperBenchRunner():
 
         return metrics_summary
 
-    def _update_config(self, args):
-        """Validate and update config for benchmarking.
-
-        Args:
-            args (dict): the arguments from config yaml.
-
-        Returns:
-            args (dict): updated arguments from config yaml.
-        """
-        if args.name == 'mpi-parallel':
-            if not args.pattern:
-                logger.error('pattern is required for mpi-parallel mode.')
-                return args
-        # TODO: add more validation and pre-config for other modes.
-
-        return args
-
     def _run_proc(self, benchmark_name, mode, vars, hostx=None):
         """Run the process.
 
@@ -453,7 +420,7 @@ class SuperBenchRunner():
         ansible_runner_config = self._ansible_client.get_shell_config(
             fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout, hostx))
         )
-        if (mode.name == 'mpi' or mode.name == 'mpi-parallel') and mode.node_num != 1:
+        if mode.name == 'mpi' and mode.node_num != 1:
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
 
         if isinstance(timeout, int):
@@ -472,8 +439,6 @@ class SuperBenchRunner():
             benchmark_config = self._sb_benchmarks[benchmark_name]
             for mode in benchmark_config.modes:
                 ansible_rc = 0
-                # prepare the config for specific benchmark
-                mode = self._update_config(mode)
                 if mode.name == 'local':
                     rc_list = Parallel(n_jobs=mode.proc_num if mode.parallel else 1)(
                         delayed(self._run_proc)(benchmark_name, mode, {
@@ -482,19 +447,20 @@ class SuperBenchRunner():
                     )
                     ansible_rc = sum(rc_list)
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
-                    ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
-                elif mode.name == 'mpi-parallel':
-                    hostx = self._ansible_client._host_list
-                    pattern_hostx = gen_tarffic_pattern_host_group(list(map(str, hostx)), mode)
-                    rc_list = []
-                    for host_groups in pattern_hostx:
-                        para_rc_list = Parallel(n_jobs=len(host_groups))(
-                            delayed(self._run_proc)(benchmark_name, mode, hostx=host_group, vars={
-                                'proc_rank': 0
-                            }) for host_group in host_groups
-                        )
-                        rc_list.append(sum(para_rc_list))
-                    ansible_rc = sum(rc_list)
+                    if not mode.pattern:
+                        ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                    else:
+                        hostx = self._ansible_client._host_list
+                        pattern_hostx = gen_tarffic_pattern_host_group(list(map(str, hostx)), mode)
+                        rc_list = []
+                        for host_groups in pattern_hostx:
+                            para_rc_list = Parallel(n_jobs=len(host_groups))(
+                                delayed(self._run_proc)(benchmark_name, mode, hostx=host_group, vars={
+                                    'proc_rank': 0
+                                }) for host_group in host_groups
+                            )
+                            rc_list.append(sum(para_rc_list))
+                        ansible_rc = sum(rc_list)
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
                 if ansible_rc != 0:

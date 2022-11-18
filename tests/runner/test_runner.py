@@ -7,7 +7,6 @@ import json
 import unittest
 import shutil
 import tempfile
-import argparse
 from pathlib import Path
 from unittest import mock
 
@@ -45,28 +44,6 @@ class RunnerTestCase(unittest.TestCase):
     def test_get_failure_count(self):
         """Test get_failure_count."""
         self.assertEqual(0, self.runner.get_failure_count())
-
-    def test_update_config(self):
-        """Test _update_config."""
-        parser = argparse.ArgumentParser(
-            add_help=False,
-            usage=argparse.SUPPRESS,
-            allow_abbrev=False,
-        )
-        parser.add_argument(
-            '--name',
-            type=str,
-            default='mpi-parallel',
-            required=False,
-        )
-        parser.add_argument(
-            '--pattern',
-            type=str,
-            default='all-nodes',
-            required=False,
-        )
-        args, _ = parser.parse_known_args()
-        self.runner._update_config(args)
 
     def test_get_mode_command(self):
         """Test __get_mode_command."""
@@ -223,18 +200,18 @@ class RunnerTestCase(unittest.TestCase):
                 'benchmark_name':
                 'foo',
                 'mode': {
-                    'name': 'mpi-parallel',
+                    'name': 'mpi',
                     'proc_num': 8,
                     'proc_rank': 1,
                     'mca': {},
-                    'patterns': 'all-nodes',
+                    'pattern': 'all-nodes',
                     'env': {
                         'PATH': None,
                         'LD_LIBRARY_PATH': None,
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -map-by ppr:8:node -bind-to numa '
+                    'mpirun -tag-output -allow-run-as-root -map-by ppr:8:node -host node0:8,node1:8 -bind-to numa '
                     ' -x PATH -x LD_LIBRARY_PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
@@ -247,7 +224,7 @@ class RunnerTestCase(unittest.TestCase):
                     self.runner._SuperBenchRunner__get_mode_command(
                         test_case['benchmark_name'],
                         OmegaConf.create(test_case['mode']),
-                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallel' else None
+                        hostx=['node0', 'node1'] if 'pattern' in test_case['mode'] else None
                     ), test_case['expected_command']
                 )
 
@@ -261,7 +238,7 @@ class RunnerTestCase(unittest.TestCase):
                         test_case['benchmark_name'],
                         OmegaConf.create(test_case['mode']),
                         test_case['timeout'],
-                        hostx=['node0', 'node1'] if test_case['mode']['name'] == 'mpi-parallel' else None
+                        hostx=['node0', 'node1'] if 'pattern' in test_case['mode'] else None
                     ), expected_command
                 )
 
