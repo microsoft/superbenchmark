@@ -5,6 +5,7 @@
 
 import tempfile
 from pathlib import Path
+import re
 
 import ansible_runner
 from ansible.parsing.dataloader import DataLoader
@@ -59,15 +60,17 @@ class AnsibleClient():
                 self._config['cmdline'] += ' --ask-pass --ask-become-pass'
         logger.info(self._config)
 
-    def run(self, ansible_config, sudo=False):    # pragma: no cover
+    def run(self, ansible_config, sudo=False, stdout=False):    # pragma: no cover
         """Run Ansible runner.
 
         Args:
             ansible_config (dict): Ansible config dict.
             sudo (bool): Run as sudo or not. Defaults to False.
+            stdout (bool): return stdout or not. Defaults to False.
 
         Returns:
             int: Ansible return code.
+            outputs: Ansible stdout if stdout is True.
         """
         if sudo:
             logger.info('Run as sudo ...')
@@ -75,11 +78,17 @@ class AnsibleClient():
         with tempfile.TemporaryDirectory(prefix='ansible') as tmpdir:
             r = ansible_runner.run(private_data_dir=tmpdir, **ansible_config)
             logger.debug(r.stats)
+            if stdout:
+                raw_outputs = r.stdout.read()
         if r.rc == 0:
             logger.info('Run succeed, return code {}.'.format(r.rc))
         else:
             self.failure_count += 1
             logger.warning('Run failed, return code {}.'.format(r.rc))
+        if stdout:
+            regex = re.compile(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))')
+            outputs = regex.sub('', raw_outputs)
+            return outputs
         return r.rc
 
     def update_mpi_config(self, ansible_config):
