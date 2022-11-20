@@ -401,7 +401,7 @@ Some attributes may only be suitable for specific mode.
 | `env`      |    ✓    |          ✓          |   ✓   |
 | `mca`      |    ✘    |          ✘          |   ✓   |
 | `parallel` |    ✓    |          ✘          |   ✘   |
-| `pattern` |    ✘    |          ✘          |   ✓   |
+| `pattern`  |    ✘    |          ✘          |   ✓   |
 
 * accepted values: `local | torch.distributed | mpi`
 * default value: `local`
@@ -452,11 +452,11 @@ Only available for `mpi` mode.
 ### `parallel`
 
 Whether run benchmarks in parallel (all ranks at the same time) or in sequence (one rank at a time).
-Only available for `local`.
+Only available for `local` mode.
 
 * default value: `yes`
 
 ### `pattern`
 
 Whether run benchmarks with nodes in specified traffic pattern combination. Only available for `mpi`
-* accepted values: `all-nodes | torch.distributed | mpi`
+* accepted values: `all-nodes`
