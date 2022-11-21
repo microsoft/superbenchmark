@@ -28,6 +28,7 @@ class AnsibleClient():
             'cmdline': '--forks 128',
         }
         self._head_host = None
+        self._regex = re.compile(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))')
         self.failure_count = 0
         if config:
             inventory_file = getattr(config, 'host_file', None)
@@ -86,8 +87,7 @@ class AnsibleClient():
             self.failure_count += 1
             logger.warning('Run failed, return code {}.'.format(r.rc))
         if stdout:
-            regex = re.compile(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))')
-            outputs = regex.sub('', raw_outputs)
+            outputs = self._regex.sub('', raw_outputs)
             return outputs
         return r.rc
 
