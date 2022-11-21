@@ -144,19 +144,17 @@ class SuperBenchRunner():
                 'mpirun '    # use default OpenMPI in image
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
-                '{host_list} '    # use prepared hostfile and launch {proc_num} processes on each node
-                '{host}'    # specify the hosts for mpirun
+                '{host_list} '    # use prepared hostfile or specify nodes and launch {proc_num} processes on each node
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else
-                ('-hostfile hostfile ' if hostx is None else '') + f'-map-by ppr:{mode.proc_num}:node',
-                host='' if hostx is None else '-host ' + ','.join(f'{host}:{mode.proc_num}' for host in hostx) + ' ',
+                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else \
+                    ('-hostfile hostfile' if hostx is None else '-host ' + ','.join(
+                        f'{host}:{mode.proc_num}' for host in hostx)) + f' -map-by ppr:{mode.proc_num}:node',
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
-                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()
-                ),
+                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()),
                 command=exec_command,
             )
         else:
