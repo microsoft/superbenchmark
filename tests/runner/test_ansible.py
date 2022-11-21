@@ -58,6 +58,20 @@ class AnsibleClientTestCase(unittest.TestCase):
             }
         )
 
+    def test_run(self):
+        """Test run of client."""
+        self.ansible_client._config = {
+            **self.ansible_client._config,
+            'host_pattern': 'localhost',
+        }
+        # Test run w/o options
+        rc = self.ansible_client.run(self.ansible_client.get_shell_config('echo test run w/o options'))
+        self.assertEqual(rc, 0)
+
+        # Test run w/ stdout option
+        output = self.ansible_client.run(self.ansible_client.get_shell_config('echo test run w/ stdout'), stdout=True)
+        self.assertEqual(output, 'test run w/ stdout')
+
     def test_update_mpi_config(self):
         """Test update_mpi_config of client."""
         self.assertDictEqual(

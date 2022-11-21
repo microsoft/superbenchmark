@@ -88,6 +88,9 @@ class AnsibleClient():
             logger.warning('Run failed, return code {}.'.format(r.rc))
         if stdout:
             outputs = self._run_stdout_regex.sub('', raw_outputs)
+            # Extra treatment for local condition
+            if ansible_config['host_pattern'] == 'localhost':
+                outputs = outputs.split('rc=0 >>', 1)[1].strip()
             return outputs
         return r.rc
 
