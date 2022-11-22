@@ -35,10 +35,10 @@ class AnsibleClient():
             if inventory_file or inventory_list:
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
-                host_list = inventory.get_hosts(pattern='all', order='sorted')
+                host_list = inventory.get_hosts(pattern='all')
                 if len(host_list) > 0:
                     self._config['cmdline'] = '--forks {}'.format(len(host_list))
-                    self._head_host = host_list[0].get_name()
+                    #self._head_host = host_list[0].get_name()
                 if inventory_list in ['localhost', '127.0.0.1']:
                     self._config['cmdline'] += ' --connection local'
                 self._config['cmdline'] += ' --inventory {}'.format(inventory_file or f'{inventory_list},')
