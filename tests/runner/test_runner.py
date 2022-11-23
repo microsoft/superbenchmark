@@ -220,11 +220,13 @@ class RunnerTestCase(unittest.TestCase):
 
         for test_case in test_cases:
             with self.subTest(msg='Testing with case', test_case=test_case):
+                mode = OmegaConf.create(test_case['mode'])
+                if 'pattern' in test_case['mode']:
+                    mode.update({'host_list': ['node0', 'node1']})
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
                         test_case['benchmark_name'],
-                        OmegaConf.create(test_case['mode']),
-                        hostx=['node0', 'node1'] if 'pattern' in test_case['mode'] else None
+                        mode,
                     ), test_case['expected_command']
                 )
 
@@ -233,12 +235,14 @@ class RunnerTestCase(unittest.TestCase):
                 index = test_case['expected_command'].find('sb exec')
                 expected_command = test_case['expected_command'][:index] + timeout_str + test_case['expected_command'][
                     index:]
+                mode = OmegaConf.create(test_case['mode'])
+                if 'pattern' in test_case['mode']:
+                    mode.update({'host_list': ['node0', 'node1']})
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
                         test_case['benchmark_name'],
-                        OmegaConf.create(test_case['mode']),
+                        mode,
                         test_case['timeout'],
-                        hostx=['node0', 'node1'] if 'pattern' in test_case['mode'] else None
                     ), expected_command
                 )
 
