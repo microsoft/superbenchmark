@@ -102,14 +102,14 @@ class SuperBenchRunner():
                 return list(self._sb_config.superbench.enable)
         return [k for k, v in self._sb_benchmarks.items() if v.enable]
 
-    def __get_mode_command(self, benchmark_name, mode, timeout=None, hostx=None):
+    def __get_mode_command(self, benchmark_name, mode, timeout=None):
         """Get runner command for given mode.
 
         Args:
             benchmark_name (str): Benchmark name.
             mode (DictConfig): Runner mode.
             timeout (int): The timeout value in seconds.
-            hostx (str): The specified Host node list.
+            host_list (list): The specified Host node list.
 
         Return:
             str: Runner command.
@@ -149,8 +149,8 @@ class SuperBenchRunner():
                 '{mca_list} {env_list} {command}'
             ).format(
                 host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else \
-                    ('-hostfile hostfile' if hostx is None else '-host ' + ','.join(
-                        f'{host}:{mode.proc_num}' for host in hostx)) + f' -map-by ppr:{mode.proc_num}:node',
+                    ('-hostfile hostfile' if mode.host_list is None else '-host ' + ','.join(
+                        f'{host}:{mode.proc_num}' for host in mode.host_list)) + f' -map-by ppr:{mode.proc_num}:node',
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
@@ -386,7 +386,7 @@ class SuperBenchRunner():
 
         return metrics_summary
 
-    def _run_proc(self, benchmark_name, mode, vars, hostx=None):
+    def _run_proc(self, benchmark_name, mode, vars):
         """Run the process.
 
         Args:
@@ -416,7 +416,7 @@ class SuperBenchRunner():
         if self._docker_config.skip:
             fcmd = "bash -c '{env_list} && cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
-            fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout, hostx))
+            fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout))
         )
         if mode.name == 'mpi' and mode.node_num != 1:
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
@@ -448,17 +448,19 @@ class SuperBenchRunner():
                     if not mode.pattern:
                         ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                     else:
-                        hostx = self._ansible_client._host_list
-                        pattern_hostx = gen_tarffic_pattern_host_group(list(map(str, hostx)), mode)
-                        rc_list = []
+                        with open(self._output_path / 'hostfile', 'r') as f:
+                            host_list = f.read().splitlines()
+                        pattern_hostx = gen_tarffic_pattern_host_group(host_list, mode)
+                        ansible_rc = 0
                         for host_groups in pattern_hostx:
                             para_rc_list = Parallel(n_jobs=len(host_groups))(
-                                delayed(self._run_proc)(benchmark_name, mode, hostx=host_group, vars={
-                                    'proc_rank': 0
+                                delayed(self._run_proc)
+                                (benchmark_name, mode, vars={
+                                    'proc_rank': 0,
+                                    'host_list': host_group,
                                 }) for host_group in host_groups
                             )
-                            rc_list.append(sum(para_rc_list))
-                        ansible_rc = sum(rc_list)
+                            ansible_rc = ansible_rc + sum(para_rc_list)
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
                 if ansible_rc != 0:
