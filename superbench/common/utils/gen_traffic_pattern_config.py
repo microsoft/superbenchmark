@@ -22,7 +22,7 @@ def gen_all_nodes_config(n):
     return config
 
 
-def __covert_config_to_host_group(config, host_list):
+def __convert_config_to_host_group(config, host_list):
     """Convert config format to host node.
 
     Args:
@@ -30,7 +30,7 @@ def __covert_config_to_host_group(config, host_list):
         config (list): the traffic pattern config.
 
     Returns:
-        host_groups (list): the host groups coverted from traffic pattern config.
+        host_groups (list): the host groups converted from traffic pattern config.
     """
     host_groups = []
     for item in config:
@@ -61,5 +61,5 @@ def gen_tarffic_pattern_host_group(host_list, args):
         config = gen_all_nodes_config(n)
     else:
         logger.error('Unsupported traffic pattern: {}'.format(args.pattern))
-    host_group = __covert_config_to_host_group(config, host_list)
+    host_group = __convert_config_to_host_group(config, host_list)
     return host_group
