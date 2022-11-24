@@ -50,7 +50,7 @@ def gen_tarffic_pattern_host_group(host_list, pattern):
 
     Args:
         host_list (list): the list of hostnames read from hostfile.
-        pattern ((DictConfig)): mpi pattern.
+        pattern (DictConfig): the mpi pattern dict.
 
     Returns:
         host_group (list): the host group from traffic pattern config.

@@ -450,8 +450,7 @@ class SuperBenchRunner():
                     else:
                         with open(self._output_path / 'hostfile', 'r') as f:
                             host_list = f.read().splitlines()
-                        pattern_hostx = gen_tarffic_pattern_host_group(host_list, mode)
-                        ansible_rc = 0
+                        pattern_hostx = gen_tarffic_pattern_host_group(host_list, mode.pattern)
                         for host_groups in pattern_hostx:
                             para_rc_list = Parallel(n_jobs=len(host_groups))(
                                 delayed(self._run_proc)
