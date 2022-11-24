@@ -204,7 +204,9 @@ class RunnerTestCase(unittest.TestCase):
                     'proc_num': 8,
                     'proc_rank': 1,
                     'mca': {},
-                    'pattern': 'all-nodes',
+                    'pattern': {
+                        'name': 'all-nodes',
+                    },
                     'env': {
                         'PATH': None,
                         'LD_LIBRARY_PATH': None,

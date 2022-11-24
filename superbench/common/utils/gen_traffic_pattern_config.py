@@ -45,21 +45,21 @@ def __convert_config_to_host_group(config, host_list):
     return host_groups
 
 
-def gen_tarffic_pattern_host_group(host_list, args):
+def gen_tarffic_pattern_host_group(host_list, pattern):
     """Generate traffic pattern config from specified mode.
 
     Args:
         host_list (list): the list of hostnames read from hostfile.
-        args (dir): the arguments from config yaml.
+        pattern ((DictConfig)): mpi pattern.
 
     Returns:
         host_group (list): the host group from traffic pattern config.
     """
     config = []
     n = len(host_list)
-    if args.pattern == 'all-nodes':
+    if pattern.name == 'all-nodes':
         config = gen_all_nodes_config(n)
     else:
-        logger.error('Unsupported traffic pattern: {}'.format(args.pattern))
+        logger.error('Unsupported traffic pattern: {}'.format(pattern.name))
     host_group = __convert_config_to_host_group(config, host_list)
     return host_group

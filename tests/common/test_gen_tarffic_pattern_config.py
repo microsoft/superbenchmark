@@ -20,11 +20,11 @@ class GenConfigTest(unittest.TestCase):
             allow_abbrev=False,
         )
         parser.add_argument(
-            '--pattern',
+            '--name',
             type=str,
             default='all-nodes',
             required=False,
         )
-        args, _ = parser.parse_known_args()
+        pattern, _ = parser.parse_known_args()
         expected_host_group = [[['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']]]
-        self.assertEqual(gen_tarffic_pattern_host_group(hostx, args), expected_host_group)
+        self.assertEqual(gen_tarffic_pattern_host_group(hostx, pattern), expected_host_group)

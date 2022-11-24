@@ -27,7 +27,6 @@ class AnsibleClient():
             'cmdline': '--forks 128',
         }
         self._head_host = None
-        self._host_list = []
         self.failure_count = 0
         if config:
             inventory_file = getattr(config, 'host_file', None)
@@ -37,10 +36,10 @@ class AnsibleClient():
             if inventory_file or inventory_list:
                 self._config['host_pattern'] = 'all'
                 inventory = InventoryManager(loader=DataLoader(), sources=inventory_file or f'{inventory_list},')
-                self._host_list = inventory.get_hosts(pattern='all', order='sorted')
-                if len(self._host_list) > 0:
-                    self._config['cmdline'] = '--forks {}'.format(len(self._host_list))
-                    self._head_host = self._host_list[0].get_name()
+                host_list = inventory.get_hosts(pattern='all', order='sorted')
+                if len(host_list) > 0:
+                    self._config['cmdline'] = '--forks {}'.format(len(host_list))
+                    self._head_host = host_list[0].get_name()
                 if inventory_list in ['localhost', '127.0.0.1']:
                     self._config['cmdline'] += ' --connection local'
                 self._config['cmdline'] += ' --inventory {}'.format(inventory_file or f'{inventory_list},')

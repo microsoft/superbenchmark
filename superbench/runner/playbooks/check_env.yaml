@@ -61,7 +61,8 @@
         content: "{{ sb_nodes | join('\n') }}\n"
         dest: '{{ workspace }}/hostfile'
         mode: 0644
-    - name: Generating hostfile to Local
+      become: yes
+    - name: Generating Hostfile to Local
       delegate_to: localhost
       run_once: true
       copy:
