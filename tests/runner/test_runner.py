@@ -213,7 +213,7 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -map-by ppr:8:node -bind-to numa '
+                    'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -bind-to numa '
                     ' -x PATH -x LD_LIBRARY_PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),

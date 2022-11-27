@@ -148,13 +148,14 @@ class SuperBenchRunner():
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else \
-                    ('-hostfile hostfile' if mode.host_list is None else '-host ' + ','.join(
-                        f'{host}:{mode.proc_num}' for host in mode.host_list)) + f' -map-by ppr:{mode.proc_num}:node',
+                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else
+                f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if mode.host_list is None else '-host ' +
+                ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
-                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()),
+                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()
+                ),
                 command=exec_command,
             )
         else:
