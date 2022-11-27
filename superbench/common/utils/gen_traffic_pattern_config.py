@@ -46,14 +46,14 @@ def __convert_config_to_host_group(config, host_list):
 
 
 def gen_tarffic_pattern_host_group(host_list, pattern):
-    """Generate traffic pattern config from specified mode.
+    """Generate host group from specified traffic pattern.
 
     Args:
         host_list (list): the list of hostnames read from hostfile.
         pattern (DictConfig): the mpi pattern dict.
 
     Returns:
-        host_group (list): the host group from traffic pattern config.
+        host_group (list): the host group generated from traffic pattern.
     """
     config = []
     n = len(host_list)
