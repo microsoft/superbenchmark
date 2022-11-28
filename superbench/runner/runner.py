@@ -5,6 +5,7 @@
 
 import json
 import random
+import re
 from pathlib import Path
 from pprint import pformat
 from collections import defaultdict
@@ -14,7 +15,7 @@ from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
-from superbench.common.utils import SuperBenchLogger, logger, gen_tarffic_pattern_host_group
+from superbench.common.utils import SuperBenchLogger, logger, gen_traffic_pattern_host_group, gen_ibstat
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
@@ -37,6 +38,7 @@ class SuperBenchRunner():
         self._sb_output_dir = sb_output_dir
         self._output_path = Path(sb_output_dir).expanduser().resolve()
         self._ansible_client = AnsibleClient(ansible_config)
+        self._run_stdout_regex = re.compile(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))')
 
         self.__set_logger('sb-run.log')
         logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
@@ -88,6 +90,11 @@ class SuperBenchRunner():
                         }
                     for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH', 'SB_WORKSPACE']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
+                    if mode.pattern:
+                        if mode.pattern.type == 'topo-aware' and not mode.pattern.ibstat:
+                            self._sb_benchmarks[name].modes[idx].pattern.ibstat = gen_ibstat(
+                                self._ansible_config, str(self._output_path / 'ibstate_file.txt')
+                            )
 
     def __get_enabled_benchmarks(self):
         """Get enabled benchmarks list.
@@ -451,7 +458,7 @@ class SuperBenchRunner():
                     else:
                         with open(self._output_path / 'hostfile', 'r') as f:
                             host_list = f.read().splitlines()
-                        pattern_hostx = gen_tarffic_pattern_host_group(host_list, mode.pattern)
+                        pattern_hostx = gen_traffic_pattern_host_group(host_list, mode.pattern)
                         for host_groups in pattern_hostx:
                             para_rc_list = Parallel(n_jobs=len(host_groups))(
                                 delayed(self._run_proc)

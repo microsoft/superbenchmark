@@ -2,7 +2,12 @@
 # Licensed under the MIT License.
 
 """Utilities for traffic pattern config."""
+import os
+import re
+from pathlib import Path
+
 from superbench.common.utils import logger
+from superbench.common.utils import gen_topo_aware_config
 
 
 def gen_all_nodes_config(n):
@@ -19,6 +24,74 @@ def gen_all_nodes_config(n):
         logger.warning('n is not positive')
         return config
     config = [','.join(map(str, range(n)))]
+    return config
+
+
+def gen_pair_wise_config(n):
+    """Generate pair-wised VM pairs config.
+
+    One-to-one means that each participant plays every other participant once.
+    The algorithm refers circle method of Round-robin tournament in
+    https://en.wikipedia.org/wiki/Round-robin_tournament.
+    if n is even, there are a total of n-1 rounds, with n/2 pair of 2 unique participants in each round.
+    If n is odd, there will be n rounds, each with n-1/2 pairs, and one participant rotating empty in that round.
+    In each round, pair up two by two from the beginning to the middle as (begin, end),(begin+1,end-1)...
+    Then, all the participants except the beginning shift left one position, and repeat the previous step.
+
+    Args:
+        n (int): the number of participants.
+
+    Returns:
+        config (list): the generated config list, each item in the list is a str like "0,1;2,3".
+    """
+    config = []
+    if n <= 0:
+        logger.warning('n is not positive')
+        return config
+    candidates = list(range(n))
+    # Add a fake participant if n is odd
+    if n % 2 == 1:
+        candidates.append(-1)
+    count = len(candidates)
+    non_moving = [candidates[0]]
+    for _ in range(count - 1):
+        pairs = [
+            '{},{}'.format(candidates[i], candidates[count - i - 1]) for i in range(0, count // 2)
+            if candidates[i] != -1 and candidates[count - i - 1] != -1
+        ]
+        row = ';'.join(pairs)
+        config.append(row)
+        robin = candidates[2:] + candidates[1:2]
+        candidates = non_moving + robin
+    return config
+
+
+def gen_k_batch_config(n, scale):
+    """Generate VM groups config with specified batch scale.
+
+    Args:
+        k (int): the scale of batch.
+        n (int): the number of participants.
+
+    Returns:
+        config (list): the generated config list, each item in the list is a str like "0,1;2,3".
+    """
+    config = []
+    if scale is None:
+        logger.warning('scale is not specified')
+        return config
+    if scale <= 0 or n <= 0:
+        logger.warning('scale or n is not positive')
+        return config
+    if scale > n:
+        logger.warning('scale large than n')
+        return config
+
+    group = []
+    rem = n % scale
+    for i in range(0, n - rem, scale):
+        group.append(','.join(map(str, list(range(i, i + scale)))))
+    config = [';'.join(group)]
     return config
 
 
@@ -45,7 +118,43 @@ def __convert_config_to_host_group(config, host_list):
     return host_groups
 
 
-def gen_tarffic_pattern_host_group(host_list, pattern):
+def gen_ibstat(ansible_config, ibstat_path):    # pragma: no cover
+    """Generate the ibstat file in specifed path.
+
+    Args:
+        ansible_config (DictConfig): Ansible config object.
+        ibstat_path (str): the expected path of ibstat file.
+
+    Returns:
+        ibstat_path (str): the generated path of ibstat file.
+    """
+    from superbench.runner import AnsibleClient
+    ibstat_list = []
+    stdout_regex = re.compile(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))')
+    ansible_client = AnsibleClient(ansible_config)
+    cmd = 'cat /sys/class/infiniband/*/sys_image_guid | tr -d :'
+
+    # callback function to collect and parse ibstat
+    def _ibstat_parser(artifact_dir):
+        raw_outputs = open(os.path.join(artifact_dir, 'stdout'), 'r')
+        for raw_output in raw_outputs:
+            output = stdout_regex.sub('', raw_output).strip()
+            if ' | CHANGED | rc=0 >>' in output:
+                output = 'VM_hostname ' + output.replace(' | CHANGED | rc=0 >>', '')
+            ibstat_list.append(output)
+
+    config = ansible_client.get_shell_config(cmd)
+    config['artifacts_handler'] = _ibstat_parser
+    rc = ansible_client.run(config)
+    if rc != 0:
+        logger.error('Failed to gather ibstat with config: {}'.format(config))
+    with Path(ibstat_path).open(mode='w') as f:
+        for ibstat in ibstat_list:
+            f.write(ibstat + '\n')
+    return ibstat_path
+
+
+def gen_traffic_pattern_host_group(host_list, pattern):
     """Generate host group from specified traffic pattern.
 
     Args:
@@ -57,8 +166,16 @@ def gen_tarffic_pattern_host_group(host_list, pattern):
     """
     config = []
     n = len(host_list)
-    if pattern.name == 'all-nodes':
+    if pattern.type == 'all-nodes':
         config = gen_all_nodes_config(n)
+    elif pattern.type == 'pair-wise':
+        config = gen_pair_wise_config(n)
+    elif pattern.type == 'k-batch':
+        config = gen_k_batch_config(n, pattern.scale)
+    elif pattern.type == 'topo-aware':
+        config = gen_topo_aware_config(
+            host_list, pattern.ibstat, pattern.ibnetdiscover, pattern.min_dist, pattern.max_dist
+        )
     else:
         logger.error('Unsupported traffic pattern: {}'.format(pattern.name))
     host_group = __convert_config_to_host_group(config, host_list)
