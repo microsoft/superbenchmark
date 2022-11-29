@@ -14,7 +14,7 @@ from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
-from superbench.common.utils import SuperBenchLogger, logger
+from superbench.common.utils import SuperBenchLogger, logger, gen_tarffic_pattern_host_group
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
@@ -109,6 +109,7 @@ class SuperBenchRunner():
             benchmark_name (str): Benchmark name.
             mode (DictConfig): Runner mode.
             timeout (int): The timeout value in seconds.
+            host_list (list): The specified Host node list.
 
         Return:
             str: Runner command.
@@ -143,12 +144,13 @@ class SuperBenchRunner():
                 'mpirun '    # use default OpenMPI in image
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
-                '{host_list} '    # use prepared hostfile and launch {proc_num} processes on each node
+                '{host_list} '    # use prepared hostfile or specify nodes and launch {proc_num} processes on each node
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                host_list=f'-host localhost:{mode.proc_num}'
-                if mode.node_num == 1 else f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node',
+                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else
+                f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if mode.host_list is None else '-host ' +
+                ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
@@ -444,7 +446,21 @@ class SuperBenchRunner():
                     )
                     ansible_rc = sum(rc_list)
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
-                    ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                    if not mode.pattern:
+                        ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                    else:
+                        with open(self._output_path / 'hostfile', 'r') as f:
+                            host_list = f.read().splitlines()
+                        pattern_hostx = gen_tarffic_pattern_host_group(host_list, mode.pattern)
+                        for host_groups in pattern_hostx:
+                            para_rc_list = Parallel(n_jobs=len(host_groups))(
+                                delayed(self._run_proc)
+                                (benchmark_name, mode, vars={
+                                    'proc_rank': 0,
+                                    'host_list': host_group,
+                                }) for host_group in host_groups
+                            )
+                            ansible_rc = ansible_rc + sum(para_rc_list)
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
                 if ansible_rc != 0:

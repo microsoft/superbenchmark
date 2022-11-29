@@ -196,12 +196,39 @@ class RunnerTestCase(unittest.TestCase):
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
+                    'proc_num': 8,
+                    'proc_rank': 1,
+                    'mca': {},
+                    'pattern': {
+                        'name': 'all-nodes',
+                    },
+                    'env': {
+                        'PATH': None,
+                        'LD_LIBRARY_PATH': None,
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -bind-to numa '
+                    ' -x PATH -x LD_LIBRARY_PATH '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
         ]
+
         for test_case in test_cases:
             with self.subTest(msg='Testing with case', test_case=test_case):
+                mode = OmegaConf.create(test_case['mode'])
+                if 'pattern' in test_case['mode']:
+                    mode.update({'host_list': ['node0', 'node1']})
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode'])
+                        test_case['benchmark_name'],
+                        mode,
                     ), test_case['expected_command']
                 )
 
@@ -210,9 +237,14 @@ class RunnerTestCase(unittest.TestCase):
                 index = test_case['expected_command'].find('sb exec')
                 expected_command = test_case['expected_command'][:index] + timeout_str + test_case['expected_command'][
                     index:]
+                mode = OmegaConf.create(test_case['mode'])
+                if 'pattern' in test_case['mode']:
+                    mode.update({'host_list': ['node0', 'node1']})
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode']), test_case['timeout']
+                        test_case['benchmark_name'],
+                        mode,
+                        test_case['timeout'],
                     ), expected_command
                 )
 
