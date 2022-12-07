@@ -52,6 +52,7 @@ class CudaMemBwBenchmark(MemBwBenchmark):
             if self._args.memory == 'pinned':
                 command += ' memory=pinned'
             command += ' --csv'
+            command += ' && sleep 3'
             self._commands.append(command)
 
         return True
