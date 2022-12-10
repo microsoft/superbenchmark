@@ -119,7 +119,7 @@ def __convert_config_to_host_group(config, host_list):
 
 
 def gen_ibstat(ansible_config, ibstat_path):    # pragma: no cover
-    """Generate the ibstat file in specifed path.
+    """Generate the ibstat file in specified path.
 
     Args:
         ansible_config (DictConfig): Ansible config object.
