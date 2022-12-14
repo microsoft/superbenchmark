@@ -57,3 +57,18 @@ class CudaMemBwTest(BenchmarkTestCase, unittest.TestCase):
             assert (metric in benchmark.result)
             assert (len(benchmark.result[metric]) == 1)
             assert (isinstance(benchmark.result[metric][0], numbers.Number))
+
+        benchmark = benchmark_class(benchmark_name, parameters='--memory=pinned --sleep 3')
+
+        ret = benchmark._preprocess()
+        assert (ret is True)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
+
+        # Check command list
+        expected_command = [
+            'bandwidthTest --htod memory=pinned --csv && sleep 3',
+            'bandwidthTest --dtoh memory=pinned --csv && sleep 3', 'bandwidthTest --dtod memory=pinned --csv && sleep 3'
+        ]
+        for i in range(len(expected_command)):
+            command = benchmark._bin_name + benchmark._commands[i].split(benchmark._bin_name)[1]
+            assert (command == expected_command[i])
