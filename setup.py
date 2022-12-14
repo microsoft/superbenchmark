@@ -204,7 +204,7 @@ setup(
             'torch': [
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
-                'transformers>=4.3.3',
+                'transformers>=4.3.3, <4.23.0',
             ],
             'ort': [
                 'onnx>=1.10.2',
