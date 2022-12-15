@@ -4,19 +4,43 @@
 """Process Utility."""
 
 import subprocess
+import sys
+import os
+import shlex
 
 
-def run_command(command):
+def run_command(command, flush_output=False):
     """Run command in string format, return the result with stdout and stderr.
 
     Args:
         command (str): command to run.
+        flush_output (bool): enable real-time output flush or not when running the command.
 
     Return:
         result (subprocess.CompletedProcess): The return value from subprocess.run().
     """
-    result = subprocess.run(
-        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
-    )
+    if flush_output:
+        process = None
+        try:
+            args = shlex.split(command)
+            process = subprocess.Popen(
+                args, cwd=os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+            )
+            output = ''
+            for line in process.stdout:
+                output += line
+                sys.stdout.write(line)
+            process.wait()
+            retcode = process.poll()
+            return subprocess.CompletedProcess(args=args, returncode=retcode, stdout=output, stderr=output)
+        except Exception as e:
+            if process:
+                process.kill()
+                process.wait()
+            return subprocess.CompletedProcess(args=args, returncode=-1, stdout=str(e), stderr=str(e))
+    else:
+        result = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
+        )
 
-    return result
+        return result

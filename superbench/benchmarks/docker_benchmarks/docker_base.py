@@ -122,7 +122,7 @@ class DockerBenchmark(Benchmark):
                     self._curr_run_index, self._name, self._commands[cmd_idx]
                 )
             )
-            output = run_command(self._commands[cmd_idx])
+            output = run_command(self._commands[cmd_idx], flush_output=True)
             if output.returncode != 0:
                 self._result.set_return_code(ReturnCode.DOCKERBENCHMARK_EXECUTION_FAILURE)
                 logger.error(
