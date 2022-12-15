@@ -131,6 +131,14 @@ class ModelBenchmark(Benchmark):
             help='Enable option to use full float32 precision.',
         )
 
+        self._parser.add_argument(
+            '--log_every_steps',
+            type=int,
+            default=0,
+            required=False,
+            help='Real-time log every n steps.',
+        )
+
     @abstractmethod
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""

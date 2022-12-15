@@ -142,6 +142,9 @@ class PytorchGPT2(PytorchBase):
                 self._optimizer.step()
                 end = self._timer()
                 curr_step += 1
+                if self._args.log_every_steps:
+                    if curr_step % self._args.log_every_steps == 0:
+                        print(f'{self._name} - {precision.value}: step {curr_step}, step time {(end - start) * 1000}')
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
@@ -170,6 +173,11 @@ class PytorchGPT2(PytorchBase):
                     self._model(sample)
                     end = self._timer()
                     curr_step += 1
+                    if self._args.log_every_steps:
+                        if curr_step % self._args.log_every_steps == 0:
+                            print(
+                                f'{self._name} - {precision.value}: step {curr_step}, step time {(end - start) * 1000}'
+                            )
                     if curr_step > self._args.num_warmup:
                         # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
