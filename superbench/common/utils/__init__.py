@@ -10,12 +10,14 @@ from superbench.common.utils.lazy_import import LazyImport
 from superbench.common.utils.process import run_command
 from superbench.common.utils.topo_aware import gen_topo_aware_config
 from superbench.common.utils.gen_traffic_pattern_config import gen_tarffic_pattern_host_group
+from superbench.common.utils.stdout_logging import SuperBenchStdoutLogger
 
 device_manager = LazyImport('superbench.common.utils.device_manager')
 
 __all__ = [
     'LazyImport',
     'SuperBenchLogger',
+    'SuperBenchStdoutLogger',
     'create_sb_output_dir',
     'device_manager',
     'get_sb_config',
