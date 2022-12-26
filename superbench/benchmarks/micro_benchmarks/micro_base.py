@@ -173,7 +173,7 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
                 )
             )
 
-            output = run_command(self._commands[cmd_idx])
+            output = run_command(self._commands[cmd_idx], flush_output=True)
             if output.returncode != 0:
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 logger.error(

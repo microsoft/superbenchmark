@@ -74,6 +74,12 @@ class Benchmark(ABC):
             default=False,
             help='Log raw data into file instead of saving it into result object.',
         )
+        self._parser.add_argument(
+            '--log_flushing',
+            action='store_true',
+            default=False,
+            help='Real-time log flusing in running benchmark into stdout and log file.',
+        )
 
     def get_configurable_settings(self):
         """Get all the configurable settings.

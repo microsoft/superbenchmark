@@ -17,23 +17,18 @@ from superbench.monitor import Monitor
 
 class SuperBenchExecutor():
     """SuperBench executor class."""
-    def __init__(self, sb_config, sb_output_dir, log_flushing=True):
+    def __init__(self, sb_config, sb_output_dir):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
             sb_output_dir (str): SuperBench output directory.
-            log_flushing (bool): if enable real-time output flushing for benchmarks.
         """
         self._sb_config = sb_config
         self._sb_output_dir = sb_output_dir
         self._output_path = Path(sb_output_dir).expanduser().resolve()
 
         self.__set_logger('sb-exec.log')
-        if log_flushing:
-            log_dir = self._output_path / 'logs' / str(self.__get_rank_id())
-            log_dir.mkdir(parents=True, exist_ok=True)
-            self.__set_stdout_logger(str(log_dir / 'benchmark.log'))
         logger.debug('Executor uses config: %s.', self._sb_config)
         logger.debug('Executor writes to: %s.', str(self._output_path))
 
@@ -42,6 +37,16 @@ class SuperBenchExecutor():
         self._sb_benchmarks = self._sb_config.superbench.benchmarks
         self._sb_enabled = self.__get_enabled_benchmarks()
         logger.debug('Executor will execute: %s', self._sb_enabled)
+
+        self._log_flushing = False
+        for benchmark in self._sb_enabled:
+            if self._sb_benchmarks[benchmark].parameters.log_flushing:
+                self._log_flushing = True
+                break
+        if self._log_flushing:
+            log_dir = self._output_path / 'logs' / str(self.__get_rank_id())
+            log_dir.mkdir(parents=True, exist_ok=True)
+            self.__set_stdout_logger(str(log_dir / 'benchmark.log'))
 
     def __set_logger(self, filename):
         """Set logger and add file handler.
@@ -259,7 +264,7 @@ class SuperBenchExecutor():
 
             if monitor:
                 monitor.stop()
-            if self._stdout:
+            if self._log_flushing:
                 self._stdout.stop()
             self.__write_benchmark_results(benchmark_name, benchmark_results)
             os.chdir(cwd)
