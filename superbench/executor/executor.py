@@ -38,11 +38,7 @@ class SuperBenchExecutor():
         self._sb_enabled = self.__get_enabled_benchmarks()
         logger.debug('Executor will execute: %s', self._sb_enabled)
 
-        self._log_flushing = False
-        for benchmark in self._sb_enabled:
-            if self._sb_benchmarks[benchmark].parameters.log_flushing:
-                self._log_flushing = True
-                break
+        self._log_flushing = self.__get_if_log_flushing()
         if self._log_flushing:
             log_dir = self._output_path / 'logs' / str(self.__get_rank_id())
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -55,6 +51,19 @@ class SuperBenchExecutor():
             filename (str): Log file name.
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
+
+    def __get_if_log_flushing(self):
+        """Get whether user enable log flushing in config.
+
+        Returns:
+            bool: True if any benchmark enable log flushing in parameters of config
+        """
+        for benchmark, config in self._sb_benchmarks.items():
+            if benchmark in self._sb_enabled:
+                if 'parameter' in self._sb_benchmarks[benchmark] and self._sb_benchmarks[benchmark
+                                                                                         ].parameters.log_flushing:
+                    return True
+        return False
 
     def __set_stdout_logger(self, filename):
         """Set stdout logger and redirect logs and stdout into the file.
