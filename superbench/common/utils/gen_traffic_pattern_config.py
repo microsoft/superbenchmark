@@ -177,6 +177,6 @@ def gen_traffic_pattern_host_group(host_list, pattern):
             host_list, pattern.ibstat, pattern.ibnetdiscover, pattern.min_dist, pattern.max_dist
         )
     else:
-        logger.error('Unsupported traffic pattern: {}'.format(pattern.name))
+        logger.error('Unsupported traffic pattern: {}'.format(pattern.type))
     host_group = __convert_config_to_host_group(config, host_list)
     return host_group

@@ -3,6 +3,7 @@
 
 """SuperBench Runner."""
 
+import os
 import json
 import random
 import re
@@ -456,8 +457,11 @@ class SuperBenchRunner():
                     if not mode.pattern:
                         ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                     else:
-                        with open(self._output_path / 'hostfile', 'r') as f:
-                            host_list = f.read().splitlines()
+                        if not os.path.exists(self._output_path / 'hostfile'):
+                            host_list = []
+                        else:
+                            with open(self._output_path / 'hostfile', 'r') as f:
+                                host_list = f.read().splitlines()
                         pattern_hostx = gen_traffic_pattern_host_group(host_list, mode.pattern)
                         for host_groups in pattern_hostx:
                             para_rc_list = Parallel(n_jobs=len(host_groups))(

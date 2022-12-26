@@ -46,9 +46,10 @@ superbench:
     nccl-bw:default:
       enable: true
       modes:
-        - name: local
+        - name: mpi
           proc_num: 1
-          parallel: no
+          pattern:
+            type: all-nodes
       parameters:
         ngpus: 8
     nccl-bw:gdr-only:
