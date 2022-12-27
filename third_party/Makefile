@@ -6,8 +6,10 @@ SB_MICRO_PATH ?= /usr/local
 MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
-ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 HPCX_HOME ?= /opt/hpcx
+
+CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
+ROCM_VER ?= $(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
 .PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn
 
@@ -24,9 +26,14 @@ sb_micro_path:
 
 # Build cutlass.
 cuda_cutlass:
+ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+	$(eval ARCHS := "70;75;80;86;90")
+else
+	$(eval ARCHS := "70;75;80;86")
+endif
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
 	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
-		-DCUTLASS_NVCC_ARCHS='70;75;80;86' -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
+		-DCUTLASS_NVCC_ARCHS=$(ARCHS) -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
 	cmake --build ./cutlass/build -j $(shell nproc --ignore=2) --target install
 endif
 
@@ -35,10 +42,17 @@ endif
 # The version we use is the released tag of cuda-samples which is consistent with the cuda version in the environment or docker.
 # The Makefile of bandwidthTest does not have 'install' target, so need to copy bin to $(SB_MICRO_PATH)/bin/ and create $(SB_MICRO_PATH)/bin/ if not existing.
 cuda_bandwidthTest: sb_micro_path
+ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
+	$(eval ARCHS := "70 75 80 86 90")
+else
+	$(eval TEST_PATH := "./cuda-samples/Samples/bandwidthTest")
+	$(eval ARCHS := "70 75 80 86")
+endif
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
-	git clone -b v$(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2) https://github.com/NVIDIA/cuda-samples.git ./cuda-samples
-	cd ./cuda-samples/Samples/bandwidthTest && make clean && make TARGET_ARCH=x86_64 SMS="70 75 80 86"
-	cp -v ./cuda-samples/Samples/bandwidthTest/bandwidthTest $(SB_MICRO_PATH)/bin/
+	git clone -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
+	cd ./$(TEST_PATH) && make clean && make TARGET_ARCH=x86_64 SMS=$(ARCHS)
+	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
 
 # Build nccl-tests from commit 8274cb4 of default branch.
 cuda_nccl_tests: sb_micro_path
@@ -78,7 +92,7 @@ endif
 rocm_rocblas: sb_micro_path
 ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
 	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
-	git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
+	git clone -b rocm-$(ROCM_VER) https://github.com/ROCmSoftwarePlatform/rocBLAS.git
 	cd ./rocBLAS && ./install.sh --dependencies --clients-only
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
 endif
