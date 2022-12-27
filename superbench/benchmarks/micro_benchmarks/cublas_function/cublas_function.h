@@ -14,9 +14,13 @@
  * @brief Class of SgemmFunction
  */
 class SgemmFunction : public CublasFunction {
-    float *Parameter_0_0; ///< the pointer of the first input data
-    float *Parameter_1_0; ///< the pointer of the second input data
-    float *Result_3_0;    ///< the pointer of output data
+    float *Parameter_0_0;      ///< the pointer of the first input data
+    float *Parameter_1_0;      ///< the pointer of the second input data
+    float *Result_3_0;         ///< the pointer of output data
+    float *Parameter_0_0_host; ///< the pointer of the first input data on host
+    float *Parameter_1_0_host; ///< the pointer of the second input data on host
+    float *Result_cpu;
+
     /**
      * @brief Execute the kernel/function
      */
@@ -26,9 +30,21 @@ class SgemmFunction : public CublasFunction {
               reinterpret_cast<float *>(Result_3_0));
     }
     /**
+     * @brief  Function calculation on CPU side
+     */
+    virtual void matrix_calculation_on_cpu() {
+        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu);
+    }
+    /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() { CublasFunction::prepare_tensor_float(&Parameter_0_0, &Parameter_1_0, &Result_3_0); }
+    virtual void prepare_tensor() {
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
+    }
+    /**
+     * @brief Check the correctness of function calculation result
+     */
+    virtual int correctness_check() { return check_result(1, Result_3_0, Result_cpu); }
 
   public:
     /**
@@ -54,6 +70,9 @@ class SgemmFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+        free(Result_cpu);
         cuda_free(&cublas_handle);
     }
 };
@@ -65,6 +84,9 @@ class CgemmFunction : public CublasFunction {
     cuComplex *Parameter_0_0;
     cuComplex *Parameter_1_0;
     cuComplex *Result_3_0;
+    cuComplex *Parameter_0_0_host;
+    cuComplex *Parameter_1_0_host;
+    std::complex<float> *Result_cpu;
     /**
      * @brief Execute the kernel/function
      */
@@ -74,11 +96,21 @@ class CgemmFunction : public CublasFunction {
               reinterpret_cast<cuComplex *>(Result_3_0));
     }
     /**
+     * @brief  Function calculation on CPU side
+     */
+    virtual void matrix_calculation_on_cpu() {
+        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu);
+    }
+    /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
     virtual void prepare_tensor() {
-        CublasFunction::prepare_tensor_cucomplex(&Parameter_0_0, &Parameter_1_0, &Result_3_0);
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
     }
+    /**
+     * @brief Check the correctness of function calculation result
+     */
+    virtual int correctness_check() { return check_result(1, Result_3_0, Result_cpu); }
 
   public:
     /**
@@ -104,6 +136,9 @@ class CgemmFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+        free(Result_cpu);
         cuda_free(&cublas_handle);
     }
 };
@@ -112,9 +147,12 @@ class CgemmFunction : public CublasFunction {
  * @brief Class of GemmExFunction
  */
 class GemmExFunction : public CublasFunction {
-    float *Parameter_0_0;
-    float *Parameter_1_0;
-    float *Result_3_0;
+    void *Parameter_0_0;
+    void *Parameter_1_0;
+    void *Result_3_0;
+    void *Parameter_0_0_host;
+    void *Parameter_1_0_host;
+    void *Result_cpu;
     /**
      * @brief Execute the kernel/function
      */
@@ -126,7 +164,47 @@ class GemmExFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() { CublasFunction::prepare_tensor_float(&Parameter_0_0, &Parameter_1_0, &Result_3_0); }
+    virtual void prepare_tensor() {
+        if (this->datatype_.compare("half")) {
+            CublasFunction::prepare_tensor_template<half>(
+                reinterpret_cast<half **>(&Parameter_0_0), reinterpret_cast<half **>(&Parameter_1_0),
+                reinterpret_cast<half **>(&Result_3_0), reinterpret_cast<half **>(&Parameter_0_0_host),
+                reinterpret_cast<half **>(&Parameter_1_0_host));
+        } else if (this->datatype_.compare("float")) {
+            CublasFunction::prepare_tensor_template<float>(
+                reinterpret_cast<float **>(&Parameter_0_0), reinterpret_cast<float **>(&Parameter_1_0),
+                reinterpret_cast<float **>(&Result_3_0), reinterpret_cast<float **>(&Parameter_0_0_host),
+                reinterpret_cast<float **>(&Parameter_1_0_host));
+        }
+    }
+    /**
+     * @brief  Function calculation on CPU side
+     */
+    virtual void matrix_calculation_on_cpu() {
+        if (this->datatype_.compare("half")) {
+            matrix_calculation_on_cpu_with_data(
+                reinterpret_cast<half *>(Parameter_0_0_host), reinterpret_cast<half *>(Parameter_1_0_host),
+                reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
+        } else if (this->datatype_.compare("float")) {
+            matrix_calculation_on_cpu_with_data(
+                reinterpret_cast<float *>(Parameter_0_0_host), reinterpret_cast<float *>(Parameter_1_0_host),
+                reinterpret_cast<float *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
+        }
+    }
+    /**
+     * @brief Check the correctness of function calculation result
+     */
+    virtual int correctness_check() {
+        bool result = false;
+        if (this->datatype_.compare("half")) {
+            result = check_result(this->batch_count_, reinterpret_cast<half *>(Result_3_0),
+                                  reinterpret_cast<float *>(Result_cpu), 1.e-3);
+        } else if (this->datatype_.compare("float")) {
+            result = check_result(this->batch_count_, reinterpret_cast<float *>(Result_3_0),
+                                  reinterpret_cast<float *>(Result_cpu), 1.e-6);
+        }
+        return result;
+    }
 
   public:
     /**
@@ -152,6 +230,9 @@ class GemmExFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+        free(Result_cpu);
         cuda_free(&cublas_handle);
     }
 };
@@ -160,9 +241,12 @@ class GemmExFunction : public CublasFunction {
  * @brief Class of GemmStridedBatchedExFunction
  */
 class GemmStridedBatchedExFunction : public CublasFunction {
-    float *Parameter_0_0;
-    float *Parameter_1_0;
-    float *Result_3_0;
+    void *Parameter_0_0;
+    void *Parameter_1_0;
+    void *Result_3_0;
+    void *Parameter_0_0_host;
+    void *Parameter_1_0_host;
+    void *Result_cpu;
     /**
      * @brief Execute the kernel/function
      */
@@ -175,7 +259,47 @@ class GemmStridedBatchedExFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() { CublasFunction::prepare_tensor_float(&Parameter_0_0, &Parameter_1_0, &Result_3_0); }
+    virtual void prepare_tensor() {
+        if (this->datatype_.compare("half")) {
+            prepare_tensor_template<half>(
+                reinterpret_cast<half **>(&Parameter_0_0), reinterpret_cast<half **>(&Parameter_1_0),
+                reinterpret_cast<half **>(&Result_3_0), reinterpret_cast<half **>(&Parameter_0_0_host),
+                reinterpret_cast<half **>(&Parameter_1_0_host));
+        } else if (this->datatype_.compare("float")) {
+            prepare_tensor_template<float>(
+                reinterpret_cast<float **>(&Parameter_0_0), reinterpret_cast<float **>(&Parameter_1_0),
+                reinterpret_cast<float **>(&Result_3_0), reinterpret_cast<float **>(&Parameter_0_0_host),
+                reinterpret_cast<float **>(&Parameter_1_0_host));
+        }
+    }
+    /**
+     * @brief  Function calculation on CPU side
+     */
+    virtual void matrix_calculation_on_cpu() {
+        if (this->datatype_.compare("half")) {
+            matrix_calculation_on_cpu_with_data(
+                reinterpret_cast<half *>(Parameter_0_0_host), reinterpret_cast<half *>(Parameter_1_0_host),
+                reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
+        } else if (this->datatype_.compare("float")) {
+            matrix_calculation_on_cpu_with_data(
+                reinterpret_cast<float *>(Parameter_0_0_host), reinterpret_cast<float *>(Parameter_1_0_host),
+                reinterpret_cast<float *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
+        }
+    }
+    /**
+     * @brief Check the correctness of function calculation result
+     */
+    virtual int correctness_check() {
+        bool result = false;
+        if (this->datatype_.compare("half")) {
+            result = check_result(this->batch_count_, reinterpret_cast<half *>(Result_3_0),
+                                  reinterpret_cast<float *>(Result_cpu), 1.e-3);
+        } else if (this->datatype_.compare("float")) {
+            result = check_result(this->batch_count_, reinterpret_cast<float *>(Result_3_0),
+                                  reinterpret_cast<float *>(Result_cpu), 1.e-6);
+        }
+        return result;
+    }
 
   public:
     /**
@@ -195,6 +319,9 @@ class GemmStridedBatchedExFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+        free(Result_cpu);
         cuda_free(&cublas_handle);
     }
 };
@@ -206,6 +333,9 @@ class SgemmStridedBatchedFunction : public CublasFunction {
     float *Parameter_0_0;
     float *Parameter_1_0;
     float *Result_3_0;
+    float *Parameter_0_0_host;
+    float *Parameter_1_0_host;
+    float *Result_cpu;
     /**
      * @brief Execute the kernel/function
      */
@@ -218,7 +348,19 @@ class SgemmStridedBatchedFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() { CublasFunction::prepare_tensor_float(&Parameter_0_0, &Parameter_1_0, &Result_3_0); }
+    virtual void prepare_tensor() {
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
+    }
+    /**
+     * @brief  Function calculation on CPU side
+     */
+    virtual void matrix_calculation_on_cpu() {
+        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu);
+    }
+    /**
+     * @brief Check the correctness of function calculation result
+     */
+    virtual int correctness_check() { return check_result(this->batch_count_, Result_3_0, Result_cpu); }
 
   public:
     /**
@@ -238,6 +380,9 @@ class SgemmStridedBatchedFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+        free(Result_cpu);
         cuda_free(&cublas_handle);
     }
 };
@@ -249,6 +394,9 @@ class Cgemm3mStridedBatchedFunction : public CublasFunction {
     cuComplex *Parameter_0_0;
     cuComplex *Parameter_1_0;
     cuComplex *Result_3_0;
+    cuComplex *Parameter_0_0_host;
+    cuComplex *Parameter_1_0_host;
+    std::complex<float> *Result_cpu;
     /**
      * @brief Execute the kernel/function
      */
@@ -262,8 +410,18 @@ class Cgemm3mStridedBatchedFunction : public CublasFunction {
      * @brief Prepare memory and data of the input and output for kernel running
      */
     virtual void prepare_tensor() {
-        CublasFunction::prepare_tensor_cucomplex(&Parameter_0_0, &Parameter_1_0, &Result_3_0);
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
     }
+    /**
+     * @brief  Function calculation on CPU side
+     */
+    virtual void matrix_calculation_on_cpu() {
+        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu);
+    }
+    /**
+     * @brief Check the correctness of function calculation result
+     */
+    virtual int correctness_check() { return check_result(this->batch_count_, Result_3_0, Result_cpu); }
 
   public:
     /**
@@ -283,6 +441,9 @@ class Cgemm3mStridedBatchedFunction : public CublasFunction {
         CUDA_SAFE_CALL(cudaFree(Parameter_0_0));
         CUDA_SAFE_CALL(cudaFree(Parameter_1_0));
         CUDA_SAFE_CALL(cudaFree(Result_3_0));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
+        CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+        free(Result_cpu);
         cuda_free(&cublas_handle);
     }
 };

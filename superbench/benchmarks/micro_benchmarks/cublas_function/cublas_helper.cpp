@@ -69,7 +69,7 @@ void cuda_free(cublasHandle_t *cublas_handle) {
 void sgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a, const float *b,
            float *c) {
     float alpha = 1.0f;
-    float beta = 1.0f;
+    float beta = 0.0f;
     CUBLAS_SAFE_CALL(cublasSgemm(handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m,
                                  n, k, &alpha, a, (transa ? k : m), b, (transb ? n : k), &beta, c, m));
 }
@@ -148,7 +148,7 @@ void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, 
 void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a,
                           const void *b, void *c, std::string type, bool use_tensor_core, int batchCount) {
     float alpha = 1.0f;
-    float beta = 1.0f;
+    float beta = 0.0f;
     cublasComputeType_t compute_type = CUBLAS_COMPUTE_32F;
     cudaDataType_t matrix_type;
     cublasGemmAlgo_t algo;
@@ -185,7 +185,7 @@ void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, 
 void sgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
                          const float *b, float *c, int batchCount) {
     float alpha = 1.0f;
-    float beta = 1.0f;
+    float beta = 0.0f;
     CUBLAS_SAFE_CALL(cublasSgemmStridedBatched(
         handle, (transa ? CUBLAS_OP_T : CUBLAS_OP_N), (transb ? CUBLAS_OP_T : CUBLAS_OP_N), m, n, k, &alpha, a,
         (transa ? k : m), static_cast<long long>(m) * k, b, (transb ? n : k), static_cast<long long>(n) * k, &beta, c,

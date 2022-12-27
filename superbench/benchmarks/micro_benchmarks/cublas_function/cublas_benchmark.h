@@ -9,6 +9,7 @@
 #pragma once
 
 #include <chrono>
+#include <complex>
 #include <iostream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -51,6 +52,7 @@ class CublasFunction {
     int warm_up;                       ///< the number of steps used to warm up
     int num_in_step;                   ///< the number of functions invoking in a step
     int random_seed;                   ///< the random seed used to generate random data
+    bool correctness;                  ///< if check the correctness
     std::string name_;                 ///< the name of the cublas function
     int m_;                            ///< the m dim of matrix
     int k_;                            ///< the k dim of matrix
@@ -67,19 +69,13 @@ class CublasFunction {
     /**
      * @brief Fill the random data into the input in float type
      */
-    void fill_data_float(float *Parameter_0_0_host, float *Parameter_1_0_host);
+    template <typename T> void fill_data(T *Parameter_0_0_host, T *Parameter_1_0_host);
     /**
-     * @brief Fill the random data into the input in cuComplex type
+     * @brief Prepare memory and data of the input and output
      */
-    void fill_data_cucomplex(cuComplex *Parameter_0_0_host, cuComplex *Parameter_1_0_host);
-    /**
-     * @brief Prepare memory and data of the input and output in float type
-     */
-    void prepare_tensor_float(float **Parameter_0_0, float **Parameter_1_0, float **Result_3_0);
-    /**
-     * @brief Prepare memory and data of the input and output in cuComplex type
-     */
-    void prepare_tensor_cucomplex(cuComplex **Parameter_0_0, cuComplex **Parameter_1_0, cuComplex **Result_3_0);
+    template <typename T>
+    void prepare_tensor_template(T **Parameter_0_0, T **Parameter_1_0, T **Result_3_0, T **Parameter_0_0_host,
+                                 T **Parameter_1_0_host);
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
@@ -88,6 +84,29 @@ class CublasFunction {
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {}
+    /**
+     * @brief Transpose the colomn-order strored matrix with float or half datatype
+     */
+    template <typename T> T *transpose(const T *matrix, int m, int n, int batch_count);
+    /**
+     * @brief Matrix multiply calculation on CPU side with input data and output data
+     */
+    template <typename T1, typename T2>
+    void matrix_calculation_on_cpu_with_data(const T1 *Parameter_0_0_host, const T1 *Parameter_1_0_host,
+                                             const T1 *Result_3_0, T2 **Result_cpu, T2 alpha = 1, T2 beta = 0);
+    /**
+     * @brief Check if the error < eps between the calculation result of GPU and CPU for each element in the matrix
+     */
+    template <typename T1, typename T2>
+    int check_result(int batch_count, T1 *Result_3_0, T2 *Result_cpu, double eps = 1.e-6);
+    /**
+     * @brief  Virtual function of Matrix multiply calculation on CPU side
+     */
+    virtual void matrix_calculation_on_cpu() {}
+    /**
+     * @brief Virtual function of Check the cublas function calculation correctness
+     */
+    virtual int correctness_check() { return 0; }
 
   public:
     /**
@@ -110,6 +129,11 @@ class CublasFunction {
      * @param  random_seed      random seed
      */
     void set_random_seed(int random_seed) { this->random_seed = random_seed; }
+    /**
+     * @brief Set the correctness
+     * @param  correctness_check      if check the correctness of the function result
+     */
+    void set_correctness(int correctness_check) { this->correctness = correctness_check; }
     /**
      * @brief Set the params string
      * @param  str             the str representing the params of the function
@@ -195,95 +219,230 @@ class CublasFunction {
 };
 
 /**
- * @brief Fill the random data into the input in cuComplex type
+ * @brief Fill the random data into the input in float type
  */
-void CublasFunction::fill_data_float(float *Parameter_0_0_host, float *Parameter_1_0_host) {
+template <> void CublasFunction::fill_data(float *Parameter_0_0_host, float *Parameter_1_0_host) {
     srand(random_seed);
-    for (int i = 0; i < m_ * k_; i++) {
-        Parameter_0_0_host[i] = (float)rand() / (float)(RAND_MAX);
+    for (int i = 0; i < m_ * k_ * batch_count_; i++) {
+        Parameter_0_0_host[i] = ((float)rand() / (float)(RAND_MAX));
     }
-    for (int i = 0; i < k_ * n_; ++i) {
-        Parameter_1_0_host[i] = (float)rand() / (float)(RAND_MAX);
+    for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
+        Parameter_1_0_host[i] = ((float)rand() / (float)(RAND_MAX));
+    }
+}
+/**
+ * @brief Fill the random data into the input in half type
+ */
+template <> void CublasFunction::fill_data(half *Parameter_0_0_host, half *Parameter_1_0_host) {
+    srand(random_seed);
+    for (int i = 0; i < m_ * k_ * batch_count_; i++) {
+        Parameter_0_0_host[i] = half((float)rand() / (float)(RAND_MAX));
+    }
+    for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
+        Parameter_1_0_host[i] = half((float)rand() / (float)(RAND_MAX));
     }
 }
 /**
  * @brief Fill the random data into the input in cuComplex type
  */
-void CublasFunction::fill_data_cucomplex(cuComplex *Parameter_0_0_host, cuComplex *Parameter_1_0_host) {
+template <> void CublasFunction::fill_data(cuComplex *Parameter_0_0_host, cuComplex *Parameter_1_0_host) {
     srand(random_seed);
-    for (int i = 0; i < m_ * k_; i++) {
+    for (int i = 0; i < m_ * k_ * batch_count_; i++) {
         Parameter_0_0_host[i] =
             make_cuComplex(((float)rand() / (float)(RAND_MAX)), ((float)rand() / (float)(RAND_MAX)));
     }
-    for (int i = 0; i < k_ * n_; ++i) {
+    for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
         Parameter_1_0_host[i] =
             make_cuComplex(((float)rand() / (float)(RAND_MAX)), ((float)rand() / (float)(RAND_MAX)));
     }
 }
 /**
- * @brief Prepare memory and data of the input and output in float type
+ * @brief Prepare memory and data of the input and output
  */
-void CublasFunction::prepare_tensor_float(float **Parameter_0_0, float **Parameter_1_0, float **Result_3_0) {
-    int m = this->m_;
-    int n = this->n_;
-    int k = this->k_;
-
-    float *Parameter_0_0_host, *Parameter_1_0_host;
+template <typename T>
+void CublasFunction::prepare_tensor_template(T **Parameter_0_0, T **Parameter_1_0, T **Result_3_0,
+                                             T **Parameter_0_0_host, T **Parameter_1_0_host) {
+    int m = this->m_, n = this->n_, k = this->k_, batch_count = this->batch_count_;
     // input argument
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&Parameter_0_0_host, sizeof(float) * m * k * this->batch_count_));
-    CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_0_0, sizeof(float) * m * k * this->batch_count_));
+    CUDA_SAFE_CALL(cudaMallocHost((void **)Parameter_0_0_host, sizeof(T) * m * k * batch_count_));
+    CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_0_0, sizeof(T) * m * k * batch_count_));
     // input argument
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&Parameter_1_0_host, sizeof(float) * n * k * this->batch_count_));
-    CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_1_0, sizeof(float) * n * k * this->batch_count_));
+    CUDA_SAFE_CALL(cudaMallocHost((void **)Parameter_1_0_host, sizeof(T) * n * k * batch_count_));
+    CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_1_0, sizeof(T) * n * k * batch_count_));
 
     // fill input values
-    fill_data_float(Parameter_0_0_host, Parameter_1_0_host);
+    fill_data(reinterpret_cast<T *>(*Parameter_0_0_host), reinterpret_cast<T *>(*Parameter_1_0_host));
 
     // copy input data from host to device
-    CUDA_SAFE_CALL(cudaMemcpy(*Parameter_0_0, Parameter_0_0_host, sizeof(float) * m * k * this->batch_count_,
-                              cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(*Parameter_1_0, Parameter_1_0_host, sizeof(float) * k * n * this->batch_count_,
-                              cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(
+        cudaMemcpy(*Parameter_0_0, *Parameter_0_0_host, sizeof(T) * m * k * batch_count_, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(
+        cudaMemcpy(*Parameter_1_0, *Parameter_1_0_host, sizeof(T) * k * n * batch_count_, cudaMemcpyHostToDevice));
 
     // output arguments
-    CUDA_SAFE_CALL(cudaMalloc((void **)Result_3_0, sizeof(float) * m * n * batch_count_));
-    CUDA_SAFE_CALL(cudaMemset((void *)*Result_3_0, 0, sizeof(float) * m * n * batch_count_));
-
-    CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
-    CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+    CUDA_SAFE_CALL(cudaMalloc((void **)Result_3_0, sizeof(T) * m * n * batch_count_));
+    CUDA_SAFE_CALL(cudaMemset((void *)*Result_3_0, 0, sizeof(T) * m * n * batch_count_));
 }
 /**
- * @brief Prepare memory and data of the input and output in cuComplex type
+ * @brief Transpose the colomn-order strored matrix with float or half datatype
  */
-void CublasFunction::prepare_tensor_cucomplex(cuComplex **Parameter_0_0, cuComplex **Parameter_1_0,
-                                              cuComplex **Result_3_0) {
-    int m = this->m_;
-    int n = this->n_;
-    int k = this->k_;
+template <typename T> T *CublasFunction::transpose(const T *matrix, int m, int n, int batch_count) {
+    T *transpose_matrix = (T *)malloc(m * n * sizeof(T) * batch_count);
+    for (int b = 0; b < batch_count; b++) {
+        for (int i = 0; i < m * n; i++) {
+            int c = i / m;
+            int r = i % m;
+            int tran_i = r * n + c;
+            transpose_matrix[tran_i + b * m * n] = matrix[i + b * m * n];
+        }
+    }
+    return transpose_matrix;
+}
+/**
+ * @brief Matrix multiply calculation on CPU side
+ */
+template <typename T1, typename T2>
+void CublasFunction::matrix_calculation_on_cpu_with_data(const T1 *Parameter_0_0_host, const T1 *Parameter_1_0_host,
+                                                         const T1 *Result_3_0, T2 **Result_cpu, T2 alpha, T2 beta) {
+    int m = this->m_, n = this->n_, k = this->k_, batch_count = this->batch_count_;
+    // Copy result from device to host
+    T1 *Result_3_0_host;
+    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host, sizeof(T1) * m * n * batch_count));
+    CUDA_SAFE_CALL(cudaMemcpy(Result_3_0_host, Result_3_0, sizeof(T1) * m * n * batch_count, cudaMemcpyDeviceToHost));
+    // Transpose the input matrix
+    T1 *Parameter_0_0_host_op, *Parameter_1_0_host_op;
+    Parameter_0_0_host_op = (T1 *)malloc(m * k * sizeof(T1) * batch_count);
+    Parameter_1_0_host_op = (T1 *)malloc(n * k * sizeof(T1) * batch_count);
+    memcpy(Parameter_0_0_host_op, Parameter_0_0_host, m * k * sizeof(T1) * batch_count);
+    memcpy(Parameter_1_0_host_op, Parameter_1_0_host, n * k * sizeof(T1) * batch_count);
+    if (this->transa_) {
+        Parameter_0_0_host_op = transpose(Parameter_0_0_host, k, m, batch_count);
+    }
+    if (this->transb_) {
+        Parameter_1_0_host_op = transpose(Parameter_1_0_host, n, k, batch_count);
+    }
+    // C + i*strideC = alpha*op(A+i*strideA)*op(B+i*strideB)+beta(C+i*strideC), for i in [0, batchcount -1 ]
+    // reference in https://docs.nvidia.com/cuda/cublas/index.html#cublas-level-3-function-reference
+    *Result_cpu = (T2 *)malloc(m * n * sizeof(T2) * batch_count);
+    for (int b = 0; b < batch_count; b++) {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                (*Result_cpu)[i + j * m + b * m * n] = beta * ((T2 *)Result_3_0_host)[i + j * m + b * m * n];
+                for (int p = 0; p < k; p++) {
+                    (*Result_cpu)[i + j * m + b * m * n] +=
+                        Parameter_0_0_host_op[p * m + i + b * m * k] * Parameter_1_0_host_op[j * k + p + b * k * n];
+                    (*Result_cpu)[i + j * m + b * m * n] *= alpha;
+                }
+            }
+        }
+    }
+    CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
+    free(Parameter_0_0_host_op);
+    free(Parameter_1_0_host_op);
+}
+/**
+ * @brief Transpose the colomn-order strored matrix with complex datatype
+ */
+template <>
+void CublasFunction::matrix_calculation_on_cpu_with_data(const cuComplex *Parameter_0_0_host,
+                                                         const cuComplex *Parameter_1_0_host,
+                                                         const cuComplex *Result_3_0, std::complex<float> **Result_cpu,
+                                                         std::complex<float> alpha, std::complex<float> beta) {
+    int m = this->m_, n = this->n_, k = this->k_, batch_count = this->batch_count_;
+    // Copy result from device to host
+    std::complex<float> *Result_3_0_host;
+    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host, sizeof(std::complex<float>) * m * n * batch_count));
+    CUDA_SAFE_CALL(cudaMemcpy(Result_3_0_host, Result_3_0, sizeof(std::complex<float>) * m * n * batch_count,
+                              cudaMemcpyDeviceToHost));
+    cuComplex *Parameter_0_0_host_op, *Parameter_1_0_host_op;
+    Parameter_0_0_host_op = (cuComplex *)malloc(m * k * sizeof(cuComplex) * batch_count);
+    Parameter_1_0_host_op = (cuComplex *)malloc(n * k * sizeof(cuComplex) * batch_count);
+    memcpy(Parameter_0_0_host_op, Parameter_0_0_host, m * k * sizeof(cuComplex) * batch_count);
+    memcpy(Parameter_1_0_host_op, Parameter_1_0_host, n * k * sizeof(cuComplex) * batch_count);
+    if (this->transa_) {
+        Parameter_0_0_host_op = transpose<cuComplex>(Parameter_0_0_host, k, m, batch_count);
+    }
+    if (this->transb_) {
+        Parameter_1_0_host_op = transpose<cuComplex>(Parameter_1_0_host, n, k, batch_count);
+    }
 
-    cuComplex *Parameter_0_0_host, *Parameter_1_0_host;
-    // input argument
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&Parameter_0_0_host, sizeof(cuComplex) * m * k * this->batch_count_));
-    CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_0_0, sizeof(cuComplex) * m * k * this->batch_count_));
-    // input argument
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&Parameter_1_0_host, sizeof(cuComplex) * n * k * this->batch_count_));
-    CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_1_0, sizeof(cuComplex) * n * k * this->batch_count_));
+    *Result_cpu = (std::complex<float> *)malloc(m * n * sizeof(std::complex<float>) * batch_count);
 
-    // fill input values
-    fill_data_cucomplex(Parameter_0_0_host, Parameter_1_0_host);
+    for (int b = 0; b < batch_count; b++) {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                (*Result_cpu)[i + j * m + b * m * n] = beta * Result_3_0_host[i + j * m + b * m * n];
+                for (int p = 0; p < k; p++) {
+                    (*Result_cpu)[i + j * m + b * m * n] +=
+                        std::complex<float>(Parameter_0_0_host_op[p * m + i + b * m * k].x,
+                                            Parameter_0_0_host_op[p * m + i + b * m * k].y) *
+                        std::complex<float>(Parameter_1_0_host_op[j * k + p + b * k * n].x,
+                                            Parameter_1_0_host_op[j * k + p + b * k * n].y);
+                    (*Result_cpu)[i + j * m + b * m * n] *= alpha;
+                }
+            }
+        }
+    }
+    CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
+    free(Parameter_0_0_host_op);
+    free(Parameter_1_0_host_op);
+}
+/**
+ * @brief Check if the error < eps between the calculation result of GPU and CPU for each element in the matrix
+ */
+template <typename T1, typename T2>
+int CublasFunction::check_result(int batch_count, T1 *Result_3_0, T2 *Result_cpu, double eps) {
+    int m = this->m_, n = this->n_, k = this->k_;
+    // Copy result from device to host
+    T1 *Result_3_0_host;
+    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host, sizeof(T1) * m * n * batch_count));
+    CUDA_SAFE_CALL(cudaMemcpy(Result_3_0_host, Result_3_0, sizeof(T1) * m * n * batch_count, cudaMemcpyDeviceToHost));
 
-    // copy input data from host to device
-    CUDA_SAFE_CALL(cudaMemcpy(*Parameter_0_0, Parameter_0_0_host, sizeof(cuComplex) * m * k * this->batch_count_,
-                              cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(*Parameter_1_0, Parameter_1_0_host, sizeof(cuComplex) * k * n * this->batch_count_,
-                              cudaMemcpyHostToDevice));
-
-    // output arguments
-    CUDA_SAFE_CALL(cudaMalloc((void **)Result_3_0, sizeof(cuComplex) * m * n * batch_count_));
-    CUDA_SAFE_CALL(cudaMemset((void *)*Result_3_0, 0, sizeof(cuComplex) * m * n * batch_count_));
-
-    CUDA_SAFE_CALL(cudaFreeHost(Parameter_0_0_host));
-    CUDA_SAFE_CALL(cudaFreeHost(Parameter_1_0_host));
+    // test relative error by the formula
+    //     |<x, y>_cpu - <x,y>_gpu|/|<x, y>_cpu|/dot_length  < eps
+    int error_count = 0;
+    for (int i = 0; i < static_cast<int>(m * n) * batch_count; i++) {
+        double abs_err = fabs(Result_cpu[i] - Result_3_0_host[i]);
+        double dot_length = k;
+        double abs_val = fabs(Result_cpu[i]);
+        double rel_err = abs_err / abs_val / dot_length;
+        if (rel_err > eps) {
+            printf("Error! Matrix[%05d]=%.8f, ref=%.8f error term %.8f is > %E\n", i, (float)Result_3_0_host[i],
+                   Result_cpu[i], rel_err, eps);
+            error_count += 1;
+        }
+    }
+    CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
+    return error_count;
+}
+/**
+ * @brief Check if the error < eps between the calculation result of GPU and CPU for each element in the matrix
+ */
+template <>
+int CublasFunction::check_result(int batch_count, cuComplex *Result_3_0, std::complex<float> *Result_cpu, double eps) {
+    int m = this->m_, n = this->n_, k = this->k_;
+    // Copy result from device to host
+    std::complex<float> *Result_3_0_host;
+    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host, sizeof(std::complex<float>) * m * n * batch_count));
+    CUDA_SAFE_CALL(cudaMemcpy(Result_3_0_host, Result_3_0, sizeof(std::complex<float>) * m * n * batch_count,
+                              cudaMemcpyDeviceToHost));
+    // test relative error by the formula
+    //     |<x, y>_cpu - <x,y>_gpu|/|<x, y>_cpu|/dot_length  < eps
+    int error_count = 0;
+    for (int i = 0; i < static_cast<int>(m * n) * batch_count; i++) {
+        double abs_err = fabs(Result_cpu[i] - Result_3_0_host[i]);
+        double dot_length = k;
+        double abs_val = fabs(Result_cpu[i]);
+        double rel_err = abs_err / abs_val / dot_length;
+        if (rel_err > eps) {
+            printf("Error! Matrix[%05d]=%.8f,%.8f, ref=%.8f,%.8f error term %.8f is > %E\n", i,
+                   Result_3_0_host[i].real(), Result_3_0_host[i].imag(), Result_cpu[i].real(), Result_cpu[i].imag(),
+                   rel_err, eps);
+            error_count += 1;
+        }
+    }
+    CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
+    return error_count;
 }
 /**
  * @brief The main procedure for cublas function test, including warmup, function test, time measurement and output raw
@@ -303,6 +462,9 @@ void CublasFunction::benchmark() {
 
     // Prepare some varibles for time measurement
     std::vector<float> iteration_time;
+    int errors = 0;
+    if (this->correctness)
+        this->matrix_calculation_on_cpu();
     // Benchmark in range of steps
     for (int i_ = 0; i_ < num_test; i_++) {
         // Collect time within each step, including #repeat_in_one_step times function invoking
@@ -316,6 +478,9 @@ void CublasFunction::benchmark() {
         // Convert step time to single function duration and update min and max duration
         float i = static_cast<float>(std::chrono::duration<double, std::micro>(end - start).count() / num_in_step);
         iteration_time.emplace_back(i);
+        if (this->correctness) {
+            errors += this->correctness_check();
+        }
     }
 
     // Output results
@@ -325,4 +490,9 @@ void CublasFunction::benchmark() {
         std::cout << iteration_time[i] << ",";
     }
     std::cout << std::endl;
+    if (this->correctness) {
+        std::string correctness_str = errors == 0 ? "Result = PASS" : "Result = FAIL";
+        std::cout << "[correctness]: " << correctness_str
+                  << ", Error rate: " << errors / (num_test * this->m_ * this->n_) << std::endl;
+    }
 }
