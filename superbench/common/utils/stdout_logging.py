@@ -8,23 +8,17 @@ import sys
 
 class SuperBenchStdoutLogger:
     """Logger class to enable or disable to redirect STDOUT and STDERR to file."""
-    def __init__(self, filename):
-        """Init the class with filename.
-
-        Args:
-            filename (str): the path of the file to save the log
-        """
-        self.filename = filename
-
     class StdoutLoggerStream:
         """StdoutLoggerStream class which redirect the sys.stdout to file."""
-        def __init__(self, filename):
+        def __init__(self, filename, rank):
             """Init the class with filename.
 
             Args:
                 filename (str): the path of the file to save the log
+                rank (int): the rank id
             """
             self.terminal = sys.stdout
+            self.rank = rank
             self.log = open(filename, 'a')
 
         def __getattr__(self, attr):
@@ -44,6 +38,7 @@ class SuperBenchStdoutLogger:
             Args:
                 message (str): the message to log.
             """
+            message = f'[{self.rank}]: message'
             self.terminal.write(message)
             self.log.write(message)
             self.log.flush()
@@ -52,12 +47,37 @@ class SuperBenchStdoutLogger:
             """Override flush."""
             pass
 
-    def start(self):
-        """Start the logger to redirect the sys.stdout to file."""
-        sys.stdout = self.StdoutLoggerStream(self.filename)
+    def add_file_handler(self, filename):
+        """Init the class with filename.
+
+        Args:
+            filename (str): the path of the file to save the log
+        """
+        self.filename = filename
+
+    def start(self, rank):
+        """Start the logger to redirect the sys.stdout to file.
+        
+        Args:
+            rank (int): the rank id
+        """
+        self.logger_stream = self.StdoutLoggerStream(self.filename, rank)
+        sys.stdout = self.logger_stream
         sys.stderr = sys.stdout
 
     def stop(self):
         """Restore the sys.stdout to termital."""
-        sys.stdout.log.close()
-        sys.stdout = sys.stdout.terminal
+        if self.logger_stream:
+            sys.stdout.log.close()
+            sys.stdout = sys.stdout.terminal
+
+    def log(self, message):
+        """Write the message into the logger.
+
+        Args:
+            message (str): the message to log.
+        """
+        sys.stdout.write(message)
+
+
+stdout_logger = SuperBenchStdoutLogger()

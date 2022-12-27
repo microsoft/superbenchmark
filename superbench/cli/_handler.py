@@ -183,7 +183,7 @@ def version_command_handler():
         return superbench.__version__
 
 
-def exec_command_handler(config_file=None, config_override=None, output_dir=None):
+def exec_command_handler(config_file=None, config_override=None, output_dir=None, log_flushing=False):
     """Run the SuperBench benchmarks locally.
 
     Args:
@@ -191,6 +191,7 @@ def exec_command_handler(config_file=None, config_override=None, output_dir=None
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
         output_dir (str, optional): Path to output directory. Defaults to None.
+        log_flushing (bool): if enable real-time log flushing. Defaluts tgo False.
 
     Raises:
         CLIError: If input arguments are invalid.
@@ -201,7 +202,7 @@ def exec_command_handler(config_file=None, config_override=None, output_dir=None
         output_dir=output_dir,
     )
 
-    executor = SuperBenchExecutor(sb_config, sb_output_dir)
+    executor = SuperBenchExecutor(sb_config, sb_output_dir, log_flushing)
     executor.exec()
 
 
@@ -269,7 +270,8 @@ def run_command_handler(
     output_dir=None,
     private_key=None,
     config_file=None,
-    config_override=None
+    config_override=None,
+    log_flushing=False
 ):
     """Run the SuperBench benchmarks distributedly.
 
@@ -289,6 +291,7 @@ def run_command_handler(
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
+        log_flushing (bool): if enable real-time log flushing. Defaluts tgo False.
 
     Raises:
         CLIError: If input arguments are invalid.
@@ -308,7 +311,7 @@ def run_command_handler(
         config_override=config_override,
     )
 
-    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
+    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir, log_flushing)
     runner.run()
     if runner.get_failure_count() != 0:
         sys.exit(runner.get_failure_count())

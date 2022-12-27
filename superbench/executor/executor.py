@@ -10,19 +10,20 @@ from pathlib import Path
 from omegaconf import ListConfig
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
-from superbench.common.utils import SuperBenchLogger, logger, rotate_dir, SuperBenchStdoutLogger
+from superbench.common.utils import SuperBenchLogger, logger, rotate_dir, stdout_logger
 from superbench.common.devices import GPU
 from superbench.monitor import Monitor
 
 
 class SuperBenchExecutor():
     """SuperBench executor class."""
-    def __init__(self, sb_config, sb_output_dir):
+    def __init__(self, sb_config, sb_output_dir, log_flushing=False):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
             sb_output_dir (str): SuperBench output directory.
+            log_flushing (bool): if enable real-time log flushing
         """
         self._sb_config = sb_config
         self._sb_output_dir = sb_output_dir
@@ -38,11 +39,10 @@ class SuperBenchExecutor():
         self._sb_enabled = self.__get_enabled_benchmarks()
         logger.debug('Executor will execute: %s', self._sb_enabled)
 
-        self._log_flushing = self.__get_if_log_flushing()
+        self._log_flushing = log_flushing
+        self.__set_stdout_logger(self._output_path / 'benchmark.log')
         if self._log_flushing:
-            log_dir = self._output_path / 'logs' / str(self.__get_rank_id())
-            log_dir.mkdir(parents=True, exist_ok=True)
-            self.__set_stdout_logger(str(log_dir / 'benchmark.log'))
+            self.__set_log_flushing()
 
     def __set_logger(self, filename):
         """Set logger and add file handler.
@@ -52,18 +52,17 @@ class SuperBenchExecutor():
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
-    def __get_if_log_flushing(self):
-        """Get whether user enable log flushing in config.
+    def __set_log_flushing(self):
+        """Set log flushing parameter in enabled benchmarks.
 
         Returns:
             bool: True if any benchmark enable log flushing in parameters of config
         """
         for benchmark, config in self._sb_benchmarks.items():
             if benchmark in self._sb_enabled:
-                if 'parameter' in self._sb_benchmarks[benchmark] and self._sb_benchmarks[benchmark
-                                                                                         ].parameters.log_flushing:
-                    return True
-        return False
+                if 'parameter' not in self._sb_benchmarks[benchmark]:
+                    self._sb_benchmarks[benchmark].parameters = {}
+                self._sb_benchmarks[benchmark].parameters.log_flushing = True
 
     def __set_stdout_logger(self, filename):
         """Set stdout logger and redirect logs and stdout into the file.
@@ -71,9 +70,8 @@ class SuperBenchExecutor():
         Args:
             filename (str): Log file name.
         """
-        self._stdout = SuperBenchStdoutLogger(filename)
-        self._stdout.start()
-        SuperBenchLogger.add_handler(logger.logger, filename=filename)
+        stdout_logger.add_file_handler(filename)
+        stdout_logger.start(self.__get_rank_id())
 
     def __validate_sb_config(self):
         """Validate SuperBench config object.
@@ -273,7 +271,6 @@ class SuperBenchExecutor():
 
             if monitor:
                 monitor.stop()
-            if self._log_flushing:
-                self._stdout.stop()
+            stdout_logger.stop()
             self.__write_benchmark_results(benchmark_name, benchmark_results)
             os.chdir(cwd)

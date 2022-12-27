@@ -22,7 +22,7 @@ from superbench.monitor import MonitorRecord
 
 class SuperBenchRunner():
     """SuperBench runner class."""
-    def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir):
+    def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir, log_flushing=False):
         """Initilize.
 
         Args:
@@ -30,6 +30,7 @@ class SuperBenchRunner():
             docker_config (DictConfig): Docker config object.
             ansible_config (DictConfig): Ansible config object.
             sb_output_dir (str): SuperBench output directory.
+            log_flushing (bool): if enable real-time log flushing
         """
         self._sb_config = sb_config
         self._docker_config = docker_config
@@ -37,6 +38,7 @@ class SuperBenchRunner():
         self._sb_output_dir = sb_output_dir
         self._output_path = Path(sb_output_dir).expanduser().resolve()
         self._ansible_client = AnsibleClient(ansible_config)
+        self._log_flushing = log_flushing
 
         self.__set_logger('sb-run.log')
         logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
@@ -114,10 +116,9 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
-        exec_command = ('sb exec --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name}').format(
-            name=benchmark_name,
-            output_dir=self._sb_output_dir,
-        )
+        exec_command = (
+            'sb exec --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name} --log-flushing {log_flushing}'
+        ).format(name=benchmark_name, output_dir=self._sb_output_dir, log_flushing=self._log_flushing)
         if timeout is not None:
             exec_command = 'timeout {timeout} {command}'.format(timeout=timeout, command=exec_command)
 
