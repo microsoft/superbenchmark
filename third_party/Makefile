@@ -9,7 +9,7 @@ RCCL_HOME ?= /opt/rocm/rccl
 HPCX_HOME ?= /opt/hpcx
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
-ROCM_VER ?= $(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
+ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
 .PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn
 
@@ -92,7 +92,7 @@ endif
 rocm_rocblas: sb_micro_path
 ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
 	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
-	git clone -b rocm-$(ROCM_VER) https://github.com/ROCmSoftwarePlatform/rocBLAS.git
+	git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
 	cd ./rocBLAS && ./install.sh --dependencies --clients-only
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
 endif

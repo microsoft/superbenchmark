@@ -22,6 +22,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
     automake \
+    bc \
     build-essential \
     curl \
     dmidecode \
