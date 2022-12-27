@@ -14,8 +14,7 @@ class GenConfigTest(unittest.TestCase):
     @decorator.load_data('tests/data/ib_traffic_topo_aware_hostfile')    # noqa: C901
     def test_gen_traffic_pattern_host_group(self, tp_hostfile):
         """Test the function of generating traffic pattern config from specified mode."""
-        # test under 8 nodes
-        # test all-nodes pattern
+        # Test for all-nodes pattern
         hostx = ['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']
         parser = argparse.ArgumentParser()
         parser.add_argument(
@@ -26,7 +25,8 @@ class GenConfigTest(unittest.TestCase):
         pattern, _ = parser.parse_known_args()
         expected_host_group = [[['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']]]
         self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
-        # test pair-wise pattern
+
+        # Test for pair-wise pattern
         parser = argparse.ArgumentParser()
         parser.add_argument(
             '--type',
@@ -44,7 +44,8 @@ class GenConfigTest(unittest.TestCase):
             [['node0', 'node6'], ['node7', 'node5'], ['node1', 'node4'], ['node2', 'node3']]
         ]
         self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
-        # test k-batch pattern
+
+        # Test for k-batch pattern
         parser = argparse.ArgumentParser()
         parser.add_argument(
             '--type',
@@ -59,7 +60,8 @@ class GenConfigTest(unittest.TestCase):
         pattern, _ = parser.parse_known_args()
         expected_host_group = [[['node0', 'node1', 'node2'], ['node3', 'node4', 'node5']]]
         self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
-        # test topo-aware pattern
+
+        # Test for topo-aware pattern
         tp_ibstat_path = 'tests/data/ib_traffic_topo_aware_ibstat.txt'
         tp_ibnetdiscover_path = 'tests/data/ib_traffic_topo_aware_ibnetdiscover.txt'
         parser = argparse.ArgumentParser()
@@ -106,7 +108,8 @@ class GenConfigTest(unittest.TestCase):
             ]
         ]
         self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
-        # test invalid pattern
+
+        # Test for invalid pattern
         hostx = ['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']
         parser = argparse.ArgumentParser()
         parser.add_argument(

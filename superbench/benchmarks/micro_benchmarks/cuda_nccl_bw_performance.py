@@ -128,7 +128,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
     def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to parse raw results and save the summarized results.
 
-        self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
 
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.

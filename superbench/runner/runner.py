@@ -6,7 +6,6 @@
 import os
 import json
 import random
-import re
 from pathlib import Path
 from pprint import pformat
 from collections import defaultdict
@@ -16,7 +15,7 @@ from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
-from superbench.common.utils import SuperBenchLogger, logger, gen_traffic_pattern_host_group, gen_ibstat
+from superbench.common.utils import SuperBenchLogger, logger, gen_ibstat, gen_traffic_pattern_host_group
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
@@ -39,7 +38,6 @@ class SuperBenchRunner():
         self._sb_output_dir = sb_output_dir
         self._output_path = Path(sb_output_dir).expanduser().resolve()
         self._ansible_client = AnsibleClient(ansible_config)
-        self._run_stdout_regex = re.compile(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))')
 
         self.__set_logger('sb-run.log')
         logger.info('Runner uses config: %s.', pformat(OmegaConf.to_container(self._sb_config, resolve=True)))
