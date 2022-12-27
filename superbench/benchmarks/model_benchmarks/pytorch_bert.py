@@ -20,37 +20,15 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class BertBenchmarkModel(torch.nn.Module):
     """The BERT model for benchmarking."""
-    def __init__(self, config, num_classes, enable_fp8=False):
+    def __init__(self, config, num_classes):
         """Constructor.
 
         Args:
             config (BertConfig): Configurations of BERT model.
             num_classes (int): The number of objects for classification.
-            enable_fp8 (Boolean): Enable FP8 or not, model will be built with te.TransformerLayer if FP8 enabled.
         """
         super().__init__()
-        self._enable_fp8 = enable_fp8
-        if self._enable_fp8:
-            self._embedding = torch.nn.Embedding(config.vocab_size, config.hidden_size)
-            # Build BERT using nn.TransformerEncoderLayer or te.TransformerLayer
-            # input shape: (seq_len, batch_size, hidden_size)
-            encoder_layer = te.TransformerLayer(
-                config.hidden_size,
-                config.intermediate_size,
-                config.num_attention_heads,
-                apply_residual_connection_post_layernorm=True,
-                output_layernorm=True,
-                layer_type='encoder',
-            )
-            self._encoder_layers = torch.nn.ModuleList([encoder_layer for _ in range(config.num_hidden_layers)])
-            # BertPooler used in huggingface transformers
-            # https://github.com/huggingface/transformers/blob/accad48e/src/transformers/models/bert/modeling_bert.py#L893
-            self._pooler = torch.nn.Sequential(
-                torch.nn.Linear(config.hidden_size, config.hidden_size),
-                torch.nn.Tanh(),
-            )
-        else:
-            self._bert = BertModel(config)
+        self._bert = BertModel(config)
         self._linear = torch.nn.Linear(config.hidden_size, num_classes)
 
     def forward(self, input):
@@ -64,15 +42,58 @@ class BertBenchmarkModel(torch.nn.Module):
             result (torch.FloatTensor): Last layer hidden-state of the first token of the sequence
               (classification token) further processed by a Linear layer, shape (batch_size, hidden_size).
         """
-        if self._enable_fp8:
-            out = self._embedding(input.movedim(0, -1))
-            for layer in self._encoder_layers:
-                out = layer(out, attention_mask=None)
-            result = self._linear(self._pooler(out.movedim(0, 1)[:, 0]))
-        else:
-            outputs = self._bert(input)
-            result = self._linear(outputs[1])
+        outputs = self._bert(input)
+        result = self._linear(outputs[1])
         return result
+
+
+class TeBertBenchmarkModel(torch.nn.Module):
+    """BERT model using Transformer Engine."""
+    def __init__(self, config, num_classes):
+        """Constructor.
+
+        Args:
+            config (BertConfig): Configurations of BERT model.
+            num_classes (int): The number of objects for classification.
+        """
+        super().__init__()
+
+        self._embedding = torch.nn.Embedding(config.vocab_size, config.hidden_size)
+        # Build BERT using nn.TransformerEncoderLayer or te.TransformerLayer
+        # input shape: (seq_len, batch_size, hidden_size)
+        encoder_layer = te.TransformerLayer(
+            config.hidden_size,
+            config.intermediate_size,
+            config.num_attention_heads,
+            apply_residual_connection_post_layernorm=True,
+            output_layernorm=True,
+            layer_type='encoder',
+        )
+        self._encoder_layers = torch.nn.ModuleList([encoder_layer for _ in range(config.num_hidden_layers)])
+        # BertPooler used in huggingface transformers
+        # https://github.com/huggingface/transformers/blob/accad48e/src/transformers/models/bert/modeling_bert.py#L893
+        self._pooler = torch.nn.Sequential(
+            torch.nn.Linear(config.hidden_size, config.hidden_size),
+            torch.nn.Tanh(),
+        )
+        self._linear = torch.nn.Linear(config.hidden_size, num_classes)
+
+    def forward(self, input):
+        """Forward propagation function.
+
+        Args:
+            input (torch.LongTensor): Indices of input sequence tokens in the vocabulary,
+              shape (batch_size, sequence_length).
+
+        Return:
+            out (torch.FloatTensor): Last layer hidden-state of the first token of the sequence
+              (classification token) further processed by a Linear layer, shape (batch_size, hidden_size).
+        """
+        out = self._embedding(input.movedim(0, -1))
+        for layer in self._encoder_layers:
+            out = layer(out, attention_mask=None)
+        out = self._linear(self._pooler(out.movedim(0, 1)[:, 0]))
+        return out
 
 
 class PytorchBERT(PytorchBase):
@@ -160,16 +181,18 @@ class PytorchBERT(PytorchBase):
             return False
 
         try:
-            self._model = BertBenchmarkModel(self._config, self._args.num_classes, enable_fp8=enable_fp8)
-            self._model = self._model.to(dtype=getattr(torch, precision.FLOAT16 if enable_fp8 else precision.value))
-            if self._gpu_available:
-                self._model = self._model.cuda()
             if enable_fp8:
                 self._fp8_recipe = DelayedScaling(
                     fp8_format=Format[precision.name.strip('FP8_')],
                     amax_history_len=16,
                     amax_compute_algo='max',
                 )
+                self._model = TeBertBenchmarkModel(self._config, self._args.num_classes).to(dtype=torch.float16)
+            else:
+                self._model = BertBenchmarkModel(self._config, self._args.num_classes)
+                self._model = self._model.to(dtype=getattr(torch, precision.value))
+            if self._gpu_available:
+                self._model = self._model.cuda()
         except BaseException as e:
             logger.error(
                 'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
