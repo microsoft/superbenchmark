@@ -443,3 +443,15 @@ class ModelBenchmark(Benchmark):
         """Print environments or dependencies information."""
         # TODO: will implement it when add real benchmarks in the future.
         pass
+
+    def _log_step_time(self, curr_step, precision, start, end):
+        """Log step time into stdout regularly.
+
+        Args:
+            curr_step (int): the index of the current step
+            precision (Precision): precision of model and input data, such as float32, float16.
+            start (float): the start timestamp of the current step
+            end (float): the end timestamp of the current step
+        """
+        if self._args.log_every_steps and curr_step % self._args.log_every_steps == 0:
+            print(f'{self._name} - {precision.value}: step {curr_step}, step time {(end - start) * 1000}')
