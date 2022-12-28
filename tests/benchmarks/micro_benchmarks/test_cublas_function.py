@@ -118,3 +118,33 @@ def test_cublas_functions():
         assert (isinstance(benchmark.result[metric][0], numbers.Number))
         if metric != 'return_code':
             assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
+
+    # Test for correctness check
+    context = BenchmarkRegistry.create_benchmark_context(
+        'cublas-function',
+        platform=Platform.CUDA,
+        parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --correctness'
+    )
+
+    assert (BenchmarkRegistry.is_benchmark_context_valid(context))
+
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+
+    # Check basic information.
+    assert (benchmark)
+    assert (benchmark.name == 'cublas-function')
+    assert (benchmark.type == BenchmarkType.MICRO)
+
+    # Check parameters specified in BenchmarkContext.
+    assert (benchmark._args.correctness)
+
+    # Check results and metrics.
+    assert (55 == len(benchmark.result))
+    assert (benchmark.run_count == 1)
+    assert (benchmark.return_code == ReturnCode.SUCCESS)
+    assert ('correctness' in benchmark.result)
+    assert ('error_rate' in benchmark.result)
+    for metric in list(benchmark.result.keys()):
+        if 'correctness' in metric or 'error_rate' in metric:
+            assert (len(benchmark.result[metric]) == 1)
+            assert (isinstance(benchmark.result[metric][0], numbers.Number))
