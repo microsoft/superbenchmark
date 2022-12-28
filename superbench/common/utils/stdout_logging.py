@@ -57,7 +57,7 @@ class SuperBenchStdoutLogger:
 
     def start(self, rank):
         """Start the logger to redirect the sys.stdout to file.
-        
+
         Args:
             rank (int): the rank id
         """

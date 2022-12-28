@@ -446,6 +446,7 @@ class ModelBenchmark(Benchmark):
 
     def _log_step_time(self, curr_step, precision, start, end):
         """Log step time into stdout regularly.
+
         Args:
             curr_step (int): the index of current step
             precision (Precision): precision of model and input data, such as float32, float16.
