@@ -84,12 +84,12 @@ float timing_matmul_tn(int m, int n, int k, int batch, int warmup, int iter) {
     Ta *matrix_a = nullptr;
     Tb *matrix_b = nullptr;
     Tout *matrix_out = nullptr;
-    cudaMalloc(&matrix_a, m * k * batch * sizeof(Ta));
-    cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
-    cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
+    cudaMalloc(&matrix_a, m * k * std::max(batch, 1) * sizeof(Ta));
+    cudaMalloc(&matrix_b, k * n * std::max(batch, 1) * sizeof(Tb));
+    cudaMalloc(&matrix_out, m * n * std::max(batch, 1) * sizeof(Tout));
 
-    init_matrix<Ta><<<216, 1024>>>(matrix_a, static_cast<fp16>(1.f), m * k * batch);
-    init_matrix<Tb><<<216, 1024>>>(matrix_b, static_cast<fp16>(2.f), k * n * batch);
+    init_matrix<Ta><<<216, 1024>>>(matrix_a, static_cast<fp16>(1.f), m * k * std::max(batch, 1));
+    init_matrix<Tb><<<216, 1024>>>(matrix_b, static_cast<fp16>(2.f), k * n * std::max(batch, 1));
 
     // init gemm
     int lda = k, ldb = k, ldd = m;
@@ -133,7 +133,7 @@ template <typename Ta, typename Tb = Ta, typename Tout = fp16> void run(Args *ar
     float time_us = timing_matmul_tn<Ta, Tb, Tout>(args->m, args->n, args->k, args->batch, args->warmup, args->iter);
     // m n k batch time_us tflops
     printf("%d\t%d\t%d\t%d\t%f\t%f\n", args->m, args->n, args->k, args->batch, time_us,
-           float(args->m) * float(args->n) * float(2 * args->k - 1) / 1e6 / time_us * args->batch);
+           float(args->m) * float(args->n) * float(2 * args->k - 1) / 1e6 / time_us * std::max(args->batch, 1));
 }
 
 int main(int argc, char **argv) {
