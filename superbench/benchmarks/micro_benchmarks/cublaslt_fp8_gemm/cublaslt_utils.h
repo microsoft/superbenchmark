@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <memory>
 #include <stdio.h>
 #include <vector>
 
