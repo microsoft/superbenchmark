@@ -367,8 +367,6 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + self._args.command, raw_output, self._args.log_raw_data)
-
         # If it's invoked by MPI and rank is not 0, no result is expected
         if os.getenv('OMPI_COMM_WORLD_RANK'):
             rank = int(os.getenv('OMPI_COMM_WORLD_RANK'))

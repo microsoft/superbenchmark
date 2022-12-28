@@ -83,8 +83,6 @@ Numa node            0       1
 """
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert ('raw_output_0' in benchmark.raw_data)
-        assert ([test_raw_output] == benchmark.raw_data['raw_output_0'])
         assert ([82542.2] == benchmark.result['mem_bandwidth_matrix_numa_0_0_bw'])
         assert ([76679.9] == benchmark.result['mem_bandwidth_matrix_numa_0_1_bw'])
         assert ([76536.0] == benchmark.result['mem_bandwidth_matrix_numa_1_0_bw'])
@@ -106,9 +104,6 @@ Numa node            0       1
 """
         assert (benchmark._process_raw_result(1, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert ('raw_output_1' in benchmark.raw_data)
-        assert ([test_raw_output] == benchmark.raw_data['raw_output_1'])
-
         assert ([87.0] == benchmark.result['mem_latency_matrix_numa_0_0_lat'])
         assert ([101.0] == benchmark.result['mem_latency_matrix_numa_0_1_lat'])
         assert ([101.9] == benchmark.result['mem_latency_matrix_numa_1_0_lat'])
@@ -137,8 +132,6 @@ Stream-triad like:      157878.32
 """
         assert (benchmark._process_raw_result(2, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert ('raw_output_2' in benchmark.raw_data)
-        assert ([test_raw_output] == benchmark.raw_data['raw_output_2'])
         assert ([165400.60] == benchmark.result['mem_max_bandwidth_all_reads_bw'])
         assert ([154975.19] == benchmark.result['mem_max_bandwidth_3_1_reads-writes_bw'])
         assert ([158433.32] == benchmark.result['mem_max_bandwidth_2_1_reads-writes_bw'])

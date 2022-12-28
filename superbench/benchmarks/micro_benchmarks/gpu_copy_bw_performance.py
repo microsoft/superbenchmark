@@ -122,8 +122,6 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
-
         try:
             output_lines = [x.strip() for x in raw_output.strip().splitlines()]
             for output_line in output_lines:

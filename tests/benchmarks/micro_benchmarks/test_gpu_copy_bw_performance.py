@@ -97,7 +97,6 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-        assert (1 == len(benchmark.raw_data))
         print(test_raw_output.splitlines())
         test_raw_output_dict = {x.split()[0]: float(x.split()[1]) for x in test_raw_output.strip().splitlines()}
         assert (len(test_raw_output_dict) + benchmark.default_metric_count == len(benchmark.result))

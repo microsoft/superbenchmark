@@ -74,8 +74,6 @@ class GPCNetBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + str(idx), raw_output, self._args.log_raw_data)
-
         try:
             # Parse and add result
             if 'ERROR' not in raw_output:

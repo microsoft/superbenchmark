@@ -6,7 +6,7 @@
 import tcping
 from joblib import Parallel, delayed
 
-from superbench.common.utils import logger
+from superbench.common.utils import logger, stdout_logger
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 
@@ -135,6 +135,8 @@ class TCPConnectivityBenchmark(MicroBenchmark):
 
         # Parse the output and get the results
         for host_index, out in enumerate(outputs):
+            stdout_logger.log(f'Host {self.__hosts[host_index]}\n')
+            stdout_logger.log(out)
             if not self._process_raw_result(host_index, out):
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
                 return False
@@ -154,7 +156,6 @@ class TCPConnectivityBenchmark(MicroBenchmark):
             True if the raw output string is valid and result can be extracted.
         """
         host = self.__hosts[idx]
-        self._result.add_raw_data('raw_output_' + host, raw_output, self._args.log_raw_data)
 
         try:
             # If socket error or exception happens on TCPing, add result values as failed

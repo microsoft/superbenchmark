@@ -34,9 +34,6 @@ def test_cublas_functions():
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    assert ('raw_output_0' in benchmark.raw_data)
-    assert (len(benchmark.raw_data['raw_output_0']) == 1)
-    assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
     assert (19 <= len(benchmark.result))
     for metric in list(benchmark.result.keys()):
@@ -70,9 +67,6 @@ def test_cublas_functions():
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    assert ('raw_output_0' in benchmark.raw_data)
-    assert (len(benchmark.raw_data['raw_output_0']) == 1)
-    assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
     assert (1 + benchmark.default_metric_count == len(benchmark.result))
     for metric in list(benchmark.result.keys()):
@@ -108,9 +102,6 @@ def test_cublas_functions():
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    assert ('raw_output_0' in benchmark.raw_data)
-    assert (len(benchmark.raw_data['raw_output_0']) == 1)
-    assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
     assert (2 + benchmark.default_metric_count == len(benchmark.result))
     for metric in list(benchmark.result.keys()):

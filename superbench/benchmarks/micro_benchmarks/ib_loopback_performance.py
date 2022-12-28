@@ -197,11 +197,6 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data(
-            'raw_output_' + self._args.commands[cmd_idx] + '_IB' + str(self._args.ib_index), raw_output,
-            self._args.log_raw_data
-        )
-
         valid = False
         content = raw_output.splitlines()
 

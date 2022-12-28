@@ -33,9 +33,6 @@ def test_kernel_launch_overhead():
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    assert ('raw_output_0' in benchmark.raw_data)
-    assert (len(benchmark.raw_data['raw_output_0']) == 1)
-    assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
     for metric in ['event_time', 'wall_time']:
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)

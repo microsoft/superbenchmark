@@ -51,8 +51,6 @@ class FAMBenchBenchmark(CudaDockerBenchmark):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output', raw_output, self._args.log_raw_data)
-
         content = raw_output.splitlines(False)
         try:
             result_header = 'benchmark implementation mode config score'

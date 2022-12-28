@@ -127,10 +127,6 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data(
-            f'raw_output_{self._args.pytorch_models[cmd_idx]}', raw_output, self._args.log_raw_data
-        )
-
         success = False
         try:
             model = self._args.pytorch_models[cmd_idx]

@@ -5,7 +5,7 @@
 
 import os
 
-from superbench.common.utils import logger
+from superbench.common.utils import logger, stdout_logger
 from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
@@ -123,9 +123,9 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                         self._result.add_result(res.split(':')[0].replace(' ', '_').lower() + '_pass', 1)
                     else:
                         self._result.add_result(res.split(':')[0].replace(' ', '_').lower() + '_pass', 0)
-                    self._result.add_raw_data('GPU-Burn_result', res, self._args.log_raw_data)
+                    stdout_logger.log('GPU-Burn_result' + res)
             else:
-                self._result.add_raw_data('GPU Burn Failure: ', failure_msg, self._args.log_raw_data)
+                stdout_logger.log('GPU Burn Failure: ' + failure_msg)
                 self._result.add_result('abort', 1)
                 return False
         except BaseException as e:
