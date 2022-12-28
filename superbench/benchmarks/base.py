@@ -3,6 +3,7 @@
 
 """Module of the base class."""
 
+import os
 import shlex
 import signal
 import traceback
@@ -51,6 +52,7 @@ class Benchmark(ABC):
         self._args = None
         self._curr_run_index = 0
         self._result = None
+        self._log_flushing = bool(os.getenv('LOG_FLUSHING', default='False'))
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -73,12 +75,6 @@ class Benchmark(ABC):
             action='store_true',
             default=False,
             help='Log raw data into file instead of saving it into result object.',
-        )
-        self._parser.add_argument(
-            '--log_flushing',
-            action='store_true',
-            default=False,
-            help='Real-time log flushing.',
         )
 
     def get_configurable_settings(self):

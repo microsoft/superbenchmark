@@ -53,12 +53,8 @@ class SuperBenchExecutor():
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
     def __set_log_flushing(self):
-        """Set log flushing parameter in enabled benchmarks."""
-        for benchmark, config in self._sb_benchmarks.items():
-            if benchmark in self._sb_enabled:
-                if 'parameters' not in self._sb_benchmarks[benchmark]:
-                    self._sb_benchmarks[benchmark].parameters = {}
-                self._sb_benchmarks[benchmark].parameters.log_flushing = True
+        """Set log flushing env."""
+        os.environ['LOG_FLUSHING'] = 'True'
 
     def __set_stdout_logger(self, filename):
         """Set stdout logger and redirect logs and stdout into the file.

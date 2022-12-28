@@ -114,7 +114,6 @@ def test_get_benchmark_configurable_settings():
 
     expected = """optional arguments:
   --duration int     The elapsed time of benchmark in seconds.
-  --log_flushing     Real-time log flushing.
   --log_raw_data     Log raw data into file instead of saving it into result
                      object.
   --lower_bound int  The lower bound for accumulation.

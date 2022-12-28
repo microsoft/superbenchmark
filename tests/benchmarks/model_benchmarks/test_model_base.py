@@ -158,7 +158,6 @@ def test_arguments_related_interfaces():
   --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
-  --log_flushing        Real-time log flushing.
   --log_n_steps int     Real-time log every n steps.
   --log_raw_data        Log raw data into file instead of saving it into
                         result object.
@@ -196,7 +195,6 @@ def test_preprocess():
   --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
-  --log_flushing        Real-time log flushing.
   --log_n_steps int     Real-time log every n steps.
   --log_raw_data        Log raw data into file instead of saving it into
                         result object.
