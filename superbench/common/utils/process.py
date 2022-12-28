@@ -17,6 +17,7 @@ def run_command(command, quite=False, flush_output=False):
         command (str): command to run.
         quite (bool): no stdout display of the command if quite is True.
         flush_output (bool): enable real-time output flush or not when running the command.
+
     Return:
         result (subprocess.CompletedProcess): The return value from subprocess.run().
     """
