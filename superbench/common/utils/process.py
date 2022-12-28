@@ -46,5 +46,5 @@ def run_command(command, quite=False, flush_output=False):
             command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
         )
         if not quite:
-            stdout_logger.log(result)
+            stdout_logger.log(result.stdout)
         return result

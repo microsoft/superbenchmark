@@ -17,9 +17,9 @@ class SuperBenchStdoutLogger:
                 filename (str): the path of the file to save the log
                 rank (int): the rank id
             """
-            self.terminal = sys.stdout
-            self.rank = rank
-            self.log = open(filename, 'a')
+            self._terminal = sys.stdout
+            self._rank = rank
+            self.log_file_handler = open(filename, 'a')
 
         def __getattr__(self, attr):
             """Override __getattr__.
@@ -30,7 +30,7 @@ class SuperBenchStdoutLogger:
             Returns:
                 Any: Attribute value.
             """
-            return getattr(self.terminal, attr)
+            return getattr(self._terminal, attr)
 
         def write(self, message):
             """Write the message to the stream.
@@ -38,14 +38,19 @@ class SuperBenchStdoutLogger:
             Args:
                 message (str): the message to log.
             """
-            message = f'[{self.rank}]: {message}'
-            self.terminal.write(message)
-            self.log.write(message)
-            self.log.flush()
+            message = f'[{self._rank}]: {message}'
+            self._terminal.write(message)
+            self.log_file_handler.write(message)
+            self.log_file_handler.flush()
 
         def flush(self):
             """Override flush."""
             pass
+
+        def restore(self):
+            """Restore sys.stdout and close the file."""
+            self.log_file_handler.close()
+            sys.stdout = self._terminal
 
     def add_file_handler(self, filename):
         """Init the class with filename.
@@ -54,6 +59,10 @@ class SuperBenchStdoutLogger:
             filename (str): the path of file to save the log
         """
         self.filename = filename
+
+    def __init__(self):
+        """Init the logger."""
+        self.logger_stream = None
 
     def start(self, rank):
         """Start the logger to redirect the sys.stdout to file.
@@ -67,9 +76,8 @@ class SuperBenchStdoutLogger:
 
     def stop(self):
         """Restore the sys.stdout to termital."""
-        if self.logger_stream:
-            sys.stdout.log.close()
-            sys.stdout = sys.stdout.terminal
+        if self.logger_stream is not None:
+            self.logger_stream.restore()
 
     def log(self, message):
         """Write the message into the logger.
@@ -77,7 +85,10 @@ class SuperBenchStdoutLogger:
         Args:
             message (str): the message to log.
         """
-        self.logger_stream.write(message)
+        if self.logger_stream:
+            self.logger_stream.write(message)
+        else:
+            sys.stdout.write(message)
 
 
 stdout_logger = SuperBenchStdoutLogger()

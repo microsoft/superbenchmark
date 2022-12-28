@@ -116,13 +116,8 @@ class SuperBenchRunner():
         Return:
             str: Runner command.
         """
-        exec_command = (
-            'sb exec {log_flushing} --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name}'
-        ).format(
-            name=benchmark_name,
-            output_dir=self._sb_output_dir,
-            log_flushing='--log-flushing' if self._log_flushing else ''
-        )
+        exec_command = ('sb exec --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name}'
+                        ).format(name=benchmark_name, output_dir=self._sb_output_dir)
         if timeout is not None:
             exec_command = 'timeout {timeout} {command}'.format(timeout=timeout, command=exec_command)
 
@@ -165,6 +160,8 @@ class SuperBenchRunner():
             )
         else:
             logger.warning('Unknown mode %s.', mode.name)
+        if self._log_flushing:
+            mode_command += ' --log-flushing'
         return mode_command.strip()
 
     def get_failure_count(self):
