@@ -40,7 +40,7 @@ class SuperBenchExecutor():
         logger.debug('Executor will execute: %s', self._sb_enabled)
 
         self._log_flushing = log_flushing
-        self.__set_stdout_logger(self._output_path / 'benchmark.log')
+        self.__set_stdout_logger(self._output_path / 'sb-debug.log')
         if self._log_flushing:
             self.__set_log_flushing()
 
@@ -53,14 +53,10 @@ class SuperBenchExecutor():
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
     def __set_log_flushing(self):
-        """Set log flushing parameter in enabled benchmarks.
-
-        Returns:
-            bool: True if any benchmark enable log flushing in parameters of config
-        """
+        """Set log flushing parameter in enabled benchmarks."""
         for benchmark, config in self._sb_benchmarks.items():
             if benchmark in self._sb_enabled:
-                if 'parameter' not in self._sb_benchmarks[benchmark]:
+                if 'parameters' not in self._sb_benchmarks[benchmark]:
                     self._sb_benchmarks[benchmark].parameters = {}
                 self._sb_benchmarks[benchmark].parameters.log_flushing = True
 
@@ -72,6 +68,7 @@ class SuperBenchExecutor():
         """
         stdout_logger.add_file_handler(filename)
         stdout_logger.start(self.__get_rank_id())
+        SuperBenchLogger.add_handler(logger.logger, filename=filename)
 
     def __validate_sb_config(self):
         """Validate SuperBench config object.

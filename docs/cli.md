@@ -139,6 +139,7 @@ Execute the SuperBench benchmarks locally.
 ```bash title="SB CLI"
 sb exec [--config-file]
         [--config-override]
+        [--log-flushing]
         [--output-dir]
 ```
 
@@ -148,6 +149,7 @@ sb exec [--config-file]
 |--------------------------|---------|-----------------------------------------------------------------------------|
 | `--config-file` `-c`     | `None`  | Path to SuperBench config file.                                             |
 | `--config-override` `-C` | `None`  | Extra arguments to override config_file.                                    |
+| `--log-flushing`         | `False` | Real-time log flushing                                                      |
 | `--output-dir`           | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
 
 #### Global arguments
@@ -161,6 +163,11 @@ sb exec [--config-file]
 Execute GPT2 model benchmark in default configuration:
 ```bash title="SB CLI"
 sb exec --config-override superbench.enable="['gpt2_models']"
+```
+
+Exucute all benchmarks with log flushing enabled
+```bash title="SB CLI"
+sb exec --config-file ./config.yaml --log-flushing
 ```
 
 ### `sb result diagnosis`
@@ -286,6 +293,7 @@ sb run [--config-file]
        [--host-list]
        [--host-password]
        [--host-username]
+       [--log-flushing]
        [--no-docker]
        [--output-dir]
        [--private-key]
@@ -304,6 +312,7 @@ sb run [--config-file]
 | `--host-list` `-l`       | `None`                  | Comma separated host list.                                                  |
 | `--host-password`        | `None`                  | Host password or key passphase if needed.                                   |
 | `--host-username`        | `None`                  | Host username if needed.                                                    |
+| `--log-flushing`         | `False`                 | Real-time log flushing                                                      |
 | `--no-docker`            | `False`                 | Run on host directly without Docker.                                        |
 | `--output-dir`           | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--private-key`          | `None`                  | Path to private key if needed.                                              |
@@ -331,6 +340,11 @@ Run kernel launch benchmarks on host directly without using Docker:
 ```bash title="SB CLI"
 sb run --no-docker --host-list localhost --config-override \
   superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
+```
+
+Run all benchmarks on localhost with log flushing enabled
+```bash title="SB CLI"
+sb run --host-list localhost --log-flushing
 ```
 
 ### `sb version`

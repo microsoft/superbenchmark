@@ -48,6 +48,10 @@ helps['exec'] = """
           text: {cli_name} exec --docker-image superbench/cuda:11.1
         - name: execute all benchmarks using image "superbench/rocm:4.0" and custom config file ./config.yaml
           text: {cli_name} exec --docker-image superbench/rocm:4.0 --config-file ./config.yaml
+        - name: execute all benchmarks using image "superbench/rocm:4.0" and custom config file ./config.yaml
+          text: {cli_name} exec --docker-image superbench/rocm:4.0 --config-file ./config.yaml
+        - name: exucute all benchmarks with log flushing enabled
+          text: {cli_name} exec --config-file ./config.yaml --log-flushing
 """.format(cli_name=CLI_NAME)
 
 helps['run'] = """
@@ -63,6 +67,8 @@ helps['run'] = """
           text: >
             {cli_name} run --no-docker --host-list localhost
             --config-override superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
+        - name run all benchmarks on localhost with log flushing enabled
+          text: {cli_name} run --host-list localhost --log-flushing
 """.format(cli_name=CLI_NAME)
 
 helps['benchmark'] = """

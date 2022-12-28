@@ -78,7 +78,7 @@ class Benchmark(ABC):
             '--log_flushing',
             action='store_true',
             default=False,
-            help='Real-time log flusing in running benchmark into stdout and log file.',
+            help='Real-time log flusing.',
         )
 
     def get_configurable_settings(self):

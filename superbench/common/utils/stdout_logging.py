@@ -38,7 +38,7 @@ class SuperBenchStdoutLogger:
             Args:
                 message (str): the message to log.
             """
-            message = f'[{self.rank}]: message'
+            message = f'[{self.rank}]: {message}'
             self.terminal.write(message)
             self.log.write(message)
             self.log.flush()
@@ -51,7 +51,7 @@ class SuperBenchStdoutLogger:
         """Init the class with filename.
 
         Args:
-            filename (str): the path of the file to save the log
+            filename (str): the path of file to save the log
         """
         self.filename = filename
 
@@ -77,7 +77,7 @@ class SuperBenchStdoutLogger:
         Args:
             message (str): the message to log.
         """
-        sys.stdout.write(message)
+        self.logger_stream.write(message)
 
 
 stdout_logger = SuperBenchStdoutLogger()

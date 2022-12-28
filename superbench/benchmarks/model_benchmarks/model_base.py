@@ -447,10 +447,10 @@ class ModelBenchmark(Benchmark):
     def _log_step_time(self, curr_step, precision, start, end):
         """Log step time into stdout regularly.
         Args:
-            curr_step (int): the index of the current step
+            curr_step (int): the index of current step
             precision (Precision): precision of model and input data, such as float32, float16.
-            start (float): the start timestamp of the current step
-            end (float): the end timestamp of the current step
+            start (float): the start timestamp of current step
+            end (float): the end timestamp of current step
         """
         if self._args.log_n_steps and curr_step % self._args.log_n_steps == 0:
-            stdout_logger.log(f'{self._name} - {precision.value}: step {curr_step}, step time {(end - start) * 1000}')
+            stdout_logger.log(f'{self._name} - {precision.value}: step {curr_step}, step time {(end - start) * 1000}\n')

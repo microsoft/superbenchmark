@@ -117,8 +117,12 @@ class SuperBenchRunner():
             str: Runner command.
         """
         exec_command = (
-            'sb exec --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name} --log-flushing {log_flushing}'
-        ).format(name=benchmark_name, output_dir=self._sb_output_dir, log_flushing=self._log_flushing)
+            'sb exec {log_flushing} --output-dir {output_dir} -c sb.config.yaml -C superbench.enable={name}'
+        ).format(
+            name=benchmark_name,
+            output_dir=self._sb_output_dir,
+            log_flushing='--log-flushing' if self._log_flushing else ''
+        )
         if timeout is not None:
             exec_command = 'timeout {timeout} {command}'.format(timeout=timeout, command=exec_command)
 

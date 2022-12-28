@@ -191,7 +191,7 @@ def exec_command_handler(config_file=None, config_override=None, output_dir=None
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
         output_dir (str, optional): Path to output directory. Defaults to None.
-        log_flushing (bool): if enable real-time log flushing. Defaluts tgo False.
+        log_flushing (bool): Enable real-time log flushing or not. Defaluts to False.
 
     Raises:
         CLIError: If input arguments are invalid.
@@ -291,7 +291,7 @@ def run_command_handler(
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
-        log_flushing (bool): if enable real-time log flushing. Defaluts tgo False.
+        log_flushing (bool): Enable real-time log flushing or not. Defaluts to False.
 
     Raises:
         CLIError: If input arguments are invalid.
