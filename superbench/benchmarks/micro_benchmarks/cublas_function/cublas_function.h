@@ -25,9 +25,15 @@ class SgemmFunction : public CublasFunction {
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {
-        sgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-              reinterpret_cast<const float *>(Parameter_0_0), reinterpret_cast<const float *>(Parameter_1_0),
-              reinterpret_cast<float *>(Result_3_0));
+        if (this->correctness) {
+            sgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                  reinterpret_cast<const float *>(Parameter_0_0), reinterpret_cast<const float *>(Parameter_1_0),
+                  reinterpret_cast<float *>(Result_3_0));
+        } else {
+            sgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                  reinterpret_cast<const float *>(Parameter_0_0), reinterpret_cast<const float *>(Parameter_1_0),
+                  reinterpret_cast<float *>(Result_3_0), 1.0f, 1.0f);
+        }
     }
     /**
      * @brief  Function calculation on CPU side
@@ -251,10 +257,17 @@ class GemmStridedBatchedExFunction : public CublasFunction {
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {
-        gemmStridedBatchedEx(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                             reinterpret_cast<void *>(Parameter_0_0), reinterpret_cast<void *>(Parameter_1_0),
-                             reinterpret_cast<void *>(Result_3_0), this->datatype_, this->use_tensor_core_,
-                             this->batch_count_);
+        if (this->correctness) {
+            gemmStridedBatchedEx(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                                 reinterpret_cast<void *>(Parameter_0_0), reinterpret_cast<void *>(Parameter_1_0),
+                                 reinterpret_cast<void *>(Result_3_0), this->datatype_, this->use_tensor_core_,
+                                 this->batch_count_);
+        } else {
+            gemmStridedBatchedEx(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                                 reinterpret_cast<void *>(Parameter_0_0), reinterpret_cast<void *>(Parameter_1_0),
+                                 reinterpret_cast<void *>(Result_3_0), this->datatype_, this->use_tensor_core_,
+                                 this->batch_count_, 1.0f, 1.0f);
+        }
     }
     /**
      * @brief Prepare memory and data of the input and output for kernel running
@@ -340,10 +353,17 @@ class SgemmStridedBatchedFunction : public CublasFunction {
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {
-        sgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                            reinterpret_cast<const float *>(Parameter_0_0),
-                            reinterpret_cast<const float *>(Parameter_1_0), reinterpret_cast<float *>(Result_3_0),
-                            this->batch_count_);
+        if (this->correctness) {
+            sgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                                reinterpret_cast<const float *>(Parameter_0_0),
+                                reinterpret_cast<const float *>(Parameter_1_0), reinterpret_cast<float *>(Result_3_0),
+                                this->batch_count_);
+        } else {
+            sgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                                reinterpret_cast<const float *>(Parameter_0_0),
+                                reinterpret_cast<const float *>(Parameter_1_0), reinterpret_cast<float *>(Result_3_0),
+                                this->batch_count_, 1.0f, 1.0f);
+        }
     }
     /**
      * @brief Prepare memory and data of the input and output for kernel running

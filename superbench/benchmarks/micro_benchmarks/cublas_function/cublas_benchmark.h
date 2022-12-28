@@ -287,7 +287,7 @@ void CublasFunction::prepare_tensor_template(T **Parameter_0_0, T **Parameter_1_
  * @brief Transpose the colomn-order strored matrix with float or half datatype
  */
 template <typename T> T *CublasFunction::transpose(const T *matrix, int m, int n, int batch_count) {
-    T *transpose_matrix = (T *)malloc(m * n * sizeof(T) * batch_count);
+    T *transpose_matrix = (T *)malloc((unsigned long)m * (unsigned long)n * sizeof(T) * (unsigned long)batch_count);
     for (int b = 0; b < batch_count; b++) {
         for (int i = 0; i < m * n; i++) {
             int c = i / m;
@@ -307,14 +307,19 @@ void CublasFunction::matrix_calculation_on_cpu_with_data(const T1 *Parameter_0_0
     int m = this->m_, n = this->n_, k = this->k_, batch_count = this->batch_count_;
     // Copy result from device to host
     T1 *Result_3_0_host;
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host, sizeof(T1) * m * n * batch_count));
-    CUDA_SAFE_CALL(cudaMemcpy(Result_3_0_host, Result_3_0, sizeof(T1) * m * n * batch_count, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMallocHost((void **)&Result_3_0_host,
+                                  sizeof(T1) * (unsigned long)m * (unsigned long)n * (unsigned long)batch_count));
+    CUDA_SAFE_CALL(cudaMemcpy(Result_3_0_host, Result_3_0,
+                              sizeof(T1) * (unsigned long)m * (unsigned long)n * (unsigned long)batch_count,
+                              cudaMemcpyDeviceToHost));
     // Transpose the input matrix
     T1 *Parameter_0_0_host_op, *Parameter_1_0_host_op;
-    Parameter_0_0_host_op = (T1 *)malloc(m * k * sizeof(T1) * batch_count);
-    Parameter_1_0_host_op = (T1 *)malloc(n * k * sizeof(T1) * batch_count);
-    memcpy(Parameter_0_0_host_op, Parameter_0_0_host, m * k * sizeof(T1) * batch_count);
-    memcpy(Parameter_1_0_host_op, Parameter_1_0_host, n * k * sizeof(T1) * batch_count);
+    Parameter_0_0_host_op = (T1 *)malloc((unsigned long)m * (unsigned long)k * sizeof(T1) * (unsigned long)batch_count);
+    Parameter_1_0_host_op = (T1 *)malloc((unsigned long)n * (unsigned long)k * sizeof(T1) * (unsigned long)batch_count);
+    memcpy(Parameter_0_0_host_op, Parameter_0_0_host,
+           (unsigned long)m * (unsigned long)k * sizeof(T1) * (unsigned long)batch_count);
+    memcpy(Parameter_1_0_host_op, Parameter_1_0_host,
+           (unsigned long)n * (unsigned long)k * sizeof(T1) * (unsigned long)batch_count);
     if (this->transa_) {
         Parameter_0_0_host_op = transpose(Parameter_0_0_host, k, m, batch_count);
     }
@@ -323,7 +328,7 @@ void CublasFunction::matrix_calculation_on_cpu_with_data(const T1 *Parameter_0_0
     }
     // C + i*strideC = alpha*op(A+i*strideA)*op(B+i*strideB)+beta(C+i*strideC), for i in [0, batchcount -1 ]
     // reference in https://docs.nvidia.com/cuda/cublas/index.html#cublas-level-3-function-reference
-    *Result_cpu = (T2 *)malloc(m * n * sizeof(T2) * batch_count);
+    *Result_cpu = (T2 *)malloc((unsigned long)m * (unsigned long)n * sizeof(T2) * (unsigned long)batch_count);
     for (int b = 0; b < batch_count; b++) {
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
@@ -355,10 +360,14 @@ void CublasFunction::matrix_calculation_on_cpu_with_data(const cuComplex *Parame
     CUDA_SAFE_CALL(cudaMemcpy(Result_3_0_host, Result_3_0, sizeof(std::complex<float>) * m * n * batch_count,
                               cudaMemcpyDeviceToHost));
     cuComplex *Parameter_0_0_host_op, *Parameter_1_0_host_op;
-    Parameter_0_0_host_op = (cuComplex *)malloc(m * k * sizeof(cuComplex) * batch_count);
-    Parameter_1_0_host_op = (cuComplex *)malloc(n * k * sizeof(cuComplex) * batch_count);
-    memcpy(Parameter_0_0_host_op, Parameter_0_0_host, m * k * sizeof(cuComplex) * batch_count);
-    memcpy(Parameter_1_0_host_op, Parameter_1_0_host, n * k * sizeof(cuComplex) * batch_count);
+    Parameter_0_0_host_op =
+        (cuComplex *)malloc((unsigned long)m * (unsigned long)k * sizeof(cuComplex) * (unsigned long)batch_count);
+    Parameter_1_0_host_op =
+        (cuComplex *)malloc((unsigned long)n * (unsigned long)k * sizeof(cuComplex) * (unsigned long)batch_count);
+    memcpy(Parameter_0_0_host_op, Parameter_0_0_host,
+           (unsigned long)m * (unsigned long)k * sizeof(cuComplex) * (unsigned long)batch_count);
+    memcpy(Parameter_1_0_host_op, Parameter_1_0_host,
+           (unsigned long)n * (unsigned long)k * sizeof(cuComplex) * (unsigned long)batch_count);
     if (this->transa_) {
         Parameter_0_0_host_op = transpose<cuComplex>(Parameter_0_0_host, k, m, batch_count);
     }
@@ -366,7 +375,8 @@ void CublasFunction::matrix_calculation_on_cpu_with_data(const cuComplex *Parame
         Parameter_1_0_host_op = transpose<cuComplex>(Parameter_1_0_host, n, k, batch_count);
     }
 
-    *Result_cpu = (std::complex<float> *)malloc(m * n * sizeof(std::complex<float>) * batch_count);
+    *Result_cpu = (std::complex<float> *)malloc((unsigned long)m * (unsigned long)n * sizeof(std::complex<float>) *
+                                                (unsigned long)batch_count);
 
     for (int b = 0; b < batch_count; b++) {
         for (int i = 0; i < m; i++) {
