@@ -332,7 +332,7 @@ void CublasFunction::matrix_calculation_on_cpu_with_data(const T1 *Parameter_0_0
     for (int b = 0; b < batch_count; b++) {
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
-                (*Result_cpu)[i + j * m + b * m * n] = beta * ((T2 *)Result_3_0_host)[i + j * m + b * m * n];
+                (*Result_cpu)[i + j * m + b * m * n] = beta * (T2)(Result_3_0_host[i + j * m + b * m * n]);
                 for (int p = 0; p < k; p++) {
                     (*Result_cpu)[i + j * m + b * m * n] +=
                         Parameter_0_0_host_op[p * m + i + b * m * k] * Parameter_1_0_host_op[j * k + p + b * k * n];
