@@ -52,7 +52,8 @@ class CublasFunction {
     int warm_up;                       ///< the number of steps used to warm up
     int num_in_step;                   ///< the number of functions invoking in a step
     int random_seed;                   ///< the random seed used to generate random data
-    bool correctness;                  ///< if check the correctness
+    double eps;                        ///< the acceptable error bound for numeric stability
+    bool correctness;                  ///< whether enable correctness check or not
     std::string name_;                 ///< the name of the cublas function
     int m_;                            ///< the m dim of matrix
     int k_;                            ///< the k dim of matrix
@@ -135,9 +136,15 @@ class CublasFunction {
      */
     void set_correctness(int correctness_check) { this->correctness = correctness_check; }
     /**
+     * @brief Set the eps
+     * @param  eps      the acceptable error bound for numeric stability
+     */
+    void set_eps(double eps) { this->eps = eps; }
+    /**
      * @brief Set the params string
      * @param  str             the str representing the params of the function
      */
+
     void set_function(std::string &str) { this->function_str_ = str; }
     /**
      * @brief Set the name member
@@ -417,7 +424,7 @@ int CublasFunction::check_result(int batch_count, T1 *Result_3_0, T2 *Result_cpu
         double abs_val = fabs(Result_cpu[i]);
         double rel_err = abs_err / abs_val / dot_length;
         if (rel_err > eps) {
-            printf("Error! Matrix[%05d]=%.8f, ref=%.8f error term %.8f is > %E\n", i, (float)Result_3_0_host[i],
+            printf("error! matrix[%05d]=%.8f, ref=%.8f error term %.8f is > %E\n", i, (float)Result_3_0_host[i],
                    Result_cpu[i], rel_err, eps);
             error_count += 1;
         }
@@ -445,7 +452,7 @@ int CublasFunction::check_result(int batch_count, cuComplex *Result_3_0, std::co
         double abs_val = fabs(Result_cpu[i]);
         double rel_err = abs_err / abs_val / dot_length;
         if (rel_err > eps) {
-            printf("Error! Matrix[%05d]=%.8f,%.8f, ref=%.8f,%.8f error term %.8f is > %E\n", i,
+            printf("error! matrix[%05d]=%.8f,%.8f, ref=%.8f,%.8f error term %.8f is > %E\n", i,
                    Result_3_0_host[i].real(), Result_3_0_host[i].imag(), Result_cpu[i].real(), Result_cpu[i].imag(),
                    rel_err, eps);
             error_count += 1;
@@ -473,14 +480,17 @@ void CublasFunction::benchmark() {
     // Prepare some varibles for time measurement
     std::vector<float> iteration_time;
     int errors = 0;
-    if (this->correctness)
-        this->matrix_calculation_on_cpu();
     // Benchmark in range of steps
     for (int i_ = 0; i_ < num_test; i_++) {
         // Collect time within each step, including #repeat_in_one_step times function invoking
         auto start = std::chrono::high_resolution_clock::now();
         for (int j = 0; j < num_in_step; j++) {
+            if (this->correctness)
+                this->matrix_calculation_on_cpu();
             this->kernel_entry();
+            if (this->correctness) {
+                errors += this->correctness_check();
+            }
         }
         CUDA_SAFE_CALL(cudaDeviceSynchronize());
         auto end = std::chrono::high_resolution_clock::now();
@@ -488,9 +498,6 @@ void CublasFunction::benchmark() {
         // Convert step time to single function duration and update min and max duration
         float i = static_cast<float>(std::chrono::duration<double, std::micro>(end - start).count() / num_in_step);
         iteration_time.emplace_back(i);
-        if (this->correctness) {
-            errors += this->correctness_check();
-        }
     }
 
     // Output results
@@ -503,6 +510,6 @@ void CublasFunction::benchmark() {
     if (this->correctness) {
         std::string correctness_str = errors == 0 ? "Result = PASS" : "Result = FAIL";
         std::cout << "[correctness]: " << correctness_str
-                  << ", Error rate: " << errors / (num_test * this->m_ * this->n_) << std::endl;
+                  << ", error rate: " << errors / (num_in_step * num_test * this->m_ * this->n_) << std::endl;
     }
 }

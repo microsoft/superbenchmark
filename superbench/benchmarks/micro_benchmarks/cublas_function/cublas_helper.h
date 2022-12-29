@@ -50,11 +50,9 @@ void cuda_free(cublasHandle_t *cublas_handle);
  * @param  a                input matrixA
  * @param  b                input matrixB
  * @param  c                output matrix
- * @param  alpha            scalar used for multiplication. C = alpha*A*B + beta*C
- * @param  beta             scalar used for multiplication. If beta==0, C does not have to be a valid input.
  */
-void sgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a, const float *b, float *c,
-           float alpha = 1.0f, float beta = 0.0f);
+void sgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a, const float *b,
+           float *c);
 
 /**
  * @brief                   cublas function of gemm, wrapper of cublasCgemm
@@ -67,11 +65,9 @@ void sgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, c
  * @param  a                input matrixA
  * @param  b                input matrixB
  * @param  c                output matrix
- * @param  alpha            scalar used for multiplication. C = alpha*A*B + beta*C
- * @param  beta             scalar used for multiplication. If beta==0, C does not have to be a valid input.
  */
 void cgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a, const cuComplex *b,
-           cuComplex *c, cuComplex alpha = make_cuComplex(1.0f, 0.0f), cuComplex beta = make_cuComplex(0.0f, 0.0f));
+           cuComplex *c);
 
 /**
  * @brief                   cublas function of GemmEx, wrapper of cublasGemmEx
@@ -86,11 +82,9 @@ void cgemm(cublasHandle_t handle, int transa, int transb, int m, int n, int k, c
  * @param  c                output matrix
  * @param  type             matrix type, 'float' or 'half'
  * @param  use_tensor_core  whether use tensor core
- * @param  alpha            scalar used for multiplication. C = alpha*A*B + beta*C
- * @param  beta             scalar used for multiplication. If beta==0, C does not have to be a valid input.
  */
 void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *A, const void *B, void *C,
-            std::string type, bool use_tensor_core, float alpha = 1.0f, float beta = 0.0f);
+            std::string type, bool use_tensor_core);
 
 /**
  * @brief                   cublas function of gemmStridedBatchedEx, wrapper of cublasGemmStridedBatchedEx
@@ -106,12 +100,9 @@ void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, 
  * @param  type             matrix type, 'float' or 'half'
  * @param  use_tensor_core  whether use tensor core
  * @param  batchCount       My Param doc
- * @param  alpha            scalar used for multiplication. C = alpha*A*B + beta*C
- * @param  beta             scalar used for multiplication. If beta==0, C does not have to be a valid input.
  */
 void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const void *a,
-                          const void *b, void *c, std::string type, bool use_tensor_core, int batchCount,
-                          float alpha = 1.0f, float beta = 0.0f);
+                          const void *b, void *c, std::string type, bool use_tensor_core, int batchCount);
 
 /**
  * @brief                   cublas function of gemmStridedBatchedEx, wrapper of cublasGemmStridedBatchedEx
@@ -125,12 +116,9 @@ void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, 
  * @param  b                input matrixB
  * @param  c                output matrix
  * @param  batchCount       the count of batch used to compute
- * @param  alpha            scalar used for multiplication. C = alpha*A*B + beta*C
- * @param  beta             scalar used for multiplication. If beta==0, C does not have to be a valid input.
  */
 void cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const cuComplex *a,
-                           const cuComplex *b, cuComplex *c, int batchCount,
-                           cuComplex alpha = make_cuComplex(1.0f, 0.0f), cuComplex beta = make_cuComplex(0.0f, 0.0f));
+                           const cuComplex *b, cuComplex *c, int batchCount);
 
 /**
  * @brief
@@ -145,8 +133,6 @@ void cgemm3mStridedBatched(cublasHandle_t handle, int transa, int transb, int m,
  * @param  b                input matrixB
  * @param  c                output matrix
  * @param  batchCount       the count of batch used to compute
- * @param  alpha            scalar used for multiplication. C = alpha*A*B + beta*C
- * @param  beta             scalar used for multiplication. If beta==0, C does not have to be a valid input.
  */
 void sgemmStridedBatched(cublasHandle_t handle, int transa, int transb, int m, int n, int k, const float *a,
-                         const float *b, float *c, int batchCount, float alpha = 1.0f, float beta = 0.0f);
+                         const float *b, float *c, int batchCount);

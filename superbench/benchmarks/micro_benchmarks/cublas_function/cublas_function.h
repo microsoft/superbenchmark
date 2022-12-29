@@ -25,21 +25,16 @@ class SgemmFunction : public CublasFunction {
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {
-        if (this->correctness) {
-            sgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                  reinterpret_cast<const float *>(Parameter_0_0), reinterpret_cast<const float *>(Parameter_1_0),
-                  reinterpret_cast<float *>(Result_3_0));
-        } else {
-            sgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                  reinterpret_cast<const float *>(Parameter_0_0), reinterpret_cast<const float *>(Parameter_1_0),
-                  reinterpret_cast<float *>(Result_3_0), 1.0f, 1.0f);
-        }
+        sgemm(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+              reinterpret_cast<const float *>(Parameter_0_0), reinterpret_cast<const float *>(Parameter_1_0),
+              reinterpret_cast<float *>(Result_3_0));
     }
     /**
      * @brief  Function calculation on CPU side
      */
     virtual void matrix_calculation_on_cpu() {
-        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu);
+        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu, 1.0f,
+                                            1.0f);
     }
     /**
      * @brief Prepare memory and data of the input and output for kernel running
@@ -50,7 +45,10 @@ class SgemmFunction : public CublasFunction {
     /**
      * @brief Check the correctness of function calculation result
      */
-    virtual int correctness_check() { return check_result(1, Result_3_0, Result_cpu); }
+    virtual int correctness_check() {
+        double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
+        return check_result(1, Result_3_0, Result_cpu, eps);
+    }
 
   public:
     /**
@@ -116,7 +114,10 @@ class CgemmFunction : public CublasFunction {
     /**
      * @brief Check the correctness of function calculation result
      */
-    virtual int correctness_check() { return check_result(1, Result_3_0, Result_cpu); }
+    virtual int correctness_check() {
+        double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
+        return check_result(1, Result_3_0, Result_cpu, eps);
+    }
 
   public:
     /**
@@ -201,13 +202,15 @@ class GemmExFunction : public CublasFunction {
      * @brief Check the correctness of function calculation result
      */
     virtual int correctness_check() {
-        bool result = false;
+        int result = 0;
         if (this->datatype_.compare("half")) {
+            double eps = this->eps == 0.0 ? 1.e-3 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<half *>(Result_3_0),
-                                  reinterpret_cast<float *>(Result_cpu), 1.e-3);
+                                  reinterpret_cast<float *>(Result_cpu), eps);
         } else if (this->datatype_.compare("float")) {
+            double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<float *>(Result_3_0),
-                                  reinterpret_cast<float *>(Result_cpu), 1.e-6);
+                                  reinterpret_cast<float *>(Result_cpu), eps);
         }
         return result;
     }
@@ -257,17 +260,10 @@ class GemmStridedBatchedExFunction : public CublasFunction {
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {
-        if (this->correctness) {
-            gemmStridedBatchedEx(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                                 reinterpret_cast<void *>(Parameter_0_0), reinterpret_cast<void *>(Parameter_1_0),
-                                 reinterpret_cast<void *>(Result_3_0), this->datatype_, this->use_tensor_core_,
-                                 this->batch_count_);
-        } else {
-            gemmStridedBatchedEx(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                                 reinterpret_cast<void *>(Parameter_0_0), reinterpret_cast<void *>(Parameter_1_0),
-                                 reinterpret_cast<void *>(Result_3_0), this->datatype_, this->use_tensor_core_,
-                                 this->batch_count_, 1.0f, 1.0f);
-        }
+        gemmStridedBatchedEx(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                             reinterpret_cast<void *>(Parameter_0_0), reinterpret_cast<void *>(Parameter_1_0),
+                             reinterpret_cast<void *>(Result_3_0), this->datatype_, this->use_tensor_core_,
+                             this->batch_count_);
     }
     /**
      * @brief Prepare memory and data of the input and output for kernel running
@@ -293,23 +289,25 @@ class GemmStridedBatchedExFunction : public CublasFunction {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<half *>(Parameter_0_0_host), reinterpret_cast<half *>(Parameter_1_0_host),
                 reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
-        } else if (this->datatype_.compare("float")) {
+        } else if (this->datatype_.compare("float"), 1.0f, 1.0f) {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<float *>(Parameter_0_0_host), reinterpret_cast<float *>(Parameter_1_0_host),
-                reinterpret_cast<float *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
+                reinterpret_cast<float *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu), 1.0f, 1.0f);
         }
     }
     /**
      * @brief Check the correctness of function calculation result
      */
     virtual int correctness_check() {
-        bool result = false;
+        int result = 0;
         if (this->datatype_.compare("half")) {
+            double eps = this->eps == 0.0 ? 1.e-3 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<half *>(Result_3_0),
-                                  reinterpret_cast<float *>(Result_cpu), 1.e-3);
+                                  reinterpret_cast<float *>(Result_cpu), eps);
         } else if (this->datatype_.compare("float")) {
+            double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<float *>(Result_3_0),
-                                  reinterpret_cast<float *>(Result_cpu), 1.e-6);
+                                  reinterpret_cast<float *>(Result_cpu), eps);
         }
         return result;
     }
@@ -353,17 +351,10 @@ class SgemmStridedBatchedFunction : public CublasFunction {
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {
-        if (this->correctness) {
-            sgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                                reinterpret_cast<const float *>(Parameter_0_0),
-                                reinterpret_cast<const float *>(Parameter_1_0), reinterpret_cast<float *>(Result_3_0),
-                                this->batch_count_);
-        } else {
-            sgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
-                                reinterpret_cast<const float *>(Parameter_0_0),
-                                reinterpret_cast<const float *>(Parameter_1_0), reinterpret_cast<float *>(Result_3_0),
-                                this->batch_count_, 1.0f, 1.0f);
-        }
+        sgemmStridedBatched(cublas_handle, this->transa_, this->transb_, this->m_, this->n_, this->k_,
+                            reinterpret_cast<const float *>(Parameter_0_0),
+                            reinterpret_cast<const float *>(Parameter_1_0), reinterpret_cast<float *>(Result_3_0),
+                            this->batch_count_);
     }
     /**
      * @brief Prepare memory and data of the input and output for kernel running
@@ -375,12 +366,16 @@ class SgemmStridedBatchedFunction : public CublasFunction {
      * @brief  Function calculation on CPU side
      */
     virtual void matrix_calculation_on_cpu() {
-        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu);
+        matrix_calculation_on_cpu_with_data(Parameter_0_0_host, Parameter_1_0_host, Result_3_0, &Result_cpu, 1.0f,
+                                            1.0f);
     }
     /**
      * @brief Check the correctness of function calculation result
      */
-    virtual int correctness_check() { return check_result(this->batch_count_, Result_3_0, Result_cpu); }
+    virtual int correctness_check() {
+        double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
+        return check_result(this->batch_count_, Result_3_0, Result_cpu, eps);
+    }
 
   public:
     /**
@@ -441,7 +436,10 @@ class Cgemm3mStridedBatchedFunction : public CublasFunction {
     /**
      * @brief Check the correctness of function calculation result
      */
-    virtual int correctness_check() { return check_result(this->batch_count_, Result_3_0, Result_cpu); }
+    virtual int correctness_check() {
+        double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
+        return check_result(this->batch_count_, Result_3_0, Result_cpu, eps);
+    }
 
   public:
     /**
