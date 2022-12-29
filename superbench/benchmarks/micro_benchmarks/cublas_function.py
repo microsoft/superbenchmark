@@ -232,7 +232,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--eps',
             type=float,
-            default=0,
+            default=None,
             required=False,
             help='The acceptable error bound for correctness check.',
         )
@@ -252,7 +252,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         command += (' --num_in_step ' + str(self._args.num_in_step))
         command += (' --random_seed ' + str(self._args.random_seed))
         command += ' --correctness' if self._args.correctness else ''
-        command += (' --eps ' + str(self._args.eps))
+        command += (' --eps ' + str(self._args.eps)) if self._args.eps is not None else ''
 
         try:
             if not self._args.config_json_str:

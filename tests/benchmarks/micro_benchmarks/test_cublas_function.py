@@ -7,7 +7,6 @@ import numbers
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
-from superbench.benchmarks.micro_benchmarks import CublasBenchmark
 
 
 @decorator.cuda_test
