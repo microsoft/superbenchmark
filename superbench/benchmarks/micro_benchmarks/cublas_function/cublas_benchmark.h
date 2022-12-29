@@ -430,6 +430,7 @@ int CublasFunction::check_result(int batch_count, T1 *Result_3_0, T2 *Result_cpu
         }
     }
     CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
+    free(Result_cpu);
     return error_count;
 }
 /**
