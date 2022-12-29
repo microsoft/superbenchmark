@@ -457,7 +457,7 @@ class SuperBenchRunner():
                     else:
                         if not os.path.exists(self._output_path / 'hostfile'):
                             logger.warning('No hostfile under %s.', self._output_path)
-                            host_list = []
+                            continue
                         else:
                             with open(self._output_path / 'hostfile', 'r') as f:
                                 host_list = f.read().splitlines()

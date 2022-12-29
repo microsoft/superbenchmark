@@ -168,7 +168,7 @@ def gen_traffic_pattern_host_group(host_list, pattern):
     n = len(host_list)
     if pattern.type == 'all-nodes':
         config = gen_all_nodes_config(n)
-    elif pattern.name == 'pair-wise':
+    elif pattern.type == 'pair-wise':
         config = gen_pair_wise_config(n)
     elif pattern.type == 'k-batch':
         config = gen_k_batch_config(n, pattern.batch)

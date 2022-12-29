@@ -29,7 +29,7 @@ class GenConfigTest(unittest.TestCase):
         # Test for pair-wise pattern
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            '--name',
+            '--type',
             type=str,
             default='pair-wise',
         )
