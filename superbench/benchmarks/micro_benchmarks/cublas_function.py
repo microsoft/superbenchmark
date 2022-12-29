@@ -229,6 +229,13 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             default=False,
             help='Enable correctness check for cublas functions.',
         )
+        self._parser.add_argument(
+            '--eps',
+            type=float,
+            default=0,
+            required=False,
+            help='The acceptable error bound for correctness check.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -244,7 +251,8 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         command += (' --warm_up ' + str(self._args.num_warmup))
         command += (' --num_in_step ' + str(self._args.num_in_step))
         command += (' --random_seed ' + str(self._args.random_seed))
-        command += '--correctness' if self._args.correctness else ''
+        command += ' --correctness' if self._args.correctness else ''
+        command += (' --eps ' + str(self._args.eps))
 
         try:
             if not self._args.config_json_str:
@@ -267,7 +275,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             return False
         return True
 
-    def _process_raw_result(self, cmd_idx, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to process raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
@@ -311,7 +319,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                         self._result.add_result(metric.lower() + '_correctness', 1)
                     elif 'FAIL' in line:
                         self._result.add_result(metric.lower() + '_correctness', 0)
-                    error_rate = int(line.split(' ')[-1])
+                    error_rate = float(line.split(' ')[-1])
                     self._result.add_result(metric.lower() + '_error_rate', error_rate)
 
         except BaseException as e:
