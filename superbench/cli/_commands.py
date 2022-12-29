@@ -44,7 +44,6 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             ac.argument('docker_username', type=str, help='Docker registry username if authentication is needed.')
             ac.argument('docker_password', type=str, help='Docker registry password if authentication is needed.')
             ac.argument('no_docker', action='store_true', help='Run on host directly without Docker.')
-            ac.argument('log_flushing', action='store_true', help='Real-time log flushing.')
             ac.argument(
                 'host_file', options_list=('--host-file', '-f'), type=str, help='Path to Ansible inventory host file.'
             )

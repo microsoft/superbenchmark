@@ -3,9 +3,7 @@
 
 """SuperBench CLI command handler."""
 
-import sys
 from pathlib import Path
-from importlib_metadata import version, PackageNotFoundError
 
 from knack.util import CLIError
 from omegaconf import OmegaConf
@@ -64,7 +62,7 @@ def split_docker_domain(name):
     return domain, remainder
 
 
-def process_config_arguments(config_file=None, config_override=None, output_dir=None, log_flushing=False):
+def process_config_arguments(config_file=None, config_override=None, output_dir=None):
     """Process configuration arguments.
 
     Args:
@@ -72,7 +70,6 @@ def process_config_arguments(config_file=None, config_override=None, output_dir=
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
         output_dir (str, optional): Path to output directory. Defaults to None.
-        log_flushing (bool, optional): Enable Real-time log flushing or not. Default to False.
 
     Returns:
         DictConfig: SuperBench config object.
@@ -92,8 +89,6 @@ def process_config_arguments(config_file=None, config_override=None, output_dir=
     # Create output directory
     sb_output_dir = create_sb_output_dir(output_dir)
 
-    sb_config.superbench.log_flushing = log_flushing
-
     return sb_config, sb_output_dir
 
 
@@ -109,8 +104,7 @@ def process_runner_arguments(
     private_key=None,
     output_dir=None,
     config_file=None,
-    config_override=None,
-    log_flusing=False
+    config_override=None
 ):
     """Process runner related arguments.
 
@@ -128,7 +122,6 @@ def process_runner_arguments(
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
-        log_flushing (bool, optional): Enable Real-time log flushing or not. Default to False.
 
     Returns:
         DictConfig: SuperBench config object.
@@ -168,25 +161,24 @@ def process_runner_arguments(
     )
 
     sb_config, sb_output_dir = process_config_arguments(
-        config_file=config_file, config_override=config_override, output_dir=output_dir, log_flushing=log_flusing
+        config_file=config_file,
+        config_override=config_override,
+        output_dir=output_dir,
     )
 
     return docker_config, ansible_config, sb_config, sb_output_dir
 
 
 def version_command_handler():
-    """Print the current SuperBench tool version in "{last tag}+g{git hash}.d{date}" format.
+    """Print the current SuperBench tool version.
 
     Returns:
         str: current SuperBench tool version.
     """
-    try:
-        return version('superbench')
-    except PackageNotFoundError:
-        return superbench.__version__
+    return superbench.__version__
 
 
-def exec_command_handler(config_file=None, config_override=None, output_dir=None, log_flushing=False):
+def exec_command_handler(config_file=None, config_override=None, output_dir=None):
     """Run the SuperBench benchmarks locally.
 
     Args:
@@ -194,13 +186,14 @@ def exec_command_handler(config_file=None, config_override=None, output_dir=None
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
         output_dir (str, optional): Path to output directory. Defaults to None.
-        log_flushing (bool): Enable real-time log flushing or not. Defaluts to False.
 
     Raises:
         CLIError: If input arguments are invalid.
     """
     sb_config, sb_output_dir = process_config_arguments(
-        config_file=config_file, config_override=config_override, output_dir=output_dir, log_flushing=log_flushing
+        config_file=config_file,
+        config_override=config_override,
+        output_dir=output_dir,
     )
 
     executor = SuperBenchExecutor(sb_config, sb_output_dir)
@@ -255,8 +248,6 @@ def deploy_command_handler(
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
     runner.deploy()
-    if runner.get_failure_count() != 0:
-        sys.exit(runner.get_failure_count())
 
 
 def run_command_handler(
@@ -271,8 +262,7 @@ def run_command_handler(
     output_dir=None,
     private_key=None,
     config_file=None,
-    config_override=None,
-    log_flushing=False
+    config_override=None
 ):
     """Run the SuperBench benchmarks distributedly.
 
@@ -292,7 +282,6 @@ def run_command_handler(
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
-        log_flushing (bool): Enable real-time log flushing or not. Defaluts to False.
 
     Raises:
         CLIError: If input arguments are invalid.
@@ -310,10 +299,7 @@ def run_command_handler(
         private_key=private_key,
         config_file=config_file,
         config_override=config_override,
-        log_flushing=log_flushing
     )
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
     runner.run()
-    if runner.get_failure_count() != 0:
-        sys.exit(runner.get_failure_count())

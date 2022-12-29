@@ -29,6 +29,7 @@ class SuperBenchExecutor():
         self._output_path = Path(sb_output_dir).expanduser().resolve()
 
         self.__set_logger('sb-exec.log')
+        self.__set_stdout_logger(self._output_path / 'sb-debug.log')
         logger.debug('Executor uses config: %s.', self._sb_config)
         logger.debug('Executor writes to: %s.', str(self._output_path))
 
@@ -38,11 +39,6 @@ class SuperBenchExecutor():
         self._sb_enabled = self.__get_enabled_benchmarks()
         logger.debug('Executor will execute: %s', self._sb_enabled)
 
-        self._log_flushing = self._sb_config.superbench.log_flushing
-        self.__set_stdout_logger(self._output_path / 'sb-debug.log')
-        if self._log_flushing:
-            self.__set_log_flushing()
-
     def __set_logger(self, filename):
         """Set logger and add file handler.
 
@@ -50,10 +46,6 @@ class SuperBenchExecutor():
             filename (str): Log file name.
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
-
-    def __set_log_flushing(self):
-        """Set log flushing env."""
-        os.environ['LOG_FLUSHING'] = 'True'
 
     def __set_stdout_logger(self, filename):
         """Set stdout logger and redirect logs and stdout into the file.
