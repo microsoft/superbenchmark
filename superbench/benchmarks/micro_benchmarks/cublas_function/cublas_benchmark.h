@@ -68,7 +68,7 @@ class CublasFunction {
     cublasHandle_t cublas_handle;      ///< the handle of cublas function
 
     /**
-     * @brief Fill the random data into the input in float type
+     * @brief Fill the random data into the input
      */
     template <typename T> void fill_data(T *Parameter_0_0_host, T *Parameter_1_0_host);
     /**
@@ -86,7 +86,7 @@ class CublasFunction {
      */
     virtual void kernel_entry() {}
     /**
-     * @brief Transpose the colomn-order strored matrix with float or half datatype
+     * @brief Transpose the colomn-order stored matrix
      */
     template <typename T> T *transpose(const T *matrix, int m, int n, int batch_count);
     /**
@@ -101,7 +101,7 @@ class CublasFunction {
     template <typename T1, typename T2>
     int check_result(int batch_count, T1 *Result_3_0, T2 *Result_cpu, double eps = 1.e-6);
     /**
-     * @brief  Virtual function of Matrix multiply calculation on CPU side
+     * @brief Virtual function of Matrix multiply calculation on CPU side
      */
     virtual void matrix_calculation_on_cpu() {}
     /**
@@ -291,7 +291,7 @@ void CublasFunction::prepare_tensor_template(T **Parameter_0_0, T **Parameter_1_
     CUDA_SAFE_CALL(cudaMemset((void *)*Result_3_0, 0, sizeof(T) * m * n * batch_count_));
 }
 /**
- * @brief Transpose the colomn-order strored matrix with float or half datatype
+ * @brief Transpose the colomn-order stored matrix with float or half datatype
  */
 template <typename T> T *CublasFunction::transpose(const T *matrix, int m, int n, int batch_count) {
     T *transpose_matrix = (T *)malloc((unsigned long)m * (unsigned long)n * sizeof(T) * (unsigned long)batch_count);
@@ -353,7 +353,7 @@ void CublasFunction::matrix_calculation_on_cpu_with_data(const T1 *Parameter_0_0
     free(Parameter_1_0_host_op);
 }
 /**
- * @brief Transpose the colomn-order strored matrix with complex datatype
+ * @brief Transpose the colomn-order stored matrix with complex datatype
  */
 template <>
 void CublasFunction::matrix_calculation_on_cpu_with_data(const cuComplex *Parameter_0_0_host,
@@ -459,6 +459,7 @@ int CublasFunction::check_result(int batch_count, cuComplex *Result_3_0, std::co
         }
     }
     CUDA_SAFE_CALL(cudaFreeHost(Result_3_0_host));
+    free(Result_cpu);
     return error_count;
 }
 /**
