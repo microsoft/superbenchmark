@@ -26,6 +26,22 @@ class GenConfigTest(unittest.TestCase):
         expected_host_group = [[['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']]]
         self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
 
+        # Test for k-batch pattern
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            '--type',
+            type=str,
+            default='k-batch',
+        )
+        parser.add_argument(
+            '--scale',
+            type=int,
+            default=3,
+        )
+        pattern, _ = parser.parse_known_args()
+        expected_host_group = [[['node0', 'node1', 'node2'], ['node3', 'node4', 'node5']]]
+        self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
+
         # Test for topo-aware pattern
         tp_ibstat_path = 'tests/data/ib_traffic_topo_aware_ibstat.txt'
         tp_ibnetdiscover_path = 'tests/data/ib_traffic_topo_aware_ibnetdiscover.txt'
