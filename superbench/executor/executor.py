@@ -17,13 +17,12 @@ from superbench.monitor import Monitor
 
 class SuperBenchExecutor():
     """SuperBench executor class."""
-    def __init__(self, sb_config, sb_output_dir, log_flushing=False):
+    def __init__(self, sb_config, sb_output_dir):
         """Initilize.
 
         Args:
             sb_config (DictConfig): SuperBench config object.
             sb_output_dir (str): SuperBench output directory.
-            log_flushing (bool): if enable real-time log flushing
         """
         self._sb_config = sb_config
         self._sb_output_dir = sb_output_dir
@@ -39,7 +38,7 @@ class SuperBenchExecutor():
         self._sb_enabled = self.__get_enabled_benchmarks()
         logger.debug('Executor will execute: %s', self._sb_enabled)
 
-        self._log_flushing = log_flushing
+        self._log_flushing = self._sb_config.superbench.log_flushing
         self.__set_stdout_logger(self._output_path / 'sb-debug.log')
         if self._log_flushing:
             self.__set_log_flushing()
