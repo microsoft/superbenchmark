@@ -128,7 +128,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
     def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to parse raw results and save the summarized results.
 
-          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+        self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
 
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
@@ -150,22 +150,25 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         busbw_out = -1
         time_out = -1
         algbw_out = -1
+        hostx = []
         try:
             # Filter useless output
-            out_of_place_index = -1
+            using_device_index = -1
             out_of_bound_index = -1
             for index, line in enumerate(content):
-                if 'out-of-place' in line:
-                    out_of_place_index = index
+                if 'Using devices' in line:
+                    using_device_index = index
                 if 'Out of bounds values' in line:
                     out_of_bound_index = index
-            content = content[out_of_place_index + 1:out_of_bound_index]
+            content = content[using_device_index + 1:out_of_bound_index]
             # Parse max out of bound bus bw as the result
             size_index = -1
             time_index = -1
             busbw_index = -1
             algbw_index = -1
             for line in content:
+                if 'Rank' in line and 'Pid' in line:
+                    hostx.append(re.search(r'on\s+(.*)\s+device', line)[1])
                 if 'time' in line and 'busbw' in line:
                     # Get index of selected column
                     line = line[1:].strip(' ')
@@ -188,9 +191,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                         busbw_out = float(line[busbw_index])
                         time_out = float(line[time_index])
                         algbw_out = float(line[algbw_index])
-                        self._result.add_result(self._args.operation + '_' + str(size) + '_busbw', busbw_out)
-                        self._result.add_result(self._args.operation + '_' + str(size) + '_algbw', algbw_out)
-                        self._result.add_result(self._args.operation + '_' + str(size) + '_time', time_out)
+                        prefix_name = '{}_{}_{}_'.format(self._args.operation, '_'.join(set(hostx)), size)
+                        self._result.add_result(prefix_name + 'busbw', busbw_out)
+                        self._result.add_result(prefix_name + 'algbw', algbw_out)
+                        self._result.add_result(prefix_name + 'time', time_out)
         except BaseException as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
@@ -198,7 +202,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                 )
             )
             return False
-        if out_of_place_index == -1 or out_of_bound_index == -1 or busbw_out == -1:
+        if using_device_index == -1 or out_of_bound_index == -1 or busbw_out == -1:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
                     self._curr_run_index, self._name, raw_output
