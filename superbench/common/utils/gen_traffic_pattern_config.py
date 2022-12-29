@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 
 """Utilities for traffic pattern config."""
-import os
 import re
 from pathlib import Path
 
@@ -27,31 +26,70 @@ def gen_all_nodes_config(n):
     return config
 
 
-def gen_k_batch_config(n, scale):
-    """Generate VM groups config with specified batch scale.
+def gen_pair_wise_config(n):
+    """Generate pair-wised VM pairs config.
+
+    One-to-one means that each participant plays every other participant once.
+    The algorithm refers circle method of Round-robin tournament in
+    https://en.wikipedia.org/wiki/Round-robin_tournament.
+    if n is even, there are a total of n-1 rounds, with n/2 pair of 2 unique participants in each round.
+    If n is odd, there will be n rounds, each with n-1/2 pairs, and one participant rotating empty in that round.
+    In each round, pair up two by two from the beginning to the middle as (begin, end),(begin+1,end-1)...
+    Then, all the participants except the beginning shift left one position, and repeat the previous step.
 
     Args:
-        k (int): the scale of batch.
         n (int): the number of participants.
 
     Returns:
         config (list): the generated config list, each item in the list is a str like "0,1;2,3".
     """
     config = []
-    if scale is None:
+    if n <= 0:
+        logger.warning('n is not positive')
+        return config
+    candidates = list(range(n))
+    # Add a fake participant if n is odd
+    if n % 2 == 1:
+        candidates.append(-1)
+    count = len(candidates)
+    non_moving = [candidates[0]]
+    for _ in range(count - 1):
+        pairs = [
+            '{},{}'.format(candidates[i], candidates[count - i - 1]) for i in range(0, count // 2)
+            if candidates[i] != -1 and candidates[count - i - 1] != -1
+        ]
+        row = ';'.join(pairs)
+        config.append(row)
+        robin = candidates[2:] + candidates[1:2]
+        candidates = non_moving + robin
+    return config
+
+
+def gen_k_batch_config(n, batch):
+    """Generate VM groups config with specified batch scale.
+
+    Args:
+        n (int): the number of participants.
+        batch (int): the scale of batch.
+
+    Returns:
+        config (list): the generated config list, each item in the list is a str like "0,1;2,3".
+    """
+    config = []
+    if batch is None:
         logger.warning('scale is not specified')
         return config
-    if scale <= 0 or n <= 0:
+    if batch <= 0 or n <= 0:
         logger.warning('scale or n is not positive')
         return config
-    if scale > n:
+    if batch > n:
         logger.warning('scale large than n')
         return config
 
     group = []
-    rem = n % scale
-    for i in range(0, n - rem, scale):
-        group.append(','.join(map(str, list(range(i, i + scale)))))
+    rem = n % batch
+    for i in range(0, n - rem, batch):
+        group.append(','.join(map(str, list(range(i, i + batch)))))
     config = [';'.join(group)]
     return config
 
@@ -97,12 +135,13 @@ def gen_ibstat(ansible_config, ibstat_path):    # pragma: no cover
 
     # callback function to collect and parse ibstat
     def _ibstat_parser(artifact_dir):
-        raw_outputs = open(os.path.join(artifact_dir, 'stdout'), 'r')
-        for raw_output in raw_outputs:
-            output = stdout_regex.sub('', raw_output).strip()
-            if ' | CHANGED | rc=0 >>' in output:
-                output = 'VM_hostname ' + output.replace(' | CHANGED | rc=0 >>', '')
-            ibstat_list.append(output)
+        stdout_path = Path(artifact_dir) / 'stdout'
+        with stdout_path.open(mode='r') as raw_outputs:
+            for raw_output in raw_outputs:
+                output = stdout_regex.sub('', raw_output).strip()
+                if ' | CHANGED | rc=0 >>' in output:
+                    output = 'VM_hostname ' + output.replace(' | CHANGED | rc=0 >>', '')
+                ibstat_list.append(output)
 
     config = ansible_client.get_shell_config(cmd)
     config['artifacts_handler'] = _ibstat_parser
@@ -129,8 +168,10 @@ def gen_traffic_pattern_host_group(host_list, pattern):
     n = len(host_list)
     if pattern.type == 'all-nodes':
         config = gen_all_nodes_config(n)
+    elif pattern.name == 'pair-wise':
+        config = gen_pair_wise_config(n)
     elif pattern.type == 'k-batch':
-        config = gen_k_batch_config(n, pattern.scale)
+        config = gen_k_batch_config(n, pattern.batch)
     elif pattern.type == 'topo-aware':
         config = gen_topo_aware_config(
             host_list, pattern.ibstat, pattern.ibnetdiscover, pattern.min_dist, pattern.max_dist

@@ -456,6 +456,7 @@ class SuperBenchRunner():
                         ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                     else:
                         if not os.path.exists(self._output_path / 'hostfile'):
+                            logger.warning('No hostfile under %s.', self._output_path)
                             host_list = []
                         else:
                             with open(self._output_path / 'hostfile', 'r') as f:
