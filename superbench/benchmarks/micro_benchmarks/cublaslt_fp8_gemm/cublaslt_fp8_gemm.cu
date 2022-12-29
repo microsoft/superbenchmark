@@ -21,7 +21,7 @@ struct Args {
     int batch = 0;
     int warmup = 20;
     int iter = 50;
-    std::string dtype = "fp8e4m3";
+    std::string in_type = "fp8e4m3";
 };
 
 void process_args(int argc, char **argv, Args *args) {
@@ -30,7 +30,7 @@ void process_args(int argc, char **argv, Args *args) {
         {"batch", required_argument, nullptr, 'b'},
         {"warmup", required_argument, nullptr, 'w'},
         {"iter", required_argument, nullptr, 'i'},
-        {"type", required_argument, nullptr, 't'},
+        {"in_type", required_argument, nullptr, 't'},
     };
 
     int opt = 0;
@@ -55,7 +55,7 @@ void process_args(int argc, char **argv, Args *args) {
             args->iter = std::stoi(optarg);
             break;
         case 't':
-            args->dtype = std::string(optarg);
+            args->in_type = std::string(optarg);
             break;
         }
     }
@@ -140,13 +140,14 @@ int main(int argc, char **argv) {
     Args args;
     process_args(argc, argv, &args);
 
-    // TODO: add fp8e5m2
-    if (args.dtype == "fp8e4m3")
-        run<fp8e4m3>(&args);
-    else if (args.dtype == "fp16")
+    if (args.in_type == "fp16")
         run<fp16>(&args);
+    else if (args.in_type == "fp8e4m3")
+        run<fp8e4m3>(&args);
+    else if (args.in_type == "fp8e5m2")
+        run<fp8e5m2, fp8e4m3>(&args);
     else
-        throw std::invalid_argument("Unknown type " + args.dtype);
+        throw std::invalid_argument("Unknown type " + args.in_type);
 
     return 0;
 }
