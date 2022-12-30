@@ -464,8 +464,8 @@ Only available for `mpi` mode.
 Available variables in formatted string includes:
 + `type`: the traffic pattern type, required.
     * accepted values: `all-nodes`, `pair-wise`, `k-batch`, `topo-aware`
-+ `batch`: the scale of batch in `k-batch` pattern, required.
-+ `ibstat`: the path of ibstat output in `topo-aware` pattern, wil be auto-generated in `./output/ibstat_file.txt` if not specified.
-+ `ibnetdiscover`: the path of ibnetdiscover output `ibnetdiscover_file.txt` in `topo-aware` pattern, required.
-+ `min_dist`: minimum distance of VM pair in `topo-aware` pattern, required.
-+ `max_dist`: maximum distance of VM pair in `topo-aware` pattern, required.
++ `batch`: the scale of batch, required in `k-batch` pattern.
++ `ibstat`: the path of ibstat output, wil be auto-generated in `./output/ibstat_file.txt` if not specified, optional in `topo-aware` pattern
++ `ibnetdiscover`: the path of ibnetdiscover output `ibnetdiscover_file.txt`, required in `topo-aware` pattern.
++ `min_dist`: minimum distance of VM pair, required in `topo-aware` pattern.
++ `max_dist`: maximum distance of VM pair, required in `topo-aware` pattern.

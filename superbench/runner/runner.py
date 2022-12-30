@@ -458,9 +458,8 @@ class SuperBenchRunner():
                         if not os.path.exists(self._output_path / 'hostfile'):
                             logger.warning('No hostfile under %s.', self._output_path)
                             continue
-                        else:
-                            with open(self._output_path / 'hostfile', 'r') as f:
-                                host_list = f.read().splitlines()
+                        with open(self._output_path / 'hostfile', 'r') as f:
+                            host_list = f.read().splitlines()
                         pattern_hostx = gen_traffic_pattern_host_group(host_list, mode.pattern)
                         for host_groups in pattern_hostx:
                             para_rc_list = Parallel(n_jobs=len(host_groups))(
