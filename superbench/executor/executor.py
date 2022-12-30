@@ -29,7 +29,7 @@ class SuperBenchExecutor():
         self._output_path = Path(sb_output_dir).expanduser().resolve()
 
         self.__set_logger('sb-exec.log')
-        self.__set_stdout_logger(self._output_path / 'sb-debug.log')
+        self.__set_stdout_logger(self._output_path / 'sb-bench.log')
         logger.debug('Executor uses config: %s.', self._sb_config)
         logger.debug('Executor writes to: %s.', str(self._output_path))
 

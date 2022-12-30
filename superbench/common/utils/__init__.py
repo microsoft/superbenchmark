@@ -5,7 +5,7 @@
 
 from superbench.common.utils.azure import get_vm_size
 from superbench.common.utils.logging import SuperBenchLogger, logger
-from superbench.common.utils.stdout_logging import SuperBenchStdoutLogger, stdout_logger
+from superbench.common.utils.stdout_logging import StdLogger, stdout_logger
 from superbench.common.utils.file_handler import rotate_dir, create_sb_output_dir, get_sb_config
 from superbench.common.utils.lazy_import import LazyImport
 from superbench.common.utils.process import run_command
@@ -17,7 +17,7 @@ device_manager = LazyImport('superbench.common.utils.device_manager')
 __all__ = [
     'LazyImport',
     'SuperBenchLogger',
-    'SuperBenchStdoutLogger',
+    'StdLogger',
     'stdout_logger',
     'create_sb_output_dir',
     'device_manager',

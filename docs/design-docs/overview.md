@@ -68,7 +68,7 @@ Here're the details about work directory structure for SuperBench Runner.
         │       │       └── rank-0            # output for each rank in each benchmark
         │       │           ├── results.json  # raw results
         |       |           └── monitor.jsonl # monitor results (optional)
-        |       ├── sb-debug.log              # SuperBench benchmarks' runtime log for debugging
+        |       ├── sb-bench.log              # SuperBench benchmarks' runtime log for debugging
         │       └── sb-exec.log               # collected SuperBench Executor log
         ├── sb-run.log                        # SuperBench Runner log
         ├── sb.config.yaml                    # SuperBench configuration snapshot
@@ -99,7 +99,7 @@ The `/root` directory is mounted from `$HOME/sb-workspace` on the host path.
         │           ├── results.json  # raw results
         │           └── monitor.jsonl # monitor results (optional)
         ├── sb.config.yaml            # SuperBench configuration snapshot
-        ├── sb-debug.log              # SuperBench benchmarks' runtime log for debugging
+        ├── sb-bench.log              # SuperBench benchmarks' runtime log for debugging
         └── sb.env                    # SuperBench runtime environment variables
 ```
 

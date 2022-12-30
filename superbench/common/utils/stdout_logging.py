@@ -6,7 +6,7 @@
 import sys
 
 
-class SuperBenchStdoutLogger:
+class StdLogger:
     """Logger class to enable or disable to redirect STDOUT and STDERR to file."""
     class StdoutLoggerStream:
         """StdoutLoggerStream class which redirect the sys.stdout to file."""
@@ -19,7 +19,7 @@ class SuperBenchStdoutLogger:
             """
             self._terminal = sys.stdout
             self._rank = rank
-            self.log_file_handler = open(filename, 'a')
+            self._log_file_handler = open(filename, 'a')
 
         def __getattr__(self, attr):
             """Override __getattr__.
@@ -40,8 +40,8 @@ class SuperBenchStdoutLogger:
             """
             message = f'[{self._rank}]: {message}'
             self._terminal.write(message)
-            self.log_file_handler.write(message)
-            self.log_file_handler.flush()
+            self._log_file_handler.write(message)
+            self._log_file_handler.flush()
 
         def flush(self):
             """Override flush."""
@@ -49,7 +49,7 @@ class SuperBenchStdoutLogger:
 
         def restore(self):
             """Restore sys.stdout and close the file."""
-            self.log_file_handler.close()
+            self._log_file_handler.close()
             sys.stdout = self._terminal
 
     def add_file_handler(self, filename):
@@ -91,4 +91,4 @@ class SuperBenchStdoutLogger:
             sys.stdout.write(message)
 
 
-stdout_logger = SuperBenchStdoutLogger()
+stdout_logger = StdLogger()

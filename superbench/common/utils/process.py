@@ -35,12 +35,12 @@ def run_command(command, quite=False, flush_output=False):
                     stdout_logger.log(line)
             process.wait()
             retcode = process.poll()
-            return subprocess.CompletedProcess(args=args, returncode=retcode, stdout=output, stderr=output)
+            return subprocess.CompletedProcess(args=args, returncode=retcode, stdout=output)
         except Exception as e:
             if process:
                 process.kill()
                 process.wait()
-            return subprocess.CompletedProcess(args=args, returncode=-1, stdout=str(e), stderr=str(e))
+            return subprocess.CompletedProcess(args=args, returncode=-1, stdout=str(e))
     else:
         result = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
