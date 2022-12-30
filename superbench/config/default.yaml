@@ -46,10 +46,9 @@ superbench:
     nccl-bw:default:
       enable: true
       modes:
-        - name: mpi
+        - name: local
           proc_num: 1
-          pattern:
-            type: all-nodes
+          parallel: no
       parameters:
         ngpus: 8
     nccl-bw:gdr-only:
@@ -65,6 +64,50 @@ superbench:
             NCCL_SHM_DISABLE: '1'
             NCCL_MIN_NCHANNELS: '16'
             NCCL_IB_DISABLE: '0'
+      parameters:
+        ngpus: 8
+    nccl-bw:all-nodes:
+      enable: true
+      modes:
+        - name: mpi
+          proc_num: 8
+          node_num: all
+          pattern: 
+            type: all-nodes
+      parameters:
+        ngpus: 8
+    nccl-bw:pair-wise:
+      enable: true
+      modes:
+        - name: mpi
+          proc_num: 8
+          node_num: all
+          pattern: 
+            type: pair-wise
+      parameters:
+        ngpus: 8
+    nccl-bw:k-batch:
+      enable: true
+      modes:
+        - name: mpi
+          proc_num: 8
+          node_num: all
+          pattern: 
+            type: k-batch
+      parameters:
+        ngpus: 8
+    nccl-bw:topo-aware:
+      enable: true
+      modes:
+        - name: mpi
+          proc_num: 8
+          node_num: all
+          pattern: 
+            type: topo-aware
+            ibstat: ibstat_file.txt
+            ibnetdiscover: ibnetdiscover_file.txt
+            min_dist: 2
+            max_dist: 6
       parameters:
         ngpus: 8
     ib-loopback:
