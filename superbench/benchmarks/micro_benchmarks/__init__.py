@@ -9,6 +9,7 @@ from superbench.benchmarks.micro_benchmarks.memory_bw_performance_base import Me
 
 from superbench.benchmarks.micro_benchmarks.computation_communication_overlap import ComputationCommunicationOverlap
 from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchmark
+from superbench.benchmarks.micro_benchmarks.cublaslt_gemm import LtGemmBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_gemm_flops_performance import CudaGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import CudaMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
@@ -30,20 +31,21 @@ from superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance impor
 
 __all__ = [
     'ComputationCommunicationOverlap',
+    'CpuMemBwLatencyBenchmark',
     'CublasBenchmark',
     'CudaGemmFlopsBenchmark',
     'CudaMemBwBenchmark',
     'CudaNcclBwBenchmark',
     'CudnnBenchmark',
     'DiskBenchmark',
-    'CpuMemBwLatencyBenchmark',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
-    'GpuCopyBwBenchmark',
     'GpuBurnBenchmark',
+    'GpuCopyBwBenchmark',
     'IBBenchmark',
     'IBLoopbackBenchmark',
     'KernelLaunch',
+    'LtGemmBenchmark',
     'MemBwBenchmark',
     'MicroBenchmark',
     'MicroBenchmarkWithInvoke',
