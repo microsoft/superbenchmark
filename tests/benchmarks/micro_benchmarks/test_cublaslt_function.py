@@ -11,7 +11,7 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, 
 from superbench.benchmarks.result import BenchmarkResult
 
 
-class LtGemmBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
+class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     """Class for cublaslt-gemm benchmark test cases."""
     @classmethod
     def setUpClass(cls):
@@ -44,7 +44,7 @@ class LtGemmBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
         self.assertEqual(3, len(benchmark.result))
         for shape in benchmark._args.shapes:
-            self.assertEqual(2.222, benchmark.result[f'fp8e4m3_{shape.replace(",", "_")}'][0])
+            self.assertEqual(2.222, benchmark.result[f'fp8e4m3_{shape.replace(",", "_")}_flops'][0])
 
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'cuBLAS API failed'))
