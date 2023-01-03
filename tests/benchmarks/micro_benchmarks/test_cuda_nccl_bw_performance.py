@@ -109,8 +109,8 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.result['alltoall_8589934592_busbw'][0] == 224.31)
 
         # Check with exec index info
-        os.environ['SERIAL_INDEX'] = "0"
-        os.environ['PARALLEL_INDEX'] = "0"
+        os.environ['SERIAL_INDEX'] = '0'
+        os.environ['PARALLEL_INDEX'] = '0'
         exec_index = '0_0'
 
         for op in raw_output.keys():
