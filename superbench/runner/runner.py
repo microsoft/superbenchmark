@@ -3,6 +3,7 @@
 
 """SuperBench Runner."""
 
+import os
 import json
 import random
 from pathlib import Path
@@ -14,7 +15,7 @@ from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
-from superbench.common.utils import SuperBenchLogger, logger, gen_traffic_pattern_host_group
+from superbench.common.utils import SuperBenchLogger, logger, gen_ibstat, gen_traffic_pattern_host_group
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
@@ -88,6 +89,11 @@ class SuperBenchRunner():
                         }
                     for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH', 'SB_WORKSPACE']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
+                    if mode.pattern:
+                        if mode.pattern.type == 'topo-aware' and not mode.pattern.ibstat:
+                            self._sb_benchmarks[name].modes[idx].pattern.ibstat = gen_ibstat(
+                                self._ansible_config, str(self._output_path / 'ibstate_file.txt')
+                            )
 
     def __get_enabled_benchmarks(self):
         """Get enabled benchmarks list.
@@ -449,6 +455,9 @@ class SuperBenchRunner():
                     if not mode.pattern:
                         ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                     else:
+                        if not os.path.exists(self._output_path / 'hostfile'):
+                            logger.warning('No hostfile under %s.', self._output_path)
+                            continue
                         with open(self._output_path / 'hostfile', 'r') as f:
                             host_list = f.read().splitlines()
                         pattern_hostx = gen_traffic_pattern_host_group(host_list, mode.pattern)
