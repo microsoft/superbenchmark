@@ -155,6 +155,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
 
         try:
             # Filter useless output
+            out_of_place_index = -1
             out_of_bound_index = -1
             for index, line in enumerate(content):
                 if 'out-of-place' in line:
