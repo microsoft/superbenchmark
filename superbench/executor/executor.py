@@ -10,7 +10,7 @@ from pathlib import Path
 from omegaconf import ListConfig
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
-from superbench.common.utils import SuperBenchLogger, logger, rotate_dir
+from superbench.common.utils import SuperBenchLogger, logger, rotate_dir, stdout_logger
 from superbench.common.devices import GPU
 from superbench.monitor import Monitor
 
@@ -29,6 +29,7 @@ class SuperBenchExecutor():
         self._output_path = Path(sb_output_dir).expanduser().resolve()
 
         self.__set_logger('sb-exec.log')
+        self.__set_stdout_logger(self._output_path / 'sb-bench.log')
         logger.debug('Executor uses config: %s.', self._sb_config)
         logger.debug('Executor writes to: %s.', str(self._output_path))
 
@@ -45,6 +46,16 @@ class SuperBenchExecutor():
             filename (str): Log file name.
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
+
+    def __set_stdout_logger(self, filename):
+        """Set stdout logger and redirect logs and stdout into the file.
+
+        Args:
+            filename (str): Log file name.
+        """
+        stdout_logger.add_file_handler(filename)
+        stdout_logger.start(self.__get_rank_id())
+        SuperBenchLogger.add_handler(logger.logger, filename=filename)
 
     def __validate_sb_config(self):
         """Validate SuperBench config object.
@@ -244,5 +255,6 @@ class SuperBenchExecutor():
 
             if monitor:
                 monitor.stop()
+            stdout_logger.stop()
             self.__write_benchmark_results(benchmark_name, benchmark_results)
             os.chdir(cwd)

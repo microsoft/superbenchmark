@@ -8,7 +8,7 @@ import time
 import statistics
 from abc import abstractmethod
 
-from superbench.common.utils import logger
+from superbench.common.utils import logger, stdout_logger
 from superbench.benchmarks import Precision, ModelAction, DistributedImpl, DistributedBackend, BenchmarkType, ReturnCode
 from superbench.benchmarks.base import Benchmark
 from superbench.benchmarks.context import Enum
@@ -129,6 +129,14 @@ class ModelBenchmark(Benchmark):
             action='store_true',
             default=False,
             help='Enable option to use full float32 precision.',
+        )
+
+        self._parser.add_argument(
+            '--log_n_steps',
+            type=int,
+            default=0,
+            required=False,
+            help='Real-time log every n steps.',
         )
 
     @abstractmethod
@@ -435,3 +443,16 @@ class ModelBenchmark(Benchmark):
         """Print environments or dependencies information."""
         # TODO: will implement it when add real benchmarks in the future.
         pass
+
+    def _log_step_time(self, curr_step, precision, duration):
+        """Log step time into stdout regularly.
+
+        Args:
+            curr_step (int): the index of current step
+            precision (Precision): precision of model and input data, such as float32, float16.
+            duration (list): the durations of all steps
+        """
+        if self._args.log_n_steps and curr_step % self._args.log_n_steps == 0:
+            step_time = statistics.mean(duration) if len(duration) < self._args.log_n_steps \
+                else statistics.mean(duration[-self._args.log_n_steps:])
+            stdout_logger.log(f'{self._name} - {precision.value}: step {curr_step}, step time {step_time}\n')
