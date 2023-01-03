@@ -6,7 +6,7 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.common.utils import gen_topo_aware_config
+from superbench.common.utils import gen_pair_wise_config, gen_topo_aware_config
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.common.devices import GPU
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
@@ -184,41 +184,6 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             config.append(row)
         return config
 
-    def __fully_one_to_one(self, n):
-        """Generate one-to-one pattern config.
-
-        One-to-one means that each participant plays every other participant once.
-        The algorithm refers circle method of Round-robin tournament in
-        https://en.wikipedia.org/wiki/Round-robin_tournament.
-        if n is even, there are a total of n-1 rounds, with n/2 pair of 2 unique participants in each round.
-        If n is odd, there will be n rounds, each with n-1/2 pairs, and one participant rotating empty in that round.
-        In each round, pair up two by two from the beginning to the middle as (begin, end),(begin+1,end-1)...
-        Then, all the participants except the beginning shift left one position, and repeat the previous step.
-
-        Args:
-            n (int): the number of participants.
-
-        Returns:
-            list: the generated config list, each item in the list is a str like "0,1;2,3".
-        """
-        config = []
-        candidates = list(range(n))
-        # Add a fake participant if n is odd
-        if n % 2 == 1:
-            candidates.append(-1)
-        count = len(candidates)
-        non_moving = [candidates[0]]
-        for _ in range(count - 1):
-            pairs = [
-                '{},{}'.format(candidates[i], candidates[count - i - 1]) for i in range(0, count // 2)
-                if candidates[i] != -1 and candidates[count - i - 1] != -1
-            ]
-            row = ';'.join(pairs)
-            config.append(row)
-            robin = candidates[2:] + candidates[1:2]
-            candidates = non_moving + robin
-        return config
-
     def gen_traffic_pattern(self, hosts, mode, config_file_path):
         """Generate traffic pattern into config file.
 
@@ -234,7 +199,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         elif mode == 'many-to-one':
             config = self.__many_to_one(n)
         elif mode == 'one-to-one':
-            config = self.__fully_one_to_one(n)
+            config = gen_pair_wise_config(n)
         elif mode == 'topo-aware':
             config = gen_topo_aware_config(
                 hosts, self._args.ibstat, self._args.ibnetdiscover, self._args.min_dist, self._args.max_dist
