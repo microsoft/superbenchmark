@@ -202,6 +202,7 @@ class RuleOp:
             categories (set): categories of violated rules
             store_values (dict): including the number of the metrics that violate the rule, and the values of
             the metrics for the rules with 'store' True
+
         Returns:
             number: 0 if the rule is passed, otherwise 1
         """
