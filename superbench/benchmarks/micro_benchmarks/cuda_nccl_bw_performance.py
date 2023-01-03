@@ -150,25 +150,24 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         busbw_out = -1
         time_out = -1
         algbw_out = -1
-        hostx = []
+        serial_index = os.environ.get('SERIAL_INDEX')
+        parallel_index = os.environ.get('PARALLEL_INDEX')
+
         try:
             # Filter useless output
-            using_device_index = -1
             out_of_bound_index = -1
             for index, line in enumerate(content):
-                if 'Using devices' in line:
-                    using_device_index = index
+                if 'out-of-place' in line:
+                    out_of_place_index = index
                 if 'Out of bounds values' in line:
                     out_of_bound_index = index
-            content = content[using_device_index + 1:out_of_bound_index]
+            content = content[out_of_place_index + 1:out_of_bound_index]
             # Parse max out of bound bus bw as the result
             size_index = -1
             time_index = -1
             busbw_index = -1
             algbw_index = -1
             for line in content:
-                if 'Rank' in line and 'Pid' in line:
-                    hostx.append(re.search(r'on\s+(.*)\s+device', line)[1])
                 if 'time' in line and 'busbw' in line:
                     # Get index of selected column
                     line = line[1:].strip(' ')
@@ -191,7 +190,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                         busbw_out = float(line[busbw_index])
                         time_out = float(line[time_index])
                         algbw_out = float(line[algbw_index])
-                        prefix_name = '{}_{}_{}_'.format(self._args.operation, '_'.join(set(hostx)), size)
+                        exec_index = '_{}_{}_'.format(
+                            int(serial_index), int(parallel_index)
+                        ) if serial_index and parallel_index else '_'
+                        prefix_name = '{}{}{}_'.format(self._args.operation, exec_index, size)
                         self._result.add_result(prefix_name + 'busbw', busbw_out)
                         self._result.add_result(prefix_name + 'algbw', algbw_out)
                         self._result.add_result(prefix_name + 'time', time_out)
@@ -202,7 +204,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                 )
             )
             return False
-        if using_device_index == -1 or out_of_bound_index == -1 or busbw_out == -1:
+        if out_of_place_index == -1 or out_of_bound_index == -1 or busbw_out == -1:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}.'.format(
                     self._curr_run_index, self._name, raw_output

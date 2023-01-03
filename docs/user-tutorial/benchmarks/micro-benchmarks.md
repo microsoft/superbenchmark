@@ -249,9 +249,10 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 
 Support the following traffic patterns:
 * `all-nodes`, validate the NCCL/RCCL performance across all VM nodes simultaneously
-* `pair-wise`, validate the NCCL/RCCL performance across VM pairs with all possible combinations by parallelizing
+* `pair-wise`, validate the NCCL/RCCL performance across VM pairs with all possible combinations in parallel
 * `k-batch`, validate the NCCL/RCCL performance across VM groups with a specified batch scale
 * `topo-aware`, validate the NCCL/RCCL performance across VM pairs with different distances/hops as a quick test
+
 #### Metrics
 
 | Name                                   | Unit             | Description                                                 |
@@ -263,6 +264,9 @@ Support the following traffic patterns:
 | rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
 | rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
 
+If traffic pattern is specified, the Metrics pattern will change to `nccl-bw/${operation}_${serial_index)_${parallel_index)_${msg_size}_time`
+- `serial_index` represents the serial index of the host group in serial.
+- `parallel_index` represents the parallel index of the host list in parallel.
 ### `tcp-connectivity`
 
 #### Introduction

@@ -3,6 +3,7 @@
 
 """Tests for nccl-bw benchmark."""
 
+import os
 import numbers
 import unittest
 
@@ -89,21 +90,43 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             'alltoall': alltoall,
         }
 
-        device_name = 'localhost'
         for op in raw_output.keys():
             benchmark._args.operation = op
             assert (benchmark._process_raw_result(0, raw_output[op]))
 
             for name in ['time', 'algbw', 'busbw']:
                 for size in ['8589934592', '4294967296', '2147483648', '1073741824', '536870912', '32']:
-                    metric = op + '_' + device_name + '_' + size + '_' + name
+                    metric = op + '_' + size + '_' + name
                     assert (metric in benchmark.result)
                     assert (len(benchmark.result[metric]) == 1)
                     assert (isinstance(benchmark.result[metric][0], numbers.Number))
 
-        assert (benchmark.result['allreduce_localhost_8589934592_time'][0] == 63896.0)
-        assert (benchmark.result['allreduce_localhost_8589934592_algbw'][0] == 134.44)
-        assert (benchmark.result['allreduce_localhost_8589934592_busbw'][0] == 235.26)
-        assert (benchmark.result['alltoall_localhost_8589934592_time'][0] == 33508.0)
-        assert (benchmark.result['alltoall_localhost_8589934592_algbw'][0] == 256.36)
-        assert (benchmark.result['alltoall_localhost_8589934592_busbw'][0] == 224.31)
+        assert (benchmark.result['allreduce_8589934592_time'][0] == 63896.0)
+        assert (benchmark.result['allreduce_8589934592_algbw'][0] == 134.44)
+        assert (benchmark.result['allreduce_8589934592_busbw'][0] == 235.26)
+        assert (benchmark.result['alltoall_8589934592_time'][0] == 33508.0)
+        assert (benchmark.result['alltoall_8589934592_algbw'][0] == 256.36)
+        assert (benchmark.result['alltoall_8589934592_busbw'][0] == 224.31)
+
+        # Check with exec index info
+        os.environ['SERIAL_INDEX']="0"
+        os.environ['PARALLEL_INDEX']="0"
+        exec_index = '_0_0_'
+
+        for op in raw_output.keys():
+                    benchmark._args.operation = op
+                    assert (benchmark._process_raw_result(0, raw_output[op]))
+
+                    for name in ['time', 'algbw', 'busbw']:
+                        for size in ['8589934592', '4294967296', '2147483648', '1073741824', '536870912', '32']:
+                            metric = op + '_' + exec_index + ' ' + '_' + size + '_' + name
+                            assert (metric in benchmark.result)
+                            assert (len(benchmark.result[metric]) == 1)
+                            assert (isinstance(benchmark.result[metric][0], numbers.Number))
+
+        assert (benchmark.result['allreduce_0_0_8589934592_time'][0] == 63896.0)
+        assert (benchmark.result['allreduce_0_0_8589934592_algbw'][0] == 134.44)
+        assert (benchmark.result['allreduce_0_0_8589934592_busbw'][0] == 235.26)
+        assert (benchmark.result['alltoall_0_0_8589934592_time'][0] == 33508.0)
+        assert (benchmark.result['alltoall_0_0_8589934592_algbw'][0] == 256.36)
+        assert (benchmark.result['alltoall_0_0_8589934592_busbw'][0] == 224.31)
