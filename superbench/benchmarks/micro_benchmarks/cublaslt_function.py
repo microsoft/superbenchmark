@@ -10,7 +10,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
-class LtGemmBenchmark(MicroBenchmarkWithInvoke):
+class CublasLtBenchmark(MicroBenchmarkWithInvoke):
     """The cuBLASLt GEMM benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -50,11 +50,11 @@ class LtGemmBenchmark(MicroBenchmarkWithInvoke):
             help='Number of warm up steps.',
         )
         self._parser.add_argument(
-            '--num_iter',
+            '--num_steps',
             type=int,
             default=50,
             required=False,
-            help='Number of iterations to measure.',
+            help='Number of steps to measure.',
         )
         self._parser.add_argument(
             '--in_type',
@@ -87,7 +87,7 @@ class LtGemmBenchmark(MicroBenchmarkWithInvoke):
                 return False
             self._commands.append(
                 f'{self.__bin_path} -m {shape_list[0]} -n {shape_list[1]} -k {shape_list[2]} '
-                f'-b {self._args.batch} -w {self._args.num_warmup} -i {self._args.num_iter} -t {self._args.in_type}'
+                f'-b {self._args.batch} -w {self._args.num_warmup} -i {self._args.num_steps} -t {self._args.in_type}'
             )
 
         return True
@@ -110,7 +110,7 @@ class LtGemmBenchmark(MicroBenchmarkWithInvoke):
             fields = raw_output.strip().split()
             if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
                 raise ValueError('Invalid result.')
-            self._result.add_result(f'{self._args.in_type}_{"_".join(fields[:3])}', float(fields[-1]))
+            self._result.add_result(f'{self._args.in_type}_{"_".join(fields[:3])}_flops', float(fields[-1]))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
@@ -123,4 +123,4 @@ class LtGemmBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('cublaslt-gemm', LtGemmBenchmark, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('cublaslt-gemm', CublasLtBenchmark, platform=Platform.CUDA)
