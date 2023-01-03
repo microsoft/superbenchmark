@@ -89,8 +89,9 @@ class ResultSummary(RuleBase):
 
         Args:
             category (str): category in the rule
-            summary_df_of_rule ([type]): summary df of a rule, the columns are metrics, the index are statistics
+            summary_df_of_rule (DataFrame): summary df of a rule, the columns are metrics, the index are statistics
             statistics (list): statistics in the rule
+
         Returns:
             list: list of summary lines like [category, metric, statistic, value]
         """
