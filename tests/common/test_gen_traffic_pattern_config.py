@@ -4,15 +4,17 @@
 """Tests for traffic pattern config generation module."""
 import argparse
 import unittest
+import tempfile
 
 from tests.helper import decorator
-from superbench.common.utils import gen_traffic_pattern_host_group
+from superbench.common.utils import gen_traffic_pattern_host_groups
 
 
 class GenConfigTest(unittest.TestCase):
     """Test the utils for generating config."""
+    @decorator.load_data('tests/data/pattern_config')    # noqa: C901
     @decorator.load_data('tests/data/ib_traffic_topo_aware_hostfile')    # noqa: C901
-    def test_gen_traffic_pattern_host_group(self, tp_hostfile):
+    def test_gen_traffic_pattern_host_group(self, expected_pattern_config, tp_hostfile):
         """Test the function of generating traffic pattern config from specified mode."""
         # Test for all-nodes pattern
         hostx = ['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']
@@ -24,7 +26,7 @@ class GenConfigTest(unittest.TestCase):
         )
         pattern, _ = parser.parse_known_args()
         expected_host_group = [[['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']]]
-        self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
+        self.assertEqual(gen_traffic_pattern_host_groups(hostx, pattern), expected_host_group)
 
         # Test for pair-wise pattern
         parser = argparse.ArgumentParser()
@@ -43,7 +45,14 @@ class GenConfigTest(unittest.TestCase):
             [['node0', 'node5'], ['node6', 'node4'], ['node7', 'node3'], ['node1', 'node2']],
             [['node0', 'node6'], ['node7', 'node5'], ['node1', 'node4'], ['node2', 'node3']]
         ]
-        self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
+        self.assertEqual(gen_traffic_pattern_host_groups(hostx, pattern), expected_host_group)
+        # Test for pattern_config file
+        temp_dir = tempfile.TemporaryDirectory()
+        test_config_path = '{}/test_pattern_config.txt'.format(temp_dir.name)
+        gen_traffic_pattern_host_groups(hostx, pattern, test_config_path)
+        with open(test_config_path, 'r') as f:
+            content = f.read()
+            self.assertEqual(content, expected_pattern_config)
 
         # Test for k-batch pattern
         parser = argparse.ArgumentParser()
@@ -59,7 +68,7 @@ class GenConfigTest(unittest.TestCase):
         )
         pattern, _ = parser.parse_known_args()
         expected_host_group = [[['node0', 'node1', 'node2'], ['node3', 'node4', 'node5']]]
-        self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
+        self.assertEqual(gen_traffic_pattern_host_groups(hostx, pattern), expected_host_group)
 
         # Test for topo-aware pattern
         tp_ibstat_path = 'tests/data/ib_traffic_topo_aware_ibstat.txt'
@@ -107,7 +116,7 @@ class GenConfigTest(unittest.TestCase):
                 ['vma414bbc00005K', 'vma414bbc00005Q'], ['vma414bbc00005L', 'vma414bbc00005R']
             ]
         ]
-        self.assertEqual(gen_traffic_pattern_host_group(hostx, pattern), expected_host_group)
+        self.assertEqual(gen_traffic_pattern_host_groups(hostx, pattern), expected_host_group)
 
         # Test for invalid pattern
         hostx = ['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']
@@ -118,4 +127,4 @@ class GenConfigTest(unittest.TestCase):
             default='invalid pattern',
         )
         pattern, _ = parser.parse_known_args()
-        gen_traffic_pattern_host_group(hostx, pattern)
+        gen_traffic_pattern_host_groups(hostx, pattern)

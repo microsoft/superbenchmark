@@ -15,7 +15,7 @@ from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
-from superbench.common.utils import SuperBenchLogger, logger, gen_ibstat, gen_traffic_pattern_host_group
+from superbench.common.utils import SuperBenchLogger, logger, gen_ibstat, gen_traffic_pattern_host_groups
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
@@ -405,6 +405,8 @@ class SuperBenchRunner():
             int: Process return code.
         """
         mode.update(vars)
+        if mode.name == 'mpi' and mode.pattern:
+            mode.env.update({'SERIAL_INDEX': mode.serial_index, 'PARALLEL_INDEX': mode.parallel_index})
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
 
         timeout = self._sb_benchmarks[benchmark_name].timeout
@@ -460,14 +462,19 @@ class SuperBenchRunner():
                             continue
                         with open(self._output_path / 'hostfile', 'r') as f:
                             host_list = f.read().splitlines()
-                        pattern_hostx = gen_traffic_pattern_host_group(host_list, mode.pattern)
-                        for host_groups in pattern_hostx:
-                            para_rc_list = Parallel(n_jobs=len(host_groups))(
-                                delayed(self._run_proc)
-                                (benchmark_name, mode, vars={
-                                    'proc_rank': 0,
-                                    'host_list': host_group,
-                                }) for host_group in host_groups
+                        host_groups = gen_traffic_pattern_host_groups(host_list, mode.pattern)
+                        for serial_index, host_group in enumerate(host_groups):
+                            para_rc_list = Parallel(n_jobs=len(host_group))(
+                                delayed(self._run_proc)(
+                                    benchmark_name,
+                                    mode,
+                                    vars={
+                                        'proc_rank': 0,
+                                        'host_list': host_list,
+                                        'serial_index': str(serial_index),
+                                        'parallel_index': str(parallel_index),
+                                    }
+                                ) for parallel_index, host_list in enumerate(host_group)
                             )
                             ansible_rc = ansible_rc + sum(para_rc_list)
                 else:

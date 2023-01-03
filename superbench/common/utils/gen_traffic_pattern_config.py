@@ -154,15 +154,16 @@ def gen_ibstat(ansible_config, ibstat_path):    # pragma: no cover
     return ibstat_path
 
 
-def gen_traffic_pattern_host_group(host_list, pattern):
+def gen_traffic_pattern_host_groups(host_list, pattern, pattern_config_path=None):
     """Generate host group from specified traffic pattern.
 
     Args:
         host_list (list): the list of hostnames read from hostfile.
         pattern (DictConfig): the mpi pattern dict.
+        pattern_config_path (str): the path of traffic pattern config file. Defaults to None.
 
     Returns:
-        host_group (list): the host group generated from traffic pattern.
+        host_groups (list): the host groups generated from traffic pattern.
     """
     config = []
     n = len(host_list)
@@ -178,5 +179,14 @@ def gen_traffic_pattern_host_group(host_list, pattern):
         )
     else:
         logger.error('Unsupported traffic pattern: {}'.format(pattern.type))
-    host_group = __convert_config_to_host_group(config, host_list)
-    return host_group
+    host_groups = __convert_config_to_host_group(config, host_list)
+    # write traffic pattern host groups to specified path
+    if pattern_config_path:
+        with open(pattern_config_path, 'a') as f:
+            f.write('pattern_type: {}'.format(pattern.type) + '\n')
+            for serial_index, host_group in enumerate(host_groups):
+                for parallel_index, host_list in enumerate(host_group):
+                    exec_index = '{}_{}'.format(serial_index, parallel_index)
+                    f.write("{}: '{}' ".format(exec_index, ' '.join(host_list)))
+                f.write('\n')
+    return host_groups
