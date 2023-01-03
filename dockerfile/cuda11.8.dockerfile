@@ -1,17 +1,16 @@
-FROM nvcr.io/nvidia/pytorch:20.12-py3
+FROM nvcr.io/nvidia/pytorch:22.12-py3
 
 # OS:
 #   - Ubuntu: 20.04
-#   - OpenMPI: 4.0.5
+#   - OpenMPI: 4.1.5a1
 #   - Docker Client: 20.10.8
 # NVIDIA:
-#   - CUDA: 11.1.1
-#   - cuDNN: 8.0.5
-#   - NCCL: v2.10.3-1
+#   - CUDA: 11.8.0
+#   - cuDNN: 8.7.0.84
+#   - NCCL: v2.15.5-1
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 #   - HPC-X: v2.8.3
-#   - NCCL RDMA SHARP plugins: 7cccbc1
 # Intel:
 #   - mlc: v3.9a
 
@@ -30,6 +29,7 @@ RUN apt-get update && \
     iproute2 \
     jq \
     libaio-dev \
+    libboost-program-options-dev \
     libcap2 \
     libnuma-dev \
     libpci-dev \
@@ -47,7 +47,7 @@ RUN apt-get update && \
     && \
     apt-get autoremove && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
+    rm -rf /var/lib/apt/lists/* /tmp/*
 
 ARG NUM_MAKE_JOBS=
 
@@ -78,31 +78,11 @@ RUN cd /tmp && \
 
 # Install HPC-X
 RUN cd /opt && \
+    rm -rf hpcx && \
     wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
     tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
     ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64 hpcx && \
     rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz
-
-# Install NCCL RDMA SHARP plugins
-RUN cd /tmp && \
-    git clone https://github.com/Mellanox/nccl-rdma-sharp-plugins.git && \
-    cd nccl-rdma-sharp-plugins && \
-    git reset --hard 7cccbc1 && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr/local --with-cuda=/usr/local/cuda && \
-    make -j ${NUM_MAKE_JOBS} && \
-    make install && \
-    cd /tmp && \
-    rm -rf nccl-rdma-sharp-plugins
-
-# Install NCCL patch
-RUN cd /tmp && \
-    git clone -b v2.10.3-1 https://github.com/NVIDIA/nccl.git && \
-    cd nccl && \
-    make -j ${NUM_MAKE_JOBS} src.build && \
-    make install && \
-    cd /tmp && \
-    rm -rf nccl
 
 # Install Intel MLC
 RUN cd /tmp && \

@@ -145,6 +145,7 @@ class PytorchGPT2(PytorchBase):
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
+                    self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     return duration
 
@@ -173,6 +174,7 @@ class PytorchGPT2(PytorchBase):
                     if curr_step > self._args.num_warmup:
                         # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
+                        self._log_step_time(curr_step, precision, duration)
                     if self._is_finished(curr_step, end):
                         return duration
 
