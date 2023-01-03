@@ -20,13 +20,13 @@ class RunnerTestCase(unittest.TestCase):
     """A class for runner test cases."""
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
-        default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
-        with default_config_file.open() as fp:
-            self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
+        test_config_file = Path(__file__).parent / '../../tests/data/test.yaml'
+        with test_config_file.open() as fp:
+            self.test_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
         self.sb_output_dir = tempfile.mkdtemp()
 
         self.runner = SuperBenchRunner(
-            self.default_config,
+            self.test_config,
             OmegaConf.create({}),
             OmegaConf.create({}),
             self.sb_output_dir,
@@ -205,7 +205,7 @@ class RunnerTestCase(unittest.TestCase):
                     'proc_rank': 1,
                     'mca': {},
                     'pattern': {
-                        'name': 'all-nodes',
+                        'type': 'all-nodes',
                     },
                     'env': {
                         'PATH': None,

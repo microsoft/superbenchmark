@@ -2,7 +2,11 @@
 # Licensed under the MIT License.
 
 """Utilities for traffic pattern config."""
+import re
+from pathlib import Path
+
 from superbench.common.utils import logger
+from superbench.common.utils import gen_topo_aware_config
 
 
 def gen_all_nodes_config(n):
@@ -61,6 +65,35 @@ def gen_pair_wise_config(n):
     return config
 
 
+def gen_k_batch_config(n, batch):
+    """Generate VM groups config with specified batch scale.
+
+    Args:
+        n (int): the number of participants.
+        batch (int): the scale of batch.
+
+    Returns:
+        config (list): the generated config list, each item in the list is a str like "0,1;2,3".
+    """
+    config = []
+    if batch is None:
+        logger.warning('scale is not specified')
+        return config
+    if batch <= 0 or n <= 0:
+        logger.warning('scale or n is not positive')
+        return config
+    if batch > n:
+        logger.warning('scale large than n')
+        return config
+
+    group = []
+    rem = n % batch
+    for i in range(0, n - rem, batch):
+        group.append(','.join(map(str, list(range(i, i + batch)))))
+    config = [';'.join(group)]
+    return config
+
+
 def __convert_config_to_host_group(config, host_list):
     """Convert config format to host node.
 
@@ -84,6 +117,43 @@ def __convert_config_to_host_group(config, host_list):
     return host_groups
 
 
+def gen_ibstat(ansible_config, ibstat_path):    # pragma: no cover
+    """Generate the ibstat file in specified path.
+
+    Args:
+        ansible_config (DictConfig): Ansible config object.
+        ibstat_path (str): the expected path of ibstat file.
+
+    Returns:
+        ibstat_path (str): the generated path of ibstat file.
+    """
+    from superbench.runner import AnsibleClient
+    ibstat_list = []
+    stdout_regex = re.compile(r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))')
+    ansible_client = AnsibleClient(ansible_config)
+    cmd = 'cat /sys/class/infiniband/*/sys_image_guid | tr -d :'
+
+    # callback function to collect and parse ibstat
+    def _ibstat_parser(artifact_dir):
+        stdout_path = Path(artifact_dir) / 'stdout'
+        with stdout_path.open(mode='r') as raw_outputs:
+            for raw_output in raw_outputs:
+                output = stdout_regex.sub('', raw_output).strip()
+                if ' | CHANGED | rc=0 >>' in output:
+                    output = 'VM_hostname ' + output.replace(' | CHANGED | rc=0 >>', '')
+                ibstat_list.append(output)
+
+    config = ansible_client.get_shell_config(cmd)
+    config['artifacts_handler'] = _ibstat_parser
+    rc = ansible_client.run(config)
+    if rc != 0:
+        logger.error('Failed to gather ibstat with config: {}'.format(config))
+    with Path(ibstat_path).open(mode='w') as f:
+        for ibstat in ibstat_list:
+            f.write(ibstat + '\n')
+    return ibstat_path
+
+
 def gen_traffic_pattern_host_group(host_list, pattern):
     """Generate host group from specified traffic pattern.
 
@@ -96,11 +166,17 @@ def gen_traffic_pattern_host_group(host_list, pattern):
     """
     config = []
     n = len(host_list)
-    if pattern.name == 'all-nodes':
+    if pattern.type == 'all-nodes':
         config = gen_all_nodes_config(n)
-    elif pattern.name == 'pair-wise':
+    elif pattern.type == 'pair-wise':
         config = gen_pair_wise_config(n)
+    elif pattern.type == 'k-batch':
+        config = gen_k_batch_config(n, pattern.batch)
+    elif pattern.type == 'topo-aware':
+        config = gen_topo_aware_config(
+            host_list, pattern.ibstat, pattern.ibnetdiscover, pattern.min_dist, pattern.max_dist
+        )
     else:
-        logger.error('Unsupported traffic pattern: {}'.format(pattern.name))
+        logger.error('Unsupported traffic pattern: {}'.format(pattern.type))
     host_group = __convert_config_to_host_group(config, host_list)
     return host_group
