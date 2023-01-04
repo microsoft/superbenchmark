@@ -154,13 +154,14 @@ def gen_ibstat(ansible_config, ibstat_path):    # pragma: no cover
     return ibstat_path
 
 
-def gen_traffic_pattern_host_groups(host_list, pattern, pattern_config_path):
+def gen_traffic_pattern_host_groups(host_list, pattern, pattern_config_path, benchmark_name):
     """Generate host group from specified traffic pattern and write in specified path.
 
     Args:
         host_list (list): the list of hostnames read from hostfile.
         pattern (DictConfig): the mpi pattern dict.
         pattern_config_path (str): the path of traffic pattern config file.
+        benchmark_name (str): the name of benchmark.
 
     Returns:
         host_groups (list): the host groups generated from traffic pattern.
@@ -182,7 +183,7 @@ def gen_traffic_pattern_host_groups(host_list, pattern, pattern_config_path):
     host_groups = __convert_config_to_host_group(config, host_list)
     # write traffic pattern host groups to specified path
     with open(pattern_config_path, 'a') as f:
-        f.write('pattern_type: {}'.format(pattern.type) + '\n')
+        f.write('benchmark_name: {} pattern_type: {}'.format(benchmark_name, pattern.type) + '\n')
         for host_group in host_groups:
             row = []
             for host_list in host_group:
