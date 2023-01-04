@@ -44,6 +44,9 @@ class BenchmarkType(Enum):
 
 class Precision(Enum):
     """The Enum class representing different data precisions."""
+    FP8_HYBRID = 'fp8_hybrid'
+    FP8_E4M3 = 'fp8_e4m3'
+    FP8_E5M2 = 'fp8_e5m2'
     FLOAT16 = 'float16'
     FLOAT32 = 'float32'
     FLOAT64 = 'float64'
