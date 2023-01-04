@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -53,6 +54,18 @@ class Options {
     }
 
     /**
+     * @brief Get the double type value of cmd line argument
+     * @param  option           the cmd line argument
+     * @return double           the double type value of cmd line argument 'option'
+     */
+    double get_cmd_line_argument_double(const std::string &option) {
+        if (char *value = get_cmd_option(option)) {
+            return std::atof(value);
+        }
+        return 0.0;
+    }
+
+    /**
      * @brief Get the string type value of cmd line argument
      * @param  option           the cmd line argument
      * @return std::string      the int type value of cmd line argument 'option'
@@ -64,12 +77,27 @@ class Options {
         return "";
     }
 
+    /**
+     * @brief Get the bool type value of cmd line argument
+     * @param  option           the cmd line argument
+     * @return std::string      the int type value of cmd line argument 'option'
+     */
+    bool get_cmd_line_argument_bool(const std::string &option) {
+        char **itr = std::find(begin, end, option);
+        if (itr != end) {
+            return true;
+        }
+        return false;
+    }
+
   public:
     int num_test;
     int warm_up;
     int num_in_step;
     int random_seed;
     std::string para_info_json;
+    bool correctness_check;
+    double eps;
 
     /**
      * @brief Construct a options object according to cmd or set a default value used to test
@@ -90,6 +118,8 @@ class Options {
         para_info_json = get_cmd_line_argument_string("--config_json");
         para_info_json = para_info_json == "" ? R"({"name":"cublasCgemm","m":512,"n":512,"k":32,"transa":1,"transb":0})"
                                               : para_info_json;
+        correctness_check = get_cmd_line_argument_bool("--correctness");
+        eps = get_cmd_line_argument_double("--eps");
     }
 };
 
@@ -197,6 +227,8 @@ void run_benchmark(Options &options) {
         function.set_warm_up(options.warm_up);
         function.set_num_in_step(options.num_in_step);
         function.set_random_seed(options.random_seed);
+        function.set_correctness(options.correctness_check);
+        function.set_eps(options.eps);
         CublasFunction *p_function = get_cublas_function_pointer(function);
         p_function->benchmark();
         delete p_function;

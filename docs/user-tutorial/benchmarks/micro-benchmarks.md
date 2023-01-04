@@ -58,6 +58,18 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 |--------------------------------|-----------|--------------------------------|
 | pytorch-matmul/nosharding_time | time (ms) | Time of pure matmul operation. |
 
+### `cublaslt-gemm`
+
+#### Introduction
+
+Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul).
+
+#### Metrics
+
+| Name                            | Unit           | Description                     |
+|---------------------------------|----------------|---------------------------------|
+| cublaslt-gemm/dtype_m_n_k_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
+
 ### `cublas-function`
 
 #### Introduction
