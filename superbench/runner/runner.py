@@ -406,7 +406,7 @@ class SuperBenchRunner():
         """
         mode.update(vars)
         if mode.name == 'mpi' and mode.pattern:
-            mode.env.update({'SERIAL_INDEX': mode.serial_index, 'PARALLEL_INDEX': mode.parallel_index})
+            mode.env.update({'SB_MODE_SERIAL_INDEX': mode.serial_index, 'SB_MODE_PARALLEL_INDEX': mode.parallel_index})
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
 
         timeout = self._sb_benchmarks[benchmark_name].timeout
@@ -462,7 +462,9 @@ class SuperBenchRunner():
                             continue
                         with open(self._output_path / 'hostfile', 'r') as f:
                             host_list = f.read().splitlines()
-                        host_groups = gen_traffic_pattern_host_groups(host_list, mode.pattern)
+                        host_groups = gen_traffic_pattern_host_groups(
+                            host_list, mode.pattern, self._output_path / 'pattern_config'
+                        )
                         for serial_index, host_group in enumerate(host_groups):
                             para_rc_list = Parallel(n_jobs=len(host_group))(
                                 delayed(self._run_proc)(
