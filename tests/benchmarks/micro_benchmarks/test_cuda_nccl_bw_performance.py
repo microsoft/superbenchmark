@@ -109,8 +109,8 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.result['alltoall_8589934592_busbw'][0] == 224.31)
 
         # Check with exec index info
-        os.environ['SERIAL_INDEX'] = '0'
-        os.environ['PARALLEL_INDEX'] = '0'
+        os.environ['SB_MODE_SERIAL_INDEX'] = '0'
+        os.environ['SB_MODE_PARALLEL_INDEX'] = '0'
         exec_index = '0_0'
 
         for op in raw_output.keys():
@@ -119,14 +119,14 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
             for name in ['time', 'algbw', 'busbw']:
                 for size in ['8589934592', '4294967296', '2147483648', '1073741824', '536870912', '32']:
-                    metric = op + '_' + exec_index + '_' + size + '_' + name
+                    metric = op + '_' + exec_index + ':' + size + '_' + name
                     assert (metric in benchmark.result)
                     assert (len(benchmark.result[metric]) == 1)
                     assert (isinstance(benchmark.result[metric][0], numbers.Number))
 
-        assert (benchmark.result['allreduce_0_0_8589934592_time'][0] == 63896.0)
-        assert (benchmark.result['allreduce_0_0_8589934592_algbw'][0] == 134.44)
-        assert (benchmark.result['allreduce_0_0_8589934592_busbw'][0] == 235.26)
-        assert (benchmark.result['alltoall_0_0_8589934592_time'][0] == 33508.0)
-        assert (benchmark.result['alltoall_0_0_8589934592_algbw'][0] == 256.36)
-        assert (benchmark.result['alltoall_0_0_8589934592_busbw'][0] == 224.31)
+        assert (benchmark.result['allreduce_0_0:8589934592_time'][0] == 63896.0)
+        assert (benchmark.result['allreduce_0_0:8589934592_algbw'][0] == 134.44)
+        assert (benchmark.result['allreduce_0_0:8589934592_busbw'][0] == 235.26)
+        assert (benchmark.result['alltoall_0_0:8589934592_time'][0] == 33508.0)
+        assert (benchmark.result['alltoall_0_0:8589934592_algbw'][0] == 256.36)
+        assert (benchmark.result['alltoall_0_0:8589934592_busbw'][0] == 224.31)
