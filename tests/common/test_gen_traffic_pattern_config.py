@@ -128,4 +128,4 @@ class GenConfigTest(unittest.TestCase):
             default='invalid pattern',
         )
         pattern, _ = parser.parse_known_args()
-        gen_traffic_pattern_host_groups(hostx, pattern)
+        gen_traffic_pattern_host_groups(hostx, pattern, test_config_path)
