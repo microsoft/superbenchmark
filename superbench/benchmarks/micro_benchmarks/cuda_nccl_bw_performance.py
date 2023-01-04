@@ -150,8 +150,8 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         busbw_out = -1
         time_out = -1
         algbw_out = -1
-        serial_index = os.environ.get('SERIAL_INDEX')
-        parallel_index = os.environ.get('PARALLEL_INDEX')
+        serial_index = os.environ.get('SB_MODE_SERIAL_INDEX', -1)
+        parallel_index = os.environ.get('SB_MODE_PARALLEL_INDEX', -1)
 
         try:
             # Filter useless output
@@ -192,8 +192,8 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                         time_out = float(line[time_index])
                         algbw_out = float(line[algbw_index])
                         exec_index = '_{}_{}_'.format(
-                            int(serial_index), int(parallel_index)
-                        ) if serial_index and parallel_index else '_'
+                            serial_index, parallel_index
+                        ) if serial_index != -1 and parallel_index != -1 else ':'
                         prefix_name = '{}{}{}_'.format(self._args.operation, exec_index, size)
                         self._result.add_result(prefix_name + 'busbw', busbw_out)
                         self._result.add_result(prefix_name + 'algbw', algbw_out)
