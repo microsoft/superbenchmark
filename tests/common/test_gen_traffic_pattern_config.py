@@ -12,9 +12,9 @@ from superbench.common.utils import gen_traffic_pattern_host_groups
 
 class GenConfigTest(unittest.TestCase):
     """Test the utils for generating config."""
-    @decorator.load_data('tests/data/pattern_config')    # noqa: C901
+    @decorator.load_data('tests/data/mpi_pattern.txt')    # noqa: C901
     @decorator.load_data('tests/data/ib_traffic_topo_aware_hostfile')    # noqa: C901
-    def test_gen_traffic_pattern_host_group(self, expected_pattern_config, tp_hostfile):
+    def test_gen_traffic_pattern_host_group(self, expected_mpi_pattern, tp_hostfile):
         """Test the function of generating traffic pattern config from specified mode."""
         # Test for all-nodes pattern
         test_config_file = tempfile.NamedTemporaryFile()
@@ -28,6 +28,11 @@ class GenConfigTest(unittest.TestCase):
             type=str,
             default='all-nodes',
         )
+        parser.add_argument(
+            '--mpi_pattern',
+            type=bool,
+            default=True,
+        )
         pattern, _ = parser.parse_known_args()
         expected_host_group = [[['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']]]
         self.assertEqual(
@@ -40,6 +45,11 @@ class GenConfigTest(unittest.TestCase):
             '--type',
             type=str,
             default='pair-wise',
+        )
+        parser.add_argument(
+            '--mpi_pattern',
+            type=bool,
+            default=True,
         )
         pattern, _ = parser.parse_known_args()
         expected_host_group = [
@@ -66,6 +76,11 @@ class GenConfigTest(unittest.TestCase):
             '--batch',
             type=int,
             default=3,
+        )
+        parser.add_argument(
+            '--mpi_pattern',
+            type=bool,
+            default=True,
         )
         pattern, _ = parser.parse_known_args()
         expected_host_group = [[['node0', 'node1', 'node2'], ['node3', 'node4', 'node5']]]
@@ -102,6 +117,11 @@ class GenConfigTest(unittest.TestCase):
             type=int,
             default=6,
         )
+        parser.add_argument(
+            '--mpi_pattern',
+            type=bool,
+            default=True,
+        )
         hostx = tp_hostfile.split()
         pattern, _ = parser.parse_known_args()
         expected_host_group = [
@@ -123,10 +143,11 @@ class GenConfigTest(unittest.TestCase):
             gen_traffic_pattern_host_groups(hostx, pattern, test_config_path, test_benchmark_name), expected_host_group
         )
 
-        # Test for pattern_config file
+        # Test for mpi_pattern file
         with open(test_config_path, 'r') as f:
             content = f.read()
-            self.assertEqual(content, expected_pattern_config)
+            self.assertEqual(content, expected_mpi_pattern)
+        test_config_file.close()
 
         # Test for invalid pattern
         hostx = ['node0', 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7']
@@ -135,6 +156,11 @@ class GenConfigTest(unittest.TestCase):
             '--type',
             type=str,
             default='invalid pattern',
+        )
+        parser.add_argument(
+            '--mpi_pattern',
+            type=bool,
+            default=True,
         )
         pattern, _ = parser.parse_known_args()
         gen_traffic_pattern_host_groups(hostx, pattern, test_config_path, test_benchmark_name)

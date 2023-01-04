@@ -463,10 +463,12 @@ Pattern variables to run benchmarks with nodes in specified traffic pattern comb
 Only available for `mpi` mode.
 
 Available variables in formatted string includes:
-+ `type`: the traffic pattern type, required.
++ `type(str)`: the traffic pattern type, required.
     * accepted values: `all-nodes`, `pair-wise`, `k-batch`, `topo-aware`
-+ `batch`: the scale of batch, required in `k-batch` pattern.
-+ `ibstat`: the path of ibstat output, wil be auto-generated in `./output/ibstat_file.txt` if not specified, optional in `topo-aware` pattern
-+ `ibnetdiscover`: the path of ibnetdiscover output `ibnetdiscover_file.txt`, required in `topo-aware` pattern.
-+ `min_dist`: minimum distance of VM pair, required in `topo-aware` pattern.
-+ `max_dist`: maximum distance of VM pair, required in `topo-aware` pattern.
++ `mpi_pattern(bool)`: generate pattern config file in `./output/mpi_pattern.txt` for diagnosis, required.
++ `batch(int)`: the scale of batch, required in `k-batch` pattern.
++ `ibstat(str)`: the path of ibstat output, wil be auto-generated in `./output/ibstat_file.txt` if not specified, optional in `topo-aware` pattern
++ `ibnetdiscover(str)`: the path of ibnetdiscover output `ibnetdiscover_file.txt`, required in `topo-aware` pattern.
++ `min_dist(int)`: minimum distance of VM pair, required in `topo-aware` pattern.
++ `max_dist(int)`: maximum distance of VM pair, required in `topo-aware` pattern.
+
