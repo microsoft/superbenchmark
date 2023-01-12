@@ -61,15 +61,18 @@ class TeBertBenchmarkModel(torch.nn.Module):
         self._embedding = torch.nn.Embedding(config.vocab_size, config.hidden_size)
         # Build BERT using nn.TransformerEncoderLayer or te.TransformerLayer
         # input shape: (seq_len, batch_size, hidden_size)
-        encoder_layer = te.TransformerLayer(
-            config.hidden_size,
-            config.intermediate_size,
-            config.num_attention_heads,
-            apply_residual_connection_post_layernorm=True,
-            output_layernorm=True,
-            layer_type='encoder',
+        self._encoder_layers = torch.nn.ModuleList(
+            [
+                te.TransformerLayer(
+                    config.hidden_size,
+                    config.intermediate_size,
+                    config.num_attention_heads,
+                    apply_residual_connection_post_layernorm=True,
+                    output_layernorm=True,
+                    layer_type='encoder',
+                ) for _ in range(config.num_hidden_layers)
+            ]
         )
-        self._encoder_layers = torch.nn.ModuleList([encoder_layer for _ in range(config.num_hidden_layers)])
         # BertPooler used in huggingface transformers
         # https://github.com/huggingface/transformers/blob/accad48e/src/transformers/models/bert/modeling_bert.py#L893
         self._pooler = torch.nn.Sequential(
