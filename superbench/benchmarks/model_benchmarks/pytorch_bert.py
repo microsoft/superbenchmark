@@ -116,7 +116,6 @@ class PytorchBERT(PytorchBase):
             Precision.FLOAT16,
             Precision.FP8_HYBRID,
             Precision.FP8_E4M3,
-            Precision.FP8_E5M2,
         ]
         self._optimizer_type = Optimizer.ADAMW
         self._loss_fn = torch.nn.CrossEntropyLoss()
