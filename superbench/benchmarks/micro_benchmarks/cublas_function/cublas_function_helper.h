@@ -178,13 +178,13 @@ void from_json(const json &j, CublasFunction &fn) {
         auto datatype = j.at("datatype").get<std::string>();
         fn.set_datatype(datatype);
     } catch (std::exception &e) {
-        throw "invalid datatype in json";
+        fn.set_datatype("unknown");
     }
     try {
         auto use_tensor_core = j.at("use_tensor_core").get<bool>();
         fn.set_use_tensor_core(use_tensor_core);
     } catch (std::exception &e) {
-        throw "invalid tensorcore flag in json";
+        fn.set_use_tensor_core(false);
     }
 }
 

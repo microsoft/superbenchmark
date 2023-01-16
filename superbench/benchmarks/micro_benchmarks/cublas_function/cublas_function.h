@@ -285,7 +285,7 @@ class GemmStridedBatchedExFunction : public CublasFunction {
         if (this->datatype_.compare("half") == 0) {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<half *>(Parameter_0_0_host), reinterpret_cast<half *>(Parameter_1_0_host),
-                reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
+                reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu), 1.0f, 1.0f);
         } else if (this->datatype_.compare("float") == 0) {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<float *>(Parameter_0_0_host), reinterpret_cast<float *>(Parameter_1_0_host),
