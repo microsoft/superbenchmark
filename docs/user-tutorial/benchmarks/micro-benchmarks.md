@@ -66,9 +66,9 @@ Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/
 
 #### Metrics
 
-| Name                            | Unit           | Description                     |
-|---------------------------------|----------------|---------------------------------|
-| cublaslt-gemm/dtype_m_n_k_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
+| Name                                           | Unit           | Description                     |
+|------------------------------------------------|----------------|---------------------------------|
+| cublaslt-gemm/${dtype}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 
 ### `cublas-function`
 
@@ -86,9 +86,11 @@ The supported functions for cuBLAS are as follows:
 
 #### Metrics
 
-| Name                                                     | Unit      | Description                                                       |
-|----------------------------------------------------------|-----------|-------------------------------------------------------------------|
-| cublas-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cublas function with the parameters. |
+| Name                                                            | Unit      | Description                                                                                                                                  |
+|-----------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| cublas-function/name_${function_name}_${parameters}_time        | time (us) | The mean time to execute the cublas function with the parameters.                                                                            |
+| cublas-function/name_${function_name}_${parameters}_correctness |           | Whether the calculation results of executing the cublas function with the parameters pass the correctness check if enable correctness check. |
+| cublas-function/name_${function_name}_${parameters}_error       |           | The error ratio of the calculation results of executing the cublas function with the parameters if enable correctness check.                 |
 
 ### `cudnn-function`
 
@@ -264,9 +266,10 @@ Support the following traffic patterns:
 | rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
 | rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
 
-If traffic pattern is specified, the metrics pattern will change to `nccl-bw/${operation}_${serial_index)_${parallel_index):${msg_size}_time`
+If mpi mode is enable and traffic pattern is specified, the metrics pattern will change to `nccl-bw/${operation}_${serial_index)_${parallel_index):${msg_size}_time`
 - `serial_index` represents the serial index of the host group in serial.
 - `parallel_index` represents the parallel index of the host list in parallel.
+
 ### `tcp-connectivity`
 
 #### Introduction
