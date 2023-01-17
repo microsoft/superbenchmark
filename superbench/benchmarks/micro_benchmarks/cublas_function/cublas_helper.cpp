@@ -116,10 +116,10 @@ void gemmEx(cublasHandle_t handle, int transa, int transb, int m, int n, int k, 
     cudaDataType_t matrix_type;
     cublasGemmAlgo_t algo;
     algo = (use_tensor_core ? CUBLAS_GEMM_DFALT_TENSOR_OP : CUBLAS_GEMM_DFALT);
-    if (type.compare("float") == 0) {
+    if (type.compare("float")) {
         matrix_type = CUDA_R_32F;
     } else {
-        if (type.compare("half") == 0) {
+        if (type.compare("half")) {
             matrix_type = CUDA_R_16F;
         } else {
             throw "invalid datatype";
@@ -153,10 +153,10 @@ void gemmStridedBatchedEx(cublasHandle_t handle, int transa, int transb, int m, 
     cudaDataType_t matrix_type;
     cublasGemmAlgo_t algo;
     algo = (use_tensor_core ? CUBLAS_GEMM_DFALT_TENSOR_OP : CUBLAS_GEMM_DFALT);
-    if (type.compare("float") == 0) {
+    if (type.compare("float")) {
         matrix_type = CUDA_R_32F;
     } else {
-        if (type.compare("half") == 0) {
+        if (type.compare("half")) {
             matrix_type = CUDA_R_16F;
         } else {
             throw "invalid datatype";

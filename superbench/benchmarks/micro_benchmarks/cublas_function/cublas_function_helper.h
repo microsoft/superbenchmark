@@ -175,25 +175,13 @@ void from_json(const json &j, CublasFunction &fn) {
         fn.set_batch_count(1);
     }
     try {
-        if (str.find("datatype") == std::string::npos) {
-            fn.set_datatype("unknown");
-        } else {
-            auto datatype = j.at("datatype").get<std::string>();
-            fn.set_datatype(datatype);
-        }
-
+        auto datatype = j.at("datatype").get<std::string>();
+        fn.set_datatype(datatype);
+        auto use_tensor_core = j.at("use_tensor_core").get<bool>();
+        fn.set_use_tensor_core(use_tensor_core);
     } catch (std::exception &e) {
-        throw std::runtime_error("datatype is required for cublasGemmEx and cublasGemmStridedBatchedEx");
-    }
-    try {
-        if (str.find("use_tensor_core") == std::string::npos) {
-            fn.set_use_tensor_core(false);
-        } else {
-            auto use_tensor_core = j.at("use_tensor_core").get<bool>();
-            fn.set_use_tensor_core(use_tensor_core);
-        }
-    } catch (std::exception &e) {
-        throw std::runtime_error("use_tensor_core is required for cublasGemmEx and cublasGemmStridedBatchedEx");
+        fn.set_datatype("float");
+        fn.set_use_tensor_core(false);
     }
 }
 
