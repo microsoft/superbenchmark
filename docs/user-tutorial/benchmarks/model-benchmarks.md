@@ -30,7 +30,7 @@ including the following categories:
 For inference, supported percentiles include
 50<sup>th</sup>, 90<sup>th</sup>, 95<sup>th</sup>, 99<sup>th</sup>, and 99.9<sup>th</sup>.
 
-**New: Support fp8_hybrid or fp8_e4m3 precision for BERT models.**
+**New: Support fp8_hybrid and fp8_e4m3 precision for BERT models.**
 
 #### Metrics
 

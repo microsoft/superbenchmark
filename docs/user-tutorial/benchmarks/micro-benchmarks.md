@@ -86,11 +86,11 @@ The supported functions for cuBLAS are as follows:
 
 #### Metrics
 
-| Name                                                            | Unit      | Description                                                                                                                                  |
-|-----------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| cublas-function/name_${function_name}_${parameters}_time        | time (us) | The mean time to execute the cublas function with the parameters.                                                                            |
-| cublas-function/name_${function_name}_${parameters}_correctness |           | Whether the calculation results of executing the cublas function with the parameters pass the correctness check if enable correctness check. |
-| cublas-function/name_${function_name}_${parameters}_error       |           | The error ratio of the calculation results of executing the cublas function with the parameters if enable correctness check.                 |
+| Name                                                              | Unit      | Description                                                                                                                                  |
+|-------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| cublas-function/name\_${function_name}\_${parameters}_time        | time (us) | The mean time to execute the cublas function with the parameters.                                                                            |
+| cublas-function/name\_${function_name}\_${parameters}_correctness |           | Whether the calculation results of executing the cublas function with the parameters pass the correctness check if enable correctness check. |
+| cublas-function/name\_${function_name}\_${parameters}_error       |           | The error ratio of the calculation results of executing the cublas function with the parameters if enable correctness check.                 |
 
 ### `cudnn-function`
 
@@ -105,9 +105,9 @@ The supported functions for cuDNN are as follows:
 
 #### Metrics
 
-| Name                                                    | Unit      | Description                                                      |
-|---------------------------------------------------------|-----------|------------------------------------------------------------------|
-| cudnn-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
+| Name                                                      | Unit      | Description                                                      |
+|-----------------------------------------------------------|-----------|------------------------------------------------------------------|
+| cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
 ### `tensorrt-inference`
 
