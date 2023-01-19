@@ -97,7 +97,7 @@ sb deploy [--docker-image]
           [--host-list]
           [--host-password]
           [--host-username]
-          [--no-pull]
+          [--no-image-pull]
           [--output-dir]
           [--private-key]
 ```
@@ -113,7 +113,7 @@ sb deploy [--docker-image]
 | `--host-list` `-l`    | `None`                  | Comma separated host list.                                                        |
 | `--host-password`     | `None`                  | Host password or key passphase if needed.                                         |
 | `--host-username`     | `None`                  | Host username if needed.                                                          |
-| `--no-pull`           | `False`                 | Skip pull and use local Docker image.                                             |
+| `--no-image-pull`     | `False`                 | Skip pull and use local Docker image.                                             |
 | `--output-dir`        | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified.       |
 | `--private-key`       | `None`                  | Path to private key if needed.                                                    |
 
