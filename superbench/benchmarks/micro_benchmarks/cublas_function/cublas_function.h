@@ -170,12 +170,12 @@ class GemmExFunction : public CublasFunction {
      * @brief Prepare memory and data of the input and output for kernel running
      */
     virtual void prepare_tensor() {
-        if (this->datatype_.compare("half")) {
+        if (this->datatype_.compare("half") == 0) {
             CublasFunction::prepare_tensor_template<half>(
                 reinterpret_cast<half **>(&Parameter_0_0), reinterpret_cast<half **>(&Parameter_1_0),
                 reinterpret_cast<half **>(&Result_3_0), reinterpret_cast<half **>(&Parameter_0_0_host),
                 reinterpret_cast<half **>(&Parameter_1_0_host));
-        } else if (this->datatype_.compare("float")) {
+        } else if (this->datatype_.compare("float") == 0) {
             CublasFunction::prepare_tensor_template<float>(
                 reinterpret_cast<float **>(&Parameter_0_0), reinterpret_cast<float **>(&Parameter_1_0),
                 reinterpret_cast<float **>(&Result_3_0), reinterpret_cast<float **>(&Parameter_0_0_host),
@@ -186,11 +186,11 @@ class GemmExFunction : public CublasFunction {
      * @brief  Function calculation on CPU side
      */
     virtual void matrix_calculation_on_cpu() {
-        if (this->datatype_.compare("half")) {
+        if (this->datatype_.compare("half") == 0) {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<half *>(Parameter_0_0_host), reinterpret_cast<half *>(Parameter_1_0_host),
                 reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
-        } else if (this->datatype_.compare("float")) {
+        } else if (this->datatype_.compare("float") == 0) {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<float *>(Parameter_0_0_host), reinterpret_cast<float *>(Parameter_1_0_host),
                 reinterpret_cast<float *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
@@ -201,11 +201,11 @@ class GemmExFunction : public CublasFunction {
      */
     virtual int correctness_check() {
         int result = 0;
-        if (this->datatype_.compare("half")) {
+        if (this->datatype_.compare("half") == 0) {
             double eps = this->eps == 0.0 ? 1.e-3 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<half *>(Result_3_0),
                                   reinterpret_cast<float *>(Result_cpu), eps);
-        } else if (this->datatype_.compare("float")) {
+        } else if (this->datatype_.compare("float") == 0) {
             double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<float *>(Result_3_0),
                                   reinterpret_cast<float *>(Result_cpu), eps);
@@ -266,12 +266,12 @@ class GemmStridedBatchedExFunction : public CublasFunction {
      * @brief Prepare memory and data of the input and output for kernel running
      */
     virtual void prepare_tensor() {
-        if (this->datatype_.compare("half")) {
+        if (this->datatype_.compare("half") == 0) {
             prepare_tensor_template<half>(
                 reinterpret_cast<half **>(&Parameter_0_0), reinterpret_cast<half **>(&Parameter_1_0),
                 reinterpret_cast<half **>(&Result_3_0), reinterpret_cast<half **>(&Parameter_0_0_host),
                 reinterpret_cast<half **>(&Parameter_1_0_host));
-        } else if (this->datatype_.compare("float")) {
+        } else if (this->datatype_.compare("float") == 0) {
             prepare_tensor_template<float>(
                 reinterpret_cast<float **>(&Parameter_0_0), reinterpret_cast<float **>(&Parameter_1_0),
                 reinterpret_cast<float **>(&Result_3_0), reinterpret_cast<float **>(&Parameter_0_0_host),
@@ -282,11 +282,11 @@ class GemmStridedBatchedExFunction : public CublasFunction {
      * @brief  Function calculation on CPU side
      */
     virtual void matrix_calculation_on_cpu() {
-        if (this->datatype_.compare("half")) {
+        if (this->datatype_.compare("half") == 0) {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<half *>(Parameter_0_0_host), reinterpret_cast<half *>(Parameter_1_0_host),
-                reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu));
-        } else if (this->datatype_.compare("float"), 1.0f, 1.0f) {
+                reinterpret_cast<half *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu), 1.0f, 1.0f);
+        } else if (this->datatype_.compare("float") == 0) {
             matrix_calculation_on_cpu_with_data(
                 reinterpret_cast<float *>(Parameter_0_0_host), reinterpret_cast<float *>(Parameter_1_0_host),
                 reinterpret_cast<float *>(Result_3_0), reinterpret_cast<float **>(&Result_cpu), 1.0f, 1.0f);
@@ -297,11 +297,11 @@ class GemmStridedBatchedExFunction : public CublasFunction {
      */
     virtual int correctness_check() {
         int result = 0;
-        if (this->datatype_.compare("half")) {
+        if (this->datatype_.compare("half") == 0) {
             double eps = this->eps == 0.0 ? 1.e-3 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<half *>(Result_3_0),
                                   reinterpret_cast<float *>(Result_cpu), eps);
-        } else if (this->datatype_.compare("float")) {
+        } else if (this->datatype_.compare("float") == 0) {
             double eps = this->eps == 0.0 ? 1.e-6 : this->eps;
             result = check_result(this->batch_count_, reinterpret_cast<float *>(Result_3_0),
                                   reinterpret_cast<float *>(Result_cpu), eps);
