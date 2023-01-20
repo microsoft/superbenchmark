@@ -60,6 +60,12 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         mocked_failure_count.return_value = 0
         self.cmd('sb deploy --host-list localhost', checks=[NoneCheck()])
 
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_deploy_skippull(self, mocked_failure_count):
+        """Test sb deploy without docker pull."""
+        mocked_failure_count.return_value = 0
+        self.cmd('sb deploy --host-list localhost --no-image-pull', checks=[NoneCheck()])
+
     def test_sb_deploy_no_host(self):
         """Test sb deploy, no host_file or host_list provided, should fail."""
         self.cmd('sb deploy', expect_failure=True)

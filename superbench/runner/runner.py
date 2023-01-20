@@ -183,6 +183,7 @@ class SuperBenchRunner():
             'ssh_port': random.randint(1 << 14, (1 << 15) - 1),
             'output_dir': str(self._output_path),
             'docker_image': self._docker_config.image,
+            'docker_pull': bool(self._docker_config.pull),
         }
         if bool(self._docker_config.username) and bool(self._docker_config.password):
             extravars.update(
