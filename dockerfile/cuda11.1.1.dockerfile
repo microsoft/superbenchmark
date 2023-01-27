@@ -122,6 +122,19 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
+#install STREAM
+RUN pushd /tmp && \
+    wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
+    apt install aocc-compiler-4.0.0_1_amd64.deb && \
+    /opt/AMD/aocc-compiler-4.0.0/bin/clang -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -march=znver1 -lomp -fopenmp -fnt-store=aggressive -DSTREAM_ARRAY_SIZE=800000000 -DNTIMES=10 stream.c -o streamZen1.exe && \
+    /opt/AMD/aocc-compiler-4.0.0/bin/clang -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -march=znver2 -lomp -fopenmp -fnt-store=aggressive -DSTREAM_ARRAY_SIZE=800000000 -DNTIMES=10 stream.c -o streamZen2.exe && \
+    /opt/AMD/aocc-compiler-4.0.0/bin/clang -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -march=znver3 -lomp -fopenmp -fnt-store=aggressive -DSTREAM_ARRAY_SIZE=800000000 -DNTIMES=10 stream.c -o streamZen3.exe && \
+    /opt/AMD/aocc-compiler-4.0.0/bin/clang -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -march=znver4 -lomp -fopenmp -fnt-store=aggressive -DSTREAM_ARRAY_SIZE=800000000 -DNTIMES=10 stream.c -o streamZen4.exe && \
+    cp streamZen* /usr/local/bin/ && \
+    rm -rf aocc-compiler-4.0.0_1_amd64.deb && \
+    rm -rf streamZen* && \
+    popd
+
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
 
