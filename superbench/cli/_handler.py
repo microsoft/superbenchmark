@@ -99,6 +99,7 @@ def process_runner_arguments(
     docker_username=None,
     docker_password=None,
     no_docker=False,
+    no_image_pull=False,
     host_file=None,
     host_list=None,
     host_username=None,
@@ -115,6 +116,7 @@ def process_runner_arguments(
         docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
         docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
         no_docker (bool, optional): Run on host directly without Docker. Defaults to False.
+        no_image_pull (bool, optional): Skip pull and use local Docker image. Defaults to False.
         host_file (str, optional): Path to Ansible inventory host file. Defaults to None.
         host_list (str, optional): Comma separated host list. Defaults to None.
         host_username (str, optional): Host username if needed. Defaults to None.
@@ -149,6 +151,7 @@ def process_runner_arguments(
             'password': docker_password,
             'registry': split_docker_domain(docker_image)[0],
             'skip': no_docker,
+            'pull': not no_image_pull,
         }
     )
     # Ansible config
@@ -209,6 +212,7 @@ def deploy_command_handler(
     docker_image='superbench/superbench',
     docker_username=None,
     docker_password=None,
+    no_image_pull=False,
     host_file=None,
     host_list=None,
     host_username=None,
@@ -228,6 +232,7 @@ def deploy_command_handler(
         docker_image (str, optional): Docker image URI. Defaults to superbench/superbench:latest.
         docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
         docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
+        no_image_pull (bool, optional): Skip pull and use local Docker image. Defaults to False.
         host_file (str, optional): Path to Ansible inventory host file. Defaults to None.
         host_list (str, optional): Comma separated host list. Defaults to None.
         host_username (str, optional): Host username if needed. Defaults to None.
@@ -243,6 +248,7 @@ def deploy_command_handler(
         docker_username=docker_username,
         docker_password=docker_password,
         no_docker=False,
+        no_image_pull=no_image_pull,
         host_file=host_file,
         host_list=host_list,
         host_username=host_username,
@@ -298,6 +304,7 @@ def run_command_handler(
         docker_username=docker_username,
         docker_password=docker_password,
         no_docker=no_docker,
+        no_image_pull=False,
         host_file=host_file,
         host_list=host_list,
         host_username=host_username,
