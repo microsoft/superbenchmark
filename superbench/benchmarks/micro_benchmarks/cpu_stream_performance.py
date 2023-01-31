@@ -24,7 +24,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'stream'
+        self._bin_name = 'streamZen3.exe'
         self.__cpu_arch = ['other', 'zen3', 'zen4']
 
     def add_parser_arguments(self):
@@ -54,10 +54,8 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             True if _preprocess() succeed.
         """
         if not super()._preprocess():
-            print("fail1")
             return False
         if not self._set_binary_path():
-            print("fail2")
             return False
 
         # zen3
@@ -73,7 +71,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             omp_places += '{' + '{}:1'.format(core) + '}'
 
         envar = 'OMP_SCHEDULE=static && OMP_DYNAMIC=false && OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && \
-            OMP_PROC_BIND=true && OMP_NUM_THREADS={} && OMP_PLACES={}'.format(self._args.cores.len, omp_places)
+            OMP_PROC_BIND=true && OMP_NUM_THREADS={} && OMP_PLACES={}'.format(len(self._args.cores), omp_places)
 
         if self._args.CPU_ARCH == 'zen3':
             exe = 'streamZen3.exe'

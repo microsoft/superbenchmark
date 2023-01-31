@@ -28,12 +28,11 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
-        cores = '0, 4, 8, 12, 16, 20, 24, 28, 30, 34, 38, 42, \
-            46, 50, 54, 58, 60, 64, 68, 72, 76, 80, 84, 88, 90, 94, 98, 102, 106, 110, 114, 118'
+        cores = '0 4 8 12 16 20 24 28 30 34 38 42 46 50 54 58 60 64 68 72 76 80 84 88 90 94 98 102 106 110 114 118'
         coresList = [0, 4, 8, 12, 16, 20, 24, 28, 30, 34, 38, 42, 46, 50, 54, 58, 60, 64, 68, 72,
                      76, 80, 84, 88, 90, 94, 98, 102, 106, 110, 114, 118]
         arch = 'zen3'
-        parameters = '--CPU_ARCH ' + arch + '--cores ' + cores
+        parameters = '--CPU_ARCH ' + arch + ' --cores ' + cores
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -50,8 +49,7 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Check command
         assert (1 == len(benchmark._commands))
-        assert ('CPU_ARCH' in benchmark._commands)
-        assert ('cores' in benchmark._commands)
+        assert ('OMP_PLACES' in benchmark._commands[0])
 
         # Check results
         assert (benchmark._process_raw_result(0, results))
@@ -59,8 +57,10 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         functions = ['Copy', 'Scale', 'Add', 'Triad']
         values = [342008.3, 342409.6, 343827.7, 363208.7]
         for index in range(0, 4):
-            assert (benchmark.result[functions[index] + '_Throughput'][0] == values[index])
-        assert (benchmark.result['Threads'][0] == 32)
+            result = float(benchmark.result[functions[index] + '_Throughput'][0])
+            print(result, values[index])
+            assert (result == values[index])
+        assert (int(benchmark.result['Threads'][0]) == 32)
 
 
 if __name__ == '__main__':
