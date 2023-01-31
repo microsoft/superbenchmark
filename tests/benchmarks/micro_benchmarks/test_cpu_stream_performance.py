@@ -7,7 +7,7 @@ import unittest
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
-from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
+from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
 
 
 class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):

@@ -7,8 +7,7 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Platform
-# , ReturnCode
+from superbench.benchmarks import BenchmarkRegistry
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
