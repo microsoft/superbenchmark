@@ -112,7 +112,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         for line in content:
             if "Number of Threads counted" in line:
                 line.split("= ")[1]
-                self._result.add_result("Threads", line.split("= ")[1])
+                self._result.add_result("Threads", int(line.split("= ")[1]))
             for function in functions:
                 if function in line:
                     records.append(line)
@@ -121,10 +121,10 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         for record in records:
             entries = record.split()
             metric = entries[0].strip().replace(':', '')
-            self._result.add_result(metric + "_Throughput", entries[1].strip())
-            self._result.add_result(metric + "_AvgTime", entries[2].strip())
-            self._result.add_result(metric + "_MinTime", entries[3].strip())
-            self._result.add_result(metric + "_MaxTime", entries[4].strip())
+            self._result.add_result(metric + "_Throughput", float(entries[1].strip()))
+            self._result.add_result(metric + "_AvgTime", float(entries[2].strip()))
+            self._result.add_result(metric + "_MinTime", float(entries[3].strip()))
+            self._result.add_result(metric + "_MaxTime", float(entries[4].strip()))
 
         # raw output
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
@@ -132,4 +132,4 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('cpu-stream', CpuStreamBenchmark, platform=Platform.CPU)
+BenchmarkRegistry.register_benchmark('cpu-stream', CpuStreamBenchmark)

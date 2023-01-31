@@ -25,7 +25,7 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test STREAM benchmark command generation."""
         benchmark_name = 'cpu-stream'
         (benchmark_class,
-            predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+            predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name)
         assert (benchmark_class)
 
         cores = '0 4 8 12 16 20 24 28 30 34 38 42 46 50 54 58 60 64 68 72 76 80 84 88 90 94 98 102 106 110 114 118'
