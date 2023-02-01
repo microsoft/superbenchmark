@@ -20,13 +20,13 @@ class RunnerTestCase(unittest.TestCase):
     """A class for runner test cases."""
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
-        default_config_file = Path(__file__).parent / '../../superbench/config/default.yaml'
-        with default_config_file.open() as fp:
-            self.default_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
+        test_config_file = Path(__file__).parent / '../../tests/data/test.yaml'
+        with test_config_file.open() as fp:
+            self.test_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
         self.sb_output_dir = tempfile.mkdtemp()
 
         self.runner = SuperBenchRunner(
-            self.default_config,
+            self.test_config,
             OmegaConf.create({}),
             OmegaConf.create({}),
             self.sb_output_dir,
@@ -40,6 +40,10 @@ class RunnerTestCase(unittest.TestCase):
         """Test log file exists."""
         expected_log_file = Path(self.runner._sb_output_dir) / 'sb-run.log'
         self.assertTrue(expected_log_file.is_file())
+
+    def test_get_failure_count(self):
+        """Test get_failure_count."""
+        self.assertEqual(0, self.runner.get_failure_count())
 
     def test_get_mode_command(self):
         """Test __get_mode_command."""
@@ -192,12 +196,39 @@ class RunnerTestCase(unittest.TestCase):
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
+                    'proc_num': 8,
+                    'proc_rank': 1,
+                    'mca': {},
+                    'pattern': {
+                        'type': 'all-nodes',
+                    },
+                    'env': {
+                        'PATH': None,
+                        'LD_LIBRARY_PATH': None,
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -bind-to numa '
+                    ' -x PATH -x LD_LIBRARY_PATH '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
         ]
+
         for test_case in test_cases:
             with self.subTest(msg='Testing with case', test_case=test_case):
+                mode = OmegaConf.create(test_case['mode'])
+                if 'pattern' in test_case['mode']:
+                    mode.update({'host_list': ['node0', 'node1']})
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode'])
+                        test_case['benchmark_name'],
+                        mode,
                     ), test_case['expected_command']
                 )
 
@@ -206,9 +237,14 @@ class RunnerTestCase(unittest.TestCase):
                 index = test_case['expected_command'].find('sb exec')
                 expected_command = test_case['expected_command'][:index] + timeout_str + test_case['expected_command'][
                     index:]
+                mode = OmegaConf.create(test_case['mode'])
+                if 'pattern' in test_case['mode']:
+                    mode.update({'host_list': ['node0', 'node1']})
                 self.assertEqual(
                     self.runner._SuperBenchRunner__get_mode_command(
-                        test_case['benchmark_name'], OmegaConf.create(test_case['mode']), test_case['timeout']
+                        test_case['benchmark_name'],
+                        mode,
+                        test_case['timeout'],
                     ), expected_command
                 )
 

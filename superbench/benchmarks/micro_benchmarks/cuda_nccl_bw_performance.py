@@ -128,7 +128,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
     def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to parse raw results and save the summarized results.
 
-          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+        self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
 
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
@@ -150,6 +150,9 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
         busbw_out = -1
         time_out = -1
         algbw_out = -1
+        serial_index = os.environ.get('SB_MODE_SERIAL_INDEX', -1)
+        parallel_index = os.environ.get('SB_MODE_PARALLEL_INDEX', -1)
+
         try:
             # Filter useless output
             out_of_place_index = -1
@@ -188,9 +191,13 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                         busbw_out = float(line[busbw_index])
                         time_out = float(line[time_index])
                         algbw_out = float(line[algbw_index])
-                        self._result.add_result(self._args.operation + '_' + str(size) + '_busbw', busbw_out)
-                        self._result.add_result(self._args.operation + '_' + str(size) + '_algbw', algbw_out)
-                        self._result.add_result(self._args.operation + '_' + str(size) + '_time', time_out)
+                        exec_index = '_{}_{}:'.format(
+                            serial_index, parallel_index
+                        ) if serial_index != -1 and parallel_index != -1 else '_'
+                        prefix_name = '{}{}{}_'.format(self._args.operation, exec_index, size)
+                        self._result.add_result(prefix_name + 'busbw', busbw_out)
+                        self._result.add_result(prefix_name + 'algbw', algbw_out)
+                        self._result.add_result(prefix_name + 'time', time_out)
         except BaseException as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(

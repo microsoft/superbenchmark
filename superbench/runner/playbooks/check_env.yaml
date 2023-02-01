@@ -56,9 +56,16 @@
         - '{{ workspace }}/sb.env'
         - /tmp/sb.env
       become: yes
-    - name: Updating Hostfile
+    - name: Updating Hostfile to Remote
       copy:
         content: "{{ sb_nodes | join('\n') }}\n"
         dest: '{{ workspace }}/hostfile'
         mode: 0644
       become: yes
+    - name: Generating Hostfile to Local
+      delegate_to: localhost
+      run_once: true
+      copy:
+        content: "{{ sb_nodes | join('\n') }}\n"
+        dest: '{{ output_dir }}/hostfile'
+        mode: 0644

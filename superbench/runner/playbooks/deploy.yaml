@@ -92,6 +92,7 @@
       shell: |
         docker pull {{ docker_image }}
       become: yes
+      when: docker_pull | default(true)
       throttle: 32
     - name: Starting Container
       shell: |

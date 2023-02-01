@@ -58,6 +58,18 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 |--------------------------------|-----------|--------------------------------|
 | pytorch-matmul/nosharding_time | time (ms) | Time of pure matmul operation. |
 
+### `cublaslt-gemm`
+
+#### Introduction
+
+Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul).
+
+#### Metrics
+
+| Name                                           | Unit           | Description                     |
+|------------------------------------------------|----------------|---------------------------------|
+| cublaslt-gemm/${dtype}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
+
 ### `cublas-function`
 
 #### Introduction
@@ -74,9 +86,11 @@ The supported functions for cuBLAS are as follows:
 
 #### Metrics
 
-| Name                                                     | Unit      | Description                                                       |
-|----------------------------------------------------------|-----------|-------------------------------------------------------------------|
-| cublas-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cublas function with the parameters. |
+| Name                                                              | Unit      | Description                                                                                                                                  |
+|-------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| cublas-function/name\_${function_name}\_${parameters}_time        | time (us) | The mean time to execute the cublas function with the parameters.                                                                            |
+| cublas-function/name\_${function_name}\_${parameters}_correctness |           | Whether the calculation results of executing the cublas function with the parameters pass the correctness check if enable correctness check. |
+| cublas-function/name\_${function_name}\_${parameters}_error       |           | The error ratio of the calculation results of executing the cublas function with the parameters if enable correctness check.                 |
 
 ### `cudnn-function`
 
@@ -91,9 +105,9 @@ The supported functions for cuDNN are as follows:
 
 #### Metrics
 
-| Name                                                    | Unit      | Description                                                      |
-|---------------------------------------------------------|-----------|------------------------------------------------------------------|
-| cudnn-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
+| Name                                                      | Unit      | Description                                                      |
+|-----------------------------------------------------------|-----------|------------------------------------------------------------------|
+| cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
 ### `tensorrt-inference`
 
@@ -230,10 +244,16 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 
 #### Introduction
 
-Measure the performance of NCCL/RCCL operations,
+Measure the performance of NCCL/RCCL operations under multi nodes' traffic pattern,
 performed by [nccl-tests](https://github.com/NVIDIA/nccl-tests/tree/44df0bf010dcc95e840ca0fb7466c67cff3f1f0f)
 or [rccl-tests](https://github.com/ROCmSoftwarePlatform/rccl-tests/tree/dc1ad4853d7ec738387d42a75a58a98d7af00c7b).
 Support the following operations currently: allreduce, allgather, broadcast, reduce, reducescatter, alltoall.
+
+Support the following traffic patterns:
+* `all-nodes`, validate the NCCL/RCCL performance across all VM nodes simultaneously.
+* `pair-wise`, validate the NCCL/RCCL performance across VM pairs with all possible combinations in parallel.
+* `k-batch`, validate the NCCL/RCCL performance across VM groups with a specified batch scale.
+* `topo-aware`, validate the NCCL/RCCL performance across VM pairs with different distances/hops as a quick test.
 
 #### Metrics
 
@@ -245,6 +265,10 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 | rccl-bw/${operation}_${msg_size}_time  | time (us)        | RCCL operation lantency with given message size.            |
 | rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
 | rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
+
+If mpi mode is enable and traffic pattern is specified, the metrics pattern will change to `nccl-bw/${operation}_${serial_index)_${parallel_index):${msg_size}_time`
+- `serial_index` represents the serial index of the host group in serial.
+- `parallel_index` represents the parallel index of the host list in parallel.
 
 ### `tcp-connectivity`
 

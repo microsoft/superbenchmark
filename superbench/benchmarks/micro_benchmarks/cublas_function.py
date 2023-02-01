@@ -218,9 +218,23 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--config_json_str',
             type=str,
+            nargs='+',
             default=None,
             required=False,
             help='The custom json string defining the params in a cublas function.',
+        )
+        self._parser.add_argument(
+            '--correctness',
+            action='store_true',
+            default=False,
+            help='Enable correctness check for cublas functions.',
+        )
+        self._parser.add_argument(
+            '--eps',
+            type=float,
+            default=None,
+            required=False,
+            help='The acceptable error bound for correctness check.',
         )
 
     def _preprocess(self):
@@ -237,6 +251,8 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         command += (' --warm_up ' + str(self._args.num_warmup))
         command += (' --num_in_step ' + str(self._args.num_in_step))
         command += (' --random_seed ' + str(self._args.random_seed))
+        command += ' --correctness' if self._args.correctness else ''
+        command += (' --eps ' + str(self._args.eps)) if self._args.eps is not None else ''
 
         try:
             if not self._args.config_json_str:
@@ -246,17 +262,20 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._commands.append(complete_command)
 
             else:
-                custom_config_str = yaml.safe_load(self._args.config_json_str)
-                config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
-                complete_command = command + (' --config_json ') + config_json_str
-                self._commands.append(complete_command)
+                if not isinstance(self._args.config_json_str, list):
+                    self._args.config_json_str = [self._args.config_json_str]
+                for config_json_str in self._args.config_json_str:
+                    custom_config_str = yaml.safe_load(config_json_str)
+                    config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
+                    complete_command = command + (' --config_json ') + config_json_str
+                    self._commands.append(complete_command)
         except BaseException as e:
             logger.error('Invalid input params - benchmark: {},  message: {}'.format(self._name, str(e)))
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
         return True
 
-    def _process_raw_result(self, cmd_idx, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to process raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
@@ -295,6 +314,14 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._result.add_raw_data(metric.lower() + '_time', raw_data, self._args.log_raw_data)
                 if 'Error' in line:
                     error = True
+                if '[correctness]' in line:
+                    if 'PASS' in line:
+                        self._result.add_result(metric.lower() + '_correctness', 1)
+                    elif 'FAIL' in line:
+                        self._result.add_result(metric.lower() + '_correctness', 0)
+                    error_rate = float(line.split(' ')[-1])
+                    self._result.add_result(metric.lower() + '_error_rate', error_rate)
+
         except BaseException as e:
             logger.error(
                 'Cannot extract results from cublas functions - round: {}, index of cmd: {}, \

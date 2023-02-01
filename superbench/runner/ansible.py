@@ -27,6 +27,7 @@ class AnsibleClient():
             'cmdline': '--forks 128',
         }
         self._head_host = None
+        self.failure_count = 0
         if config:
             inventory_file = getattr(config, 'host_file', None)
             inventory_list = getattr(config, 'host_list', None)
@@ -77,6 +78,7 @@ class AnsibleClient():
         if r.rc == 0:
             logger.info('Run succeed, return code {}.'.format(r.rc))
         else:
+            self.failure_count += 1
             logger.warning('Run failed, return code {}.'.format(r.rc))
         return r.rc
 

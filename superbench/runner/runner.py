@@ -3,6 +3,7 @@
 
 """SuperBench Runner."""
 
+import os
 import json
 import random
 from pathlib import Path
@@ -14,7 +15,7 @@ from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
-from superbench.common.utils import SuperBenchLogger, logger
+from superbench.common.utils import SuperBenchLogger, logger, gen_ibstat, gen_traffic_pattern_host_groups
 from superbench.runner.ansible import AnsibleClient
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
@@ -88,6 +89,11 @@ class SuperBenchRunner():
                         }
                     for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH', 'SB_WORKSPACE']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
+                    if mode.pattern:
+                        if mode.pattern.type == 'topo-aware' and not mode.pattern.ibstat:
+                            self._sb_benchmarks[name].modes[idx].pattern.ibstat = gen_ibstat(
+                                self._ansible_config, str(self._output_path / 'ibstate_file.txt')
+                            )
 
     def __get_enabled_benchmarks(self):
         """Get enabled benchmarks list.
@@ -109,6 +115,7 @@ class SuperBenchRunner():
             benchmark_name (str): Benchmark name.
             mode (DictConfig): Runner mode.
             timeout (int): The timeout value in seconds.
+            host_list (list): The specified Host node list.
 
         Return:
             str: Runner command.
@@ -143,12 +150,13 @@ class SuperBenchRunner():
                 'mpirun '    # use default OpenMPI in image
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
-                '{host_list} '    # use prepared hostfile and launch {proc_num} processes on each node
+                '{host_list} '    # use prepared hostfile or specify nodes and launch {proc_num} processes on each node
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                host_list=f'-host localhost:{mode.proc_num}'
-                if mode.node_num == 1 else f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node',
+                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else
+                f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if mode.host_list is None else '-host ' +
+                ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
@@ -160,6 +168,14 @@ class SuperBenchRunner():
             logger.warning('Unknown mode %s.', mode.name)
         return mode_command.strip()
 
+    def get_failure_count(self):
+        """Get failure count during Ansible run.
+
+        Return:
+            int: Failure count.
+        """
+        return self._ansible_client.failure_count
+
     def deploy(self):    # pragma: no cover
         """Deploy SuperBench environment."""
         logger.info('Preparing SuperBench environment.')
@@ -167,6 +183,7 @@ class SuperBenchRunner():
             'ssh_port': random.randint(1 << 14, (1 << 15) - 1),
             'output_dir': str(self._output_path),
             'docker_image': self._docker_config.image,
+            'docker_pull': bool(self._docker_config.pull),
         }
         if bool(self._docker_config.username) and bool(self._docker_config.password):
             extravars.update(
@@ -389,6 +406,8 @@ class SuperBenchRunner():
             int: Process return code.
         """
         mode.update(vars)
+        if mode.name == 'mpi' and mode.pattern:
+            mode.env.update({'SB_MODE_SERIAL_INDEX': mode.serial_index, 'SB_MODE_PARALLEL_INDEX': mode.parallel_index})
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
 
         timeout = self._sb_benchmarks[benchmark_name].timeout
@@ -436,7 +455,31 @@ class SuperBenchRunner():
                     )
                     ansible_rc = sum(rc_list)
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
-                    ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                    if not mode.pattern:
+                        ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
+                    else:
+                        if not os.path.exists(self._output_path / 'hostfile'):
+                            logger.warning('No hostfile under %s.', self._output_path)
+                            continue
+                        with open(self._output_path / 'hostfile', 'r') as f:
+                            host_list = f.read().splitlines()
+                        host_groups = gen_traffic_pattern_host_groups(
+                            host_list, mode.pattern, self._output_path / 'mpi_pattern.txt', benchmark_name
+                        )
+                        for serial_index, host_group in enumerate(host_groups):
+                            para_rc_list = Parallel(n_jobs=len(host_group))(
+                                delayed(self._run_proc)(
+                                    benchmark_name,
+                                    mode,
+                                    vars={
+                                        'proc_rank': 0,
+                                        'host_list': host_list,
+                                        'serial_index': str(serial_index),
+                                        'parallel_index': str(parallel_index),
+                                    }
+                                ) for parallel_index, host_list in enumerate(host_group)
+                            )
+                            ansible_rc = ansible_rc + sum(para_rc_list)
                 else:
                     logger.warning('Unknown mode %s.', mode.name)
                 if ansible_rc != 0:
