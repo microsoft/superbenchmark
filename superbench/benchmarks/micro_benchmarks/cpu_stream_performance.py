@@ -31,9 +31,9 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--CPU_ARCH',
+            '--cpu_arch',
             type=str,
-            default=['other'],
+            default=['zen4'],
             required=False,
             help='The targeted cpu architectures to run \
                 STREAM. Possible values are {}.'.format(' '.join(self.__cpu_arch))
@@ -42,6 +42,8 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             '--cores',
             nargs='+',
             type=int,
+            default=[0, 8, 16, 24, 32, 38, 44, 52, 60, 68, 76, 82, 88, 96,
+                     104, 112, 120, 126, 132, 140, 148, 156, 164, 170],
             required=True,
             help='List of cores to perform test'
         )
@@ -53,8 +55,6 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             True if _preprocess() succeed.
         """
         if not super()._preprocess():
-            return False
-        if not self._set_binary_path():
             return False
 
         # zen3
@@ -72,19 +72,17 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         envar = 'OMP_SCHEDULE=static && OMP_DYNAMIC=false && OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && \
             OMP_PROC_BIND=true && OMP_NUM_THREADS={} && OMP_PLACES={}'.format(len(self._args.cores), omp_places)
 
-        if self._args.CPU_ARCH == 'zen3':
+        if self._args.cpu_arch == 'zen3':
             exe = 'streamZen3.exe'
-        elif self._args.CPU_ARCH == 'zen4':
+        elif self._args.cpu_arch == 'zen4':
             exe = 'streamZen4.exe'
         else:
             exe = 'streamx86.exe'
 
         command = envar + " " + os.path.join(self._args.bin_dir, exe)
         self._bin_name = exe
-        stream_path = os.path.join(self._args.bin_dir, self._bin_name)
-        ret_val = os.access(stream_path, os.X_OK | os.F_OK)
-        if not ret_val:
-            print("fail3")
+
+        if not self._set_binary_path():
             logger.error(
                 'Executable {} not found in {} or it is not executable'.format(self._bin_name, self._args.bin_dir)
             )
@@ -111,7 +109,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         for line in content:
             if "Number of Threads counted" in line:
                 line.split("= ")[1]
-                self._result.add_result("Threads", int(line.split("= ")[1]))
+                self._result.add_result("threads", int(line.split("= ")[1]))
             for function in functions:
                 if function in line:
                     records.append(line)
@@ -120,10 +118,10 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         for record in records:
             entries = record.split()
             metric = entries[0].strip().replace(':', '')
-            self._result.add_result(metric + "_Throughput", float(entries[1].strip()))
-            self._result.add_result(metric + "_AvgTime", float(entries[2].strip()))
-            self._result.add_result(metric + "_MinTime", float(entries[3].strip()))
-            self._result.add_result(metric + "_MaxTime", float(entries[4].strip()))
+            self._result.add_result(metric.lower() + "_throughput", float(entries[1].strip()))
+            self._result.add_result(metric.lower() + "_time_avg", float(entries[2].strip()))
+            self._result.add_result(metric.lower() + "_time_min", float(entries[3].strip()))
+            self._result.add_result(metric.lower() + "_time_max", float(entries[4].strip()))
 
         # raw output
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)

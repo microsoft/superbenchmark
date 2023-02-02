@@ -110,9 +110,9 @@ RUN cd /tmp && \
     /opt/AMD/aocc-compiler-4.0.0/bin/clang -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -lomp -fopenmp -fnt-store=aggressive -DSTREAM_ARRAY_SIZE=400000000 -DNTIMES=10 stream.c -o streamx86.exe && \    
     /opt/AMD/aocc-compiler-4.0.0/bin/clang -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -march=znver3 -lomp -fopenmp -fnt-store=aggressive -DSTREAM_ARRAY_SIZE=400000000 -DNTIMES=10 stream.c -o streamZen3.exe && \
     /opt/AMD/aocc-compiler-4.0.0/bin/clang -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -march=znver4 -lomp -fopenmp -fnt-store=aggressive -DSTREAM_ARRAY_SIZE=800000000 -DNTIMES=10 stream.c -o streamZen4.exe && \
-    cp streamZen* /usr/local/bin/ && \
+    cp stream*.exe /usr/local/bin/ && \
     rm -rf aocc-compiler-4.0.0_1_amd64.deb && \
-    rm -rf streamZen*
+    rm -rf stream*
 
 # Add config files
 ADD dockerfile/etc /opt/microsoft/

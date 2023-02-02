@@ -7,7 +7,7 @@ import unittest
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
-from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
 class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
@@ -25,14 +25,14 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test STREAM benchmark command generation."""
         benchmark_name = 'cpu-stream'
         (benchmark_class,
-            predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name)
+            predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
         cores = '0 4 8 12 16 20 24 28 30 34 38 42 46 50 54 58 60 64 68 72 76 80 84 88 90 94 98 102 106 110 114 118'
         coresList = [0, 4, 8, 12, 16, 20, 24, 28, 30, 34, 38, 42, 46, 50, 54, 58, 60, 64, 68, 72,
                      76, 80, 84, 88, 90, 94, 98, 102, 106, 110, 114, 118]
         arch = 'zen3'
-        parameters = '--CPU_ARCH ' + arch + ' --cores ' + cores
+        parameters = '--cpu_arch ' + arch + ' --cores ' + cores
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -45,7 +45,7 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Check parameters specified in BenchmarkContext.
         assert (benchmark._args.cores == coresList)
-        assert (benchmark._args.CPU_ARCH)
+        assert (benchmark._args.cpu_arch == arch)
 
         # Check command
         assert (1 == len(benchmark._commands))
@@ -54,13 +54,13 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         # Check results
         assert (benchmark._process_raw_result(0, results))
         assert (benchmark.result['return_code'][0] == 0)
-        functions = ['Copy', 'Scale', 'Add', 'Triad']
+        functions = ['copy', 'scale', 'add', 'triad']
         values = [342008.3, 342409.6, 343827.7, 363208.7]
         for index in range(0, 4):
-            result = float(benchmark.result[functions[index] + '_Throughput'][0])
+            result = float(benchmark.result[functions[index] + '_throughput'][0])
             print(result, values[index])
             assert (result == values[index])
-        assert (int(benchmark.result['Threads'][0]) == 32)
+        assert (int(benchmark.result['threads'][0]) == 32)
 
 
 if __name__ == '__main__':
