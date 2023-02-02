@@ -33,7 +33,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--cpu_arch',
             type=str,
-            default=['zen4'],
+            default='zen4',
             required=False,
             help='The targeted cpu architectures to run \
                 STREAM. Possible values are {}.'.format(' '.join(self.__cpu_arch))
