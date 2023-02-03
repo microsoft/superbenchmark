@@ -3,10 +3,12 @@
 
 """A module containing all the e2e model related benchmarks."""
 
-from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
-from superbench.benchmarks.model_benchmarks.pytorch_bert import PytorchBERT
-from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import PytorchGPT2
-from superbench.benchmarks.model_benchmarks.pytorch_cnn import PytorchCNN
-from superbench.benchmarks.model_benchmarks.pytorch_lstm import PytorchLSTM
+from superbench.common.utils import LazyImport
+ModelBenchmark = LazyImport('superbench.benchmarks.model_benchmarks.model_base.ModelBenchmark')
+PytorchBERT = LazyImport('superbench.benchmarks.model_benchmarks.model_benchmarks.pytorch_bert.PytorchBERT')
+PytorchGPT2 = LazyImport('superbench.benchmarks.model_benchmarks.model_benchmarks.pytorch_gpt2.PytorchGPT2')
+PytorchCNN = LazyImport('superbench.benchmarks.model_benchmarks.pytorch_cnn.PytorchCNN')
+PytorchLSTM = LazyImport('superbench.benchmarks.model_benchmarks.pytorch_lstm.PytorchLSTM')
+
 
 __all__ = ['ModelBenchmark', 'PytorchBERT', 'PytorchGPT2', 'PytorchCNN', 'PytorchLSTM']
