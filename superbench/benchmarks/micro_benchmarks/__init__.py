@@ -32,6 +32,7 @@ from superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance impor
 __all__ = [
     'ComputationCommunicationOverlap',
     'CpuMemBwLatencyBenchmark',
+    'CpuHplBenchmark',
     'CublasBenchmark',
     'CublasLtBenchmark',
     'CudaGemmFlopsBenchmark',
