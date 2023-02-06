@@ -4,6 +4,7 @@
 """A module containing all the e2e model related benchmarks."""
 
 from superbench.common.utils import LazyImport
+
 ModelBenchmark = LazyImport('superbench.benchmarks.model_benchmarks.model_base.ModelBenchmark')
 PytorchBERT = LazyImport('superbench.benchmarks.model_benchmarks.model_benchmarks.pytorch_bert.PytorchBERT')
 PytorchGPT2 = LazyImport('superbench.benchmarks.model_benchmarks.model_benchmarks.pytorch_gpt2.PytorchGPT2')
