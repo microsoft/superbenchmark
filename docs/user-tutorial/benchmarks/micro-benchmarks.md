@@ -183,10 +183,10 @@ performed by [University of Virginia STREAM benchmark](https://www.cs.virginia.e
 | Name                                                     | Unit             | Description                                                         |
 |----------------------------------------------------------|------------------|---------------------------------------------------------------------|
 | cpu-stream/threads                                       |                  | Number of threads used for the test. Determined by core count.      |
-| cpu-stream/['copy', 'scale', 'add', 'triad']\_throughput | bandwidth (MB/s) | Memory throughput of designated kerel operation                     |
-| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_avg   | time (s)         | Average elapsed times over all iterations                           |
-| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_min   | time (s)         | Minimum elapsed times over all iterations                           |
-| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_max   | time (s)         | Maximum elapsed times over all iterations                           |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_throughput | bandwidth (MB/s) | Memory throughput of designated kerel operation.                    |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_avg   | time (s)         | Average elapsed times over all iterations.                          |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_min   | time (s)         | Minimum elapsed times over all iterations.                          |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_max   | time (s)         | Maximum elapsed times over all iterations.                          |
 
 ## Communication Benchmarks
 
