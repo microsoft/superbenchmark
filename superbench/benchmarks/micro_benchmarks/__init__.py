@@ -3,11 +3,11 @@
 
 """A module containing all the micro-benchmarks."""
 
-from superbench.common.utils import LazyImport
 from superbench.benchmarks.micro_benchmarks.micro_base import MicroBenchmark, MicroBenchmarkWithInvoke
 from superbench.benchmarks.micro_benchmarks.gemm_flops_performance_base import GemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.memory_bw_performance_base import MemBwBenchmark
 
+from superbench.benchmarks.micro_benchmarks.computation_communication_overlap import ComputationCommunicationOverlap
 from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchmark
 from superbench.benchmarks.micro_benchmarks.cublaslt_function import CublasLtBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_gemm_flops_performance import CudaGemmFlopsBenchmark
@@ -22,20 +22,12 @@ from superbench.benchmarks.micro_benchmarks.gpu_burn_test import GpuBurnBenchmar
 from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoopbackBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_validation_performance import IBBenchmark
 from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import KernelLaunch
+from superbench.benchmarks.micro_benchmarks.ort_inference_performance import ORTInferenceBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_gemm_flops_performance import RocmGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
+from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul
 from superbench.benchmarks.micro_benchmarks.tcp_connectivity import TCPConnectivityBenchmark
-
-ComputationCommunicationOverlap = LazyImport(
-    'superbench.benchmarks.micro_benchmarks.computation_communication_overlap', 'ComputationCommunicationOverlap'
-)
-ShardingMatmul = LazyImport('superbench.benchmarks.micro_benchmarks.sharding_matmul', 'ShardingMatmul')
-ORTInferenceBenchmark = LazyImport(
-    'superbench.benchmarks.micro_benchmarks.ort_inference_performance', 'ORTInferenceBenchmark'
-)
-TensorRTInferenceBenchmark = LazyImport(
-    'superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance', 'TensorRTInferenceBenchmark'
-)
+from superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance import TensorRTInferenceBenchmark
 
 __all__ = [
     'ComputationCommunicationOverlap',
