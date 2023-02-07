@@ -27,14 +27,14 @@ from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import Ro
 from superbench.benchmarks.micro_benchmarks.tcp_connectivity import TCPConnectivityBenchmark
 
 ComputationCommunicationOverlap = LazyImport(
-    'superbench.benchmarks.micro_benchmarks.computation_communication_overlap.ComputationCommunicationOverlap'
+    'superbench.benchmarks.micro_benchmarks.computation_communication_overlap', 'ComputationCommunicationOverlap'
 )
-ShardingMatmul = LazyImport('superbench.benchmarks.micro_benchmarks.sharding_matmul.ShardingMatmul')
+ShardingMatmul = LazyImport('superbench.benchmarks.micro_benchmarks.sharding_matmul', 'ShardingMatmul')
 ORTInferenceBenchmark = LazyImport(
-    'superbench.benchmarks.micro_benchmarks.ort_inference_performance.ORTInferenceBenchmark'
+    'superbench.benchmarks.micro_benchmarks.ort_inference_performance', 'ORTInferenceBenchmark'
 )
 TensorRTInferenceBenchmark = LazyImport(
-    'superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance.TensorRTInferenceBenchmark'
+    'superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance', 'TensorRTInferenceBenchmark'
 )
 
 __all__ = [
