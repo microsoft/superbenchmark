@@ -11,5 +11,4 @@ PytorchGPT2 = LazyImport('superbench.benchmarks.model_benchmarks.model_benchmark
 PytorchCNN = LazyImport('superbench.benchmarks.model_benchmarks.pytorch_cnn.PytorchCNN')
 PytorchLSTM = LazyImport('superbench.benchmarks.model_benchmarks.pytorch_lstm.PytorchLSTM')
 
-
 __all__ = ['ModelBenchmark', 'PytorchBERT', 'PytorchGPT2', 'PytorchCNN', 'PytorchLSTM']
