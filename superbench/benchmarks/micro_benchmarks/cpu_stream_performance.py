@@ -36,16 +36,19 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             default='zen4',
             required=False,
             help='The targeted cpu architectures to run \
-                STREAM. Possible values are {}.'.format(' '.join(self.__cpu_arch))
+                STREAM. Default is zen4. Possible values are {}.'.format(' '.join(self.__cpu_arch))
         )
+        core_link = "https://techcommunity.microsoft.com/t5/azure-compute-blog/performance-\
+        amp-scalability-of-hbv3-vms-with-milan-x-cpus/ba-p/2939814"
         self._parser.add_argument(
             '--cores',
             nargs='+',
             type=int,
             default=[0, 8, 16, 24, 32, 38, 44, 52, 60, 68, 76, 82, 88, 96,
                      104, 112, 120, 126, 132, 140, 148, 156, 164, 170],
-            required=True,
-            help='List of cores to perform test'
+            required=False,
+            help='List of cores to perform test. Default core configuration is for HBv4/Zen4 SKU offering. \
+            For HBv3/Zen3 please see: ' + core_link
         )
 
     def _preprocess(self):
