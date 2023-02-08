@@ -54,16 +54,16 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb version."""
         self.cmd('sb version', checks=[StringContainCheck(superbench.__version__)])
 
-    @mock.patch('superbench.runner.runner.SuperBenchRunner')
-    def test_sb_deploy(self, mocked_superbenchrunner):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_deploy(self, mocked_failure_count):
         """Test sb deploy."""
-        mocked_superbenchrunner().get_failure_count.return_value = 0
+        mocked_failure_count.return_value = 0
         self.cmd('sb deploy --host-list localhost', checks=[NoneCheck()])
 
-    @mock.patch('superbench.runner.runner.SuperBenchRunner')
-    def test_sb_deploy_skippull(self, mocked_superbenchrunner):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_deploy_skippull(self, mocked_failure_count):
         """Test sb deploy without docker pull."""
-        mocked_superbenchrunner().get_failure_count.return_value = 0
+        mocked_failure_count.return_value = 0
         self.cmd('sb deploy --host-list localhost --no-image-pull', checks=[NoneCheck()])
 
     def test_sb_deploy_no_host(self):
@@ -74,16 +74,16 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb exec."""
         self.cmd('sb exec --config-override superbench.enable=["none"]', checks=[NoneCheck()])
 
-    @mock.patch('superbench.runner.runner.SuperBenchRunner')
-    def test_sb_run(self, mocked_superbenchrunner):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_run(self, mocked_failure_count):
         """Test sb run."""
-        mocked_superbenchrunner().get_failure_count.return_value = 0
+        mocked_failure_count.return_value = 0
         self.cmd('sb run --host-list localhost --config-override superbench.enable=none', checks=[NoneCheck()])
 
-    @mock.patch('superbench.runner.runner.SuperBenchRunner')
-    def test_sb_run_skipdocker(self, mocked_superbenchrunner):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_run_skipdocker(self, mocked_failure_count):
         """Test sb run without docker."""
-        mocked_superbenchrunner().get_failure_count.return_value = 0
+        mocked_failure_count.return_value = 0
         self.cmd('sb run -l localhost -C superbench.enable=none --no-docker', checks=[NoneCheck()])
 
     def test_sb_run_no_docker_auth(self):
