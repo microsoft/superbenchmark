@@ -11,13 +11,13 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream_hpl
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
-common: fio cpu_stream_hpl
+common: fio cpu_stream
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -119,14 +119,12 @@ ifneq (,$(wildcard gpu-burn/Makefile))
 	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
 endif
 
-#Build hpl and streamfrom main branch (only branch that exists)
-cpu_stream_hpl: sb_micro_path
-ifneq (,$(wildcard hpl-stream-tests/Makefile))
-	cd ./hpl-stream-tests && \
-    wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
-    apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
+#Build stream from main branch (only branch that exists)
+cpu_stream: sb_micro_path
+ifneq (,$(wildcard stream-tests/Makefile))
+	cd ./stream-tests && \
     wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
 	make all
-	cp -v ./hpl-stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
+	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
 endif
 
