@@ -10,7 +10,6 @@ Commands to run:
 from superbench.benchmarks import BenchmarkRegistry
 from superbench.common.utils import logger
 
-
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
         'cpu-stream',
