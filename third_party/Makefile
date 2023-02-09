@@ -118,3 +118,16 @@ ifneq (,$(wildcard gpu-burn/Makefile))
 	cp -v ./gpu-burn/gpu_burn $(SB_MICRO_PATH)/bin/
 	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
 endif
+
+#Build HPL from main branch (only branch that exists)
+cpu_hpl: sb_micro_path
+ifneq (,$(wildcard hpl-tests/Makefile))
+	cd ./hpl-tests && \
+    wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
+	tar xzf hpl-2.3.tar.gz && \
+	make all
+	cp -v ./hpl-tests/xhpl $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/run.sh $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/bindmem.sh $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/hpl.dat $(SB_MICRO_PATH)/bin/
+endif

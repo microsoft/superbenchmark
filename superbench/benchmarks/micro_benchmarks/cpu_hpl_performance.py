@@ -27,14 +27,34 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
-        # self._parser.add_argument(
-        #     '--cpu_arch',
-        #     type=str,
-        #     default='zen4',
-        #     required=False,
-        #     help='The targeted cpu architectures to run \
-        #         STREAM. Possible values are {}.'.format(' '.join(self.__cpu_arch))
-        # )
+        self._parser.add_argument(
+            '--blockSize',
+            type=int,
+            default=388,
+            required=False,
+            help='Size of blocks. This parameter is an HPL input. Default 388.'
+        )
+        self._parser.add_argument(
+            '--coreCount',
+            type=int,
+            default=176,
+            required=False,
+            help='Number of cores on CPU. Used for MPI and HPL configuration. Default 176'
+        )
+        self._parser.add_argument(
+            '--blocks',
+            type=int,
+            default=1,
+            required=False,
+            help='Number of blocks. This parameter is an HPL input. Default 1.'
+        )
+        self._parser.add_argument(
+            '--problemSize',
+            type=int,
+            default=1,
+            required=False,
+            help='This is the problem size designated by "N" notation. This parameter is an HPL input. Default is'
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -49,6 +69,9 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
                 'Executable {} not found in {} or it is not executable'.format(self._bin_name, self._args.bin_dir)
             )
             return False
+
+        if
+
 
         self._commands.append(command)
         return True
