@@ -13,7 +13,6 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
     """The Stream benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 

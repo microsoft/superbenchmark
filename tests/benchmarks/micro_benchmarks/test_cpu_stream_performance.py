@@ -12,7 +12,6 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, 
 
 class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Test class for STREAM benchmark."""
-
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""
