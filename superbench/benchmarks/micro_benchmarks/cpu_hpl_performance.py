@@ -21,12 +21,22 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'xhpl'
+        self._bin_name = 'hpl_run.sh'
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
+        self.__cpu_arch = ['zen3', 'zen4']
+
+        self._parser.add_argument(
+            '--cpu_arch',
+            type=str,
+            default='zen4',
+            required=False,
+            help='The targeted cpu architectures to run \
+                HPL. Default is zen4. Possible values are {}.'.format(' '.join(self.__cpu_arch))
+        )
         self._parser.add_argument(
             '--blockSize',
             type=int,
@@ -37,9 +47,9 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--coreCount',
             type=int,
-            default=176,
+            default=88, # for HBv4 total number of cores is 176 => 88 per cpu
             required=False,
-            help='Number of cores on CPU. Used for MPI and HPL configuration. Default 176'
+            help='Number of cores per CPU. Used for MPI and HPL configuration. Default 88 (HBv4 has a total of 176 w/ 2 cpus therefore 88 per cpu)'
         )
         self._parser.add_argument(
             '--blocks',
@@ -69,9 +79,17 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
                 'Executable {} not found in {} or it is not executable'.format(self._bin_name, self._args.bin_dir)
             )
             return False
-
-        if
-
+        
+        # xhpl type
+        xhpl = 'xhpl_z4'
+        if self._args.cpu_arch == 'zen3':
+            xhpl= 'xhpl_z3'
+        # command
+        command = os.path.join(self._args.bin_dir, self._bin_name)
+        command = command + xhpl + self._args.coreCount
+        # need to modify HPL.dat
+        hpl_input_file = os.path.join(self._args.bin_dir, HPL.dat)
+        
 
         self._commands.append(command)
         return True
@@ -88,16 +106,16 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         content = raw_output.splitlines()
         results
         for idx, line in enumerate(content):
-            if "T/V" in line and 'Gflops' in line:
+            if 'T/V' in line and 'Gflops' in line:
                 break
 
         results = content[idx+2].split()
 
         for line in content[idx+2:]:
-            if "1 tests completed and passed residual checks" in line:
-                self._result.add_result("tests_pass", 1)
-            elif "0 tests completed and passed residual checks" in line::
-                self._result.add_result("tests_pass", 0)
+            if '1 tests completed and passed residual checks' in line:
+                self._result.add_result('tests_pass', 1)
+            elif '0 tests completed and passed residual checks' in line::
+                self._result.add_result('tests_pass', 0)
 
         self._result.add_result( 'time',float(results[5]))
         self._result.add_result( 'Gflops',float(results[6]))

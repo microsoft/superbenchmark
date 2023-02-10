@@ -126,7 +126,8 @@ ifneq (,$(wildcard hpl-tests/Makefile))
     wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
 	tar xzf hpl-2.3.tar.gz && \
 	make all
-	cp -v ./hpl-tests/xhpl $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/xhpl_z3 $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/xhpl_z4 $(SB_MICRO_PATH)/bin/
 	cp -v ./hpl-tests/run.sh $(SB_MICRO_PATH)/bin/
 	cp -v ./hpl-tests/bindmem.sh $(SB_MICRO_PATH)/bin/
 	cp -v ./hpl-tests/hpl.dat $(SB_MICRO_PATH)/bin/
