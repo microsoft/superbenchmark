@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module for running the University of Virginia STREAM tool. It measures sustainable main memory
+"""Module for running the University of Virginia STREAM tool. It measures sustainable main memory \
     bandwidth in MB/s and the corresponding computation rate for simple vector kernels."""
 
 import os
@@ -38,8 +38,8 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             help='The targeted cpu architectures to run \
                 STREAM. Default is zen4. Possible values are {}.'.format(' '.join(self.__cpu_arch))
         )
-        core_link = "https://techcommunity.microsoft.com/t5/azure-compute-blog/performance-\
-        amp-scalability-of-hbv3-vms-with-milan-x-cpus/ba-p/2939814"
+        core_link = 'https://techcommunity.microsoft.com/t5/azure-compute-blog/performance-\
+        amp-scalability-of-hbv3-vms-with-milan-x-cpus/ba-p/2939814'
 
         self._parser.add_argument(
             '--cores',
@@ -84,7 +84,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         else:
             exe = 'streamx86.exe'
 
-        command = envar + " " + os.path.join(self._args.bin_dir, exe)
+        command = envar + ' ' + os.path.join(self._args.bin_dir, exe)
         self._bin_name = exe
 
         if not self._set_binary_path():
@@ -112,9 +112,9 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         records = []
         content = raw_output.splitlines()
         for line in content:
-            if "Number of Threads counted" in line:
-                line.split("= ")[1]
-                self._result.add_result("threads", int(line.split("= ")[1]))
+            if 'Number of Threads counted' in line:
+                line.split('= ')[1]
+                self._result.add_result('threads', int(line.split('= ')[1]))
             for function in functions:
                 if function in line:
                     records.append(line)
@@ -123,10 +123,10 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         for record in records:
             entries = record.split()
             metric = entries[0].strip().replace(':', '')
-            self._result.add_result(metric.lower() + "_throughput", float(entries[1].strip()))
-            self._result.add_result(metric.lower() + "_time_avg", float(entries[2].strip()))
-            self._result.add_result(metric.lower() + "_time_min", float(entries[3].strip()))
-            self._result.add_result(metric.lower() + "_time_max", float(entries[4].strip()))
+            self._result.add_result(metric.lower() + '_throughput', float(entries[1].strip()))
+            self._result.add_result(metric.lower() + '_time_avg', float(entries[2].strip()))
+            self._result.add_result(metric.lower() + '_time_min', float(entries[3].strip()))
+            self._result.add_result(metric.lower() + '_time_max', float(entries[4].strip()))
 
         # raw output
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
