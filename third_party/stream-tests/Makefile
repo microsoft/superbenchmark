@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 CC= /opt/AMD/aocc-compiler-4.0.0/bin/clang
 CFLAGS= -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -lomp -fopenmp -fnt-store=aggressive -DNTIMES=10
 GENFLAGS= -DSTREAM_ARRAY_SIZE=400000000 
