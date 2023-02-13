@@ -122,7 +122,7 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
-#install AOCC compiler
+# Install AOCC compiler
 RUN cd /tmp && \
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
     apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
