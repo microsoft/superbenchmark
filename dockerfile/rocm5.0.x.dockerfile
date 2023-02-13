@@ -102,6 +102,12 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
+# Install AOCC compiler
+RUN cd /tmp && \
+    wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
+    apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
+    rm -rf aocc-compiler-4.0.0_1_amd64.deb
+
 # Install rccl-rdma-sharp-plugins
 ENV SHARP_VERSION=5.0
 RUN cd /opt/rocm && \
