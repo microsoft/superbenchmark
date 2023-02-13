@@ -16,9 +16,11 @@ from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
 
 from superbench.common.utils import SuperBenchLogger, logger, gen_ibstat, gen_traffic_pattern_host_groups
-from superbench.runner.ansible import AnsibleClient
+from superbench.common.utils.lazy_import import LazyImport
 from superbench.benchmarks import ReduceType, Reducer
 from superbench.monitor import MonitorRecord
+
+AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
 
 
 class SuperBenchRunner():
