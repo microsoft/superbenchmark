@@ -11,6 +11,8 @@ strategy:
       imageTag: '3.8'
     python-3.7:
       imageTag: '3.7'
+    python-3.6:
+      imageTag: '3.6'
     # TODO
     #python-latest:
     #  imageTag: '3'
