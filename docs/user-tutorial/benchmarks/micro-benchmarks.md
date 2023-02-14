@@ -171,6 +171,23 @@ Supports the use of double unit types and the use of tensor cores.
 | gpu-burn/gpu_[0-9]_pass | yes/no   | The result of the gpu-burn test for each GPU (1: yes, 0: no).                      |
 | gpu-burn/abort          | yes/no   | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no). |
 
+### `cpu-stream`
+
+#### Introduction
+
+Measure of memory bandwidth and computation rate for simple vector kernels.
+performed by [University of Virginia STREAM benchmark](https://www.cs.virginia.edu/stream/ref.html).
+
+#### Metrics
+
+| Name                                                     | Unit             | Description                                                         |
+|----------------------------------------------------------|------------------|---------------------------------------------------------------------|
+| cpu-stream/threads                                       |                  | Number of threads used for the test. Determined by core count.      |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_throughput | bandwidth (MB/s) | Memory throughput of designated kerel operation.                    |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_avg   | time (s)         | Average elapsed times over all iterations.                          |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_min   | time (s)         | Minimum elapsed times over all iterations.                          |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_max   | time (s)         | Maximum elapsed times over all iterations.                          |
+
 ## Communication Benchmarks
 
 ### `cpu-memory-bw-latency`

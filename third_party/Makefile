@@ -11,13 +11,13 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
-common: cpu_hpl fio
+common: cpu_hpl cpu_stream fio 
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -119,7 +119,6 @@ ifneq (,$(wildcard gpu-burn/Makefile))
 	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
 endif
 
-#Build HPL from main branch (only branch that exists)
 cpu_hpl: sb_micro_path
 ifneq (,$(wildcard hpl-tests/Makefile))
 	cd ./hpl-tests && \
@@ -132,3 +131,11 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 	cp -v ./hpl-tests/bindmem.sh $(SB_MICRO_PATH)/bin/
 	cp -v ./hpl-tests/hpl.dat $(SB_MICRO_PATH)/bin/template_hpl.dat
 endif
+#Build stream from main branch (only branch that exists)
+ifneq (,$(wildcard stream-tests/Makefile))
+	cd ./stream-tests && \
+    wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
+	make all
+	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
+endif
+
