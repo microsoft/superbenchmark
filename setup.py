@@ -160,7 +160,7 @@ setup(
         'matplotlib>=3.0.0',
         'natsort>=7.1.1',
         'networkx>=2.5',
-        'numpy>=1.20.3',
+        'numpy>=1.19.2',
         'omegaconf==2.0.6',
         'openpyxl>=3.0.7',
         'pandas>=1.1.5',
