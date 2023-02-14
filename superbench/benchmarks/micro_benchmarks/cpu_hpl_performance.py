@@ -84,12 +84,26 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         xhpl = 'xhpl_z4'
         if self._args.cpu_arch == 'zen3':
             xhpl= 'xhpl_z3'
+
         # command
         command = os.path.join(self._args.bin_dir, self._bin_name)
-        command = command + xhpl + self._args.coreCount
+        command = command + ' ' + xhpl + ' ' + self._args.coreCount
+
         # need to modify HPL.dat
-        hpl_input_file = os.path.join(self._args.bin_dir, HPL.dat)
-        
+        hpl_input_file = os.path.join(self._args.bin_dir, template_hpl.dat)
+        search_string=['problemSize','blockCount','blockSize']
+        with open(hpl_input_file, "r") as hplfile:
+            lines = hplfile.readlines()
+        hpl_input_file = os.path.join(self._args.bin_dir, hpl.dat)
+        with open(hpl_input_file, "w") as hplfile:
+            for line in lines:
+                if search_string[0] in line:
+                    line = line.replace(search_string[0],'5200')
+                elif search_string[1] in line:
+                    line = line.replace(search_string[1],'1')
+                elif search_string[2] in line:
+                    line = line.replace(search_string[2],'384')
+                hplfile.write(line)
 
         self._commands.append(command)
         return True
