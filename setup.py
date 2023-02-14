@@ -169,7 +169,6 @@ setup(
         'pandas>=1.4.0;python_version>"3.7"',
         'omegaconf==2.0.6',
         'openpyxl>=3.0.7',
-        'pandas>=1.1.5',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
         'requests>=2.27.1',
