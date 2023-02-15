@@ -114,11 +114,18 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
-#install AOCC compiler
+# install AOCC compiler
 RUN cd /tmp && \
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
     apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
     rm -rf aocc-compiler-4.0.0_1_amd64.deb
+
+# install AMD BLIS
+RUN cd /tmp && \
+    wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
+    tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
+    mv amd-blis /opt/AMD && \
+    rm -rf aocl-blis-linux-aocc-4.0.tar.gz
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
     LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \

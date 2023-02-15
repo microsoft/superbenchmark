@@ -15,6 +15,7 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
 
     def __init__(self, name, parameters=''):
         """Constructor.
+
         Args:
             name (str): benchmark name.
             parameters (str): benchmark parameters.
@@ -47,9 +48,10 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--coreCount',
             type=int,
-            default=88, # for HBv4 total number of cores is 176 => 88 per cpu
+            default=88,  # for HBv4 total number of cores is 176 => 88 per cpu
             required=False,
-            help='Number of cores per CPU. Used for MPI and HPL configuration. Default 88 (HBv4 has a total of 176 w/ 2 cpus therefore 88 per cpu)'
+            help='Number of cores per CPU. Used for MPI and HPL configuration. \
+            Default 88 (HBv4 has a total of 176 w/ 2 cpus therefore 88 per cpu)'
         )
         self._parser.add_argument(
             '--blocks',
@@ -61,13 +63,14 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--problemSize',
             type=int,
-            default=1,
+            default=384000,
             required=False,
             help='This is the problem size designated by "N" notation. This parameter is an HPL input. Default is'
         )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
+
         Return:
             True if _preprocess() succeed.
         """
@@ -79,30 +82,30 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
                 'Executable {} not found in {} or it is not executable'.format(self._bin_name, self._args.bin_dir)
             )
             return False
-        
+
         # xhpl type
         xhpl = 'xhpl_z4'
         if self._args.cpu_arch == 'zen3':
-            xhpl= 'xhpl_z3'
+            xhpl = 'xhpl_z3'
 
         # command
         command = os.path.join(self._args.bin_dir, self._bin_name)
-        command = command + ' ' + xhpl + ' ' + self._args.coreCount
+        command = command + ' ' + xhpl + ' ' + str(self._args.coreCount)
 
         # need to modify HPL.dat
-        hpl_input_file = os.path.join(self._args.bin_dir, template_hpl.dat)
-        search_string=['problemSize','blockCount','blockSize']
-        with open(hpl_input_file, "r") as hplfile:
+        hpl_input_file = './third_party/hpl-tests/template_hpl.dat'
+        search_string = ['problemSize', 'blockCount', 'blockSize']
+        with open(hpl_input_file, 'r') as hplfile:
             lines = hplfile.readlines()
-        hpl_input_file = os.path.join(self._args.bin_dir, hpl.dat)
-        with open(hpl_input_file, "w") as hplfile:
+        hpl_input_file = os.path.join(self._args.bin_dir, 'HPL.dat')
+        with open(hpl_input_file, 'w') as hplfile:
             for line in lines:
                 if search_string[0] in line:
-                    line = line.replace(search_string[0],'5200')
+                    line = line.replace(search_string[0], str(self._args.problemSize))
                 elif search_string[1] in line:
-                    line = line.replace(search_string[1],'1')
+                    line = line.replace(search_string[1], str(self._args.blocks))
                 elif search_string[2] in line:
-                    line = line.replace(search_string[2],'384')
+                    line = line.replace(search_string[2], str(self._args.blockSize))
                 hplfile.write(line)
 
         self._commands.append(command)
@@ -110,15 +113,18 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
+
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
             raw_output (str): raw output string of the micro-benchmark.
+
         Return:
             True if the raw output string is valid and result can be extracted.
         """
         content = raw_output.splitlines()
-        results
+
         for idx, line in enumerate(content):
             if 'T/V' in line and 'Gflops' in line:
                 break
@@ -128,11 +134,11 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         for line in content[idx+2:]:
             if '1 tests completed and passed residual checks' in line:
                 self._result.add_result('tests_pass', 1)
-            elif '0 tests completed and passed residual checks' in line::
+            elif '0 tests completed and passed residual checks' in line:
                 self._result.add_result('tests_pass', 0)
 
-        self._result.add_result( 'time',float(results[5]))
-        self._result.add_result( 'Gflops',float(results[6]))
+        self._result.add_result('time', float(results[5]))
+        self._result.add_result('Gflops', float(results[6]))
 
         # raw output
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
@@ -140,4 +146,4 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('cpu-hpl', CpuStreamBenchmark)
+BenchmarkRegistry.register_benchmark('cpu-hpl', CpuHplBenchmark)

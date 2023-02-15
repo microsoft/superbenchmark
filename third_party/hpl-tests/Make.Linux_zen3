@@ -92,10 +92,7 @@ MPlib        = $(MPdir)/lib/libmpi.so
 # header files,  LAlib  is defined  to be the name of  the library to be
 # used. The variable LAdir is only used for defining LAinc and LAlib.
 #
-#LAdir        = /usr/lib/x86_64-linux-gnu/lapack
-#LAinc        = /usr/include/x86_64-linux-gnu
-#LAlib        = /usr/lib/x86_64-linux-gnu/blas/libblas.so
-LAdir        = /home/azureuser/amdhpl/amd-blis
+LAdir        = /opt/AMD/amd-blis
 LAinc        = -I$(LAdir)/lib/include
 LAlib        = $(LAdir)/lib/LP64/libblis-mt.so
 #

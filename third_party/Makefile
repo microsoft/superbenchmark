@@ -11,7 +11,7 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl
 
 # Build all targets.
 all: cuda rocm
@@ -124,13 +124,16 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 	cd ./hpl-tests && \
     wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
 	tar xzf hpl-2.3.tar.gz && \
+	cp Make.Linux_zen3 hpl-2.3 && \
+	cp Make.Linux_zen4 hpl-2.3 && \
 	make all
-	cp -v ./hpl-tests/xhpl_z3 $(SB_MICRO_PATH)/bin/
-	cp -v ./hpl-tests/xhpl_z4 $(SB_MICRO_PATH)/bin/
-	cp -v ./hpl-tests/run.sh $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/hpl-2.3/bin/Linux_zen3/xhpl $(SB_MICRO_PATH)/bin/xhpl_z3
+	cp -v ./hpl-tests/hpl-2.3/bin/Linux_zen4/xhpl $(SB_MICRO_PATH)/bin/xhpl_z4
+	cp -v ./hpl-tests/hpl_run.sh $(SB_MICRO_PATH)/bin/
 	cp -v ./hpl-tests/bindmem.sh $(SB_MICRO_PATH)/bin/
-	cp -v ./hpl-tests/hpl.dat $(SB_MICRO_PATH)/bin/template_hpl.dat
 endif
+
+cpu_stream: sb_micro_path
 #Build stream from main branch (only branch that exists)
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \

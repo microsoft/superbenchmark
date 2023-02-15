@@ -12,7 +12,8 @@ from superbench.common.utils import logger
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
         'cpu-hpl',
-        parameters=''
+        parameters='--cpu_arch zen3 \
+        --blockSize 224 --coreCount 60 --blocks 1 --problemSize 224000'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

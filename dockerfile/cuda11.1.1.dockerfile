@@ -128,6 +128,13 @@ RUN cd /tmp && \
     apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
     rm -rf aocc-compiler-4.0.0_1_amd64.deb
 
+# install AMD BLIS
+RUN cd /tmp && \
+    wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
+    tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
+    mv amd-blis /opt/AMD && \
+    rm -rf aocl-blis-linux-aocc-4.0.tar.gz
+
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
 
