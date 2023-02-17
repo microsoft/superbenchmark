@@ -25,11 +25,12 @@ class CpuHplBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test STREAM benchmark command generation."""
         benchmark_name = 'cpu-hpl'
         (benchmark_class,
-            predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
         parameters = '--cpu_arch zen3 \
         --blockSize 224 --coreCount 60 --blocks 1 --problemSize 224000'
+
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -41,13 +42,12 @@ class CpuHplBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check parameters specified in BenchmarkContext.
-        
+
         assert (benchmark._args.cpu_arch == 'zen3')
         assert (benchmark._args.blockSize == 224)
         assert (benchmark._args.coreCount == 60)
         assert (benchmark._args.blocks == 1)
         assert (benchmark._args.problemSize == 224000)
-
 
         # Check command
         assert (1 == len(benchmark._commands))

@@ -12,7 +12,6 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 class CpuHplBenchmark(MicroBenchmarkWithInvoke):
     """The HPL benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -48,7 +47,7 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--coreCount',
             type=int,
-            default=88,  # for HBv4 total number of cores is 176 => 88 per cpu
+            default=88,    # for HBv4 total number of cores is 176 => 88 per cpu
             required=False,
             help='Number of cores per CPU. Used for MPI and HPL configuration. \
             Default 88 (HBv4 has a total of 176 w/ 2 cpus therefore 88 per cpu)'
@@ -97,7 +96,7 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         search_string = ['problemSize', 'blockCount', 'blockSize']
         with open(hpl_input_file, 'r') as hplfile:
             lines = hplfile.readlines()
-        hpl_input_file = os.path.join(self._args.bin_dir, 'HPL.dat')
+        hpl_input_file = os.path.join(os.getcwd(), 'HPL.dat')
         with open(hpl_input_file, 'w') as hplfile:
             for line in lines:
                 if search_string[0] in line:
@@ -129,9 +128,9 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
             if 'T/V' in line and 'Gflops' in line:
                 break
 
-        results = content[idx+2].split()
+        results = content[idx + 2].split()
 
-        for line in content[idx+2:]:
+        for line in content[idx + 2:]:
             if '1 tests completed and passed residual checks' in line:
                 self._result.add_result('tests_pass', 1)
             elif '0 tests completed and passed residual checks' in line:

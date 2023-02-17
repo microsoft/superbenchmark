@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 """Micro benchmark example for CPU HPL performance.
+
 Commands to run:
   python3 examples/benchmarks/cpu_hpl_performance.py
 """
