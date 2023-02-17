@@ -131,6 +131,7 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 	cp -v ./hpl-tests/hpl-2.3/bin/Linux_zen4/xhpl $(SB_MICRO_PATH)/bin/xhpl_z4
 	cp -v ./hpl-tests/hpl_run.sh $(SB_MICRO_PATH)/bin/
 	cp -v ./hpl-tests/bindmem.sh $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/template_hpl.dat $(SB_MICRO_PATH)/bin/
 endif
 
 cpu_stream: sb_micro_path
@@ -141,4 +142,3 @@ ifneq (,$(wildcard stream-tests/Makefile))
 	make all
 	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
 endif
-

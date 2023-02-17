@@ -40,9 +40,9 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--blockSize',
             type=int,
-            default=388,
+            default=384,
             required=False,
-            help='Size of blocks. This parameter is an HPL input. Default 388.'
+            help='Size of blocks. This parameter is an HPL input. Default 384.'
         )
         self._parser.add_argument(
             '--coreCount',
@@ -64,7 +64,8 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
             type=int,
             default=384000,
             required=False,
-            help='This is the problem size designated by "N" notation. This parameter is an HPL input. Default is'
+            help='This is the problem size designated by "N" notation. \
+            This parameter is an HPL input. Default is 384000'
         )
 
     def _preprocess(self):
@@ -92,7 +93,7 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         command = command + ' ' + xhpl + ' ' + str(self._args.coreCount)
 
         # need to modify HPL.dat
-        hpl_input_file = './third_party/hpl-tests/template_hpl.dat'
+        hpl_input_file = os.path.join(self._args.bin_dir, 'template_hpl.dat')
         search_string = ['problemSize', 'blockCount', 'blockSize']
         with open(hpl_input_file, 'r') as hplfile:
             lines = hplfile.readlines()
