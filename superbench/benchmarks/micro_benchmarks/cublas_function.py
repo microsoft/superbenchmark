@@ -190,7 +190,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--num_warmup',
             type=int,
-            default=8,
+            default=8 * 1000,
             required=False,
             help='The number of warmup step.',
         )

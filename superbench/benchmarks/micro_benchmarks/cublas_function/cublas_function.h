@@ -39,8 +39,9 @@ class SgemmFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() {
-        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
+    virtual void prepare_tensor(bool random) {
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host,
+                                random);
     }
     /**
      * @brief Check the correctness of function calculation result
@@ -107,8 +108,9 @@ class CgemmFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() {
-        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
+    virtual void prepare_tensor(bool random) {
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host,
+                                random);
     }
     /**
      * @brief Check the correctness of function calculation result
@@ -169,17 +171,17 @@ class GemmExFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() {
+    virtual void prepare_tensor(bool random) {
         if (this->datatype_.compare("half") == 0) {
             CublasFunction::prepare_tensor_template<half>(
                 reinterpret_cast<half **>(&Parameter_0_0), reinterpret_cast<half **>(&Parameter_1_0),
                 reinterpret_cast<half **>(&Result_3_0), reinterpret_cast<half **>(&Parameter_0_0_host),
-                reinterpret_cast<half **>(&Parameter_1_0_host));
+                reinterpret_cast<half **>(&Parameter_1_0_host), random);
         } else if (this->datatype_.compare("float") == 0) {
             CublasFunction::prepare_tensor_template<float>(
                 reinterpret_cast<float **>(&Parameter_0_0), reinterpret_cast<float **>(&Parameter_1_0),
                 reinterpret_cast<float **>(&Result_3_0), reinterpret_cast<float **>(&Parameter_0_0_host),
-                reinterpret_cast<float **>(&Parameter_1_0_host));
+                reinterpret_cast<float **>(&Parameter_1_0_host), random);
         }
     }
     /**
@@ -265,17 +267,17 @@ class GemmStridedBatchedExFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() {
+    virtual void prepare_tensor(bool random) {
         if (this->datatype_.compare("half") == 0) {
             prepare_tensor_template<half>(
                 reinterpret_cast<half **>(&Parameter_0_0), reinterpret_cast<half **>(&Parameter_1_0),
                 reinterpret_cast<half **>(&Result_3_0), reinterpret_cast<half **>(&Parameter_0_0_host),
-                reinterpret_cast<half **>(&Parameter_1_0_host));
+                reinterpret_cast<half **>(&Parameter_1_0_host), random);
         } else if (this->datatype_.compare("float") == 0) {
             prepare_tensor_template<float>(
                 reinterpret_cast<float **>(&Parameter_0_0), reinterpret_cast<float **>(&Parameter_1_0),
                 reinterpret_cast<float **>(&Result_3_0), reinterpret_cast<float **>(&Parameter_0_0_host),
-                reinterpret_cast<float **>(&Parameter_1_0_host));
+                reinterpret_cast<float **>(&Parameter_1_0_host), random);
         }
     }
     /**
@@ -355,8 +357,9 @@ class SgemmStridedBatchedFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() {
-        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
+    virtual void prepare_tensor(bool random) {
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host,
+                                random);
     }
     /**
      * @brief  Function calculation on CPU side
@@ -419,8 +422,9 @@ class Cgemm3mStridedBatchedFunction : public CublasFunction {
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() {
-        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host);
+    virtual void prepare_tensor(bool random) {
+        prepare_tensor_template(&Parameter_0_0, &Parameter_1_0, &Result_3_0, &Parameter_0_0_host, &Parameter_1_0_host,
+                                random);
     }
     /**
      * @brief  Function calculation on CPU side

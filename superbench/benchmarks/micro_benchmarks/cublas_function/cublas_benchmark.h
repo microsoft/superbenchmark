@@ -70,17 +70,17 @@ class CublasFunction {
     /**
      * @brief Fill the random data into the input
      */
-    template <typename T> void fill_data(T *Parameter_0_0_host, T *Parameter_1_0_host);
+    template <typename T> void fill_data(T *Parameter_0_0_host, T *Parameter_1_0_host, bool random = true);
     /**
      * @brief Prepare memory and data of the input and output
      */
     template <typename T>
     void prepare_tensor_template(T **Parameter_0_0, T **Parameter_1_0, T **Result_3_0, T **Parameter_0_0_host,
-                                 T **Parameter_1_0_host);
+                                 T **Parameter_1_0_host, bool random = true);
     /**
      * @brief Prepare memory and data of the input and output for kernel running
      */
-    virtual void prepare_tensor() {}
+    virtual void prepare_tensor(bool random = true) {}
     /**
      * @brief Execute the kernel/function
      */
@@ -228,39 +228,57 @@ class CublasFunction {
 /**
  * @brief Fill the random data into the input in float type
  */
-template <> void CublasFunction::fill_data(float *Parameter_0_0_host, float *Parameter_1_0_host) {
-    srand(random_seed);
-    for (int i = 0; i < m_ * k_ * batch_count_; i++) {
-        Parameter_0_0_host[i] = ((float)rand() / (float)(RAND_MAX));
-    }
-    for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
-        Parameter_1_0_host[i] = ((float)rand() / (float)(RAND_MAX));
+template <> void CublasFunction::fill_data(float *Parameter_0_0_host, float *Parameter_1_0_host, bool random) {
+    if (random) {
+        srand(random_seed);
+        for (int i = 0; i < m_ * k_ * batch_count_; i++) {
+            Parameter_0_0_host[i] = ((float)rand() / (float)(RAND_MAX));
+        }
+        for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
+            Parameter_1_0_host[i] = ((float)rand() / (float)(RAND_MAX));
+        }
+    } else {
+        // memset the input data to fixed float value
+        memset(Parameter_0_0_host, 1, m_ * k_ * batch_count_ * sizeof(float));
+        memset(Parameter_1_0_host, 2, k_ * n_ * batch_count_ * sizeof(float));
     }
 }
 /**
  * @brief Fill the random data into the input in half type
  */
-template <> void CublasFunction::fill_data(half *Parameter_0_0_host, half *Parameter_1_0_host) {
-    srand(random_seed);
-    for (int i = 0; i < m_ * k_ * batch_count_; i++) {
-        Parameter_0_0_host[i] = half((float)rand() / (float)(RAND_MAX));
-    }
-    for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
-        Parameter_1_0_host[i] = half((float)rand() / (float)(RAND_MAX));
+template <> void CublasFunction::fill_data(half *Parameter_0_0_host, half *Parameter_1_0_host, bool random) {
+    if (random) {
+        srand(random_seed);
+        for (int i = 0; i < m_ * k_ * batch_count_; i++) {
+            Parameter_0_0_host[i] = half((float)rand() / (float)(RAND_MAX));
+        }
+        for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
+            Parameter_1_0_host[i] = half((float)rand() / (float)(RAND_MAX));
+        }
+    } else {
+        // memset the input data to fixed float value
+        std::fill(Parameter_0_0_host, Parameter_0_0_host + m_ * k_ * batch_count_, half(1.0));
+        std::fill(Parameter_1_0_host, Parameter_1_0_host + k_ * n_ * batch_count_, half(2.0));
     }
 }
 /**
  * @brief Fill the random data into the input in cuComplex type
  */
-template <> void CublasFunction::fill_data(cuComplex *Parameter_0_0_host, cuComplex *Parameter_1_0_host) {
-    srand(random_seed);
-    for (int i = 0; i < m_ * k_ * batch_count_; i++) {
-        Parameter_0_0_host[i] =
-            make_cuComplex(((float)rand() / (float)(RAND_MAX)), ((float)rand() / (float)(RAND_MAX)));
-    }
-    for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
-        Parameter_1_0_host[i] =
-            make_cuComplex(((float)rand() / (float)(RAND_MAX)), ((float)rand() / (float)(RAND_MAX)));
+template <> void CublasFunction::fill_data(cuComplex *Parameter_0_0_host, cuComplex *Parameter_1_0_host, bool random) {
+    if (random) {
+        srand(random_seed);
+        for (int i = 0; i < m_ * k_ * batch_count_; i++) {
+            Parameter_0_0_host[i] =
+                make_cuComplex(((float)rand() / (float)(RAND_MAX)), ((float)rand() / (float)(RAND_MAX)));
+        }
+        for (int i = 0; i < k_ * n_ * batch_count_; ++i) {
+            Parameter_1_0_host[i] =
+                make_cuComplex(((float)rand() / (float)(RAND_MAX)), ((float)rand() / (float)(RAND_MAX)));
+        }
+    } else {
+        // memset the input data to fixed float value
+        std::fill(Parameter_0_0_host, Parameter_0_0_host + m_ * k_ * batch_count_, make_cuComplex(1.0f, 1.0f));
+        std::fill(Parameter_1_0_host, Parameter_1_0_host + k_ * n_ * batch_count_, make_cuComplex(2.0f, 2.0f));
     }
 }
 /**
@@ -268,7 +286,7 @@ template <> void CublasFunction::fill_data(cuComplex *Parameter_0_0_host, cuComp
  */
 template <typename T>
 void CublasFunction::prepare_tensor_template(T **Parameter_0_0, T **Parameter_1_0, T **Result_3_0,
-                                             T **Parameter_0_0_host, T **Parameter_1_0_host) {
+                                             T **Parameter_0_0_host, T **Parameter_1_0_host, bool random) {
     int m = this->m_, n = this->n_, k = this->k_, batch_count = this->batch_count_;
     // input argument
     CUDA_SAFE_CALL(cudaMallocHost((void **)Parameter_0_0_host, sizeof(T) * m * k * batch_count_));
@@ -278,7 +296,7 @@ void CublasFunction::prepare_tensor_template(T **Parameter_0_0, T **Parameter_1_
     CUDA_SAFE_CALL(cudaMalloc((void **)Parameter_1_0, sizeof(T) * n * k * batch_count_));
 
     // fill input values
-    fill_data(reinterpret_cast<T *>(*Parameter_0_0_host), reinterpret_cast<T *>(*Parameter_1_0_host));
+    fill_data(reinterpret_cast<T *>(*Parameter_0_0_host), reinterpret_cast<T *>(*Parameter_1_0_host), random);
 
     // copy input data from host to device
     CUDA_SAFE_CALL(
@@ -469,13 +487,12 @@ int CublasFunction::check_result(int batch_count, cuComplex *Result_3_0, std::co
  */
 void CublasFunction::benchmark() {
     // Malloc memory for input and output data
-    this->prepare_tensor();
+    bool random_data = this->correctness ? true : false;
+    this->prepare_tensor(random_data);
 
     // Warm up
     for (int i_ = 0; i_ < warm_up; i_++) {
-        for (int j = 0; j < num_in_step; j++) {
-            this->kernel_entry();
-        }
+        this->kernel_entry();
     }
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
