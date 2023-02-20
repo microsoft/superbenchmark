@@ -239,8 +239,10 @@ template <> void CublasFunction::fill_data(float *Parameter_0_0_host, float *Par
         }
     } else {
         // memset the input data to fixed float value
-        memset(Parameter_0_0_host, 1, m_ * k_ * batch_count_ * sizeof(float));
-        memset(Parameter_1_0_host, 2, k_ * n_ * batch_count_ * sizeof(float));
+        memset(Parameter_0_0_host, 1,
+               (unsigned long)m_ * (unsigned long)k_ * (unsigned long)batch_count_ * sizeof(float));
+        memset(Parameter_1_0_host, 2,
+               (unsigned long)k_ * (unsigned long)n_ * (unsigned long)batch_count_ * sizeof(float));
     }
 }
 /**
