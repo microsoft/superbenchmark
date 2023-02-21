@@ -54,6 +54,7 @@ class CublasFunction {
     int random_seed;                   ///< the random seed used to generate random data
     double eps;                        ///< the acceptable error bound for numeric stability
     bool correctness;                  ///< whether enable correctness check or not
+    bool random_data;                  ///< whether enable random data generation or not
     std::string name_;                 ///< the name of the cublas function
     int m_;                            ///< the m dim of matrix
     int k_;                            ///< the k dim of matrix
@@ -141,10 +142,14 @@ class CublasFunction {
      */
     void set_eps(double eps) { this->eps = eps; }
     /**
+     * @brief Set the random data
+     * @param  random_data      if generate random data
+     */
+    void set_random_data(bool random_data) { this->random_data = random_data; }
+    /**
      * @brief Set the params string
      * @param  str             the str representing the params of the function
      */
-
     void set_function(std::string &str) { this->function_str_ = str; }
     /**
      * @brief Set the name member
@@ -239,9 +244,9 @@ template <> void CublasFunction::fill_data(float *Parameter_0_0_host, float *Par
         }
     } else {
         // memset the input data to fixed float value
-        memset(Parameter_0_0_host, 1,
+        memset(Parameter_0_0_host, 2,
                (unsigned long)m_ * (unsigned long)k_ * (unsigned long)batch_count_ * sizeof(float));
-        memset(Parameter_1_0_host, 2,
+        memset(Parameter_1_0_host, 3,
                (unsigned long)k_ * (unsigned long)n_ * (unsigned long)batch_count_ * sizeof(float));
     }
 }
@@ -259,8 +264,8 @@ template <> void CublasFunction::fill_data(half *Parameter_0_0_host, half *Param
         }
     } else {
         // memset the input data to fixed float value
-        std::fill(Parameter_0_0_host, Parameter_0_0_host + m_ * k_ * batch_count_, half(1.0));
-        std::fill(Parameter_1_0_host, Parameter_1_0_host + k_ * n_ * batch_count_, half(2.0));
+        std::fill(Parameter_0_0_host, Parameter_0_0_host + m_ * k_ * batch_count_, half(2.0));
+        std::fill(Parameter_1_0_host, Parameter_1_0_host + k_ * n_ * batch_count_, half(3.0));
     }
 }
 /**
@@ -279,8 +284,8 @@ template <> void CublasFunction::fill_data(cuComplex *Parameter_0_0_host, cuComp
         }
     } else {
         // memset the input data to fixed float value
-        std::fill(Parameter_0_0_host, Parameter_0_0_host + m_ * k_ * batch_count_, make_cuComplex(1.0f, 1.0f));
-        std::fill(Parameter_1_0_host, Parameter_1_0_host + k_ * n_ * batch_count_, make_cuComplex(2.0f, 2.0f));
+        std::fill(Parameter_0_0_host, Parameter_0_0_host + m_ * k_ * batch_count_, make_cuComplex(2.0f, 2.0f));
+        std::fill(Parameter_1_0_host, Parameter_1_0_host + k_ * n_ * batch_count_, make_cuComplex(3.0f, 3.0f));
     }
 }
 /**
@@ -489,8 +494,8 @@ int CublasFunction::check_result(int batch_count, cuComplex *Result_3_0, std::co
  */
 void CublasFunction::benchmark() {
     // Malloc memory for input and output data
-    bool random_data = this->correctness ? true : false;
-    this->prepare_tensor(random_data);
+    bool random = this->correctness ? true : this->random_data;
+    this->prepare_tensor(random);
 
     // Warm up
     for (int i_ = 0; i_ < warm_up; i_++) {

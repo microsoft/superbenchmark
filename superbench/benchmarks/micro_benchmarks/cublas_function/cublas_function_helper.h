@@ -98,6 +98,7 @@ class Options {
     std::string para_info_json;
     bool correctness_check;
     double eps;
+    bool random_data;
 
     /**
      * @brief Construct a options object according to cmd or set a default value used to test
@@ -120,6 +121,7 @@ class Options {
                                               : para_info_json;
         correctness_check = get_cmd_line_argument_bool("--correctness");
         eps = get_cmd_line_argument_double("--eps");
+        random_data = get_cmd_line_argument_bool("--random_data");
     }
 };
 
@@ -241,6 +243,7 @@ void run_benchmark(Options &options) {
         function.set_random_seed(options.random_seed);
         function.set_correctness(options.correctness_check);
         function.set_eps(options.eps);
+        function.set_random_data(options.random_data);
         CublasFunction *p_function = get_cublas_function_pointer(function);
         p_function->benchmark();
         delete p_function;

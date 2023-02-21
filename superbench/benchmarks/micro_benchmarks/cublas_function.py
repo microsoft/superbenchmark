@@ -236,6 +236,12 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help='The acceptable error bound for correctness check.',
         )
+        self._parser.add_argument(
+            '--random_data',
+            action='store_true',
+            default=False,
+            help='Enable random data generation for performance test.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -253,6 +259,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         command += (' --random_seed ' + str(self._args.random_seed))
         command += ' --correctness' if self._args.correctness else ''
         command += (' --eps ' + str(self._args.eps)) if self._args.eps is not None else ''
+        command += ' --random_data' if self._args.random_data else ''
 
         try:
             if not self._args.config_json_str:
