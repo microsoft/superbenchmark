@@ -171,6 +171,21 @@ Supports the use of double unit types and the use of tensor cores.
 | gpu-burn/gpu_[0-9]_pass | yes/no   | The result of the gpu-burn test for each GPU (1: yes, 0: no).                      |
 | gpu-burn/abort          | yes/no   | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no). |
 
+
+### `cpu-hpl`
+
+#### Introduction
+
+HPL or High Performance Computing Linpack evaluates compute bandwidth by solving dense linear systems in double precision arethmetic.
+
+#### Metrics
+
+| Name                | Unit               | Description                                                                |
+|---------------------|--------------------|----------------------------------------------------------------------------|
+| cpu-hpl/tests_pass  |                    | HPL completed running and correctness test has passed (1: pass, 0: fail).  |
+| cpu-hpl/throughput  | bandwidth (GFlops) | Compute bandwidth.                                                         |
+| cpu-hpl/time        | time (s)           | Time elapsed during HPL run.                                               |
+
 ### `cpu-stream`
 
 #### Introduction

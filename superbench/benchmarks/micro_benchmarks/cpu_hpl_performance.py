@@ -138,7 +138,7 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
                 self._result.add_result('tests_pass', 0)
 
         self._result.add_result('time', float(results[5]))
-        self._result.add_result('Gflops', float(results[6]))
+        self._result.add_result('throughput', float(results[6]))
 
         # raw output
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)

@@ -59,7 +59,7 @@ class CpuHplBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._process_raw_result(0, results))
         assert (benchmark.result['return_code'][0] == 0)
         assert (float(benchmark.result['time'][0]) == 4645.37)
-        assert (float(benchmark.result['Gflops'][0]) == 8126.1)
+        assert (float(benchmark.result['throughput'][0]) == 8126.1)
 
 
 if __name__ == '__main__':
