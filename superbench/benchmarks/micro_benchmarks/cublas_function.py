@@ -192,21 +192,24 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             type=int,
             default=8 * 1000,
             required=False,
-            help='The number of warmup step.',
+            help='The number of functions for warmup. By default, the total number of functions to run in warmup ' +
+            'is 8 warmup steps * 1000 num_in_step.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
             default=100,
             required=False,
-            help='The number of test step.',
+            help='The number of test steps. By default, the total number of functions to run in the measured test ' +
+            'is 100 test steps * 1000 num_in_step.',
         )
         self._parser.add_argument(
             '--num_in_step',
             type=int,
             default=1000,
             required=False,
-            help='The number of functions in one step.',
+            help='The number of functions in one step. By default, the total number of functions to run ' +
+            'in each step is 1000.',
         )
         self._parser.add_argument(
             '--random_seed',
