@@ -243,7 +243,8 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             '--random_data',
             action='store_true',
             default=False,
-            help='Enable random data generation for performance test.',
+            help='Enable random data generation for performance test. ' +
+            'By default, the data is filled with fixed value for performance test.',
         )
 
     def _preprocess(self):
