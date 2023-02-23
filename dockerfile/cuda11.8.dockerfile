@@ -69,11 +69,15 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
-ENV OFED_VERSION=5.8-1.0.1.1
+ENV OFED_VERSION="5.8-1.0.1.1"
+
+RUN cd /usr/local/lib/ && \ 
+rm libtbbbind_2_5.so.3 libtbbmalloc.so.2 libtbbbind.so.3 libtbb.so.12 libtbbmalloc_proxy.so.2 libtbbbind_2_0.so.3
+
 RUN cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
-    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
+    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-ucx-cuda --without-fw-update --force --all  && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
@@ -82,9 +86,9 @@ ENV RELEASE_VERSION="20.04"
 RUN cd /opt && \
     rm -rf hpcx && \
     wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64.tbz && \
-    tar xf hpcx-v2.13.1-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
-    ln -s hpcx-v2.13.1-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64 hpcx && \
-    rm hpcx-v2.13.1-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz
+    tar xf hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64.tbz && \
+    ln -s hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64 hpcx && \
+    rm hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64.tbz
 
 # Install Intel MLC
 RUN cd /tmp && \
