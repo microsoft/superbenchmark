@@ -171,7 +171,6 @@ Supports the use of double unit types and the use of tensor cores.
 | gpu-burn/gpu_[0-9]_pass | yes/no   | The result of the gpu-burn test for each GPU (1: yes, 0: no).                      |
 | gpu-burn/abort          | yes/no   | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no). |
 
-
 ### `cpu-hpl`
 
 #### Introduction

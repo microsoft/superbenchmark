@@ -111,7 +111,7 @@ gpcnet: sb_micro_path
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
 
-#Build GPU burn from main branch (only branch that exists)
+# Build GPU burn from main branch (only branch that exists)
 cuda_gpuburn: sb_micro_path
 ifneq (,$(wildcard gpu-burn/Makefile))
 	cd ./gpu-burn && make
@@ -119,6 +119,7 @@ ifneq (,$(wildcard gpu-burn/Makefile))
 	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
 endif
 
+# Build HPL from main branch 
 cpu_hpl: sb_micro_path
 ifneq (,$(wildcard hpl-tests/Makefile))
 	cd ./hpl-tests && \
@@ -134,8 +135,8 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 	cp -v ./hpl-tests/template_hpl.dat $(SB_MICRO_PATH)/bin/
 endif
 
+# Build STREAM 
 cpu_stream: sb_micro_path
-#Build stream from main branch (only branch that exists)
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
     wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
