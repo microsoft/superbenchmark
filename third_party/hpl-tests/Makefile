@@ -1,9 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-ZEN3_OUTPUT= xhpl_z3
-ZEN4_OUTPUT= xhpl_z4 
-
 all: ZEN3 ZEN4
 
 ZEN3:
