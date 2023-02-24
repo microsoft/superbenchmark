@@ -21,8 +21,8 @@ class CpuHplBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         return True
 
     @decorator.load_data('tests/data/hpl_results.log')
-    def test_stream(self, results):
-        """Test STREAM benchmark command generation."""
+    def test_hpl(self, results):
+        """Test HPL benchmark command generation."""
         benchmark_name = 'cpu-hpl'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
@@ -35,7 +35,7 @@ class CpuHplBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Check basic information
         assert (benchmark)
-        ret = benchmark._preprocess()
+        ret = benchmark._preprocess(hpl_template='third_party/hpl-tests/template_hpl.dat')
         assert (ret is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
         assert (benchmark.name == benchmark_name)

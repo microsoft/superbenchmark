@@ -68,7 +68,7 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
             This parameter is an HPL input. Default is 384000'
         )
 
-    def _preprocess(self):
+    def _preprocess(self, hpl_template):
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
@@ -92,8 +92,11 @@ class CpuHplBenchmark(MicroBenchmarkWithInvoke):
         command = os.path.join(self._args.bin_dir, self._bin_name)
         command = command + ' ' + xhpl + ' ' + str(self._args.coreCount)
 
-        # need to modify HPL.dat
-        hpl_input_file = os.path.join(self._args.bin_dir, 'template_hpl.dat')
+        # modify HPL.dat
+        if hpl_template:
+            hpl_input_file = hpl_template
+        else:
+            hpl_input_file = os.path.join(self._args.bin_dir, 'template_hpl.dat')
         search_string = ['problemSize', 'blockCount', 'blockSize']
         with open(hpl_input_file, 'r') as hplfile:
             lines = hplfile.readlines()
