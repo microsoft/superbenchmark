@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 #!/bin/bash
 
 source /opt/hpcx/hpcx-init.sh
