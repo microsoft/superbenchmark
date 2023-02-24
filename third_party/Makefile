@@ -17,7 +17,8 @@ ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | 
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
-common: cpu_hpl cpu_stream fio 
+cpu: common cpu_perftest
+common: cpu_hpl cpu_stream fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -70,6 +71,10 @@ endif
 rocm_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=/opt/rocm --prefix=$(SB_MICRO_PATH) && make -j && make install
+endif
+cpu_perftest:
+ifneq (,$(wildcard perftest/autogen.sh))
+	cd perftest && ./autogen.sh && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
 # Build FIO from commit d83ac9 (fio-3.28 tag).
