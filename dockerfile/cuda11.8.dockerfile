@@ -9,7 +9,7 @@ FROM nvcr.io/nvidia/pytorch:22.12-py3
 #   - cuDNN: 8.7.0.84
 #   - NCCL: v2.15.5-1
 # Mellanox:
-#   - OFED: 5.2-2.2.3.0
+#   - OFED: 5.8-1.0.1.1
 #   - HPC-X: v2.13.1
 # Intel:
 #   - mlc: v3.9a
