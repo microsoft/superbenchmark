@@ -1,7 +1,8 @@
 # SuperBench Config
 #
-# Azure HB120rs_v3
-# reference: https://learn.microsoft.com/en-us/azure/virtual-machines/hbv3-series
+# Azure HB120rs_v4/HX
+# reference: https://learn.microsoft.com/en-us/azure/virtual-machines/hbv4-series
+# reference: https://learn.microsoft.com/en-us/azure/virtual-machines/hx-series
 
 version: v0.6
 superbench:
@@ -52,11 +53,11 @@ superbench:
           proc_num: 1
           parallel: no
       parameters:
-        coreCount: 60
-        cpu_arch: zen3
-        blockSize: 224
+        coreCount: 88
+        cpu_arch: zen4
+        blockSize: 384
         blocks: 1
-        problemSize: 224000
+        problemSize: 384000
     cpu-stream:
       enable: true
       modes:
@@ -64,8 +65,8 @@ superbench:
           proc_num: 1
           parallel: no
       parameters:
-        cores: 0 4 8 12 16 20 24 28 30 34 38 42 46 50 54 58 60 64 68 72 76 80 84 88 90 94 98 102 106 110 114 118
-        cpu_arch: zen3
+        cores: 0 8 16 24 32 38 44 52 60 68 76 82 88 96 104 112 120 126 132 140 148 156 164 170
+        cpu_arch: zen4
     ib-traffic:
       enable: false
       modes:
