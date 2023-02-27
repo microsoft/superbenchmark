@@ -81,12 +81,7 @@ HPLlib       = $(LIBdir)/libhpl.a
 # header files,  MPlib  is defined  to be the name of  the library to be
 # used. The variable MPdir is only used for defining MPinc and MPlib.
 #
-MPdir        = /opt/ompi
-ifneq(,$(wildcard /opt/hpcx/ompi))
-    MPdir        = /opt/hpcx/ompi
-else
-    MPdir        = /opt/ompi
-endif
+MPdir        = $(omp)
 MPinc        = -I$(MPdir)/include
 MPlib        = $(MPdir)/lib/libmpi.so
 #
