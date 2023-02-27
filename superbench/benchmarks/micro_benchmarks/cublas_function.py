@@ -190,23 +190,26 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--num_warmup',
             type=int,
-            default=8,
+            default=8 * 1000,
             required=False,
-            help='The number of warmup step.',
+            help='The number of functions for warmup. By default, the total number of functions to run in warmup ' +
+            'is 8 warmup steps * 1000 num_in_step.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
             default=100,
             required=False,
-            help='The number of test step.',
+            help='The number of test steps. By default, the total number of functions to run in the measured test ' +
+            'is 100 test steps * 1000 num_in_step.',
         )
         self._parser.add_argument(
             '--num_in_step',
             type=int,
             default=1000,
             required=False,
-            help='The number of functions in one step.',
+            help='The number of functions in one step. By default, the total number of functions to run ' +
+            'in each step is 1000.',
         )
         self._parser.add_argument(
             '--random_seed',
@@ -236,6 +239,13 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help='The acceptable error bound for correctness check.',
         )
+        self._parser.add_argument(
+            '--random_data',
+            action='store_true',
+            default=False,
+            help='Enable random data generation for performance test. ' +
+            'By default, the data is filled with fixed value for performance test.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -253,6 +263,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         command += (' --random_seed ' + str(self._args.random_seed))
         command += ' --correctness' if self._args.correctness else ''
         command += (' --eps ' + str(self._args.eps)) if self._args.eps is not None else ''
+        command += ' --random_data' if self._args.random_data else ''
 
         try:
             if not self._args.config_json_str:
