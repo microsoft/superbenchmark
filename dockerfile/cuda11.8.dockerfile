@@ -70,10 +70,6 @@ RUN mkdir -p /root/.ssh && \
 
 # Install OFED
 ENV OFED_VERSION="5.8-1.0.1.1"
-
-RUN cd /usr/local/lib/ && \ 
-rm libtbbbind_2_5.so.3 libtbbmalloc.so.2 libtbbbind.so.3 libtbb.so.12 libtbbmalloc_proxy.so.2 libtbbbind_2_0.so.3
-
 RUN cd /tmp && \
     wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
