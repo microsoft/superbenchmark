@@ -9,8 +9,8 @@ FROM nvcr.io/nvidia/pytorch:22.12-py3
 #   - cuDNN: 8.7.0.84
 #   - NCCL: v2.15.5-1
 # Mellanox:
-#   - OFED: 5.8-1.0.1.1
-#   - HPC-X: v2.13.1
+#   - OFED: 5.2-2.2.3.0
+#   - HPC-X: v2.8.3
 # Intel:
 #   - mlc: v3.9a
 
@@ -69,26 +69,20 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
-ENV OFED_VERSION="5.8-1.0.1.1"
-
-RUN cd /usr/local/lib/ && \ 
-rm libtbbbind_2_5.so.3 libtbbmalloc.so.2 libtbbbind.so.3 libtbb.so.12 libtbbmalloc_proxy.so.2 libtbbbind_2_0.so.3
-
+ENV OFED_VERSION=5.2-2.2.3.0
 RUN cd /tmp && \
-    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
+    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
-    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-ucx-cuda --without-fw-update --force --all  && \
+    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
-ENV HPCX_VERSION="v2.13.1"
-ENV RELEASE_VERSION="20.04"
 RUN cd /opt && \
     rm -rf hpcx && \
-    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64.tbz && \
-    tar xf hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64.tbz && \
-    ln -s hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64 hpcx && \
-    rm hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu${RELEASE_VERSION}-cuda11-gdrcopy2-nccl2.12-x86_64.tbz
+    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
+    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
+    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64 hpcx && \
+    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -113,13 +107,6 @@ RUN cd /tmp && \
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
     apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
     rm -rf aocc-compiler-4.0.0_1_amd64.deb
-
-# Install AMD BLIS
-RUN cd /tmp && \
-    wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
-    tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
-    mv amd-blis /opt/AMD && \
-    rm -rf aocl-blis-linux-aocc-4.0.tar.gz
 
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
