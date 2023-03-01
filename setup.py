@@ -18,9 +18,9 @@ from setuptools import setup, find_packages, Command
 import superbench
 
 try:
-    pkg_resources.require(['pip>=18', 'setuptools>=45'])
+    pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
 except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
-    print('Try upgrade pip/setuptools to latest version, for example, python3 -m pip install --upgrade pip setuptools')
+    print('Try update pip/setuptools versions, for example, python3 -m pip install --upgrade pip setuptools==65.7')
     raise
 
 here = pathlib.Path(__file__).parent.resolve()

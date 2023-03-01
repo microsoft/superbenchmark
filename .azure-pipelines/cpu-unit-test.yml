@@ -29,7 +29,7 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      python3 -m pip install --upgrade pip
+      python3 -m pip install --upgrade pip setuptools==65.7
       python3 -m pip install .[test,cpuworker]
       make postinstall
     displayName: Install dependencies
