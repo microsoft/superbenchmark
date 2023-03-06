@@ -132,7 +132,7 @@ ADD third_party third_party
 RUN make -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install --upgrade setuptools && \
+RUN python3 -m pip install --upgrade setuptools==65.7 && \
     python3 -m pip install --no-cache-dir .[amdworker] && \
     make cppbuild && \
     make postinstall && \
