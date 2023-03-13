@@ -47,7 +47,6 @@ struct Options {
         return 0;
     }
 
-
     /**
      * @brief Get the unsigned long long type value of cmd line argument.
      * @param option the cmd line argument.
@@ -100,7 +99,9 @@ struct Options {
         std::cout << "  --minbytes <minbytes> : Lower data size bound to test." << std::endl;
         std::cout << "  --maxbytes <maxbytes> : Upper data size bound to test." << std::endl;
         std::cout << "  --check_data <check_data> : Whether check data correctness." << std::endl;
-        std::cout << "  --opt_type <opt_type> : Memory operation type." << std::endl;
+        std::cout << "  --read : Memory operation type is read." << std::endl;
+        std::cout << "  --write : Memory operation type is write." << std::endl;
+        std::cout << "  --readwrite : Memory operation type is readwrite." << std::endl;
         std::cout << "  --help : Print help message." << std::endl;
     }
 
@@ -139,13 +140,13 @@ struct Options {
             num_loop = get_cmd_line_argument_int("--num_loop");
             num_loop = (num_loop == 0 ? 1 : num_loop);
             check_data = get_cmd_line_argument_bool("--check");
-            if (get_cmd_line_argument_bool("--r")) {
+            if (get_cmd_line_argument_bool("--read")) {
                 opt_type = Option::Read;
             }
-            if (get_cmd_line_argument_bool("--w")) {
+            if (get_cmd_line_argument_bool("--write")) {
                 opt_type = Option::Write;
             }
-            if (get_cmd_line_argument_bool("--rw")) {
+            if (get_cmd_line_argument_bool("--readwrite")) {
                 opt_type = Option::ReadWrite;
             }
         }

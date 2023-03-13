@@ -47,7 +47,7 @@ void GPUMemRwBw::Run() {
  */
 void GPUMemRwBw::PrepareData(SIZE_T numElement) {
     // Prepare CPU side data.
-    std::vector<Data> dataA(numElement + 10);
+    std::vector<Data> dataA(numElement);
     for (SIZE_T i = 0; i < numElement; i++) {
         dataA[i].v1 = i % 256;
     }
