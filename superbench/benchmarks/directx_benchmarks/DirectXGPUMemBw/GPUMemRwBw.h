@@ -85,7 +85,7 @@ class GPUMemRwBw {
 
     /**
      * @brief Memory read write benchmark.
-     * @param numElem the lenght of data array.
+     * @param numElem the length of data array.
      * @param loops the number of dispatch tiems for measuring the performance.
      * @param numWarmUp the number of warm up dispatch times.
      * @return double the time elapsed in ms.
@@ -118,8 +118,8 @@ class GPUMemRwBw {
                                                                Microsoft::WRL::ComPtr<ID3D12Resource> &uploadBuffer);
 
     /**
-     * @brief Allocate resouce on both CPU side and GPU side and construct a array of buffers with given lenght.
-     * @param numElement the lenght of data array.
+     * @brief Allocate resouce on both CPU side and GPU side and construct a array of buffers with given length.
+     * @param numElement the length of data array.
      */
     void PrepareData(SIZE_T numElement);
 
@@ -130,7 +130,7 @@ class GPUMemRwBw {
 
     /**
      * @brief Check result correctness.
-     * @param numElement the lenght of data array.
+     * @param numElement the length of data array.
      * @return true if result is correct.
      */
     bool CheckData(SIZE_T numElement);

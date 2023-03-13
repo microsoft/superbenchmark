@@ -41,8 +41,8 @@ void GPUMemRwBw::Run() {
 }
 
 /**
- * @brief Allocate resouce on both CPU side and GPU side and construct a array of buffers with given lenght.
- * @param numElement the lenght of data array.
+ * @brief Allocate resouce on both CPU side and GPU side and construct a array of buffers with given length.
+ * @param numElement the length of data array.
 
  */
 void GPUMemRwBw::PrepareData(SIZE_T numElement) {
@@ -93,7 +93,7 @@ void GPUMemRwBw::PrepareData(SIZE_T numElement) {
 
 /**
  * @brief Check result correctness.
- * @param numElement the lenght of data array.
+ * @param numElement the length of data array.
  * @return true if result is correct.
  */
 bool GPUMemRwBw::CheckData(SIZE_T numElement) {
@@ -128,7 +128,7 @@ bool GPUMemRwBw::CheckData(SIZE_T numElement) {
 
 /**
  * @brief Memory read write benchmark.
- * @param numElem the lenght of data array.
+ * @param numElem the length of data array.
  * @return double the time elapsed in ms.
  */
 double GPUMemRwBw::MemReadWriteBench(SIZE_T numElem, int loops, int numWarmUp) {
@@ -237,7 +237,7 @@ void GPUMemRwBw::LoadAssets() {
     // Prepare root signature, root parameter can be a table, root descriptor or root constants.
     const int nParamter = 3;
     CD3DX12_ROOT_PARAMETER slotRootParameter[nParamter];
-    // Perfomance TIP: Order from most frequent to least frequent.
+    // Performance TIP: Order from most frequent to least frequent.
     slotRootParameter[0].InitAsShaderResourceView(0);
     slotRootParameter[1].InitAsConstantBufferView(0);
     slotRootParameter[2].InitAsUnorderedAccessView(0);
