@@ -28,6 +28,7 @@ void GPUCore::Run() {
     FlushCommandQueue();
 
     int loops = opts->num_loops;
+    std::cout << "GPUCoreFLOPs" << std::endl;
     for (int i = 0; i < loops; ++i) {
         gpuTimer.init(m_device.Get(), 1);
 

@@ -8,7 +8,6 @@
 #endif
 
 #include <chrono>
-#include <shellapi.h>
 #include <string>
 #include <unordered_map>
 #include <wrl.h>
@@ -94,7 +93,7 @@ class GPUCore {
      * @brief Start the computation job.
      * @return the elapsed time in ms.
      */
-    void DoComputeWork_MulAdd();
+    double DoComputeWork_MulAdd();
 
     /**
      * @brief Wait until command completed.
