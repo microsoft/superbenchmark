@@ -90,6 +90,7 @@ void GPUMemRwBw::PrepareData(SIZE_T numElement) {
     memcpy(pCBDataBegin, &param, sizeof(param));
     m_constantBuffer->Unmap(0, nullptr);
 }
+
 /**
  * @brief Check result correctness.
  * @param numElement the lenght of data array.
@@ -124,6 +125,7 @@ bool GPUMemRwBw::CheckData(SIZE_T numElement) {
     m_readbackBuffer->Unmap(0, nullptr);
     return true;
 }
+
 /**
  * @brief Memory read write benchmark.
  * @param numElem the lenght of data array.
@@ -168,6 +170,7 @@ double GPUMemRwBw::MemReadWriteBench(SIZE_T numElem, int loops, int numWarmUp) {
     }
     return timeInMs;
 }
+
 /**
  * @brief Wait until command completed.
  */
@@ -182,6 +185,7 @@ void GPUMemRwBw::waitForCommandQueue() {
         WaitForSingleObject(m_eventHandle, INFINITE);
     }
 }
+
 /**
  * @brief Create pipeline including
  *		  create device object, command list, command queue
@@ -225,7 +229,8 @@ void GPUMemRwBw::LoadPipeline() {
     activeAllocator->Reset();
     m_commandList->Reset(activeAllocator, nullptr);
 }
-/*
+
+/**
  * @brief Setup GPU pipeline resource like root signature and shader.
  */
 void GPUMemRwBw::LoadAssets() {
@@ -279,8 +284,8 @@ void GPUMemRwBw::LoadAssets() {
         ThrowIfFailed(m_device->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&m_PSO)));
     }
 }
-/*
 
+/**
  * @brief Create a default buffer and upload data with the upload buffer.
  * @param device the GPU device object.
  * @param cmdList the GPU command list object.
