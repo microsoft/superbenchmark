@@ -126,8 +126,8 @@ struct Options {
             dtoh_enabled = get_cmd_line_argument_bool("--dtoh");
             check_data = get_cmd_line_argument_bool("--check");
             if (!htod_enabled && !dtoh_enabled) {
-                std::cerr << "Please specify memory type!" << std::endl;
-                //exit(-1);
+                std::cerr << "Error: Please specify memory type!" << std::endl;
+                exit(-1);
             }
         }
     }
