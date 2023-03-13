@@ -132,7 +132,7 @@ void GPUCore::PrepareData(int NumDataElements) {
     m_inputBufferB =
         CreateDefaultBuffer(m_device.Get(), m_commandList.Get(), dataB.data(), byteSize, m_inputUploadBufferB);
 
-    // Create ouput buffer.
+    // Create output buffer.
     m_device->CreateCommittedResource(
         get_rvalue_ptr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT)), D3D12_HEAP_FLAG_NONE,
         get_rvalue_ptr(CD3DX12_RESOURCE_DESC::Buffer(byteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)),
