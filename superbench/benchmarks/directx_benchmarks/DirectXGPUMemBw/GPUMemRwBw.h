@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <chrono>
 #include <random>
-#include <shellapi.h>
 #include <string>
 #include <vector>
 #include <wrl.h>
@@ -77,7 +76,7 @@ class GPUMemRwBw {
     /**
      * @brief Destructor, release the fence.
      */
-    ~GPUMemRwBw() { CloseHandle(fence); }
+    ~GPUMemRwBw() { CloseHandle(m_fence); }
 
     /**
      * @brief Start and run the benchmark.
@@ -138,11 +137,11 @@ class GPUMemRwBw {
 
   private:
     // Dispatch layout of command.
-	uint3 num_dispatch_;
-	// Number of elements in data buffer.
-	uint64_t num_elements_ = 0;
-	// Number of threads each group.
-	uint3 num_thread_;
+    uint3 num_dispatch_;
+    // Number of elements in data buffer.
+    uint64_t num_elements_ = 0;
+    // Number of threads each group.
+    uint3 num_thread_;
 
     // Pipeline objects.
     ComPtr<ID3D12Device> m_device;
@@ -157,9 +156,9 @@ class GPUMemRwBw {
     ComPtr<ID3D12Resource> m_readbackBuffer;
 
     // Synchronization objects.
-    ID3D12Fence1 *fence = nullptr;
-    HANDLE eventHandle = nullptr;
-    UINT64 fenceValue = 0;
+    ID3D12Fence1 *m_fence = nullptr;
+    HANDLE m_eventHandle = nullptr;
+    UINT64 m_fenceValue = 0;
 
     // GPU timer.
     D3D12::D3D12Timer m_gpuTimer;

@@ -135,7 +135,7 @@ struct Options {
             minbytes = get_cmd_line_argument_int("--minbytes");
             minbytes = (minbytes == 0 ? 4 * 1024 : minbytes);
             maxbytes = get_cmd_line_argument_ulonglong("--maxbytes");
-            maxbytes = (maxbytes == 0 ? static_cast<unsigned long long>(2LL * 1024 * 1024 * 1024) : maxbytes);
+            maxbytes = (maxbytes == 0 ? static_cast<unsigned long long>(1LL * 1024 * 1024 * 1024) : maxbytes);
             num_loop = get_cmd_line_argument_int("--num_loop");
             num_loop = (num_loop == 0 ? 1 : num_loop);
             check_data = get_cmd_line_argument_bool("--check");
