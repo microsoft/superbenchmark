@@ -36,6 +36,18 @@ struct Options {
         return 0;
     }
 
+     /**
+     * @brief Get the unsigned long long type value of cmd line argument.
+     * @param option the cmd line argument.
+     * @return unsigned long long the unsigned long long type value of cmd line argument 'option'.
+     */
+    unsigned long long get_cmd_line_argument_ulonglong(const std::string &option) {
+        if (char *value = get_cmd_option(option)) {
+            return std::stoull(value);
+        }
+        return 0;
+    }
+
     /**
      * @brief Get the string type value of cmd line argument
      * @param  option the cmd line argument.
@@ -81,7 +93,7 @@ struct Options {
     // Lower limits of each buffer.
     int minbytes = 0;
     // Upper limits of each buffer.
-    long long maxbytes = 0;
+    unsigned long long maxbytes = 0;
     // Whether host-to-device transfer needs to be evaluated.
     bool htod_enabled = false;
     // Whether device-to-host transfer needs to be evaluated.
@@ -105,16 +117,17 @@ struct Options {
             num_warm_up = get_cmd_line_argument_int("--warm_up");
             num_warm_up = (num_warm_up == 0 ? 20 : num_warm_up);
             num_loops = get_cmd_line_argument_int("--num_loops");
-            num_loops = (num_loops == 0 ? 10000 : num_loops);
+            num_loops = (num_loops == 0 ? 100000 : num_loops);
             minbytes = get_cmd_line_argument_int("--minbytes");
             minbytes = (minbytes == 0 ? 64 : minbytes);
-            maxbytes = get_cmd_line_argument_int("--maxbytes");
+            maxbytes = get_cmd_line_argument_ulonglong("--maxbytes");
             maxbytes = (maxbytes == 0 ? 8 * 1024 * 1024 : maxbytes);
             htod_enabled = get_cmd_line_argument_bool("--htod");
             dtoh_enabled = get_cmd_line_argument_bool("--dtoh");
             check_data = get_cmd_line_argument_bool("--check");
             if (!htod_enabled && !dtoh_enabled) {
                 std::cerr << "Please specify memory type!" << std::endl;
+                //exit(-1);
             }
         }
     }

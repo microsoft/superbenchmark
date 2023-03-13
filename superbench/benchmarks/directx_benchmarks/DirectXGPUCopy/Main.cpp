@@ -11,6 +11,7 @@ int main(int argc, char *argv[]) {
     for (SIZE_T usize = opts->minbytes; usize <= opts->maxbytes; usize += usize) {
         std::cout << "size: " << usize << "B,";
         opts->size = usize;
+        opts->htod_enabled = true;
         auto gpucopy = new GPUCopyBw(opts);
         gpucopy->Run();
     }

@@ -13,9 +13,6 @@ D3D12Timer::~D3D12Timer() {
 
     if (queryResourceCPU_)
         queryResourceCPU_->Release();
-
-    if (queryResourceGPU_)
-        queryResourceGPU_->Release();
 }
 
 HRESULT D3D12Timer::init(ID3D12Device *pDevice, UINT numTimers) {
@@ -55,13 +52,6 @@ HRESULT D3D12Timer::init(ID3D12Device *pDevice, UINT numTimers) {
                                                             D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
                                                             IID_PPV_ARGS(&queryResourceCPU_)))) {
             queryResourceCPU_->SetName(L"queryResourceCPU_");
-        }
-
-        heapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
-        if (SUCCEEDED(hr = device_->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAG_NONE, &resouceDesc,
-                                                            D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr,
-                                                            IID_PPV_ARGS(&queryResourceGPU_)))) {
-            queryResourceGPU_->SetName(L"queryResourceGPU_");
         }
     }
 

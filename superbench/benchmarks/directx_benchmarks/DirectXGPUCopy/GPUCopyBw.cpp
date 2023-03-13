@@ -13,7 +13,7 @@
 void GPUCopyBw::Run() {
     LoadPipeline();
     double time_ms = CopyResourceBench(opts->size, opts->num_loops, opts->num_warm_up);
-    double bw = opts->size / time_ms / 1e6;
+    double bw = opts->size * opts->num_loops / time_ms / 1e6;
     cout << "DirectXGPUCopy:" << bw << " GB/s" << endl;
 }
 
@@ -112,7 +112,7 @@ double GPUCopyBw::CopyResourceBench(SIZE_T size, int loops, int warm_up) {
     m_commandList->Reset(activeAllocator, nullptr);
 
     // Set data into source buffer.
-    SetDataToBufferMemcpy(pData, size, 0);
+    SetDataToBufferMemcpy(pData, size);
 
     for (int i = 0; i < loops + warm_up; i++) {
         if (i == warm_up) {
@@ -123,8 +123,6 @@ double GPUCopyBw::CopyResourceBench(SIZE_T size, int loops, int warm_up) {
             CopyResourceFromUploadToDefault();
         } else if (opts->dtoh_enabled) {
             CopyResourceFromDefaultToReadback();
-        } else if (opts->dtod_enabled) {
-            CopyResourceFromDefaultToDefault();
         }
     }
 
@@ -197,7 +195,7 @@ void GPUCopyBw::SetDataToBufferMemcpy(const void *pData, SIZE_T byteSize) {
     memcpy(p, pData, byteSize);
     m_uploadBuffer->Unmap(0, nullptr);
 
-    if (opts->dtoh_enabled || opts->dtod_enabled) {
+    if (opts->dtoh_enabled) {
         CopyResourceFromUploadToDefault();
         D3D12_RESOURCE_BARRIER outputBufferResourceBarrier{CD3DX12_RESOURCE_BARRIER::Transition(
             m_vertexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE)};
