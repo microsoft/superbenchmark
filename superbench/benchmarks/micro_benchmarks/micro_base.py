@@ -166,6 +166,7 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
         Return:
             True if run benchmark successfully.
         """
+        success = True
         for cmd_idx in range(len(self._commands)):
             logger.info(
                 'Execute command - round: {}, benchmark: {}, command: {}.'.format(
@@ -181,13 +182,13 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
                         self._curr_run_index, self._name, output.stdout
                     )
                 )
-                return False
+                success = False
             else:
                 if not self._process_raw_result(cmd_idx, output.stdout):
                     self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
-                    return False
+                    success = False
 
-        return True
+        return success
 
     @abstractmethod
     def _process_raw_result(self, cmd_idx, raw_output):
