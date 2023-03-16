@@ -11,7 +11,6 @@ import statistics
 from superbench.common.utils import logger
 from superbench.benchmarks import Platform, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
-from superbench.common.utils import device_manager as dm
 
 
 class CudnnBenchmark(MicroBenchmarkWithInvoke):
@@ -24,7 +23,6 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-        self._capability = dm.device_manager.get_device_compute_capability()
 
         self.__default_params_dict_list = [
             {
@@ -369,6 +367,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
+        self._args.tolerant_fail = True
         command = os.path.join(self._args.bin_dir, self._bin_name)
         command += (' --num_test ' + str(self._args.num_steps))
         command += (' --warm_up ' + str(self._args.num_warmup))
@@ -444,21 +443,13 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             )
             error = True
         if error:
-            if self._capability == 9.0 and 'CUDNN_STATUS_NOT_SUPPORTED' in raw_output:
-                logger.warning(
-                    'CUDNN_STATUS_NOT_SUPPORTED error in running cudnn test on Hopper GPU - round: {}, \
-                        index of cmd: {},  benchmark: {}, raw data: {}'.format(
-                        self._curr_run_index, cmd_idx, self._name, raw_output
-                    )
+            logger.error(
+                'Error in running cudnn test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
+                    self._curr_run_index, cmd_idx, self._name, raw_output
                 )
-                self._result.add_result(metric.lower() + '_time', -1)
-            else:
-                logger.error(
-                    'Error in running cudnn test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
-                        self._curr_run_index, cmd_idx, self._name, raw_output
-                    )
-                )
-                return False
+            )
+            self._result.add_result(metric.lower() + '_time', -1)
+            return False
         return True
 
 

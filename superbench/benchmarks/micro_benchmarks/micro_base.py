@@ -110,6 +110,12 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
             required=False,
             help='Specify the directory of the benchmark binary.',
         )
+        self._parser.add_argument(
+            '--tolerant_fail',
+            action='store_true',
+            default=False,
+            help='Tolerant failure for sub microbenchmark.',
+        )
 
     def _set_binary_path(self):
         """Search the binary from self._args.bin_dir or from system environment path and set the binary directory.
@@ -166,7 +172,7 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
         Return:
             True if run benchmark successfully.
         """
-        success = True
+        ret = True
         for cmd_idx in range(len(self._commands)):
             logger.info(
                 'Execute command - round: {}, benchmark: {}, command: {}.'.format(
@@ -182,13 +188,15 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
                         self._curr_run_index, self._name, output.stdout
                     )
                 )
-                success = False
+                ret = False
             else:
                 if not self._process_raw_result(cmd_idx, output.stdout):
                     self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
-                    success = False
+                    ret = False
+            if not self._args.tolerant_fail and ret is False:
+                return False
 
-        return success
+        return ret
 
     @abstractmethod
     def _process_raw_result(self, cmd_idx, raw_output):
