@@ -11,7 +11,6 @@ import statistics
 from superbench.common.utils import logger
 from superbench.benchmarks import Platform, BenchmarkRegistry, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
-from superbench.common.utils import device_manager as dm
 
 
 class CublasBenchmark(MicroBenchmarkWithInvoke):
@@ -24,7 +23,6 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-        self._capability = dm.device_manager.get_device_compute_capability()
 
         self.__default_params_dict_list = [
             {
@@ -192,26 +190,23 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--num_warmup',
             type=int,
-            default=8 * 1000,
+            default=8,
             required=False,
-            help='The number of functions for warmup. By default, the total number of functions to run in warmup ' +
-            'is 8 warmup steps * 1000 num_in_step.',
+            help='The number of warmup step.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
             default=100,
             required=False,
-            help='The number of test steps. By default, the total number of functions to run in the measured test ' +
-            'is 100 test steps * 1000 num_in_step.',
+            help='The number of test step.',
         )
         self._parser.add_argument(
             '--num_in_step',
             type=int,
             default=1000,
             required=False,
-            help='The number of functions in one step. By default, the total number of functions to run ' +
-            'in each step is 1000.',
+            help='The number of functions in one step.',
         )
         self._parser.add_argument(
             '--random_seed',
@@ -241,13 +236,6 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help='The acceptable error bound for correctness check.',
         )
-        self._parser.add_argument(
-            '--random_data',
-            action='store_true',
-            default=False,
-            help='Enable random data generation for performance test. ' +
-            'By default, the data is filled with fixed value for performance test.',
-        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -265,7 +253,6 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
         command += (' --random_seed ' + str(self._args.random_seed))
         command += ' --correctness' if self._args.correctness else ''
         command += (' --eps ' + str(self._args.eps)) if self._args.eps is not None else ''
-        command += ' --random_data' if self._args.random_data else ''
 
         try:
             if not self._args.config_json_str:
@@ -342,23 +329,14 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
                 )
             )
-            error = True
+            return False
         if error:
-            if self._capability == 9.0 and 'CUDNN_STATUS_NOT_SUPPORTED' in raw_output:
-                logger.warning(
-                    'CUDNN_STATUS_NOT_SUPPORTED error in running cublas test on Hopper GPU - round: {}, \
-                        index of cmd: {},  benchmark: {}, raw data: {}'.format(
-                        self._curr_run_index, cmd_idx, self._name, raw_output
-                    )
+            logger.error(
+                'Error in running cublas test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
+                    self._curr_run_index, cmd_idx, self._name, raw_output
                 )
-                self._result.add_result(metric.lower() + '_time', -1)
-            else:
-                logger.error(
-                    'Error in running cublas test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
-                        self._curr_run_index, cmd_idx, self._name, raw_output
-                    )
-                )
-                return False
+            )
+            return False
         return True
 
 
