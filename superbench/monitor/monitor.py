@@ -47,7 +47,7 @@ class Monitor(multiprocessing.Process):
         """
         if self.__container_name is not None:
             raise RuntimeError(
-                'cgroup v2 is used in Ubuntu 22.04, cgroup files for specific container is not supportted.'
+                'For superbench, monitor is used inside the container by executor, the code for host will not be used.'
             )
             output = run_command('docker ps -qf name={}'.format(self.__container_name))
             if output.returncode != 0:
