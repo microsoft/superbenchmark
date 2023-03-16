@@ -458,7 +458,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                         self._curr_run_index, cmd_idx, self._name, raw_output
                     )
                 )
-            return False
+                return False
         return True
 
 
