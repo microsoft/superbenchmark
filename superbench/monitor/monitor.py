@@ -46,6 +46,9 @@ class Monitor(multiprocessing.Process):
             True if __preprocess() succeed.
         """
         if self.__container_name is not None:
+            raise RuntimeError(
+                'cgroup v2 is used in Ubuntu 22.04, cgroup files for specific container is not supportted.'
+            )
             output = run_command('docker ps -qf name={}'.format(self.__container_name))
             if output.returncode != 0:
                 logger.error(
@@ -80,8 +83,8 @@ class Monitor(multiprocessing.Process):
                 )
                 return False
         else:
-            self._cpu_file = '/sys/fs/cgroup/cpuacct/cpuacct.stat'
-            self._mem_file = '/sys/fs/cgroup/memory/memory.usage_in_bytes'
+            self._cpu_file = '/proc/stat'
+            self._mem_file = '/proc/meminfo'
             self._net_file = '/proc/net/dev'
 
         return True
@@ -215,13 +218,12 @@ class Monitor(multiprocessing.Process):
         system_time = 0
         try:
             with open(self._cpu_file, 'r') as f:
-                for line in f:
-                    items = line.split()
-                    if items[0] == 'user':
-                        user_time = int(items[1])
-                    elif items[1] == 'system':
-                        system_time = int(items[1])
-                return user_time + system_time
+                for line in f.readlines():
+                    if line.startswith('cpu '):
+                        items = line.split()
+                        user_time = int(items[1]) + int(items[2])
+                        system_time = int(items[3]) + int(items[-4])
+                        return user_time + system_time
         except BaseException as e:
             logger.error('Failed to read process cpu ticks information - error message: {}'.format(str(e)))
 
