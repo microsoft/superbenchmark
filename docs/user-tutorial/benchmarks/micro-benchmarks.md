@@ -176,6 +176,7 @@ Supports the use of double unit types and the use of tensor cores.
 #### Introduction
 
 HPL or High Performance Computing Linpack evaluates compute bandwidth by solving dense linear systems in double precision arethmetic.
+Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computers](https://netlib.org/benchmark/hpl/)
 
 #### Metrics
 
