@@ -10,7 +10,10 @@
 
 #include "cublaslt_utils.h"
 
-using fp16 = half; // nv_bfloat16
+using fp64 = double;
+using fp32 = float;
+using fp16 = half;
+using bf16 = nv_bfloat16;
 using fp8e4m3 = __nv_fp8_e4m3;
 using fp8e5m2 = __nv_fp8_e5m2;
 
@@ -61,7 +64,7 @@ void process_args(int argc, char **argv, Args *args) {
     }
 }
 
-template <typename T> __global__ void init_matrix(T *matrix, const fp16 val, const size_t N) {
+template <typename T> __global__ void init_matrix(T *matrix, const fp32 val, const size_t N) {
     size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
     for (size_t i = tid; i < N; i += gridDim.x * blockDim.x) {
         matrix[i] = T(val);
@@ -69,8 +72,14 @@ template <typename T> __global__ void init_matrix(T *matrix, const fp16 val, con
 }
 
 template <typename T> cudaDataType_t get_datatype() {
+    if (std::is_same<T, fp64>::value)
+        return CUDA_R_64F;
+    if (std::is_same<T, fp32>::value)
+        return CUDA_R_32F;
     if (std::is_same<T, fp16>::value)
         return CUDA_R_16F;
+    if (std::is_same<T, bf16>::value)
+        return CUDA_R_16BF;
     if (std::is_same<T, fp8e4m3>::value)
         return CUDA_R_8F_E4M3;
     if (std::is_same<T, fp8e5m2>::value)
@@ -88,8 +97,8 @@ float timing_matmul_tn(int m, int n, int k, int batch, int warmup, int iter) {
     cudaMalloc(&matrix_b, k * n * std::max(batch, 1) * sizeof(Tb));
     cudaMalloc(&matrix_out, m * n * std::max(batch, 1) * sizeof(Tout));
 
-    init_matrix<Ta><<<216, 1024>>>(matrix_a, static_cast<fp16>(1.f), m * k * std::max(batch, 1));
-    init_matrix<Tb><<<216, 1024>>>(matrix_b, static_cast<fp16>(2.f), k * n * std::max(batch, 1));
+    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * std::max(batch, 1));
+    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * std::max(batch, 1));
 
     // init gemm
     int lda = k, ldb = k, ldd = m;
@@ -129,7 +138,7 @@ float timing_matmul_tn(int m, int n, int k, int batch, int warmup, int iter) {
     return (time * 1e3 / iter);
 }
 
-template <typename Ta, typename Tb = Ta, typename Tout = fp16> void run(Args *args) {
+template <typename Ta, typename Tb = Ta, typename Tout = Ta> void run(Args *args) {
     float time_us = timing_matmul_tn<Ta, Tb, Tout>(args->m, args->n, args->k, args->batch, args->warmup, args->iter);
     // m n k batch time_us tflops
     printf("%d\t%d\t%d\t%d\t%f\t%f\n", args->m, args->n, args->k, args->batch, time_us,
@@ -140,12 +149,18 @@ int main(int argc, char **argv) {
     Args args;
     process_args(argc, argv, &args);
 
-    if (args.in_type == "fp16")
+    if (args.in_type == "fp64")
+        run<fp64>(&args);
+    else if (args.in_type == "fp32")
+        run<fp32>(&args);
+    else if (args.in_type == "fp16")
         run<fp16>(&args);
+    else if (args.in_type == "bf16")
+        run<bf16>(&args);
     else if (args.in_type == "fp8e4m3")
-        run<fp8e4m3>(&args);
+        run<fp8e4m3, fp8e4m3, fp16>(&args);
     else if (args.in_type == "fp8e5m2")
-        run<fp8e5m2, fp8e4m3>(&args);
+        run<fp8e5m2, fp8e4m3, fp16>(&args);
     else
         throw std::invalid_argument("Unknown type " + args.in_type);
 
