@@ -243,14 +243,14 @@ class Monitor(multiprocessing.Process):
                         items = line.split()
                         if items[0] == 'user':
                             user_time = int(items[1])
-                        elif items[1] == 'system':
+                        elif items[0] == 'system':
                             system_time = int(items[1])
                 else:
                     for line in f:
                         items = line.split()
                         if items[0] == 'user_usec':
                             user_time = int(items[1]) / 10000
-                        elif items[1] == 'system_usec':
+                        elif items[0] == 'system_usec':
                             system_time = int(items[1]) / 10000
             return user_time + system_time
         except BaseException as e:
