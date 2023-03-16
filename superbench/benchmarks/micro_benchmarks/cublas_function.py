@@ -326,14 +326,7 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._result.add_result(metric.lower() + '_time', statistics.mean(raw_data))
                     self._result.add_raw_data(metric.lower() + '_time', raw_data, self._args.log_raw_data)
                 if 'Error' in line:
-                    if self._capability == 9.0 and 'CUDNN_STATUS_NOT_SUPPORTED' in line:
-                        logger.warning(
-                            'CUDNN_STATUS_NOT_SUPPORTED error in running cublas test - round: {}, index of cmd: {}, \
-                            benchmark: {}, raw data: {}'.format(self._curr_run_index, cmd_idx, self._name, raw_output)
-                        )
-                        self._result.add_result(metric.lower() + '_time', -1)
-                    else:
-                        error = True
+                    error = True
                 if '[correctness]' in line:
                     if 'PASS' in line:
                         self._result.add_result(metric.lower() + '_correctness', 1)
@@ -349,14 +342,23 @@ class CublasBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
                 )
             )
-            return False
+            error = True
         if error:
-            logger.error(
-                'Error in running cublas test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
-                    self._curr_run_index, cmd_idx, self._name, raw_output
+            if self._capability == 9.0 and 'CUDNN_STATUS_NOT_SUPPORTED' in raw_output:
+                logger.warning(
+                    'CUDNN_STATUS_NOT_SUPPORTED error in running cublas test on Hopper GPU - round: {}, \
+                        index of cmd: {},  benchmark: {}, raw data: {}'.format(
+                        self._curr_run_index, cmd_idx, self._name, raw_output
+                    )
                 )
-            )
-            return False
+                self._result.add_result(metric.lower() + '_time', -1)
+            else:
+                logger.error(
+                    'Error in running cublas test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
+                        self._curr_run_index, cmd_idx, self._name, raw_output
+                    )
+                )
+                return False
         return True
 
 
