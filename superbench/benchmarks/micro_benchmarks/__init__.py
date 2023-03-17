@@ -29,34 +29,13 @@ from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import Ro
 from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul
 from superbench.benchmarks.micro_benchmarks.tcp_connectivity import TCPConnectivityBenchmark
 from superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance import TensorRTInferenceBenchmark
-from superbench.benchmarks.micro_benchmarks.dist_inference_simulation import DistInferenceSimulation
+from superbench.benchmarks.micro_benchmarks.dist_inference import DistInference
 
 __all__ = [
-    'ComputationCommunicationOverlap',
-    'CpuMemBwLatencyBenchmark',
-    'CpuStreamBenchmark',
-    'CublasBenchmark',
-    'CublasLtBenchmark',
-    'CudaGemmFlopsBenchmark',
-    'CudaMemBwBenchmark',
-    'CudaNcclBwBenchmark',
-    'CudnnBenchmark',
-    'DiskBenchmark',
-    'GPCNetBenchmark',
-    'GemmFlopsBenchmark',
-    'GpuBurnBenchmark',
-    'GpuCopyBwBenchmark',
-    'IBBenchmark',
-    'IBLoopbackBenchmark',
-    'KernelLaunch',
-    'MemBwBenchmark',
-    'MicroBenchmark',
-    'MicroBenchmarkWithInvoke',
-    'ORTInferenceBenchmark',
-    'RocmGemmFlopsBenchmark',
-    'RocmMemBwBenchmark',
-    'ShardingMatmul',
-    'TCPConnectivityBenchmark',
-    'TensorRTInferenceBenchmark',
-    'DistInferenceSimulation'
+    'ComputationCommunicationOverlap', 'CpuMemBwLatencyBenchmark', 'CpuStreamBenchmark', 'CublasBenchmark',
+    'CublasLtBenchmark', 'CudaGemmFlopsBenchmark', 'CudaMemBwBenchmark', 'CudaNcclBwBenchmark', 'CudnnBenchmark',
+    'DiskBenchmark', 'GPCNetBenchmark', 'GemmFlopsBenchmark', 'GpuBurnBenchmark', 'GpuCopyBwBenchmark', 'IBBenchmark',
+    'IBLoopbackBenchmark', 'KernelLaunch', 'MemBwBenchmark', 'MicroBenchmark', 'MicroBenchmarkWithInvoke',
+    'ORTInferenceBenchmark', 'RocmGemmFlopsBenchmark', 'RocmMemBwBenchmark', 'ShardingMatmul',
+    'TCPConnectivityBenchmark', 'TensorRTInferenceBenchmark', 'DistInference'
 ]

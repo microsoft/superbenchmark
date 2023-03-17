@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the distributed inference simulation benchmark."""
+"""Module of the distributed inference benchmark."""
 
 import os
 import time
@@ -16,6 +16,7 @@ from superbench.benchmarks import DistributedImpl, DistributedBackend, Benchmark
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
 
+
 class ComputationKernelType(Enum):
     """The Enum class representing different computation kernel type."""
     ADDMM = 'addmm'
@@ -23,11 +24,13 @@ class ComputationKernelType(Enum):
     MATMUL = 'matmul'
     MUL = 'mul'
 
+
 class CommunicationKernelType(Enum):
     """The Enum class representing different communication kernel type."""
     ALLGATHER = 'allgather'
     ALLREDUCE = 'allreduce'
     ALLTOALL = 'alltoall'
+
 
 class ActivationKernelType(Enum):
     """The Enum class representing different activation kernel type."""
@@ -35,27 +38,32 @@ class ActivationKernelType(Enum):
     SIGMOID = 'sigmoid'
     TANH = 'tanh'
 
-class DistInferenceSimulationModel():
-    def __init__(self, input_size, hidden_size, num_layers, precision, computation, communication, activation, device, num_ranks):
+
+class DistInferenceModel():
+    def __init__(
+        self, input_size, hidden_size, num_layers, precision, computation, communication, activation, device, num_ranks
+    ):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.device = device
         self.linear = nn.Linear(self.input_size, self.hidden_size, device=self.device)
-        self.weights = torch.rand(self.input_size, self.hidden_size, dtype=getattr(torch, precision.value), device=self.device)
+        self.weights = torch.rand(
+            self.input_size, self.hidden_size, dtype=getattr(torch, precision.value), device=self.device
+        )
         self.bias = torch.rand(self.hidden_size, dtype=getattr(torch, precision.value), device=self.device)
 
         self.num_ranks = num_ranks
 
         self.computation_kernel = None
         if computation == ComputationKernelType.ADDMM:
-            self.computation_kernel = lambda x : torch.addmm(self.bias, x, self.weights)
+            self.computation_kernel = lambda x: torch.addmm(self.bias, x, self.weights)
         elif computation == ComputationKernelType.LINEAR:
-            self.computation_kernel = lambda x : self.linear(x)
+            self.computation_kernel = lambda x: self.linear(x)
         elif computation == ComputationKernelType.MATMUL:
-            self.computation_kernel = lambda x : torch.matmul(x, self.weights)
+            self.computation_kernel = lambda x: torch.matmul(x, self.weights)
         elif computation == ComputationKernelType.MUL:
-            self.computation_kernel = lambda x : torch.mul(x, x)
+            self.computation_kernel = lambda x: torch.mul(x, x)
 
         self.activation_kernel = None
         if activation == ActivationKernelType.RELU:
@@ -95,7 +103,8 @@ class DistInferenceSimulationModel():
             communication_out = self.communication_kernel(computation_out)
             activation_out = self.activation_kernel(communication_out)
 
-class DistInferenceSimulation(MicroBenchmark):
+
+class DistInference(MicroBenchmark):
     """The base class of micro-benchmarks."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -266,18 +275,19 @@ class DistInferenceSimulation(MicroBenchmark):
 
         if self.__local_rank == 0:
             logger.info(
-                'Distributed Inference Simulation - using {} GPUs: '
+                'Distributed Inference - using {} GPUs: '
                 'batch_size={}, input_size={}, hidden_size={}, num_layers={}, '
                 'computation_kernel={}, communication_kernel={}, activation_kernel={}, precision={}, '
                 'num_warmup={} num_steps={}'.format(
-                    self.__world_size,
-                    batch_size, input_size, hidden_size, num_layers,
-                    computation, communication, activation, precision,
-                    num_warmup, num_steps
+                    self.__world_size, batch_size, input_size, hidden_size, num_layers, computation, communication,
+                    activation, precision, num_warmup, num_steps
                 )
             )
 
-        model = DistInferenceSimulationModel(input_size, hidden_size, num_layers, precision, computation, communication, activation, self.__device, self.__world_size)
+        model = DistInferenceModel(
+            input_size, hidden_size, num_layers, precision, computation, communication, activation, self.__device,
+            self.__world_size
+        )
         data = torch.rand(batch_size, input_size, dtype=getattr(torch, precision.value), device=self.__device)
 
         # warm up
@@ -322,6 +332,4 @@ class DistInferenceSimulation(MicroBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark(
-    'pytorch-dist-inference-simulation', DistInferenceSimulation, parameters=''
-)
+BenchmarkRegistry.register_benchmark('pytorch-dist-inference', DistInference, parameters='')

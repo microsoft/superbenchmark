@@ -159,7 +159,7 @@ superbench:
       <<: *default_pytorch_mode
     computation-communication-overlap:
       <<: *default_pytorch_mode
-    dist-inference-simulation:
+    dist-inference:
       <<: *default_pytorch_mode
     ib-traffic:
       enable: false

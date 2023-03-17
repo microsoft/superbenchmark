@@ -72,8 +72,6 @@ superbench:
         m: 7680
         n: 8192
         k: 8192
-    dist-inference-simulation:
-      <<: *default_pytorch_mode
     ib-loopback:
       enable: true
       modes:

@@ -1,15 +1,15 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for distributed inference simulation benchmark."""
+"""Tests for distributed inference benchmark."""
 
 import unittest
 
 from tests.helper import decorator
 import tests.benchmarks.utils as utils
 from superbench.benchmarks import BenchmarkRegistry, Framework, BenchmarkType, ReturnCode, Precision, DistributedImpl, DistributedBackend
-from superbench.benchmarks.micro_benchmarks.dist_inference_simulation \
-    import DistInferenceSimulation, ComputationKernelType, CommunicationKernelType, ActivationKernelType
+from superbench.benchmarks.micro_benchmarks.dist_inference \
+    import DistInference, ComputationKernelType, CommunicationKernelType, ActivationKernelType
 from superbench.common.utils import network
 
 
@@ -17,12 +17,10 @@ from superbench.common.utils import network
 @unittest.skip('no multiple GPUs')
 @decorator.cuda_test
 @decorator.pytorch_test
-def test_pytorch_dist_inference_simulation_normal():
-    """Test pytorch-dist-inference-simulation benchmark on distributed normal case."""
+def test_pytorch_dist_inference_normal():
+    """Test pytorch-dist-inference benchmark on distributed normal case."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'dist-inference-simulation',
-        parameters='',
-        framework=Framework.PYTORCH
+        'dist-inference', parameters='', framework=Framework.PYTORCH
     )
     world_size = 2
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -31,11 +29,11 @@ def test_pytorch_dist_inference_simulation_normal():
     for benchmark in results:
         # Check basic information.
         assert (benchmark)
-        assert (isinstance(benchmark, DistInferenceSimulation))
-        assert (benchmark.name == 'pytorch-dist-inference-simulation')
+        assert (isinstance(benchmark, DistInference))
+        assert (benchmark.name == 'pytorch-dist-inference')
         assert (benchmark.type == BenchmarkType.MICRO)
 
-        # Check predefined parameters of dist-inference-simulation benchmark.
+        # Check predefined parameters of dist-inference benchmark.
         assert (benchmark._args.batch_size == 64)
         assert (benchmark._args.input_size == 1024)
         assert (benchmark._args.hidden_size == 1024)
@@ -57,14 +55,13 @@ def test_pytorch_dist_inference_simulation_normal():
         # return code + (warmup_step_times, test_step_times) * (avg, 50th, 90th, 95th, 99th, 99.9th)
         assert (len(benchmark.result) == 13)
 
+
 @decorator.cuda_test
 @decorator.pytorch_test
-def test_pytorch_dist_inference_simulation_fake_distributed():
-    """Test pytorch-dist-inference-simulation benchmark on single gpu."""
+def test_pytorch_dist_inference_fake_distributed():
+    """Test pytorch-dist-inference benchmark on single gpu."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'dist-inference-simulation',
-        parameters='',
-        framework=Framework.PYTORCH
+        'dist-inference', parameters='', framework=Framework.PYTORCH
     )
     port = network.get_free_port()
     assert (port)
@@ -73,11 +70,11 @@ def test_pytorch_dist_inference_simulation_fake_distributed():
 
     # Check basic information.
     assert (benchmark)
-    assert (isinstance(benchmark, DistInferenceSimulation))
-    assert (benchmark.name == 'pytorch-dist-inference-simulation')
+    assert (isinstance(benchmark, DistInference))
+    assert (benchmark.name == 'pytorch-dist-inference')
     assert (benchmark.type == BenchmarkType.MICRO)
 
-    # Check predefined parameters of dist-inference-simulation benchmark.
+    # Check predefined parameters of dist-inference benchmark.
     assert (benchmark._args.batch_size == 64)
     assert (benchmark._args.input_size == 1024)
     assert (benchmark._args.hidden_size == 1024)

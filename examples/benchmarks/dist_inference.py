@@ -1,10 +1,10 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Micro benchmark example for distributed inference simulation with pytorch.
+"""Micro benchmark example for distributed inference with pytorch.
 
 Commands to run:
-  python3 -m torch.distributed.launch --nproc_per_node=8 examples/benchmarks/dist_inference_simulation.py
+  python3 -m torch.distributed.launch --nproc_per_node=8 examples/benchmarks/dist_inference.py
 """
 
 from superbench.benchmarks import Framework, BenchmarkRegistry
@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'dist-inference-simulation', parameters='', framework=Framework.PYTORCH
+        'dist-inference', parameters='', framework=Framework.PYTORCH
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
