@@ -7,7 +7,8 @@ import unittest
 
 from tests.helper import decorator
 import tests.benchmarks.utils as utils
-from superbench.benchmarks import BenchmarkRegistry, Framework, BenchmarkType, ReturnCode, Precision, DistributedImpl, DistributedBackend
+from superbench.benchmarks \
+    import BenchmarkRegistry, Framework, BenchmarkType, ReturnCode, Precision, DistributedImpl, DistributedBackend
 from superbench.benchmarks.micro_benchmarks.dist_inference \
     import DistInference, ComputationKernelType, CommunicationKernelType, ActivationKernelType
 from superbench.common.utils import network

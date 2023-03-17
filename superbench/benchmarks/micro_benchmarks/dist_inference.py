@@ -40,9 +40,23 @@ class ActivationKernelType(Enum):
 
 
 class DistInferenceModel():
+    """The model class for distributed inference benchmark."""
     def __init__(
         self, input_size, hidden_size, num_layers, precision, computation, communication, activation, device, num_ranks
     ):
+        """Constructor.
+
+        Args:
+            input_size (int): input data dimension.
+            hidden_size (int): hidden layer dimension.
+            num_layers (int): number of layers in the model.
+            precision (Precision): data type of this model.
+            computation (ComputationKernelType): type of computation kernel of this model.
+            communication (CommunicationKernelType): type of communication kernel of this model.
+            activation (ActivationKernelType): type of activation kernel of this model.
+            device (str): PyTorch device this model runs on.
+            num_ranks (int): number of ranks in this model run.
+        """
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -52,9 +66,14 @@ class DistInferenceModel():
             self.input_size, self.hidden_size, dtype=getattr(torch, precision.value), device=self.device
         )
         self.bias = torch.rand(self.hidden_size, dtype=getattr(torch, precision.value), device=self.device)
-
         self.num_ranks = num_ranks
+        self.step_times = []
 
+        self.__init_computation_kernels(computation)
+        self.__init_communication_kernels(communication)
+        self.__init_activation_kernels(activation)
+
+    def __init_computation_kernels(self, computation):
         self.computation_kernel = None
         if computation == ComputationKernelType.ADDMM:
             self.computation_kernel = lambda x: torch.addmm(self.bias, x, self.weights)
@@ -65,14 +84,7 @@ class DistInferenceModel():
         elif computation == ComputationKernelType.MUL:
             self.computation_kernel = lambda x: torch.mul(x, x)
 
-        self.activation_kernel = None
-        if activation == ActivationKernelType.RELU:
-            self.activation_kernel = F.relu
-        elif activation == ActivationKernelType.SIGMOID:
-            self.activation_kernel = F.sigmoid
-        elif activation == ActivationKernelType.TANH:
-            self.activation_kernel = F.tanh
-
+    def __init_communication_kernels(self, communication):
         self.communication_kernel = None
         if communication == CommunicationKernelType.ALLGATHER:
             self.communication_kernel = self.__all_gather_wrapper
@@ -81,7 +93,14 @@ class DistInferenceModel():
         elif communication == CommunicationKernelType.ALLTOALL:
             self.communication_kernel = self.__all_to_all_wrapper
 
-        self.step_times = []
+    def __init_activation_kernels(self, activation):
+        self.activation_kernel = None
+        if activation == ActivationKernelType.RELU:
+            self.activation_kernel = F.relu
+        elif activation == ActivationKernelType.SIGMOID:
+            self.activation_kernel = F.sigmoid
+        elif activation == ActivationKernelType.TANH:
+            self.activation_kernel = F.tanh
 
     def __all_gather_wrapper(self, x):
         output = torch.empty_like([x.shape[0] * self.num_ranks] + list(x.shape[1:]), device=self.device)
@@ -98,10 +117,15 @@ class DistInferenceModel():
         return output
 
     def forward(self, x):
+        """Execute forward process of this model.
+
+        Args:
+            x (Tensor): tensor of input data.
+        """
         for i in range(self.num_layers):
             computation_out = self.computation_kernel(x)
             communication_out = self.communication_kernel(computation_out)
-            activation_out = self.activation_kernel(communication_out)
+            self.activation_kernel(communication_out)
 
 
 class DistInference(MicroBenchmark):
@@ -252,10 +276,10 @@ class DistInference(MicroBenchmark):
 
         if torch.cuda.is_available():
             torch.cuda.set_device(self.__local_rank)
-            self.__device = torch.device("cuda:{}".format(self.__local_rank))
+            self.__device = torch.device('cuda:{}'.format(self.__local_rank))
             self.__cuda_available = True
         else:
-            self.__device = torch.device("cpu:{}".format(self.__local_rank))
+            self.__device = torch.device('cpu:{}'.format(self.__local_rank))
             self.__cuda_available = False
 
         return True
