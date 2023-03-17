@@ -400,7 +400,7 @@ Test the performance of large scale matmul operation with multiple GPUs:
 
 #### Introduction
 
-Test the performance of a simulated distributed model inference.
+Test the performance of distributed model inference.
 
 #### Metrics
 
