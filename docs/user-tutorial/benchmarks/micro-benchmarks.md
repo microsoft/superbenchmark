@@ -404,10 +404,12 @@ Test the performance of a simulated distributed model inference.
 
 #### Metrics
 
-| Name                                                | Unit      | Description                      |
-|-----------------------------------------------------|-----------|----------------------------------|
-| pytorch-dist-inference-simulation/warmup_step_times | time (ms) | Time of warm up inference steps. |
-| pytorch-dist-inference-simulation/test_step_times   | time (ms) | Time of test inference steps.    |
+| Name                                                             | Unit      | Description                                              |
+|------------------------------------------------------------------|-----------|----------------------------------------------------------|
+| pytorch-dist-inference-simulation/warmup_step_times              | time (ms) | Average time of warm up inference steps.                 |
+| pytorch-dist-inference-simulation/warmup_step_times_{percentile} | time (ms) | Tail (50,90,95,99,99.9) time of warm up inference steps. |
+| pytorch-dist-inference-simulation/test_step_times                | time (ms) | Average time of test inference steps.                    |
+| pytorch-dist-inference-simulation/test_step_times_{percentile}   | time (ms) | Tail (50,90,95,99,99.9) time of test inference steps.    |
 
 ## Storage Benchmarks
 

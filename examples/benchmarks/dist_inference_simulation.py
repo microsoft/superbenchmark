@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'pytorch-dist-inference-simulation', parameters='', framework=Framework.PYTORCH
+        'dist-inference-simulation', parameters='', framework=Framework.PYTORCH
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

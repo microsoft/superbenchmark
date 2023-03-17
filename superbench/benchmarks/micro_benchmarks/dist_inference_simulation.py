@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.distributed as dist
 
 from superbench.common.utils import logger
-from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode
+from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode, Precision
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
 
@@ -58,11 +58,11 @@ class DistInferenceSimulationModel():
             self.computation_kernel = lambda x : torch.mul(x, x)
 
         self.activation_kernel = None
-        if activation == ComputationKernelType.RELU:
+        if activation == ActivationKernelType.RELU:
             self.activation_kernel = F.relu
-        elif activation == ComputationKernelType.SIGMOID:
+        elif activation == ActivationKernelType.SIGMOID:
             self.activation_kernel = F.sigmoid
-        elif activation == ComputationKernelType.TANH:
+        elif activation == ActivationKernelType.TANH:
             self.activation_kernel = F.tanh
 
         self.communication_kernel = None
@@ -93,7 +93,7 @@ class DistInferenceSimulationModel():
         for i in range(self.num_layers):
             computation_out = self.computation_kernel(x)
             communication_out = self.communication_kernel(computation_out)
-            activation_out = self.activation_out(communication_out)
+            activation_out = self.activation_kernel(communication_out)
 
 class DistInferenceSimulation(MicroBenchmark):
     """The base class of micro-benchmarks."""
@@ -110,19 +110,6 @@ class DistInferenceSimulation(MicroBenchmark):
         torch.backends.cudnn.benchmark = True
         self.__device = None
         self.__cuda_available = False
-
-        self.__default_batch_size = 64
-        self.__default_input_size = 1024
-        self.__default_hidden_size = 1024
-        self.__default_num_layers = 10
-        self.__default_computation_kernel = ComputationKernelType.MATMUL
-        self.__default_communication_kernel = CommunicationKernelType.ALLREDUCE
-        self.__default_activation_kernel = ActivationKernelType.RELU
-        self.__default_precision = Precision.FLOAT32
-        self.__default_num_warmup = 50
-        self.__default_num_steps = 200
-        self.__default_distributed_impl = DistributedImpl.DDP
-        self.__default_distributed_backend = DistributedBackend.NCCL
 
     def __timer(self):
         """Returns the current time which ensures all previous CUDA events have been finished.
@@ -144,84 +131,84 @@ class DistInferenceSimulation(MicroBenchmark):
         self._parser.add_argument(
             '--batch_size',
             type=int,
-            default=self.__default_batch_size,
+            default=64,
             required=False,
             help='Batch size.',
         )
         self._parser.add_argument(
             '--input_size',
             type=int,
-            default=self.__default_input_size,
+            default=1024,
             required=False,
             help='Input dimension size.',
         )
         self._parser.add_argument(
             '--hidden_size',
             type=int,
-            default=self.__default_hidden_size,
+            default=1024,
             required=False,
             help='Hidden size.',
         )
         self._parser.add_argument(
             '--num_layers',
             type=int,
-            default=self.__default_num_layers,
+            default=10,
             required=False,
             help='Number of compute-communicate-activate layers.',
         )
         self._parser.add_argument(
             '--computation_kernel',
             type=ComputationKernelType,
-            default=self.__default_computation_kernel,
+            default=ComputationKernelType.MATMUL,
             required=False,
             help='Computation kernel type. E.g. {}.'.format(' '.join(ComputationKernelType.get_values())),
         )
         self._parser.add_argument(
             '--communication_kernel',
             type=CommunicationKernelType,
-            default=self.__default_communication_kernel,
+            default=CommunicationKernelType.ALLREDUCE,
             required=False,
             help='Communication kernel type. E.g. {}.'.format(' '.join(CommunicationKernelType.get_values())),
         )
         self._parser.add_argument(
             '--activation_kernel',
             type=ActivationKernelType,
-            default=self.__default_activation_kernel,
+            default=ActivationKernelType.RELU,
             required=False,
             help='Activation kernel type. E.g. {}.'.format(' '.join(ActivationKernelType.get_values())),
         )
         self._parser.add_argument(
             '--precision',
             type=Precision,
-            default=self.__default_precision,
+            default=Precision.FLOAT32,
             required=False,
             help='Model precision. E.g. {}.'.format(' '.join(Precision.get_values())),
         )
         self._parser.add_argument(
             '--num_warmup',
             type=int,
-            default=self.__default_num_warmup,
+            default=50,
             required=False,
             help='Number of warmup steps.',
         )
         self._parser.add_argument(
             '--num_steps',
             type=int,
-            default=self.__default_num_steps,
+            default=200,
             required=False,
             help='Number of test steps.',
         )
         self._parser.add_argument(
             '--distributed_impl',
             type=DistributedImpl,
-            default=self.__default_distributed_impl,
+            default=DistributedImpl.DDP,
             required=False,
             help='Distributed implementations. E.g. {}.'.format(' '.join(DistributedImpl.get_values())),
         )
         self._parser.add_argument(
             '--distributed_backend',
             type=DistributedBackend,
-            default=self.__default_distributed_backend,
+            default=DistributedBackend.NCCL,
             required=False,
             help='Distributed backends. E.g. {}.'.format(' '.join(DistributedBackend.get_values())),
         )
@@ -273,15 +260,16 @@ class DistInferenceSimulation(MicroBenchmark):
         computation = self._args.computation_kernel
         communication = self._args.communication_kernel
         activation = self._args.activation_kernel
+        precision = self._args.precision
         num_warmup = self._args.num_warmup
         num_steps = self._args.num_steps
 
         if self.__local_rank == 0:
             logger.info(
-                'Distributed Inference Simulation - using {} GPUs, \
-                batch_size={}, input_size={}, hidden_size={}, num_layers={}, \
-                computation_kernel={}, communication_kernel={}, activation_kernel={}, precision={}, \
-                num_warmup={} num_steps={}'.format(
+                'Distributed Inference Simulation - using {} GPUs: '
+                'batch_size={}, input_size={}, hidden_size={}, num_layers={}, '
+                'computation_kernel={}, communication_kernel={}, activation_kernel={}, precision={}, '
+                'num_warmup={} num_steps={}'.format(
                     self.__world_size,
                     batch_size, input_size, hidden_size, num_layers,
                     computation, communication, activation, precision,
@@ -308,9 +296,9 @@ class DistInferenceSimulation(MicroBenchmark):
             end = self.__timer()
             test_step_times.append((end - start) * 1000)
 
-        if not self._process_numeric_result('warmup_step_times', warmup_step_times):
+        if not self._process_numeric_result('warmup_step_times', warmup_step_times, cal_percentile=True):
             return False
-        if not self._process_numeric_result('test_step_times', test_step_times):
+        if not self._process_numeric_result('test_step_times', test_step_times, cal_percentile=True):
             return False
 
         return True
