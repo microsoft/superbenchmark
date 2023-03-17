@@ -372,9 +372,9 @@ class DistInference(MicroBenchmark):
         kernel_times = [None] * self._args.num_steps
         for i in range(self._args.num_steps):
             start = self.__timer()
-            self.model(data)
+            model(data)
             end = self.__timer()
-            kernel_times[i] = copy.deepcopy(self.model.get_kernel_times())
+            kernel_times[i] = copy.deepcopy(model.get_kernel_times())
 
         return (step_times, step_times_with_events, kernel_times)
 
