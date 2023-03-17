@@ -18,9 +18,9 @@ from setuptools import setup, find_packages, Command
 import superbench
 
 try:
-    pkg_resources.require(['pip>=18', 'setuptools>=45'])
+    pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
 except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
-    print('Try upgrade pip/setuptools to latest version, for example, python3 -m pip install --upgrade pip setuptools')
+    print('Try update pip/setuptools versions, for example, python3 -m pip install --upgrade pip setuptools==65.7')
     raise
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -149,7 +149,7 @@ setup(
     ],
     install_requires=[
         'ansible_base>=2.10.9;os_name=="posix"',
-        'ansible_runner>=2.0.0rc1',
+        'ansible_runner>=2.0.0rc1, <2.3.2',
         'colorlog>=6.7.0',
         'importlib_metadata',
         'jinja2>=2.10.1',
