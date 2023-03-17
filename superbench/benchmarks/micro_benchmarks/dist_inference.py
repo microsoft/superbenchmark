@@ -58,8 +58,8 @@ class DistInferenceModel(torch.nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.linear = nn.Linear(self.input_size, self.hidden_size)
-        self.weights = torch.rand(self.input_size, self.hidden_size)
-        self.bias = torch.rand(self.hidden_size)
+        self.weights = nn.Parameter(torch.rand(self.input_size, self.hidden_size))
+        self.bias = nn.Parameter(torch.rand(self.hidden_size))
         self.num_ranks = num_ranks
         self.step_times = []
 
