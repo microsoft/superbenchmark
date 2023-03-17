@@ -40,6 +40,14 @@ class Monitor(multiprocessing.Process):
         self.__output_handler = open(self.__output_file, 'a')
 
         self.__cgroup = 1
+        output = run_command('grep cgroup /proc/filesystems')
+        if output.returncode != 0:
+            logger.error('Failed to check the cgroup version, will assume using cgroup V1.')
+        else:
+            if 'cgroup2' in output.stdout:
+                self.__cgroup = 2
+
+        logger.info('cgroup version: {}.'.format(self.__cgroup))
 
     def __preprocess(self):
         """Preprocess/preparation operations before the monitoring.
