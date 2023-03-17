@@ -394,6 +394,21 @@ Test the performance of large scale matmul operation with multiple GPUs:
 | pytorch-sharding-matmul/allreduce_time | time (ms) | Time of sharding matmul using allreduce. |
 | pytorch-sharding-matmul/allgather_time | time (ms) | Time of sharding matmul using allgather. |
 
+####
+
+### `dist-inference-simulation`
+
+#### Introduction
+
+Test the performance of a simulated distributed model inference.
+
+#### Metrics
+
+| Name                                                | Unit      | Description                      |
+|-----------------------------------------------------|-----------|----------------------------------|
+| pytorch-dist-inference-simulation/warmup_step_times | time (ms) | Time of warm up inference steps. |
+| pytorch-dist-inference-simulation/test_step_times   | time (ms) | Time of test inference steps.    |
+
 ## Storage Benchmarks
 
 ### `disk-benchmark`

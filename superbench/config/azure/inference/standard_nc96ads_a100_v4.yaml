@@ -101,6 +101,8 @@ superbench:
     computation-communication-overlap:
       <<: *default_pytorch_mode
       enable: false
+    dist-inference-simulation:
+      <<: *default_pytorch_mode
     ort-inference:fp16-offline:
       <<: *default_local_mode
       parameters:
