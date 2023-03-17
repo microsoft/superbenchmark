@@ -53,6 +53,7 @@ class DistInferenceModel(torch.nn.Module):
             activation (ActivationKernelType): type of activation kernel of this model.
             num_ranks (int): number of ranks in this model run.
         """
+        super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
