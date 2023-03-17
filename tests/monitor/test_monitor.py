@@ -4,6 +4,7 @@
 """Tests for Monitor module."""
 
 import numbers
+import tempfile
 
 from tests.helper import decorator
 from superbench.monitor import Monitor
@@ -13,7 +14,7 @@ from superbench.monitor import MonitorRecord
 @decorator.cuda_test
 def test_monitor():
     """Test the module Monitor."""
-    monitor = Monitor(None, 1, 10, 'file')
+    monitor = Monitor(None, 1, 10, tempfile.NamedTemporaryFile().name)
     monitor._Monitor__preprocess()
     record = MonitorRecord()
     monitor._Monitor__sample_host_metrics(record)
