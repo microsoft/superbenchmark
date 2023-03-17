@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the distributed inference simulation model."""
+"""Module of the distributed inference simulation benchmark."""
 
 import os
 import time
