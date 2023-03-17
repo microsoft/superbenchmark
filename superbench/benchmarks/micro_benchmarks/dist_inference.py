@@ -3,6 +3,7 @@
 
 """Module of the distributed inference benchmark."""
 
+import copy
 import os
 import time
 
@@ -67,6 +68,11 @@ class DistInferenceModel(torch.nn.Module):
         self.__init_communication_kernels(communication)
         self.__init_activation_kernels(activation)
 
+        self.__events_enabled = False
+        self.__computation_times = [0.] * self.num_layers
+        self.__communication_times = [0.] * self.num_layers
+        self.__activation_times = [0.] * self.num_layers
+
     def __init_computation_kernels(self, computation):
         self.computation_kernel = None
         if computation == ComputationKernelType.ADDMM:
@@ -110,6 +116,54 @@ class DistInferenceModel(torch.nn.Module):
         dist.all_to_all_single(output, x)
         return output
 
+    def __forward_with_events(self, x):
+        computation_event = torch.cuda.Event(enable_timing=True)
+        communication_event = torch.cuda.Event(enable_timing=True)
+        activation_event = torch.cuda.Event(enable_timing=True)
+        activation_out = None
+        for i in range(self.num_layers):
+            computation_event.record()
+            computation_out = self.computation_kernel(x)
+            communication_event.record()
+            communication_out = self.communication_kernel(computation_out)
+            activation_event.record()
+
+            activation_event.wait()
+            if i > 0:
+                self.__activation_times[i - 1] = activation_event.elapsed_time(computation_event)
+            self.__computation_times[i] = computation_event.elapsed_time(communication_event)
+            self.__communication_times[i] = communication_event.elapsed_time(activation_event)
+
+            activation_out = self.activation_kernel(communication_out)
+        computation_event.record()
+        computation_event.wait()
+        self.__activation_times[self.num_layers - 1] = activation_event.elapsed_time(computation_event)
+        return activation_out
+
+    def __forward_without_events(self, x):
+        activation_out = None
+        for i in range(self.num_layers):
+            computation_out = self.computation_kernel(x)
+            communication_out = self.communication_kernel(computation_out)
+            activation_out = self.activation_kernel(communication_out)
+        return activation_out
+
+    def enable_events(self):
+        """Enable GPU events in forward process."""
+        self.__events_enabled = True
+
+    def disable_events(self):
+        """Disable GPU events in forward process."""
+        self.__events_enabled = False
+
+    def get_kernel_times(self):
+        """Return a tuple containing kernel times of computation, communication and activation.
+
+        Return:
+            (computation times, communication times, activation times)
+        """
+        return (self.__computation_times, self.__communication_times, self.__activation_times)
+
     def forward(self, x):
         """Execute forward process of this model.
 
@@ -119,11 +173,10 @@ class DistInferenceModel(torch.nn.Module):
         Return:
             activation_out (Tensor): last layer output of the model.
         """
-        for i in range(self.num_layers):
-            computation_out = self.computation_kernel(x)
-            communication_out = self.communication_kernel(computation_out)
-            activation_out = self.activation_kernel(communication_out)
-            return activation_out
+        if self.__events_enabled:
+            return self.__forward_with_events(x)
+        else:
+            return self.__forward_without_events(x)
 
 
 class DistInference(MicroBenchmark):
@@ -282,6 +335,70 @@ class DistInference(MicroBenchmark):
 
         return True
 
+    def _prepare_model(
+        self, input_size, hidden_size, num_layers, computation, communication, activation, precision, num_ranks
+    ):
+        """Prepare model."""
+        model = DistInferenceModel(
+            input_size, hidden_size, num_layers, computation, communication, activation, num_ranks
+        )
+        model = model.to(dtype=getattr(torch, precision.value))
+        if self.__cuda_available:
+            model = model.cuda()
+        return model
+
+    def _run_model(self, model, batch_size, input_size, precision, device, num_warmup, num_steps):
+        """Run model."""
+        data = torch.rand(batch_size, input_size, dtype=getattr(torch, precision.value), device=self.__device)
+
+        model.disable_events()
+
+        # warm up
+        for i in range(num_warmup):
+            model(data)
+
+        # run and collect results without events
+        step_times = [0.] * num_steps
+        for i in range(self._args.num_steps):
+            start = self.__timer()
+            model(data)
+            end = self.__timer()
+            step_times[i] = (end - start) * 1000
+
+        model.enable_events()
+
+        # run and collect results with events
+        step_times_with_events = [0.] * self._args.num_steps
+        kernel_times = [None] * self._args.num_steps
+        for i in range(self._args.num_steps):
+            start = self.__timer()
+            self.model(data)
+            end = self.__timer()
+            kernel_times[i] = copy.deepcopy(self.model.get_kernel_times())
+
+        return (step_times, step_times_with_events, kernel_times)
+
+    def _process_data(self, step_times, step_times_with_events, kernel_times):
+        """Process data."""
+        if not self._process_numeric_result('step_times', step_times, cal_percentile=True):
+            return False
+        if not self._process_numeric_result('step_times_with_events', step_times_with_events, cal_percentile=True):
+            return False
+        computation_times = []
+        communication_times = []
+        activation_times = []
+        for kernel_time_tuple in kernel_times:
+            computation_times += kernel_time_tuple[0]
+            communication_times += kernel_time_tuple[1]
+            activation_times += kernel_time_tuple[2]
+        if not self._process_numeric_result('computation_times', computation_times, cal_percentile=True):
+            return False
+        if not self._process_numeric_result('communication_times', computation_times, cal_percentile=True):
+            return False
+        if not self._process_numeric_result('activation_times', computation_times, cal_percentile=True):
+            return False
+        return True
+
     def _benchmark(self):
         """Implementation for benchmarking."""
         batch_size = self._args.batch_size
@@ -307,38 +424,17 @@ class DistInference(MicroBenchmark):
             )
 
         # Prepare model
-        model = DistInferenceModel(
-            input_size, hidden_size, num_layers, computation, communication, activation, self.__world_size
+        model = self._prepare_model(
+            input_size, hidden_size, num_layers, computation, communication, activation, precision, self.__world_size
         )
-        model = model.to(dtype=getattr(torch, precision.value))
-        if self.__cuda_available:
-            model = model.cuda()
 
-        # Prepare data
-        data = torch.rand(batch_size, input_size, dtype=getattr(torch, precision.value), device=self.__device)
+        # Run model
+        step_times, step_times_with_events, kernel_times = self._run_model(
+            model, batch_size, input_size, precision, self.__device, num_warmup, num_steps
+        )
 
-        # warm up
-        warmup_step_times = []
-        for i in range(self._args.num_warmup):
-            start = self.__timer()
-            model.forward(data)
-            end = self.__timer()
-            warmup_step_times.append((end - start) * 1000)
-
-        # run and collect results
-        test_step_times = []
-        for i in range(self._args.num_steps):
-            start = self.__timer()
-            model.forward(data)
-            end = self.__timer()
-            test_step_times.append((end - start) * 1000)
-
-        if not self._process_numeric_result('warmup_step_times', warmup_step_times, cal_percentile=True):
-            return False
-        if not self._process_numeric_result('test_step_times', test_step_times, cal_percentile=True):
-            return False
-
-        return True
+        # Process data and return
+        return self._process_data(step_times, step_times_with_events, kernel_times)
 
     def _postprocess(self):
         """Postprocess/cleanup operations after the benchmarking.

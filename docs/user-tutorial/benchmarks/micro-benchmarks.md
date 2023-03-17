@@ -404,12 +404,18 @@ Test the performance of distributed model inference.
 
 #### Metrics
 
-| Name                                                  | Unit      | Description                                              |
-|-------------------------------------------------------|-----------|----------------------------------------------------------|
-| pytorch-dist-inference/warmup_step_times              | time (ms) | Average time of warm up inference steps.                 |
-| pytorch-dist-inference/warmup_step_times_{percentile} | time (ms) | Tail (50,90,95,99,99.9) time of warm up inference steps. |
-| pytorch-dist-inference/test_step_times                | time (ms) | Average time of test inference steps.                    |
-| pytorch-dist-inference/test_step_times_{percentile}   | time (ms) | Tail (50,90,95,99,99.9) time of test inference steps.    |
+| Name                                                             | Unit      | Description                                                               |
+|------------------------------------------------------------------|-----------|---------------------------------------------------------------------------|
+| pytorch-dist-inference/test_step_times                           | time (ms) | Average time of test inference steps.                                     |
+| pytorch-dist-inference/test_step_times_${percentile}             | time (ms) | Tail (50,90,95,99,99.9) time of test inference steps.                     |
+| pytorch-dist-inference/test_step_times_with_events               | time (ms) | Average time of test inference steps with events enabled.                 |
+| pytorch-dist-inference/test_step_times_with_events_${percentile} | time (ms) | Tail (50,90,95,99,99.9) time of test inference steps with events enabled. |
+| pytorch-dist-inference/computation_times                         | time (ms) | Average time of computation kernels.                                      |
+| pytorch-dist-inference/computation_times_${percentile}           | time (ms) | Tail (50,90,95,99,99.9) time of computation kernels.                      |
+| pytorch-dist-inference/communication_times                       | time (ms) | Average time of communication kernels.                                    |
+| pytorch-dist-inference/communication_times_${percentile}         | time (ms) | Tail (50,90,95,99,99.9) time of communication kernels.                    |
+| pytorch-dist-inference/activation_times                          | time (ms) | Average time of activation kernels.                                       |
+| pytorch-dist-inference/activation_times_${percentile}            | time (ms) | Tail (50,90,95,99,99.9) time of activation kernels.                       |
 
 ## Storage Benchmarks
 
