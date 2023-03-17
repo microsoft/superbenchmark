@@ -72,6 +72,10 @@ class DistInferenceModel(torch.nn.Module):
         self.__computation_times = [0.] * self.num_layers
         self.__communication_times = [0.] * self.num_layers
         self.__activation_times = [0.] * self.num_layers
+        self.__computation_events = []
+        self.__communication_events = []
+        self.__activation_events = []
+        self.__final_event = None
 
     def __init_computation_kernels(self, computation):
         self.computation_kernel = None
@@ -117,27 +121,24 @@ class DistInferenceModel(torch.nn.Module):
         return output
 
     def __forward_with_events(self, x):
-        computation_event = torch.cuda.Event(enable_timing=True)
-        communication_event = torch.cuda.Event(enable_timing=True)
-        activation_event = torch.cuda.Event(enable_timing=True)
         activation_out = None
         for i in range(self.num_layers):
-            computation_event.record()
+            self.__computation_events[i].record()
             computation_out = self.computation_kernel(x)
-            communication_event.record()
+            self.__communication_events[i].record()
             communication_out = self.communication_kernel(computation_out)
-            activation_event.record()
-
-            activation_event.wait()
-            if i > 0:
-                self.__activation_times[i - 1] = activation_event.elapsed_time(computation_event)
-            self.__computation_times[i] = computation_event.elapsed_time(communication_event)
-            self.__communication_times[i] = communication_event.elapsed_time(activation_event)
-
+            self.__activation_events[i].record()
             activation_out = self.activation_kernel(communication_out)
-        computation_event.record()
-        computation_event.wait()
-        self.__activation_times[self.num_layers - 1] = activation_event.elapsed_time(computation_event)
+        self.__final_event.record()
+        self.__final_event.synchronize()
+        for i in range(self.num_layers):
+            self.__computation_times[i] = self.__computation_events[i].elapsed_time(self.__communication_events[i])
+            self.__communication_times[i] = self.__communication_events[i].elapsed_time(self.__activation_events[i])
+            if i > 0:
+                self.__activation_times[i - 1] = \
+                    self.__activation_events[i - 1].elapsed_time(self.__computation_events[i])
+        self.__activation_times[self.num_layers - 1] = \
+            self.__activation_events[self.num_layers - 1].elapsed_time(self.__final_event)
         return activation_out
 
     def __forward_without_events(self, x):
@@ -150,10 +151,19 @@ class DistInferenceModel(torch.nn.Module):
 
     def enable_events(self):
         """Enable GPU events in forward process."""
+        for i in range(self.num_layers):
+            self.__computation_events.append(torch.cuda.Event(enable_timing=True))
+            self.__communication_events.append(torch.cuda.Event(enable_timing=True))
+            self.__activation_events.append(torch.cuda.Event(enable_timing=True))
+        self.__final_event = torch.cuda.Event(enable_timing=True)
         self.__events_enabled = True
 
     def disable_events(self):
         """Disable GPU events in forward process."""
+        self.__computation_events = []
+        self.__communication_events = []
+        self.__activation_events = []
+        self.__final_event = None
         self.__events_enabled = False
 
     def get_kernel_times(self):
@@ -374,6 +384,7 @@ class DistInference(MicroBenchmark):
             start = self.__timer()
             model(data)
             end = self.__timer()
+            step_times_with_events[i] = (end - start) * 1000
             kernel_times[i] = copy.deepcopy(model.get_kernel_times())
 
         return (step_times, step_times_with_events, kernel_times)
@@ -393,9 +404,9 @@ class DistInference(MicroBenchmark):
             activation_times += kernel_time_tuple[2]
         if not self._process_numeric_result('computation_times', computation_times, cal_percentile=True):
             return False
-        if not self._process_numeric_result('communication_times', computation_times, cal_percentile=True):
+        if not self._process_numeric_result('communication_times', communication_times, cal_percentile=True):
             return False
-        if not self._process_numeric_result('activation_times', computation_times, cal_percentile=True):
+        if not self._process_numeric_result('activation_times', activation_times, cal_percentile=True):
             return False
         return True
 
