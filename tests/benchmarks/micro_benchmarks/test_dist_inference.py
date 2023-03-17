@@ -19,9 +19,7 @@ from superbench.common.utils import network
 @decorator.pytorch_test
 def test_pytorch_dist_inference_normal():
     """Test pytorch-dist-inference benchmark on distributed normal case."""
-    context = BenchmarkRegistry.create_benchmark_context(
-        'dist-inference', parameters='', framework=Framework.PYTORCH
-    )
+    context = BenchmarkRegistry.create_benchmark_context('dist-inference', parameters='', framework=Framework.PYTORCH)
     world_size = 2
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
     results = utils.simulated_ddp_distributed_benchmark(context, world_size)
@@ -60,9 +58,7 @@ def test_pytorch_dist_inference_normal():
 @decorator.pytorch_test
 def test_pytorch_dist_inference_fake_distributed():
     """Test pytorch-dist-inference benchmark on single gpu."""
-    context = BenchmarkRegistry.create_benchmark_context(
-        'dist-inference', parameters='', framework=Framework.PYTORCH
-    )
+    context = BenchmarkRegistry.create_benchmark_context('dist-inference', parameters='', framework=Framework.PYTORCH)
     port = network.get_free_port()
     assert (port)
     utils.setup_simulated_ddp_distributed_env(1, 0, port)
