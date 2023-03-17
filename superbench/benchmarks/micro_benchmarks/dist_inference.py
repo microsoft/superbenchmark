@@ -39,33 +39,26 @@ class ActivationKernelType(Enum):
     TANH = 'tanh'
 
 
-class DistInferenceModel():
+class DistInferenceModel(torch.nn.Module):
     """The model class for distributed inference benchmark."""
-    def __init__(
-        self, input_size, hidden_size, num_layers, precision, computation, communication, activation, device, num_ranks
-    ):
+    def __init__(self, input_size, hidden_size, num_layers, computation, communication, activation, num_ranks):
         """Constructor.
 
         Args:
             input_size (int): input data dimension.
             hidden_size (int): hidden layer dimension.
             num_layers (int): number of layers in the model.
-            precision (Precision): data type of this model.
             computation (ComputationKernelType): type of computation kernel of this model.
             communication (CommunicationKernelType): type of communication kernel of this model.
             activation (ActivationKernelType): type of activation kernel of this model.
-            device (str): PyTorch device this model runs on.
             num_ranks (int): number of ranks in this model run.
         """
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.device = device
-        self.linear = nn.Linear(self.input_size, self.hidden_size, device=self.device)
-        self.weights = torch.rand(
-            self.input_size, self.hidden_size, dtype=getattr(torch, precision.value), device=self.device
-        )
-        self.bias = torch.rand(self.hidden_size, dtype=getattr(torch, precision.value), device=self.device)
+        self.linear = nn.Linear(self.input_size, self.hidden_size)
+        self.weights = torch.rand(self.input_size, self.hidden_size)
+        self.bias = torch.rand(self.hidden_size)
         self.num_ranks = num_ranks
         self.step_times = []
 
@@ -103,7 +96,7 @@ class DistInferenceModel():
             self.activation_kernel = F.tanh
 
     def __all_gather_wrapper(self, x):
-        output = torch.empty_like([x.shape[0] * self.num_ranks] + list(x.shape[1:]), device=self.device)
+        output = torch.empty_like([x.shape[0] * self.num_ranks] + list(x.shape[1:]))
         dist.all_gather_into_tensor(output, x)
         return output
 
@@ -112,7 +105,7 @@ class DistInferenceModel():
         return x
 
     def __all_to_all_wrapper(self, x):
-        output = torch.empty_like(x, device=self.device)
+        output = torch.empty_like(x)
         dist.all_to_all_single(output, x)
         return output
 
@@ -121,11 +114,15 @@ class DistInferenceModel():
 
         Args:
             x (Tensor): tensor of input data.
+
+        Return:
+            activation_out (Tensor): last layer output of the model.
         """
         for i in range(self.num_layers):
             computation_out = self.computation_kernel(x)
             communication_out = self.communication_kernel(computation_out)
-            self.activation_kernel(communication_out)
+            activation_out = self.activation_kernel(communication_out)
+            return activation_out
 
 
 class DistInference(MicroBenchmark):
@@ -308,10 +305,15 @@ class DistInference(MicroBenchmark):
                 )
             )
 
+        # Prepare model
         model = DistInferenceModel(
-            input_size, hidden_size, num_layers, precision, computation, communication, activation, self.__device,
-            self.__world_size
+            input_size, hidden_size, num_layers, computation, communication, activation, self.__world_size
         )
+        model = model.to(dtype=getattr(torch, precision.value))
+        if self.__cuda_available:
+            model = model.cuda()
+
+        # Prepare data
         data = torch.rand(batch_size, input_size, dtype=getattr(torch, precision.value), device=self.__device)
 
         # warm up
