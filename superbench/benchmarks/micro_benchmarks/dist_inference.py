@@ -434,15 +434,16 @@ class DistInference(MicroBenchmark):
                 )
             )
 
-        # Prepare model
-        model = self._prepare_model(
-            input_size, hidden_size, num_layers, computation, communication, activation, precision, self.__world_size
-        )
+        with torch.no_grad():
+            # Prepare model
+            model = self._prepare_model(
+                input_size, hidden_size, num_layers, computation, communication, activation, precision, self.__world_size
+            )
 
-        # Run model
-        step_times, step_times_with_events, kernel_times = self._run_model(
-            model, batch_size, input_size, precision, self.__device, num_warmup, num_steps
-        )
+            # Run model
+            step_times, step_times_with_events, kernel_times = self._run_model(
+                model, batch_size, input_size, precision, self.__device, num_warmup, num_steps
+            )
 
         # Process data and return
         return self._process_data(step_times, step_times_with_events, kernel_times)
