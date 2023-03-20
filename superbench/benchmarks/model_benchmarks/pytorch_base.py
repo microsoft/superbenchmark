@@ -70,7 +70,8 @@ class PytorchBase(ModelBenchmark):
                     )
                     return False
                 # torch >= 1.9.0a0 torch.distributed.elastic is used by default
-                port = int(os.environ['MASTER_PORT']) + 1
+                port = int(os.environ.get('MASTER_PORT', '29500')) + 1
+                os.environ['MASTER_PORT'] = str(port)
                 addr = os.environ['MASTER_ADDR']
                 self._global_rank = int(os.environ['RANK'])
                 self._local_rank = int(os.environ['LOCAL_RANK'])
