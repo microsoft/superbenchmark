@@ -42,7 +42,9 @@ class ActivationKernelType(Enum):
 
 class DistInferenceModel(torch.nn.Module):
     """The model class for distributed inference benchmark."""
-    def __init__(self, input_size, hidden_size, num_layers, computation, communication, activation, num_ranks):
+    def __init__(
+        self, input_size, hidden_size, num_layers, computation, communication, activation, num_ranks, cuda_available
+    ):
         """Constructor.
 
         Args:
@@ -62,22 +64,20 @@ class DistInferenceModel(torch.nn.Module):
         self.weights = nn.Parameter(torch.rand(self.input_size, self.hidden_size))
         self.bias = nn.Parameter(torch.rand(self.hidden_size))
         self.num_ranks = num_ranks
+        self.cuda_available = cuda_available
         self.step_times = []
 
         self.__init_computation_kernels(computation)
         self.__init_communication_kernels(communication)
         self.__init_activation_kernels(activation)
 
-        self.__events_enabled = False
+        self.__timing_enabled = False
         self.__computation_times = [0.] * self.num_layers
         self.__communication_times = [0.] * self.num_layers
         self.__activation_times = [0.] * self.num_layers
-        self.__computation_events = []
-        self.__communication_events = []
-        self.__activation_events = []
-        self.__final_event = None
 
     def __init_computation_kernels(self, computation):
+        """Select computation kernel according to option."""
         self.computation_kernel = None
         if computation == ComputationKernelType.ADDMM:
             self.computation_kernel = lambda x: torch.addmm(self.bias, x, self.weights)
@@ -89,6 +89,7 @@ class DistInferenceModel(torch.nn.Module):
             self.computation_kernel = lambda x: torch.mul(x, x)
 
     def __init_communication_kernels(self, communication):
+        """Select communication kernel according to option."""
         self.communication_kernel = None
         if communication == CommunicationKernelType.ALLGATHER:
             self.communication_kernel = self.__all_gather_wrapper
@@ -98,6 +99,7 @@ class DistInferenceModel(torch.nn.Module):
             self.communication_kernel = self.__all_to_all_wrapper
 
     def __init_activation_kernels(self, activation):
+        """Select activation kernel according to option."""
         self.activation_kernel = None
         if activation == ActivationKernelType.RELU:
             self.activation_kernel = F.relu
@@ -107,64 +109,69 @@ class DistInferenceModel(torch.nn.Module):
             self.activation_kernel = F.tanh
 
     def __all_gather_wrapper(self, x):
+        """All-gather wrapper with output initialization."""
         output = torch.empty_like([x.shape[0] * self.num_ranks] + list(x.shape[1:]))
         dist.all_gather_into_tensor(output, x)
         return output
 
     def __all_reduce_wrapper(self, x):
+        """All-reduce wrapper."""
         dist.all_reduce(x)
         return x
 
     def __all_to_all_wrapper(self, x):
+        """All-to-all wrapper with output initialization."""
         output = torch.empty_like(x)
         dist.all_to_all_single(output, x)
         return output
 
-    def __forward_with_events(self, x):
-        activation_out = None
-        for i in range(self.num_layers):
-            self.__computation_events[i].record()
-            computation_out = self.computation_kernel(x)
-            self.__communication_events[i].record()
-            communication_out = self.communication_kernel(computation_out)
-            self.__activation_events[i].record()
-            activation_out = self.activation_kernel(communication_out)
-        self.__final_event.record()
-        self.__final_event.synchronize()
-        for i in range(self.num_layers):
-            self.__computation_times[i] = self.__computation_events[i].elapsed_time(self.__communication_events[i])
-            self.__communication_times[i] = self.__communication_events[i].elapsed_time(self.__activation_events[i])
-            if i > 0:
-                self.__activation_times[i - 1] = \
-                    self.__activation_events[i - 1].elapsed_time(self.__computation_events[i])
-        self.__activation_times[self.num_layers - 1] = \
-            self.__activation_events[self.num_layers - 1].elapsed_time(self.__final_event)
-        return activation_out
+    def __timer(self):
+        """Returns the current time which ensures all previous CUDA events have been finished.
 
-    def __forward_without_events(self, x):
+        If there is no GPU present, this defaults to `time.time()`; otherwise it will
+        synchronize CUDA before measuring the time.
+
+        Returns:
+            Current time in second.
+        """
+        if self.cuda_available:
+            torch.cuda.synchronize()
+        return time.time()
+
+    def __forward_with_timing(self, x):
+        """Do forward loops with timing enabled."""
         activation_out = None
+        computation_time = 0.
+        communication_time = 0.
+        activation_time = self.__timer()
         for i in range(self.num_layers):
             computation_out = self.computation_kernel(x)
+            computation_time = self.__timer()
+            self.__computation_times[i] = (computation_time - activation_time) * 1000
+            communication_out = self.communication_kernel(computation_out)
+            communication_time = self.__timer()
+            self.__communication_times[i] = (communication_time - computation_time) * 1000
+            activation_out = self.activation_kernel(communication_out)
+            activation_time = self.__timer()
+            self.__activation_times[i] = (activation_time - communication_time) * 1000
+        return activation_out
+
+    def __forward_without_timing(self, x):
+        """Do forward loops without timing enabled."""
+        activation_out = None
+        for i in range(self.num_layers):
+            computation_out = self.computation_kernel(x)
             communication_out = self.communication_kernel(computation_out)
             activation_out = self.activation_kernel(communication_out)
         return activation_out
 
-    def enable_events(self):
-        """Enable GPU events in forward process."""
-        for i in range(self.num_layers):
-            self.__computation_events.append(torch.cuda.Event(enable_timing=True))
-            self.__communication_events.append(torch.cuda.Event(enable_timing=True))
-            self.__activation_events.append(torch.cuda.Event(enable_timing=True))
-        self.__final_event = torch.cuda.Event(enable_timing=True)
-        self.__events_enabled = True
+    def enable_timing(self):
+        """Enable per-layer timing in forward process."""
+        self.__timing_enabled = True
 
-    def disable_events(self):
-        """Disable GPU events in forward process."""
-        self.__computation_events = []
-        self.__communication_events = []
-        self.__activation_events = []
-        self.__final_event = None
-        self.__events_enabled = False
+    def disable_timing(self):
+        """Disable per-layer timing in forward process."""
+        self.__timing_enabled = False
 
     def get_kernel_times(self):
         """Return a tuple containing kernel times of computation, communication and activation.
@@ -183,10 +190,10 @@ class DistInferenceModel(torch.nn.Module):
         Return:
             activation_out (Tensor): last layer output of the model.
         """
-        if self.__events_enabled:
-            return self.__forward_with_events(x)
+        if self.__timing_enabled:
+            return self.__forward_with_timing(x)
         else:
-            return self.__forward_without_events(x)
+            return self.__forward_without_timing(x)
 
 
 class DistInference(MicroBenchmark):
@@ -350,7 +357,8 @@ class DistInference(MicroBenchmark):
     ):
         """Prepare model."""
         model = DistInferenceModel(
-            input_size, hidden_size, num_layers, computation, communication, activation, num_ranks
+            input_size, hidden_size, num_layers, computation, communication, activation, num_ranks,
+            self.__cuda_available
         )
         model = model.to(dtype=getattr(torch, precision.value))
         if self.__cuda_available:
@@ -361,13 +369,13 @@ class DistInference(MicroBenchmark):
         """Run model."""
         data = torch.rand(batch_size, input_size, dtype=getattr(torch, precision.value), device=self.__device)
 
-        model.disable_events()
+        model.disable_timing()
 
         # warm up
         for i in range(num_warmup):
             model(data)
 
-        # run and collect results without events
+        # run and collect results without per-layer timing
         step_times = [0.] * num_steps
         for i in range(self._args.num_steps):
             start = self.__timer()
@@ -375,25 +383,25 @@ class DistInference(MicroBenchmark):
             end = self.__timer()
             step_times[i] = (end - start) * 1000
 
-        model.enable_events()
+        model.enable_timing()
 
-        # run and collect results with events
-        step_times_with_events = [0.] * self._args.num_steps
+        # run and collect results with per-layer timing
+        step_times_with_timing = [0.] * self._args.num_steps
         kernel_times = [None] * self._args.num_steps
         for i in range(self._args.num_steps):
             start = self.__timer()
             model(data)
             end = self.__timer()
-            step_times_with_events[i] = (end - start) * 1000
+            step_times_with_timing[i] = (end - start) * 1000
             kernel_times[i] = copy.deepcopy(model.get_kernel_times())
 
-        return (step_times, step_times_with_events, kernel_times)
+        return (step_times, step_times_with_timing, kernel_times)
 
-    def _process_data(self, step_times, step_times_with_events, kernel_times):
+    def _process_data(self, step_times, step_times_with_timing, kernel_times):
         """Process data."""
         if not self._process_numeric_result('step_times', step_times, cal_percentile=True):
             return False
-        if not self._process_numeric_result('step_times_with_events', step_times_with_events, cal_percentile=True):
+        if not self._process_numeric_result('step_times_with_timing', step_times_with_timing, cal_percentile=True):
             return False
         computation_times = []
         communication_times = []
@@ -437,16 +445,17 @@ class DistInference(MicroBenchmark):
         with torch.no_grad():
             # Prepare model
             model = self._prepare_model(
-                input_size, hidden_size, num_layers, computation, communication, activation, precision, self.__world_size
+                input_size, hidden_size, num_layers, computation, communication, activation, precision,
+                self.__world_size
             )
 
             # Run model
-            step_times, step_times_with_events, kernel_times = self._run_model(
+            step_times, step_times_with_timing, kernel_times = self._run_model(
                 model, batch_size, input_size, precision, self.__device, num_warmup, num_steps
             )
 
         # Process data and return
-        return self._process_data(step_times, step_times_with_events, kernel_times)
+        return self._process_data(step_times, step_times_with_timing, kernel_times)
 
     def _postprocess(self):
         """Postprocess/cleanup operations after the benchmarking.
