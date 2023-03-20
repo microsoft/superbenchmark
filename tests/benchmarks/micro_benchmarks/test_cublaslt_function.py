@@ -44,6 +44,10 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         self.assertListEqual([2, 4, 8], list(benchmark.mrange(2, 8)))
         self.assertListEqual([2], list(benchmark.mrange(2, 0, 2)))
         self.assertListEqual([2], list(benchmark.mrange(2)))
+        self.assertListEqual([2], list(benchmark.mrange(2, 4, 1)))
+        self.assertListEqual([2], list(benchmark.mrange(2, 4, 0)))
+        self.assertListEqual([0], list(benchmark.mrange(0, 0)))
+        self.assertListEqual([0], list(benchmark.mrange(0)))
 
     def test_validate_mrange(self):
         """Test mrange validation."""

@@ -39,7 +39,7 @@ class CublasLtBenchmark(MicroBenchmarkWithInvoke):
         while True:
             yield start
             start *= multiplication_factor
-            if start > stop:
+            if start > stop or start == 0 or multiplication_factor < 2:
                 break
 
     def validate_mrange(self, string):
