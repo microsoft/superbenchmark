@@ -22,7 +22,7 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
 ) {
     cublasLtMatrixLayout_t a_desc = nullptr, b_desc = nullptr, c_desc = nullptr, d_desc = nullptr;
     // force c_type
-    cudaDataType_t c_type = CUDA_R_16F;
+    cudaDataType_t c_type = d_type;
     // Create matrix descriptors.
     checkCublasStatus(
         cublasLtMatrixLayoutCreate(&a_desc, a_type, transa == CUBLAS_OP_N ? m : k, transa == CUBLAS_OP_N ? k : m, lda));
@@ -57,10 +57,11 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     d_desc_.reset(d_desc);
 
     // default to tf32 except for e5m2 inputs where the config is not supported
-    cublasComputeType_t gemm_compute_type =
-        (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3)
-            ? CUBLAS_COMPUTE_32F
-            : CUBLAS_COMPUTE_32F_FAST_TF32;
+    cublasComputeType_t gemm_compute_type = CUBLAS_COMPUTE_32F_FAST_TF32;
+    if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3)
+        gemm_compute_type = CUBLAS_COMPUTE_32F;
+    if (a_type == CUDA_R_64F || b_type == CUDA_R_64F)
+        gemm_compute_type = CUBLAS_COMPUTE_64F;
 
     cublasLtMatmulDesc_t op_desc = nullptr;
     checkCublasStatus(cublasLtMatmulDescCreate(&op_desc, gemm_compute_type, CUDA_R_32F));
