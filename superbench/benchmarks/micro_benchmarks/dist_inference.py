@@ -55,6 +55,7 @@ class DistInferenceModel(torch.nn.Module):
             communication (CommunicationKernelType): type of communication kernel of this model.
             activation (ActivationKernelType): type of activation kernel of this model.
             num_ranks (int): number of ranks in this model run.
+            cuda_available (bool): whether CUDA is available for this model.
         """
         super().__init__()
         self.input_size = input_size
