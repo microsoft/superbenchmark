@@ -21,7 +21,6 @@ from superbench.benchmarks.context import Enum
 class ComputationKernelType(Enum):
     """The Enum class representing different computation kernel type."""
     ADDMM = 'addmm'
-    LINEAR = 'linear'
     MATMUL = 'matmul'
     MUL = 'mul'
 
@@ -43,7 +42,7 @@ class ActivationKernelType(Enum):
 class DistInferenceModel(torch.nn.Module):
     """The model class for distributed inference benchmark."""
     def __init__(
-        self, input_size, hidden_size, num_layers, computation, communication, activation, num_ranks, cuda_available
+        self, input_size, hidden_size, num_layers, computation, communication, activation, precision, num_ranks, device
     ):
         """Constructor.
 
@@ -55,17 +54,16 @@ class DistInferenceModel(torch.nn.Module):
             communication (CommunicationKernelType): type of communication kernel of this model.
             activation (ActivationKernelType): type of activation kernel of this model.
             num_ranks (int): number of ranks in this model run.
-            cuda_available (bool): whether CUDA is available for this model.
         """
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.linear = nn.Linear(self.input_size, self.hidden_size)
-        self.weights = nn.Parameter(torch.rand(self.input_size, self.hidden_size))
-        self.bias = nn.Parameter(torch.rand(self.hidden_size))
+        self.weights = torch.rand(
+            self.input_size, self.hidden_size, dtype=getattr(torch, precision.value), device=device
+        )
+        self.bias = torch.rand(self.hidden_size, dtype=getattr(torch, precision.value), device=device)
         self.num_ranks = num_ranks
-        self.cuda_available = cuda_available
         self.step_times = []
 
         self.__init_computation_kernels(computation)
@@ -77,8 +75,6 @@ class DistInferenceModel(torch.nn.Module):
         self.computation_kernel = None
         if computation == ComputationKernelType.ADDMM:
             self.computation_kernel = lambda x: torch.addmm(self.bias, x, self.weights)
-        elif computation == ComputationKernelType.LINEAR:
-            self.computation_kernel = lambda x: self.linear(x)
         elif computation == ComputationKernelType.MATMUL:
             self.computation_kernel = lambda x: torch.matmul(x, self.weights)
         elif computation == ComputationKernelType.MUL:
@@ -120,19 +116,6 @@ class DistInferenceModel(torch.nn.Module):
         output = torch.empty_like(x)
         dist.all_to_all_single(output, x)
         return output
-
-    def __timer(self):
-        """Returns the current time which ensures all previous CUDA events have been finished.
-
-        If there is no GPU present, this defaults to `time.time()`; otherwise it will
-        synchronize CUDA before measuring the time.
-
-        Returns:
-            Current time in second.
-        """
-        if self.cuda_available:
-            torch.cuda.synchronize()
-        return time.time()
 
     def forward(self, x):
         """Do forward loops."""
@@ -305,8 +288,8 @@ class DistInference(MicroBenchmark):
     ):
         """Prepare model."""
         model = DistInferenceModel(
-            input_size, hidden_size, num_layers, computation, communication, activation, num_ranks,
-            self.__cuda_available
+            input_size, hidden_size, num_layers, computation, communication, activation, precision, num_ranks,
+            self.__device
         )
         model = model.to(dtype=getattr(torch, precision.value))
         if self.__cuda_available:
@@ -361,15 +344,14 @@ class DistInference(MicroBenchmark):
                 )
             )
 
-        with torch.no_grad():
-            # Prepare model
-            model = self._prepare_model(
-                input_size, hidden_size, num_layers, computation, communication, activation, precision,
-                self.__world_size
-            )
+        # Prepare model
+        model = self._prepare_model(
+            input_size, hidden_size, num_layers, computation, communication, activation, precision,
+            self.__world_size
+        )
 
-            # Run model
-            step_times = self._run_model(model, batch_size, input_size, precision, self.__device, num_warmup, num_steps)
+        # Run model
+        step_times = self._run_model(model, batch_size, input_size, precision, self.__device, num_warmup, num_steps)
 
         # Process data and return
         return self._process_data(step_times)
