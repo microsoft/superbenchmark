@@ -49,10 +49,10 @@ def test_pytorch_dist_inference_normal():
         # Check results and metrics.
         assert (benchmark.run_count == 1)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        # step_times, step_times_with_events, computation_times, communication_times and activation_times
-        assert (len(benchmark.raw_data) == 5)
-        # return code + number of time types * (avg, 50th, 90th, 95th, 99th, 99.9th)
-        assert (len(benchmark.result) == 31)
+        # step_times
+        assert (len(benchmark.raw_data) == 1)
+        # return code + (avg, 50th, 90th, 95th, 99th, 99.9th)
+        assert (len(benchmark.result) == 7)
 
 
 @decorator.cuda_test
@@ -88,9 +88,9 @@ def test_pytorch_dist_inference_fake_distributed():
     # Check results and metrics.
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
-    # step_times, step_times_with_events, computation_times, communication_times and activation_times
-    assert (len(benchmark.raw_data) == 5)
-    # return code + number of time types * (avg, 50th, 90th, 95th, 99th, 99.9th)
-    assert (len(benchmark.result) == 31)
+    # step_times
+    assert (len(benchmark.raw_data) == 1)
+    # return code + (avg, 50th, 90th, 95th, 99th, 99.9th)
+    assert (len(benchmark.result) == 7)
 
     utils.clean_simulated_ddp_distributed_env()

@@ -72,11 +72,6 @@ class DistInferenceModel(torch.nn.Module):
         self.__init_communication_kernels(communication)
         self.__init_activation_kernels(activation)
 
-        self.__timing_enabled = False
-        self.__computation_times = [0.] * self.num_layers
-        self.__communication_times = [0.] * self.num_layers
-        self.__activation_times = [0.] * self.num_layers
-
     def __init_computation_kernels(self, computation):
         """Select computation kernel according to option."""
         self.computation_kernel = None
@@ -139,62 +134,14 @@ class DistInferenceModel(torch.nn.Module):
             torch.cuda.synchronize()
         return time.time()
 
-    def __forward_with_timing(self, x):
-        """Do forward loops with timing enabled."""
-        activation_out = None
-        computation_time = 0.
-        communication_time = 0.
-        activation_time = self.__timer()
-        for i in range(self.num_layers):
-            computation_out = self.computation_kernel(x)
-            computation_time = self.__timer()
-            self.__computation_times[i] = (computation_time - activation_time) * 1000
-            communication_out = self.communication_kernel(computation_out)
-            communication_time = self.__timer()
-            self.__communication_times[i] = (communication_time - computation_time) * 1000
-            activation_out = self.activation_kernel(communication_out)
-            activation_time = self.__timer()
-            self.__activation_times[i] = (activation_time - communication_time) * 1000
-        return activation_out
-
-    def __forward_without_timing(self, x):
-        """Do forward loops without timing enabled."""
-        activation_out = None
-        for i in range(self.num_layers):
-            computation_out = self.computation_kernel(x)
-            communication_out = self.communication_kernel(computation_out)
-            activation_out = self.activation_kernel(communication_out)
-        return activation_out
-
-    def enable_timing(self):
-        """Enable per-layer timing in forward process."""
-        self.__timing_enabled = True
-
-    def disable_timing(self):
-        """Disable per-layer timing in forward process."""
-        self.__timing_enabled = False
-
-    def get_kernel_times(self):
-        """Return a tuple containing kernel times of computation, communication and activation.
-
-        Return:
-            (computation times, communication times, activation times)
-        """
-        return (self.__computation_times, self.__communication_times, self.__activation_times)
-
     def forward(self, x):
-        """Execute forward process of this model.
-
-        Args:
-            x (Tensor): tensor of input data.
-
-        Return:
-            activation_out (Tensor): last layer output of the model.
-        """
-        if self.__timing_enabled:
-            return self.__forward_with_timing(x)
-        else:
-            return self.__forward_without_timing(x)
+        """Do forward loops."""
+        activation_out = None
+        for i in range(self.num_layers):
+            computation_out = self.computation_kernel(x)
+            communication_out = self.communication_kernel(computation_out)
+            activation_out = self.activation_kernel(communication_out)
+        return activation_out
 
 
 class DistInference(MicroBenchmark):
@@ -370,13 +317,11 @@ class DistInference(MicroBenchmark):
         """Run model."""
         data = torch.rand(batch_size, input_size, dtype=getattr(torch, precision.value), device=self.__device)
 
-        model.disable_timing()
-
         # warm up
         for i in range(num_warmup):
             model(data)
 
-        # run and collect results without per-layer timing
+        # run and collect results
         step_times = [0.] * num_steps
         for i in range(self._args.num_steps):
             start = self.__timer()
@@ -384,38 +329,11 @@ class DistInference(MicroBenchmark):
             end = self.__timer()
             step_times[i] = (end - start) * 1000
 
-        model.enable_timing()
+        return step_times
 
-        # run and collect results with per-layer timing
-        step_times_with_timing = [0.] * self._args.num_steps
-        kernel_times = [None] * self._args.num_steps
-        for i in range(self._args.num_steps):
-            start = self.__timer()
-            model(data)
-            end = self.__timer()
-            step_times_with_timing[i] = (end - start) * 1000
-            kernel_times[i] = copy.deepcopy(model.get_kernel_times())
-
-        return (step_times, step_times_with_timing, kernel_times)
-
-    def _process_data(self, step_times, step_times_with_timing, kernel_times):
+    def _process_data(self, step_times):
         """Process data."""
         if not self._process_numeric_result('step_times', step_times, cal_percentile=True):
-            return False
-        if not self._process_numeric_result('step_times_with_timing', step_times_with_timing, cal_percentile=True):
-            return False
-        computation_times = []
-        communication_times = []
-        activation_times = []
-        for kernel_time_tuple in kernel_times:
-            computation_times += kernel_time_tuple[0]
-            communication_times += kernel_time_tuple[1]
-            activation_times += kernel_time_tuple[2]
-        if not self._process_numeric_result('computation_times', computation_times, cal_percentile=True):
-            return False
-        if not self._process_numeric_result('communication_times', communication_times, cal_percentile=True):
-            return False
-        if not self._process_numeric_result('activation_times', activation_times, cal_percentile=True):
             return False
         return True
 
@@ -451,12 +369,12 @@ class DistInference(MicroBenchmark):
             )
 
             # Run model
-            step_times, step_times_with_timing, kernel_times = self._run_model(
+            step_times = self._run_model(
                 model, batch_size, input_size, precision, self.__device, num_warmup, num_steps
             )
 
         # Process data and return
-        return self._process_data(step_times, step_times_with_timing, kernel_times)
+        return self._process_data(step_times)
 
     def _postprocess(self):
         """Postprocess/cleanup operations after the benchmarking.
