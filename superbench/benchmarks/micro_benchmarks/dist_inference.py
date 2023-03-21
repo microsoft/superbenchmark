@@ -369,9 +369,7 @@ class DistInference(MicroBenchmark):
             )
 
             # Run model
-            step_times = self._run_model(
-                model, batch_size, input_size, precision, self.__device, num_warmup, num_steps
-            )
+            step_times = self._run_model(model, batch_size, input_size, precision, self.__device, num_warmup, num_steps)
 
         # Process data and return
         return self._process_data(step_times)
