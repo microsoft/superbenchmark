@@ -97,7 +97,7 @@ class CublasLtBenchmark(MicroBenchmarkWithInvoke):
             nargs='+',
             default=['fp8e4m3'],
             required=False,
-            help='Input data type, supports {}.'.format(' '.join(self._in_types)),
+            help='List of input data types, support {}.'.format(' '.join(self._in_types)),
         )
 
     def _preprocess(self):
