@@ -367,6 +367,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
+        self._args.tolerant_fail = True
         command = os.path.join(self._args.bin_dir, self._bin_name)
         command += (' --num_test ' + str(self._args.num_steps))
         command += (' --warm_up ' + str(self._args.num_warmup))
@@ -440,13 +441,14 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
                 )
             )
-            return False
+            error = True
         if error:
             logger.error(
                 'Error in running cudnn test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
                     self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
+            self._result.add_result(metric.lower() + '_time', -1)
             return False
         return True
 
