@@ -10,12 +10,12 @@ import shlex
 from superbench.common.utils import stdout_logger
 
 
-def run_command(command, quite=False, flush_output=False):
+def run_command(command, quiet=False, flush_output=False):
     """Run command in string format, return the result with stdout and stderr.
 
     Args:
         command (str): command to run.
-        quite (bool): no stdout display of the command if quite is True.
+        quiet (bool): no stdout display of the command if quiet is True.
         flush_output (bool): enable real-time output flush or not when running the command.
 
     Return:
@@ -31,7 +31,7 @@ def run_command(command, quite=False, flush_output=False):
             output = ''
             for line in process.stdout:
                 output += line
-                if not quite:
+                if not quiet:
                     stdout_logger.log(line)
             process.wait()
             retcode = process.poll()
@@ -45,6 +45,6 @@ def run_command(command, quite=False, flush_output=False):
         result = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False, universal_newlines=True
         )
-        if not quite:
+        if not quiet:
             stdout_logger.log(result.stdout)
         return result

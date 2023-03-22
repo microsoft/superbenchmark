@@ -40,7 +40,7 @@ class Monitor(multiprocessing.Process):
         self.__output_handler = open(self.__output_file, 'a')
 
         self.__cgroup = 1
-        output = run_command('grep cgroup /proc/filesystems')
+        output = run_command('grep cgroup /proc/filesystems', quiet=True)
         if output.returncode != 0:
             logger.error('Failed to check the cgroup version, will assume using cgroup V1.')
         else:
