@@ -346,8 +346,7 @@ class DistInference(MicroBenchmark):
 
         # Prepare model
         model = self._prepare_model(
-            input_size, hidden_size, num_layers, computation, communication, activation, precision,
-            self.__world_size
+            input_size, hidden_size, num_layers, computation, communication, activation, precision, self.__world_size
         )
 
         # Run model
