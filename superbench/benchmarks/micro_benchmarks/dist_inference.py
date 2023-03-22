@@ -3,12 +3,10 @@
 
 """Module of the distributed inference benchmark."""
 
-import copy
 import os
 import time
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributed as dist
 
@@ -53,7 +51,9 @@ class DistInferenceModel(torch.nn.Module):
             computation (ComputationKernelType): type of computation kernel of this model.
             communication (CommunicationKernelType): type of communication kernel of this model.
             activation (ActivationKernelType): type of activation kernel of this model.
-            num_ranks (int): number of ranks in this model run.
+            precision (Precision): data type of this model.
+            num_ranks (int): number of ranks in this model runs.
+            device (torch.device): device this model runs on.
         """
         super().__init__()
         self.input_size = input_size
