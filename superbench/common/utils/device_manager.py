@@ -129,7 +129,7 @@ class DeviceManager:
         Return:
             remapped_metrics (dict): the row remapped information, None means failed to get the data.
         """
-        output = process.run_command('nvidia-smi -i {} -q'.format(idx), quite=True)
+        output = process.run_command('nvidia-smi -i {} -q'.format(idx), quiet=True)
         if output.returncode == 0:
             begin = output.stdout.find('Remapped Rows')
             end = output.stdout.find('Temperature', begin)

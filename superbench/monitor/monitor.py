@@ -39,6 +39,16 @@ class Monitor(multiprocessing.Process):
 
         self.__output_handler = open(self.__output_file, 'a')
 
+        self.__cgroup = 1
+        output = run_command('grep cgroup /proc/filesystems', quiet=True)
+        if output.returncode != 0:
+            logger.error('Failed to check the cgroup version, will assume using cgroup V1.')
+        else:
+            if 'cgroup2' in output.stdout:
+                self.__cgroup = 2
+
+        logger.info('cgroup version: {}.'.format(self.__cgroup))
+
     def __preprocess(self):
         """Preprocess/preparation operations before the monitoring.
 
@@ -67,11 +77,20 @@ class Monitor(multiprocessing.Process):
             container_pid = output.stdout
 
             try:
-                self._cpu_file = glob.glob('/sys/fs/cgroup/cpuacct/docker/{}*/cpuacct.stat'.format(container_id))[0]
-                self._mem_file = glob.glob(
-                    '/sys/fs/cgroup/memory/docker/{}*/memory.usage_in_bytes'.format(container_id)
-                )[0]
-                self._net_file = '/proc/{}/net/dev'.format(container_pid)
+                if self.__cgroup == 1:
+                    self._cpu_file = glob.glob('/sys/fs/cgroup/cpuacct/docker/{}*/cpuacct.stat'.format(container_id))[0]
+                    self._mem_file = glob.glob(
+                        '/sys/fs/cgroup/memory/docker/{}*/memory.usage_in_bytes'.format(container_id)
+                    )[0]
+                    self._net_file = '/proc/{}/net/dev'.format(container_pid)
+                else:
+                    self._cpu_file = glob.glob(
+                        '/sys/fs/cgroup/system.slice/docker-{}*.scope/cpu.stat'.format(container_id)
+                    )[0]
+                    self._mem_file = glob.glob(
+                        '/sys/fs/cgroup/system.slice/docker-{}*.scope/memory.stat'.format(container_id)
+                    )[0]
+                    self._net_file = '/proc/net/dev'
             except BaseException as e:
                 logger.error(
                     'Faild to get the cpu/mem/net file - container: {}, error message: {}'.format(
@@ -80,8 +99,12 @@ class Monitor(multiprocessing.Process):
                 )
                 return False
         else:
-            self._cpu_file = '/sys/fs/cgroup/cpuacct/cpuacct.stat'
-            self._mem_file = '/sys/fs/cgroup/memory/memory.usage_in_bytes'
+            if self.__cgroup == 1:
+                self._cpu_file = '/sys/fs/cgroup/cpuacct/cpuacct.stat'
+                self._mem_file = '/sys/fs/cgroup/memory/memory.usage_in_bytes'
+            else:
+                self._cpu_file = '/sys/fs/cgroup/cpu.stat'
+                self._mem_file = '/sys/fs/cgroup/memory.stat'
             self._net_file = '/proc/net/dev'
 
         return True
@@ -215,13 +238,21 @@ class Monitor(multiprocessing.Process):
         system_time = 0
         try:
             with open(self._cpu_file, 'r') as f:
-                for line in f:
-                    items = line.split()
-                    if items[0] == 'user':
-                        user_time = int(items[1])
-                    elif items[1] == 'system':
-                        system_time = int(items[1])
-                return user_time + system_time
+                if self.__cgroup == 1:
+                    for line in f:
+                        items = line.split()
+                        if items[0] == 'user':
+                            user_time = int(items[1])
+                        elif items[0] == 'system':
+                            system_time = int(items[1])
+                else:
+                    for line in f:
+                        items = line.split()
+                        if items[0] == 'user_usec':
+                            user_time = int(items[1]) / 10000
+                        elif items[0] == 'system_usec':
+                            system_time = int(items[1]) / 10000
+            return user_time + system_time
         except BaseException as e:
             logger.error('Failed to read process cpu ticks information - error message: {}'.format(str(e)))
 
