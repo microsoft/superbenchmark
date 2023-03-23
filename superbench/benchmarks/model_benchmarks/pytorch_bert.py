@@ -183,15 +183,15 @@ class PytorchBERT(PytorchBase):
             return False
 
         try:
+            self._model = BertBenchmarkModel(self._config, self._args.num_classes)
             if enable_fp8:
                 self._fp8_recipe = DelayedScaling(
                     fp8_format=Format[precision.name.strip('FP8_')],
                     amax_history_len=16,
                     amax_compute_algo='max',
                 )
-                self._model = TeBertBenchmarkModel(self._config, self._args.num_classes).to(dtype=torch.float16)
+                self._to_te_model(self._model.to(dtype=torch.float16))
             else:
-                self._model = BertBenchmarkModel(self._config, self._args.num_classes)
                 self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
                 self._model = self._model.cuda()
