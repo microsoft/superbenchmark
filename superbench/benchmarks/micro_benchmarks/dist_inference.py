@@ -184,7 +184,7 @@ class DistInference(MicroBenchmark):
         self._parser.add_argument(
             '--num_layers',
             type=int,
-            default=10,
+            default=1,
             required=False,
             help='Number of compute-communicate-activate layers.',
         )
@@ -226,7 +226,7 @@ class DistInference(MicroBenchmark):
         self._parser.add_argument(
             '--num_steps',
             type=int,
-            default=200,
+            default=10000,
             required=False,
             help='Number of test steps.',
         )
