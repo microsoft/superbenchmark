@@ -71,7 +71,11 @@ class DistInferenceModel(torch.nn.Module):
         self.__init_activation_kernels(activation)
 
     def __init_computation_kernels(self, computation):
-        """Select computation kernel according to option."""
+        """Select computation kernel according to option.
+
+        Args:
+            computation (ComputationKernelType): the type of the computation kernel to run.
+        """
         self.computation_kernel = None
         if computation == ComputationKernelType.ADDMM:
             self.computation_kernel = lambda x: torch.addmm(self.bias, x, self.weights)
@@ -81,7 +85,11 @@ class DistInferenceModel(torch.nn.Module):
             self.computation_kernel = lambda x: torch.mul(x, x)
 
     def __init_communication_kernels(self, communication):
-        """Select communication kernel according to option."""
+        """Select communication kernel according to option.
+
+        Args:
+            communication (CommunicationKernelType): the type of the communication kernel to run.
+        """
         self.communication_kernel = None
         if communication == CommunicationKernelType.ALLGATHER:
             self.communication_kernel = self.__all_gather_wrapper
@@ -91,7 +99,11 @@ class DistInferenceModel(torch.nn.Module):
             self.communication_kernel = self.__all_to_all_wrapper
 
     def __init_activation_kernels(self, activation):
-        """Select activation kernel according to option."""
+        """Select activation kernel according to option.
+
+        Args:
+            activation (ActivationKernelType): the type of the activation kernel to run.
+        """
         self.activation_kernel = None
         if activation == ActivationKernelType.RELU:
             self.activation_kernel = F.relu
@@ -101,24 +113,52 @@ class DistInferenceModel(torch.nn.Module):
             self.activation_kernel = F.tanh
 
     def __all_gather_wrapper(self, x):
-        """All-gather wrapper with output initialization."""
+        """All-gather wrapper with output initialization.
+
+        Args:
+            x (Tensor): input.
+
+        Return:
+            Tensor after all-gather.
+        """
         output = torch.empty_like([x.shape[0] * self.num_ranks] + list(x.shape[1:]))
         dist.all_gather_into_tensor(output, x)
         return output
 
     def __all_reduce_wrapper(self, x):
-        """All-reduce wrapper."""
+        """All-reduce wrapper.
+
+        Args:
+            x (Tensor): input.
+
+        Return:
+            Tensor after all-reduce.
+        """
         dist.all_reduce(x)
         return x
 
     def __all_to_all_wrapper(self, x):
-        """All-to-all wrapper with output initialization."""
+        """All-to-all wrapper with output initialization.
+
+        Args:
+            x (Tensor): input.
+
+        Return:
+            Tensor after all-to-all.
+        """
         output = torch.empty_like(x)
         dist.all_to_all_single(output, x)
         return output
 
     def forward(self, x):
-        """Do forward loops."""
+        """Do forward loops.
+
+        Args:
+            x (Tensor): input.
+
+        Return:
+            Tensor after the whole inference process.
+        """
         activation_out = None
         for i in range(self.num_layers):
             computation_out = self.computation_kernel(x)
@@ -149,7 +189,7 @@ class DistInference(MicroBenchmark):
         If there is no GPU present, this defaults to `time.time()`; otherwise it will
         synchronize CUDA before measuring the time.
 
-        Returns:
+        Return:
             Current time in second.
         """
         if self.__cuda_available:
@@ -286,7 +326,21 @@ class DistInference(MicroBenchmark):
     def _prepare_model(
         self, input_size, hidden_size, num_layers, computation, communication, activation, precision, num_ranks
     ):
-        """Prepare model."""
+        """Prepare model.
+
+        Args:
+            input_size (int): input data dimension.
+            hidden_size (int): hidden layer dimension.
+            num_layers (int): number of layers in the model.
+            computation (ComputationKernelType): type of computation kernel of this model.
+            communication (CommunicationKernelType): type of communication kernel of this model.
+            activation (ActivationKernelType): type of activation kernel of this model.
+            precision (Precision): data type of this model.
+            num_ranks (int): number of ranks in this model runs.
+
+        Return:
+            Model prepared.
+        """
         model = DistInferenceModel(
             input_size, hidden_size, num_layers, computation, communication, activation, precision, num_ranks,
             self.__device
@@ -297,7 +351,20 @@ class DistInference(MicroBenchmark):
         return model
 
     def _run_model(self, model, batch_size, input_size, precision, device, num_warmup, num_steps):
-        """Run model."""
+        """Run model and collect step times.
+
+        Args:
+            model (torch.nn.Module): model to run.
+            batch_size (int): batch size of input data.
+            input_size (int): input data dimension.
+            precision (Precision): data type of this model.
+            device (torch.device): device this model runs on.
+            num_warmup (int): number of warm-up runs.
+            num_steps (int): number of test runs.
+
+        Return:
+            Model step times collected.
+        """
         data = torch.rand(batch_size, input_size, dtype=getattr(torch, precision.value), device=self.__device)
 
         # warm up
@@ -315,13 +382,24 @@ class DistInference(MicroBenchmark):
         return step_times
 
     def _process_data(self, step_times):
-        """Process data."""
+        """Process data.
+
+        Args:
+            step_times (List[float]): Model step times collected.
+
+        Return:
+            True if _process_data succeeds.
+        """
         if not self._process_numeric_result('step_times', step_times, cal_percentile=True):
             return False
         return True
 
     def _benchmark(self):
-        """Implementation for benchmarking."""
+        """Implementation for benchmarking.
+
+        Return:
+            True if _benchmark succeeds.
+        """
         batch_size = self._args.batch_size
         input_size = self._args.input_size
         hidden_size = self._args.hidden_size
@@ -359,7 +437,7 @@ class DistInference(MicroBenchmark):
         """Postprocess/cleanup operations after the benchmarking.
 
         Return:
-            True if _postprocess() succeed.
+            True if _postprocess succeeds.
         """
         if not super()._postprocess():
             return False
