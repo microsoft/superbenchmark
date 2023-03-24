@@ -409,6 +409,19 @@ Test the performance of large scale matmul operation with multiple GPUs:
 | pytorch-sharding-matmul/allreduce_time | time (ms) | Time of sharding matmul using allreduce. |
 | pytorch-sharding-matmul/allgather_time | time (ms) | Time of sharding matmul using allgather. |
 
+### `dist-inference`
+
+#### Introduction
+
+Test the performance of distributed model inference.
+
+#### Metrics
+
+| Name                                            | Unit      | Description                                           |
+|-------------------------------------------------|-----------|-------------------------------------------------------|
+| pytorch-dist-inference/step_times               | time (ms) | Average time of model inference runs.                 |
+| pytorch-dist-inference/step_times_${percentile} | time (ms) | Tail (50,90,95,99,99.9) time of model inference runs. |
+
 ## Storage Benchmarks
 
 ### `disk-benchmark`
