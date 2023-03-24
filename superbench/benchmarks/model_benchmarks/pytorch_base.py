@@ -63,6 +63,7 @@ class PytorchBase(ModelBenchmark):
             return
         for name, m in model.named_children():
             if isinstance(m, torch.nn.Linear):
+                # check 16-byte alignment
                 if any(p % 16 != 0 for p in m.weight.shape):
                     return
                 te_m = te.Linear(m.in_features, m.out_features, bias=(m.bias is not None))
