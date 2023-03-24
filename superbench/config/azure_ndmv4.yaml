@@ -26,6 +26,13 @@ superbench:
           node_num: 1
       frameworks:
         - pytorch
+    dist_inference_pytorch_mode: &dist_inference_pytorch_mode
+      modes:
+        - name: torch.distributed
+          proc_num: 8
+          node_num: 1
+          env:
+            NCCL_ASYNC_ERROR_HANDLING: '0'
     common_model_config: &common_model_config
       duration: 0
       num_warmup: 64
@@ -159,6 +166,8 @@ superbench:
       <<: *default_pytorch_mode
     computation-communication-overlap:
       <<: *default_pytorch_mode
+    dist-inference:
+      <<: *dist_inference_pytorch_mode
     ib-traffic:
       enable: false
       modes:
