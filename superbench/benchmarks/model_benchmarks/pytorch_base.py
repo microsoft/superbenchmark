@@ -9,6 +9,10 @@ import time
 
 import torch
 import transformers
+try:
+    import transformer_engine.pytorch as te
+except ImportError:
+    te = None
 from torch.utils.data import DataLoader
 from torch.distributed import TCPStore, PrefixStore
 
@@ -43,6 +47,40 @@ class PytorchBase(ModelBenchmark):
         """
         torch.backends.cuda.matmul.allow_tf32 = not self._args.force_fp32
         torch.backends.cudnn.allow_tf32 = not self._args.force_fp32
+
+    @torch.no_grad()
+    def _to_te_model(self, model):
+        """Convert the input model to Transformer Engine model.
+
+        Replace all Linear/LayerNorm layers.
+        Modified based on Huggingface's utils `accelerate.accelerator.convert_model`, reference:
+        https://github.com/huggingface/accelerate/blob/v0.17.1/src/accelerate/utils/transformer_engine.py#L24
+
+        Args:
+            model (torch.nn.Module): Torch model.
+        """
+        if not te:
+            return
+        for name, m in model.named_children():
+            if isinstance(m, torch.nn.Linear):
+                if any(p % 16 != 0 for p in m.weight.shape):
+                    return
+                te_m = te.Linear(m.in_features, m.out_features, bias=(m.bias is not None))
+                te_m.weight.copy_(m.weight)
+                if m.bias is not None:
+                    te_m.bias.copy_(m.bias)
+                setattr(model, name, te_m)
+            elif isinstance(m, torch.nn.LayerNorm):
+                te_m = te.LayerNorm(m.normalized_shape[0], eps=m.eps)
+                if hasattr(te_m, 'weight'):
+                    te_m.weight.copy_(m.weight)
+                    te_m.bias.copy_(m.bias)
+                else:
+                    te_m.layer_norm_weight.copy_(m.weight)
+                    te_m.layer_norm_bias.copy_(m.bias)
+                setattr(model, name, te_m)
+            else:
+                self._to_te_model(m)
 
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU.
