@@ -63,15 +63,16 @@ class PytorchBase(ModelBenchmark):
             return
         for name, m in model.named_children():
             if isinstance(m, torch.nn.Linear):
+                # check 16-byte alignment
                 if any(p % 16 != 0 for p in m.weight.shape):
                     return
-                te_m = te.Linear(m.in_features, m.out_features, bias=(m.bias is not None))
+                te_m = te.Linear(m.in_features, m.out_features, bias=(m.bias is not None), params_dtype=m.weight.dtype)
                 te_m.weight.copy_(m.weight)
                 if m.bias is not None:
                     te_m.bias.copy_(m.bias)
                 setattr(model, name, te_m)
             elif isinstance(m, torch.nn.LayerNorm):
-                te_m = te.LayerNorm(m.normalized_shape[0], eps=m.eps)
+                te_m = te.LayerNorm(m.normalized_shape[0], eps=m.eps, params_dtype=m.weight.dtype)
                 if hasattr(te_m, 'weight'):
                     te_m.weight.copy_(m.weight)
                     te_m.bias.copy_(m.bias)
