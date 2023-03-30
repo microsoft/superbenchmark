@@ -8,7 +8,6 @@ import time
 import glob
 import sched
 import multiprocessing
-from pathlib import Path
 
 from superbench.common.utils import logger, run_command
 from superbench.common.utils import device_manager as dm
