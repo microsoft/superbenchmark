@@ -448,7 +448,6 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
-            self._result.add_result(metric.lower() + '_time', -1)
             return False
         return True
 
