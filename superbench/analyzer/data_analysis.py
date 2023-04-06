@@ -31,6 +31,8 @@ def statistic(raw_data_df):
         logger.warning('DataAnalyzer: empty data.')
         return data_statistics_df
     try:
+        raw_data_df = raw_data_df.apply(pd.to_numeric, errors='coerce')
+        raw_data_df = raw_data_df.dropna(axis=1, how='all')
         data_statistics_df = raw_data_df.describe()
         data_statistics_df.loc['1%'] = raw_data_df.quantile(0.01, numeric_only=True)
         data_statistics_df.loc['5%'] = raw_data_df.quantile(0.05, numeric_only=True)
@@ -122,7 +124,9 @@ def correlation(raw_data_df):
         logger.warning('DataAnalyzer: empty data.')
         return data_corr_df
     try:
-        data_corr_df = raw_data_df.corr(numeric_only=True)
+        raw_data_df = raw_data_df.apply(pd.to_numeric, errors='coerce')
+        raw_data_df = raw_data_df.dropna(axis=1, how='all')
+        data_corr_df = raw_data_df.corr()
         statistics_error = []
         for column in list(raw_data_df.columns):
             if column not in list(data_corr_df.columns) and not raw_data_df[column].isnull().all():
@@ -181,13 +185,15 @@ def generate_baseline(raw_data_df, output_dir):
         output_dir (str): the directory of output file
     """
     try:
+        raw_data_df = raw_data_df.apply(pd.to_numeric, errors='coerce')
+        raw_data_df = raw_data_df.dropna(axis=1, how='all')
         if not isinstance(raw_data_df, pd.DataFrame):
             logger.error('DataAnalyzer: the type of raw data is not pd.DataFrame')
             return
         if len(raw_data_df) == 0:
             logger.error('DataAnalyzer: empty data.')
             return
-        mean_df = raw_data_df.mean(numeric_only=True)
+        mean_df = raw_data_df.mean()
         mean_df.to_json(output_dir + '/baseline.json')
     except Exception as e:
         logger.error('DataAnalyzer: generate baseline failed, msg: {}'.format(str(e)))
