@@ -32,10 +32,10 @@ def statistic(raw_data_df):
         return data_statistics_df
     try:
         data_statistics_df = raw_data_df.describe()
-        data_statistics_df.loc['1%'] = raw_data_df.quantile(0.01)
-        data_statistics_df.loc['5%'] = raw_data_df.quantile(0.05)
-        data_statistics_df.loc['95%'] = raw_data_df.quantile(0.95)
-        data_statistics_df.loc['99%'] = raw_data_df.quantile(0.99)
+        data_statistics_df.loc['1%'] = raw_data_df.quantile(0.01, numeric_only=True)
+        data_statistics_df.loc['5%'] = raw_data_df.quantile(0.05, numeric_only=True)
+        data_statistics_df.loc['95%'] = raw_data_df.quantile(0.95, numeric_only=True)
+        data_statistics_df.loc['99%'] = raw_data_df.quantile(0.99, numeric_only=True)
         statistics_error = []
         for column in list(raw_data_df.columns):
             if column not in list(data_statistics_df.columns) and not raw_data_df[column].isnull().all():
@@ -122,7 +122,7 @@ def correlation(raw_data_df):
         logger.warning('DataAnalyzer: empty data.')
         return data_corr_df
     try:
-        data_corr_df = raw_data_df.corr()
+        data_corr_df = raw_data_df.corr(numeric_only=True)
         statistics_error = []
         for column in list(raw_data_df.columns):
             if column not in list(data_corr_df.columns) and not raw_data_df[column].isnull().all():
@@ -187,7 +187,7 @@ def generate_baseline(raw_data_df, output_dir):
         if len(raw_data_df) == 0:
             logger.error('DataAnalyzer: empty data.')
             return
-        mean_df = raw_data_df.mean()
+        mean_df = raw_data_df.mean(numeric_only=True)
         mean_df.to_json(output_dir + '/baseline.json')
     except Exception as e:
         logger.error('DataAnalyzer: generate baseline failed, msg: {}'.format(str(e)))
