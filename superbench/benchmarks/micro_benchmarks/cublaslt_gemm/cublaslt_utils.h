@@ -10,12 +10,14 @@
 
 #include <cublasLt.h>
 
-inline void checkCublasStatus(cublasStatus_t status) {
-    if (status != CUBLAS_STATUS_SUCCESS) {
-        printf("cuBLAS API failed with status %s\n", cublasGetStatusString(status));
-        throw std::logic_error("cuBLAS API failed");
-    }
-}
+#define CUBLAS_CHECK(func)                                                                                             \
+    do {                                                                                                               \
+        cublasStatus_t status = func;                                                                                  \
+        if (status != CUBLAS_STATUS_SUCCESS) {                                                                         \
+            printf("cuBLAS call %s failed at %s:%d '%s'\n", #func, __FILE__, __LINE__, cublasGetStatusString(status)); \
+            exit(EXIT_FAILURE);                                                                                        \
+        }                                                                                                              \
+    } while (0)
 
 class cublasLtGemm {
   public:
