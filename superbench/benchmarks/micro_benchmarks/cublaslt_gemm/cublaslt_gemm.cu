@@ -88,20 +88,21 @@ template <typename T> cudaDataType_t get_datatype() {
 }
 
 template <typename Ta, typename Tb, typename Tout>
-float timing_matmul_tn(int m, int n, int k, int batch, int warmup, int iter) {
+float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, int iter) {
     // init matrix
     Ta *matrix_a = nullptr;
     Tb *matrix_b = nullptr;
     Tout *matrix_out = nullptr;
-    cudaMalloc(&matrix_a, m * k * std::max(batch, 1) * sizeof(Ta));
-    cudaMalloc(&matrix_b, k * n * std::max(batch, 1) * sizeof(Tb));
-    cudaMalloc(&matrix_out, m * n * std::max(batch, 1) * sizeof(Tout));
+    batch = std::max<size_t>(batch, 1);
+    cudaMalloc(&matrix_a, m * k * batch * sizeof(Ta));
+    cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
+    cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
 
-    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * std::max(batch, 1));
-    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * std::max(batch, 1));
+    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * batch);
+    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * batch);
 
     // init gemm
-    int lda = k, ldb = k, ldd = m;
+    size_t lda = k, ldb = k, ldd = m;
     std::unique_ptr<cublasLtGemm> gemm = std::make_unique<cublasLtGemm>();
     gemm->Init();
     gemm->Setup(m, n, k, batch, lda, ldb, ldd, get_datatype<Ta>(), get_datatype<Tb>(), get_datatype<Tout>(),
