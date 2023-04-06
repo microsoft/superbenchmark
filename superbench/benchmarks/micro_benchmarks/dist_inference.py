@@ -121,7 +121,7 @@ class DistInferenceModel(torch.nn.Module):
         Return:
             Tensor after all-gather.
         """
-        output = torch.empty_like([x.shape[0] * self.num_ranks] + list(x.shape[1:]))
+        output = torch.empty([x.shape[0] * self.num_ranks] + list(x.shape[1:]), dtype=x.dtype, device=x.device)
         dist.all_gather_into_tensor(output, x)
         return output
 
