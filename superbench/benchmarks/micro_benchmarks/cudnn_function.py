@@ -411,8 +411,15 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         metric = ''
         try:
             lines = raw_output.splitlines()
-            metric = json.dumps(json.loads(self._commands[cmd_idx].split('--config_json')[-1].replace(' ', '')[1:-1])
-                                ).replace('\"', '').replace(':', '_').replace(',', '_')[1:-1]
+
+            cmd_config = json.loads(self._commands[cmd_idx].split('--config_json')[-1].replace(' ', '')[1:-1])
+            for key in sorted(cmd_config.keys()):
+                if 'name' in key:
+                    metric = key + '_' + str(cmd_config[key]) + metric
+                else:
+                    metric = metric + '_' + key + '_' + str(cmd_config[key])
+            metric = metric.replace(' ', '').replace(',', '_')
+
             error = False
             raw_data = []
             for line in lines:
@@ -434,12 +441,12 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             )
             error = True
         if error:
-            self._result.add_result(metric.lower() + '_time', -1)
             logger.error(
                 'Error in running cudnn test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
                     self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
+            self._result.add_result(metric.lower() + '_time', -1)
             return False
         return True
 
