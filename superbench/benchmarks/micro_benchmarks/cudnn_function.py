@@ -408,23 +408,14 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             True if the raw output string is valid and result can be extracted.
         """
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
-
+        metric = ''
         try:
             lines = raw_output.splitlines()
-            metric = ''
+            metric = json.dumps(json.loads(self._commands[cmd_idx].split('--config_json')[-1].replace(' ', '')[1:-1])
+                                ).replace('\"', '').replace(':', '_').replace(',', '_')[1:-1]
             error = False
             raw_data = []
             for line in lines:
-                if '[function config]' in line:
-                    metric = ''
-                    metric_json_str = line[line.index('[function config]: ') +
-                                           len('[function config]: '):].replace(' ', '').replace(':', '_')[1:-1]
-                    metric_list = metric_json_str.split(',')
-                    for key in metric_list:
-                        if 'name' in key:
-                            metric = key + metric
-                        else:
-                            metric = metric + '_' + key
                 if '[raw_data]' in line:
                     raw_data = line[line.index('[raw_data]: ') + len('[raw_data]: '):]
                     raw_data = raw_data.split(',')
@@ -443,6 +434,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             )
             error = True
         if error:
+            self._result.add_result(metric.lower() + '_time', -1)
             logger.error(
                 'Error in running cudnn test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
                     self._curr_run_index, cmd_idx, self._name, raw_output
