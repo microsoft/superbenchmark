@@ -387,8 +387,9 @@ class SuperBenchRunner():
                 metrics_dict[metric].append(value)
 
         for metric, values in metrics_dict.items():
+            prefix = metric.split(':')[0]
             for pattern, reduce_type in MonitorRecord.reduce_ops.items():
-                if pattern in metric:
+                if pattern == prefix:
                     reduce_func = Reducer.get_reduce_func(reduce_type)
                     metric_name = 'monitor/{}'.format(metric)
                     metrics_summary[metric_name] = reduce_func(values)
