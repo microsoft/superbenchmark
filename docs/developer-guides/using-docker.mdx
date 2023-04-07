@@ -29,7 +29,7 @@ You need to [clone the code](./development.md#set-up) first before building the 
 export DOCKER_BUILDKIT=1
 docker buildx build \
   --platform linux/amd64 --cache-to type=inline,mode=max \
-  --tag superbench-dev --file dockerfile/cuda11.1.1.dockerfile .
+  --tag superbench-dev --file dockerfile/cuda11.8.dockerfile .
 ```
 
 </TabItem>
@@ -39,7 +39,7 @@ docker buildx build \
 export DOCKER_BUILDKIT=1
 docker buildx build \
   --platform linux/amd64 --cache-to type=inline,mode=max \
-  --tag superbench-dev --file dockerfile/rocm4.2-pytorch1.7.0.dockerfile .
+  --tag superbench-dev --file dockerfile/rocm5.1.x.dockerfile .
 ```
 
 </TabItem>
