@@ -194,6 +194,7 @@ class Monitor(multiprocessing.Process):
         for i in range(device_count):
             record.gpu_usage.append(dm.device_manager.get_device_utilization(i))
             record.gpu_temperature.append(dm.device_manager.get_device_temperature(i))
+            record.gpu_power.append(dm.device_manager.get_device_power(i))
             record.gpu_power_limit.append(dm.device_manager.get_device_power_limit(i))
             mem_used, mem_total = dm.device_manager.get_device_memory(i)
             record.gpu_mem_used.append(mem_used)
