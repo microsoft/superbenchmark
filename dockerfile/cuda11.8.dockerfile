@@ -128,3 +128,10 @@ RUN python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
     rm -rf .git
+
+# Update NCCL
+RUN cd /usr/local && \
+    git clone -b v2.17.1-1 https://github.com/NVIDIA/nccl.git && \
+    cd nccl && \
+    make -j ${NUM_MAKE_JOBS} src.build && \
+    make install
