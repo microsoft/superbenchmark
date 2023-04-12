@@ -167,6 +167,7 @@ def test_arguments_related_interfaces():
   --no_gpu              Disable GPU training.
   --num_steps int       The number of test step.
   --num_warmup int      The number of warmup step.
+  --num_workers int     Number of subprocesses to use for data loading.
   --pin_memory          Enable option to pin memory in data loader.
   --precision Precision [Precision ...]
                         Model precision. E.g. fp8_hybrid fp8_e4m3 fp8_e5m2
@@ -206,6 +207,7 @@ def test_preprocess():
   --no_gpu              Disable GPU training.
   --num_steps int       The number of test step.
   --num_warmup int      The number of warmup step.
+  --num_workers int     Number of subprocesses to use for data loading.
   --pin_memory          Enable option to pin memory in data loader.
   --precision Precision [Precision ...]
                         Model precision. E.g. fp8_hybrid fp8_e4m3 fp8_e5m2

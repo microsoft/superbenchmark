@@ -181,7 +181,7 @@ class PytorchBase(ModelBenchmark):
             dataset=self._dataset,
             batch_size=self._args.batch_size,
             shuffle=False,
-            num_workers=8,
+            num_workers=self._args.num_workers,
             sampler=train_sampler,
             drop_last=True,
             pin_memory=self._args.pin_memory

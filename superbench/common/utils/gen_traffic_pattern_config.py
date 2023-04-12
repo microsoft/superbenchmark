@@ -182,15 +182,14 @@ def gen_traffic_pattern_host_groups(host_list, pattern, mpi_pattern_path, benchm
         logger.error('Unsupported traffic pattern: {}'.format(pattern.type))
     host_groups = __convert_config_to_host_group(config, host_list)
     # write traffic pattern host groups to specified path
-    if pattern.mpi_pattern:
-        with open(mpi_pattern_path, 'a') as f:
-            f.write('benchmark_name: {} pattern_type: {}'.format(benchmark_name, pattern.type) + '\n')
-            for host_group in host_groups:
-                row = []
-                for host_list in host_group:
-                    group = ','.join(host_list)
-                    row.append(group)
-                group = ';'.join(row)
-                f.write(group + '\n')
-            f.write('\n')
+    with open(mpi_pattern_path, 'a') as f:
+        f.write('benchmark_name: {} pattern_type: {}'.format(benchmark_name, pattern.type) + '\n')
+        for host_group in host_groups:
+            row = []
+            for host_list in host_group:
+                group = ','.join(host_list)
+                row.append(group)
+            group = ';'.join(row)
+            f.write(group + '\n')
+        f.write('\n')
     return host_groups
