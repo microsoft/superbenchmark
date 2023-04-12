@@ -9,7 +9,7 @@ FROM nvcr.io/nvidia/pytorch:23.03-py3
 #   - cuDNN: 8.8.1.3
 #   - NCCL: v2.17.1-1
 # Mellanox:
-#   - OFED: 5.8-2.0.3.0
+#   - OFED: 5.2-2.2.3.0 # TODO
 #   - HPC-X: v2.14
 # Intel:
 #   - mlc: v3.10
@@ -69,7 +69,7 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
-ENV OFED_VERSION=5.8-2.0.3.0
+ENV OFED_VERSION=5.2-2.2.3.0
 RUN cd /tmp && \
     wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
