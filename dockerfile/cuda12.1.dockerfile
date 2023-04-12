@@ -81,8 +81,8 @@ ENV HPCX_VERSION=v2.14
 RUN cd /opt && \
     rm -rf hpcx && \
     wget -q https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu20.04-cuda12-gdrcopy2-nccl2.17-x86_64.tbz -O hpcx.tbz && \
-    tar xzf hpcx.tbz && \
-    ln -s hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu20.04-cuda12-gdrcopy2-nccl2.17-x86_64 hpcx && \
+    tar xf hpcx.tbz && \
+    mv hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu20.04-cuda12-gdrcopy2-nccl2.17-x86_64 hpcx && \
     rm hpcx.tbz
 
 # Install Intel MLC
