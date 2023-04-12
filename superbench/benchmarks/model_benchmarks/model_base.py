@@ -79,6 +79,13 @@ class ModelBenchmark(Benchmark):
             help='The number of batch size.',
         )
         self._parser.add_argument(
+            '--num_workers',
+            type=int,
+            default=8,
+            required=False,
+            help='Number of subprocesses to use for data loading.',
+        )
+        self._parser.add_argument(
             '--precision',
             type=Precision,
             default=[Precision.FLOAT32, Precision.FLOAT16],
