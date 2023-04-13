@@ -70,7 +70,7 @@ superbench:
 <TabItem value='example'>
 
 ```yaml
-version: v0.5
+version: v0.7
 superbench:
   enable: benchmark_1
   monitor:
@@ -336,10 +336,11 @@ A list of models to run, only supported in model-benchmark.
 
 Parameters for benchmark to use, varying for different benchmarks.
 
-There have three common parameters for all benchmarks:
+There have four common parameters for all benchmarks:
 * run_count: how many times do user want to run this benchmark, default value is 1.
 * duration: the elapsed time of benchmark in seconds. It can work for all model-benchmark. But for micro-benchmark, benchmark authors should consume it by themselves.
 * log_raw_data: log raw data into file instead of saving it into result object, default value is `False`.  Benchmarks who have large raw output may want to set it as `True`, such as `nccl-bw`/`rccl-bw`.
+* log_flushing: real-time log flushing, default value is `False`.
 
 For Model-Benchmark, there have some parameters that can control the elapsed time.
 * duration: the elapsed time of benchmark in seconds.
@@ -396,11 +397,12 @@ Some attributes may only be suitable for specific mode.
 |            | `local` | `torch.distributed` | `mpi` |
 | ---------: | :-----: | :-----------------: | :---: |
 | `proc_num` |    ✓    |          ✓          |   ✓   |
-| `node_num` |    ✘    |          ✓          |   ✘   |
+| `node_num` |    ✘    |          ✓          |   ✓   |
 | `prefix`   |    ✓    |          ✘          |   ✘   |
 | `env`      |    ✓    |          ✓          |   ✓   |
 | `mca`      |    ✘    |          ✘          |   ✓   |
 | `parallel` |    ✓    |          ✘          |   ✘   |
+| `pattern`  |    ✘    |          ✘          |   ✓   |
 
 * accepted values: `local | torch.distributed | mpi`
 * default value: `local`
@@ -414,7 +416,7 @@ Each process will run an individual benchmark, how processes communicate depends
 
 ### `node_num`
 
-Node number to run in the mode. Defaults to all nodes in the run.
+Node number to run in the mode. Defaults to all nodes provided by host file in the run.
 Will be ignored in `local` mode.
 
 For example, assuming you are running model benchmark on 4 nodes,
@@ -454,3 +456,18 @@ Whether run benchmarks in parallel (all ranks at the same time) or in sequence (
 Only available for `local` mode.
 
 * default value: `yes`
+
+### `pattern`
+
+Pattern variables to run benchmarks with nodes in specified traffic pattern combination, in a flatten key-value dictionary.
+Only available for `mpi` mode.
+
+Available variables in formatted string includes:
++ `type(str)`: the traffic pattern type, required.
+    * accepted values: `all-nodes`, `pair-wise`, `k-batch`, `topo-aware`
++ `mpi_pattern(bool)`: generate pattern config file in `./output/mpi_pattern.txt` for diagnosis, required.
++ `batch(int)`: the scale of batch, required in `k-batch` pattern.
++ `ibstat(str)`: the path of ibstat output, wil be auto-generated in `./output/ibstat_file.txt` if not specified, optional in `topo-aware` pattern
++ `ibnetdiscover(str)`: the path of ibnetdiscover output `ibnetdiscover_file.txt`, required in `topo-aware` pattern.
++ `min_dist(int)`: minimum distance of VM pair, required in `topo-aware` pattern.
++ `max_dist(int)`: maximum distance of VM pair, required in `topo-aware` pattern.

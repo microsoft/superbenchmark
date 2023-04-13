@@ -158,6 +158,8 @@ def test_arguments_related_interfaces():
   --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
+  --log_flushing        Real-time log flushing.
+  --log_n_steps int     Real-time log every n steps.
   --log_raw_data        Log raw data into file instead of saving it into
                         result object.
   --model_action ModelAction [ModelAction ...]
@@ -167,8 +169,9 @@ def test_arguments_related_interfaces():
   --num_warmup int      The number of warmup step.
   --pin_memory          Enable option to pin memory in data loader.
   --precision Precision [Precision ...]
-                        Model precision. E.g. float16 float32 float64 bfloat16
-                        uint8 int8 int16 int32 int64.
+                        Model precision. E.g. fp8_hybrid fp8_e4m3 fp8_e5m2
+                        float16 float32 float64 bfloat16 uint8 int8 int16
+                        int32 int64.
   --run_count int       The run count of benchmark.
   --sample_count int    The number of data samples in dataset.
   --seq_len int         Sequence length."""
@@ -194,6 +197,8 @@ def test_preprocess():
   --duration int        The elapsed time of benchmark in seconds.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
+  --log_flushing        Real-time log flushing.
+  --log_n_steps int     Real-time log every n steps.
   --log_raw_data        Log raw data into file instead of saving it into
                         result object.
   --model_action ModelAction [ModelAction ...]
@@ -203,8 +208,9 @@ def test_preprocess():
   --num_warmup int      The number of warmup step.
   --pin_memory          Enable option to pin memory in data loader.
   --precision Precision [Precision ...]
-                        Model precision. E.g. float16 float32 float64 bfloat16
-                        uint8 int8 int16 int32 int64.
+                        Model precision. E.g. fp8_hybrid fp8_e4m3 fp8_e5m2
+                        float16 float32 float64 bfloat16 uint8 int8 int16
+                        int32 int64.
   --run_count int       The run count of benchmark.
   --sample_count int    The number of data samples in dataset.
   --seq_len int         Sequence length."""

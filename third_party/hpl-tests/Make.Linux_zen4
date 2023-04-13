@@ -1,0 +1,62 @@
+# ######################################################################
+# HPL Makefile for Zen4 build
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+# ######################################################################
+#
+# Shell path and command translations  
+#
+SHELL        = /bin/sh
+#
+CD           = cd
+CP           = cp
+LN_S         = ln -fs
+MKDIR        = mkdir -p
+RM           = /bin/rm -f
+TOUCH        = touch
+#
+# Build Type
+#
+ARCH         = $(arch)
+#
+#HPL Directory
+#
+TOPdir       = ../../..
+INCdir       = $(TOPdir)/include
+BINdir       = $(TOPdir)/bin/$(ARCH)
+LIBdir       = $(TOPdir)/lib/$(ARCH)
+#
+HPLlib       = $(LIBdir)/libhpl.a
+#
+# OPenMPI LIB
+#
+MPdir        = $(omp)
+MPinc        = -I$(MPdir)/include
+MPlib        = $(MPdir)/lib/libmpi.so
+#
+# Add Bliss
+#
+LAdir        = /opt/AMD/amd-blis
+LAinc        = -I$(LAdir)/lib/include
+LAlib        = $(LAdir)/lib/LP64/libblis-mt.so
+#
+# Fortran to C
+#
+Fort_C_FLAGS      = -DAdd__ -DF77_INTEGER=int -DStringSunStyle
+#
+# HPL includes and libraries 
+#
+HPL_INCLUDES = -I$(INCdir) -I$(INCdir)/$(ARCH) $(LAinc) $(MPinc)
+HPL_LIBS     = $(HPLlib) $(LAlib) $(MPlib) -lm
+#
+# Compilers and linker path + flags 
+#
+HPL_DEFS     = $(Fort_C_FLAGS) -DHPL_PROGRESS_REPORT $(HPL_INCLUDES)
+CC           = /opt/AMD/aocc-compiler-4.0.0/bin/clang
+CCNOOPT      = $(HPL_DEFS)
+CCFLAGS      = $(HPL_DEFS) -march=znver4 -fomit-frame-pointer -O3 -funroll-loops
+LINKER       = /opt/AMD/aocc-compiler-4.0.0/bin/clang
+LINKFLAGS    = $(CCFLAGS)
+ARCHIVER     = ar
+ARFLAGS      = r
+RANLIB       = echo

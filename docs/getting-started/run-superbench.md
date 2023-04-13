@@ -27,7 +27,7 @@ sb deploy -f remote.ini --host-password [password]
 :::note Note
 You should deploy corresponding Docker image to use release version, for example,
 
-`sb deploy -f local.ini -i superbench/superbench:v0.5.0-cuda11.1.1`
+`sb deploy -f local.ini -i superbench/superbench:v0.7.0-cuda11.1.1`
 
 You should note that version of git repo only determines version of sb CLI, and not the sb container. You should define the container version even if you specified a release version for the git clone.
 
@@ -40,3 +40,10 @@ After deployment, you can start to run the SuperBench benchmarks on all managed 
 ```bash
 sb run -f local.ini -c resnet.yaml
 ```
+
+:::tip TIP
+For environments that cannot start containers through `sb deploy`, e.g., a Kubernetes cluster.
+You can create a privileged container with `superbench/superbench` image, skip `sb deploy`, and run `sb run` directly inside the container with `--no-docker` argument:
+`sb run --no-docker -l localhost -c resnet.yaml`.
+
+:::

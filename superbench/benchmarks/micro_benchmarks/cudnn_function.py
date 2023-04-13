@@ -352,6 +352,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--config_json_str',
             type=str,
+            nargs='+',
             default=None,
             required=False,
             help='The custom json string defining the params in a cudnn function.',
@@ -366,6 +367,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
+        self._args.tolerant_fail = True
         command = os.path.join(self._args.bin_dir, self._bin_name)
         command += (' --num_test ' + str(self._args.num_steps))
         command += (' --warm_up ' + str(self._args.num_warmup))
@@ -380,10 +382,13 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._commands.append(complete_command)
 
             else:
-                custom_config_str = yaml.safe_load(self._args.config_json_str)
-                config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
-                complete_command = command + (' --config_json ') + config_json_str
-                self._commands.append(complete_command)
+                if not isinstance(self._args.config_json_str, list):
+                    self._args.config_json_str = [self._args.config_json_str]
+                for config_json_str in self._args.config_json_str:
+                    custom_config_str = yaml.safe_load(config_json_str)
+                    config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
+                    complete_command = command + (' --config_json ') + config_json_str
+                    self._commands.append(complete_command)
         except BaseException as e:
             logger.error('Invalid input params - benchmark: {},  message: {}'.format(self._name, str(e)))
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
@@ -436,13 +441,14 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
                 )
             )
-            return False
+            error = True
         if error:
             logger.error(
                 'Error in running cudnn test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
                     self._curr_run_index, cmd_idx, self._name, raw_output
                 )
             )
+            self._result.add_result(metric.lower() + '_time', -1)
             return False
         return True
 

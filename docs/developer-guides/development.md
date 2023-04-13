@@ -19,7 +19,7 @@ Follow [System Requirements](../getting-started/installation.mdx).
 git clone --recurse-submodules -j8 https://github.com/microsoft/superbenchmark
 cd superbenchmark
 
-python3 -m pip install -e .[dev,test]
+python3 -m pip install -e .[develop]
 ```
 
 ## Lint and Test

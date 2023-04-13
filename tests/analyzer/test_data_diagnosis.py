@@ -9,6 +9,7 @@ import yaml
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from superbench.analyzer import DataDiagnosis
 import superbench.analyzer.file_handler as file_handler
@@ -21,7 +22,8 @@ class TestDataDiagnosis(unittest.TestCase):
         self.parent_path = Path(__file__).parent
         self.output_excel_file = str(self.parent_path / 'diagnosis_summary.xlsx')
         self.test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
-        self.output_json_file = str(self.parent_path / 'diagnosis_summary.jsonl')
+        self.output_json_file = str(self.parent_path / 'diagnosis_summary.json')
+        self.output_jsonl_file = str(self.parent_path / 'diagnosis_summary.jsonl')
         self.output_md_file = str(self.parent_path / 'diagnosis_summary.md')
         self.output_html_file = str(self.parent_path / 'diagnosis_summary.html')
         self.output_all_json_file = str(self.parent_path / 'diagnosis_summary.json')
@@ -29,8 +31,8 @@ class TestDataDiagnosis(unittest.TestCase):
     def tearDown(self):
         """Method called after the test method has been called and the result recorded."""
         for file in [
-            self.output_excel_file, self.output_json_file, self.test_rule_file_fake, self.output_md_file,
-            self.output_html_file, self.output_all_json_file
+            self.output_excel_file, self.output_json_file, self.output_jsonl_file, self.test_rule_file_fake,
+            self.output_md_file, self.output_html_file, self.output_all_json_file
         ]:
             p = Path(file)
             if p.is_file():
@@ -51,9 +53,8 @@ class TestDataDiagnosis(unittest.TestCase):
         test_raw_data_fake = str(self.parent_path / 'test_results_fake.jsonl')
         test_rule_file_fake = str(self.parent_path / 'test_rules_fake.yaml')
         diag2 = DataDiagnosis()
-        diag2._raw_data_df = file_handler.read_raw_data(test_raw_data_fake)
-        diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
-        assert (len(diag2._raw_data_df) == 0)
+        self.assertRaises(FileNotFoundError, file_handler.read_raw_data, test_raw_data_fake)
+        diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks([])
         assert (len(diag2._benchmark_metrics_dict) == 0)
         metric_list = [
             'gpu_temperature', 'gpu_power_limit', 'gemm-flops/FP64',
@@ -66,8 +67,7 @@ class TestDataDiagnosis(unittest.TestCase):
             }
         )
         # Test - read rules
-        rules = file_handler.read_rules(test_rule_file_fake)
-        assert (not rules)
+        self.assertRaises(FileNotFoundError, file_handler.read_rules, test_rule_file_fake)
         rules = file_handler.read_rules(test_rule_file)
         assert (rules)
         # Test - _check_and_format_rules
@@ -129,12 +129,12 @@ class TestDataDiagnosis(unittest.TestCase):
         baseline = file_handler.read_baseline(test_baseline_file)
         assert (diag1._get_baseline_of_metric(baseline, 'kernel-launch/event_overhead:0') == 0.00596)
         assert (diag1._get_baseline_of_metric(baseline, 'kernel-launch/return_code') == 0)
-        assert (diag1._get_baseline_of_metric(baseline, 'mem-bw/H2D:0') == -1)
+        assert (diag1._get_baseline_of_metric(baseline, 'mem-bw/H2D:0') is None)
         # Test - _parse_rules_and_baseline
         # Negative case
-        fake_rules = file_handler.read_rules(test_rule_file_fake)
+        fake_rules = []
         baseline = file_handler.read_baseline(test_baseline_file)
-        assert (diag2._parse_rules_and_baseline(fake_rules, baseline) is False)
+        self.assertRaises(Exception, diag2._parse_rules_and_baseline, fake_rules, baseline)
         diag2 = DataDiagnosis()
         diag2._raw_data_df = file_handler.read_raw_data(test_raw_data)
         diag2._benchmark_metrics_dict = diag2._get_metrics_by_benchmarks(list(diag2._raw_data_df))
@@ -144,7 +144,7 @@ class TestDataDiagnosis(unittest.TestCase):
         rules['superbench']['rules']['fake'] = false_rules[0]
         with open(test_rule_file_fake, 'w') as f:
             yaml.dump(rules, f)
-        assert (diag1._parse_rules_and_baseline(fake_rules, baseline) is False)
+        self.assertRaises(Exception, diag1._parse_rules_and_baseline, fake_rules, baseline)
         # Positive case
         rules = file_handler.read_rules(test_rule_file)
         assert (diag1._parse_rules_and_baseline(rules, baseline))
@@ -196,7 +196,7 @@ class TestDataDiagnosis(unittest.TestCase):
             json.loads(line)
             assert ('Category' in line)
             assert ('Defective Details' in line)
-            assert ('Index' in line)
+            assert ('index' in line)
         # Test - generate_md_lines
         lines = diag1.generate_md_lines(data_not_accept_df, diag1._sb_rules, 2)
         assert (lines)
@@ -212,7 +212,7 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (data_df.loc['sb-validation-02']['Accept'])
         assert (not data_df.loc['sb-validation-03']['Accept'])
         assert ('Category' in data_df)
-        assert ('Issue_Details' in data_df)
+        assert ('Defective Details' in data_df)
         # case 1: 3 accept, 0 not accept
         data_df_all_accept = diag1.output_all_nodes_results(diag1._raw_data_df, pd.DataFrame())
         assert (len(data_df_all_accept) == 3)
@@ -248,10 +248,19 @@ class TestDataDiagnosis(unittest.TestCase):
         assert (Path(self.output_json_file).is_file())
         with Path(self.output_json_file).open() as f:
             data_not_accept_read_from_json = f.read()
-        expect_result_file = self.parent_path / '../data/diagnosis_summary.jsonl'
+        expect_result_file = self.parent_path / '../data/diagnosis_summary_json.json'
         with Path(expect_result_file).open() as f:
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
+        # Test - output in jsonl
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'jsonl')
+        assert (Path(self.output_jsonl_file).is_file())
+        with Path(self.output_jsonl_file).open() as f:
+            data_not_accept_read_from_jsonl = f.read()
+        expect_result_file = self.parent_path / '../data/diagnosis_summary.jsonl'
+        with Path(expect_result_file).open() as f:
+            expect_result = f.read()
+        assert (data_not_accept_read_from_jsonl == expect_result)
         # Test - output in md
         DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md', round=2)
         assert (Path(self.output_md_file).is_file())
@@ -281,6 +290,38 @@ class TestDataDiagnosis(unittest.TestCase):
         with Path(expected_result_file).open() as f:
             expect_result = f.read()
         assert (data_not_accept_read_from_json == expect_result)
+
+    def test_data_diagnosis_run_without_baseline(self):
+        """Test for the run process of rule-based data diagnosis."""
+        test_raw_data = str(self.parent_path / 'test_results.jsonl')
+        test_rule_file = str(self.parent_path / 'test_rules_without_baseline.yaml')
+        test_baseline_file = None
+
+        # Test - output in excel
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'excel')
+        assert (Path(self.output_excel_file).is_file())
+
+        # Test - output in json
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'json')
+        assert (Path(self.output_json_file).is_file())
+
+        # Test - output in jsonl
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'jsonl')
+        assert (Path(self.output_jsonl_file).is_file())
+
+        # Test - output in md
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'md', round=2)
+        assert (Path(self.output_md_file).is_file())
+
+        # Test - output in html
+        DataDiagnosis().run(test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'html', round=2)
+        assert (Path(self.output_html_file).is_file())
+
+        # Test - output all nodes results
+        DataDiagnosis().run(
+            test_raw_data, test_rule_file, test_baseline_file, str(self.parent_path), 'json', output_all=True
+        )
+        assert (Path(self.output_all_json_file).is_file())
 
     def test_mutli_rules(self):
         """Test multi rules check feature."""
@@ -357,4 +398,94 @@ class TestDataDiagnosis(unittest.TestCase):
             details_row[1] == 'kernel-launch/wall_overhead(B/L: 0.0103 VAL: 0.0050 VAR: -51.27% Rule:lambda x:x<-0.5),'
             + 'mem-bw/D2H_Mem_BW(B/L: 24.3000 VAL: 10.0000 VAR: -58.85% Rule:lambda x:x<-0.5),' +
             'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
+        )
+
+        # Test multi-rule using values of metrics in criteria lambda expression
+        diag1 = DataDiagnosis()
+        # test _run_diagnosis_rules_for_single_node
+        rules = {
+            'superbench': {
+                'rules': {
+                    'rule1': {
+                        'categories':
+                        'NCCL_DIS',
+                        'store':
+                        True,
+                        'metrics': [
+                            'nccl-bw:allreduce-run0/allreduce_1073741824_busbw',
+                            'nccl-bw:allreduce-run1/allreduce_1073741824_busbw',
+                            'nccl-bw:allreduce-run2/allreduce_1073741824_busbw'
+                        ]
+                    },
+                    'rule2': {
+                        'categories': 'NCCL_DIS',
+                        'criteria': 'lambda label:True if min(label["rule1"].values())' + '/' +
+                        'max(label["rule1"].values())<0.95 else False',
+                        'function': 'multi_rules'
+                    }
+                }
+            }
+        }
+
+        baseline = {}
+        data = {
+            'nccl-bw:allreduce-run0/allreduce_1073741824_busbw': [10, 22, 10],
+            'nccl-bw:allreduce-run1/allreduce_1073741824_busbw': [23, 23, np.nan],
+            'nccl-bw:allreduce-run2/allreduce_1073741824_busbw': [22, 22, np.nan]
+        }
+        diag1._raw_data_df = pd.DataFrame(data, index=['sb-validation-04', 'sb-validation-05', 'sb-validation-06'])
+        diag1._benchmark_metrics_dict = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df.columns))
+        diag1._parse_rules_and_baseline(rules, baseline)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-04')
+        assert (details_row)
+        assert ('NCCL_DIS' in details_row[0])
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-05')
+        assert (not details_row)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-06')
+        assert (not details_row)
+
+    def test_failure_check(self):
+        """Test failure test check feature."""
+        diag1 = DataDiagnosis()
+        # test _run_diagnosis_rules_for_single_node
+        rules = {
+            'superbench': {
+                'rules': {
+                    'rule1': {
+                        'categories':
+                        'FailedTest',
+                        'criteria':
+                        'lambda x:x!=0',
+                        'function':
+                        'failure_check',
+                        'metrics': [
+                            'gemm-flops/return_code:0', 'gemm-flops/return_code:1', 'gemm-flops/return_code:2',
+                            'resnet_models/pytorch-resnet152/return_code'
+                        ]
+                    }
+                }
+            }
+        }
+
+        baseline = {}
+
+        data = {
+            'gemm-flops/return_code:0': [0, -1],
+            'gemm-flops/return_code:1': [0, pd.NA],
+            'resnet_models/pytorch-resnet152/return_code': [0, -1]
+        }
+        diag1._raw_data_df = pd.DataFrame(data, index=['sb-validation-04', 'sb-validation-05'])
+        diag1._benchmark_metrics_dict = diag1._get_metrics_by_benchmarks(list(diag1._raw_data_df.columns))
+        diag1._parse_rules_and_baseline(rules, baseline)
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-04')
+        assert (details_row)
+        assert ('FailedTest' in details_row[0])
+        assert (details_row[1] == 'gemm-flops/return_code:2_miss')
+        (details_row, summary_data_row) = diag1._run_diagnosis_rules_for_single_node('sb-validation-05')
+        assert (details_row)
+        assert ('FailedTest' in details_row[0])
+        assert (
+            details_row[1] == 'gemm-flops/return_code:0(VAL: -1.0000 Rule:lambda x:x!=0),' +
+            'gemm-flops/return_code:1_miss,' + 'gemm-flops/return_code:2_miss,' +
+            'resnet_models/pytorch-resnet152/return_code(VAL: -1.0000 Rule:lambda x:x!=0)'
         )

@@ -3,6 +3,12 @@
 
 """SuperBench runner module."""
 
+from superbench.common.utils.lazy_import import LazyImport
 from superbench.runner.runner import SuperBenchRunner
 
-__all__ = ['SuperBenchRunner']
+AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
+
+__all__ = [
+    'AnsibleClient',
+    'SuperBenchRunner',
+]

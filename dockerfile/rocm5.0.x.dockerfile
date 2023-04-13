@@ -1,14 +1,19 @@
-FROM rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
+ARG BASE_IMAGE=rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
+FROM ${BASE_IMAGE}
+
+# 5.1.x base images:
+# rocm5.0   - rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
+# rocm5.0.1 - rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
 
 # OS:
 #   - Ubuntu: 18.04
 #   - OpenMPI: 4.0.5
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 5.0.1
+#   - ROCm: 5.0.x
 #   - RCCL: 2.10.3
 #   - RCCL RDMA SHARP plugins: rocm-rel-5.0
-#   - hipify: 5.0.1
+#   - hipify: 5.0.x
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
@@ -26,19 +31,23 @@ RUN apt-get update && \
     dmidecode \
     git \
     hipify-clang \
+    iproute2 \
     jq \
     libaio-dev \
+    libboost-program-options-dev \
     libcap2 \
+    libnuma-dev \
     libpci-dev \
     libtinfo5 \
     libtool \
     lshw \
     net-tools \
-    libnuma-dev \
     numactl \
     openssh-client \
     openssh-server \
     pciutils \
+    rsync \
+    sudo \
     util-linux \
     vim \
     wget \
@@ -52,7 +61,7 @@ ARG NUM_MAKE_JOBS=
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
 RUN cd /tmp && \
-    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz
 
@@ -63,8 +72,8 @@ RUN mkdir -p /root/.ssh && \
     sed -i "s/[# ]*PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*PermitUserEnvironment no/PermitUserEnvironment yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*Port.*/Port 22/" /etc/ssh/sshd_config && \
-    echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
-    echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
+    echo "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
+    echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
 ENV OFED_VERSION=5.2-2.2.3.0
@@ -88,13 +97,23 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    mkdir -p mlc && \
-    cd mlc && \
-    curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc_v3.9a.tgz && \
-    tar xvf mlc_v3.9a.tgz && \
+    wget -q https://downloadmirror.intel.com/736634/mlc_v3.9a.tgz -O mlc.tgz && \
+    tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
-    cd /tmp && \
-    rm -rf mlc
+    rm -rf ./Linux mlc.tgz
+
+# Install AOCC compiler
+RUN cd /tmp && \
+    wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
+    apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
+    rm -rf aocc-compiler-4.0.0_1_amd64.deb
+
+# Install AMD BLIS
+RUN cd /tmp && \
+    wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
+    tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
+    mv amd-blis /opt/AMD && \
+    rm -rf aocl-blis-linux-aocc-4.0.tar.gz
 
 # Install rccl-rdma-sharp-plugins
 ENV SHARP_VERSION=5.0
@@ -105,14 +124,23 @@ RUN cd /opt/rocm && \
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
     LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
-    SB_HOME="/opt/superbench" \
-    SB_MICRO_PATH="/opt/superbench"
+    SB_HOME=/opt/superbench \
+    SB_MICRO_PATH=/opt/superbench \
+    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=rocm-5.0.1 make -j ${NUM_MAKE_JOBS} -C third_party rocm
+RUN make -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install .[torch,ort]  && \
-    make cppbuild
+RUN python3 -m pip install --upgrade setuptools==65.7 && \
+    python3 -m pip install --no-cache-dir .[amdworker] && \
+    make cppbuild && \
+    make postinstall && \
+    rm -rf .git

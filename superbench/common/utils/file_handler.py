@@ -10,7 +10,7 @@ from datetime import datetime
 import yaml
 from omegaconf import OmegaConf
 
-from superbench.common.utils import logger
+from superbench.common.utils import logger, get_vm_size
 
 
 def rotate_dir(target_dir):
@@ -57,7 +57,7 @@ def create_sb_output_dir(output_dir=None):
 def get_sb_config(config_file):
     """Read SuperBench config yaml.
 
-    Read config file, use default config if None is provided.
+    Read config file, detect Azure SKU and use corresponding config if None is provided.
 
     Args:
         config_file (str): config file path.
@@ -65,8 +65,18 @@ def get_sb_config(config_file):
     Returns:
         OmegaConf: Config object, None if file does not exist.
     """
-    default_config_file = Path(__file__).parent / '../../config/default.yaml'
-    p = Path(config_file) if config_file else default_config_file
+    p = Path(str(config_file))
+    if not config_file:
+        config_path = (Path(__file__).parent / '../../config').resolve()
+        p = config_path / 'default.yaml'
+        vm_size = get_vm_size().lower()
+        if vm_size:
+            logger.info('Detected Azure SKU %s.', vm_size)
+            for config in (config_path / 'azure').glob('**/*'):
+                if config.name.startswith(vm_size):
+                    p = config
+                    break
+        logger.info('No benchmark config provided, using config file %s.', str(p))
     if not p.is_file():
         return None
     with p.open() as fp:

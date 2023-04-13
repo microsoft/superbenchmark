@@ -97,23 +97,25 @@ sb deploy [--docker-image]
           [--host-list]
           [--host-password]
           [--host-username]
+          [--no-image-pull]
           [--output-dir]
           [--private-key]
 ```
 
 #### Optional arguments
 
-| Name                  | Default                 | Description                                                                   |
-|-----------------------|-------------------------|-------------------------------------------------------------------------------|
+| Name                  | Default                 | Description                                                                       |
+|-----------------------|-------------------------|-----------------------------------------------------------------------------------|
 | `--docker-image` `-i` | `superbench/superbench` | Docker image URI, [here](./user-tutorial/container-images.mdx) listed all images. |
-| `--docker-password`   | `None`                  | Docker registry password if authentication is needed.                         |
-| `--docker-username`   | `None`                  | Docker registry username if authentication is needed.                         |
-| `--host-file` `-f`    | `None`                  | Path to Ansible inventory host file.                                          |
-| `--host-list` `-l`    | `None`                  | Comma separated host list.                                                    |
-| `--host-password`     | `None`                  | Host password or key passphase if needed.                                     |
-| `--host-username`     | `None`                  | Host username if needed.                                                      |
-| `--output-dir`        | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified.   |
-| `--private-key`       | `None`                  | Path to private key if needed.                                                |
+| `--docker-password`   | `None`                  | Docker registry password if authentication is needed.                             |
+| `--docker-username`   | `None`                  | Docker registry username if authentication is needed.                             |
+| `--host-file` `-f`    | `None`                  | Path to Ansible inventory host file.                                              |
+| `--host-list` `-l`    | `None`                  | Comma separated host list.                                                        |
+| `--host-password`     | `None`                  | Host password or key passphase if needed.                                         |
+| `--host-username`     | `None`                  | Host username if needed.                                                          |
+| `--no-image-pull`     | `False`                 | Skip pull and use local Docker image.                                             |
+| `--output-dir`        | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified.       |
+| `--private-key`       | `None`                  | Path to private key if needed.                                                    |
 
 #### Global arguments
 
@@ -180,20 +182,20 @@ sb result diagnosis --baseline-file
 
 #### Required arguments
 
-| Name                   | Description            |
-|------------------------|------------------------|
-| `--baseline-file` `-b` | Path to baseline file. |
-| `--data-file` `-d`     | Path to raw data file. |
-| `--rule-file` `-r`     | Path to rule file.     |
+| Name               | Description            |
+|--------------------|------------------------|
+| `--data-file` `-d` | Path to raw data file. |
+| `--rule-file` `-r` | Path to rule file.     |
 
 #### Optional arguments
 
 | Name                    | Default | Description                                                                 |
 |-------------------------|---------|-----------------------------------------------------------------------------|
+| `--baseline-file` `-b` | Path to baseline file. |
 | `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
 | `--output-all`          | N/A     | Output diagnosis results for all nodes.                                     |
 | `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
-| `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'md' or 'html'. Default: excel.     |
+| `--output-file-format`  | `excel` | Format of output file, 'excel', 'json', 'jsonl', 'md' or 'html'. Default: excel.     |
 
 #### Global arguments
 
@@ -208,9 +210,14 @@ Run data diagnosis and output the results in excel format:
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format excel
 ```
 
-Run data diagnosis and output the results in jsonl format:
+Run data diagnosis and output the results in json format:
 ```bash title="SB CLI"
 sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format json
+```
+
+Run data diagnosis and output the results in jsonl format:
+```bash title="SB CLI"
+sb result diagnosis --data-file outputs/results-summary.jsonl --rule-file rule.yaml --baseline-file baseline.json --output-file-format jsonl
 ```
 
 Run data diagnosis and output the results in markdown format with 2 valid decimal places:
@@ -281,6 +288,7 @@ sb run [--config-file]
        [--host-list]
        [--host-password]
        [--host-username]
+       [--no-docker]
        [--output-dir]
        [--private-key]
 ```
@@ -298,6 +306,7 @@ sb run [--config-file]
 | `--host-list` `-l`       | `None`                  | Comma separated host list.                                                  |
 | `--host-password`        | `None`                  | Host password or key passphase if needed.                                   |
 | `--host-username`        | `None`                  | Host username if needed.                                                    |
+| `--no-docker`            | `False`                 | Run on host directly without Docker.                                        |
 | `--output-dir`           | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--private-key`          | `None`                  | Path to private key if needed.                                              |
 
@@ -318,6 +327,12 @@ Run all benchmarks on all managed nodes in `./host.ini` using image `superbench/
 and default benchmarking configuration:
 ```bash title="SB CLI"
 sb run --docker-image superbench/cuda:11.1 --host-file ./host.ini
+```
+
+Run kernel launch benchmarks on host directly without using Docker:
+```bash title="SB CLI"
+sb run --no-docker --host-list localhost --config-override \
+  superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
 ```
 
 ### `sb version`

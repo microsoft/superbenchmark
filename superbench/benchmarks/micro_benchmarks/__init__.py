@@ -9,12 +9,16 @@ from superbench.benchmarks.micro_benchmarks.memory_bw_performance_base import Me
 
 from superbench.benchmarks.micro_benchmarks.computation_communication_overlap import ComputationCommunicationOverlap
 from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchmark
+from superbench.benchmarks.micro_benchmarks.cublaslt_function import CublasLtBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_gemm_flops_performance import CudaGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import CudaMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmark
+from superbench.benchmarks.micro_benchmarks.dist_inference import DistInference
 from superbench.benchmarks.micro_benchmarks.cpu_memory_bw_latency_performance import CpuMemBwLatencyBenchmark
+from superbench.benchmarks.micro_benchmarks.cpu_stream_performance import CpuStreamBenchmark
+from superbench.benchmarks.micro_benchmarks.cpu_hpl_performance import CpuHplBenchmark
 from superbench.benchmarks.micro_benchmarks.gpcnet_performance import GPCNetBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_copy_bw_performance import GpuCopyBwBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_burn_test import GpuBurnBenchmark
@@ -30,17 +34,21 @@ from superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance impor
 
 __all__ = [
     'ComputationCommunicationOverlap',
+    'CpuMemBwLatencyBenchmark',
+    'CpuHplBenchmark',
+    'CpuStreamBenchmark',
     'CublasBenchmark',
+    'CublasLtBenchmark',
     'CudaGemmFlopsBenchmark',
     'CudaMemBwBenchmark',
     'CudaNcclBwBenchmark',
     'CudnnBenchmark',
     'DiskBenchmark',
-    'CpuMemBwLatencyBenchmark',
+    'DistInference',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
-    'GpuCopyBwBenchmark',
     'GpuBurnBenchmark',
+    'GpuCopyBwBenchmark',
     'IBBenchmark',
     'IBLoopbackBenchmark',
     'KernelLaunch',

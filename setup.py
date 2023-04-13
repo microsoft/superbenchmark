@@ -12,9 +12,16 @@ import sys
 import pathlib
 from typing import List, Tuple
 
+import pkg_resources
 from setuptools import setup, find_packages, Command
 
 import superbench
+
+try:
+    pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
+except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
+    print('Try update pip/setuptools versions, for example, python3 -m pip install --upgrade pip setuptools==65.7')
+    raise
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
@@ -41,7 +48,7 @@ class Formatter(Command):
 
     def run(self):
         """Fromat the code using yapf."""
-        errno = os.system('python3 -m yapf --in-place --recursive --exclude .git .')
+        errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
         sys.exit(0 if errno == 0 else 1)
 
 
@@ -69,7 +76,7 @@ class Linter(Command):
         errno = os.system(
             ' && '.join(
                 [
-                    'python3 -m yapf --diff --recursive --exclude .git .',
+                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .',
                     'python3 -m mypy .',
                     'python3 -m flake8',
                 ]
@@ -132,10 +139,19 @@ setup(
     keywords='benchmark, AI systems',
     packages=find_packages(exclude=['tests']),
     python_requires='>=3.6, <4',
+    use_scm_version={
+        'local_scheme': 'node-and-date',
+        'version_scheme': lambda _: superbench.__version__,
+        'fallback_version': f'{superbench.__version__}+unknown',
+    },
+    setup_requires=[
+        'setuptools_scm',
+    ],
     install_requires=[
         'ansible_base>=2.10.9;os_name=="posix"',
-        'ansible_runner>=2.0.0rc1',
-        'colorlog>=4.7.2',
+        'ansible_runner>=2.0.0rc1, <2.3.2',
+        'colorlog>=6.7.0',
+        'importlib_metadata',
         'jinja2>=2.10.1',
         'joblib>=1.0.1',
         'jsonlines>=2.0.0',
@@ -143,44 +159,60 @@ setup(
         'markdown>=3.3.0',
         'matplotlib>=3.0.0',
         'natsort>=7.1.1',
+        'networkx>=2.5',
         'numpy>=1.19.2',
-        'openpyxl>=3.0.7',
         'omegaconf==2.0.6',
+        'openpyxl>=3.0.7',
         'pandas>=1.1.5',
+        'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
+        'requests>=2.27.1',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
-        'types-Markdown>=3.3.0'
+        'urllib3>=1.26.9',
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
     ],
-    extras_require={
-        'dev': ['pre-commit>=2.10.0'],
-        'test': [
-            'flake8-docstrings>=1.5.0',
-            'flake8-quotes>=3.2.0',
-            'flake8>=3.8.4',
-            'mypy>=0.800',
-            'pydocstyle>=5.1.1',
-            'pytest-cov>=2.11.1',
-            'pytest-subtests>=0.4.0',
-            'pytest>=6.2.2',
-            'types-pyyaml',
-            'vcrpy>=4.1.1',
-            'yapf==0.31.0',
-        ],
-        'nvidia': ['py3nvml>=0.2.6'],
-        'ort': [
-            'onnx>=1.10.2',
-            'onnxruntime-gpu==1.10.0',
-        ],
-        'torch': [
-            'torch>=1.7.0a0',
-            'torchvision>=0.8.0a0',
-            'transformers>=4.3.3',
-        ],
-    },
+    extras_require=(
+        lambda x: {
+            **x,
+            'develop': x['dev'] + x['test'],
+            'cpuworker': x['torch'],
+            'amdworker': x['torch'] + x['ort'],
+            'nvworker': x['torch'] + x['ort'] + x['nvidia'],
+        }
+    )(
+        {
+            'dev': ['pre-commit>=2.10.0'],
+            'test': [
+                'flake8-docstrings>=1.5.0',
+                'flake8-quotes>=3.2.0',
+                'flake8>=3.8.4, <6.0.0',
+                'mypy>=0.800',
+                'pydocstyle>=5.1.1',
+                'pytest-cov>=2.11.1',
+                'pytest-subtests>=0.4.0',
+                'pytest>=6.2.2',
+                'types-markdown',
+                'types-pkg_resources',
+                'types-pyyaml',
+                'typing-extensions>=3.10',
+                'vcrpy>=4.1.1',
+                'yapf==0.31.0',
+            ],
+            'torch': [
+                'torch>=1.7.0a0',
+                'torchvision>=0.8.0a0',
+                'transformers>=4.3.3, <4.23.0',
+            ],
+            'ort': [
+                'onnx>=1.10.2',
+                'onnxruntime-gpu==1.10.0',
+            ],
+            'nvidia': ['py3nvml>=0.2.6'],
+        }
+    ),
     include_package_data=True,
     entry_points={
         'console_scripts': [

@@ -65,6 +65,29 @@ class TestRuleOp(unittest.TestCase):
             self.assertRaises(Exception, RuleOp.variance, data_row, rule, summary_data_row, details, categories)
             self.assertRaises(Exception, RuleOp.value, data_row, rule, summary_data_row, details, categories)
 
+        # Negative case, if baseline is 0 or None in 'variance' function, raise error
+        false_rule_and_baselines = [
+            {
+                'categories': 'KernelLaunch',
+                'criteria': 'lambda x:x>0.5',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:0': 0,
+                }
+            },
+            {
+                'categories': 'KernelLaunch',
+                'criteria': 'lambda x:x>0.5',
+                'function': 'variance',
+                'metrics': {
+                    'kernel-launch/event_overhead:1': None,
+                }
+            },
+        ]
+
+        for rule in false_rule_and_baselines:
+            self.assertRaises(ValueError, RuleOp.variance, data_row, rule, summary_data_row, details, categories)
+
         # Positive case
         true_baselines = [
             {
@@ -132,12 +155,12 @@ class TestRuleOp(unittest.TestCase):
         ]
         label = {}
         for rule in false_baselines:
-            self.assertRaises(Exception, RuleOp.multi_rules, rule, details, categories, label)
+            self.assertRaises(KeyError, RuleOp.multi_rules, false_baselines[0], details, categories, label)
 
         true_baselines = [
             {
                 'name': 'rule1',
-                'categories': 'CNN',
+                'categories': 'TMP',
                 'criteria': 'lambda x:x<-0.5',
                 'store': True,
                 'function': 'variance',
@@ -146,7 +169,7 @@ class TestRuleOp(unittest.TestCase):
                 }
             }, {
                 'name': 'rule2',
-                'categories': 'CNN',
+                'categories': 'TMP',
                 'criteria': 'lambda x:x<-0.5',
                 'store': True,
                 'function': 'variance',
@@ -155,7 +178,7 @@ class TestRuleOp(unittest.TestCase):
                 }
             }, {
                 'name': 'rule3',
-                'categories': 'KernelLaunch',
+                'categories': 'CNN',
                 'criteria': 'lambda label:True if label["rule1"]+label["rule2"]>=2 else False',
                 'store': False,
                 'function': 'multi_rules'
@@ -187,6 +210,7 @@ class TestRuleOp(unittest.TestCase):
         rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[2]['function']))
         violated_metric_num = rule_op(true_baselines[2], details, categories, label)
         assert (violated_metric_num)
+        assert ('TMP' not in categories)
         assert ('CNN' in categories)
         assert (
             details == [
@@ -197,3 +221,108 @@ class TestRuleOp(unittest.TestCase):
                 'rule3:lambda label:True if label["rule1"]+label["rule2"]>=2 else False'
             ]
         )
+
+    def test_failure_check_op(self):
+        """Test for failure_check op."""
+        details = []
+        categories = set()
+        data_row = pd.Series()
+        summary_data_row = pd.Series(dtype=float)
+
+        # invalid rule
+        false_baselines = [{'categories': 'FailedTest', 'criteria': 'lambda x:x!=0', 'function': 'failure_check'}]
+        label = {}
+        for rule in false_baselines:
+            self.assertRaises(
+                Exception, RuleOp.failure_check, data_row, rule, summary_data_row, details, categories, rule
+            )
+
+        true_baselines = [
+            {
+                'name': 'rule1',
+                'categories': 'FailedTest',
+                'criteria': 'lambda x:x!=0',
+                'function': 'failure_check',
+                'metrics': {
+                    'gemm-flops/return_code:0': -1,
+                    'gemm-flops/return_code:1': -1,
+                    'resnet_models/pytorch-resnet152/return_code': -1,
+                }
+            }, {
+                'name': 'rule2',
+                'categories': 'FailedTest',
+                'criteria': 'lambda x:x!=0',
+                'function': 'failure_check',
+                'metrics': {
+                    'gemm-flops/return_code:0': -1,
+                    'gemm-flops/return_code:1': -1,
+                    'gemm-flops/return_code:2': -1,
+                    'resnet_models/pytorch-resnet152/return_code': -1,
+                }
+            }
+        ]
+        # positive case
+        data = {
+            'gemm-flops/return_code:0': 0,
+            'gemm-flops/return_code:1': 0,
+            'resnet_models/pytorch-resnet152/return_code': 0,
+        }
+        data_row = pd.Series(data)
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
+        label[true_baselines[0]['name']
+              ] = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, true_baselines[0])
+        assert (label[true_baselines[0]['name']] == 0)
+
+        # negative cases
+        # 1. return_code != 0
+        data = {
+            'gemm-flops/return_code:0': 0,
+            'gemm-flops/return_code:1': -1,
+            'resnet_models/pytorch-resnet152/return_code': -1,
+        }
+        details = []
+        categories = set()
+        data_row = pd.Series(data)
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
+        label[true_baselines[0]['name']
+              ] = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, true_baselines[0])
+        assert (label[true_baselines[0]['name']] != 0)
+        assert ({'FailedTest'} == categories)
+        assert (
+            details == [
+                'gemm-flops/return_code:1(VAL: -1.0000 Rule:lambda x:x!=0)',
+                'resnet_models/pytorch-resnet152/return_code(VAL: -1.0000 Rule:lambda x:x!=0)',
+            ]
+        )
+
+        # 2. metric not in raw_data or the value is none, miss test
+        data = {
+            'gemm-flops/return_code:0': 0,
+            'gemm-flops/return_code:1': 0,
+            'resnet_models/pytorch-resnet152/return_code': 0,
+        }
+        details = []
+        categories = set()
+        data_row = pd.Series(data)
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
+        label[true_baselines[1]['name']
+              ] = rule_op(data_row, true_baselines[1], summary_data_row, details, categories, true_baselines[1])
+        assert (label[true_baselines[1]['name']] != 0)
+        assert ({'FailedTest'} == categories)
+        assert (details == ['gemm-flops/return_code:2_miss'])
+
+        # 3. metric_regex written in rules is not matched by any metric, miss test
+        data = {
+            'gemm-flops/return_code:0': 0,
+            'gemm-flops/return_code:1': 0,
+            'resnet_models/pytorch-resnet152/return_code': 0,
+        }
+        details = []
+        categories = set()
+        data_row = pd.Series(data)
+        rule_op = RuleOp.get_rule_func(DiagnosisRuleType(true_baselines[0]['function']))
+        label[true_baselines[1]['name']
+              ] = rule_op(data_row, true_baselines[0], summary_data_row, details, categories, true_baselines[1])
+        assert (label[true_baselines[1]['name']] != 0)
+        assert ({'FailedTest'} == categories)
+        assert (details == ['gemm-flops/return_code:2_miss'])

@@ -6,8 +6,9 @@
 import io
 import contextlib
 from functools import wraps
-from knack.testsdk import ScenarioTest, StringCheck, NoneCheck, JMESPathCheck
+from knack.testsdk import ScenarioTest, StringContainCheck, NoneCheck, JMESPathCheck
 from pathlib import Path
+from unittest import mock
 
 import superbench
 from superbench.cli import SuperBenchCLI
@@ -51,11 +52,19 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
 
     def test_sb_version(self):
         """Test sb version."""
-        self.cmd('sb version', checks=[StringCheck(superbench.__version__)])
+        self.cmd('sb version', checks=[StringContainCheck(superbench.__version__)])
 
-    def test_sb_deploy(self):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_deploy(self, mocked_failure_count):
         """Test sb deploy."""
+        mocked_failure_count.return_value = 0
         self.cmd('sb deploy --host-list localhost', checks=[NoneCheck()])
+
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_deploy_skippull(self, mocked_failure_count):
+        """Test sb deploy without docker pull."""
+        mocked_failure_count.return_value = 0
+        self.cmd('sb deploy --host-list localhost --no-image-pull', checks=[NoneCheck()])
 
     def test_sb_deploy_no_host(self):
         """Test sb deploy, no host_file or host_list provided, should fail."""
@@ -65,9 +74,17 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         """Test sb exec."""
         self.cmd('sb exec --config-override superbench.enable=["none"]', checks=[NoneCheck()])
 
-    def test_sb_run(self):
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_run(self, mocked_failure_count):
         """Test sb run."""
+        mocked_failure_count.return_value = 0
         self.cmd('sb run --host-list localhost --config-override superbench.enable=none', checks=[NoneCheck()])
+
+    @mock.patch('superbench.runner.SuperBenchRunner.get_failure_count')
+    def test_sb_run_skipdocker(self, mocked_failure_count):
+        """Test sb run without docker."""
+        mocked_failure_count.return_value = 0
+        self.cmd('sb run -l localhost -C superbench.enable=none --no-docker', checks=[NoneCheck()])
 
     def test_sb_run_no_docker_auth(self):
         """Test sb run, only --docker-username argument, should fail."""
@@ -113,6 +130,11 @@ class SuperBenchCLIScenarioTest(ScenarioTest):
         self.cmd(
             'sb result diagnosis -d {dir}/test_results.jsonl -r {dir}/test_rules.yaml -b {dir}/test_baseline.json'.
             format(dir=test_analyzer_dir) + ' --output-dir outputs/test-diagnosis/ --output-all'
+        )
+        self.cmd(
+            'sb result diagnosis -d {dir}/test_results.jsonl -r {dir}/test_rules_without_baseline.yaml'.
+            format(dir=test_analyzer_dir) +
+            ' --output-dir outputs/test-diagnosis/ --output-all --output-file-format json'
         )
         # test invalid output format
         self.cmd(

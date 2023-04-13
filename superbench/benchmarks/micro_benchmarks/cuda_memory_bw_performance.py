@@ -33,6 +33,13 @@ class CudaMemBwBenchmark(MemBwBenchmark):
             default=False,
             help='Enable shmoo mode for bandwidthtest.',
         )
+        self._parser.add_argument(
+            '--sleep',
+            type=int,
+            default=0,
+            required=False,
+            help='The seconds will be sleeped between each bandwidthtest command.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -52,6 +59,8 @@ class CudaMemBwBenchmark(MemBwBenchmark):
             if self._args.memory == 'pinned':
                 command += ' memory=pinned'
             command += ' --csv'
+            if self._args.sleep != 0:
+                command += f' && sleep {self._args.sleep}'
             self._commands.append(command)
 
         return True

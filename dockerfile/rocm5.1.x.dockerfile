@@ -1,14 +1,18 @@
-FROM rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
+ARG BASE_IMAGE=rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
+FROM ${BASE_IMAGE}
+
+# 5.1.x base images:
+# rocm5.1.1 - rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
+# rocm5.1.3 - rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
 
 # OS:
 #   - Ubuntu: 20.04
 #   - OpenMPI: 4.0.5
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 5.1.1
-#   - RCCL: 2.11.4
-#   - RCCL RDMA SHARP plugins: rocm-rel-5.1
-#   - hipify: 5.1.1
+#   - ROCm: 5.1.x
+#   - RCCL: 2.12.10+6707a27
+#   - hipify: 5.1.x
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
@@ -26,20 +30,24 @@ RUN apt-get update && \
     dmidecode \
     git \
     hipify-clang \
+    iproute2 \
     jq \
     libaio-dev \
+    libboost-program-options-dev \
     libcap2 \
+    libnuma-dev \
     libpci-dev \
+    libssl-dev \
     libtinfo5 \
     libtool \
     lshw \
     net-tools \
-    libnuma-dev \
-    libssl-dev \
     numactl \
     openssh-client \
     openssh-server \
     pciutils \
+    rsync \
+    sudo \
     util-linux \
     vim \
     wget \
@@ -52,20 +60,19 @@ ARG NUM_MAKE_JOBS=
 
 # Upgrade CMake from 3.16 to 3.23
 ENV CMAKE_VERSION=3.23.1
-ENV CMAKE_REPO="https://github.com/Kitware/CMake/releases/download/v3.23.1/"
-RUN wget -nv ${CMAKE_REPO}/cmake-${CMAKE_VERSION}.tar.gz && \
-    tar -xvf cmake-${CMAKE_VERSION}.tar.gz && \
+RUN cd /tmp && \
+    wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
+    tar xzf cmake-${CMAKE_VERSION}.tar.gz && \
     cd cmake-${CMAKE_VERSION} && \
-    ./bootstrap --prefix=/usr --no-system-curl --parallel=16  && \
-    make -j16 && \
-    sudo make install && \
-    cd .. && \
-    rm -rf cmake-${CMAKE_VERSION}.tar.gz cmake-${CMAKE_VERSION}
+    ./bootstrap --prefix=/usr --no-system-curl --parallel=16 && \
+    make -j ${NUM_MAKE_JOBS} && \
+    make install && \
+    rm -rf /tmp/cmake-${CMAKE_VERSION}*
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
 RUN cd /tmp && \
-    wget https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz
 
@@ -76,8 +83,8 @@ RUN mkdir -p /root/.ssh && \
     sed -i "s/[# ]*PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*PermitUserEnvironment no/PermitUserEnvironment yes/" /etc/ssh/sshd_config && \
     sed -i "s/[# ]*Port.*/Port 22/" /etc/ssh/sshd_config && \
-    echo -e "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
-    echo -e "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
+    echo "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
+    echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
 ENV OFED_VERSION=5.2-2.2.3.0
@@ -102,40 +109,42 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    mkdir -p mlc && \
-    cd mlc && \
-    curl https://www.intel.com/content/dam/develop/external/us/en/documents/mlc_v3.9a.tgz -o mlc_v3.9a.tgz && \
-    tar xvf mlc_v3.9a.tgz && \
+    wget -q https://downloadmirror.intel.com/736634/mlc_v3.9a.tgz -O mlc.tgz && \
+    tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
-    cd /tmp && \
-    rm -rf mlc
+    rm -rf ./Linux mlc.tgz
 
-# Install rccl with commitid 6707a27
+# Install AOCC compiler
 RUN cd /tmp && \
-    git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
-    cd rccl && git checkout 6707a27 && \
-    mkdir build && cd build && \
-    CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
-    make && make install && \
-    cd /tmp && \
-    rm -rf rccl
+    wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
+    apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
+    rm -rf aocc-compiler-4.0.0_1_amd64.deb
 
-# Install rccl-rdma-sharp-plugins with commitid 34611d3
-RUN cd /opt/rocm && \
-    git clone https://github.com/ROCmSoftwarePlatform/rccl-rdma-sharp-plugins.git && \
-    cd rccl-rdma-sharp-plugins && git checkout 34611d3 && \
-    ./autogen.sh && ./configure --prefix=/usr/local && make -j ${NUM_MAKE_JOBS} && make install
+# Install AMD BLIS
+RUN cd /tmp && \
+    wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
+    tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
+    mv amd-blis /opt/AMD && \
+    rm -rf aocl-blis-linux-aocc-4.0.tar.gz
 
 ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
     LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
-    SB_HOME="/opt/superbench" \
-    SB_MICRO_PATH="/opt/superbench"
+    SB_HOME=/opt/superbench \
+    SB_MICRO_PATH=/opt/superbench \
+    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN ROCM_VERSION=release/rocm-rel-5.1 make -j ${NUM_MAKE_JOBS} -C third_party rocm
+RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm
 
 ADD . .
-RUN python3 -m pip install .[torch,ort]  && \
-    make cppbuild
+RUN python3 -m pip install --no-cache-dir .[amdworker] && \
+    make cppbuild && \
+    make postinstall && \
+    rm -rf .git

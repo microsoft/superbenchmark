@@ -1,5 +1,5 @@
 # SuperBench Config
-version: v0.5
+version: v0.7
 superbench:
   enable: null
   monitor:
@@ -22,6 +22,13 @@ superbench:
           node_num: 1
       frameworks:
         - pytorch
+    dist_inference_pytorch_mode: &dist_inference_pytorch_mode
+      modes:
+        - name: torch.distributed
+          proc_num: 8
+          node_num: 1
+          env:
+            NCCL_ASYNC_ERROR_HANDLING: '0'
     common_model_config: &common_model_config
       duration: 0
       num_warmup: 64
@@ -165,11 +172,18 @@ superbench:
       <<: *default_pytorch_mode
     computation-communication-overlap:
       <<: *default_pytorch_mode
+    dist-inference:
+      <<: *dist_inference_pytorch_mode
     ib-traffic:
       enable: false
       modes:
         - name: mpi
-          proc_num: 1
+          proc_num: 8
+      parameters:
+        msg_size: 8388608
+        ib_dev: mlx5_$LOCAL_RANK
+        gpu_dev: $LOCAL_RANK
+        numa_dev: $((LOCAL_RANK/2))
     gpcnet-network-test:
       enable: false
       modes:

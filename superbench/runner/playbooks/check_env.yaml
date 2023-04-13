@@ -4,15 +4,17 @@
   max_fail_percentage: 0
   vars:
     container: sb-workspace
+    skip: '{{ no_docker | default(false) }}'
   tasks:
     - name: Checking container status
       shell: docker inspect --format={{ '{{.State.Running}}' }} {{ container }}
       register: result
       ignore_errors: true
       become: yes
+      when: not skip
     - fail:
         msg: Container {{ container }} is not running.
-      when: result is failed or result.stdout != "true"
+      when: (not skip) and (result is failed or result.stdout != "true")
 
 - name: Runtime Environment Update
   hosts: all
@@ -20,8 +22,11 @@
   vars:
     workspace: '{{ ansible_user_dir }}/sb-workspace'
     container: sb-workspace
+    skip_docker: '{{ no_docker | default(false) }}'
     sb_nodes: '{{ hostvars.values() | map(attribute="ansible_hostname") | sort }}'
     sb_env: |
+      # sb env
+      SB_WORKSPACE={{ workspace if skip_docker else '/root' }}
       # pytorch env
       NNODES={{ sb_nodes | length }}
       NODE_RANK={{ lookup('ansible.utils.index_of', sb_nodes, 'eq', ansible_hostname) }}
@@ -31,6 +36,11 @@
       # config env
       {{ env | default('') }}
   tasks:
+    - name: Ensure Workspace
+      file:
+        path: '{{ workspace }}'
+        state: directory
+        mode: 0755
     - name: Updating Config
       copy:
         src: '{{ output_dir }}/sb.config.yaml'
@@ -46,9 +56,16 @@
         - '{{ workspace }}/sb.env'
         - /tmp/sb.env
       become: yes
-    - name: Updating Hostfile
+    - name: Updating Hostfile to Remote
       copy:
         content: "{{ sb_nodes | join('\n') }}\n"
         dest: '{{ workspace }}/hostfile'
         mode: 0644
       become: yes
+    - name: Generating Hostfile to Local
+      delegate_to: localhost
+      run_once: true
+      copy:
+        content: "{{ sb_nodes | join('\n') }}\n"
+        dest: '{{ output_dir }}/hostfile'
+        mode: 0644

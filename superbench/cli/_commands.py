@@ -43,6 +43,8 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             ac.argument('docker_image', options_list=('--docker-image', '-i'), type=str, help='Docker image URI.')
             ac.argument('docker_username', type=str, help='Docker registry username if authentication is needed.')
             ac.argument('docker_password', type=str, help='Docker registry password if authentication is needed.')
+            ac.argument('no_docker', action='store_true', help='Run on host directly without Docker.')
+            ac.argument('no_image_pull', action='store_true', help='Skip pull and use local Docker image.')
             ac.argument(
                 'host_file', options_list=('--host-file', '-f'), type=str, help='Path to Ansible inventory host file.'
             )

@@ -58,6 +58,18 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 |--------------------------------|-----------|--------------------------------|
 | pytorch-matmul/nosharding_time | time (ms) | Time of pure matmul operation. |
 
+### `cublaslt-gemm`
+
+#### Introduction
+
+Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul).
+
+#### Metrics
+
+| Name                                                     | Unit           | Description                     |
+|----------------------------------------------------------|----------------|---------------------------------|
+| cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
+
 ### `cublas-function`
 
 #### Introduction
@@ -74,9 +86,11 @@ The supported functions for cuBLAS are as follows:
 
 #### Metrics
 
-| Name                                                     | Unit      | Description                                                       |
-|----------------------------------------------------------|-----------|-------------------------------------------------------------------|
-| cublas-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cublas function with the parameters. |
+| Name                                                              | Unit      | Description                                                                                                                                  |
+|-------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| cublas-function/name\_${function_name}\_${parameters}_time        | time (us) | The mean time to execute the cublas function with the parameters.                                                                            |
+| cublas-function/name\_${function_name}\_${parameters}_correctness |           | Whether the calculation results of executing the cublas function with the parameters pass the correctness check if enable correctness check. |
+| cublas-function/name\_${function_name}\_${parameters}_error       |           | The error ratio of the calculation results of executing the cublas function with the parameters if enable correctness check.                 |
 
 ### `cudnn-function`
 
@@ -91,9 +105,9 @@ The supported functions for cuDNN are as follows:
 
 #### Metrics
 
-| Name                                                    | Unit      | Description                                                      |
-|---------------------------------------------------------|-----------|------------------------------------------------------------------|
-| cudnn-function/name_${function_name}_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
+| Name                                                      | Unit      | Description                                                      |
+|-----------------------------------------------------------|-----------|------------------------------------------------------------------|
+| cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
 ### `tensorrt-inference`
 
@@ -137,10 +151,10 @@ The supported percentiles are 50, 90, 95, 99, and 99.9.
 
 #### Metrics
 
-| Name                                                    | Unit      | Description                                                                 |
-|---------------------------------------------------------|-----------|-----------------------------------------------------------------------------|
-| ort-inference/{precision}_{model}_time                  | time (ms) | The mean latency to execute one batch of inference.                         |
-| ort-inference/{precision}_{model}_time_{percentile}     | time (ms) | The {percentile}th percentile latency to execute one batch of inference.    |
+| Name                                                | Unit      | Description                                                              |
+|-----------------------------------------------------|-----------|--------------------------------------------------------------------------|
+| ort-inference/{precision}_{model}_time              | time (ms) | The mean latency to execute one batch of inference.                      |
+| ort-inference/{precision}_{model}_time_{percentile} | time (ms) | The {percentile}th percentile latency to execute one batch of inference. |
 
 ### `gpu-burn`
 
@@ -151,11 +165,43 @@ Supports the use of double unit types and the use of tensor cores.
 
 #### Metrics
 
-| Name                     | Unit       | Description                                                                         |
-|--------------------------|------------|-------------------------------------------------------------------------------------|
-| gpu-burn/time            | time (s)   | The runtime for gpu-burn test.                                                      |
-| gpu-burn/gpu_[0-9]_pass  | yes/no  	  | The result of the gpu-burn test for each GPU (1: yes, 0: no).                       |
-| gpu-burn/abort           | yes/no  	  | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no).  |
+| Name                    | Unit     | Description                                                                        |
+|-------------------------|----------|------------------------------------------------------------------------------------|
+| gpu-burn/time           | time (s) | The runtime for gpu-burn test.                                                     |
+| gpu-burn/gpu_[0-9]_pass | yes/no   | The result of the gpu-burn test for each GPU (1: yes, 0: no).                      |
+| gpu-burn/abort          | yes/no   | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no). |
+
+### `cpu-hpl`
+
+#### Introduction
+
+HPL or High Performance Computing Linpack evaluates compute bandwidth by solving dense linear systems in double precision arethmetic.
+Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computers](https://netlib.org/benchmark/hpl/)
+
+#### Metrics
+
+| Name                | Unit               | Description                                                                |
+|---------------------|--------------------|----------------------------------------------------------------------------|
+| cpu-hpl/tests_pass  |                    | HPL completed running and correctness test has passed (1: pass, 0: fail).  |
+| cpu-hpl/throughput  | bandwidth (GFlops) | Compute bandwidth.                                                         |
+| cpu-hpl/time        | time (s)           | Time elapsed during HPL run.                                               |
+
+### `cpu-stream`
+
+#### Introduction
+
+Measure of memory bandwidth and computation rate for simple vector kernels.
+performed by [University of Virginia STREAM benchmark](https://www.cs.virginia.edu/stream/ref.html).
+
+#### Metrics
+
+| Name                                                     | Unit             | Description                                                    |
+|----------------------------------------------------------|------------------|----------------------------------------------------------------|
+| cpu-stream/threads                                       |                  | Number of threads used for the test. Determined by core count. |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_throughput | bandwidth (MB/s) | Memory throughput of designated kerel operation.               |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_avg   | time (s)         | Average elapsed times over all iterations.                     |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_min   | time (s)         | Minimum elapsed times over all iterations.                     |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_max   | time (s)         | Maximum elapsed times over all iterations.                     |
 
 ## Communication Benchmarks
 
@@ -220,20 +266,26 @@ Measure the InfiniBand loopback verbs bandwidth, performed by
 
 #### Metrics
 
-| Name                                        | Unit             | Description                                                  |
-|---------------------------------------------|------------------|--------------------------------------------------------------|
-| ib-loopback/ib_write_${msg_size}_ib[0-9]_bw | bandwidth (GB/s) | InfiniBand loopback write bandwidth with given message size. |
-| ib-loopback/ib_read_${msg_size}_ib[0-9]_bw  | bandwidth (GB/s) | InfiniBand loopback read bandwidth with given message size.  |
-| ib-loopback/ib_send_${msg_size}_ib[0-9]_bw  | bandwidth (GB/s) | InfiniBand loopback send bandwidth with given message size.  |
+| Name                                | Unit             | Description                                                  |
+|-------------------------------------|------------------|--------------------------------------------------------------|
+| ib-loopback/ib_write_bw_${msg_size} | bandwidth (GB/s) | InfiniBand loopback write bandwidth with given message size. |
+| ib-loopback/ib_read_bw_${msg_size}  | bandwidth (GB/s) | InfiniBand loopback read bandwidth with given message size.  |
+| ib-loopback/ib_send_bw_${msg_size}  | bandwidth (GB/s) | InfiniBand loopback send bandwidth with given message size.  |
 
 ### `nccl-bw` / `rccl-bw`
 
 #### Introduction
 
-Measure the performance of NCCL/RCCL operations,
+Measure the performance of NCCL/RCCL operations under multi nodes' traffic pattern,
 performed by [nccl-tests](https://github.com/NVIDIA/nccl-tests/tree/44df0bf010dcc95e840ca0fb7466c67cff3f1f0f)
 or [rccl-tests](https://github.com/ROCmSoftwarePlatform/rccl-tests/tree/dc1ad4853d7ec738387d42a75a58a98d7af00c7b).
 Support the following operations currently: allreduce, allgather, broadcast, reduce, reducescatter, alltoall.
+
+Support the following traffic patterns:
+* `all-nodes`, validate the NCCL/RCCL performance across all VM nodes simultaneously.
+* `pair-wise`, validate the NCCL/RCCL performance across VM pairs with all possible combinations in parallel.
+* `k-batch`, validate the NCCL/RCCL performance across VM groups with a specified batch scale.
+* `topo-aware`, validate the NCCL/RCCL performance across VM pairs with different distances/hops as a quick test.
 
 #### Metrics
 
@@ -245,6 +297,10 @@ Support the following operations currently: allreduce, allgather, broadcast, red
 | rccl-bw/${operation}_${msg_size}_time  | time (us)        | RCCL operation lantency with given message size.            |
 | rccl-bw/${operation}_${msg_size}_algbw | bandwidth (GB/s) | RCCL operation algorithm bandwidth with given message size. |
 | rccl-bw/${operation}_${msg_size}_busbw | bandwidth (GB/s) | RCCL operation bus bandwidth with given message size.       |
+
+If mpi mode is enable and traffic pattern is specified, the metrics pattern will change to `nccl-bw/${operation}_${serial_index)_${parallel_index):${msg_size}_time`
+- `serial_index` represents the serial index of the host group in serial.
+- `parallel_index` represents the parallel index of the host list in parallel.
 
 ### `tcp-connectivity`
 
@@ -302,12 +358,23 @@ Measure the InfiniBand performance under multi nodes' traffic pattern.
 The traffic pattern is defined in a config file, which is pre-defined for one-to-many, many-to-one and all-to-all patterns.
 Each row in the config is one round, and all pairs of nodes in a row run ib command simultaneously.
 
+Besides the above three patterns, ib-traffic also supports topology-aware traffic pattern. To run ib-traffic with topology-aware
+pattern, the user needs to specify 3 required (and 2 optional) parameters in YAML config file:
+   - --pattern	&emsp;**topo-aware**
+   - --ibstat	&emsp;**path to ibstat output**
+   - --ibnetdiscover	&emsp;**path to ibnetdiscover output**
+   - --min_dist	&emsp;**minimum distance of VM pairs (optional, default 2)**
+   - --max_dist	&emsp;**maximum distance of VM pairs (optional, default 6)**
+
+Each row in the config file has all VM pairs with a fixed distance (#hops). That's by default, 1st, 2nd, 3rd row has all VM pairs
+with topology distance of 2, 4, 6, respectively.
+
 #### Metrics
 
-| Metrics                                                       | Unit             | Description                                                                                                                                                                                                                         |
-|---------------------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ib-traffic/${command}_${line}_${pair}_${server}_${client}_bw  | bandwidth (GB/s) | The max bandwidth of ib command (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client  |
-| ib-traffic/${command}_${line}_${pair}_${server}_${client}_lat | time (us)        | The max latency of ib command (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client |
+| Metrics                                                          | Unit             | Description                                                                                                                                                                                                                        |
+|------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ib-traffic/ib\_write\_bw\_${line}\_${pair}:${server}\_${client}  | bandwidth (GB/s) | The max bandwidth of perftest (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client.  |
+| ib-traffic/ib\_write\_lat\_${line}\_${pair}:${server}\_${client} | time (us)        | The max latency of perftest (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client. |
 
 
 ## Computation-communication Benchmarks
@@ -341,6 +408,19 @@ Test the performance of large scale matmul operation with multiple GPUs:
 |----------------------------------------|-----------|------------------------------------------|
 | pytorch-sharding-matmul/allreduce_time | time (ms) | Time of sharding matmul using allreduce. |
 | pytorch-sharding-matmul/allgather_time | time (ms) | Time of sharding matmul using allgather. |
+
+### `dist-inference`
+
+#### Introduction
+
+Test the performance of distributed model inference.
+
+#### Metrics
+
+| Name                                            | Unit      | Description                                           |
+|-------------------------------------------------|-----------|-------------------------------------------------------|
+| pytorch-dist-inference/step_times               | time (ms) | Average time of model inference runs.                 |
+| pytorch-dist-inference/step_times_${percentile} | time (ms) | Tail (50,90,95,99,99.9) time of model inference runs. |
 
 ## Storage Benchmarks
 

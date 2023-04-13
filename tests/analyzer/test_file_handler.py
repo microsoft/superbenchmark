@@ -36,16 +36,13 @@ class TestFileHandler(unittest.TestCase):
         # Test - read_raw_data
         raw_data_df = file_handler.read_raw_data(test_raw_data)
         assert (not raw_data_df.empty)
-        raw_data_df = file_handler.read_raw_data(test_raw_data_fake)
-        assert (raw_data_df.empty)
+        self.assertRaises(FileNotFoundError, file_handler.read_raw_data, test_raw_data_fake)
         # Test - read rules
-        rules = file_handler.read_rules(test_rule_file_fake)
-        assert (not rules)
+        self.assertRaises(FileNotFoundError, file_handler.read_rules, test_rule_file_fake)
         rules = file_handler.read_rules(test_rule_file)
         assert (rules)
         # Test - read baseline
-        baseline = file_handler.read_baseline(test_aseline_file_fake)
-        assert (not baseline)
+        self.assertRaises(FileNotFoundError, file_handler.read_baseline, test_aseline_file_fake)
         baseline = file_handler.read_baseline(test_baseline_file)
         assert (baseline)
         # Test - generate_md_table
