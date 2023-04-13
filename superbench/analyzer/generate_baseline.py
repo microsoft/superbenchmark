@@ -48,7 +48,8 @@ class GenerateBaseline(DataDiagnosis):
         Returns:
             tuple: the baseline of the metric, normal data of the metric
         """
-        if single_metric_with_baseline['metrics'][metric] != -1:
+        if single_metric_with_baseline['metrics'][metric] != None and single_metric_with_baseline['metrics'][metric
+                                                                                                             ] != -1:
             return single_metric_with_baseline['metrics'][metric]
         tmp_single_metric_with_baseline = deepcopy(single_metric_with_baseline)
         tmp_single_metric_with_baseline['metrics'] = {}

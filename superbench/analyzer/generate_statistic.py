@@ -143,6 +143,9 @@ class GenerateStatistics(GenerateBaseline):
                         (aggregated_df[metric], single_metric_rule, metric, rule_op) for metric in metrics
                     )
                     for index, out in enumerate(outputs):
+                        if not out:
+                            logger.error('Analyzer: filter healthy nodese failed')
+                            return
                         aggregated_df[metrics[index]] = out[1]
                         if plot:
                             plot_steps(
@@ -168,15 +171,23 @@ if __name__ == '__main__':
     parser.add_argument(
         '--input_dir',
         type=str,
-        default=None,
+        default='rawdata/',
         required=False,
         help='Input directory which stores the results-summary.jsonl.'
     )
     parser.add_argument(
-        '--diagnosis_rule_file', type=str, default=None, required=False, help='The input path of diagnosis rule file.'
+        '--diagnosis_rule_file',
+        type=str,
+        default='rules/diagnosis_rules.yaml',
+        required=False,
+        help='The input path of diagnosis rule file.'
     )
     parser.add_argument(
-        '--summary_rule_file', type=str, default=None, required=False, help='The input path of summary rule file.'
+        '--summary_rule_file',
+        type=str,
+        default='rules/analysis_rules.yaml',
+        required=False,
+        help='The input path of summary rule file.'
     )
     args = parser.parse_args()
 

@@ -87,12 +87,12 @@ superbench:
       categories: CPU
       metrics:
         - cpu-memory-bw-latency/.*_lat
-    gpu_burn:
-      function: value
-      criteria: 'lambda x:x!=1'
-      categories: GPUBURN
-      metrics:
-        - gpu-burn:*.*/.*_pass
+    # gpu_burn:
+    #   function: value
+    #   criteria: 'lambda x:x!=1'
+    #   categories: GPUBURN
+    #   metrics:
+    #     - gpu-burn:*.*/.*_pass
     cpu:
       function: variance
       criteria: 'lambda x:x<-0.05'

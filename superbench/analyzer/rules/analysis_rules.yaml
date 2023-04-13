@@ -27,12 +27,12 @@ superbench:
       aggregate: True
       metrics:
         - cublaslt-gemm/fp.*_.*_flops
-    micro-cublasltbatchflops:
-      statistics: mean
-      categories: MICRO
-      aggregate: True
-      metrics:
-        - cublaslt-gemm:bmm/fp.*_.*_flops
+    # micro-cublasltbatchflops:
+    #   statistics: mean
+    #   categories: MICRO
+    #   aggregate: True
+    #   metrics:
+    #     - cublaslt-gemm:bmm/fp.*_.*_flops
     micro-aggregation-with-aggregate:
       statistics: mean
       categories: MICRO
@@ -50,7 +50,7 @@ superbench:
         - nccl-bw:*.*/allreduce_.*_busbw
         - sharding-matmul:*.*/.*_time
         - matmul:*.*/.*_time
-        - gpu-burn:*.*/.*
+        #- gpu-burn:*.*/.*_pass
         - cpu-memory-bw-latency/.*_bw
         - cpu-memory-bw-latency/.*_lat
         #- cublas-function:*.*/.*_time
