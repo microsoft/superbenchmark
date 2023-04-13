@@ -6,7 +6,6 @@
 import argparse
 from copy import deepcopy
 import json
-from pathlib import Path
 import re
 
 from joblib import Parallel, delayed
@@ -29,6 +28,7 @@ class BaselineAlgoType(Enum):
 
 
 class GenerateBaseline(DataDiagnosis):
+    """The class to generate baseline for raw data."""
     def fix_threshold_outlier_detection(self, data_series, single_metric_with_baseline, metric, rule_op):
         """Fix threshold outlier detection algorithm.
 
@@ -72,7 +72,7 @@ class GenerateBaseline(DataDiagnosis):
         return baseline, data_series
 
     def get_aggregate_data(self, raw_data_file, summary_rule_file):
-        """Aggregate raw data according to the summary rule file.
+        r"""Aggregate raw data according to the summary rule file.
 
         If the metric is aggregated by rank (:\d+), remove the rank info to generate the metric name and aggregate data
         If the metric is aggregated by pattern in regex, aggregate the data and copy to all metrics which match this pattern
@@ -149,15 +149,24 @@ class GenerateBaseline(DataDiagnosis):
                     function_name = self._sb_rules[rule]['function']
                     rule_op = RuleOp.get_rule_func(DiagnosisRuleType(function_name))
                     outputs = Parallel(n_jobs=-1)(
-                        delayed(self.fix_threshold_outlier_detection)(
-                            aggregated_df[metric], single_metric_rule, metric, rule_op)
-                        for metric in metrics)
+                        delayed(self.fix_threshold_outlier_detection)
+                        (aggregated_df[metric], single_metric_rule, metric, rule_op) for metric in metrics
+                    )
                     for index, out in enumerate(outputs):
                         baseline[metrics[index]] = out[0]
                         aggregated_df[metrics[index]] = out[1]
         return baseline
 
-    def run(self, raw_data_file,  summary_rule_file,  output_dir, algorithm='mean', diagnosis_rule_file=None, baseline_file=None, digit=2):
+    def run(
+        self,
+        raw_data_file,
+        summary_rule_file,
+        output_dir,
+        algorithm='mean',
+        diagnosis_rule_file=None,
+        baseline_file=None,
+        digit=2
+    ):
         """Export baseline to json file.
 
         If diagnosis_rule_file is None, use mean of the data as baseline.
@@ -165,7 +174,12 @@ class GenerateBaseline(DataDiagnosis):
 
         Args:
             raw_data_df (DataFrame): raw data
-            output_dir (str): the directory of output file
+            summary_rule_file (str): the file name of the summary rule file
+            output_dir (str): the directory to save the baseline file
+            algorithm (str): the algorithm to generate the baseline
+            diagnosis_rule_file (str): the file name of the diagnosis rules which used in fix_threshold algorithm
+            baseline_file (str): the file name of the baseline file
+            digit (int): the number of digits after the decimal point
         """
         try:
             # aggregate results from different devices
@@ -182,11 +196,14 @@ class GenerateBaseline(DataDiagnosis):
                     baseline[metric] = f'%.{digit}g' % val if abs(val) < 1 else f'%.{digit}f' % val
                 elif isinstance(self._raw_data_df[metric].iloc[0], int):
                     baseline[metric] = int(val)
-            print(self._raw_data_df["gpu-burn/gpu_0_pass"].iloc[0])
-            print(self._raw_data_df["gpu-burn/gpu_0_pass"].iloc[0].type)
+                else:
+                    try:
+                        baseline[metric] = float(val)
+                    except Exception as e:
+                        logger.error('Analyzer: {} baseline is not numeric, msg: {}'.format(metric, str(e)))
             baseline = json.dumps(baseline, indent=2, sort_keys=True)
             baseline = re.sub(r': \"(\d+.?\d*)\"', r': \1', baseline)
-            with open(output_dir+'/baseline.json', mode='w') as f:
+            with open(output_dir + '/baseline.json', mode='w') as f:
                 f.write(baseline)
 
         except Exception as e:
@@ -197,20 +214,33 @@ if __name__ == '__main__':
     global args
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--algo', type=str, default='mean', required=False, help='Algorithm to generate baseline, eg, mean/fix_threshold.'
+        '--algo',
+        type=str,
+        default='fix_threshold',
+        required=False,
+        help='Algorithm to generate baseline, eg, mean/fix_threshold.'
     )
     parser.add_argument(
-        '--input_dir', type=str, default=None, required=False, help='Input directory which stores the results-summary.jsonl.'
+        '--input_dir',
+        type=str,
+        default=None,
+        required=False,
+        help='Input directory which stores the results-summary.jsonl.'
+    )
+    parser.add_argument(
+        '--diagnosis_rule_file', type=str, default=None, required=False, help='The input path of diagnosis rule file.'
+    )
+    parser.add_argument(
+        '--summary_rule_file', type=str, default=None, required=False, help='The input path of summary rule file.'
     )
     args = parser.parse_args()
     folder = args.input_dir
-    #folder = '/Users/jiangyt/Documents/000-workspace/raw-data/ndv4/0.5-ndv41'
     if args.algo == 'mean':
         # simply use mean, need result_summary rules to define how to aggregate the metrics.
         print('Generate baseine using mean of the data.')
-        GenerateBaseline().run(folder+'/results-summary.jsonl', 'rules/aggregation_rules.yaml', folder)
     elif args.algo == 'fix_threshold':
         # use fix threshold method, need result_summary rules to define how to aggregate the metrics and diagnosis_rules.yaml to define the rules for the metrics.
         print('Generate baseine using fix threshold algorithm, the threshold is defined in rules/diagnosis_rules.yaml.')
-        GenerateBaseline().run(folder+'/results-summary.jsonl', 'rules/aggregation_rules.yaml',
-                               folder, 'fix_threshold', 'rules/diagnosis_rules.yaml')
+        GenerateBaseline().run(
+            folder + '/results-summary.jsonl', args.diagnosis_rule_file, folder, 'fix_threshold', args.summary_rule_file
+        )
