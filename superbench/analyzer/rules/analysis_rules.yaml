@@ -1,0 +1,100 @@
+# SuperBench rules
+version: v0.5
+superbench:
+  rules:
+    model-benchmarks:
+      statistics:
+        - mean
+      categories: models
+      metrics:
+        - model-benchmarks:.*/.*/.*_train_throughput
+        - gpt_models/.*/.*_train_throughput
+        - lstm_models/pytorch-lstm/.*_train_throughput
+        - bert_models/pytorch-bert-.*/.*_train_throughput
+        - resnet_models/pytorch-resnet\d*/.*_train_throughput
+        - vgg_models/pytorch-vgg\d*/.*_train_throughput
+        - densenet_models/.*/.*_train_throughput
+    micro-flops:
+      statistics: mean
+      categories: MICRO
+      aggregate: True
+      metrics:
+        - cublaslt-gemm/fp8.*_0_8192_8192_8192_flops
+        - gemm-flops:*.*/.*op
+    micro-cublasltflops:
+      statistics: mean
+      categories: MICRO
+      aggregate: True
+      metrics:
+        - cublaslt-gemm/fp.*_.*_flops
+    micro-cublasltbatchflops:
+      statistics: mean
+      categories: MICRO
+      aggregate: True
+      metrics:
+        - cublaslt-gemm:bmm/fp.*_.*_flops
+    micro-aggregation-with-aggregate:
+      statistics: mean
+      categories: MICRO
+      aggregate: True
+      metrics:
+        - kernel-launch:*.*/.*_time
+        - dist-inference/.*step_times.*
+        - mem-bw:*.*/.*_bw
+        - computation-communication-overlap:*.*/.*_time
+    micro-aggregation-wo-aggregate:
+      statistics: mean
+      categories: MICRO
+      aggregate: False
+      metrics:
+        - nccl-bw:*.*/allreduce_.*_busbw
+        - sharding-matmul:*.*/.*_time
+        - matmul:*.*/.*_time
+        - gpu-burn:*.*/.*
+        - cpu-memory-bw-latency/.*_bw
+        - cpu-memory-bw-latency/.*_lat
+        #- cublas-function:*.*/.*_time
+        #- cudnn-function:*.*/.*_time
+        #- ort-inference/.*_time.*
+        #- tensorrt-inference/.*_time.*
+    gpu-copy-bw:
+      statistics: mean
+      categories: DTOH
+      metrics:
+        - gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
+        #- gpu-copy-bw:perf/gpu.*_to_cpu_by_sm_under_numa.*_bw
+      aggregate: gpu-copy-bw:perf/gpu(.*)_to_gpu(.*)_by_.*_bw
+    # gpu-copy-bw1:
+    #   statistics: mean
+    #   categories: DTOH
+    #   metrics:
+    #     #- gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
+    #     - gpu-copy-bw:perf/gpu.*_to_cpu_by_sm_under_numa.*_bw
+    #   aggregate: gpu-copy-bw:perf/gpu(.*)_to_cpu_by_sm_under_numa.*_bw
+    # gpu-copy-bw2:
+    #   statistics: mean
+    #   categories: HTOD
+    #   metrics:
+    #     #- gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
+    #     - gpu-copy-bw:perf/cpu_to_gpu(.*)_by_sm_under_numa.*_bw
+    #   aggregate: gpu-copy-bw:perf/cpu_to_gpu(.*)_by_sm_under_numa.*_bw
+    # # ib-loopback1:
+    # #   statistics: mean
+    # #   categories: RDMA
+    # #   metrics:
+    # #     #- ib-loopback/ib_write_8388608_ib.*_bw
+    # #     - ib-loopback/ib_write_.*_ib.*_bw
+    # #   aggregate: ib-loopback/ib_write_.*_ib(.*)_bw
+    # ib-loopback2:
+    #   statistics: mean
+    #   categories: RDMA
+    #   metrics:
+    #     #- ib-loopback/ib_write_8388608_ib.*_bw
+    #     - ib-loopback/ib_write_bw_.*:\d+
+    #   #aggregate: True
+    # disk:
+    #   statistics: mean
+    #   categories: DISK
+    #   aggregate: disk-benchmark/nvme(\d+n1)_.*_iops
+    #   metrics:
+    #     - disk-benchmark/nvme(\d+n1)_.*_iops

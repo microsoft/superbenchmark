@@ -19,7 +19,30 @@ superbench:
         - resnet_models/.*/return_code
         - vgg_models/.*/return_code
         - densenet_models/.*/return_code
-        - model-benchmarks:.*/return_code
+        - model-benchmarks:.*/return_code:.*
+        #- cudnn-function:*.*/return_code                        # 06:14
+        - cublaslt-gemm:*.*/return_code
+        - cublas-function:*.*/return_code                       # 05:52
+        - matmul:*.*/return_code                                # 00:25
+        - gpu-burn:*.*/return_code                              # 15:08
+        # microbenchmark - communication
+        - cpu-memory-bw-latency:*.*/return_code                 # 05:38
+        - gpu-copy-bw:*.*/return_code                     # 08:44
+        - computation-communication-overlap:*.*/return_code     # 06:30
+        - sharding-matmul:*.*/return_code                       # 00:24
+        # microbenchmark - storage
+        #- disk-benchmark                       # 18:47
+        # model benchmark - inference
+        # - ort-inference:*.*/return_code                         # 03:43
+        ##tensorrt-inference                    # 02:03:33
+        - dist-inference:*.*/return_code
+        - cublaslt-gemm:*.*/return_code
+    kernel_launch_rule_outlier:
+      function: value
+      criteria: 'lambda x:x<0.001'
+      categories: INVESTIGATING
+      metrics:
+        - kernel-launch:*.*/.*_time
     kernel_launch_rule:
       function: variance
       criteria: 'lambda x:x>0.05'
@@ -33,25 +56,47 @@ superbench:
       categories: TensorCore
       metrics:
         - gemm-flops:*.*/.*ops
-    cudnn_cublas:
+    cublaslt_gemm_rule:
       function: variance
-      criteria: 'lambda x:x>0.05'
-      categories: TensorCore
+      criteria: 'lambda x:x<-0.05'
+      categories: CUBLASLT
       metrics:
-        - cublas-function:*.*/.*_time
-        - cudnn-function:*.*/.*_time
+        - cublaslt-gemm:*.*/.*ops
+    # cublas:
+    #   function: variance
+    #   criteria: 'lambda x:x>0.05'
+    #   categories: CUBLAS
+    #   metrics:
+    #     - cublas-function:*.*/.*_time
+    # cudnn:
+    #   function: variance
+    #   criteria: 'lambda x:x>0.05'
+    #   categories: CUDNN
+    #   metrics:
+    #     - cudnn-function:*.*/.*_time
     matmul:
       function: variance
       criteria: 'lambda x:x>0.05'
-      categories: TensorCore
+      categories: MATMUL
       metrics:
         - matmul:*.*/.*_time
-        - gpu-burn/.*
+        - sharding-matmul:*.*/.*_time
+    cpu1:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: CPU
+      metrics:
         - cpu-memory-bw-latency/.*_lat
+    gpu_burn:
+      function: value
+      criteria: 'lambda x:x!=1'
+      categories: GPUBURN
+      metrics:
+        - gpu-burn:*.*/.*_pass
     cpu:
       function: variance
       criteria: 'lambda x:x<-0.05'
-      categories: TensorCore
+      categories: CPU
       metrics:
         - cpu-memory-bw-latency/.*_bw
   # Rule 2: If H2D_Mem_BW or D2H_Mem_BW test suffers > 5% downgrade, label it as Not acceptable
@@ -65,16 +110,16 @@ superbench:
     gpu-copy:
       function: variance
       criteria: 'lambda x:x<-0.05'
-      categories: Mem
+      categories: GPUCOPY
       metrics:
         - gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
   # Rule 3: If ib-loopback test with 8M suffers > 5% downgrade, label it as Not acceptable
-    rdma_loopback_rule:
-      function: variance
-      criteria: 'lambda x:x<-0.05'
-      categories: RDMA
-      metrics:
-        - ib-loopback:*.*/ib_write_bw_8388608
+    # rdma_loopback_rule:
+    #   function: variance
+    #   criteria: 'lambda x:x<-0.05'
+    #   categories: RDMA
+    #   metrics:
+    #     - ib-loopback:*.*/ib_write_bw_8388608
         #- ib-loopback:*.*/ib_write_bw_.*
   # Rule 4: If nccl-bw:default with 8GB suffers > 5% downgrade, label it as Not acceptable
     nccl_rule:
@@ -82,21 +127,25 @@ superbench:
       criteria: 'lambda x:x<-0.05'
       categories: NCCL
       metrics:
-        - nccl-bw:.*/allreduce_8589934592_busbw
+        - nccl-bw:*.*/allreduce_.*_busbw
+    overlap_rules:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: OVERLAP
+      metrics:
+        - computation-communication-overlap:*.*/.*_time
     investigating_rules:
       function: variance
       criteria: 'lambda x:x>0.05'
-      categories: INVESTIGATING
+      categories: DIST_INFERENCE
       metrics:
-        - computation-communication-overlap:*.*/.*_time
-        - sharding-matmul:*.*/.*_time
-        - ort-inference/.*_time.*
-    disk_rule:
-      function: variance
-      criteria: 'lambda x:x<-0.05'
-      categories: NCCL
-      metrics:
-        - disk-benchmark/nvme(\d+n1)_.*_iops
+        - dist-inference/.*step_times
+    # disk_rule:
+    #   function: variance
+    #   criteria: 'lambda x:x<-0.05'
+    #   categories: DISK
+    #   metrics:
+    #     - disk-benchmark/nvme(\d+n1)_.*_iops
   #Rule 5,6,7: If BERT or GPT-2 or LSTM suffers > 5% downgrade, label it as Not acceptable
     model_throughput_rule:
       function: variance
@@ -104,11 +153,11 @@ superbench:
       categories: Model
       metrics:
         - gpt_models/.*/.*_train_throughput
-        - lstm_models/pytorch-lstm/.*_train_throughput
-        - bert_models/pytorch-bert-.*/.*_train_throughput
-        - model-benchmarks:.*/pytorch-bert.*/.*_train_throughput
-        - model-benchmarks:.*/pytorch-gpt.*/.*_train_throughput
-        - model-benchmarks:.*/pytorch-lstm.*/.*_train_throughput
+        - lstm_models/.*lstm/.*_train_throughput
+        - bert_models/.*bert-.*/.*_train_throughput
+        - model-benchmarks:.*/.*bert.*/.*_train_throughput
+        - model-benchmarks:.*/.*gpt.*/.*_train_throughput
+        - model-benchmarks:.*/.*lstm.*/.*_train_throughput
   # Rule 8: If 2+ CNN models suffer > 5% downgrade, label it as Not acceptable
     resnet_throughput:
       function: variance
@@ -116,26 +165,30 @@ superbench:
       store: true
       categories: CNN
       metrics:
-        - resnet_models/pytorch-resnet\d*/.*_train_throughput
-        - model-benchmarks:.*/pytorch-resnet.*/.*_train_throughput
+        - resnet_models/.*resnet\d*/.*_train_throughput
+        - model-benchmarks:.*/.*resnet.*/.*_train_throughput
     vgg_throughput:
       function: variance
       criteria: 'lambda x:x<-0.05'
       store: true
       categories: CNN
       metrics:
-        - vgg_models/pytorch-vgg\d*/.*_train_throughput
-        - model-benchmarks:.*/pytorch-vgg.*/.*_train_throughput
+        - vgg_models/.*vgg\d*/.*_train_throughput
+        - model-benchmarks:.*/.*vgg.*/.*_train_throughput
     densenet_throughput:
       function: variance
       criteria: 'lambda x:x<-0.05'
       store: true
       categories: CNN
       metrics:
-        - densenet_models/pytorch-densenet\d*/.*_train_throughput
-        - model-benchmarks:.*/pytorch-densenet.*/.*_train_throughput
+        - densenet_models/.*densenet\d*/.*_train_throughput
+        - model-benchmarks:.*/.*densenet.*/.*_train_throughput
     cnn_throughput_rule:
       categories: CNN
       function: multi_rules
-      criteria: 'lambda label:True if label["resnet_throughput"]+label["vgg_throughput"]+label["densenet_throughput"]>=2 else False'
+      criteria: 'lambda label:True if label["resnet_throughput"]+label["densenet_throughput"]>=2 else False'
+    vgg_throughput_rule:
+      categories: VGG
+      function: multi_rules
+      criteria: 'lambda label:True if label["vgg_throughput"]>=2 else False'
 
