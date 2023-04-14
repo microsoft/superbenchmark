@@ -62,18 +62,18 @@ superbench:
       categories: CUBLASLT
       metrics:
         - cublaslt-gemm:*.*/.*ops
-    # cublas:
-    #   function: variance
-    #   criteria: 'lambda x:x>0.05'
-    #   categories: CUBLAS
-    #   metrics:
-    #     - cublas-function:*.*/.*_time
-    # cudnn:
-    #   function: variance
-    #   criteria: 'lambda x:x>0.05'
-    #   categories: CUDNN
-    #   metrics:
-    #     - cudnn-function:*.*/.*_time
+    cublas:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: CUBLAS
+      metrics:
+        - cublas-function:*.*/.*_time
+    cudnn:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: CUDNN
+      metrics:
+        - cudnn-function:*.*/.*_time
     matmul:
       function: variance
       criteria: 'lambda x:x>0.05'
@@ -87,12 +87,12 @@ superbench:
       categories: CPU
       metrics:
         - cpu-memory-bw-latency/.*_lat
-    # gpu_burn:
-    #   function: value
-    #   criteria: 'lambda x:x!=1'
-    #   categories: GPUBURN
-    #   metrics:
-    #     - gpu-burn:*.*/.*_pass
+    gpu_burn:
+      function: value
+      criteria: 'lambda x:x!=1'
+      categories: GPUBURN
+      metrics:
+        - gpu-burn:*.*/.*_pass
     cpu:
       function: variance
       criteria: 'lambda x:x<-0.05'
@@ -140,12 +140,12 @@ superbench:
       categories: DIST_INFERENCE
       metrics:
         - dist-inference/.*step_times
-    # disk_rule:
-    #   function: variance
-    #   criteria: 'lambda x:x<-0.05'
-    #   categories: DISK
-    #   metrics:
-    #     - disk-benchmark/nvme(\d+n1)_.*_iops
+    disk_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: DISK
+      metrics:
+        - disk-benchmark/nvme(\d+n1)_.*_iops
   #Rule 5,6,7: If BERT or GPT-2 or LSTM suffers > 5% downgrade, label it as Not acceptable
     model_throughput_rule:
       function: variance
