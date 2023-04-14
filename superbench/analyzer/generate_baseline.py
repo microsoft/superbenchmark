@@ -29,6 +29,7 @@ class BaselineAlgoType(Enum):
 
 class GenerateBaseline(DataDiagnosis):
     """The class to generate baseline for raw data."""
+
     def fix_threshold_outlier_detection(self, data_series, single_metric_with_baseline, metric, rule_op):
         """Fix threshold outlier detection algorithm.
 
@@ -243,5 +244,5 @@ if __name__ == '__main__':
         # use fix threshold method, need result_summary rules to define how to aggregate the metrics and diagnosis_rules.yaml to define the rules for the metrics.
         print('Generate baseine using fix threshold algorithm, the threshold is defined in rules/diagnosis_rules.yaml.')
         GenerateBaseline().run(
-            folder + '/results-summary.jsonl', args.diagnosis_rule_file, folder, 'fix_threshold', args.summary_rule_file
+            folder + '/results-summary.jsonl', args.summary_rule_file, folder, 'fix_threshold', args.diagnosis_rule_file
         )

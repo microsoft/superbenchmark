@@ -2,32 +2,21 @@
 version: v0.5
 superbench:
   rules:
-    model-benchmarks-FP32:
+    model-benchmarks:
       statistics:
         - mean
-      categories: model:FP32
+      categories: model
       metrics:
-        - model-benchmarks:.*/.*/fp32_train_throughput
-        - gpt_models/.*/fp32_train_throughput
-        - lstm_models/pytorch-lstm/fp32_train_throughput
-        - bert_models/pytorch-bert-.*/fp32_train_throughput
-        - resnet_models/pytorch-resnet\d*/fp32_train_throughput
-        - vgg_models/pytorch-vgg\d*/fp32_train_throughput
-        - densenet_models/.*/fp32_train_throughput
-    model-benchmarks-FP16:
-      statistics: mean
-      categories: model:FP16
-      metrics:
-        - model-benchmarks:.*/.*/fp16_train_throughput
-        - gpt_models/.*/fp16_train_throughput
-        - lstm_models/pytorch-lstm/fp16_train_throughput
-        - bert_models/pytorch-bert-.*/fp16_train_throughput
-        - resnet_models/pytorch-resnet\d*/fp16_train_throughput
-        - vgg_models/pytorch-vgg\d*/fp16_train_throughput
-        - densenet_models/.*/fp16_train_throughput
+        - model-benchmarks:.*/.*/.*_train_throughput
+        - gpt_models/.*/.*_train_throughput
+        - lstm_models/pytorch-lstm/.*_train_throughput
+        - bert_models/pytorch-bert-.*/.*_train_throughput
+        - resnet_models/pytorch-resnet\d*/.*_train_throughput
+        - vgg_models/pytorch-vgg\d*/.*_train_throughput
+        - densenet_models/.*/.*_train_throughput
     micro-aggregation:
       statistics: mean
-      categories: MICRO
+      categories: MICRO1
       aggregate: True
       metrics:
         - gemm-flops:*.*/.*ops
@@ -38,37 +27,41 @@ superbench:
         - cudnn-function:*.*/.*_time
         - ort-inference/.*_time.*
         - tensorrt-inference/.*_time.*
+        - cublaslt-gemm:*.*/.*ops
+        - dist-inference/.*step_times.*
     micro-nonaggregation:
       statistics: mean
-      categories: MICRO
+      categories: MICRO2
       metrics:
         - nccl-bw:*.*/allreduce_.*_busbw
         - rccl-bw:*.*/allreduce_.*_busbw
         - sharding-matmul:*.*/.*_time
         - matmul:*.*/.*_time
-        - gpu-burn/.*
+        - gpu-burn/.*_pass
+        - gpu_burn/.*_abort
         - cpu-memory-bw-latency/.*_bw
         - cpu-memory-bw-latency/.*_lat
     gpu-copy-bw:
       statistics: mean
-      categories: RDMA
+      categories: DTOH
       metrics:
         - gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
-      aggregate: gpu-copy-bw:perf/.*gpu(.*)_to_gpu(.*)_write_by_.*_bw
-    ib-loopback1:
+        #- gpu-copy-bw:perf/gpu.*_to_cpu_by_sm_under_numa.*_bw
+      aggregate: gpu-copy-bw:perf/gpu(.*)_to_gpu(.*)_by_.*_bw
+    gpu-copy-bw1:
       statistics: mean
-      categories: RDMA
+      categories: DTOH
       metrics:
-        #- ib-loopback/ib_write_8388608_ib.*_bw
-        - ib-loopback/ib_write_.*_ib.*_bw
-      aggregate: ib-loopback/ib_write_.*_ib(.*)_bw
-    ib-loopback2:
+        #- gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
+        - gpu-copy-bw:perf/gpu.*_to_cpu_by_sm_under_numa.*_bw
+      aggregate: gpu-copy-bw:perf/gpu(.*)_to_cpu_by_sm_under_numa.*_bw
+    gpu-copy-bw2:
       statistics: mean
-      categories: RDMA
+      categories: HTOD
       metrics:
-        #- ib-loopback/ib_write_8388608_ib.*_bw
-        - ib-loopback/ib_write_bw_.*:\d+
-      aggregate: True
+        #- gpu-copy-bw:perf/.*gpu._to_gpu.*_write_by_.*_bw
+        - gpu-copy-bw:perf/cpu_to_gpu(.*)_by_sm_under_numa.*_bw
+      aggregate: gpu-copy-bw:perf/cpu_to_gpu(.*)_by_sm_under_numa.*_bw
     disk:
       statistics: mean
       categories: DISK

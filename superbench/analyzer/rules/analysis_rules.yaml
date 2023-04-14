@@ -21,12 +21,12 @@ superbench:
       metrics:
         - cublaslt-gemm/fp8.*_0_8192_8192_8192_flops
         - gemm-flops:*.*/.*op
-    micro-cublasltflops:
-      statistics: mean
-      categories: MICRO
-      aggregate: True
-      metrics:
-        - cublaslt-gemm/fp.*_.*_flops
+    # micro-cublasltflops:
+    #   statistics: mean
+    #   categories: MICRO
+    #   aggregate: True
+    #   metrics:
+    #     - cublaslt-gemm/fp.*_.*_flops
     # micro-cublasltbatchflops:
     #   statistics: mean
     #   categories: MICRO
