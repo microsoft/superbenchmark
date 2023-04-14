@@ -1,18 +1,18 @@
-FROM nvcr.io/nvidia/pytorch:22.12-py3
+FROM nvcr.io/nvidia/pytorch:23.03-py3
 
 # OS:
 #   - Ubuntu: 20.04
 #   - OpenMPI: 4.1.5a1
 #   - Docker Client: 20.10.8
 # NVIDIA:
-#   - CUDA: 11.8.0
-#   - cuDNN: 8.7.0.84
-#   - NCCL: v2.15.5-1
+#   - CUDA: 12.1.0
+#   - cuDNN: 8.8.1.3
+#   - NCCL: v2.17.1-1
 # Mellanox:
-#   - OFED: 5.2-2.2.3.0
-#   - HPC-X: v2.8.3
+#   - OFED: 5.2-2.2.3.0 # TODO
+#   - HPC-X: v2.14
 # Intel:
-#   - mlc: v3.9a
+#   - mlc: v3.10
 
 LABEL maintainer="SuperBench"
 
@@ -71,36 +71,26 @@ RUN mkdir -p /root/.ssh && \
 # Install OFED
 ENV OFED_VERSION=5.2-2.2.3.0
 RUN cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
     MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
+ENV HPCX_VERSION=v2.14
 RUN cd /opt && \
     rm -rf hpcx && \
-    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
-    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
-    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64 hpcx && \
-    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz
+    wget -q https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu20.04-cuda12-gdrcopy2-nccl2.17-x86_64.tbz -O hpcx.tbz && \
+    tar xf hpcx.tbz && \
+    mv hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu20.04-cuda12-gdrcopy2-nccl2.17-x86_64 hpcx && \
+    rm hpcx.tbz
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/736634/mlc_v3.9a.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
-
-ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
-    SB_HOME=/opt/superbench \
-    SB_MICRO_PATH=/opt/superbench \
-    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
-    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
-
-RUN echo PATH="$PATH" > /etc/environment && \
-    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
-    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 # Install AOCC compiler
 RUN cd /tmp && \
@@ -114,6 +104,18 @@ RUN cd /tmp && \
     tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
     mv amd-blis /opt/AMD && \
     rm -rf aocl-blis-linux-aocc-4.0.tar.gz
+
+
+ENV PATH="${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
+    SB_HOME=/opt/superbench \
+    SB_MICRO_PATH=/opt/superbench \
+    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
