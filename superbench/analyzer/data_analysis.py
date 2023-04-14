@@ -31,11 +31,13 @@ def statistic(raw_data_df):
         logger.warning('DataAnalyzer: empty data.')
         return data_statistics_df
     try:
+        raw_data_df = raw_data_df.apply(pd.to_numeric, errors='coerce')
+        raw_data_df = raw_data_df.dropna(axis=1, how='all')
         data_statistics_df = raw_data_df.describe()
-        data_statistics_df.loc['1%'] = raw_data_df.quantile(0.01)
-        data_statistics_df.loc['5%'] = raw_data_df.quantile(0.05)
-        data_statistics_df.loc['95%'] = raw_data_df.quantile(0.95)
-        data_statistics_df.loc['99%'] = raw_data_df.quantile(0.99)
+        data_statistics_df.loc['1%'] = raw_data_df.quantile(0.01, numeric_only=True)
+        data_statistics_df.loc['5%'] = raw_data_df.quantile(0.05, numeric_only=True)
+        data_statistics_df.loc['95%'] = raw_data_df.quantile(0.95, numeric_only=True)
+        data_statistics_df.loc['99%'] = raw_data_df.quantile(0.99, numeric_only=True)
         statistics_error = []
         for column in list(raw_data_df.columns):
             if column not in list(data_statistics_df.columns) and not raw_data_df[column].isnull().all():
@@ -122,6 +124,8 @@ def correlation(raw_data_df):
         logger.warning('DataAnalyzer: empty data.')
         return data_corr_df
     try:
+        raw_data_df = raw_data_df.apply(pd.to_numeric, errors='coerce')
+        raw_data_df = raw_data_df.dropna(axis=1, how='all')
         data_corr_df = raw_data_df.corr()
         statistics_error = []
         for column in list(raw_data_df.columns):
@@ -181,6 +185,8 @@ def generate_baseline(raw_data_df, output_dir):
         output_dir (str): the directory of output file
     """
     try:
+        raw_data_df = raw_data_df.apply(pd.to_numeric, errors='coerce')
+        raw_data_df = raw_data_df.dropna(axis=1, how='all')
         if not isinstance(raw_data_df, pd.DataFrame):
             logger.error('DataAnalyzer: the type of raw data is not pd.DataFrame')
             return

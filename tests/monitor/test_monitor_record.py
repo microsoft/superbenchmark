@@ -17,6 +17,7 @@ def test_monitor_record():
     mr.mem_total = 1024
     mr.gpu_usage = [90, 80, 86, 72, 79, 81, 94, 85]
     mr.gpu_temperature = [62, 75, 69, 63, 72, 77, 80, 71]
+    mr.gpu_power = [257, 290, 280, 262, 291, 284, 281, 273]
     mr.gpu_power_limit = [400, 400, 400, 350, 400, 400, 400, 400]
     mr.gpu_mem_used = [2550, 2680, 2543, 2588, 2612, 2603, 2515, 2593]
     mr.gpu_mem_total = [16777216, 16777216, 16777216, 16777216, 16777216, 16777216, 16777216, 16777216]
@@ -59,6 +60,14 @@ def test_monitor_record():
         'gpu_temperature:5': 77,
         'gpu_temperature:6': 80,
         'gpu_temperature:7': 71,
+        'gpu_power:0': 257,
+        'gpu_power:1': 290,
+        'gpu_power:2': 280,
+        'gpu_power:3': 262,
+        'gpu_power:4': 291,
+        'gpu_power:5': 284,
+        'gpu_power:6': 281,
+        'gpu_power:7': 273,
         'gpu_power_limit:0': 400,
         'gpu_power_limit:1': 400,
         'gpu_power_limit:2': 400,

@@ -72,6 +72,22 @@ class DeviceManager:
             temp = None
         return temp
 
+    def get_device_power(self, idx):
+        """Get the realtime power of device, unit: watt.
+
+        Args:
+            idx (int): device index.
+
+        Return:
+            temp (float): the realtime power of device, None means failed to get the data.
+        """
+        try:
+            power = nvml.nvmlDeviceGetPowerUsage(self._device_handlers[idx])
+        except Exception as err:
+            logger.error('Get device power failed: {}'.format(str(err)))
+            return None
+        return int(int(power) / 1000)
+
     def get_device_power_limit(self, idx):
         """Get the power management limit of device, unit: watt.
 
