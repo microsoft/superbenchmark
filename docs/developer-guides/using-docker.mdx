@@ -29,7 +29,7 @@ You need to [clone the code](./development.md#set-up) first before building the 
 export DOCKER_BUILDKIT=1
 docker buildx build \
   --platform linux/amd64 --cache-to type=inline,mode=max \
-  --tag superbench-dev --file dockerfile/cuda11.8.dockerfile .
+  --tag superbench-dev --file dockerfile/cuda12.1.dockerfile .
 ```
 
 </TabItem>
