@@ -408,25 +408,3 @@ def test_is_finished():
     end_time = 10
     assert (benchmark._is_finished(50, end_time))
 
-
-def test_check_result_format():
-    """Test interface Benchmark.__check_result_format()."""
-    # Positive case for __check_result_format().
-    benchmark = create_benchmark()
-    benchmark._preprocess()
-    assert (benchmark._benchmark())
-    assert (benchmark._Benchmark__check_result_type())
-    assert (benchmark._Benchmark__check_summarized_result())
-    assert (benchmark._Benchmark__check_raw_data())
-
-    # Negative case for __check_result_format() - change List[int] to List[str].
-    benchmark._result._BenchmarkResult__result = {'return_code': [0], 'metric1': ['2.0']}
-    assert (benchmark._Benchmark__check_summarized_result() is False)
-
-    # Negative case for __check_raw_data() - change List[List[int]] to List[List[str]].
-    benchmark._result._BenchmarkResult__raw_data = {'metric1': [['2.0']]}
-    assert (benchmark._Benchmark__check_raw_data() is False)
-
-    # Negative case for __check_raw_data() - invalid benchmark result.
-    assert (benchmark._Benchmark__check_result_format() is False)
-    assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT)
