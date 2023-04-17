@@ -4,7 +4,6 @@
 """Tests for BenchmarkRegistry module."""
 
 import json
-import time
 
 from superbench.benchmarks import Platform, Framework, Precision, BenchmarkRegistry, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks import ModelBenchmark
