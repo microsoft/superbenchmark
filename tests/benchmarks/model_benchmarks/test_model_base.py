@@ -4,6 +4,7 @@
 """Tests for BenchmarkRegistry module."""
 
 import json
+import time
 
 from superbench.benchmarks import Platform, Framework, Precision, BenchmarkRegistry, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks import ModelBenchmark
@@ -20,6 +21,7 @@ class FakeModelBenchmark(ModelBenchmark):
         """
         super().__init__(name, parameters)
         self._supported_precision = [Precision.FLOAT32, Precision.FLOAT16]
+        self._sub_benchmark_start_time = 0
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -354,6 +356,58 @@ def test_benchmark():
     assert (benchmark._preprocess())
     assert (benchmark._benchmark() is False)
     assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT)
+
+
+def test_check_result_format():
+    """Test interface Benchmark.__check_result_format()."""
+    # Positive case for __check_result_format().
+    benchmark = create_benchmark()
+    benchmark._preprocess()
+    assert (benchmark._benchmark())
+    assert (benchmark._Benchmark__check_result_type())
+    assert (benchmark._Benchmark__check_summarized_result())
+    assert (benchmark._Benchmark__check_raw_data())
+
+    # Negative case for __check_result_format() - change List[int] to List[str].
+    benchmark._result._BenchmarkResult__result = {'return_code': [0], 'metric1': ['2.0']}
+    assert (benchmark._Benchmark__check_summarized_result() is False)
+
+    # Negative case for __check_raw_data() - change List[List[int]] to List[List[str]].
+    benchmark._result._BenchmarkResult__raw_data = {'metric1': [['2.0']]}
+    assert (benchmark._Benchmark__check_raw_data() is False)
+
+    # Negative case for __check_raw_data() - invalid benchmark result.
+    assert (benchmark._Benchmark__check_result_format() is False)
+    assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT)
+
+
+def test_is_finished():
+    """Test interface Benchmark._is_finished()."""
+    # Only step takes effect, benchmarking finish due to step.
+    benchmark = create_benchmark('--num_warmup 32 --num_steps 128 --duration 0')
+    benchmark._preprocess()
+    end_time = 2
+    assert (benchmark._is_finished(50, end_time) == False)
+    assert (benchmark._is_finished(160, end_time))
+
+    # Only duration takes effect, benchmarking finish due to duration.
+    benchmark = create_benchmark('--num_warmup 32 --num_steps 0 --duration 10')
+    benchmark._preprocess()
+    benchmark._sub_benchmark_start_time = 0
+    end_time = 1
+    assert (benchmark._is_finished(160, end_time) == False)
+    end_time = 10
+    assert (benchmark._is_finished(50, end_time))
+
+    # Both step and duration take effect.
+    benchmark = create_benchmark('--num_warmup 32 --num_steps 128 --duration 10')
+    benchmark._preprocess()
+    # Benchmarking finish due to step.
+    end_time = 2
+    assert (benchmark._is_finished(160, end_time))
+    # Benchmarking finish due to duration.
+    end_time = 10
+    assert (benchmark._is_finished(50, end_time))
 
 
 def test_check_result_format():

@@ -374,7 +374,7 @@ class ModelBenchmark(Benchmark):
 
         if (
             (self._args.duration > 0 and (curr_time - self._sub_benchmark_start_time) >= self._args.duration)
-            or (total_steps > 0 and curr_step >= total_steps)
+            or (self._args.num_steps > 0 and curr_step >= total_steps)
         ):
             return True
 
