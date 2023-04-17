@@ -387,7 +387,7 @@ def test_is_finished():
     benchmark._preprocess()
     end_time = 2
     curr_step = 50
-    assert (benchmark._is_finished(curr_step, end_time) == False)
+    assert (benchmark._is_finished(curr_step, end_time) is False)
     curr_step = 160
     assert (benchmark._is_finished(curr_step, end_time))
 
@@ -397,7 +397,7 @@ def test_is_finished():
     benchmark._sub_benchmark_start_time = 0
     curr_step = 50
     end_time = 1
-    assert (benchmark._is_finished(curr_step, end_time) == False)
+    assert (benchmark._is_finished(curr_step, end_time) is False)
     end_time = 10
     assert (benchmark._is_finished(curr_step, end_time))
 
