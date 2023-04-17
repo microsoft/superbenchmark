@@ -386,25 +386,29 @@ def test_is_finished():
     benchmark = create_benchmark('--num_warmup 32 --num_steps 128 --duration 0')
     benchmark._preprocess()
     end_time = 2
-    assert (benchmark._is_finished(50, end_time) == False)
-    assert (benchmark._is_finished(160, end_time))
+    curr_step = 50
+    assert (benchmark._is_finished(curr_step, end_time) == False)
+    curr_step = 160
+    assert (benchmark._is_finished(curr_step, end_time))
 
     # Only duration takes effect, benchmarking finish due to duration.
     benchmark = create_benchmark('--num_warmup 32 --num_steps 0 --duration 10')
     benchmark._preprocess()
     benchmark._sub_benchmark_start_time = 0
+    curr_step = 50
     end_time = 1
-    assert (benchmark._is_finished(160, end_time) == False)
+    assert (benchmark._is_finished(curr_step, end_time) == False)
     end_time = 10
-    assert (benchmark._is_finished(50, end_time))
+    assert (benchmark._is_finished(curr_step, end_time))
 
     # Both step and duration take effect.
     benchmark = create_benchmark('--num_warmup 32 --num_steps 128 --duration 10')
     benchmark._preprocess()
     # Benchmarking finish due to step.
+    curr_step = 160
     end_time = 2
-    assert (benchmark._is_finished(160, end_time))
+    assert (benchmark._is_finished(curr_step, end_time))
     # Benchmarking finish due to duration.
+    curr_step = 50
     end_time = 10
-    assert (benchmark._is_finished(50, end_time))
-
+    assert (benchmark._is_finished(curr_step, end_time))
