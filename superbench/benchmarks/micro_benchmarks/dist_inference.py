@@ -14,6 +14,7 @@ from superbench.common.utils import logger
 from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode, Precision
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
+from superbench.benchmarks.reducer import ReduceType
 
 
 class ComputationKernelType(Enum):
