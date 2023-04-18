@@ -204,6 +204,11 @@ class ModelBenchmark(Benchmark):
             )
         )
 
+        if self._args.num_warmup < 0:
+            logger.error('num_warmup should be positive integer, while {} is set.'.format(self._args.num_warmup))
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
+
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
             return False
