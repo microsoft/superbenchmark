@@ -10,6 +10,8 @@ struct GPUTimestampPair {
     UINT64 Stop;
 };
 
+enum QueueType { compute = 0, copy = 1 };
+
 // D3D12 timer.
 class D3D12Timer {
   public:
@@ -19,7 +21,7 @@ class D3D12Timer {
     // Destructor.
     ~D3D12Timer();
 
-    HRESULT init(ID3D12Device *pDevice, UINT numTimers);
+    void init(ID3D12Device *pDevice, ID3D12CommandQueue *pCommandQueue, UINT numTimers, QueueType type);
 
     // Start timestamp.
     void start(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex);
@@ -31,16 +33,17 @@ class D3D12Timer {
     void resolveQueryToCPU(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex);
 
     // Get start and end timestamp pair.
-    GPUTimestampPair getTimestampPair(UINT timestampPairIndex);
+    double getElapsedMsByTimestampPair(UINT timestampPairIndex);
 
-    // Whether timer is active.
-    bool isActive();
+    // Get the GPU frequency.
+    double getGPUFrequecy() { return m_gpuFreqInv; }
 
   private:
-    ID3D12Device *device_ = nullptr;
-    ID3D12QueryHeap *queryHeap_ = nullptr;
-    ID3D12Resource *queryResourceCPU_ = nullptr;
-    bool active_ = false;
-    UINT timerCount_ = 0;
+    ID3D12Device *m_device = nullptr;
+    ID3D12QueryHeap *m_queryHeap = nullptr;
+    ID3D12Resource *m_queryResourceCPU = nullptr;
+    bool m_active = false;
+    UINT m_timerCount = 0;
+    double m_gpuFreqInv;
 };
 } // namespace D3D12

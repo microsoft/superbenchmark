@@ -30,7 +30,7 @@ void GPUCore::Run() {
     int loops = opts->num_loops;
     std::cout << "GPUCoreFLOPs" << std::endl;
     for (int i = 0; i < loops; ++i) {
-        gpuTimer.init(m_device.Get(), 1);
+        gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
 
         // Do FLOPs job.
         double timeInMs = DoComputeWork_MulAdd();
@@ -281,12 +281,7 @@ double GPUCore::DoComputeWork_MulAdd() {
     FlushCommandQueue();
 
     // Get time in ms.
-    UINT64 queueFreq;
-    this->m_commandQueue->GetTimestampFrequency(&queueFreq);
-    double timestampToMs = (1.0 / queueFreq) * 1000.0;
-    D3D12::GPUTimestampPair drawTime = gpuTimer.getTimestampPair(0);
-    UINT64 dt = drawTime.Stop - drawTime.Start;
-    double timeInMs = dt * timestampToMs;
+    double timeInMs = gpuTimer.getElapsedMsByTimestampPair(0);
 
 #if (DEBUG) && (_PRINT_RESULT)
     // Print the caculate result.

@@ -32,10 +32,10 @@
 #include <dxgidebug.h>
 #endif
 
-#include "D3D12Timer.h"
+#include "../utils/D3D12Timer.h"
 #include "Options.h"
-#include "d3dx12.h"
-#include "helper.h"
+#include "../third_party/d3dx12.h"
+#include "../third_party/DXSampleHelper.h"
 
 using namespace std;
 using namespace DirectX;

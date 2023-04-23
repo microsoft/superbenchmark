@@ -127,15 +127,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="D3D12Timer.cpp" />
+    <ClCompile Include="..\utils\D3D12Timer.cpp" />
     <ClCompile Include="GPUCore.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D3D12Timer.h" />
-    <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="..\third_party\d3dx12.h" />
+    <ClInclude Include="..\third_party\DXSampleHelper.h" />
+    <ClInclude Include="..\utils\D3D12Timer.h" />
     <ClInclude Include="GPUCore.h" />
-    <ClInclude Include="helper.h" />
     <ClInclude Include="Options.h" />
   </ItemGroup>
   <ItemGroup>
