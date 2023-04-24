@@ -14,6 +14,7 @@ from superbench.common.utils import logger
 from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode, Precision
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.context import Enum
+from superbench.benchmarks.reducer import ReduceType
 
 
 class ComputationKernelType(Enum):
@@ -390,7 +391,7 @@ class DistInference(MicroBenchmark):
         Return:
             True if _process_data succeeds.
         """
-        if not self._process_numeric_result('step_times', step_times, cal_percentile=True):
+        if not self._process_numeric_result('step_times', step_times, reduce_type=ReduceType.MAX, cal_percentile=True):
             return False
         return True
 
