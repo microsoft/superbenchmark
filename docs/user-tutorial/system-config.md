@@ -91,22 +91,22 @@ id: system-config
         <b>Kernel</b>
       </td>
       <td>kernel_modules</td>
-      <td>sysctl</td>
+      <td>lsmod</td>
       <td>list of active kernel modules</td>
       <td>
-        "abi.vsyscall32": "1",<br />
-        "debug.exception-trace": "1",<br />
+        "Module": "binfmt_misc",<br />
+        "Size": "24576",<br />
+        "Used": "1"<br />
         ...
       </td>
     </tr>
     <tr>
       <td>kernel_parameters</td>
-      <td>lsmod</td>
+      <td>sysctl</td>
       <td>kernel parameters</td>
       <td>
-        "Module": "binfmt_misc",<br />
-        "Size": "24576",<br />
-        "Used": "1"<br />
+        "abi.vsyscall32": "1",<br />
+        "debug.exception-trace": "1",<br />
         ...
       </td>
     </tr>
