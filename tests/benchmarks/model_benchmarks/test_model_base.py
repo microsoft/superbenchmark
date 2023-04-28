@@ -20,6 +20,7 @@ class FakeModelBenchmark(ModelBenchmark):
         """
         super().__init__(name, parameters)
         self._supported_precision = [Precision.FLOAT32, Precision.FLOAT16]
+        self._sub_benchmark_start_time = 0
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -377,3 +378,37 @@ def test_check_result_format():
     # Negative case for __check_raw_data() - invalid benchmark result.
     assert (benchmark._Benchmark__check_result_format() is False)
     assert (benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT)
+
+
+def test_is_finished():
+    """Test interface Benchmark._is_finished()."""
+    # Only step takes effect, benchmarking finish due to step.
+    benchmark = create_benchmark('--num_warmup 32 --num_steps 128 --duration 0')
+    benchmark._preprocess()
+    end_time = 2
+    curr_step = 50
+    assert (benchmark._is_finished(curr_step, end_time) is False)
+    curr_step = 160
+    assert (benchmark._is_finished(curr_step, end_time))
+
+    # Only duration takes effect, benchmarking finish due to duration.
+    benchmark = create_benchmark('--num_warmup 32 --num_steps 0 --duration 10')
+    benchmark._preprocess()
+    benchmark._sub_benchmark_start_time = 0
+    curr_step = 50
+    end_time = 1
+    assert (benchmark._is_finished(curr_step, end_time) is False)
+    end_time = 10
+    assert (benchmark._is_finished(curr_step, end_time))
+
+    # Both step and duration take effect.
+    benchmark = create_benchmark('--num_warmup 32 --num_steps 128 --duration 10')
+    benchmark._preprocess()
+    # Benchmarking finish due to step.
+    curr_step = 160
+    end_time = 2
+    assert (benchmark._is_finished(curr_step, end_time))
+    # Benchmarking finish due to duration.
+    curr_step = 50
+    end_time = 10
+    assert (benchmark._is_finished(curr_step, end_time))
