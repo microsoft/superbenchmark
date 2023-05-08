@@ -10,7 +10,7 @@ HPCX_HOME ?= /opt/hpcx
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
-
+ROCM_VER ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 .PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn
 
 # Build all targets.
@@ -101,7 +101,7 @@ endif
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 rocm_bandwidthTest: sb_micro_path
-	git clone https://github.com/ROCm-Developer-Tools/HIP.git
+	git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/HIP.git
 	cd ./HIP/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./HIP/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
 
