@@ -198,6 +198,7 @@ setup(
                 'types-pkg_resources',
                 'types-pyyaml',
                 'typing-extensions>=3.10',
+                'urllib3<2.0',
                 'vcrpy>=4.1.1',
                 'yapf==0.31.0',
             ],
