@@ -242,9 +242,10 @@ class SuperBenchRunner():
             signum (int): Signal number.
             frame (FrameType): Timeout frame.
         """
-        logger.info('Killed by %s, exiting ...', signal.Signals(signum).name)
-        self.cleanup()
-        sys.exit(128 + signum)
+        if signum == signal.SIGINT or signum == signal.SIGTERM:
+            logger.info('Killed by %s, exiting ...', signal.Signals(signum).name)
+            self.cleanup()
+            sys.exit(128 + signum)
 
     def __create_results_summary(self):    # pragma: no cover
         """Create the result summary file of all nodes."""
