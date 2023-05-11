@@ -81,9 +81,9 @@ struct Options {
         std::cout << "Usage: " << std::endl;
         std::cout << "  --help: Print help message." << std::endl;
         std::cout << "  --num_loops: The number of benchmark runs." << std::endl;
-        std::cout << "  --num_loops_in_shader: The number of loops in compute shader." << std::endl;
-        std::cout << "  --thread_num_per_block: The number of one block." << std::endl;
-        std::cout << "  --num_data_elements: Total thread num." << std::endl;
+        std::cout << "  --m: m dimension of GEMM." << std::endl;
+        std::cout << "  --n: n dimension of GEMM." << std::endl;
+        std::cout << "  --k: l dimension of GEMM." << std::endl;
         std::cout << "  --fp16: half precision to compute." << std::endl;
         std::cout << "  --fp32: float precision to compute." << std::endl;
     }
@@ -95,12 +95,12 @@ struct Options {
     int num_warm_up = 0;
     // The number of benchmark runs.
     int num_loops = 0;
-    // The number of loops in compute shader.
-    int num_loops_in_shader = 0;
-    // The number of one block.
-    int thread_num_per_block = 0;
-    // Total thread num.
-    int num_data_elements = 0;
+    // Dimension m of GEMM.
+    int m = 0;
+    // Dimension n of GEMM.
+    int n = 0;
+    // Dimension k of GEMM.
+    int k = 0;
     // The precision of calculate.
     Option::PrecisionType mode_precision = Option::F32;
 
@@ -116,10 +116,9 @@ struct Options {
             get_option_usage();
         } else {
             num_loops = get_cmd_line_argument_int("--num_loops", 10);
-            num_loops_in_shader = get_cmd_line_argument_int("--num_loops_in_shader", 100000);
-            thread_num_per_block = get_cmd_line_argument_int("--thread_num_per_block", 256);
-            num_data_elements = get_cmd_line_argument_int("--num_data_elements", thread_num_per_block * 512 * 8);
-
+            m = get_cmd_line_argument_int("--m", 16 * 256);
+            n = get_cmd_line_argument_int("--n", 16 * 256);
+            k = get_cmd_line_argument_int("--k", 16 * 256);
             if (get_cmd_line_argument_bool("--f16")) {
                 mode_precision = Option::F16;
             }

@@ -21,15 +21,14 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="MulAdd.hlsl" />
-    <CustomBuild Include="MulAddFloat16.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="third_party">
       <UniqueIdentifier>{4232dc68-93bf-4bfe-9a1e-7ec1a0d29114}</UniqueIdentifier>
     </Filter>
     <Filter Include="utils">
       <UniqueIdentifier>{665c5919-987f-4c33-b162-92d93897788d}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

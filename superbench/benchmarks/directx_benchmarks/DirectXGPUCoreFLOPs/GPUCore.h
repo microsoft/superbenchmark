@@ -19,6 +19,10 @@
 #include <dxgi1_6.h>
 #include <windowsx.h>
 
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
+#include <directml.h>
+
 // linker
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -32,10 +36,10 @@
 #include <dxgidebug.h>
 #endif
 
+#include "../third_party/DXSampleHelper.h"
+#include "../third_party/d3dx12.h"
 #include "../utils/D3D12Timer.h"
 #include "Options.h"
-#include "../third_party/d3dx12.h"
-#include "../third_party/DXSampleHelper.h"
 
 using namespace std;
 using namespace DirectX;
@@ -45,16 +49,6 @@ using namespace DirectX;
 // referenced by the GPU.
 // An example of this can be found in the class method: OnDestroy().
 using Microsoft::WRL::ComPtr;
-
-struct Data {
-    float v1;
-    float v2;
-};
-
-struct ParameterBuffer {
-    int numLoop;
-    int numThread;
-};
 
 #define SAFE_RELEASE(p)                                                                                                \
     if (p)                                                                                                             \
@@ -79,21 +73,20 @@ class GPUCore {
     void LoadPipeline();
 
     /**
-     * @brief Prepare input and output data and buffers.
-     * @param NumDataElements the number of elements.
+     * @brief Prepare input and output data and buffers of the tensor elements..
      */
-    void PrepareData(int numDataElements);
+    template <typename T> void PrepareData(const int m, const int n, const int k);
 
     /**
-     * @brief Setup GPU pipeline resource like root signature and shader.
+     * @brief Setup and compile DirectML operator.
      */
-    void LoadAssets();
+    void LoadAssets(int m, int n, int k, DML_TENSOR_DATA_TYPE dataType);
 
     /**
-     * @brief Start the computation job.
+     * @brief Initialize and tart the computation job.
      * @return the elapsed time in ms.
      */
-    double DoComputeWork_MulAdd();
+    template <typename T> double InitializeExecuteComputeOp(const int m, const int n, const int k);
 
     /**
      * @brief Wait until command completed.
@@ -101,15 +94,9 @@ class GPUCore {
     void FlushCommandQueue();
 
     /**
-     * @brief Helper function for debuging, which print the result array.
+     * @brief Close and execute command list, wait until command completed.
      */
-    void PrintOutputResult();
-
-    /**
-     * @brief Helper function for debuging, which print the source code of shader.
-     * @param computeShaderBlob the binary code of shader.
-     */
-    void PrintAssembleShaderCode(Microsoft::WRL::ComPtr<ID3DBlob> computeShaderBlob);
+    void CloseExecuteResetWait();
 
     /**
      * @brief Create a default buffer and upload data with the upload buffer.
@@ -130,6 +117,10 @@ class GPUCore {
     ComPtr<ID3D12CommandAllocator> m_commandAllocator;
     ComPtr<ID3D12CommandQueue> m_commandQueue;
     ComPtr<ID3D12GraphicsCommandList> m_commandList;
+    ComPtr<IDMLDevice> m_dmlDevice;
+    ComPtr<IDMLCommandRecorder> m_dmlCommandRecorder;
+    ComPtr<IDMLCompiledOperator> m_dmlCompiledOperator;
+    ComPtr<IDMLBindingTable> m_bindingTable;
 
     // Input buffer to pass data into GPU.
     ComPtr<ID3D12Resource> m_inputBufferA = nullptr;
@@ -142,18 +133,6 @@ class GPUCore {
 
     // Readback buffer to copy data from GPU side to CPU side.
     ComPtr<ID3D12Resource> m_readBackBuffer = nullptr;
-
-    // Constant buffer of GPU.
-    ComPtr<ID3D12Resource> m_constantBuffer = nullptr;
-
-    // Root signature of GPU pipeline.
-    ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;
-
-    // Pipeline object to execute.
-    std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> m_PSOs;
-
-    // Shader objects that loaded.
-    std::unordered_map<std::string, ComPtr<ID3DBlob>> m_shaders;
 
     // Synchronization objects.
     Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
