@@ -15,9 +15,6 @@ def info_command_handler(output_dir=None):
 
     Args:
         output_dir (str): Output directory.
-
-    Returns:
-        dict: node info.
     """
     try:
         output_dir = create_sb_output_dir(output_dir)

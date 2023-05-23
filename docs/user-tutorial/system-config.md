@@ -4,6 +4,8 @@ id: system-config
 
 # System Config Info
 
+This tool is to collect the system information automatically on the tested GPU nodes including the following hardware categories:
+
 - [System](#system)
 - [Memory](#memory)
 - [CPU](#cpu)
@@ -12,7 +14,21 @@ id: system-config
 - [Accelerator](#accelerator)
 - [PCIe](#pcie)
 
-## Parameter amd Details
+## Usage
+
+1. [Install SuperBench](../getting-started/installation.mdx) on the local machine.
+
+2. Prepare the host file of the tested GPU nodes using [Ansible Inventory](../getting-started/configuration.md#ansible-inventory) on the local machine.
+
+3. After installing the Superbnech and the host file is ready, you can start to collect the sys info automatically using  `sb run-info` command. The detailed command can be found from [SuperBench CLI](../cli.md).
+
+  ```
+  sb run-info -f host.ini --output-dir ${output-dir}
+  ```
+
+4. After the command finished, you can find the output system info json file `sys-info.json` of each node under \${output_dir}/nodes/${node_name}.
+
+## Parameter and Details
 
 ### System
 

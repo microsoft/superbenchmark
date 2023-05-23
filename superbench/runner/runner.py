@@ -198,7 +198,7 @@ class SuperBenchRunner():
         self._ansible_client.run(self._ansible_client.get_playbook_config('deploy.yaml', extravars=extravars))
 
     def run_sys_info(self):
-        """Run the SuperBench benchmarks distributedly."""
+        """Run the system info on all nodes."""
         self.check_env()
 
         logger.info('Runner is going to run node info.')

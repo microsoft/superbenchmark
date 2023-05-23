@@ -165,6 +165,26 @@ Execute GPT2 model benchmark in default configuration:
 sb exec --config-override superbench.enable="['gpt2_models']"
 ```
 
+### `sb node info`
+Get system info on the local node.
+
+```bash title="SB CLI"
+sb node info [--output-dir]
+```
+
+#### Optional arguments
+
+| Name           | Default | Description                                                                 |
+|----------------|---------|-----------------------------------------------------------------------------|
+| `--output-dir` | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
+
+#### Examples
+
+Get system info on the local node and save it into the `outputs` dir:
+```bash title="SB CLI"
+sb node info --output-dir outputs
+```
+
 ### `sb result diagnosis`
 
 Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
@@ -333,6 +353,54 @@ Run kernel launch benchmarks on host directly without using Docker:
 ```bash title="SB CLI"
 sb run --no-docker --host-list localhost --config-override \
   superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
+```
+
+### `sb run-info`
+
+```bash title="SB CLI"
+sb run-info [--docker-image]
+          [--docker-password]
+          [--docker-username]
+          [--host-file]
+          [--host-list]
+          [--host-password]
+          [--host-username]
+          [--no-image-pull]
+          [--output-dir]
+          [--private-key]
+```
+
+#### Optional arguments
+
+| Name                  | Default                 | Description                                                                       |
+|-----------------------|-------------------------|-----------------------------------------------------------------------------------|
+| `--docker-image` `-i` | `superbench/superbench` | Docker image URI, [here](./user-tutorial/container-images.mdx) listed all images. |
+| `--docker-password`   | `None`                  | Docker registry password if authentication is needed.                             |
+| `--docker-username`   | `None`                  | Docker registry username if authentication is needed.                             |
+| `--host-file` `-f`    | `None`                  | Path to Ansible inventory host file.                                              |
+| `--host-list` `-l`    | `None`                  | Comma separated host list.                                                        |
+| `--host-password`     | `None`                  | Host password or key passphase if needed.                                         |
+| `--host-username`     | `None`                  | Host username if needed.                                                          |
+| `--no-image-pull`     | `False`                 | Skip pull and use local Docker image.                                             |
+| `--output-dir`        | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified.       |
+| `--private-key`       | `None`                  | Path to private key if needed.                                                    |
+
+#### Global arguments
+
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
+
+#### Examples
+
+Collect system info on local GPU node:
+```bash title="SB CLI"
+sb run-info --host-list localhost
+```
+
+Collect system info on all nodes in `./host.ini`:
+```bash title="SB CLI"
+sb run-info --host-file ./host.ini
 ```
 
 ### `sb version`

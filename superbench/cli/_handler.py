@@ -333,15 +333,23 @@ def run_info_command_handler(
     output_dir=None,
     private_key=None
 ):
-    """Get node hardware info.
+    """Collect the system info on all given nodes.
 
     Args:
-        output_dir (str): Output directory.
+        docker_image (str, optional): Docker image URI. Defaults to superbench/superbench:latest.
+        docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
+        docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
+        no_image_pull (bool, optional): Skip pull and use local Docker image. Defaults to False.
+        host_file (str, optional): Path to Ansible inventory host file. Defaults to None.
+        host_list (str, optional): Comma separated host list. Defaults to None.
+        host_username (str, optional): Host username if needed. Defaults to None.
+        host_password (str, optional): Host password or key passphase if needed. Defaults to None.
+        output_dir (str, optional): Path to output directory. Defaults to None.
+        private_key (str, optional): Path to private key if needed. Defaults to None.
 
-    Returns:
-        dict: node info.
+    Raises:
+        CLIError: If input arguments are invalid.
     """
-
     docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
         docker_image=docker_image,
         docker_username=docker_username,
