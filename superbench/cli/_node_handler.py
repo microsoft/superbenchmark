@@ -27,4 +27,3 @@ def info_command_handler(output_dir=None):
             json.dump(info, f)
     except Exception as ex:
         raise RuntimeError('Failed to get node info.') from ex
-    return info
