@@ -197,6 +197,24 @@ class SuperBenchRunner():
             )
         self._ansible_client.run(self._ansible_client.get_playbook_config('deploy.yaml', extravars=extravars))
 
+    def run_sys_info(self):
+        """Run the SuperBench benchmarks distributedly."""
+        self.check_env()
+
+        logger.info('Runner is going to run node info.')
+
+        fcmd = "docker exec sb-workspace bash -c '{command}'"
+        if self._docker_config.skip:
+            fcmd = "bash -c 'cd $SB_WORKSPACE && {command}'"
+        ansible_runner_config = self._ansible_client.get_shell_config(
+            fcmd.format(command='sb node info --output-dir {output_dir}'.format(output_dir=self._sb_output_dir))
+        )
+        ansible_rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
+
+        if ansible_rc != 0:
+            self.cleanup()
+        self.fetch_results()
+
     def check_env(self):    # pragma: no cover
         """Check SuperBench environment."""
         logger.info('Checking SuperBench environment.')

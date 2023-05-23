@@ -319,3 +319,44 @@ def run_command_handler(
     runner.run()
     if runner.get_failure_count() != 0:
         sys.exit(runner.get_failure_count())
+
+
+def run_info_command_handler(
+    docker_image='superbench/superbench',
+    docker_username=None,
+    docker_password=None,
+    no_image_pull=False,
+    host_file=None,
+    host_list=None,
+    host_username=None,
+    host_password=None,
+    output_dir=None,
+    private_key=None
+):
+    """Get node hardware info.
+
+    Args:
+        output_dir (str): Output directory.
+
+    Returns:
+        dict: node info.
+    """
+
+    docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
+        docker_image=docker_image,
+        docker_username=docker_username,
+        docker_password=docker_password,
+        no_docker=False,
+        no_image_pull=no_image_pull,
+        host_file=host_file,
+        host_list=host_list,
+        host_username=host_username,
+        host_password=host_password,
+        output_dir=output_dir,
+        private_key=private_key,
+    )
+
+    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
+    runner.run_sys_info()
+    if runner.get_failure_count() != 0:
+        sys.exit(runner.get_failure_count())
