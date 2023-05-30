@@ -1,16 +1,18 @@
 @echo off
-setlocal enabledelayedexpansion
+REM Copyright (c) Microsoft Corporation - All rights reserved
+REM Licensed under the MIT License
 
-REM Iterate through all .sln files in the current directory and its subdirectories
+
+SETLOCAL EnableDelayedExpansion
+
 for /r %%F in (*.sln) do (
-    :: Process the .sln file here
-    set SLN_PATH=%%~dpF%%~nxF
-    SET CURRENT_PATH=%~dp0
-    SET MSBUILD="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
-    :: Download dependencise
-    %MSBUILD% %SLN_PATH% -t:restore -p:RestorePackagesConfig=true
-    :: Build project
-    %MSBUILD% %SLN_PATH%  /p:Configuration=Release /p:AdditionalLibraryDirectories="%WindowsSDKDir%\Lib" /p:AdditionalIncludeDirectories="%WindowsSDKDir%\Include" /p:OutDir="%SB_MICRO_PATH%\bin"
+    echo Found .sln file: %%~dpF%%~nxF
+    SET "SLN_PATH=%%~dpF%%~nxF"
+    SET "MSBUILD=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+    REM Download dependencies
+    "!MSBUILD!" "!SLN_PATH!" -t:restore -p:RestorePackagesConfig=true
+    REM Build project
+    "!MSBUILD!" "!SLN_PATH!" /p:Configuration=Release /p:AdditionalLibraryDirectories="%WindowsSDKDir%\Lib" /p:AdditionalIncludeDirectories="%WindowsSDKDir%\Include" /p:OutDir="%SB_MICRO_PATH%\bin"
 )
 
 endlocal

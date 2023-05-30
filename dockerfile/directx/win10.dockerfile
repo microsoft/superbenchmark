@@ -49,14 +49,14 @@ RUN setx INCLUDE "%include%;%WindowsSDKDir%\\Include" /M && \
     setx PATH "%path%;%SB_MICRO_PATH%\\bin" /M
 
 WORKDIR ${SB_HOME}
-COPY ./superbenchmark/ ${SB_HOME}
+COPY ./ ${SB_HOME}
 
 # Download vs_BuildTools.exe if not already present
-RUN mkdir ${SB_MICRO_PATH}/bin && \
-    curl.exe -L https://aka.ms/vs/17/release/vs_BuildTools.exe -o %SB_MICRO_PATH%/bin/vs_BuildTools.exe && \
-    curl.exe -L https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -o %SB_MICRO_PATH%/bin/nuget.exe
+RUN mkdir "%SB_MICRO_PATH%/bin"
+RUN curl.exe -L https://aka.ms/vs/17/release/vs_BuildTools.exe -o "%SB_MICRO_PATH%/bin/vs_BuildTools.exe" && \
+    curl.exe -L https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -o "%SB_MICRO_PATH%/bin/nuget.exe"
 # Run the setup script to install the visual studio components
-RUN ${SB_HOME}/dockerfile/directx/install-components.bat
+RUN "%SB_HOME%\\dockerfile\\directx\\install-components.bat"
 
 # Install Superbench
 RUN python -m pip install setuptools==65.0.0 && \
