@@ -124,7 +124,7 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
                     )
                 )
                 return False
-        self._result.add_result(self._support_precisions[precision], max(flops))
+        self._result.add_result(precision + '_flops', max(flops))
         return True
 
 BenchmarkRegistry.register_benchmark('directx-gpucoreflops', DirectXGPUCoreFlops, platform=Platform.DIRECTX)

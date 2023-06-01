@@ -253,7 +253,7 @@ class SuperBenchRunner():
         for node_path in (self._output_path / 'nodes').glob('*'):
             if not node_path.is_dir():
                 continue
-            results_summary = self.__create_single_node_summary(node_path)
+            results_summary = create_single_node_summary(node_path)
             results_summary['node'] = node_path.name
             all_results.append(results_summary)
 
@@ -261,155 +261,6 @@ class SuperBenchRunner():
             for result in all_results:
                 json.dump(result, f)
                 f.write('\n')
-
-    def __create_single_node_summary(self, node_path):    # pragma: no cover # noqa: C901
-        """Create the result summary file of single node.
-
-        Args:
-            node_path (Path): The Path instance of node directory.
-
-        Returns:
-            dict: Result summary of single node.
-        """
-        results_summary = dict()
-        reduce_ops = dict()
-        file_list = [Path(f) for f in natsorted([str(f) for f in node_path.glob('**/results.json')])]
-        for results_file in file_list:
-            with results_file.open() as f:
-                try:
-                    results = json.load(f)
-                except ValueError:
-                    logger.error('Invalid JSON file: {}'.format(results_file))
-                    continue
-
-                for result in results:
-                    try:
-                        benchmark_name = result['name']
-                    except Exception:
-                        logger.error('Invalid content in JSON file: {}'.format(results_file))
-                        continue
-                    if benchmark_name not in results_summary:
-                        results_summary[benchmark_name] = defaultdict(list)
-                    for metric in result['result']:
-                        metric_name = '{}/{}'.format(benchmark_name, metric)
-                        if metric_name not in reduce_ops:
-                            reduce_ops[metric_name] = result['reduce_op'][metric]
-                        elif reduce_ops[metric_name] != result['reduce_op'][metric]:
-                            logger.error('Inconsistent reduce type for metric: {}'.format(metric_name))
-                            continue
-
-                        results_summary[benchmark_name][metric].append(result['result'][metric])
-
-        results_summary = self.__merge_benchmark_metrics(results_summary, reduce_ops)
-        monitor_summary = self.__merge_monitor_metrics(node_path)
-        results_summary = {**results_summary, **monitor_summary}
-        with (node_path / 'results-summary.json').open(mode='w') as f:
-            json.dump(results_summary, f, indent=2)
-
-        return results_summary
-
-    def __generate_metric_name(self, benchmark_name, metric, rank_count, run_count, curr_rank, curr_run):
-        """Generate the summarized metrics name.
-
-        The format of metric name is:
-               {benchmark_name}/[{run_count}/]{metric_name}[:rank]
-        [run_count] and [rank] parts are optional.
-
-        Args:
-            benchmark_name (str): The benchmark name.
-            metric (str): The metric name.
-            rank_count (int): The total count of rank.
-            run_count (int): The total count of benchmarking.
-            curr_rank (int): The current rank index.
-            curr_run (int): The current run index.
-
-        Returns:
-            dict: Flattened result with metric as key.
-        """
-        metric_name = benchmark_name
-        if run_count > 1:
-            metric_name = '{}/{}'.format(metric_name, curr_run)
-        metric_name = '{}/{}'.format(metric_name, metric)
-        if rank_count > 1:
-            metric_name = '{}:{}'.format(metric_name, curr_rank)
-
-        return metric_name
-
-    def __merge_benchmark_metrics(self, results_summary, reduce_ops):
-        """Merge metrics of all benchmarks in one node.
-
-        Args:
-            results_summary (dict): Summarized result of one node.
-            reduce_ops (dict): The reduce type of each metric.
-
-        Returns:
-            dict: Flattened result with metric as key.
-        """
-        metrics_summary = dict()
-        for benchmark_name in results_summary:
-            for metric in results_summary[benchmark_name]:
-                metric_name = '{}/{}'.format(benchmark_name, metric)
-                if metric_name not in reduce_ops or (
-                    reduce_ops[metric_name] is not None and reduce_ops[metric_name] not in ReduceType.get_values()
-                ):
-                    logger.error('Unknown reduce type for metric: {}'.format(metric_name))
-                    continue
-
-                if reduce_ops[metric_name] is not None:
-                    reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
-                    values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
-                    for run in range(len(values)):
-                        metric_name = self.__generate_metric_name(benchmark_name, metric, 1, len(values), 0, run)
-                        metrics_summary[metric_name] = values[run]
-                else:
-                    rank_count = len(results_summary[benchmark_name][metric])
-                    for rank, rank_value in enumerate(results_summary[benchmark_name][metric]):
-                        run_count = len(rank_value)
-                        for run, run_value in enumerate(rank_value):
-                            metric_name = self.__generate_metric_name(
-                                benchmark_name, metric, rank_count, run_count, rank, run
-                            )
-                            metrics_summary[metric_name] = run_value
-
-        return metrics_summary
-
-    def __merge_monitor_metrics(self, node_path):
-        """Merge and summarize monitor metrics of one node.
-
-        Args:
-            node_path (Path): The Path instance of node directory.
-
-        Returns:
-            dict: Flattened result with metric as key.
-        """
-        metrics_summary = dict()
-        all_samples = list()
-        file_list = list(node_path.glob('**/monitor.jsonl'))
-        for results_file in file_list:
-            try:
-                with jsonlines.open(results_file) as reader:
-                    all_samples = list(reader)
-            except BaseException as e:
-                logger.error('Invalid Jsonline file: {}, error message: {}'.format(results_file, str(e)))
-                continue
-        all_samples = sorted(all_samples, key=lambda k: k.get('time', '0'))
-        metrics_dict = dict()
-        for sample in all_samples:
-            for metric, value in sample.items():
-                if metric not in metrics_dict:
-                    metrics_dict[metric] = list()
-                metrics_dict[metric].append(value)
-
-        for metric, values in metrics_dict.items():
-            prefix = metric.split(':')[0]
-            for pattern, reduce_type in MonitorRecord.reduce_ops.items():
-                if pattern == prefix:
-                    reduce_func = Reducer.get_reduce_func(reduce_type)
-                    metric_name = 'monitor/{}'.format(metric)
-                    metrics_summary[metric_name] = reduce_func(values)
-                    continue
-
-        return metrics_summary
 
     def _run_proc(self, benchmark_name, mode, vars):
         """Run the process.
@@ -509,3 +360,152 @@ class SuperBenchRunner():
             self.fetch_results()
 
         self.__create_results_summary()
+
+def create_single_node_summary(node_path):    # pragma: no cover # noqa: C901
+    """Create the result summary file of single node.
+
+    Args:
+        node_path (Path): The Path instance of node directory.
+
+    Returns:
+        dict: Result summary of single node.
+    """
+    results_summary = dict()
+    reduce_ops = dict()
+    file_list = [Path(f) for f in natsorted([str(f) for f in node_path.glob('**/results.json')])]
+    for results_file in file_list:
+        with results_file.open() as f:
+            try:
+                results = json.load(f)
+            except ValueError:
+                logger.error('Invalid JSON file: {}'.format(results_file))
+                continue
+
+            for result in results:
+                try:
+                    benchmark_name = result['name']
+                except Exception:
+                    logger.error('Invalid content in JSON file: {}'.format(results_file))
+                    continue
+                if benchmark_name not in results_summary:
+                    results_summary[benchmark_name] = defaultdict(list)
+                for metric in result['result']:
+                    metric_name = '{}/{}'.format(benchmark_name, metric)
+                    if metric_name not in reduce_ops:
+                        reduce_ops[metric_name] = result['reduce_op'][metric]
+                    elif reduce_ops[metric_name] != result['reduce_op'][metric]:
+                        logger.error('Inconsistent reduce type for metric: {}'.format(metric_name))
+                        continue
+
+                    results_summary[benchmark_name][metric].append(result['result'][metric])
+
+    results_summary = merge_benchmark_metrics(results_summary, reduce_ops)
+    monitor_summary = merge_monitor_metrics(node_path)
+    results_summary = {**results_summary, **monitor_summary}
+    with (node_path / 'results-summary.json').open(mode='w') as f:
+        json.dump(results_summary, f, indent=2)
+
+    return results_summary
+
+def generate_metric_name(benchmark_name, metric, rank_count, run_count, curr_rank, curr_run):
+    """Generate the summarized metrics name.
+
+    The format of metric name is:
+            {benchmark_name}/[{run_count}/]{metric_name}[:rank]
+    [run_count] and [rank] parts are optional.
+
+    Args:
+        benchmark_name (str): The benchmark name.
+        metric (str): The metric name.
+        rank_count (int): The total count of rank.
+        run_count (int): The total count of benchmarking.
+        curr_rank (int): The current rank index.
+        curr_run (int): The current run index.
+
+    Returns:
+        dict: Flattened result with metric as key.
+    """
+    metric_name = benchmark_name
+    if run_count > 1:
+        metric_name = '{}/{}'.format(metric_name, curr_run)
+    metric_name = '{}/{}'.format(metric_name, metric)
+    if rank_count > 1:
+        metric_name = '{}:{}'.format(metric_name, curr_rank)
+
+    return metric_name
+
+def merge_benchmark_metrics(results_summary, reduce_ops):
+    """Merge metrics of all benchmarks in one node.
+
+    Args:
+        results_summary (dict): Summarized result of one node.
+        reduce_ops (dict): The reduce type of each metric.
+
+    Returns:
+        dict: Flattened result with metric as key.
+    """
+    metrics_summary = dict()
+    for benchmark_name in results_summary:
+        for metric in results_summary[benchmark_name]:
+            metric_name = '{}/{}'.format(benchmark_name, metric)
+            if metric_name not in reduce_ops or (
+                reduce_ops[metric_name] is not None and reduce_ops[metric_name] not in ReduceType.get_values()
+            ):
+                logger.error('Unknown reduce type for metric: {}'.format(metric_name))
+                continue
+
+            if reduce_ops[metric_name] is not None:
+                reduce_func = Reducer.get_reduce_func(ReduceType(reduce_ops[metric_name]))
+                values = [reduce_func(list(result)) for result in zip(*results_summary[benchmark_name][metric])]
+                for run in range(len(values)):
+                    metric_name = generate_metric_name(benchmark_name, metric, 1, len(values), 0, run)
+                    metrics_summary[metric_name] = values[run]
+            else:
+                rank_count = len(results_summary[benchmark_name][metric])
+                for rank, rank_value in enumerate(results_summary[benchmark_name][metric]):
+                    run_count = len(rank_value)
+                    for run, run_value in enumerate(rank_value):
+                        metric_name = generate_metric_name(
+                            benchmark_name, metric, rank_count, run_count, rank, run
+                        )
+                        metrics_summary[metric_name] = run_value
+
+    return metrics_summary
+
+def merge_monitor_metrics(node_path):
+    """Merge and summarize monitor metrics of one node.
+
+    Args:
+        node_path (Path): The Path instance of node directory.
+
+    Returns:
+        dict: Flattened result with metric as key.
+    """
+    metrics_summary = dict()
+    all_samples = list()
+    file_list = list(node_path.glob('**/monitor.jsonl'))
+    for results_file in file_list:
+        try:
+            with jsonlines.open(results_file) as reader:
+                all_samples = list(reader)
+        except BaseException as e:
+            logger.error('Invalid Jsonline file: {}, error message: {}'.format(results_file, str(e)))
+            continue
+    all_samples = sorted(all_samples, key=lambda k: k.get('time', '0'))
+    metrics_dict = dict()
+    for sample in all_samples:
+        for metric, value in sample.items():
+            if metric not in metrics_dict:
+                metrics_dict[metric] = list()
+            metrics_dict[metric].append(value)
+
+    for metric, values in metrics_dict.items():
+        prefix = metric.split(':')[0]
+        for pattern, reduce_type in MonitorRecord.reduce_ops.items():
+            if pattern == prefix:
+                reduce_func = Reducer.get_reduce_func(reduce_type)
+                metric_name = 'monitor/{}'.format(metric)
+                metrics_summary[metric_name] = reduce_func(values)
+                continue
+
+    return metrics_summary

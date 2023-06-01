@@ -13,6 +13,7 @@ from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
 from superbench.common.utils import SuperBenchLogger, logger, rotate_dir, stdout_logger
 from superbench.common.devices import GPU
 from superbench.monitor import Monitor
+from superbench.runner import create_single_node_summary
 
 
 class SuperBenchExecutor():
@@ -260,3 +261,4 @@ class SuperBenchExecutor():
             stdout_logger.stop()
             self.__write_benchmark_results(benchmark_name, benchmark_results)
             os.chdir(cwd)
+        create_single_node_summary(Path(self._sb_output_dir))
