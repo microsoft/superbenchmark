@@ -16,7 +16,7 @@ BenchmarkRegistry = LazyImport(
         map(
             importlib.import_module, [
                 'superbench.benchmarks.{}'.format(module)
-                for module in ['model_benchmarks', 'micro_benchmarks', 'docker_benchmarks']
+                for module in ['model_benchmarks', 'micro_benchmarks', 'docker_benchmarks', 'directx_benchmarks']
             ]
         )
     )

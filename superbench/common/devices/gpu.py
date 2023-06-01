@@ -29,6 +29,11 @@ class GPU():
             if not list(Path('/dev/dri').glob('card*')):
                 logger.warning('Cannot find AMD GPU device.')
             return 'amd'
+        if list(Path(r'C:\Windows\System32').glob('*DriverStore/FileRepository/u*.inf_amd64_*/*/aticfx64.dll')):
+            return 'amd-win'
+        if list(Path(r'C:\Windows\System32').glob('*DriverStore/FileRepository/nv*.inf_amd64_*/nvapi64.dll')):
+            return 'nvidia-win'
+
         return None
 
     @property
