@@ -15,7 +15,7 @@ cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh
 
 directxcppbuild:
-	cd .\superbench\benchmarks\directx_benchmarks && .\build.bat
+	cd ./superbench/benchmarks/directx_benchmarks && build.bat
 
 thirdparty:
 	cd ./third_party/ && make all
