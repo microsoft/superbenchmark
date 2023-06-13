@@ -20,7 +20,10 @@ import superbench
 try:
     pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
 except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
-    print('Try update pip/setuptools versions, for example, python3 -m pip install --upgrade pip setuptools==65.7')
+    print(
+        '\033[93mTry update pip/setuptools versions, for example, '
+        'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
+    )
     raise
 
 here = pathlib.Path(__file__).parent.resolve()
