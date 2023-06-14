@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/windows:2004
 # Download Python
 ADD https://www.python.org/ftp/python/3.9.7/python-3.9.7-amd64.exe python-installer.exe
 # Install Python
-RUN python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 && DEL python-installer.exe 
+RUN python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 && DEL python-installer.exe
 # Verify Python Was Successfully Installed
 RUN python --version && \
     python -m ensurepip --upgrade
@@ -25,14 +25,14 @@ RUN curl -s -L "https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8
     expand %TEMP%\DirectX\Jun2010_D3DCompiler_43_x64.cab -F:D3DCompiler_43.dll C:\GatheredDlls\ && \
     expand %TEMP%\DirectX\Jun2010_XAudio_x64.cab -F:XAudio2_7.dll C:\GatheredDlls\ && \
     expand %TEMP%\DirectX\Jun2010_XAudio_x64.cab -F:XAPOFX1_5.dll C:\GatheredDlls\ && \
-	break
+    break
 
 # Retrieve the DirectX shader compiler files needed for DirectX Raytracing (DXR)
 RUN curl -s -L "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.6.2104/dxc_2021_04-20.zip" --output %TEMP%\dxc.zip && \
     powershell -Command "Expand-Archive -Path \"$env:TEMP\dxc.zip\" -DestinationPath $env:TEMP" && \
     xcopy /y %TEMP%\bin\x64\dxcompiler.dll C:\GatheredDlls\ && \
     xcopy /y %TEMP%\bin\x64\dxil.dll C:\GatheredDlls\ && \
-	break
+    break
 
 # Copy the required DLLs to System32 dir
 RUN xcopy C:\GatheredDlls\* C:\windows\System32\ /i
@@ -42,7 +42,7 @@ ENV SB_HOME="C:/opt/superbench" \
     WindowsSDKDir="\\Program Files (x86)\\Windows Kits\\10\\"
 
 RUN setx INCLUDE "%include%;%WindowsSDKDir%\\Include" /M && \
-	setx LIB "%lib%;%WindowsSDKDir%\\Lib" /M && \
+    setx LIB "%lib%;%WindowsSDKDir%\\Lib" /M && \
     setx PATH "%path%;%SB_MICRO_PATH%\\bin" /M
 
 WORKDIR ${SB_HOME}
@@ -62,4 +62,4 @@ RUN python -m pip install setuptools==65.0.0 && \
 
 # Run the entrypoint script for enabling vendor-specific graphics APIs
 RUN powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force"
-ENTRYPOINT [ "powershell", "dockerfile/directx/enable-graphics-apis.ps1" ]
+ENTRYPOINT [ "python", "dockerfile/directx/enable-graphics-apis.py" ]
