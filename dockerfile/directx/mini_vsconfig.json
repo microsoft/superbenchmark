@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "components": [
+    "Microsoft.VisualStudio.Component.Windows10SDK.19041",
+    "Microsoft.VisualStudio.Workload.VCTools",
+    "Microsoft.Component.MSBuild",
+    "Microsoft.VisualStudio.Component.CoreBuildTools",
+    "Microsoft.VisualStudio.Workload.MSBuildTools",
+    "Microsoft.VisualStudio.Component.VC.CoreBuildTools",
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+    "Microsoft.VisualStudio.Component.VC.14.35.17.5.ATL.Spectre",
+    "Microsoft.VisualStudio.Component.VC.14.35.17.5.MFC.Spectre"
+  ]
+}
