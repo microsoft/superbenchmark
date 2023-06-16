@@ -2,7 +2,7 @@
 version: v0.5
 superbench:
   rules:
-    model-benchmarks:
+    model-train-benchmarks:
       statistics:
         - mean
       categories: model
@@ -14,6 +14,13 @@ superbench:
         - resnet_models/pytorch-resnet\d*/.*_train_throughput
         - vgg_models/pytorch-vgg\d*/.*_train_throughput
         - densenet_models/.*/.*_train_throughput
+    model-inference-benchmarks:
+      statistics:
+        - mean
+      categories: model
+      aggregate: True
+      metrics:
+        - model-benchmarks:.*/.*/.*_inference_throughput:\d+
     micro-aggregation:
       statistics: mean
       categories: MICRO1

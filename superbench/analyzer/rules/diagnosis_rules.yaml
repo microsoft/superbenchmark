@@ -191,4 +191,41 @@ superbench:
       categories: VGG
       function: multi_rules
       criteria: 'lambda label:True if label["vgg_throughput"]>=2 else False'
-
+    model_inference_throughput_rule:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      categories: Model
+      metrics:
+        - model-benchmarks:.*/.*bert.*/.*_inference_throughput
+        - model-benchmarks:.*/.*gpt.*/.*_inference_throughput
+        - model-benchmarks:.*/.*lstm.*/.*_inference_throughput
+  # Rule 8: If 2+ CNN models suffer > 5% downgrade, label it as Not acceptable
+    resnet_inference_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+        - model-benchmarks:.*/.*resnet.*/.*_inference_throughput
+    vgg_inference_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+        - model-benchmarks:.*/.*vgg.*/.*_inference_throughput
+    densenet_inference_throughput:
+      function: variance
+      criteria: 'lambda x:x<-0.05'
+      store: true
+      categories: CNN
+      metrics:
+        - model-benchmarks:.*/.*densenet.*/.*_inference_throughput
+    cnn_inference_throughput_rule:
+      categories: CNN
+      function: multi_rules
+      criteria: 'lambda label:True if label["resnet_inference_throughput"]+label["densenet_inference_throughput"]>=2 else False'
+    vgg_inference_throughput_rule:
+      categories: VGG
+      function: multi_rules
+      criteria: 'lambda label:True if label["vgg_inference_throughput"]>=2 else False'

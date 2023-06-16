@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import natsort as ns
 
 from joblib import Parallel, delayed
 import pandas as pd
@@ -72,6 +73,8 @@ class GenerateStatistics(GenerateBaseline):
 
             for benchmark in self._benchmark_metrics_dict:
                 benchmark_df = stat_df[self._benchmark_metrics_dict[benchmark]]
+                #benchmark_df = benchmark_df[,mixedsort(names(benchmark_df))]
+                benchmark_df = benchmark_df.reindex(ns.natsorted(benchmark_df.columns), axis=1)
                 sheet_name = benchmark if len(benchmark) <= 30 else benchmark.split('-')[-1]
                 benchmark_df.to_excel(writer, sheet_name=sheet_name)
                 worksheet = writer.sheets[sheet_name]
