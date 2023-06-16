@@ -71,7 +71,7 @@ class PytorchBERT(PytorchBase):
     def add_parser_arguments(self):
         """Add the BERT-specified arguments.
 
-        BERT model reference: https://huggingface.co/transformers/model_doc/bert.html
+        BERT model reference: https://huggingface.co/docs/transformers/model_doc/bert
         """
         super().add_parser_arguments()
 
@@ -227,7 +227,7 @@ class PytorchBERT(PytorchBase):
 
 
 # Register BERT Large benchmark.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
+# Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-bert-large',
     PytorchBERT,
@@ -235,7 +235,7 @@ BenchmarkRegistry.register_benchmark(
 )
 
 # Register BERT Base benchmark.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
+# Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-bert-base',
     PytorchBERT,
