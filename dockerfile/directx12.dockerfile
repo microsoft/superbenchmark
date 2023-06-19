@@ -37,8 +37,8 @@ RUN curl -s -L "https://github.com/microsoft/DirectXShaderCompiler/releases/down
 # Copy the required DLLs to System32 dir
 RUN xcopy C:\GatheredDlls\* C:\windows\System32\ /i
 
-ENV SB_HOME="C:/opt/superbench" \
-    SB_MICRO_PATH="C:/opt/superbench" \
+ENV SB_HOME="C:/superbench" \
+    SB_MICRO_PATH="C:/superbench" \
     WindowsSDKDir="\\Program Files (x86)\\Windows Kits\\10\\"
 
 RUN setx INCLUDE "%include%;%WindowsSDKDir%\\Include" /M && \
@@ -50,8 +50,7 @@ COPY ./ ${SB_HOME}
 
 # Download vs_BuildTools.exe if not already present
 RUN mkdir "%SB_MICRO_PATH%/bin"
-RUN curl -s -L https://aka.ms/vs/17/release/vs_BuildTools.exe -o "%SB_MICRO_PATH%/bin/vs_BuildTools.exe" && \
-    curl -s -L https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -o "%SB_MICRO_PATH%/bin/nuget.exe"
+RUN curl -s -L https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -o "%SB_MICRO_PATH%/bin/nuget.exe"
 # Run the setup script to install the visual studio components
 RUN "%SB_HOME%\\dockerfile\\directx\\install-components.bat"
 
@@ -62,4 +61,5 @@ RUN python -m pip install setuptools==65.0.0 && \
 
 # Run the entrypoint script for enabling vendor-specific graphics APIs
 RUN powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force"
-ENTRYPOINT [ "python", "dockerfile/directx/enable-graphics-apis.py" ]
+CMD [ "python", "dockerfile/directx/enable-graphics-apis.py" ]
+ENTRYPOINT [ "cmd.exe" ]
