@@ -24,7 +24,7 @@ jobs:
       shell: pwsh
       run: |
         docker build `
-          --file dockerfile/directx/win10.dockerfile `
+          --file dockerfile/directx12.dockerfile `
           --label org.opencontainers.image.source=${{ github.event.repository.html_url }} `
           --label org.opencontainers.image.created=${{ github.event.repository.pushed_at }} `
           --label org.opencontainers.image.revision=${{ github.sha }} `
