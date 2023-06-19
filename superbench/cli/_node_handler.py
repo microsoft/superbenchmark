@@ -9,8 +9,8 @@ from superbench.tools import SystemInfo
 def info_command_handler():
     """Get node hardware info.
 
-    Args:
-        output_dir (str): Output directory.
+    Returns:
+        dict: node info.
     """
     try:
         info = SystemInfo().get_all()
