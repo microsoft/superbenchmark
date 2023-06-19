@@ -24,8 +24,7 @@ class Platform(Enum):
     CPU = 'CPU'
     CUDA = 'CUDA'
     ROCM = 'ROCm'
-    DIRECTXAMD = 'DirectXAMD'
-    DIRECTXNVIDIA = 'DirectXNVIDIA'
+    DIRECTX = 'DirectX'
 
 
 class Framework(Enum):
