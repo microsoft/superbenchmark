@@ -65,14 +65,14 @@ helps['run'] = """
             --config-override superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
 """.format(cli_name=CLI_NAME)
 
-helps['run-info'] = """
+helps['node-info'] = """
     type: command
     short-summary: Collect the system info distributedly.
     examples:
         - name: Collect system info on local GPU node
-          text: {cli_name} run-info --host-list localhost
+          text: {cli_name} node-info
         - name: Collect system info on all nodes in ./host.ini"
-          text: {cli_name} run-info --host-file ./host.ini
+          text: {cli_name} node-info --host-file ./host.ini
 """.format(cli_name=CLI_NAME)
 
 helps['benchmark'] = """

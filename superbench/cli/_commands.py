@@ -23,7 +23,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('deploy', 'deploy_command_handler')
             g.command('exec', 'exec_command_handler')
             g.command('run', 'run_command_handler')
-            g.command('run-info', 'run_info_command_handler')
+            g.command('node-info', 'info_command_handler')
         with CommandGroup(self, 'benchmark', 'superbench.cli._benchmark_handler#{}') as g:
             g.command('list', 'benchmark_list_command_handler')
             g.command('list-parameters', 'benchmark_list_params_command_handler')

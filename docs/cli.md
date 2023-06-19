@@ -165,26 +165,6 @@ Execute GPT2 model benchmark in default configuration:
 sb exec --config-override superbench.enable="['gpt2_models']"
 ```
 
-### `sb node info`
-Get system info on the local node.
-
-```bash title="SB CLI"
-sb node info [--output-dir]
-```
-
-#### Optional arguments
-
-| Name           | Default | Description                                                                 |
-|----------------|---------|-----------------------------------------------------------------------------|
-| `--output-dir` | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
-
-#### Examples
-
-Get system info on the local node and save it into the `outputs` dir:
-```bash title="SB CLI"
-sb node info --output-dir outputs
-```
-
 ### `sb result diagnosis`
 
 Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
@@ -355,10 +335,10 @@ sb run --no-docker --host-list localhost --config-override \
   superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
 ```
 
-### `sb run-info`
+### `sb node-info`
 
 ```bash title="SB CLI"
-sb run-info [--docker-image]
+sb node-info [--docker-image]
           [--docker-password]
           [--docker-username]
           [--host-file]
@@ -395,12 +375,12 @@ sb run-info [--docker-image]
 
 Collect system info on local GPU node:
 ```bash title="SB CLI"
-sb run-info --host-list localhost
+sb node-info
 ```
 
 Collect system info on all nodes in `./host.ini`:
 ```bash title="SB CLI"
-sb run-info --host-file ./host.ini
+sb node-info --host-file ./host.ini
 ```
 
 ### `sb version`

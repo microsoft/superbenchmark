@@ -20,7 +20,7 @@ This tool is to collect the system information automatically on the tested GPU n
 
 2. Prepare the host file of the tested GPU nodes using [Ansible Inventory](../getting-started/configuration.md#ansible-inventory) on the local machine.
 
-3. After installing the Superbnech and the host file is ready, you can start to collect the sys info automatically using  `sb run-info` command. The detailed command can be found from [SuperBench CLI](../cli.md).
+3. After installing the Superbnech and the host file is ready, you can start to collect the sys info automatically using  `sb node-info` command. The detailed command can be found from [SuperBench CLI](../cli.md).
 
   ```
   sb run-info -f host.ini --output-dir ${output-dir}
