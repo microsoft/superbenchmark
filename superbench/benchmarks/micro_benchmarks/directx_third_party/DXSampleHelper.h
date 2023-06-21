@@ -9,12 +9,11 @@
 //
 //*********************************************************
 
-
 #pragma once
-#include <stdexcept>
-#include <wrl.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <stdexcept>
+#include <wrl.h>
 
 // Note that while ComPtr is used to manage the lifetime of resources on the CPU,
 // it has no understanding of the lifetime of resources on the GPU. Apps must account

@@ -11,17 +11,13 @@
 #include <string>
 #include <unordered_map>
 #include <wrl.h>
-
-#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
 #include <d3d12.h>
 #include <d3d12shader.h>
 #include <d3dcompiler.h>
+#include <directml.h>
 #include <dxgi1_6.h>
 #include <windowsx.h>
-
-#include <DirectXMath.h>
-#include <DirectXPackedVector.h>
-#include <directml.h>
 
 // linker
 #pragma comment(lib, "dxguid.lib")
@@ -36,9 +32,9 @@
 #include <dxgidebug.h>
 #endif
 
-#include "../third_party/DXSampleHelper.h"
-#include "../third_party/d3dx12.h"
-#include "../utils/D3D12Timer.h"
+#include "../directx_third_party/DXSampleHelper.h"
+#include "../directx_third_party/d3dx12.h"
+#include "../directx_utils/D3D12Timer.h"
 #include "Options.h"
 
 using namespace std;
@@ -105,7 +101,7 @@ class GPUCore {
      * @param initData the data that need to upload.
      * @param byteSize the size of data that need to upload.
      * @param UploadBuffer the upload that use for upload data.
-     * @return a constant buffer object.
+     * @return a default buffer object.
      */
     Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
                                                                const void *initData, UINT64 byteSize,

@@ -35,6 +35,9 @@ void GPUCore::Run() {
         PrepareData<float>(opts->m, opts->n, opts->k);
         // Setup pipeline and compile operator.
         LoadAssets(opts->m, opts->n, opts->k, DML_TENSOR_DATA_TYPE_FLOAT32);
+        for (int i = 0; i < opts->num_warm_up; ++i) {
+            InitializeExecuteComputeOp<float>(m, n, k);
+        }
         for (int i = 0; i < loops; ++i) {
             gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
             // Do FLOPs job.
@@ -46,6 +49,9 @@ void GPUCore::Run() {
     case Option::F16: {
         PrepareData<uint16_t>(opts->m, opts->n, opts->k);
         LoadAssets(opts->m, opts->n, opts->k, DML_TENSOR_DATA_TYPE_FLOAT16);
+        for (int i = 0; i < opts->num_warm_up; ++i) {
+            InitializeExecuteComputeOp<uint16_t>(m, n, k);
+        }
         for (int i = 0; i < loops; ++i) {
             gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
             // Do FLOPs job.
@@ -169,7 +175,7 @@ void GPUCore::LoadAssets(int m, int n, int k, DML_TENSOR_DATA_TYPE dataType) {
     dmlTensorDescA.Type = DML_TENSOR_TYPE_BUFFER;
 
     DML_BUFFER_TENSOR_DESC bindingDescA = {};
-    UINT tensorSizesA[4] = {1, 1, m, k};
+    UINT tensorSizesA[4] = {1, 1, static_cast<UINT>(m), static_cast<UINT>(k)};
     UINT tensorElementCount = tensorSizesA[0] * tensorSizesA[1] * tensorSizesA[2] * tensorSizesA[3];
     bindingDescA.DataType = dataType;
     bindingDescA.Flags = DML_TENSOR_FLAG_NONE;
@@ -185,7 +191,7 @@ void GPUCore::LoadAssets(int m, int n, int k, DML_TENSOR_DATA_TYPE dataType) {
     dmlTensorDescB.Type = DML_TENSOR_TYPE_BUFFER;
 
     DML_BUFFER_TENSOR_DESC bindingDescB = {};
-    UINT tensorSizesB[4] = {1, 1, k, n};
+    UINT tensorSizesB[4] = {1, 1, static_cast<UINT>(k), static_cast<UINT>(n)};
     tensorElementCount = tensorSizesB[0] * tensorSizesB[1] * tensorSizesB[2] * tensorSizesB[3];
     bindingDescB.DataType = dataType;
     bindingDescB.Flags = DML_TENSOR_FLAG_NONE;
@@ -201,7 +207,7 @@ void GPUCore::LoadAssets(int m, int n, int k, DML_TENSOR_DATA_TYPE dataType) {
     dmlTensorDescC.Type = DML_TENSOR_TYPE_BUFFER;
 
     DML_BUFFER_TENSOR_DESC bindingDescC = {};
-    UINT tensorSizes[4] = {1, 1, m, n};
+    UINT tensorSizes[4] = {1, 1, static_cast<UINT>(m), static_cast<UINT>(n)};
     tensorElementCount = tensorSizes[0] * tensorSizes[1] * tensorSizes[2] * tensorSizes[3];
     bindingDescC.DataType = dataType;
     bindingDescC.Flags = DML_TENSOR_FLAG_NONE;
@@ -412,7 +418,8 @@ template <typename T> double GPUCore::InitializeExecuteComputeOp(int m, int n, i
         T *outputBufferData{};
         ThrowIfFailed(m_readBackBuffer->Map(0, &tensorBufferRange, reinterpret_cast<void **>(&outputBufferData)));
         std::wstring outputString = L"output tensor: ";
-        for (size_t tensorElementIndex{0}; tensorElementIndex < m * n; ++tensorElementIndex, ++outputBufferData) {
+        for (size_t tensorElementIndex{0}; tensorElementIndex < static_cast<SIZE_T>(m * n);
+             ++tensorElementIndex, ++outputBufferData) {
             outputString += std::to_wstring(*outputBufferData) + L' ';
         }
 
@@ -460,7 +467,7 @@ void GPUCore::FlushCommandQueue() {
  * @param initData the data that need to upload.
  * @param byteSize the size of data that need to upload.
  * @param uploadBuffer the upload that use for upload data.
- * @return a constant buffer object.
+ * @return a default buffer object.
  */
 Microsoft::WRL::ComPtr<ID3D12Resource>
 GPUCore::CreateDefaultBuffer(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, const void *initData,
@@ -488,9 +495,9 @@ GPUCore::CreateDefaultBuffer(ID3D12Device *device, ID3D12GraphicsCommandList *cm
     subResourceData.RowPitch = byteSize;
     subResourceData.SlicePitch = subResourceData.RowPitch;
 
-    // CD3DX12_RESOURCE_BARRIER WriteBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
-    //     defaultBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
-    // cmdList->ResourceBarrier(1, &WriteBarrier);
+    CD3DX12_RESOURCE_BARRIER WriteBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        defaultBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+    cmdList->ResourceBarrier(1, &WriteBarrier);
     UpdateSubresources<1>(cmdList, defaultBuffer.Get(), uploadBuffer.Get(), 0, 0, 1, &subResourceData);
     CD3DX12_RESOURCE_BARRIER ReadBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
         defaultBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);

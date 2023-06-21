@@ -81,6 +81,7 @@ struct Options {
         std::cout << "Usage: " << std::endl;
         std::cout << "  --help: Print help message." << std::endl;
         std::cout << "  --num_loops: The number of benchmark runs." << std::endl;
+        std::cout << "  --num_warm_up: The number of warmup runs." << std::endl;
         std::cout << "  --m: m dimension of GEMM." << std::endl;
         std::cout << "  --n: n dimension of GEMM." << std::endl;
         std::cout << "  --k: l dimension of GEMM." << std::endl;
@@ -89,8 +90,6 @@ struct Options {
     }
 
   public:
-    // Data buffer size for copy benchmark.
-    uint64_t size;
     // Number of warm up rounds to run.
     int num_warm_up = 0;
     // The number of benchmark runs.
@@ -116,6 +115,7 @@ struct Options {
             get_option_usage();
         } else {
             num_loops = get_cmd_line_argument_int("--num_loops", 10);
+            num_warm_up = get_cmd_line_argument_int("--num_loops", 0);
             m = get_cmd_line_argument_int("--m", 16 * 256);
             n = get_cmd_line_argument_int("--n", 16 * 256);
             k = get_cmd_line_argument_int("--k", 16 * 256);
