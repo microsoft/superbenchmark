@@ -57,7 +57,7 @@ RUN "%SB_HOME%\\dockerfile\\directx\\install-components.bat"
 # Install Superbench
 RUN python -m pip install setuptools==65.0.0 && \
     python -m pip install --no-cache-dir .[amdworker] && \
-    make directxcppbuild
+    make directxbuild
 
 # Run the entrypoint script for enabling vendor-specific graphics APIs
 RUN powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force"

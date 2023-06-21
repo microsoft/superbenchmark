@@ -14,7 +14,7 @@ cppformat:
 cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh
 
-directxcppbuild:
+directxbuild:
 	cd ./superbench/benchmarks/ && build.bat
 
 thirdparty:
