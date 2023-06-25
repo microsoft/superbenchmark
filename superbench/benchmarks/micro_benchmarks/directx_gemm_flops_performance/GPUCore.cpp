@@ -125,12 +125,6 @@ void GPUCore::CreatePipeline() {
     m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr,
                                 IID_PPV_ARGS(&m_commandList));
 
-    // Command lists are created in the recording state, but there is nothing
-    // to record yet. The main loop expects it to be closed, so close it now.
-    ThrowIfFailed(m_commandList->Close());
-    // Reset the command list to prep for initialization commands.
-    ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
-
     // Create fence.
     ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
     m_currentFence = 1;
