@@ -117,7 +117,7 @@ class ResultSummary(RuleBase):
         summary_df = pd.DataFrame()
         for category in summary:
             for i in range(len(summary[category])):
-                summary_df = summary_df.append([summary[category][i]], ignore_index=True)
+                summary_df = pd.concat([summary_df, pd.DataFrame([summary[category][i]])], ignore_index=True)
         return summary_df
 
     def _generate_summary(self, round):
@@ -217,7 +217,7 @@ class ResultSummary(RuleBase):
                 file_handler.merge_column_in_excel(worksheet, row, 1)
             else:
                 logger.error('ResultSummary: excel_data_output - summary is empty.')
-            writer.save()
+            writer.close()
         except Exception as e:
             logger.error('ResultSummary: excel_data_output - {}'.format(str(e)))
 

@@ -285,7 +285,7 @@ class DataDiagnosis(RuleBase):
                 logger.log_and_raise(exception=IOError, msg='DataDiagnosis: excel_data_output - invalid file path.')
             file_handler.output_excel_raw_data(writer, raw_data_df, 'Raw Data')
             file_handler.output_excel_data_not_accept(writer, data_not_accept_df, rules)
-            writer.save()
+            writer.close()
         except Exception as e:
             logger.log_and_raise(exception=Exception, msg='DataDiagnosis: excel_data_output - {}'.format(str(e)))
 

@@ -59,11 +59,12 @@ class AnsibleClient():
                 self._config['cmdline'] += ' --ask-pass --ask-become-pass'
         logger.info(self._config)
 
-    def run(self, ansible_config, sudo=False):    # pragma: no cover
+    def run(self, ansible_config, cancel_callback=None, sudo=False):    # pragma: no cover
         """Run Ansible runner.
 
         Args:
             ansible_config (dict): Ansible config dict.
+            cancel_callback (Callable): Ansible runner cancel callback.
             sudo (bool): Run as sudo or not. Defaults to False.
 
         Returns:
@@ -73,7 +74,7 @@ class AnsibleClient():
             logger.info('Run as sudo ...')
             ansible_config['cmdline'] += ' --become'
         with tempfile.TemporaryDirectory(prefix='ansible') as tmpdir:
-            r = ansible_runner.run(private_data_dir=tmpdir, **ansible_config)
+            r = ansible_runner.run(private_data_dir=tmpdir, cancel_callback=cancel_callback, **ansible_config)
             logger.debug(r.stats)
         if r.rc == 0:
             logger.info('Run succeed, return code {}.'.format(r.rc))

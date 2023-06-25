@@ -14,6 +14,7 @@ class MonitorRecord:
     """Record class to save all monitoring data."""
     reduce_ops = {
         'gpu_temperature': ReduceType.MAX,
+        'gpu_power': ReduceType.MAX,
         'gpu_power_limit': ReduceType.MIN,
         'gpu_corrected_ecc': ReduceType.LAST,
         'gpu_uncorrected_ecc': ReduceType.LAST,
@@ -28,6 +29,7 @@ class MonitorRecord:
         self.__mem_total = None
         self.__gpu_usage = list()
         self.__gpu_temperature = list()
+        self.__gpu_power = list()
         self.__gpu_power_limit = list()
         self.__gpu_mem_used = list()
         self.__gpu_mem_total = list()
@@ -111,6 +113,20 @@ class MonitorRecord:
             gpu_temperature (list): list of gpu temperature.
         """
         self.__gpu_temperature = gpu_temperature
+
+    @property
+    def gpu_power(self):
+        """Decoration function to access __gpu_power."""
+        return self.__gpu_power
+
+    @gpu_power.setter
+    def gpu_power(self, gpu_power):
+        """Set the gpu realtime power, unit: Watt.
+
+        Args:
+            gpu_power(list): list of gpu realtime power.
+        """
+        self.__gpu_power = gpu_power
 
     @property
     def gpu_power_limit(self):

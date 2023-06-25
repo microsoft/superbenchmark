@@ -5,6 +5,11 @@
 
 import torch
 from transformers import GPT2Model, GPT2Config
+try:
+    import transformer_engine.pytorch as te
+    from transformer_engine.common.recipe import Format, DelayedScaling
+except ImportError:
+    te = None
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Precision
@@ -23,7 +28,7 @@ class GPT2BenchmarkModel(torch.nn.Module):
             num_classes (int): The number of objects for classification.
         """
         super().__init__()
-        self._bert = GPT2Model(config)
+        self._gpt2 = GPT2Model(config)
         self._linear = torch.nn.Linear(config.hidden_size, num_classes)
 
     def forward(self, input):
@@ -37,7 +42,7 @@ class GPT2BenchmarkModel(torch.nn.Module):
             result (torch.FloatTensor): Last layer hidden-state of the first token of the sequence
               (classification token) further processed by a Linear layer, shape (batch_size, hidden_size).
         """
-        outputs = self._bert(input)
+        outputs = self._gpt2(input)
         result = self._linear(outputs[0])
         return result
 
@@ -53,7 +58,13 @@ class PytorchGPT2(PytorchBase):
         """
         super().__init__(name, parameters)
         self._config = None
-        self._supported_precision = [Precision.FLOAT32, Precision.FLOAT16]
+        self._fp8_recipe = None
+        self._supported_precision = [
+            Precision.FLOAT32,
+            Precision.FLOAT16,
+            Precision.FP8_HYBRID,
+            Precision.FP8_E4M3,
+        ]
         self._optimizer_type = Optimizer.ADAMW
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
@@ -99,9 +110,31 @@ class PytorchGPT2(PytorchBase):
             n_embd=self._args.hidden_size, n_layer=self._args.num_hidden_layers, n_head=self._args.num_attention_heads
         )
 
+        enable_fp8 = precision.name.startswith('FP8_')
+        if enable_fp8 and te is None:
+            logger.error(
+                f'Create model with fp8 failed - model: {self._name}, precision: {precision},'
+                ' message: Cannot find transformer_engine.'
+            )
+            return False
+        if enable_fp8 and not self._gpu_available:
+            logger.error(
+                f'Create model with fp8 failed - model: {self._name}, precision: {precision},'
+                ' message: FP8 is only supported on GPU.'
+            )
+            return False
+
         try:
             self._model = GPT2BenchmarkModel(self._config, self._args.num_classes)
-            self._model = self._model.to(dtype=getattr(torch, precision.value))
+            if enable_fp8:
+                self._fp8_recipe = DelayedScaling(
+                    fp8_format=Format[precision.name.strip('FP8_')],
+                    amax_history_len=16,
+                    amax_compute_algo='max',
+                )
+                self._to_te_model(self._model.to(dtype=torch.float16))
+            else:
+                self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
                 self._model = self._model.cuda()
         except BaseException as e:
@@ -136,7 +169,11 @@ class PytorchGPT2(PytorchBase):
                 if self._gpu_available:
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
-                output = self._model(sample)
+                if self._fp8_recipe is not None:
+                    with te.fp8_autocast(enabled=True, fp8_recipe=self._fp8_recipe):
+                        output = self._model(sample)
+                else:
+                    output = self._model(sample)
                 loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
                 loss.backward()
                 self._optimizer.step()
@@ -168,7 +205,11 @@ class PytorchGPT2(PytorchBase):
                     start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
-                    self._model(sample)
+                    if self._fp8_recipe is not None:
+                        with te.fp8_autocast(enabled=True, fp8_recipe=self._fp8_recipe):
+                            self._model(sample)
+                    else:
+                        self._model(sample)
                     end = self._timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
