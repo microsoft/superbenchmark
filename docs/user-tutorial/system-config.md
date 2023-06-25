@@ -16,14 +16,26 @@ This tool is to collect the system information automatically on the tested GPU n
 
 ## Usage
 
+### Usage on local machine
+
+1. [Install SuperBench](../getting-started/installation.mdx) on the local machine using root privilege.
+
+2. Start to collect the sys info using `sb run --get-info --output-dir ${output-dir}` command using root privilege.
+
+3. After the command finished, you can find the output system info json file `sys-info.json` of local node under \${output_dir}.
+
+### Usage on multiple remote machines
+
 1. [Install SuperBench](../getting-started/installation.mdx) on the local machine.
+
+2. [Deploy SuperBench](../getting-started/run-superbench.md#deploy) onto the remote machines.
 
 2. Prepare the host file of the tested GPU nodes using [Ansible Inventory](../getting-started/configuration.md#ansible-inventory) on the local machine.
 
-3. After installing the Superbnech and the host file is ready, you can start to collect the sys info automatically using  `sb node-info` command. The detailed command can be found from [SuperBench CLI](../cli.md).
+3. After installing the Superbnech and the host file is ready, you can start to collect the sys info automatically using  `sb run --get-info` command. The detailed command can be found from [SuperBench CLI](../cli.md).
 
   ```
-  sb node-info -f host.ini --output-dir ${output-dir}
+  sb run --get-info -f host.ini -c config.yaml --output-dir ${output-dir}
   ```
 
 4. After the command finished, you can find the output system info json file `sys-info.json` of each node under \${output_dir}/nodes/${node_name}.

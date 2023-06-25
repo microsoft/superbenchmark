@@ -277,7 +277,8 @@ def run_command_handler(
     output_dir=None,
     private_key=None,
     config_file=None,
-    config_override=None
+    config_override=None,
+    get_info=False,
 ):
     """Run the SuperBench benchmarks distributedly.
 
@@ -297,10 +298,22 @@ def run_command_handler(
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
+        get_info (bool, optional): Collect node system info. Defaults to False.
 
     Raises:
         CLIError: If input arguments are invalid.
     """
+    if (get_info and not (host_file or host_list)):
+        try:
+            output_dir = create_sb_output_dir(output_dir)
+            info = SystemInfo().get_all()
+            output_dir_path = Path(output_dir)
+            with open(output_dir_path / 'sys_info.json', 'w') as f:
+                json.dump(info, f)
+        except Exception as ex:
+            raise RuntimeError('Failed to get node info.') from ex
+        return
+
     docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
         docker_image=docker_image,
         docker_username=docker_username,
@@ -318,68 +331,11 @@ def run_command_handler(
     )
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
-    runner.run()
-    if runner.get_failure_count() != 0:
-        sys.exit(runner.get_failure_count())
 
+    if get_info:
+        runner.run_sys_info()
+    else:
+        runner.run()
 
-def info_command_handler(
-    docker_image='superbench/superbench',
-    docker_username=None,
-    docker_password=None,
-    no_image_pull=False,
-    host_file=None,
-    host_list=None,
-    host_username=None,
-    host_password=None,
-    output_dir=None,
-    private_key=None
-):
-    """Collect the system info on all given nodes.
-
-    Args:
-        docker_image (str, optional): Docker image URI. Defaults to superbench/superbench:latest.
-        docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
-        docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
-        no_image_pull (bool, optional): Skip pull and use local Docker image. Defaults to False.
-        host_file (str, optional): Path to Ansible inventory host file. Defaults to None.
-        host_list (str, optional): Comma separated host list. Defaults to None.
-        host_username (str, optional): Host username if needed. Defaults to None.
-        host_password (str, optional): Host password or key passphase if needed. Defaults to None.
-        output_dir (str, optional): Path to output directory. Defaults to None.
-        private_key (str, optional): Path to private key if needed. Defaults to None.
-
-    Raises:
-        CLIError: If input arguments are invalid.
-    """
-    # local
-    if not (host_file or host_list):
-        try:
-            output_dir = create_sb_output_dir(output_dir)
-            info = SystemInfo().get_all()
-            output_dir_path = Path(output_dir)
-            with open(output_dir_path / 'sys_info.json', 'w') as f:
-                json.dump(info, f)
-        except Exception as ex:
-            raise RuntimeError('Failed to get node info.') from ex
-        return
-
-    # remote
-    docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
-        docker_image=docker_image,
-        docker_username=docker_username,
-        docker_password=docker_password,
-        no_docker=False,
-        no_image_pull=no_image_pull,
-        host_file=host_file,
-        host_list=host_list,
-        host_username=host_username,
-        host_password=host_password,
-        output_dir=output_dir,
-        private_key=private_key,
-    )
-
-    runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
-    runner.run_sys_info()
     if runner.get_failure_count() != 0:
         sys.exit(runner.get_failure_count())

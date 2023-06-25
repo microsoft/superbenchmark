@@ -23,7 +23,6 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('deploy', 'deploy_command_handler')
             g.command('exec', 'exec_command_handler')
             g.command('run', 'run_command_handler')
-            g.command('node-info', 'info_command_handler')
         with CommandGroup(self, 'benchmark', 'superbench.cli._benchmark_handler#{}') as g:
             g.command('list', 'benchmark_list_command_handler')
             g.command('list-parameters', 'benchmark_list_params_command_handler')
@@ -67,6 +66,9 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 type=str,
                 nargs='+',
                 help='Extra arguments to override config_file.'
+            )
+            ac.argument(
+                'get_info', options_list=('--get-info', '-g'), action='store_true', help='Collect node system info.'
             )
 
         with ArgumentsContext(self, 'benchmark') as ac:
