@@ -7,17 +7,17 @@
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers.
 #endif
 
-#include <chrono>
-#include <string>
-#include <unordered_map>
-#include <wrl.h>
 #include <DirectXPackedVector.h>
+#include <chrono>
 #include <d3d12.h>
 #include <d3d12shader.h>
 #include <d3dcompiler.h>
 #include <directml.h>
 #include <dxgi1_6.h>
+#include <string>
+#include <unordered_map>
 #include <windowsx.h>
+#include <wrl.h>
 
 // linker
 #pragma comment(lib, "dxguid.lib")
@@ -25,10 +25,7 @@
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#define DEBUG 0
-#define _PRINT_RESULT 0
-
-#if defined(DEBUG)
+#if defined(_DEBUG)
 #include <dxgidebug.h>
 #endif
 
@@ -46,15 +43,12 @@ using namespace DirectX;
 // An example of this can be found in the class method: OnDestroy().
 using Microsoft::WRL::ComPtr;
 
-#define SAFE_RELEASE(p)                                                                                                \
-    if (p)                                                                                                             \
-    (p)->Release()
 template <typename T> T *get_rvalue_ptr(T &&v) { return &v; }
 
 class GPUCore {
   public:
     GPUCore(Options *opts) : opts(opts) {}
-    ~GPUCore() { FlushCommandQueue(); }
+    ~GPUCore() {}
 
     /**
      * @brief Setup GPU and start benchmark.
@@ -66,7 +60,7 @@ class GPUCore {
      *		  create device object, command list, command queue
      *		  and synchronization objects.
      */
-    void LoadPipeline();
+    void CreatePipeline();
 
     /**
      * @brief Prepare input and output data and buffers of the tensor elements..
@@ -74,25 +68,31 @@ class GPUCore {
     template <typename T> void PrepareData(const int m, const int n, const int k);
 
     /**
+     * @brief Create and initialize DML_TENSOR_DESC.
+     */
+    std::unique_ptr<DML_TENSOR_DESC> CreateTensorDesc(DML_TENSOR_DATA_TYPE dataType, UINT *tensorSizes,
+                                                      int dimensionCount);
+
+    /**
      * @brief Setup and compile DirectML operator.
      */
-    void LoadAssets(int m, int n, int k, DML_TENSOR_DATA_TYPE dataType);
+    void SetupAndCompileOp(int m, int n, int k, DML_TENSOR_DATA_TYPE dataType);
 
     /**
-     * @brief Initialize and tart the computation job.
+     * @brief Initialize DirectML operator.
+     */
+    void InitializeOp();
+
+    /**
+     * @brief Execute the computation GEMM op.
      * @return the elapsed time in ms.
      */
-    template <typename T> double InitializeExecuteComputeOp(const int m, const int n, const int k);
-
-    /**
-     * @brief Wait until command completed.
-     */
-    void FlushCommandQueue();
+    template <typename T> double ExecuteComputeOp(const int m, const int n, const int k);
 
     /**
      * @brief Close and execute command list, wait until command completed.
      */
-    void CloseExecuteResetWait();
+    void CloseExecuteResetWait(DWORD dwMilliseconds = 300000);
 
     /**
      * @brief Create a default buffer and upload data with the upload buffer.
@@ -109,14 +109,15 @@ class GPUCore {
 
   private:
     // Pipeline objects.
-    ComPtr<ID3D12Device> m_device;
-    ComPtr<ID3D12CommandAllocator> m_commandAllocator;
-    ComPtr<ID3D12CommandQueue> m_commandQueue;
-    ComPtr<ID3D12GraphicsCommandList> m_commandList;
-    ComPtr<IDMLDevice> m_dmlDevice;
-    ComPtr<IDMLCommandRecorder> m_dmlCommandRecorder;
-    ComPtr<IDMLCompiledOperator> m_dmlCompiledOperator;
-    ComPtr<IDMLBindingTable> m_bindingTable;
+    ComPtr<ID3D12Device> m_device = nullptr;
+    ComPtr<ID3D12CommandAllocator> m_commandAllocator = nullptr;
+    ComPtr<ID3D12CommandQueue> m_commandQueue = nullptr;
+    ComPtr<ID3D12GraphicsCommandList> m_commandList = nullptr;
+    ComPtr<IDMLDevice> m_dmlDevice = nullptr;
+    ComPtr<IDMLCommandRecorder> m_dmlCommandRecorder = nullptr;
+    ComPtr<IDMLCompiledOperator> m_dmlCompiledOperator = nullptr;
+    ComPtr<IDMLBindingTable> m_bindingTable = nullptr;
+    ComPtr<ID3D12DescriptorHeap> m_descriptorHeap = nullptr;
 
     // Input buffer to pass data into GPU.
     ComPtr<ID3D12Resource> m_inputBufferA = nullptr;
@@ -131,7 +132,7 @@ class GPUCore {
     ComPtr<ID3D12Resource> m_readBackBuffer = nullptr;
 
     // Synchronization objects.
-    Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+    ComPtr<ID3D12Fence> m_fence = nullptr;
     UINT64 m_currentFence = 0;
     HANDLE m_eventHandle = nullptr;
 

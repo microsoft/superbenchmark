@@ -44,37 +44,36 @@ void D3D12Timer::init(ID3D12Device *pDevice, ID3D12CommandQueue *pCommandQueue, 
 }
 
 // Start timestamp.
-void D3D12Timer::start(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex) {
-    m_active = true;
-
-    pCommandList->EndQuery(m_queryHeap, D3D12_QUERY_TYPE_TIMESTAMP, timestampPairIndex * 2);
+bool D3D12Timer::start(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex) {
+    if (timestampPairIndex >= m_timerCount)
+        return false;
+    pCommandList->EndQuery(m_queryHeap, D3D12_QUERY_TYPE_TIMESTAMP, getStartIndex(timestampPairIndex));
+    return true;
 }
 
 // Stop timestamp.
-void D3D12Timer::stop(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex) {
-    m_active = false;
-
-    pCommandList->EndQuery(m_queryHeap, D3D12_QUERY_TYPE_TIMESTAMP, timestampPairIndex * 2 + 1);
+bool D3D12Timer::stop(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex) {
+    if (timestampPairIndex >= m_timerCount)
+        return false;
+    pCommandList->EndQuery(m_queryHeap, D3D12_QUERY_TYPE_TIMESTAMP, getEndIndex(timestampPairIndex));
+    return true;
 }
 
 // Resolve query data. Write query to device memory. Make sure to wait for query to finish before resolving data.
 void D3D12Timer::resolveQueryToCPU(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex) {
-    pCommandList->ResolveQueryData(m_queryHeap, D3D12_QUERY_TYPE_TIMESTAMP, timestampPairIndex * 2, 2,
+    pCommandList->ResolveQueryData(m_queryHeap, D3D12_QUERY_TYPE_TIMESTAMP, getStartIndex(timestampPairIndex), 2,
                                    m_queryResourceCPU, sizeof(GPUTimestampPair) * timestampPairIndex);
 }
 
 // Get start and end timestamp pair.
 double D3D12Timer::getElapsedMsByTimestampPair(UINT timestampPairIndex) {
-    GPUTimestampPair p{};
     GPUTimestampPair *timingData = nullptr;
-    D3D12_RANGE readRange{sizeof(p) * timestampPairIndex, sizeof(p) * (timestampPairIndex + 1)};
+    D3D12_RANGE readRange{sizeof(GPUTimestampPair) * timestampPairIndex, sizeof(GPUTimestampPair) * (timestampPairIndex + 1)};
     D3D12_RANGE writeRange{0, 0};
     if (SUCCEEDED(m_queryResourceCPU->Map(0, &readRange, (void **)&timingData))) {
-        timingData += timestampPairIndex;
-        p = *timingData;
         m_queryResourceCPU->Unmap(0, &writeRange);
+        return (timingData->Stop - timingData->Start) * m_gpuFreqInv;
     }
-    double timeInMs = (p.Stop - p.Start) * m_gpuFreqInv;
-    return timeInMs;
+    return -1;
 }
 } // namespace D3D12

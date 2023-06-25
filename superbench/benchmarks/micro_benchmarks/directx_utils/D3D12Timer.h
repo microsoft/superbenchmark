@@ -24,10 +24,10 @@ class D3D12Timer {
     void init(ID3D12Device *pDevice, ID3D12CommandQueue *pCommandQueue, UINT numTimers, QueueType type);
 
     // Start timestamp.
-    void start(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex);
+    bool start(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex);
 
     // Stop timestamp.
-    void stop(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex);
+    bool stop(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex);
 
     // Resolve query data. Write query to device memory. Make sure to wait for query to finsih before resolving data.
     void resolveQueryToCPU(ID3D12GraphicsCommandList *pCommandList, UINT timestampPairIndex);
@@ -38,11 +38,16 @@ class D3D12Timer {
     // Get the GPU frequency.
     double getGPUFrequecy() { return m_gpuFreqInv; }
 
+    // Get start index of the selected timestamp pair
+    UINT getStartIndex(UINT timestampPairIndex) { return timestampPairIndex * 2; }
+
+    // Get end index of the selected timestamp pair
+    UINT getEndIndex(UINT timestampPairIndex) { return timestampPairIndex * 2 + 1; }
+
   private:
     ID3D12Device *m_device = nullptr;
     ID3D12QueryHeap *m_queryHeap = nullptr;
     ID3D12Resource *m_queryResourceCPU = nullptr;
-    bool m_active = false;
     UINT m_timerCount = 0;
     double m_gpuFreqInv;
 };

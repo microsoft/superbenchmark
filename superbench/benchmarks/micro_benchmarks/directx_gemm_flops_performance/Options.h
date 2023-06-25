@@ -35,11 +35,20 @@ struct Options {
     /**
      * @brief Get the int type value of cmd line argument.
      * @param option the cmd line argument.
+     * @param defaults the default value.
      * @return int the int type value of cmd line argument 'option'.
      */
     int get_cmd_line_argument_int(const std::string &option, int defaults) {
         if (char *value = get_cmd_option(option)) {
-            return std::stoi(value);
+            try
+            {
+                return std::stoi(value);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << "Error: Invalid argument - " << option << " should be INT" << '\n';
+                exit(1);
+            }
         }
         return defaults;
     }
@@ -62,10 +71,8 @@ struct Options {
      * @return bool the boolean value.
      */
     bool get_cmd_line_argument_bool(const std::string &option) {
-        if (char *value = get_cmd_option(option)) {
-            bool b;
-            std::istringstream(std::string(value)) >> b;
-            return b;
+        if (cmd_option_exists(option)) {
+            return true;
         }
         return false;
     }
@@ -109,22 +116,27 @@ struct Options {
      * @param argv the string array of comamnd line arguments.
      */
     Options(int argc, char *argv[]) {
-        begin = argv;
-        end = argv + argc;
-        if (cmd_option_exists("--help")) {
-            get_option_usage();
-        } else {
-            num_loops = get_cmd_line_argument_int("--num_loops", 10);
-            num_warm_up = get_cmd_line_argument_int("--num_loops", 0);
-            m = get_cmd_line_argument_int("--m", 16 * 256);
-            n = get_cmd_line_argument_int("--n", 16 * 256);
-            k = get_cmd_line_argument_int("--k", 16 * 256);
-            if (get_cmd_line_argument_bool("--f16")) {
-                mode_precision = Option::F16;
+        try {
+            begin = argv;
+            end = argv + argc;
+            if (cmd_option_exists("--help")) {
+                get_option_usage();
+            } else {
+                num_loops = get_cmd_line_argument_int("--num_loops", 10);
+                num_warm_up = get_cmd_line_argument_int("--num_loops", 0);
+                m = get_cmd_line_argument_int("--m", 16 * 256);
+                n = get_cmd_line_argument_int("--n", 16 * 256);
+                k = get_cmd_line_argument_int("--k", 16 * 256);
+                if (get_cmd_line_argument_bool("--f16")) {
+                    mode_precision = Option::F16;
+                }
+                if (get_cmd_line_argument_bool("--f32")) {
+                    mode_precision = Option::F32;
+                }
             }
-            if (get_cmd_line_argument_bool("--f32")) {
-                mode_precision = Option::F32;
-            }
+        } catch (const std::exception &e) {
+            std::cerr << "Error: Invalid argument - " << e.what() << '\n';
+            exit(1);
         }
     }
 };
