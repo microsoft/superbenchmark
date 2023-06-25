@@ -24,6 +24,7 @@ class Platform(Enum):
     CPU = 'CPU'
     CUDA = 'CUDA'
     ROCM = 'ROCm'
+    DIRECTX = 'DirectX'
 
 
 class Framework(Enum):
