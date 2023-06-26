@@ -7,17 +7,18 @@
 #include "GPUCopyBw.h"
 
 int main(int argc, char *argv[]) {
-    Options *opts = new Options(argc, argv);
+    std::unique_ptr<BenchmarkOptions> opts = std::make_unique<BenchmarkOptions>(argc, argv);
+    opts->init();
     if (opts->size != -1) {
         // Run only one size
-        auto gpucopy = new GPUCopyBw(opts);
-        gpucopy->Run();
+        std::unique_ptr<GPUCopyBw> benchmark = std::make_unique<GPUCopyBw>(opts.get());
+        benchmark->Run();
     } else {
         // Run all sizes
         for (SIZE_T usize = opts->min_size; usize <= opts->max_size; usize += usize) {
             opts->size = usize;
-            auto gpucopy = new GPUCopyBw(opts);
-            gpucopy->Run();
+            std::unique_ptr<GPUCopyBw> benchmark = std::make_unique<GPUCopyBw>(opts.get());
+            benchmark->Run();
         }
     }
 }

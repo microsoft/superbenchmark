@@ -80,8 +80,9 @@
     <ClInclude Include="..\directx_third_party\d3dx12.h" />
     <ClInclude Include="..\directx_third_party\DXSampleHelper.h" />
     <ClInclude Include="..\directx_utils\D3D12Timer.h" />
+    <ClInclude Include="..\directx_utils\Options.h" />
     <ClInclude Include="GPUCopyBw.h" />
-    <ClInclude Include="Options.h" />
+    <ClInclude Include="BenchmarkOptions.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

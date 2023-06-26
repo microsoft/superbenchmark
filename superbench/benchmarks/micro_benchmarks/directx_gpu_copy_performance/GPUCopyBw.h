@@ -29,7 +29,7 @@
 #include "../directx_third_party/DXSampleHelper.h"
 #include "../directx_third_party/d3dx12.h"
 #include "../directx_utils/D3D12Timer.h"
-#include "Options.h"
+#include "BenchmarkOptions.h"
 
 using namespace DirectX;
 // Note that while ComPtr is used to manage the lifetime of resources on the CPU,
@@ -42,11 +42,8 @@ using namespace std;
 
 class GPUCopyBw {
   public:
-    GPUCopyBw(Options *opts) : opts(opts) {}
-    ~GPUCopyBw() {
-        CloseHandle(m_copyFence.Get());
-        delete[] m_pDataBegin;
-    }
+    GPUCopyBw(BenchmarkOptions *opts) : opts(opts) {}
+    ~GPUCopyBw() { CloseHandle(m_copyFence.Get()); }
 
     /**
      * @brief Start benchmark.
@@ -72,9 +69,8 @@ class GPUCopyBw {
     /**
      * @brief Allocate data on CPU side to prepare upload.
      * @param byteSize the size of data to be uploaded.
-     * @return pointer on CPU side.
      */
-    uint8_t *PrepareData(SIZE_T byteSize);
+    void PrepareData(SIZE_T byteSize);
 
     /**
      * @brief Allocate gpu resources, construct a array of buffers with given size.
@@ -108,7 +104,7 @@ class GPUCopyBw {
     /**
      * @brief Wait until command completed.
      */
-    void ExecuteWaitForCopyQueue();
+    void ExecuteWaitForCopyQueue(DWORD dwMilliseconds = 60000);
 
     /**
      * @brief Check result correctness.
@@ -127,17 +123,17 @@ class GPUCopyBw {
 
     // App resources.
     // Pointer of CPU size resource.
-    UINT8 *m_pDataBegin = nullptr;
+    std::unique_ptr<uint8_t[]> m_pDataBegin = nullptr;
     // GPU side buffer.
-    ComPtr<ID3D12Resource> m_vertexBuffer = nullptr;
+    ComPtr<ID3D12Resource> m_defaultBuffer = nullptr;
     // GPU side buffer as destination if in dtod mode.
-    ComPtr<ID3D12Resource> m_vertexBuffer_dest = nullptr;
+    ComPtr<ID3D12Resource> m_defaultDescBuffer = nullptr;
     // Upload buffer to upload data from CPU to GPU.
     ComPtr<ID3D12Resource> m_uploadBuffer = nullptr;
     // Read back buffer to check data correctness.
     ComPtr<ID3D12Resource> m_readbackBuffer = nullptr;
     // Default buffer descriptor.
-    D3D12_RESOURCE_DESC m_defaultVertexBufferDesc;
+    D3D12_RESOURCE_DESC m_defaultBufferDesc;
 
     // Synchronization objects.
     ComPtr<ID3D12Fence1> m_copyFence = nullptr;
@@ -148,5 +144,5 @@ class GPUCopyBw {
     D3D12::D3D12Timer gpuTimer;
 
     // Options.
-    Options *opts;
+    BenchmarkOptions *opts;
 };
