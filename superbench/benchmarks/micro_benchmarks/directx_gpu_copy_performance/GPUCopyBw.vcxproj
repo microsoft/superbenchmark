@@ -72,15 +72,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="D3D12Timer.cpp" />
+    <ClCompile Include="..\directx_utils\D3D12Timer.cpp" />
     <ClCompile Include="GPUCopyBw.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D3D12Timer.h" />
-    <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="..\directx_third_party\d3dx12.h" />
+    <ClInclude Include="..\directx_third_party\DXSampleHelper.h" />
+    <ClInclude Include="..\directx_utils\D3D12Timer.h" />
     <ClInclude Include="GPUCopyBw.h" />
-    <ClInclude Include="helper.h" />
     <ClInclude Include="Options.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
