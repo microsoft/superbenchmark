@@ -40,12 +40,9 @@ struct Options {
      */
     int get_cmd_line_argument_int(const std::string &option, int defaults) {
         if (char *value = get_cmd_option(option)) {
-            try
-            {
+            try {
                 return std::stoi(value);
-            }
-            catch(const std::exception& e)
-            {
+            } catch (const std::exception &e) {
                 std::cerr << "Error: Invalid argument - " << option << " should be INT" << '\n';
                 exit(1);
             }

@@ -68,7 +68,8 @@ void D3D12Timer::resolveQueryToCPU(ID3D12GraphicsCommandList *pCommandList, UINT
 // Get start and end timestamp pair.
 double D3D12Timer::getElapsedMsByTimestampPair(UINT timestampPairIndex) {
     GPUTimestampPair *timingData = nullptr;
-    D3D12_RANGE readRange{sizeof(GPUTimestampPair) * timestampPairIndex, sizeof(GPUTimestampPair) * (timestampPairIndex + 1)};
+    D3D12_RANGE readRange{sizeof(GPUTimestampPair) * timestampPairIndex,
+                          sizeof(GPUTimestampPair) * (timestampPairIndex + 1)};
     D3D12_RANGE writeRange{0, 0};
     if (SUCCEEDED(m_queryResourceCPU->Map(0, &readRange, (void **)&timingData))) {
         m_queryResourceCPU->Unmap(0, &writeRange);
