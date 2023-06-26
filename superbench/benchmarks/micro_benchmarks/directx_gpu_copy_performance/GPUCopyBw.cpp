@@ -14,7 +14,8 @@ void GPUCopyBw::Run() {
     LoadPipeline();
     double time_ms = CopyResourceBench(opts->size, opts->num_loops, opts->num_warm_up);
     double bw = opts->size * opts->num_loops / time_ms / 1e6;
-    cout << "DirectXGPUCopy:" << bw << " GB/s" << endl;
+    string mode = opts->dtoh_enabled ? "dtoh" : "htod";
+    cout << mode << ": " << opts->size << "B " << bw << " GB/s" << endl;
 }
 
 /**
@@ -22,27 +23,26 @@ void GPUCopyBw::Run() {
  * @param uSize the size of each buffer inside of array.
  */
 void GPUCopyBw::InitializeBuffer(SIZE_T uSize) {
-    DefaultVertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(uSize);
+    m_defaultVertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(uSize);
 
     // The output buffer (created below) is on a default heap, so only the GPU can access it.
     auto defaultHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     ThrowIfFailed(m_device->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE,
-                                                    &DefaultVertexBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+                                                    &m_defaultVertexBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
                                                     IID_PPV_ARGS(&m_vertexBuffer)));
 
     // Create upload buffer to upload data to GPU.
     auto uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
     ThrowIfFailed(m_device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-                                                    &DefaultVertexBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
+                                                    &m_defaultVertexBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
                                                     nullptr, IID_PPV_ARGS(&m_uploadBuffer)));
 
-    // Create read back buffer if is dtoh mode.
+    // Create read back buffer if dtoh mode.
     if (opts->dtoh_enabled) {
         auto readbackHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
-        D3D12_RESOURCE_DESC readbackBufferDesc{CD3DX12_RESOURCE_DESC::Buffer(uSize)};
         ThrowIfFailed(m_device->CreateCommittedResource(&readbackHeapProperties, D3D12_HEAP_FLAG_NONE,
-                                                        &readbackBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
-                                                        IID_PPV_ARGS(&m_readbackBuffer)));
+                                                        &m_defaultVertexBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST,
+                                                        nullptr, IID_PPV_ARGS(&m_readbackBuffer)));
     }
 }
 
@@ -57,16 +57,8 @@ uint8_t *GPUCopyBw::PrepareData(SIZE_T byteSize) {
     for (int j = 0; j < byteSize; j++) {
         pData[j] = static_cast<uint8_t>(j % uint8_mod);
     }
-
     m_pDataBegin = pData;
     return pData;
-}
-
-/**
- * @brief Copy data from GPU side to CPU side.
- */
-void GPUCopyBw::CopyResourceFromDefaultToReadback() {
-    m_commandList->CopyResource(m_readbackBuffer.Get(), m_vertexBuffer.Get());
 }
 
 /**
@@ -94,26 +86,21 @@ bool GPUCopyBw::CheckData(SIZE_T byteSize, const uint8_t *pData) {
 }
 
 /**
- * @brief Memory copy benchmark.
- * @param size the size of each buffer.
+ * @brief GPU copy benchmark.
+ * @param size the size of data to copy.
  * @param loops the number of copy times to measure the performance.
  * @return double the time elapsed in ms.
  */
 double GPUCopyBw::CopyResourceBench(SIZE_T size, int loops, int warm_up) {
-    // Prepare CPU side buffer.
+    // Prepare CPU side data buffer.
     auto pData = PrepareData(size);
     // Prepare GPU resources and buffers.
     InitializeBuffer(size);
-
-    gpuTimer.init(m_device.Get(), 1);
-
-    ID3D12CommandAllocator *activeAllocator = m_commandAllocator.Get();
-    activeAllocator->Reset();
-    m_commandList->Reset(activeAllocator, nullptr);
-
     // Set data into source buffer.
-    SetDataToBufferMemcpy(pData, size);
+    PrepareSourceBufferData(pData, size);
 
+    // Run the copy command.
+    gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::copy);
     for (int i = 0; i < loops + warm_up; i++) {
         if (i == warm_up) {
             // Start timestamp.
@@ -131,25 +118,18 @@ double GPUCopyBw::CopyResourceBench(SIZE_T size, int loops, int warm_up) {
     this->gpuTimer.resolveQueryToCPU(m_commandList.Get(), 0);
 
     // Close, execute (and optionally reset) the command list, and also to use a fence to wait for the command queue.
-    m_commandList->Close();
-    ID3D12CommandList *listsToExecute[] = {m_commandList.Get()};
-    this->m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
-    this->waitForCopyQueue();
-
-    // Get time in ms.
-    UINT64 queueFreq;
-    this->m_commandQueue->GetTimestampFrequency(&queueFreq);
-    double timestampToMs = (1.0 / queueFreq) * 1000.0;
-    D3D12::GPUTimestampPair drawTime = gpuTimer.getTimestampPair(0);
-    double timeInMs = (drawTime.Stop - drawTime.Start) * timestampToMs;
+    this->ExecuteWaitForCopyQueue();
 
     // Check if result is correctly copied.
     // The code below assumes that the GPU wrote FLOATs to the buffer.
     if (opts->check_data) {
-        CheckData(size, pData);
+        bool correctness = CheckData(size, pData);
+        if (!correctness) {
+            std::cout << "Error: Result is not correct!" << std::endl;
+        }
     }
 
-    return timeInMs;
+    return this->gpuTimer.getElapsedMsByTimestampPair(0);
 }
 
 /**
@@ -167,39 +147,54 @@ void GPUCopyBw::CopyResourceFromDefaultToDefault() {
 }
 
 /**
- * @brief Wait until command completed.
+ * @brief Copy data from GPU side to CPU side.
  */
-void GPUCopyBw::waitForCopyQueue() {
-    // Signal and increment the fence value.
-    const UINT64 fenceL = copyFenceValue;
-    m_commandQueue->Signal(copyFence, fenceL);
-    copyFenceValue++;
-
-    // Wait until command queue is done.
-    if (copyFence->GetCompletedValue() < fenceL) {
-        copyFence->SetEventOnCompletion(fenceL, copyEventHandle);
-        WaitForSingleObject(copyEventHandle, INFINITE);
-    }
+void GPUCopyBw::CopyResourceFromDefaultToReadback() {
+    m_commandList->CopyResource(m_readbackBuffer.Get(), m_vertexBuffer.Get());
 }
 
 /**
- * @brief Prepare data of the init state of benchmark
- *        including upload data from CPU side to GPU side.
+ * @brief Wait until command completed.
+ */
+void GPUCopyBw::ExecuteWaitForCopyQueue() {
+    // Close, execute (and optionally reset) the command list, and also to use a fence to wait for the command queue.
+    m_commandList->Close();
+    ID3D12CommandList *listsToExecute[] = {m_commandList.Get()};
+    this->m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
+    // Signal and increment the fence value.
+    const UINT64 fenceL = m_copyFenceValue;
+    m_commandQueue->Signal(m_copyFence.Get(), fenceL);
+    m_copyFenceValue++;
+    // Wait until command queue is done.
+    if (m_copyFence->GetCompletedValue() < fenceL) {
+        m_copyFence->SetEventOnCompletion(fenceL, m_copyEventHandle);
+        WaitForSingleObject(m_copyEventHandle, INFINITE);
+    }
+    // Reset the command allocator and command list.
+    ID3D12CommandAllocator *activeAllocator = m_commandAllocator.Get();
+    activeAllocator->Reset();
+    m_commandList->Reset(activeAllocator, nullptr);
+}
+
+/**
+ * @brief Prepare data of the source buffer of benchmark.
  * @param pData the data that should upload.
  * @param byteSize the size of data.
  */
-void GPUCopyBw::SetDataToBufferMemcpy(const void *pData, SIZE_T byteSize) {
-    // Upload data from CPU to GPU.
+void GPUCopyBw::PrepareSourceBufferData(const void *pData, SIZE_T byteSize) {
+    // Upload data from CPU to upload buffer.
     void *p;
     m_uploadBuffer->Map(0, nullptr, &p);
     memcpy(p, pData, byteSize);
     m_uploadBuffer->Unmap(0, nullptr);
 
     if (opts->dtoh_enabled) {
+        // Upload data from upload to default buffer.
         CopyResourceFromUploadToDefault();
         D3D12_RESOURCE_BARRIER outputBufferResourceBarrier{CD3DX12_RESOURCE_BARRIER::Transition(
             m_vertexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE)};
         m_commandList->ResourceBarrier(1, &outputBufferResourceBarrier);
+        ExecuteWaitForCopyQueue();
     }
 }
 
@@ -211,7 +206,7 @@ void GPUCopyBw::SetDataToBufferMemcpy(const void *pData, SIZE_T byteSize) {
 void GPUCopyBw::LoadPipeline() {
     UINT dxgiFactoryFlags = 0;
 
-#if DEBUG
+#if _DEBUG
     // Enable the debug layer (requires the Graphics Tools "optional feature").
     // NOTE: Enabling the debug layer after device creation will invalidate the active device.
     {
@@ -245,10 +240,10 @@ void GPUCopyBw::LoadPipeline() {
 
     // Command lists are created in the recording state, but there is nothing
     // to record yet. The main loop expects it to be closed, so close it now.
-    ThrowIfFailed(m_commandList->Close());
+    // ThrowIfFailed(m_commandList->Close());
 
-    m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence));
-    copyFenceValue = 1;
+    m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyFence));
+    m_copyFenceValue = 1;
     // Create an event handle to use for GPU synchronization.
-    copyEventHandle = CreateEvent(0, false, false, 0);
+    m_copyEventHandle = CreateEvent(0, false, false, 0);
 }

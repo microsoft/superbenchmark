@@ -12,8 +12,6 @@
 #include <d3d12.h>
 #include <d3d12shader.h>
 #include <dxgi1_6.h>
-
-#include <chrono>
 #include <shellapi.h>
 #include <string>
 #include <wrl.h>
@@ -24,16 +22,14 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#define DEBUG 0
-
-#if defined(DEBUG)
+#if defined(_DEBUG)
 #include <dxgidebug.h>
 #endif
 
-#include "D3D12Timer.h"
+#include "../directx_third_party/DXSampleHelper.h"
+#include "../directx_third_party/d3dx12.h"
+#include "../directx_utils/D3D12Timer.h"
 #include "Options.h"
-#include "d3dx12.h"
-#include "helper.h"
 
 using namespace DirectX;
 // Note that while ComPtr is used to manage the lifetime of resources on the CPU,
@@ -48,7 +44,7 @@ class GPUCopyBw {
   public:
     GPUCopyBw(Options *opts) : opts(opts) {}
     ~GPUCopyBw() {
-        CloseHandle(copyFence);
+        CloseHandle(m_copyFence.Get());
         delete[] m_pDataBegin;
     }
 
@@ -92,7 +88,7 @@ class GPUCopyBw {
      * @param pData the data that should upload.
      * @param byteSize the size of data.
      */
-    void SetDataToBufferMemcpy(const void *pData, SIZE_T byteSize);
+    void PrepareSourceBufferData(const void *pData, SIZE_T byteSize);
 
     /**
      * @brief Copy data from CPU side to GPU side.
@@ -112,7 +108,7 @@ class GPUCopyBw {
     /**
      * @brief Wait until command completed.
      */
-    void waitForCopyQueue();
+    void ExecuteWaitForCopyQueue();
 
     /**
      * @brief Check result correctness.
@@ -124,29 +120,29 @@ class GPUCopyBw {
 
   private:
     // Pipeline objects.
-    ComPtr<ID3D12Device> m_device;
-    ComPtr<ID3D12CommandAllocator> m_commandAllocator;
-    ComPtr<ID3D12CommandQueue> m_commandQueue;
-    ComPtr<ID3D12GraphicsCommandList> m_commandList;
+    ComPtr<ID3D12Device> m_device = nullptr;
+    ComPtr<ID3D12CommandAllocator> m_commandAllocator = nullptr;
+    ComPtr<ID3D12CommandQueue> m_commandQueue = nullptr;
+    ComPtr<ID3D12GraphicsCommandList> m_commandList = nullptr;
 
     // App resources.
     // Pointer of CPU size resource.
     UINT8 *m_pDataBegin = nullptr;
     // GPU side buffer.
-    ComPtr<ID3D12Resource> m_vertexBuffer;
+    ComPtr<ID3D12Resource> m_vertexBuffer = nullptr;
     // GPU side buffer as destination if in dtod mode.
-    ComPtr<ID3D12Resource> m_vertexBuffer_dest;
+    ComPtr<ID3D12Resource> m_vertexBuffer_dest = nullptr;
     // Upload buffer to upload data from CPU to GPU.
-    ComPtr<ID3D12Resource> m_uploadBuffer;
+    ComPtr<ID3D12Resource> m_uploadBuffer = nullptr;
     // Read back buffer to check data correctness.
-    ComPtr<ID3D12Resource> m_readbackBuffer;
+    ComPtr<ID3D12Resource> m_readbackBuffer = nullptr;
     // Default buffer descriptor.
-    D3D12_RESOURCE_DESC DefaultVertexBufferDesc;
+    D3D12_RESOURCE_DESC m_defaultVertexBufferDesc;
 
     // Synchronization objects.
-    ID3D12Fence1 *copyFence = nullptr;
-    HANDLE copyEventHandle = nullptr;
-    UINT64 copyFenceValue = 0;
+    ComPtr<ID3D12Fence1> m_copyFence = nullptr;
+    HANDLE m_copyEventHandle = nullptr;
+    UINT64 m_copyFenceValue = 0;
 
     // GPU timer.
     D3D12::D3D12Timer gpuTimer;

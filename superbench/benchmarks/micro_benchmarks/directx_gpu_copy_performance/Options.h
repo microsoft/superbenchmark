@@ -29,23 +29,35 @@ struct Options {
      * @param  option the cmd line argument.
      * @return int the int type value of cmd line argument 'option'.
      */
-    int get_cmd_line_argument_int(const std::string &option) {
+    int get_cmd_line_argument_int(const std::string &option, int defaults) {
         if (char *value = get_cmd_option(option)) {
-            return std::stoi(value);
+            try {
+                return std::stoi(value);
+            } catch (const std::exception &e) {
+                std::cout << "Error: Invalid argument - " << option << " should be INT" << e.what() << '\n';
+                exit(1);
+            }
         }
-        return 0;
+        return defaults;
     }
 
-     /**
+    /**
      * @brief Get the unsigned long long type value of cmd line argument.
      * @param option the cmd line argument.
+     * @param defaults the default value.
      * @return unsigned long long the unsigned long long type value of cmd line argument 'option'.
      */
-    unsigned long long get_cmd_line_argument_ulonglong(const std::string &option) {
+    unsigned long long get_cmd_line_argument_ulonglong(const std::string &option, unsigned long long defaults) {
         if (char *value = get_cmd_option(option)) {
-            return std::stoull(value);
+            try {
+                return std::stoull(value);
+            } catch (const std::exception &e) {
+                std::cout << "Error: Invalid argument - " << option << " should be unsigned long long" << e.what()
+                          << '\n';
+                exit(1);
+            }
         }
-        return 0;
+        return defaults;
     }
 
     /**
@@ -66,10 +78,8 @@ struct Options {
      * @return bool the boolean value.
      */
     bool get_cmd_line_argument_bool(const std::string &option) {
-        if (char *value = get_cmd_option(option)) {
-            bool b;
-            std::istringstream(std::string(value)) >> b;
-            return b;
+        if (cmd_option_exists(option)) {
+            return true;
         }
         return false;
     }
@@ -81,22 +91,33 @@ struct Options {
      */
     bool cmd_option_exists(const std::string &option) { return std::find(begin, end, option) != end; }
 
-    void get_option_usage() {}
+    void get_option_usage() {
+        std::cout << "Usage: " << std::endl;
+        std::cout << "  --size <int>            Size of data for GPU copy." << std::endl;
+        std::cout << "  --warm_up <int>         Number of warm up copy times to run." << std::endl;
+        std::cout << "  --num_loops <int>       Number of copy times to run." << std::endl;
+        std::cout << "  --minbytes <int>        Run size from min_size to max_size for GPU copy." << std::endl;
+        std::cout << "  --maxbytes <int>        Run size from min_size to max_size for GPU copy." << std::endl;
+        std::cout << "  --htod <bool>           Host-to-device copy mode." << std::endl;
+        std::cout << "  --dtoh <bool>           Device-to-host copy mode." << std::endl;
+        std::cout << "  --check <bool>          Whether check data after copy." << std::endl;
+        exit(0);
+    }
 
   public:
-    // Data buffer size for copy benchmark.
-    uint64_t size;
-    // Number of warm up rounds to run.
+    // Size of data for GPU copy.
+    unsigned long long size;
+    // Run size from min_size to max_size for GPU copy.
+    unsigned long long min_size = 0;
+    // Run size from min_size to max_size for GPU copy.
+    unsigned long long max_size = 0;
+    // Number of warm up copy times to run.
     int num_warm_up = 0;
-    // Number of loops to run.
+    // Number of copy times to run.
     int num_loops = 0;
-    // Lower limits of each buffer.
-    int minbytes = 0;
-    // Upper limits of each buffer.
-    unsigned long long maxbytes = 0;
-    // Whether host-to-device transfer needs to be evaluated.
+    // Host-to-device copy mode.
     bool htod_enabled = false;
-    // Whether device-to-host transfer needs to be evaluated.
+    // device-to-host copy mode.
     bool dtoh_enabled = false;
     // Whether check data after copy.
     bool check_data = false;
@@ -112,21 +133,16 @@ struct Options {
         if (cmd_option_exists("--help")) {
             get_option_usage();
         } else {
-            size = get_cmd_line_argument_int("--size");
-            size = (size == 0 ? 1LL * 64 * 1024 * 1024 : size);
-            num_warm_up = get_cmd_line_argument_int("--warm_up");
-            num_warm_up = (num_warm_up == 0 ? 20 : num_warm_up);
-            num_loops = get_cmd_line_argument_int("--num_loops");
-            num_loops = (num_loops == 0 ? 100000 : num_loops);
-            minbytes = get_cmd_line_argument_int("--minbytes");
-            minbytes = (minbytes == 0 ? 64 : minbytes);
-            maxbytes = get_cmd_line_argument_ulonglong("--maxbytes");
-            maxbytes = (maxbytes == 0 ? 8 * 1024 * 1024 : maxbytes);
+            size = get_cmd_line_argument_int("--size", -1);
+            num_warm_up = get_cmd_line_argument_int("--warm_up", 20);
+            num_loops = get_cmd_line_argument_int("--num_loops", 100000);
+            min_size = get_cmd_line_argument_int("--minbytes", 64);
+            max_size = get_cmd_line_argument_ulonglong("--maxbytes", 8 * 1024 * 1024);
             htod_enabled = get_cmd_line_argument_bool("--htod");
             dtoh_enabled = get_cmd_line_argument_bool("--dtoh");
             check_data = get_cmd_line_argument_bool("--check");
             if (!htod_enabled && !dtoh_enabled) {
-                std::cerr << "Error: Please specify memory type!" << std::endl;
+                std::cerr << "Error: Please specify copy mode!" << std::endl;
                 exit(-1);
             }
         }
