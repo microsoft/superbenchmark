@@ -86,8 +86,9 @@
     <ClInclude Include="..\directx_third_party\d3dx12.h" />
     <ClInclude Include="..\directx_third_party\DXSampleHelper.h" />
     <ClInclude Include="..\directx_utils\D3D12Timer.h" />
+    <ClInclude Include=".\directx_utils\Options.h" />
     <ClInclude Include="GPUCore.h" />
-    <ClInclude Include="Options.h" />
+    <ClInclude Include="GPUCoreOptions.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

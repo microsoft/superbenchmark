@@ -32,7 +32,7 @@
 #include "../directx_third_party/DXSampleHelper.h"
 #include "../directx_third_party/d3dx12.h"
 #include "../directx_utils/D3D12Timer.h"
-#include "Options.h"
+#include "GPUCoreOptions.h"
 
 using namespace std;
 using namespace DirectX;
@@ -47,7 +47,7 @@ template <typename T> T *get_rvalue_ptr(T &&v) { return &v; }
 
 class GPUCore {
   public:
-    GPUCore(Options *opts) : opts(opts) {}
+    GPUCore(GPUCoreOptions *opts) : opts(opts) {}
     ~GPUCore() {}
 
     /**
@@ -140,5 +140,5 @@ class GPUCore {
     D3D12::D3D12Timer gpuTimer;
 
     // Options.
-    Options *opts;
+    GPUCoreOptions *opts;
 };
