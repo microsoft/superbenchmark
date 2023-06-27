@@ -46,15 +46,14 @@ class GPUCopyBw {
     ~GPUCopyBw() { CloseHandle(m_copyFence.Get()); }
 
     /**
-     * @brief Start benchmark.
+     * @brief Run the benchmark.
      */
     void Run();
 
     /**
-     * @brief Memory copy benchmark.
-     * @param size the size of each buffer.
+     * @brief GPU copy benchmark.
+     * @param size the size of data to copy.
      * @param loops the number of copy times to measure the performance.
-     * @param warm_up the number of warm up copy times.
      * @return double the time elapsed in ms.
      */
     double CopyResourceBench(SIZE_T size, int loops, int warm_up);
@@ -64,7 +63,7 @@ class GPUCopyBw {
      *		  create device object, command list, command queue
      *		  and synchronization objects.
      */
-    void LoadPipeline();
+    void CreatePipeline();
 
     /**
      * @brief Allocate data on CPU side to prepare upload.
@@ -79,8 +78,7 @@ class GPUCopyBw {
     void InitializeBuffer(SIZE_T uSize);
 
     /**
-     * @brief Prepare data of the init state of benchmark
-     *        including upload data from CPU side to GPU side.
+     * @brief Prepare data of the source buffer of benchmark.
      * @param pData the data that should upload.
      * @param byteSize the size of data.
      */
@@ -102,7 +100,7 @@ class GPUCopyBw {
     void CopyResourceFromDefaultToDefault();
 
     /**
-     * @brief Wait until command completed.
+     * @brief Execute the commands and wait until command completed.
      */
     void ExecuteWaitForCopyQueue(DWORD dwMilliseconds = 60000);
 

@@ -30,7 +30,7 @@ class BenchmarkOptions : public Options {
     bool check_data = false;
 
     /**
-     * @brief Construct a new GPUCoreOptions object.
+     * @brief Construct a new BenchmarkOptions object.
      */
     BenchmarkOptions(int argc, char *argv[]) : Options(argc, argv) {}
 

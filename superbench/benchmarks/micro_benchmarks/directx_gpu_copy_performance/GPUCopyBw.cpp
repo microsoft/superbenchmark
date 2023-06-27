@@ -8,10 +8,10 @@
 #include "GPUCopyBw.h"
 
 /**
- * @brief Start benchmark.
+ * @brief Run the benchmark.
  */
 void GPUCopyBw::Run() {
-    LoadPipeline();
+    CreatePipeline();
     double time_ms = CopyResourceBench(opts->size, opts->num_loops, opts->num_warm_up);
     double bw = opts->size * opts->num_loops / time_ms / 1e6;
     string mode = opts->dtoh_enabled ? "dtoh" : "htod";
@@ -109,7 +109,6 @@ double GPUCopyBw::CopyResourceBench(SIZE_T size, int loops, int warm_up) {
             CopyResourceFromDefaultToReadback();
         }
     }
-
     // Stop timestamp.
     this->gpuTimer.stop(m_commandList.Get(), 0);
     this->gpuTimer.resolveQueryToCPU(m_commandList.Get(), 0);
@@ -151,7 +150,7 @@ void GPUCopyBw::CopyResourceFromDefaultToReadback() {
 }
 
 /**
- * @brief Wait until command completed.
+ * @brief Execute the commands and wait until command completed.
  */
 void GPUCopyBw::ExecuteWaitForCopyQueue(DWORD dwMilliseconds) {
     // Close, execute (and optionally reset) the command list, and also to use a fence to wait for the command queue.
@@ -200,7 +199,7 @@ void GPUCopyBw::PrepareSourceBufferData(const void *pData, SIZE_T byteSize) {
  *		  create device object, command list, command queue
  *		  and synchronization objects.
  */
-void GPUCopyBw::LoadPipeline() {
+void GPUCopyBw::CreatePipeline() {
     UINT dxgiFactoryFlags = 0;
 
 #if _DEBUG
@@ -234,10 +233,6 @@ void GPUCopyBw::LoadPipeline() {
     // Create the command list.
     ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_commandAllocator.Get(), nullptr,
                                               IID_PPV_ARGS(&m_commandList)));
-
-    // Command lists are created in the recording state, but there is nothing
-    // to record yet. The main loop expects it to be closed, so close it now.
-    // ThrowIfFailed(m_commandList->Close());
 
     ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyFence)));
     m_copyFenceValue = 1;
