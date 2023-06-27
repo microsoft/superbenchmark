@@ -20,10 +20,10 @@
 #include <d3d12shader.h>
 #include <dxgi1_6.h>
 
-#include "D3D12Timer.h"
-#include "Options.h"
-#include "d3dx12.h"
-#include "helper.h"
+#include "../directx_third_party/DXSampleHelper.h"
+#include "../directx_third_party/d3dx12.h"
+#include "../directx_utils/D3D12Timer.h"
+#include "BenchmarkOptions.h"
 
 // linker
 #pragma comment(lib, "dxguid.lib")
@@ -44,16 +44,10 @@ using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 using namespace std;
 
-#define DEBUG 0
-
-struct Data {
-    float v1;
-};
-
 struct ParameterBuffer {
     int numLoop;
-    uint3 numThread;
-    uint3 numDispatch;
+    UInt3 numThread;
+    UInt3 numDispatch;
 };
 
 template <typename T> T *get_rvalue_ptr(T &&v) { return &v; }
@@ -65,18 +59,18 @@ class GPUMemRwBw {
      * @param opts, Options for construct.
      * @param usize, the byte size of data array.
      */
-    GPUMemRwBw(Options *opts, SIZE_T usize) : opts(opts) {
-        // The setting of num_thread_ here according the the shader file.
-        num_thread_ = {1, 256, 1};
-        num_elements_ = usize / sizeof(float);
-        int numThreadGroup = num_elements_ / (num_thread_.x * num_thread_.y * num_thread_.z);
-        num_dispatch_ = {1, numThreadGroup, 1};
+    GPUMemRwBw(BenchmarkOptions *opts) : opts(opts) {
+        // The setting of num_thread need be consistent with the the shader file.
+        m_num_thread = opts->num_threads;
+        m_num_elements = opts->size / sizeof(float);
+        uint32_t numThreadGroup = m_num_elements / (m_num_thread.x * m_num_thread.y * m_num_thread.z);
+        m_num_dispatch = {numThreadGroup, 1, 1};
     }
 
     /**
      * @brief Destructor, release the fence.
      */
-    ~GPUMemRwBw() { CloseHandle(m_fence); }
+    ~GPUMemRwBw() {}
 
     /**
      * @brief Start and run the benchmark.
@@ -97,12 +91,18 @@ class GPUMemRwBw {
      *		  create device object, command list, command queue
      *		  and synchronization objects.
      */
-    void LoadPipeline();
+    void CreatePipeline();
 
     /**
-     * @brief Setup GPU pipeline resource like root signature and shader.
+     * @brief Setup GPU pipeline resource including creating root signature, pipeline state and compile shader.
      */
     void LoadAssets();
+
+    /**
+     * @brief Allocate resouce on both CPU side and GPU side and construct a array of buffers with given length.
+     * @param numElement the length of data array.
+     */
+    void PrepareDataAndBuffer(SIZE_T numElement);
 
     /**
      * @brief Create a default buffer and upload data with the upload buffer.
@@ -118,15 +118,9 @@ class GPUMemRwBw {
                                                                Microsoft::WRL::ComPtr<ID3D12Resource> &uploadBuffer);
 
     /**
-     * @brief Allocate resouce on both CPU side and GPU side and construct a array of buffers with given length.
-     * @param numElement the length of data array.
+     * @brief Execute the commands and wait until command completed.
      */
-    void PrepareData(SIZE_T numElement);
-
-    /**
-     * @brief Wait until command completed.
-     */
-    void waitForCommandQueue();
+    void ExecuteWaitForCommandQueue(DWORD dwMilliseconds = 30000);
 
     /**
      * @brief Check result correctness.
@@ -137,26 +131,38 @@ class GPUMemRwBw {
 
   private:
     // Dispatch layout of command.
-    uint3 num_dispatch_;
+    UInt3 m_num_dispatch;
     // Number of elements in data buffer.
-    uint64_t num_elements_ = 0;
+    uint32_t m_num_elements = 0;
     // Number of threads each group.
-    uint3 num_thread_;
+    UInt3 m_num_thread;
 
     // Pipeline objects.
-    ComPtr<ID3D12Device> m_device;
-    ComPtr<ID3D12CommandAllocator> m_commandAllocator;
-    ComPtr<ID3D12CommandQueue> m_commandQueue;
-    ComPtr<ID3D12GraphicsCommandList> m_commandList;
+    ComPtr<ID3D12Device> m_device = nullptr;
+    ComPtr<ID3D12CommandAllocator> m_commandAllocator = nullptr;
+    ComPtr<ID3D12CommandQueue> m_commandQueue = nullptr;
+    ComPtr<ID3D12GraphicsCommandList> m_commandList = nullptr;
 
     // Upload buffer to upload data from CPU to GPU.
-    ComPtr<ID3D12Resource> m_uploadBuffer;
-
+    ComPtr<ID3D12Resource> m_uploadBuffer = nullptr;
+    // Input buffer to pass data into GPU.
+    ComPtr<ID3D12Resource> m_inputBuffer = nullptr;
     // Readback buffer to copy data from GPU to CPU for data check.
-    ComPtr<ID3D12Resource> m_readbackBuffer;
+    ComPtr<ID3D12Resource> m_readbackBuffer = nullptr;
+    // Output buffer.
+    ComPtr<ID3D12Resource> m_outputBuffer = nullptr;
+    // Constant buffer.
+    ComPtr<ID3D12Resource> m_constantBuffer = nullptr;
+
+    // Root signature of GPU pipeline.
+    ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;
+    // Pipeline object to execute.
+    ComPtr<ID3D12PipelineState> m_PSO = nullptr;
+    // Shader objects that loaded.
+    ComPtr<ID3DBlob> m_shader = nullptr;
 
     // Synchronization objects.
-    ID3D12Fence1 *m_fence = nullptr;
+    ComPtr<ID3D12Fence1> m_fence = nullptr;
     HANDLE m_eventHandle = nullptr;
     UINT64 m_fenceValue = 0;
 
@@ -164,23 +170,5 @@ class GPUMemRwBw {
     D3D12::D3D12Timer m_gpuTimer;
 
     // User options.
-    Options *opts;
-
-    // Output buffer.
-    ComPtr<ID3D12Resource> m_outputBuffer = nullptr;
-
-    // Constant buffer.
-    ComPtr<ID3D12Resource> m_constantBuffer = nullptr;
-
-    // Input buffer to pass data into GPU.
-    ComPtr<ID3D12Resource> m_inputBuffer = nullptr;
-
-    // Root signature of GPU pipeline.
-    ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;
-
-    // Pipeline object to execute.
-    ComPtr<ID3D12PipelineState> m_PSO;
-
-    // Shader objects that loaded.
-    ComPtr<ID3DBlob> m_shader;
+    BenchmarkOptions *opts;
 };

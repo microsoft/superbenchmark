@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include <fstream>
 #include <iostream>
 #include <tchar.h>
 #include <vector>
@@ -12,32 +13,16 @@
  */
 void GPUMemRwBw::Run() {
     // Create GPU pipeline and device objects.
-    LoadPipeline();
-
+    CreatePipeline();
     // Prepare data and buffers.
-    SIZE_T numElem = this->num_elements_;
-    PrepareData(numElem);
-
+    PrepareDataAndBuffer(this->m_num_elements);
     // Load shaders and root signatures.
     LoadAssets();
-
-    m_gpuTimer.init(m_device.Get(), 1);
-
-    // Commit resource allocation command list.
-    ThrowIfFailed(m_commandList->Close());
-    ID3D12CommandList *cmdsLists[] = {m_commandList.Get()};
-    m_commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-    waitForCommandQueue();
-
     // Start benchmark.
-    int loops = opts->num_loop;
-    int numWarmUp = opts->num_warm_up;
-
-    double time_ms = MemReadWriteBench(numElem, loops, numWarmUp);
-    double bw = numElem * sizeof(Data) * loops / time_ms / 1e6;
-
+    double time_ms = MemReadWriteBench(this->m_num_elements, opts->num_loop, opts->num_warm_up);
+    double bw = this->m_num_elements * sizeof(float) * opts->num_loop / time_ms / 1e6;
     // Output benchmark result.
-    cout << "GPUMemBw: " << bw << " GB/s" << endl;
+    cout << "GPUMemBw: " << opts->size << " " << bw << " GB/s" << endl;
 }
 
 /**
@@ -45,29 +30,30 @@ void GPUMemRwBw::Run() {
  * @param numElement the length of data array.
 
  */
-void GPUMemRwBw::PrepareData(SIZE_T numElement) {
+void GPUMemRwBw::PrepareDataAndBuffer(SIZE_T numElement) {
     // Prepare CPU side data.
-    std::vector<Data> dataA(numElement);
+    std::vector<float> dataA(numElement);
     for (SIZE_T i = 0; i < numElement; i++) {
-        dataA[i].v1 = i % 256;
+        dataA[i] = i % 256;
     }
     // Allocate resources on GPU side to take those data.
-    UINT64 byteSize = dataA.size() * sizeof(Data);
-    if (opts->opt_type == Option::Write || opts->opt_type == Option::ReadWrite) {
+    UINT64 byteSize = dataA.size() * sizeof(float);
+    if (opts->mem_type == Memtype::Write || opts->mem_type == Memtype::ReadWrite) {
         m_inputBuffer =
             CreateDefaultBuffer(m_device.Get(), m_commandList.Get(), dataA.data(), byteSize, m_uploadBuffer);
     }
     // Allocate upload buffer to upload data from CPU to GPU.
-    m_device->CreateCommittedResource(
+    ThrowIfFailed(m_device->CreateCommittedResource(
         get_rvalue_ptr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT)), D3D12_HEAP_FLAG_NONE,
         get_rvalue_ptr(CD3DX12_RESOURCE_DESC::Buffer(byteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)),
-        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&m_outputBuffer));
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&m_outputBuffer)));
     // Allocate readback buffer if needed.
-    if (opts->check_data && opts->opt_type != Option::Read) {
+    if (opts->check_data && opts->mem_type != Memtype::Read) {
         // Allocate readback buffer to check result correctness
-        m_device->CreateCommittedResource(get_rvalue_ptr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK)),
-                                          D3D12_HEAP_FLAG_NONE, get_rvalue_ptr(CD3DX12_RESOURCE_DESC::Buffer(byteSize)),
-                                          D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_readbackBuffer));
+        ThrowIfFailed(m_device->CreateCommittedResource(
+            get_rvalue_ptr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK)), D3D12_HEAP_FLAG_NONE,
+            get_rvalue_ptr(CD3DX12_RESOURCE_DESC::Buffer(byteSize)), D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+            IID_PPV_ARGS(&m_readbackBuffer)));
     }
     // Prepare the parameter buffer of shader.
     UINT8 *pCBDataBegin;
@@ -77,18 +63,19 @@ void GPUMemRwBw::PrepareData(SIZE_T numElement) {
                                                     D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
                                                     IID_PPV_ARGS(&m_constantBuffer)));
     // Fill the constant buffer to pass parameters to GPU.
-
     ParameterBuffer param;
     // Calculate total number of threads.
-    SIZE_T totalThreadNum =
-        1LL * (num_dispatch_.x * num_dispatch_.y * num_dispatch_.z) * (num_thread_.x * num_thread_.y * num_thread_.z);
+    SIZE_T totalThreadNum = 1LL * (m_num_dispatch.x * m_num_dispatch.y * m_num_dispatch.z) *
+                            (m_num_thread.x * m_num_thread.y * m_num_thread.z);
     param.numLoop = numElement / totalThreadNum;
-    param.numThread = num_thread_;
+    param.numThread = m_num_thread;
     // Upload constant buffer.
-    param.numDispatch = num_dispatch_;
-    m_constantBuffer->Map(0, nullptr, reinterpret_cast<void **>(&pCBDataBegin));
+    param.numDispatch = m_num_dispatch;
+    ThrowIfFailed(m_constantBuffer->Map(0, nullptr, reinterpret_cast<void **>(&pCBDataBegin)));
     memcpy(pCBDataBegin, &param, sizeof(param));
     m_constantBuffer->Unmap(0, nullptr);
+    // Commit resource allocation command list.
+    ExecuteWaitForCommandQueue();
 }
 
 /**
@@ -97,9 +84,6 @@ void GPUMemRwBw::PrepareData(SIZE_T numElement) {
  * @return true if result is correct.
  */
 bool GPUMemRwBw::CheckData(SIZE_T numElement) {
-    ID3D12CommandAllocator *activeAllocator = m_commandAllocator.Get();
-    activeAllocator->Reset();
-    m_commandList->Reset(activeAllocator, nullptr);
     // Readback result to check correctness.
     m_commandList->ResourceBarrier(
         1, get_rvalue_ptr(CD3DX12_RESOURCE_BARRIER::Transition(m_outputBuffer.Get(), D3D12_RESOURCE_STATE_COMMON,
@@ -108,17 +92,15 @@ bool GPUMemRwBw::CheckData(SIZE_T numElement) {
     m_commandList->ResourceBarrier(
         1, get_rvalue_ptr(CD3DX12_RESOURCE_BARRIER::Transition(m_outputBuffer.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE,
                                                                D3D12_RESOURCE_STATE_COMMON)));
-    m_commandList->Close();
     // Execute copy back and sync.
-    ID3D12CommandList *listsToExecute[] = {m_commandList.Get()};
-    m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
-    waitForCommandQueue();
+    ExecuteWaitForCommandQueue();
     // Access from CPU.
-    Data *mappedData = nullptr;
-    m_readbackBuffer->Map(0, nullptr, reinterpret_cast<void **>(&mappedData));
+    float *mappedData = nullptr;
+    ThrowIfFailed(m_readbackBuffer->Map(0, nullptr, reinterpret_cast<void **>(&mappedData)));
     for (int i = 0; i < numElement; ++i) {
-        if ((int)mappedData[i].v1 != i % 256) {
-            cout << "FAIL: index " << i << " should be " << i % 256 << " but got " << (int)mappedData[i].v1 << endl;
+        if ((int)mappedData[i] != i % 256) {
+            cout << "Error: check data failed - index " << i << " should be " << i % 256 << " but got "
+                 << (int)mappedData[i] << endl;
             break;
         }
     }
@@ -132,58 +114,39 @@ bool GPUMemRwBw::CheckData(SIZE_T numElement) {
  * @return double the time elapsed in ms.
  */
 double GPUMemRwBw::MemReadWriteBench(SIZE_T numElem, int loops, int numWarmUp) {
-    m_commandAllocator->Reset();
-    m_commandList->Reset(m_commandAllocator.Get(), m_PSO.Get());
     // Setup root signature for pipeline.
+    m_commandList->SetPipelineState(m_PSO.Get());
     m_commandList->SetComputeRootSignature(m_rootSignature.Get());
-    if (opts->opt_type == Option::Write || opts->opt_type == Option::ReadWrite) {
+    if (opts->mem_type == Memtype::Write || opts->mem_type == Memtype::ReadWrite) {
         m_commandList->SetComputeRootShaderResourceView(0, m_inputBuffer->GetGPUVirtualAddress());
     }
     m_commandList->SetComputeRootConstantBufferView(1, m_constantBuffer->GetGPUVirtualAddress());
     m_commandList->SetComputeRootUnorderedAccessView(2, m_outputBuffer->GetGPUVirtualAddress());
+
     // Start test.
+    m_gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
     for (int i = 0; i < loops + numWarmUp; i++) {
         if (i == numWarmUp) {
             // Start timestamp.
             m_gpuTimer.start(m_commandList.Get(), 0);
         }
-        uint3 dispatch = num_dispatch_;
+        UInt3 dispatch = m_num_dispatch;
         m_commandList->Dispatch(dispatch.x, dispatch.y, dispatch.z);
     }
     // Stop timestamp.
     m_gpuTimer.stop(m_commandList.Get(), 0);
     m_gpuTimer.resolveQueryToCPU(m_commandList.Get(), 0);
+
     // Close, execute (and optionally reset) the command list, and also to use a fence to wait for the command queue.
-    m_commandList->Close();
-    ID3D12CommandList *listsToExecute[] = {m_commandList.Get()};
-    m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
-    waitForCommandQueue();
+    ExecuteWaitForCommandQueue();
+
     // Get time in ms.
-    UINT64 queueFreq;
-    m_commandQueue->GetTimestampFrequency(&queueFreq);
-    double timestampToMs = (1.0 / queueFreq) * 1000.0;
-    D3D12::GPUTimestampPair drawTime = m_gpuTimer.getTimestampPair(0);
-    UINT64 dt = drawTime.Stop - drawTime.Start;
-    double timeInMs = dt * timestampToMs;
-    if (opts->check_data && opts->opt_type != Option::Read) {
+    double timeInMs = m_gpuTimer.getElapsedMsByTimestampPair(0);
+
+    if (opts->check_data && opts->mem_type != Memtype::Read) {
         CheckData(numElem);
     }
     return timeInMs;
-}
-
-/**
- * @brief Wait until command completed.
- */
-void GPUMemRwBw::waitForCommandQueue() {
-    // Signal and increment the fence value.
-    const UINT64 fenceL = m_fenceValue;
-    m_commandQueue->Signal(m_fence, fenceL);
-    m_fenceValue++;
-    // Wait until command queue is done.
-    if (m_fence->GetCompletedValue() < fenceL) {
-        m_fence->SetEventOnCompletion(fenceL, m_eventHandle);
-        WaitForSingleObject(m_eventHandle, INFINITE);
-    }
 }
 
 /**
@@ -191,9 +154,9 @@ void GPUMemRwBw::waitForCommandQueue() {
  *		  create device object, command list, command queue
  *		  and synchronization objects.
  */
-void GPUMemRwBw::LoadPipeline() {
+void GPUMemRwBw::CreatePipeline() {
     UINT dxgiFactoryFlags = 0;
-#if DEBUG
+#if _DEBUG
     // Enable the debug layer (requires the Graphics Tools "optional feature").
     // NOTE: Enabling the debug layer after device creation will invalidate the active device.
     {
@@ -212,77 +175,78 @@ void GPUMemRwBw::LoadPipeline() {
     ThrowIfFailed(D3D12CreateDevice(hardwareAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device)));
     D3D12_COMMAND_QUEUE_DESC cqd3 = {};
     cqd3.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    m_device->CreateCommandQueue(&cqd3, IID_PPV_ARGS(&m_commandQueue));
-    m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator));
+    ThrowIfFailed(m_device->CreateCommandQueue(&cqd3, IID_PPV_ARGS(&m_commandQueue)));
+    ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
     // Create the command list.
-    m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr,
-                                IID_PPV_ARGS(&m_commandList));
-    // Command lists are created in the recording state, but there is nothing
-    // to record yet. The main loop expects it to be closed, so close it now.
-    ThrowIfFailed(m_commandList->Close());
-    m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+    ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr,
+                                              IID_PPV_ARGS(&m_commandList)));
+    // Create synchronization objects.
+    ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
     m_fenceValue = 1;
     // Create an event handle to use for GPU synchronization.
     m_eventHandle = CreateEvent(0, false, false, 0);
-    // Setup GPU resources.
-    ID3D12CommandAllocator *activeAllocator = m_commandAllocator.Get();
-    activeAllocator->Reset();
-    m_commandList->Reset(activeAllocator, nullptr);
 }
 
 /**
- * @brief Setup GPU pipeline resource like root signature and shader.
+ * @brief Setup GPU pipeline resource including creating root signature, pipeline state and compile shader.
  */
 void GPUMemRwBw::LoadAssets() {
     // Prepare root signature, root parameter can be a table, root descriptor or root constants.
     const int nParamter = 3;
     CD3DX12_ROOT_PARAMETER slotRootParameter[nParamter];
-    // Performance TIP: Order from most frequent to least frequent.
+    // Bind the SRV, CBV and UAV descriptor tables to the root parameters.
     slotRootParameter[0].InitAsShaderResourceView(0);
     slotRootParameter[1].InitAsConstantBufferView(0);
     slotRootParameter[2].InitAsUnorderedAccessView(0);
-    // Create an empty root signature.
-    {
-        // A root signature is an array of root parameters.
-        CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(nParamter, slotRootParameter, 0, nullptr,
-                                                D3D12_ROOT_SIGNATURE_FLAG_NONE);
-        ComPtr<ID3DBlob> serializedRootSig = nullptr;
-        ComPtr<ID3DBlob> errorBlob = nullptr;
-        HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-                                                 serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
-        if (errorBlob != nullptr) {
-            ::OutputDebugStringA((char *)errorBlob->GetBufferPointer());
-            return;
-        }
-        ThrowIfFailed(hr);
-        ThrowIfFailed(m_device->CreateRootSignature(0, serializedRootSig->GetBufferPointer(),
-                                                    serializedRootSig->GetBufferSize(),
-                                                    IID_PPV_ARGS(m_rootSignature.GetAddressOf())));
+    // Create the root signature.
+    // A root signature is an array of root parameters.
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(nParamter, slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_NONE);
+    ComPtr<ID3DBlob> serializedRootSig = nullptr;
+    ComPtr<ID3DBlob> errorBlob = nullptr;
+    HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+                                             serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+    if (errorBlob != nullptr) {
+        ::OutputDebugStringA((char *)errorBlob->GetBufferPointer());
+        return;
     }
-    // Load shader according to user specified.
-    switch (opts->opt_type) {
-    case Option::Read:
-        m_shader = CompileShader(L"ReadWrite.hlsl", nullptr, "Read", "cs_5_0");
+    ThrowIfFailed(hr);
+    ThrowIfFailed(m_device->CreateRootSignature(0, serializedRootSig->GetBufferPointer(),
+                                                serializedRootSig->GetBufferSize(),
+                                                IID_PPV_ARGS(m_rootSignature.GetAddressOf())));
+    // Define the number of threads per thread group.
+    // LPCSTR pointer obtained from myString.c_str() is only valid as long as the myString object exists.
+    std::string x_str = std::to_string(m_num_thread.x);
+    LPCSTR x_val = x_str.c_str();
+    std::string y_str = std::to_string(m_num_thread.y);
+    LPCSTR y_val = y_str.c_str();
+    std::string z_str = std::to_string(m_num_thread.z);
+    LPCSTR z_val = z_str.c_str();
+    D3D_SHADER_MACRO defines[] = {
+        {"X", x_val},
+        {"Y", y_val},
+        {"Z", z_val},
+        {nullptr, nullptr} // The last entry must be nullptr to indicate the end of the array
+    };
+    // Load and Compile shader according to user specified.
+    switch (opts->mem_type) {
+    case Memtype::Read:
+        m_shader = CompileShader(L"ReadWrite.hlsl", defines, "Read", "cs_5_0");
         break;
-    case Option::Write:
-        m_shader = CompileShader(L"ReadWrite.hlsl", nullptr, "Write", "cs_5_0");
+    case Memtype::Write:
+        m_shader = CompileShader(L"ReadWrite.hlsl", defines, "Write", "cs_5_0");
         break;
-    case Option::ReadWrite:
-        m_shader = CompileShader(L"ReadWrite.hlsl", nullptr, "ReadWrite", "cs_5_0");
-        break;
-    default:
-        cout << "Invalid opt type." << endl;
+    case Memtype::ReadWrite:
+        m_shader = CompileShader(L"ReadWrite.hlsl", defines, "ReadWrite", "cs_5_0");
         break;
     }
-    // Create the pipeline state, which includes compiling and loading shaders.
-    {
-        // Describe and create the graphics pipeline state object (PSO).
-        D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
-        computePsoDesc.pRootSignature = m_rootSignature.Get();
-        computePsoDesc.CS = {reinterpret_cast<BYTE *>(m_shader->GetBufferPointer()), m_shader->GetBufferSize()};
-        computePsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-        ThrowIfFailed(m_device->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&m_PSO)));
-    }
+    // Describe and create the graphics pipeline state object (PSO).
+    D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
+    computePsoDesc.pRootSignature = m_rootSignature.Get();
+    computePsoDesc.CS = {reinterpret_cast<BYTE *>(m_shader->GetBufferPointer()), m_shader->GetBufferSize()};
+    computePsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+    ThrowIfFailed(m_device->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&m_PSO)));
+
+    ExecuteWaitForCommandQueue();
 }
 
 /**
@@ -301,14 +265,15 @@ GPUMemRwBw::CreateDefaultBuffer(ID3D12Device *device, ID3D12GraphicsCommandList 
     // Create target default buffer.
     CD3DX12_HEAP_PROPERTIES DefaultHeap(D3D12_HEAP_TYPE_DEFAULT);
     CD3DX12_RESOURCE_DESC defaultResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(byteSize);
-    device->CreateCommittedResource(&DefaultHeap, D3D12_HEAP_FLAG_NONE, &defaultResourceDesc,
-                                    D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(defaultBuffer.GetAddressOf()));
+    ThrowIfFailed(device->CreateCommittedResource(&DefaultHeap, D3D12_HEAP_FLAG_NONE, &defaultResourceDesc,
+                                                  D3D12_RESOURCE_STATE_COMMON, nullptr,
+                                                  IID_PPV_ARGS(defaultBuffer.GetAddressOf())));
     // Create a temporary upload buffer to upload data.
     CD3DX12_HEAP_PROPERTIES UploadHeap(D3D12_HEAP_TYPE_UPLOAD);
     CD3DX12_RESOURCE_DESC UploadResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(byteSize);
-    device->CreateCommittedResource(&UploadHeap, D3D12_HEAP_FLAG_NONE, &UploadResourceDesc,
-                                    D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-                                    IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
+    ThrowIfFailed(device->CreateCommittedResource(&UploadHeap, D3D12_HEAP_FLAG_NONE, &UploadResourceDesc,
+                                                  D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                                                  IID_PPV_ARGS(uploadBuffer.GetAddressOf())));
     // Upload data that pass in.
     D3D12_SUBRESOURCE_DATA subResourceData = {};
     subResourceData.pData = initData;
@@ -323,4 +288,27 @@ GPUMemRwBw::CreateDefaultBuffer(ID3D12Device *device, ID3D12GraphicsCommandList 
         defaultBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
     cmdList->ResourceBarrier(1, &ReadBarrier);
     return defaultBuffer;
+}
+
+/**
+ * @brief Execute the commands and wait until command completed.
+ */
+void GPUMemRwBw::ExecuteWaitForCommandQueue(DWORD dwMilliseconds) {
+    // Close, execute (and optionally reset) the command list, and also to use a fence to wait for the command queue.
+    ThrowIfFailed(m_commandList->Close());
+    ID3D12CommandList *listsToExecute[] = {m_commandList.Get()};
+    m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
+    // Signal and increment the fence value.
+    const UINT64 fenceL = m_fenceValue;
+    ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), fenceL));
+    m_fenceValue++;
+    // Wait until command queue is done.
+    if (m_fence->GetCompletedValue() < fenceL) {
+        ThrowIfFailed(m_fence->SetEventOnCompletion(fenceL, m_eventHandle));
+        WaitForSingleObject(m_eventHandle, dwMilliseconds);
+    }
+    // Reset the command allocator and command list.
+    ID3D12CommandAllocator *activeAllocator = m_commandAllocator.Get();
+    ThrowIfFailed(activeAllocator->Reset());
+    ThrowIfFailed(m_commandList->Reset(activeAllocator, nullptr));
 }
