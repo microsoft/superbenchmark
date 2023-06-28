@@ -32,7 +32,7 @@
 #include "../directx_third_party/DXSampleHelper.h"
 #include "../directx_third_party/d3dx12.h"
 #include "../directx_utils/D3D12Timer.h"
-#include "GPUCoreOptions.h"
+#include "BenchmarkOptions.h"
 
 using namespace std;
 using namespace DirectX;
@@ -47,7 +47,7 @@ template <typename T> T *get_rvalue_ptr(T &&v) { return &v; }
 
 class GPUCore {
   public:
-    GPUCore(GPUCoreOptions *opts) : opts(opts) {}
+    GPUCore(BenchmarkOptions *opts) : opts(opts) {}
     ~GPUCore() {}
 
     /**
@@ -81,18 +81,25 @@ class GPUCore {
     /**
      * @brief Initialize DirectML operator.
      */
-    void InitializeOp();
+    template <typename T> void InitializeOp(int m, int n, int k);
 
     /**
      * @brief Execute the computation GEMM op.
      * @return the elapsed time in ms.
      */
-    template <typename T> double ExecuteComputeOp(const int m, const int n, const int k);
+    double ExecuteComputeOp();
 
     /**
      * @brief Close and execute command list, wait until command completed.
      */
     void CloseExecuteResetWait(DWORD dwMilliseconds = 300000);
+
+#if defined _PRINT_RESULT
+    /**
+     * @brief Print the result of the benchmark for debug.
+     */
+    template <typename T> void PrintResultForDebug(int m, int n);
+#endif
 
     /**
      * @brief Create a default buffer and upload data with the upload buffer.
@@ -140,5 +147,5 @@ class GPUCore {
     D3D12::D3D12Timer gpuTimer;
 
     // Options.
-    GPUCoreOptions *opts;
+    BenchmarkOptions *opts;
 };

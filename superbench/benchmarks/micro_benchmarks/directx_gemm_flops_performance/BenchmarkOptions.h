@@ -13,7 +13,7 @@ enum Precision {
 using PrecisionType = Option::Precision;
 } // namespace Option
 
-class GPUCoreOptions : public Options {
+class BenchmarkOptions : public Options {
   public:
     // Number of warm up rounds to run.
     int num_warm_up = 0;
@@ -31,7 +31,7 @@ class GPUCoreOptions : public Options {
     /**
      * @brief Construct a new GPUCoreOptions object.
      */
-    GPUCoreOptions(int argc, char *argv[]) : Options(argc, argv) {}
+    BenchmarkOptions(int argc, char *argv[]) : Options(argc, argv) {}
 
     /**
      * @brief Parse the arguments.

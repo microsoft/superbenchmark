@@ -32,31 +32,37 @@ void GPUCore::Run() {
         PrepareData<float>(opts->m, opts->n, opts->k);
         // Setup pipeline and compile operator.
         SetupAndCompileOp(opts->m, opts->n, opts->k, DML_TENSOR_DATA_TYPE_FLOAT32);
-        InitializeOp();
+        InitializeOp<float>(opts->m, opts->n, opts->k);
         for (int i = 0; i < opts->num_warm_up; ++i) {
-            ExecuteComputeOp<float>(m, n, k);
+            ExecuteComputeOp();
         }
         for (int i = 0; i < loops; ++i) {
             gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
             // Do FLOPs job.
-            double timeInMs = ExecuteComputeOp<float>(m, n, k);
+            double timeInMs = ExecuteComputeOp();
             auto flops = (int64_t(m) * n * k + m * n) * 2 * 1e-9 / timeInMs;
             std::cout << flops << " TFLOPs" << std::endl;
+#if defined _PRINT_RESULT
+            PrintResultForDebug<float>(m, n);
+#endif
         }
     } break;
     case Option::F16: {
         PrepareData<uint16_t>(opts->m, opts->n, opts->k);
         SetupAndCompileOp(opts->m, opts->n, opts->k, DML_TENSOR_DATA_TYPE_FLOAT16);
-        InitializeOp();
+        InitializeOp<uint16_t>(opts->m, opts->n, opts->k);
         for (int i = 0; i < opts->num_warm_up; ++i) {
-            ExecuteComputeOp<uint16_t>(m, n, k);
+            ExecuteComputeOp();
         }
         for (int i = 0; i < loops; ++i) {
             gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
             // Do FLOPs job.
-            double timeInMs = ExecuteComputeOp<uint16_t>(m, n, k);
+            double timeInMs = ExecuteComputeOp();
             auto flops = (int64_t(m) * n * k + m * n) * 2 * 1e-9 / timeInMs;
             std::cout << flops << " TFLOPs" << std::endl;
+#if defined _PRINT_RESULT
+            PrintResultForDebug<uint16_t>(m, n);
+#endif
         }
     } break;
     default:
@@ -159,7 +165,8 @@ inline UINT64 DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE dataType, UINT tensor
         return 0; // Invalid data type
     }
     UINT64 minimumImpliedSizeInBytes = 0;
-    // Round up to the nearest 4 bytes.
+    // Aligh size in 4 bytes in memory
+    // Round up to nearest multiple 4 bytes
     minimumImpliedSizeInBytes = (tensorElementCount * elementSizeInBytes + 3) & ~3ull;
     return minimumImpliedSizeInBytes;
 }
@@ -267,7 +274,7 @@ template <typename T> void GPUCore::PrepareData(const int m, const int n, const 
 /**
  * @brief Initialize DirectML operator.
  */
-void GPUCore::InitializeOp() {
+template <typename T> void GPUCore::InitializeOp(int m, int n, int k) {
     ComPtr<IDMLOperatorInitializer> dmlOperatorInitializer;
 
     IDMLCompiledOperator *dmlCompiledOperators[] = {m_dmlCompiledOperator.Get()};
@@ -370,13 +377,6 @@ void GPUCore::InitializeOp() {
     }
 
     CloseExecuteResetWait();
-}
-
-/**
- * @brief Execute the computation GEMM op.
- * @return the elapsed time in ms.
- */
-template <typename T> double GPUCore::ExecuteComputeOp(int m, int n, int k) {
 
     DML_BUFFER_BINDING inputBufferBindingA{m_inputBufferA.Get(), 0, sizeof(T) * m * k};
     DML_BINDING_DESC inputBindingDescA{DML_BINDING_TYPE_BUFFER, &inputBufferBindingA};
@@ -394,6 +394,42 @@ template <typename T> double GPUCore::ExecuteComputeOp(int m, int n, int k) {
     DML_BINDING_DESC outputBindingDesc{DML_BINDING_TYPE_BUFFER, &outputBufferBinding};
 
     m_bindingTable->BindOutputs(1, &outputBindingDesc);
+}
+
+#if defined _PRINT_RESULT
+/**
+ * @brief Print the result of the benchmark for debug.
+ */
+template <typename T> void GPUCore::PrintResultForDebug(int m, int n) {
+    // The output buffer now contains the result of the identity operator,
+    // so read it back if you want the CPU to access it.
+    m_commandList->ResourceBarrier(
+        1, get_rvalue_ptr(CD3DX12_RESOURCE_BARRIER::Transition(
+               m_outputBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE)));
+
+    m_commandList->CopyResource(m_readBackBuffer.Get(), m_outputBuffer.Get());
+
+    CloseExecuteResetWait();
+    D3D12_RANGE tensorBufferRange{0, static_cast<SIZE_T>(sizeof(T) * n * m)};
+    T *outputBufferData{};
+    ThrowIfFailed(m_readBackBuffer->Map(0, &tensorBufferRange, reinterpret_cast<void **>(&outputBufferData)));
+    std::string outputString = "output tensor: ";
+    for (size_t tensorElementIndex{0}; tensorElementIndex < static_cast<SIZE_T>(m * n);
+         ++tensorElementIndex, ++outputBufferData) {
+        outputString += std::to_string(*outputBufferData) + ' ';
+    }
+
+    std::cout << outputString << std::endl;
+    D3D12_RANGE emptyRange{0, 0};
+    m_readBackBuffer->Unmap(0, &emptyRange);
+}
+#endif
+
+/**
+ * @brief Execute the computation GEMM op.
+ * @return the elapsed time in ms.
+ */
+double GPUCore::ExecuteComputeOp() {
 
     // Execute the compiled GEMM operator and record the GPU time.
     this->gpuTimer.start(m_commandList.Get(), 0);
@@ -401,33 +437,7 @@ template <typename T> double GPUCore::ExecuteComputeOp(int m, int n, int k) {
     this->gpuTimer.stop(m_commandList.Get(), 0);
     this->gpuTimer.resolveQueryToCPU(m_commandList.Get(), 0);
     CloseExecuteResetWait();
-
     double timeInMs = this->gpuTimer.getElapsedMsByTimestampPair(0);
-
-    if (_PRINT_RESULT) {
-        // The output buffer now contains the result of the identity operator,
-        // so read it back if you want the CPU to access it.
-        m_commandList->ResourceBarrier(
-            1, get_rvalue_ptr(CD3DX12_RESOURCE_BARRIER::Transition(
-                   m_outputBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE)));
-
-        m_commandList->CopyResource(m_readBackBuffer.Get(), m_outputBuffer.Get());
-
-        CloseExecuteResetWait();
-        D3D12_RANGE tensorBufferRange{0, static_cast<SIZE_T>(sizeof(T) * n * m)};
-        T *outputBufferData{};
-        ThrowIfFailed(m_readBackBuffer->Map(0, &tensorBufferRange, reinterpret_cast<void **>(&outputBufferData)));
-        std::string outputString = "output tensor: ";
-        for (size_t tensorElementIndex{0}; tensorElementIndex < static_cast<SIZE_T>(m * n);
-             ++tensorElementIndex, ++outputBufferData) {
-            outputString += std::to_string(*outputBufferData) + ' ';
-        }
-
-        std::cout << outputString << std::endl;
-        D3D12_RANGE emptyRange{0, 0};
-        m_readBackBuffer->Unmap(0, &emptyRange);
-    }
-
     return timeInMs;
 }
 
