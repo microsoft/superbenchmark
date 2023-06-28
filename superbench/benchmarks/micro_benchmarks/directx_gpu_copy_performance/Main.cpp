@@ -7,18 +7,17 @@
 #include "GPUCopyBw.h"
 
 int main(int argc, char *argv[]) {
-    std::unique_ptr<BenchmarkOptions> opts = std::make_unique<BenchmarkOptions>(argc, argv);
-    opts->init();
-    if (opts->size != -1) {
+    BenchmarkOptions option(argc, argv);
+    option.init();
+    if (option.size != -1) {
         // Run only one size
-        std::unique_ptr<GPUCopyBw> benchmark = std::make_unique<GPUCopyBw>(opts.get());
-        benchmark->Run();
+        GPUCopyBw benchmark(&option);
+        benchmark.Run();
     } else {
         // Run all sizes
-        for (SIZE_T usize = opts->min_size; usize <= opts->max_size; usize += usize) {
-            opts->size = usize;
-            std::unique_ptr<GPUCopyBw> benchmark = std::make_unique<GPUCopyBw>(opts.get());
-            benchmark->Run();
+        for (SIZE_T usize = option.min_size; usize <= option.max_size; usize += usize) {
+            GPUCopyBw benchmark(&option);
+            benchmark.Run();
         }
     }
 }
