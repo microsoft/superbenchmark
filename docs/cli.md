@@ -311,6 +311,7 @@ sb run [--config-file]
        [--no-docker]
        [--output-dir]
        [--private-key]
+       [--get-info]
 ```
 
 #### Optional arguments
@@ -329,6 +330,7 @@ sb run [--config-file]
 | `--no-docker`            | `False`                 | Run on host directly without Docker.                                        |
 | `--output-dir`           | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--private-key`          | `None`                  | Path to private key if needed.                                              |
+| `--get-info`             | `False`                 | Collect system info.                                                        |
 
 #### Global arguments
 

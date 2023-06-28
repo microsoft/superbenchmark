@@ -35,7 +35,7 @@ This tool is to collect the system information automatically on the tested GPU n
 3. After installing the Superbnech and the host file is ready, you can start to collect the sys info automatically using  `sb run --get-info` command. The detailed command can be found from [SuperBench CLI](../cli.md).
 
   ```
-  sb run --get-info -f host.ini -c config.yaml --output-dir ${output-dir} -C superbench.enable=none
+  sb run --get-info -f host.ini --output-dir ${output-dir} -C superbench.enable=none
   ```
 
 4. After the command finished, you can find the output system info json file `sys-info.json` of each node under \${output_dir}/nodes/${node_name}.

@@ -64,9 +64,9 @@ helps['run'] = """
             {cli_name} run --no-docker --host-list localhost
             --config-override superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
         - name: Collect system info on all nodes in ./host.ini" without running benchmarks
-          text: {cli_name} --get-info --host-file ./host.ini -C superbench.enable=none
+          text: {cli_name} run --get-info --host-file ./host.ini -C superbench.enable=none
         - name: Collect system info on all nodes in ./host.ini" while running benchmarks
-          text: {cli_name} --get-info --host-file ./host.ini
+          text: {cli_name} run --get-info --host-file ./host.ini
 """.format(cli_name=CLI_NAME)
 
 helps['benchmark'] = """
