@@ -15,6 +15,7 @@ enum Memtype {
     Write,
     ReadWrite,
 };
+const std::string MemtypeString[] = {"Read", "Write", "ReadWrite"};
 
 struct UInt3 {
     unsigned int x;
@@ -24,19 +25,30 @@ struct UInt3 {
 
 class BenchmarkOptions : public Options {
   protected:
-    UInt3 get_cmd_line_argument_uint3(const std::string &option, UInt3 defaults) {
+    std::vector<unsigned int> splitAndConvertToInt(const std::string &str) {
+        std::vector<unsigned int> result;
+        std::stringstream ss(str);
+        std::string token;
+
+        while (std::getline(ss, token, ',')) {
+            try {
+                result.push_back(std::stoul(token));
+            } catch (std::invalid_argument &e) {
+                throw std::invalid_argument("Invalid argument: " + token + e.what());
+            }
+        }
+        return result;
+    }
+    const UInt3 &get_cmd_line_argument_uint3(const std::string &option, UInt3 defaults) {
         if (char *value = get_cmd_option(option)) {
             try {
-                char **itr = std::find(begin, end, option);
-                UInt3 numThreads;
-                if (itr != end && std::distance(itr, end) >= 4) {
-                    numThreads.x = std::stoi(*(itr + 1));
-                    numThreads.y = std::stoi(*(itr + 2));
-                    numThreads.z = std::stoi(*(itr + 3));
-                } else {
-                    std::cerr << "Error: Invalid argument - " << option << " should be unsigned int3" << '\n';
+                std::vector<unsigned int> values = splitAndConvertToInt(value);
+                if (values.size() != 3) {
+                    std::cout << "Error: Invalid argument - " << option << " should be unsigned int3" << '\n';
                     exit(1);
                 }
+                return {values[0], values[1], values[2]};
+
             } catch (const std::exception &e) {
                 std::cout << "Error: Invalid argument - " << option << " should be unsigned int3" << e.what() << '\n';
                 exit(1);

@@ -22,7 +22,8 @@ void GPUMemRwBw::Run() {
     double time_ms = MemReadWriteBench(this->m_num_elements, opts->num_loop, opts->num_warm_up);
     double bw = this->m_num_elements * sizeof(float) * opts->num_loop / time_ms / 1e6;
     // Output benchmark result.
-    cout << "GPUMemBw: " << opts->size << " " << bw << " GB/s" << endl;
+    std::string mode = MemtypeString[static_cast<int>(opts->mem_type)];
+    cout << "GPUMemBw: " << mode << " " << opts->size << " " << bw << " GB/s" << endl;
 }
 
 /**
@@ -114,15 +115,6 @@ bool GPUMemRwBw::CheckData(SIZE_T numElement) {
  * @return double the time elapsed in ms.
  */
 double GPUMemRwBw::MemReadWriteBench(SIZE_T numElem, int loops, int numWarmUp) {
-    // Setup root signature for pipeline.
-    m_commandList->SetPipelineState(m_PSO.Get());
-    m_commandList->SetComputeRootSignature(m_rootSignature.Get());
-    if (opts->mem_type == Memtype::Write || opts->mem_type == Memtype::ReadWrite) {
-        m_commandList->SetComputeRootShaderResourceView(0, m_inputBuffer->GetGPUVirtualAddress());
-    }
-    m_commandList->SetComputeRootConstantBufferView(1, m_constantBuffer->GetGPUVirtualAddress());
-    m_commandList->SetComputeRootUnorderedAccessView(2, m_outputBuffer->GetGPUVirtualAddress());
-
     // Start test.
     m_gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
     for (int i = 0; i < loops + numWarmUp; i++) {
@@ -206,7 +198,7 @@ void GPUMemRwBw::LoadAssets() {
     HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
                                              serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
     if (errorBlob != nullptr) {
-        ::OutputDebugStringA((char *)errorBlob->GetBufferPointer());
+        std::cout << "Error: " << (char *)errorBlob->GetBufferPointer() << std::endl;
         return;
     }
     ThrowIfFailed(hr);
@@ -238,6 +230,9 @@ void GPUMemRwBw::LoadAssets() {
     case Memtype::ReadWrite:
         m_shader = CompileShader(L"ReadWrite.hlsl", defines, "ReadWrite", "cs_5_0");
         break;
+    default:
+        std::cout << "Error: Invalid memory type." << std::endl;
+        exit(1);
     }
     // Describe and create the graphics pipeline state object (PSO).
     D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
@@ -247,6 +242,15 @@ void GPUMemRwBw::LoadAssets() {
     ThrowIfFailed(m_device->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&m_PSO)));
 
     ExecuteWaitForCommandQueue();
+
+    // Setup root signature for pipeline.
+    m_commandList->SetPipelineState(m_PSO.Get());
+    m_commandList->SetComputeRootSignature(m_rootSignature.Get());
+    if (opts->mem_type == Memtype::Write || opts->mem_type == Memtype::ReadWrite) {
+        m_commandList->SetComputeRootShaderResourceView(0, m_inputBuffer->GetGPUVirtualAddress());
+    }
+    m_commandList->SetComputeRootConstantBufferView(1, m_constantBuffer->GetGPUVirtualAddress());
+    m_commandList->SetComputeRootUnorderedAccessView(2, m_outputBuffer->GetGPUVirtualAddress());
 }
 
 /**

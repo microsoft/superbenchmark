@@ -17,11 +17,9 @@ void Read(uint threadID : SV_GroupIndex, uint3 groupID : SV_GroupID, uint3 dispa
 		dispatchId.y * numDispatch.x * numThreads.x +
 		dispatchId.z * numDispatch.x * numThreads.x * numDispatch.y * numThreads.y;
 
-	uint i = idStart;
 	uint start = idStart * numLoop;
 	uint end = start + numLoop;
-	i = start;
-	for (; i < end; i++)
+	for (uint i = start; i < end; i++)
 	{
 		float c = gOutput[i];
 		if (c == -1)
@@ -39,12 +37,10 @@ void Write(uint threadID : SV_GroupIndex, uint3 groupID : SV_GroupID, uint3 disp
 	uint idStart = dispatchId.x +
 		dispatchId.y * numDispatch.x * numThreads.x +
 		dispatchId.z * numDispatch.x * numThreads.x * numDispatch.y * numThreads.y;
-	uint i = idStart;
 
 	uint start = idStart * numLoop;
 	uint end = start + numLoop;
-	i = start;
-	for (; i < end; i++)
+	for (uint i = start; i < end; i++)
 	{
 		gOutput[i] =  i % 256;
 	}
@@ -56,14 +52,11 @@ void ReadWrite(uint threadID : SV_GroupIndex, uint3 groupID : SV_GroupID, uint3 
 	uint idStart = dispatchId.x +
 		dispatchId.y * numDispatch.x * numThreads.x +
 		dispatchId.z * numDispatch.x * numThreads.x * numDispatch.y * numThreads.y;
-	uint i = idStart;
 
 	uint start = idStart * numLoop;
 	uint end = start + numLoop;
-	i = start;
-	for (; i < end; i++)
+	for (uint i = start; i < end; i++)
 	{
-		float c = gInputA[i];
-		gOutput[i] = c;
+		gOutput[i] = gInputA[i];
 	}
 }
