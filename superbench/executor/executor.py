@@ -87,6 +87,8 @@ class SuperBenchExecutor():
                 return Platform.CUDA
             elif gpu.vendor == 'amd':
                 return Platform.ROCM
+            elif gpu.vendor == 'amd-graphics' or gpu.vendor == 'nvidia-graphics':
+                return Platform.DIRECTX
         except Exception as e:
             logger.error(e)
         return Platform.CPU
