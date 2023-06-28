@@ -209,7 +209,7 @@ class SuperBenchRunner():
         if self._docker_config.skip:
             fcmd = "bash -c 'cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
-            fcmd.format(command='sb run --get-info --output-dir {output_dir}'.format(output_dir=self._sb_output_dir))
+            fcmd.format(command='sb node info --output-dir {output_dir}'.format(output_dir=self._sb_output_dir))
         )
         ansible_rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
 

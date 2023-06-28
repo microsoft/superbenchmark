@@ -3,7 +3,6 @@
 
 """SuperBench CLI command handler."""
 
-import json
 import sys
 from pathlib import Path
 from importlib_metadata import version, PackageNotFoundError
@@ -15,7 +14,6 @@ import superbench
 from superbench.runner import SuperBenchRunner
 from superbench.executor import SuperBenchExecutor
 from superbench.common.utils import create_sb_output_dir, get_sb_config
-from superbench.tools import SystemInfo
 
 
 def check_argument_file(name, file):
@@ -303,17 +301,6 @@ def run_command_handler(
     Raises:
         CLIError: If input arguments are invalid.
     """
-    if (get_info and not (host_file or host_list)):
-        try:
-            output_dir = create_sb_output_dir(output_dir)
-            info = SystemInfo().get_all()
-            output_dir_path = Path(output_dir)
-            with open(output_dir_path / 'sys_info.json', 'w') as f:
-                json.dump(info, f)
-        except Exception as ex:
-            raise RuntimeError('Failed to get node info.') from ex
-        return
-
     docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
         docker_image=docker_image,
         docker_username=docker_username,
@@ -332,10 +319,9 @@ def run_command_handler(
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
 
+    runner.run()
     if get_info:
         runner.run_sys_info()
-    else:
-        runner.run()
 
     if runner.get_failure_count() != 0:
         sys.exit(runner.get_failure_count())
