@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include "D3D12Timer.h"
 #include "../directx_third_party/DXSampleHelper.h"
 #include "../directx_third_party/d3dx12.h"
-#include "D3D12Timer.h"
 #include <cassert>
 
 namespace D3D12 {
