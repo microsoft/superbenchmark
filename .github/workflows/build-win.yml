@@ -1,0 +1,46 @@
+name: Build on Windows
+
+on:
+  push:
+    branches:
+    - main
+    - release/*
+  pull_request:
+    branches:
+    - main
+    - release/*
+
+jobs:
+  docker:
+    name: Docker build win2004
+    runs-on: [self-hosted, windows, x64, win2004]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      working-directory: .
+      shell: pwsh
+      run: |
+        docker build `
+          --file dockerfile/directx12.dockerfile `
+          --label org.opencontainers.image.source=${{ github.event.repository.html_url }} `
+          --label org.opencontainers.image.created=${{ github.event.repository.pushed_at }} `
+          --label org.opencontainers.image.revision=${{ github.sha }} `
+          --platform windows/amd64 `
+          --isolation=process `
+          --tag $env:TAG .
+      env:
+        TAG: superbench/main:win2004
+    - name: Push Docker image
+      if: ${{ github.event_name != 'pull_request' }}
+      shell: pwsh
+      run: |
+        docker login -u $env:USER -p $env:PASS
+        docker push $env:TAG
+        docker logout
+      env:
+        TAG: superbench/main:win2004
+        USER: ${{ secrets.DOCKERHUB_USERNAME }}
+        PASS: ${{ secrets.DOCKERHUB_TOKEN }}
