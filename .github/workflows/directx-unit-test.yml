@@ -31,6 +31,16 @@ jobs:
         $env:SB_HOME=$PWD; ./dockerfile/directx/install-components.bat
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Set up virtual environment
+      run: |
+        python -m venv venv
+        echo "venv\Scripts\activate.bat" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+      shell: pwsh
+    - name: Create Python alias
+      run: |
+        where.exe python
+        mklink python python3
+      shell: cmd
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools==65.7
@@ -47,7 +57,7 @@ jobs:
       shell: pwsh
     - name: Run unit tests
       run: |
-        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA = "0"; $env:SB_TEST_ROCM = "0"; $env:SB_TEST_PYTORCH = "0"; $env:SB_TEST_DIRECTX = "1"; python setup.py test
+        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test
       shell: pwsh
     - name: Report coverage results
       run: |
