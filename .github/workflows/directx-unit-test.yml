@@ -31,10 +31,10 @@ jobs:
         $env:SB_HOME=$PWD; ./dockerfile/directx/install-components.bat
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Set up virtual environment
+    - name: Setup Python and create a virtual environment
       run: |
         python -m venv venv
-        echo "venv\Scripts\activate.bat" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+        .\venv\Scripts\Activate.ps1
       shell: pwsh
     - name: Create Python alias
       run: |
