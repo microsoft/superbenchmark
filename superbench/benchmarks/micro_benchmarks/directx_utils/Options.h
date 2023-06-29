@@ -69,9 +69,9 @@ class Options {
     }
 
     /**
-     * @brief Get the bool type value of cmd line argument.
-     * @param option the cmd line argument.
-     * @return bool the bool type value of cmd line argument 'option'.
+     * @brief Split the string by ',' and convert to unsigned int.
+     * @param str the string to be split.
+     * @return std::vector<unsigned int> the vector of unsigned int.
      */
     std::vector<unsigned int> splitAndConvertToInt(const std::string &str) {
         std::vector<unsigned int> result;
@@ -89,10 +89,10 @@ class Options {
     }
 
     /**
-     * @brief Get the unsigned int type value of cmd line argument.
+     * @brief Get the unsigned int 3 type value of cmd line argument.
      * @param option the cmd line argument.
      * @param defaults the default value.
-     * @return unsigned int the unsigned int type value of cmd line argument 'option'.
+     * @return unsigned int the unsigned int 3 type value of cmd line argument 'option'.
      */
     UInt3 get_cmd_line_argument_uint3(const std::string &option, const UInt3 &defaults) {
         if (char *value = get_cmd_option(option)) {
