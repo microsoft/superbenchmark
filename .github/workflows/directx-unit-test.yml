@@ -41,6 +41,7 @@ jobs:
         where.exe python
         mklink python python3
       shell: 
+        cmd
     - name: Install dependencies
       run: |
         %VENV_PATH%\Scripts\Activate.ps1
