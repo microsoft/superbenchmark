@@ -17,46 +17,7 @@ enum Memtype {
 };
 const std::string MemtypeString[] = {"Read", "Write", "ReadWrite"};
 
-struct UInt3 {
-    unsigned int x;
-    unsigned int y;
-    unsigned int z;
-};
-
 class BenchmarkOptions : public Options {
-  protected:
-    std::vector<unsigned int> splitAndConvertToInt(const std::string &str) {
-        std::vector<unsigned int> result;
-        std::stringstream ss(str);
-        std::string token;
-
-        while (std::getline(ss, token, ',')) {
-            try {
-                result.push_back(std::stoul(token));
-            } catch (std::invalid_argument &e) {
-                throw std::invalid_argument("Invalid argument: " + token + e.what());
-            }
-        }
-        return result;
-    }
-    const UInt3 &get_cmd_line_argument_uint3(const std::string &option, UInt3 defaults) {
-        if (char *value = get_cmd_option(option)) {
-            try {
-                std::vector<unsigned int> values = splitAndConvertToInt(value);
-                if (values.size() != 3) {
-                    std::cout << "Error: Invalid argument - " << option << " should be unsigned int3" << '\n';
-                    exit(1);
-                }
-                return {values[0], values[1], values[2]};
-
-            } catch (const std::exception &e) {
-                std::cout << "Error: Invalid argument - " << option << " should be unsigned int3" << e.what() << '\n';
-                exit(1);
-            }
-        }
-        return defaults;
-    }
-
   public:
     // Number of warm up rounds.
     int num_warm_up = 0;
@@ -93,7 +54,7 @@ class BenchmarkOptions : public Options {
         std::cout << "  --read : Memory operation type is read." << std::endl;
         std::cout << "  --write : Memory operation type is write." << std::endl;
         std::cout << "  --readwrite : Memory operation type is readwrite." << std::endl;
-        std::cout << "  --numthreads <x> <y> <z> : Number of threads in 3 dimenstions to launch." << std::endl;
+        std::cout << "  --numthreads <x>,<y>,<z> : Number of threads in 3 dimenstions to launch." << std::endl;
         std::cout << "  --help : Print help message." << std::endl;
     }
 
