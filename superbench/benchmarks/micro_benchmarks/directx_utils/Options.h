@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 class Options {
   protected:
@@ -96,12 +97,12 @@ class Options {
     /**
      * @brief Get the option usage.
      */
-    virtual void get_option_usage(){};
+    virtual void get_option_usage() = 0;
 
     /**
      * @brief Parse the arguments.
      */
-    virtual void parse_arguments(){};
+    virtual void parse_arguments() = 0;
 
   public:
     /**
