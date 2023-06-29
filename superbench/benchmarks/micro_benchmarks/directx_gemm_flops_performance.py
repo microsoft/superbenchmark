@@ -13,6 +13,7 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
     """The DirectXGPUCoreFlops benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
+
         Args:
             name (str): benchmark name.
             parameters (str): benchmark parameters.
@@ -63,6 +64,7 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
+
         Return:
             True if _preprocess() succeed.
         """
@@ -99,6 +101,7 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
+
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
