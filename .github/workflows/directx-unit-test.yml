@@ -27,9 +27,9 @@ jobs:
         choco install make git -y
         del 
     - name: Install VS 2022 build tools
-      shell: cmd
+      shell: pwsh
       run: |
-        $env:SB_HOME=$PWD dockerfile/directx/install-components.bat
+        $env:SB_HOME=$PWD; ./dockerfile/directx/install-components.bat
     - name: Checkout
       uses: actions/checkout@v3
     - name: Install dependencies
@@ -48,7 +48,7 @@ jobs:
       shell: pwsh
     - name: Run unit tests
       run: |
-        $env:SB_MICRO_PATH=$PWD;SB_TEST_CUDA=0;SB_TEST_ROCM=0;SB_TEST_PYTORCH=0;SB_TEST_DIRECTX=1 python setup.py test
+        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA = "0"; $env:SB_TEST_ROCM = "0"; $env:SB_TEST_PYTORCH = "0"; $env:SB_TEST_DIRECTX = "1"; python setup.py test
       shell: pwsh
     - name: Report coverage results
       run: |
