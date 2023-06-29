@@ -100,12 +100,14 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
-        """Function to parse raw results and save the summarized results.
+        """Function to process raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
             raw_output (str): raw output string of the micro-benchmark.
+
         Return:
             True if the raw output string is valid and result can be extracted.
         """
