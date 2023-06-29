@@ -197,11 +197,10 @@ void GPUMemRwBw::LoadAssets() {
     ComPtr<ID3DBlob> errorBlob = nullptr;
     HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
                                              serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
-    if (errorBlob != nullptr) {
+    if (hr != S_OK || errorBlob != nullptr) {
         std::cout << "Error: " << (char *)errorBlob->GetBufferPointer() << std::endl;
-        return;
+        throw runtime_error("Error: D3D12SerializeRootSignature failed.");
     }
-    ThrowIfFailed(hr);
     ThrowIfFailed(m_device->CreateRootSignature(0, serializedRootSig->GetBufferPointer(),
                                                 serializedRootSig->GetBufferSize(),
                                                 IID_PPV_ARGS(m_rootSignature.GetAddressOf())));
