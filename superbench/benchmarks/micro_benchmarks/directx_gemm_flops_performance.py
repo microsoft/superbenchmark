@@ -8,6 +8,7 @@ from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
+
 class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
     """The DirectXGPUCoreFlops benchmark class."""
     def __init__(self, name, parameters=''):
@@ -34,21 +35,21 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--n',
             type=int,
-            default=16*256,
+            default=16 * 256,
             required=False,
             help='The N dim of matmul (N, K) * (K, M).',
         )
         self._parser.add_argument(
             '--k',
             type=int,
-            default=16*256,
+            default=16 * 256,
             required=False,
             help='The K dim of matmul (N, K) * (K, M).',
         )
         self._parser.add_argument(
             '--m',
             type=int,
-            default=16*256,
+            default=16 * 256,
             required=False,
             help='The M dim of matmul (N, K) * (K, M).',
         )
@@ -126,5 +127,6 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
                 return False
         self._result.add_result(precision + '_flops', max(flops))
         return True
+
 
 BenchmarkRegistry.register_benchmark('directx-gpucoreflops', DirectXGPUCoreFlops, platform=Platform.DIRECTX)

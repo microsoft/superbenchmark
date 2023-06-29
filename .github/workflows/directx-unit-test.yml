@@ -1,3 +1,5 @@
+name: DirectX unit test
+
 on:
   push:
     branches:
@@ -15,6 +17,8 @@ jobs:
     steps:
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
     - name: Install make and git
       shell: powershell
       run: |
@@ -23,7 +27,7 @@ jobs:
     - name: Install VS 2022 build tools
       shell: cmd
       run: |
-        dockerfile/directx/install-components.bat
+        $env:SB_HOME=$PWD dockerfile/directx/install-components.bat
     - name: Checkout
       uses: actions/checkout@v3
     - name: Install dependencies
