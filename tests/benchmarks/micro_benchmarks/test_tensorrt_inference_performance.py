@@ -116,16 +116,17 @@ class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                     len(test_case.get('pytorch_models', benchmark._pytorch_models)), len(benchmark._commands)
                 )
 
-    @decorator.load_data('tests/data/tensorrt_inference.log')
-    def test_tensorrt_inference_result_parsing(self, test_raw_log):
+    @decorator.load_data('tests/data/tensorrt_inference.1.log')
+    @decorator.load_data('tests/data/tensorrt_inference.2.log')
+    def test_tensorrt_inference_result_parsing(self, test_raw_log_1, test_raw_log_2):
         """Test tensorrt-inference benchmark result parsing."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
         benchmark = benchmark_cls(self.benchmark_name, parameters='')
         benchmark._args = SimpleNamespace(pytorch_models=['model_0', 'model_1'], log_raw_data=False)
         benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
 
-        # Positive case - valid raw output
-        self.assertTrue(benchmark._process_raw_result(0, test_raw_log))
+        # Positive case 1 - valid raw output
+        self.assertTrue(benchmark._process_raw_result(0, test_raw_log_1))
         self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
 
         self.assertEqual(6 + benchmark.default_metric_count, len(benchmark.result))
@@ -133,6 +134,13 @@ class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             self.assertEqual(0.5, benchmark.result[f'model_0_gpu_time_{tag}'][0])
             self.assertEqual(0.6, benchmark.result[f'model_0_host_time_{tag}'][0])
             self.assertEqual(1.0, benchmark.result[f'model_0_end_to_end_time_{tag}'][0])
+
+        # Positive case 2 - valid raw output
+        self.assertTrue(benchmark._process_raw_result(0, test_raw_log_2))
+        self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
+        for tag in ['mean', '99']:
+            self.assertEqual(1.5, benchmark.result[f'model_0_gpu_time_{tag}'][1])
+            self.assertEqual(2.0, benchmark.result[f'model_0_host_time_{tag}'][1])
 
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'Invalid raw output'))

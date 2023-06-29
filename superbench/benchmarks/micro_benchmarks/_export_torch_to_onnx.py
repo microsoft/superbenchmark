@@ -130,6 +130,7 @@ class torch2onnxExporter():
         if not self.check_torchvision_model(model_name):
             return ''
         file_name = str(self._onnx_model_path / (model_name + '.onnx'))
+        # the parameter 'pretrained' is deprecated since 0.13 in torchvision
         args = {'pretrained': False} if version.parse(torchvision.__version__) < version.parse('0.13') else {}
         model = getattr(torchvision.models, model_name)(**args).eval().cuda()
         dummy_input = torch.randn((batch_size, 3, 224, 224), device='cuda')
