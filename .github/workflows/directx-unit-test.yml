@@ -1,0 +1,52 @@
+on:
+  push:
+    branches:
+    - main
+    - release/*
+  pull_request:
+    branches:
+    - main
+    - release/*
+
+jobs:
+  directx-unit-test:
+    name: DirectX unit test
+    runs-on: [self-hosted, windows, x64, win2004]
+    steps:
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+    - name: Install make and git
+      shell: powershell
+      run: |
+        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        choco install make git -y
+    - name: Install VS 2022 build tools
+      shell: cmd
+      run: |
+        dockerfile/directx/install-components.bat
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools==65.7
+        python -m pip install .[test,nvworker]
+        make postinstall
+      shell: pwsh
+    - name: Run code lint
+      run: |
+        python setup.py lint
+      shell: pwsh
+    - name: Build benchmarks
+      run: |
+        $env:SB_MICRO_PATH=$PWD make directxbuild
+      shell: pwsh
+    - name: Run unit tests
+      run: |
+        $env:SB_MICRO_PATH=$PWD;SB_TEST_CUDA=0;SB_TEST_ROCM=0;SB_TEST_PYTORCH=0;SB_TEST_DIRECTX=1 python setup.py test
+      shell: pwsh
+    - name: Report coverage results
+      run: |
+        bash <(curl -s https://codecov.io/bash) -cF directx-unit-test
+      shell: pwsh
+      env:
+        CODECOV_TOKEN: $(codecovToken)
