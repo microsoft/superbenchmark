@@ -25,7 +25,6 @@ jobs:
         if (Test-Path C:/ProgramData/chocolatey) {Remove-Item -Path C:/ProgramData/chocolatey -Recurse -Force}
         Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
         choco install make git -y
-        del 
     - name: Install VS 2022 build tools
       shell: pwsh
       run: |
@@ -52,7 +51,8 @@ jobs:
       shell: pwsh
     - name: Report coverage results
       run: |
-        bash <(curl -s https://codecov.io/bash) -cF directx-unit-test
+        curl -s https://codecov.io/bash | bash -s -- -cF directx-unit-test
       shell: pwsh
       env:
-        CODECOV_TOKEN: $(codecovToken)
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
