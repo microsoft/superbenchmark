@@ -4,8 +4,10 @@
 """SuperBench Runner."""
 
 import os
+import sys
 import json
 import random
+import signal
 from pathlib import Path
 from pprint import pformat
 from collections import defaultdict
@@ -197,6 +199,24 @@ class SuperBenchRunner():
             )
         self._ansible_client.run(self._ansible_client.get_playbook_config('deploy.yaml', extravars=extravars))
 
+    def run_sys_info(self):
+        """Run the system info on all nodes."""
+        self.check_env()
+
+        logger.info('Runner is going to get node system info.')
+
+        fcmd = "docker exec sb-workspace bash -c '{command}'"
+        if self._docker_config.skip:
+            fcmd = "bash -c 'cd $SB_WORKSPACE && {command}'"
+        ansible_runner_config = self._ansible_client.get_shell_config(
+            fcmd.format(command='sb node info --output-dir {output_dir}'.format(output_dir=self._sb_output_dir))
+        )
+        ansible_rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
+
+        if ansible_rc != 0:
+            self.cleanup()
+        self.fetch_results()
+
     def check_env(self):    # pragma: no cover
         """Check SuperBench environment."""
         logger.info('Checking SuperBench environment.')
@@ -232,6 +252,18 @@ class SuperBenchRunner():
                 }
             )
         )
+
+    def __signal_handler(self, signum, frame):
+        """Signal handler for runner.
+
+        Args:
+            signum (int): Signal number.
+            frame (FrameType): Timeout frame.
+        """
+        if signum == signal.SIGINT or signum == signal.SIGTERM:
+            logger.info('Killed by %s, exiting ...', signal.Signals(signum).name)
+            self.cleanup()
+            sys.exit(128 + signum)
 
     def __create_results_summary(self):    # pragma: no cover
         """Create the result summary file of all nodes."""
@@ -387,8 +419,9 @@ class SuperBenchRunner():
                 metrics_dict[metric].append(value)
 
         for metric, values in metrics_dict.items():
+            prefix = metric.split(':')[0]
             for pattern, reduce_type in MonitorRecord.reduce_ops.items():
-                if pattern in metric:
+                if pattern == prefix:
                     reduce_func = Reducer.get_reduce_func(reduce_type)
                     metric_name = 'monitor/{}'.format(metric)
                     metrics_summary[metric_name] = reduce_func(values)
@@ -437,12 +470,17 @@ class SuperBenchRunner():
             # we do not expect timeout in ansible unless subprocess hangs
             ansible_runner_config['timeout'] = timeout + 60
 
-        rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
+        # overwrite ansible runner's default signal handler with main process's
+        rc = self._ansible_client.run(
+            ansible_runner_config, cancel_callback=lambda: None, sudo=(not self._docker_config.skip)
+        )
         return rc
 
     def run(self):
         """Run the SuperBench benchmarks distributedly."""
         self.check_env()
+        signal.signal(signal.SIGINT, self.__signal_handler)
+        signal.signal(signal.SIGTERM, self.__signal_handler)
         for benchmark_name in self._sb_benchmarks:
             if benchmark_name not in self._sb_enabled_benchmarks:
                 continue

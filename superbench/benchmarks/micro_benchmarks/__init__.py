@@ -15,8 +15,10 @@ from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import Cu
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmark
+from superbench.benchmarks.micro_benchmarks.dist_inference import DistInference
 from superbench.benchmarks.micro_benchmarks.cpu_memory_bw_latency_performance import CpuMemBwLatencyBenchmark
 from superbench.benchmarks.micro_benchmarks.cpu_stream_performance import CpuStreamBenchmark
+from superbench.benchmarks.micro_benchmarks.cpu_hpl_performance import CpuHplBenchmark
 from superbench.benchmarks.micro_benchmarks.gpcnet_performance import GPCNetBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_copy_bw_performance import GpuCopyBwBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_burn_test import GpuBurnBenchmark
@@ -33,6 +35,7 @@ from superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance impor
 __all__ = [
     'ComputationCommunicationOverlap',
     'CpuMemBwLatencyBenchmark',
+    'CpuHplBenchmark',
     'CpuStreamBenchmark',
     'CublasBenchmark',
     'CublasLtBenchmark',
@@ -41,6 +44,7 @@ __all__ = [
     'CudaNcclBwBenchmark',
     'CudnnBenchmark',
     'DiskBenchmark',
+    'DistInference',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
     'GpuBurnBenchmark',
