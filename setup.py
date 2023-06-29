@@ -166,6 +166,7 @@ setup(
         'numpy>=1.19.2',
         'omegaconf==2.0.6',
         'openpyxl>=3.0.7',
+        'packaging>=23.0',
         'pandas>=1.1.5',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',

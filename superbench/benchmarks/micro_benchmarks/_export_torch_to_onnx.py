@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
@@ -129,7 +130,8 @@ class torch2onnxExporter():
         if not self.check_torchvision_model(model_name):
             return ''
         file_name = str(self._onnx_model_path / (model_name + '.onnx'))
-        model = getattr(torchvision.models, model_name)(pretrained=False).eval().cuda()
+        args = {'pretrained': False} if version.parse(torchvision.__version__) < version.parse('0.13') else {}
+        model = getattr(torchvision.models, model_name)(**args).eval().cuda()
         dummy_input = torch.randn((batch_size, 3, 224, 224), device='cuda')
         torch.onnx.export(
             model,
