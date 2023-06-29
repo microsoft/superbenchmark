@@ -4,8 +4,10 @@
 """SuperBench Runner."""
 
 import os
+import sys
 import json
 import random
+import signal
 from pathlib import Path
 from pprint import pformat
 from collections import defaultdict
@@ -233,6 +235,18 @@ class SuperBenchRunner():
             )
         )
 
+    def __signal_handler(self, signum, frame):
+        """Signal handler for runner.
+
+        Args:
+            signum (int): Signal number.
+            frame (FrameType): Timeout frame.
+        """
+        if signum == signal.SIGINT or signum == signal.SIGTERM:
+            logger.info('Killed by %s, exiting ...', signal.Signals(signum).name)
+            self.cleanup()
+            sys.exit(128 + signum)
+
     def __create_results_summary(self):    # pragma: no cover
         """Create the result summary file of all nodes."""
         all_results = list()
@@ -387,8 +401,9 @@ class SuperBenchRunner():
                 metrics_dict[metric].append(value)
 
         for metric, values in metrics_dict.items():
+            prefix = metric.split(':')[0]
             for pattern, reduce_type in MonitorRecord.reduce_ops.items():
-                if pattern in metric:
+                if pattern == prefix:
                     reduce_func = Reducer.get_reduce_func(reduce_type)
                     metric_name = 'monitor/{}'.format(metric)
                     metrics_summary[metric_name] = reduce_func(values)
@@ -437,12 +452,17 @@ class SuperBenchRunner():
             # we do not expect timeout in ansible unless subprocess hangs
             ansible_runner_config['timeout'] = timeout + 60
 
-        rc = self._ansible_client.run(ansible_runner_config, sudo=(not self._docker_config.skip))
+        # overwrite ansible runner's default signal handler with main process's
+        rc = self._ansible_client.run(
+            ansible_runner_config, cancel_callback=lambda: None, sudo=(not self._docker_config.skip)
+        )
         return rc
 
     def run(self):
         """Run the SuperBench benchmarks distributedly."""
         self.check_env()
+        signal.signal(signal.SIGINT, self.__signal_handler)
+        signal.signal(signal.SIGTERM, self.__signal_handler)
         for benchmark_name in self._sb_benchmarks:
             if benchmark_name not in self._sb_enabled_benchmarks:
                 continue

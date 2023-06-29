@@ -70,7 +70,7 @@ superbench:
 <TabItem value='example'>
 
 ```yaml
-version: v0.7
+version: v0.8
 superbench:
   enable: benchmark_1
   monitor:
@@ -344,10 +344,10 @@ There have four common parameters for all benchmarks:
 
 For Model-Benchmark, there have some parameters that can control the elapsed time.
 * duration: the elapsed time of benchmark in seconds.
-* num_warmup: the number of warmup step.
+* num_warmup: the number of warmup step, should be positive integer.
 * num_steps: the number of test step.
 
-If `duration > 0` and `num_warmup + num_steps > 0`, then benchmark will take the least as the elapsed time. Otherwise only one of them will take effect.
+If `duration > 0` and `num_steps > 0`, then benchmark will take the least as the elapsed time. Otherwise only one of them will take effect.
 
 ## `Mode` Schema
 

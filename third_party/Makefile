@@ -11,14 +11,14 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
 cpu: common cpu_perftest
-common: fio cpu_stream
+common: cpu_hpl cpu_stream fio
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -116,7 +116,7 @@ gpcnet: sb_micro_path
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
 
-#Build GPU burn from main branch (only branch that exists)
+# Build GPU burn from main branch (only branch that exists)
 cuda_gpuburn: sb_micro_path
 ifneq (,$(wildcard gpu-burn/Makefile))
 	cd ./gpu-burn && make
@@ -124,7 +124,23 @@ ifneq (,$(wildcard gpu-burn/Makefile))
 	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
 endif
 
-#Build stream from main branch (only branch that exists)
+# Build HPL from main branch 
+cpu_hpl: sb_micro_path
+ifneq (,$(wildcard hpl-tests/Makefile))
+	cd ./hpl-tests && \
+    wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
+	tar xzf hpl-2.3.tar.gz && \
+	cp Make.Linux_zen3 hpl-2.3 && \
+	cp Make.Linux_zen4 hpl-2.3 && \
+	make all
+	cp -v ./hpl-tests/hpl-2.3/bin/Linux_zen3/xhpl $(SB_MICRO_PATH)/bin/xhpl_z3
+	cp -v ./hpl-tests/hpl-2.3/bin/Linux_zen4/xhpl $(SB_MICRO_PATH)/bin/xhpl_z4
+	cp -v ./hpl-tests/hpl_run.sh $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/bindmem.sh $(SB_MICRO_PATH)/bin/
+	cp -v ./hpl-tests/template_hpl.dat $(SB_MICRO_PATH)/bin/
+endif
+
+# Build STREAM 
 cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
@@ -132,4 +148,3 @@ ifneq (,$(wildcard stream-tests/Makefile))
 	make all
 	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
 endif
-
