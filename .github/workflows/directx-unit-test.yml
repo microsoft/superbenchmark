@@ -37,10 +37,10 @@ jobs:
         echo "VENV_PATH=$(pwd)\venv" >> $GITHUB_ENV
     - name: Create Python alias
       run: |
-        %VENV_PATH%\Scripts\Activate.ps1
+        %VENV_PATH%\Scripts\Activate.bat
         where.exe python
         mklink python python3
-      shell: cmd
+      shell: 
     - name: Install dependencies
       run: |
         %VENV_PATH%\Scripts\Activate.ps1
