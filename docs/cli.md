@@ -304,6 +304,7 @@ sb run [--config-file]
        [--docker-image]
        [--docker-password]
        [--docker-username]
+       [--get-info]
        [--host-file]
        [--host-list]
        [--host-password]
@@ -311,7 +312,6 @@ sb run [--config-file]
        [--no-docker]
        [--output-dir]
        [--private-key]
-       [--get-info]
 ```
 
 #### Optional arguments
@@ -323,6 +323,7 @@ sb run [--config-file]
 | `--docker-image` `-i`    | `superbench/superbench` | Docker image URI.                                                           |
 | `--docker-password`      | `None`                  | Docker registry password if authentication is needed.                       |
 | `--docker-username`      | `None`                  | Docker registry username if authentication is needed.                       |
+| `--get-info`             | `False`                 | Collect system info.                                                        |
 | `--host-file` `-f`       | `None`                  | Path to Ansible inventory host file.                                        |
 | `--host-list` `-l`       | `None`                  | Comma separated host list.                                                  |
 | `--host-password`        | `None`                  | Host password or key passphase if needed.                                   |
@@ -330,7 +331,6 @@ sb run [--config-file]
 | `--no-docker`            | `False`                 | Run on host directly without Docker.                                        |
 | `--output-dir`           | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--private-key`          | `None`                  | Path to private key if needed.                                              |
-| `--get-info`             | `False`                 | Collect system info.                                                        |
 
 #### Global arguments
 
