@@ -203,7 +203,7 @@ class SuperBenchRunner():
         """Run the system info on all nodes."""
         self.check_env()
 
-        logger.info('Runner is going to get info.')
+        logger.info('Runner is going to get node system info.')
 
         fcmd = "docker exec sb-workspace bash -c '{command}'"
         if self._docker_config.skip:
