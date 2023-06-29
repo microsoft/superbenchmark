@@ -143,7 +143,7 @@ def test_cudnn_functions():
 
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-    assert (1 + benchmark.default_metric_count == len(benchmark.result))
+    assert (18 + benchmark.default_metric_count == len(benchmark.result))
     for metric in list(benchmark.result.keys()):
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))

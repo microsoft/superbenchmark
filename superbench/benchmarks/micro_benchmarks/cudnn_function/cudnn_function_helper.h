@@ -72,7 +72,7 @@ class Options {
      * @return bool             the bool type value of cmd line argument 'option'
      */
     bool get_cmd_line_argument_bool(const std::string &option) {
-        if (char *value = get_cmd_option(option)) {
+        if (std::find(begin, end, option) != end) {
             return true;
         }
         return false;
@@ -139,8 +139,10 @@ void from_json(const json &j, cudnn_test::CudnnConfig &fn) {
     fn.set_input_stride(input_stride);
     auto output_stride = j.at("outputStride").get<std::vector<int>>();
     fn.set_output_stride(output_stride);
-    auto algo = j.at("algo").get<int>();
-    fn.set_algo(algo);
+    if (j.contains("algo")) {
+        auto algo = j.at("algo").get<int>();
+        fn.set_algo(algo);
+    }
     auto padA = j.at("padA").get<std::vector<int>>();
     fn.set_padA(padA);
     auto filter_strideA = j.at("filterStrideA").get<std::vector<int>>();
