@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 struct UInt3 {
     unsigned int x;
@@ -55,6 +56,23 @@ class Options {
      * @param defaults the default value.
      * @return unsigned long long the unsigned long long type value of cmd line argument 'option'.
      */
+    unsigned long long get_cmd_line_argument_ulonglong(const std::string &option, unsigned long long defaults) {
+        if (char *value = get_cmd_option(option)) {
+            try {
+                return std::stoull(value);
+            } catch (const std::exception &e) {
+                std::cout << "Error: Invalid argument - " << option << " should be unsigned long long" << e.what()
+                          << '\n';
+            }
+        }
+        return defaults;
+    }
+
+    /**
+     * @brief Split the string by ',' and convert to unsigned int.
+     * @param str the string to be split.
+     * @return std::vector<unsigned int> the vector of unsigned int.
+     */
     std::vector<unsigned int> splitAndConvertToInt(const std::string &str) {
         std::vector<unsigned int> result;
         std::stringstream ss(str);
@@ -71,10 +89,10 @@ class Options {
     }
 
     /**
-     * @brief Get the unsigned int type value of cmd line argument.
+     * @brief Get the unsigned int 3 type value of cmd line argument.
      * @param option the cmd line argument.
      * @param defaults the default value.
-     * @return unsigned int the unsigned int type value of cmd line argument 'option'.
+     * @return unsigned int the unsigned int 3 type value of cmd line argument 'option'.
      */
     UInt3 get_cmd_line_argument_uint3(const std::string &option, const UInt3 &defaults) {
         if (char *value = get_cmd_option(option)) {
@@ -128,12 +146,12 @@ class Options {
     /**
      * @brief Get the option usage.
      */
-    virtual void get_option_usage(){};
+    virtual void get_option_usage() = 0;
 
     /**
      * @brief Parse the arguments.
      */
-    virtual void parse_arguments(){};
+    virtual void parse_arguments() = 0;
 
   public:
     /**
