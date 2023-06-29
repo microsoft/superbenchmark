@@ -37,9 +37,8 @@ class BenchmarkOptions : public Options {
      * @brief Parse the arguments.
      */
     virtual void parse_arguments() {
-
         num_loops = get_cmd_line_argument_int("--num_loops", 10);
-        num_warm_up = get_cmd_line_argument_int("--num_loops", 0);
+        num_warm_up = get_cmd_line_argument_int("--num_warm_up", 0);
         m = get_cmd_line_argument_int("--m", 16 * 256);
         n = get_cmd_line_argument_int("--n", 16 * 256);
         k = get_cmd_line_argument_int("--k", 16 * 256);
