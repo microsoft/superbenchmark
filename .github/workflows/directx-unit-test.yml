@@ -38,8 +38,7 @@ jobs:
       shell: pwsh
     - name: Create Python alias
       run: |
-        %VENV_PATH%\Scripts\Activate.bat
-        where.exe python
+        %VENV_PATH%\Scripts\Activate.bat && echo "pythonLocation=`where.exe python`" >> $GITHUB_ENV
         mklink python python3
       shell: cmd
     - name: Install dependencies
