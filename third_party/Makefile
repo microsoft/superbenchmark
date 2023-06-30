@@ -152,11 +152,11 @@ endif
 
 # Build AMD Encoder Latency Test
 directx_amf_encoding_latency:
-	IF EXIST  AMF\amf\public\samples\CPPSamples\EncodingLatency\EncoderLatency_VS2019.vcxproj ( 
+	@if exist "AMF\amf\public\samples\CPPSamples_vs2019.sln" ( \
 		curl -L -o vs_buildtools.exe https://aka.ms/vs/16/release/vs_buildtools.exe && echo "Downloaded vs_buildtools.exe" && \
 		start /wait vs_buildtools.exe --quiet --wait --norestart --nocache --installPath C:/temp/BuildTools --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.ATLMFC --includeRecommended  && echo "Installed VS Build Tools" && \
 		del vs_buildtools.exe && echo "Deleted vs_buildtools.exe" && \
-		"C:\temp\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "AMF\amf\public\samples\CPPSamples_vs2019.sln" /t:EncoderLatency /p:Configuration=Release /p:OutDir="%SB_MICRO_PATH%\bin"
+		"C:\temp\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "AMF\amf\public\samples\CPPSamples_vs2019.sln" /t:EncoderLatency /p:Configuration=Release /p:OutDir="%SB_MICRO_PATH%\bin" \
 	)
 
 
