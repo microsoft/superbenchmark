@@ -34,11 +34,12 @@ jobs:
     - name: Setup Python and create a virtual environment
       run: |
         python -m venv venv
+        .\venv\Scripts\Activate.ps1 
+        echo "pythonLocation=`where.exe python`" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
         echo "VENV_PATH=$(pwd)\venv" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
       shell: pwsh
     - name: Create Python alias
       run: |
-        %VENV_PATH%\Scripts\Activate.bat && echo "pythonLocation=`where.exe python`" >> $GITHUB_ENV
         mklink python python3
       shell: cmd
     - name: Install dependencies
