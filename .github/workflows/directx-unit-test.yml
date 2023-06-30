@@ -25,38 +25,35 @@ jobs:
         if (Test-Path C:/ProgramData/chocolatey) {Remove-Item -Path C:/ProgramData/chocolatey -Recurse -Force}
         Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
         choco install make git -y
+        echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
     - name: Install VS 2022 build tools
       shell: pwsh
       run: |
         $env:SB_HOME=$PWD; ./dockerfile/directx/install-components.bat
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Setup Python and create a virtual environment
+    - name: Set up Python 3 alias
       run: |
-        python -m venv venv
-        .\venv\Scripts\Activate.ps1 
-        echo "pythonLocation=$(pwd)\venv\Scripts\python.exe" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
-        echo "VENV_PATH=$(pwd)\venv" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
-        echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      shell: pwsh
-    - name: Create Python alias
-      run: |
-        mklink python python3
-      shell: cmd
+        echo @python %* > python3.bat
+        echo $env:PATH=".;$env:PATH" >> $env:GITHUB_ENV
     - name: Install dependencies
       run: |
-        python -m pip install --user --upgrade pip setuptools==65.7
-        python -m pip install install  -user .[test,nvworker]
-        make postinstall
+        python -m pip install --no-build-isolation --user --upgrade pip wheel setuptools==65.7
+        python -m pip install --no-build-isolation --user .[test,nvworker]
       shell: cmd
     - name: Build benchmarks
       run: |
         $env:SB_MICRO_PATH=$PWD
         make directxbuild
       shell: cmd
+    - name: Build Third Party
+      run: |
+        $env:SB_MICRO_PATH=$PWD
+        make -C third_party directx_amd
+      shell: cmd
     - name: Run unit tests
       run: |
-        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test
+        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test --type directx
       shell: pwsh
     - name: Report coverage results
       run: |
