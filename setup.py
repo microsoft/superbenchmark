@@ -97,19 +97,24 @@ class Tester(Command):
     """
 
     description = 'test the code using pytest'
-    user_options: List[Tuple[str, str, str]] = []
+    user_options = [
+        ('type=', None, 'Type of test to run'),
+    ]
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
-        pass
+        self.type = None
 
     def finalize_options(self):
         """Set final values for options that this command supports."""
-        pass
+        if self.type not in {None, 'directx', 'cuda', 'rocm'}:    # replace with your test types
+            raise Exception(f'Invalid type: {self.type}')
 
     def run(self):
         """Run pytest."""
-        errno = os.system('python3 -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/')
+        command = 'python3 -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/'
+        command += f' -k test_{self.type}' if self.type else ''
+        errno = os.system(command)
         sys.exit(0 if errno == 0 else 1)
 
 

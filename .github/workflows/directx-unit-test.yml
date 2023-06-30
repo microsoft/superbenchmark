@@ -1,0 +1,65 @@
+name: DirectX unit test
+
+on:
+  push:
+    branches:
+    - main
+    - release/*
+  pull_request:
+    branches:
+    - main
+    - release/*
+
+jobs:
+  directx-unit-test:
+    name: DirectX unit test
+    runs-on: [self-hosted, windows, x64, win2004]
+    steps:
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Set up Python 3 alias
+      run: |
+        $pythonDir = Split-Path (Get-Command python).Source
+        cd $pythonDir
+        echo @python %* > python3.bat
+      shell: pwsh
+    - name: Install make and git
+      shell: pwsh
+      run: |
+        if (Test-Path C:/ProgramData/chocolatey) {Remove-Item -Path C:/ProgramData/chocolatey -Recurse -Force}
+        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        choco install make git -y
+        echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+    - name: Install VS 2022 build tools
+      shell: pwsh
+      run: |
+        $env:SB_HOME=$PWD; ./dockerfile/directx/install-components.bat
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        python -m pip install --no-build-isolation --user --upgrade pip wheel setuptools==65.7
+        python -m pip install --no-build-isolation --user .[test,nvworker]
+      shell: pwsh
+    - name: Build benchmarks
+      run: |
+        $env:SB_MICRO_PATH=$PWD
+        make directxbuild
+      shell: pwsh
+    - name: Build Third Party
+      run: |
+        $env:SB_MICRO_PATH=$PWD
+        make -C third_party directx_amd
+      shell: pwsh
+    - name: Run unit tests
+      run: |
+        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test --type directx
+      shell: pwsh
+    - name: Report coverage results
+      run: |
+        curl -s https://codecov.io/bash | bash -s -- -cF directx-unit-test
+      shell: pwsh
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
