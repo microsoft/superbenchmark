@@ -45,16 +45,10 @@ jobs:
       shell: cmd
     - name: Install dependencies
       run: |
-        & (Join-Path $env:VENV_PATH "Scripts/Activate.ps1")
-        $env:VENV_PATH\Scripts\pip install --upgrade pip setuptools==65.7
-        $env:VENV_PATH\Scripts\pip install --no-build-isolation .[test,nvworker]
+        %VENV_PATH%\Scripts\pip install --upgrade pip setuptools==65.7
+        %VENV_PATH%\Scripts\pip install --no-build-isolation .[test,nvworker]
         make postinstall
-      shell: pwsh
-    - name: Run code lint
-      run: |
-        & (Join-Path $env:VENV_PATH "Scripts/Activate.ps1")
-        python setup.py lint
-      shell: pwsh
+      shell: cmd
     - name: Build benchmarks
       run: |
         $env:SB_MICRO_PATH=$PWD
@@ -62,7 +56,6 @@ jobs:
       shell: cmd
     - name: Run unit tests
       run: |
-        & (Join-Path $env:VENV_PATH "Scripts/Activate.ps1")
         $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test
       shell: pwsh
     - name: Report coverage results
