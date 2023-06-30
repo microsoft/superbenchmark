@@ -35,8 +35,9 @@ jobs:
       run: |
         python -m venv venv
         .\venv\Scripts\Activate.ps1 
-        echo "pythonLocation=`where.exe python`" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+        echo "pythonLocation=$(pwd)\venv\Scripts\python.exe" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
         echo "VENV_PATH=$(pwd)\venv" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+        echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       shell: pwsh
     - name: Create Python alias
       run: |
