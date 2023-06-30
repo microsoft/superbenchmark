@@ -85,7 +85,7 @@ def test_cudnn_functions():
         if metric != 'return_code':
             assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
 
-# Test for custom list configuration
+    # Test for custom list configuration
     custom_config_str2 = '{"algo":1,"arrayLength":2,"convType":0,"dilationA":[1,1],"filterStrideA":[1,1],' \
         + '"filterDims":[32,128,3,3],"inputDims":[32,32,14,14],"inputStride":[6272, 196, 14, 1],"inputType":2,'\
         + '"mode":1,"name":"cudnnConvolutionBackwardData","outputDims":[32, 128, 14, 14],'\
