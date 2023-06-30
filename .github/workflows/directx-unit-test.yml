@@ -44,14 +44,14 @@ jobs:
         cmd
     - name: Install dependencies
       run: |
-        %VENV_PATH%\Scripts\Activate.ps1
+        $env:VENV_PATH\Scripts\Activate.ps1
         python -m pip install --upgrade pip setuptools==65.7
         python -m pip install .[test,nvworker]
         make postinstall
       shell: pwsh
     - name: Run code lint
       run: |
-        %VENV_PATH%\Scripts\Activate.ps1
+        $env:VENV_PATH\Scripts\Activate.ps1
         python setup.py lint
       shell: pwsh
     - name: Build benchmarks
@@ -60,7 +60,7 @@ jobs:
       shell: cmd
     - name: Run unit tests
       run: |
-        %VENV_PATH%\Scripts\Activate.ps1
+        $env:VENV_PATH\Scripts\Activate.ps1
         $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test
       shell: pwsh
     - name: Report coverage results
