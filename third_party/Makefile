@@ -158,5 +158,3 @@ directx_amf_encoding_latency:
 		del vs_buildtools.exe && echo "Deleted vs_buildtools.exe" && \
 		"C:\temp\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "AMF\amf\public\samples\CPPSamples_vs2019.sln" /t:EncoderLatency /p:Configuration=Release /p:OutDir="%SB_MICRO_PATH%\bin" \
 	)
-
-
