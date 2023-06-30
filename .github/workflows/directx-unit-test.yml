@@ -47,6 +47,7 @@ jobs:
         & (Join-Path $env:VENV_PATH "Scripts/Activate.ps1")
         python -m pip install --upgrade pip setuptools==65.7
         python -m pip install .[test,nvworker]
+        $env:PATH = [System.Environment]::GetEnvironmentVariable('Path','Machine') 
         make postinstall
       shell: pwsh
     - name: Run code lint
@@ -56,7 +57,9 @@ jobs:
       shell: pwsh
     - name: Build benchmarks
       run: |
-        $env:SB_MICRO_PATH=$PWD make directxbuild
+        $env:SB_MICRO_PATH=$PWD
+        $env:PATH = [System.Environment]::GetEnvironmentVariable('Path','Machine')
+        make directxbuild
       shell: cmd
     - name: Run unit tests
       run: |
