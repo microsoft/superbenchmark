@@ -275,7 +275,8 @@ def run_command_handler(
     output_dir=None,
     private_key=None,
     config_file=None,
-    config_override=None
+    config_override=None,
+    get_info=False,
 ):
     """Run the SuperBench benchmarks distributedly.
 
@@ -295,6 +296,7 @@ def run_command_handler(
         config_file (str, optional): Path to SuperBench config file. Defaults to None.
         config_override (str, optional): Extra arguments to override config_file,
             following [Hydra syntax](https://hydra.cc/docs/advanced/override_grammar/basic). Defaults to None.
+        get_info (bool, optional): Collect node system info. Defaults to False.
 
     Raises:
         CLIError: If input arguments are invalid.
@@ -316,6 +318,10 @@ def run_command_handler(
     )
 
     runner = SuperBenchRunner(sb_config, docker_config, ansible_config, sb_output_dir)
+
     runner.run()
+    if get_info:
+        runner.run_sys_info()
+
     if runner.get_failure_count() != 0:
         sys.exit(runner.get_failure_count())
