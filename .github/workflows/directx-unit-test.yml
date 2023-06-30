@@ -45,8 +45,8 @@ jobs:
       shell: cmd
     - name: Install dependencies
       run: |
-        %VENV_PATH%\Scripts\pip install --upgrade pip setuptools==65.7
-        %VENV_PATH%\Scripts\pip install --no-build-isolation .[test,nvworker]
+        python -m pip install --user --upgrade pip setuptools==65.7
+        python -m pip install install  -user .[test,nvworker]
         make postinstall
       shell: cmd
     - name: Build benchmarks
