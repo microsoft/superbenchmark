@@ -103,7 +103,7 @@ class Options {
         random_seed = get_cmd_line_argument_int("--random_seed");
         random_seed = (random_seed == 0 ? time(NULL) : random_seed);
         para_info_json = get_cmd_line_argument_string("--config_json");
-        auto_algo = get_cmd_line_argument_bool("--auto_algo");
+        auto_algo = get_cmd_line_argument_bool("--enable_auto_algo");
         para_info_json =
             para_info_json == ""
                 ? R"({"algo":0,"arrayLength":2,"convType":0,"dilationA":[1,1],"filterStrideA":[1,1],"filterDims":[32,128,3,3],"inputDims":[32,128,14,14],"inputStride":[25088,196,14,1],"inputType":0,"mode":1, "name":"cudnnConvolutionBackwardFilter","outputDims":[32,32,14,14],"outputStride":[6272,196,14,1],"padA":[1,1],"tensorOp":false})"

@@ -126,12 +126,11 @@ def test_cudnn_functions():
         if metric != 'return_code':
             assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
 
-
-# Test for auto_algo parameter
+    # Test for auto_algo parameter
     context = BenchmarkRegistry.create_benchmark_context(
         'cudnn-function',
         platform=Platform.CUDA,
-        parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --auto_algo'
+        parameters='--num_warmup 10 --num_steps 10 --num_in_step 100 --enable_auto_algo'
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -139,7 +138,7 @@ def test_cudnn_functions():
 
     # Check basic information.
     assert (benchmark)
-    assert (benchmark._args.auto_algo is True)
+    assert (benchmark._args.enable_auto_algo is True)
 
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 

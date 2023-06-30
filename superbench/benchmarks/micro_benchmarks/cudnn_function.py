@@ -358,7 +358,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             help='The custom json string defining the params in a cudnn function.',
         )
         self._parser.add_argument(
-            '--auto_algo',
+            '--enable_auto_algo',
             action='store_true',
             default=False,
             required=False,
@@ -380,8 +380,8 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         command += (' --warm_up ' + str(self._args.num_warmup))
         command += (' --num_in_step ' + str(self._args.num_in_step))
         command += (' --random_seed ' + str(self._args.random_seed))
-        if self._args.auto_algo:
-            command += (' --auto_algo ')
+        if self._args.enable_auto_algo:
+            command += (' --enable_auto_algo')
 
         try:
             if not self._args.config_json_str:
