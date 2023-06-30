@@ -34,24 +34,24 @@ jobs:
     - name: Setup Python and create a virtual environment
       run: |
         python -m venv venv
-        echo "VENV_PATH=$(pwd)\venv" >> $GITHUB_ENV
+        echo "VENV_PATH=$(pwd)/venv" >> $GITHUB_ENV
     - name: Create Python alias
       run: |
-        %VENV_PATH%\Scripts\Activate.bat
+        %VENV_PATH%/Scripts/Activate.bat
         where.exe python
         mklink python python3
       shell: 
         cmd
     - name: Install dependencies
       run: |
-        $env:VENV_PATH\Scripts\Activate.ps1
+        $env:VENV_PATH/Scripts/Activate.ps1
         python -m pip install --upgrade pip setuptools==65.7
         python -m pip install .[test,nvworker]
         make postinstall
       shell: pwsh
     - name: Run code lint
       run: |
-        $env:VENV_PATH\Scripts\Activate.ps1
+        $env:VENV_PATH/Scripts/Activate.ps1
         python setup.py lint
       shell: pwsh
     - name: Build benchmarks
@@ -60,7 +60,7 @@ jobs:
       shell: cmd
     - name: Run unit tests
       run: |
-        $env:VENV_PATH\Scripts\Activate.ps1
+        $env:VENV_PATH/Scripts/Activate.ps1
         $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test
       shell: pwsh
     - name: Report coverage results
