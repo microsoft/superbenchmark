@@ -55,7 +55,7 @@ jobs:
       shell: pwsh
     - name: Run unit tests
       run: |
-        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python setup.py test --type directx
+        $env:SB_MICRO_PATH=$PWD; $env:SB_TEST_CUDA="0"; $env:SB_TEST_ROCM="0"; $env:SB_TEST_PYTORCH="0"; $env:SB_TEST_DIRECTX="1"; python -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx
       shell: pwsh
     - name: Report coverage results
       run: |
