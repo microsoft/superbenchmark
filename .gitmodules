@@ -21,6 +21,3 @@
 [submodule "third_party/gpu-burn"]
 	path = third_party/gpu-burn
 	url = https://github.com/wilicc/gpu-burn.git
-[submodule "third_party/AMF"]
-	path = third_party/AMF
-	url = https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git
