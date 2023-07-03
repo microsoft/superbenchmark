@@ -59,6 +59,9 @@ RUN python -m pip install setuptools==65.0.0 && \
     python -m pip install --no-cache-dir .[amdworker] && \
     make directxbuild
 
+ADD third_party third_party
+RUN make -C third_party directx_amd
+
 # Run the entrypoint script for enabling vendor-specific graphics APIs
 RUN powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force"
 CMD [ "python", "dockerfile/directx/enable-graphics-apis.py" ]
