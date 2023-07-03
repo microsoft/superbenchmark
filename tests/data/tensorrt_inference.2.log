@@ -1,0 +1,80 @@
+[06/29/2023-08:24:55] [I] === Model Options ===
+[06/29/2023-08:24:55] [I] Format: ONNX
+[06/29/2023-08:24:55] [I] Model: /root/.cache/torch/hub/onnx/resnet50.onnx
+[06/29/2023-08:24:55] [I] Output:
+[06/29/2023-08:24:55] [I] === Build Options ===
+[06/29/2023-08:24:55] [I] Max batch: explicit batch
+[06/29/2023-08:24:55] [I] Memory Pools: workspace: 8192 MiB, dlaSRAM: default, dlaLocalDRAM: default, dlaGlobalDRAM: default
+[06/29/2023-08:24:55] [I] minTiming: 1
+[06/29/2023-08:24:55] [I] avgTiming: 8
+[06/29/2023-08:24:55] [I] Precision: FP32+FP16
+[06/29/2023-08:24:55] [I] LayerPrecisions:
+[06/29/2023-08:24:55] [I] Calibration:
+[06/29/2023-08:24:55] [I] Refit: Disabled
+[06/29/2023-08:24:55] [I] Sparsity: Disabled
+[06/29/2023-08:24:55] [I] Safe mode: Disabled
+[06/29/2023-08:24:55] [I] DirectIO mode: Disabled
+[06/29/2023-08:24:55] [I] Restricted mode: Disabled
+[06/29/2023-08:24:55] [I] Build only: Disabled
+[06/29/2023-08:24:55] [I] Save engine:
+[06/29/2023-08:24:55] [I] Load engine:
+[06/29/2023-08:24:55] [I] Profiling verbosity: 0
+[06/29/2023-08:24:55] [I] Tactic sources: Using default tactic sources
+[06/29/2023-08:24:55] [I] timingCacheMode: local
+[06/29/2023-08:24:55] [I] timingCacheFile:
+[06/29/2023-08:24:55] [I] Heuristic: Disabled
+[06/29/2023-08:24:55] [I] Preview Features: Use default preview flags.
+[06/29/2023-08:24:55] [I] Input(s)s format: fp32:CHW
+[06/29/2023-08:24:55] [I] Output(s)s format: fp32:CHW
+[06/29/2023-08:24:55] [I] Input build shape: input=32x3x224x224+32x3x224x224+32x3x224x224
+[06/29/2023-08:24:55] [I] Input calibration shapes: model
+[06/29/2023-08:24:55] [I] === System Options ===
+[06/29/2023-08:24:55] [I] Device: 0
+[06/29/2023-08:24:55] [I] DLACore:
+[06/29/2023-08:24:55] [I] Plugins:
+[06/29/2023-08:24:55] [I] === Inference Options ===
+[06/29/2023-08:24:55] [I] Batch: Explicit
+[06/29/2023-08:24:55] [I] Input inference shape: input=32x3x224x224
+[06/29/2023-08:24:55] [I] Iterations: 2048
+[06/29/2023-08:24:55] [I] Duration: 3s (+ 200ms warm up)
+[06/29/2023-08:24:55] [I] Sleep time: 0ms
+[06/29/2023-08:24:55] [I] Idle time: 0ms
+[06/29/2023-08:24:55] [I] Streams: 1
+[06/29/2023-08:24:55] [I] ExposeDMA: Disabled
+[06/29/2023-08:24:55] [I] Data transfers: Enabled
+[06/29/2023-08:24:55] [I] Spin-wait: Disabled
+[06/29/2023-08:24:55] [I] Multithreading: Disabled
+[06/29/2023-08:24:55] [I] CUDA Graph: Disabled
+[06/29/2023-08:24:55] [I] Separate profiling: Disabled
+[06/29/2023-08:24:55] [I] Time Deserialize: Disabled
+[06/29/2023-08:24:55] [I] Time Refit: Disabled
+[06/29/2023-08:24:55] [I] NVTX verbosity: 0
+[06/29/2023-08:24:55] [I] Persistent Cache Ratio: 0
+[06/29/2023-08:24:55] [I] Inputs:
+[06/29/2023-08:24:55] [I] === Reporting Options ===
+[06/29/2023-08:24:55] [I] Verbose: Disabled
+[06/29/2023-08:24:55] [I] Averages: 10 inferences
+[06/29/2023-08:24:55] [I] Percentiles: 99
+[06/29/2023-08:24:55] [I] Dump refittable layers:Disabled
+[06/29/2023-08:24:55] [I] Dump output: Disabled
+[06/29/2023-08:24:55] [I] Profile: Disabled
+[06/29/2023-08:24:55] [I] Export timing to JSON file:
+[06/29/2023-08:24:55] [I] Export output to JSON file:
+[06/29/2023-08:24:55] [I] Export profile to JSON file:
+[06/29/2023-08:25:38] [I]
+[06/29/2023-08:25:38] [I] === Trace details ===
+[06/29/2023-08:25:38] [I] Trace averages of 10 runs:
+[06/29/2023-08:25:38] [I] Average on 10 runs - GPU latency: 1.5 ms - Host latency: 2.0 ms (enqueue 0.4 ms)
+[06/29/2023-08:25:38] [I] Average on 10 runs - GPU latency: 1.5 ms - Host latency: 2.0 ms (enqueue 0.4 ms)
+[06/29/2023-08:25:38] [I]
+[06/29/2023-08:25:38] [I] === Performance summary ===
+[06/29/2023-08:25:38] [I] Throughput: 1000.00 qps
+[06/29/2023-08:25:38] [I] Latency: min = 1.9 ms, max = 2.1 ms, mean = 2.0 ms, median = 2.0 ms, percentile(99%) = 2.0 ms
+[06/29/2023-08:25:38] [I] Enqueue Time: min = 0.3 ms, max = 0.3 ms, mean = 0.3 ms, median = 0.3 ms, percentile(99%) = 0.3 ms
+[06/29/2023-08:25:38] [I] H2D Latency: min = 0.3 ms, max = 0.3 ms, mean = 0.3 ms, median = 0.3 ms, percentile(99%) = 0.3 ms
+[06/29/2023-08:25:38] [I] GPU Compute Time: min = 1.4 ms, max = 1.6 ms, mean = 1.5 ms, median = 1.5 ms, percentile(99%) = 1.5 ms
+[06/29/2023-08:25:38] [I] D2H Latency: min = 0.03 ms, max = 0.03 ms, mean = 0.03 ms, median = 0.03 ms, percentile(99%) = 0.03 ms
+[06/29/2023-08:25:38] [I] Total Host Walltime: 3.0 s
+[06/29/2023-08:25:38] [I] Total GPU Compute Time: 2.9 s
+[06/29/2023-08:25:38] [I] Explanations of the performance metrics are printed in the verbose logs.
+[06/29/2023-08:25:38] [I]
