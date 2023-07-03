@@ -6,6 +6,13 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
+
+struct UInt3 {
+    unsigned int x;
+    unsigned int y;
+    unsigned int z;
+};
 
 class Options {
   protected:
@@ -37,6 +44,68 @@ class Options {
                 return std::stoi(value);
             } catch (const std::exception &e) {
                 std::cerr << "Error: Invalid argument - " << option << " should be INT " << e.what() << '\n';
+                exit(1);
+            }
+        }
+        return defaults;
+    }
+
+    /**
+     * @brief Get the unsigned long long type value of cmd line argument.
+     * @param option the cmd line argument.
+     * @param defaults the default value.
+     * @return unsigned long long the unsigned long long type value of cmd line argument 'option'.
+     */
+    unsigned long long get_cmd_line_argument_ulonglong(const std::string &option, unsigned long long defaults) {
+        if (char *value = get_cmd_option(option)) {
+            try {
+                return std::stoull(value);
+            } catch (const std::exception &e) {
+                std::cout << "Error: Invalid argument - " << option << " should be unsigned long long" << e.what()
+                          << '\n';
+            }
+        }
+        return defaults;
+    }
+
+    /**
+     * @brief Split the string by ',' and convert to unsigned int.
+     * @param str the string to be split.
+     * @return std::vector<unsigned int> the vector of unsigned int.
+     */
+    std::vector<unsigned int> splitAndConvertToInt(const std::string &str) {
+        std::vector<unsigned int> result;
+        std::stringstream ss(str);
+        std::string token;
+
+        while (std::getline(ss, token, ',')) {
+            try {
+                result.push_back(std::stoul(token));
+            } catch (std::invalid_argument &e) {
+                throw std::invalid_argument("Invalid argument: " + token + e.what());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @brief Get the unsigned int 3 type value of cmd line argument.
+     * @param option the cmd line argument.
+     * @param defaults the default value.
+     * @return unsigned int the unsigned int 3 type value of cmd line argument 'option'.
+     */
+    UInt3 get_cmd_line_argument_uint3(const std::string &option, const UInt3 &defaults) {
+        if (char *value = get_cmd_option(option)) {
+            try {
+                std::vector<unsigned int> values = splitAndConvertToInt(value);
+                if (values.size() != 3) {
+                    std::cout << "Error: Invalid argument - " << option << " should be unsigned int3" << '\n';
+                    exit(1);
+                }
+                return {values[0], values[1], values[2]};
+
+            } catch (const std::exception &e) {
+                std::cout << "Error: Invalid argument - " << option << " should be unsigned int3" << e.what() << '\n';
                 exit(1);
             }
         }
@@ -77,12 +146,12 @@ class Options {
     /**
      * @brief Get the option usage.
      */
-    virtual void get_option_usage(){};
+    virtual void get_option_usage() = 0;
 
     /**
      * @brief Parse the arguments.
      */
-    virtual void parse_arguments(){};
+    virtual void parse_arguments() = 0;
 
   public:
     /**

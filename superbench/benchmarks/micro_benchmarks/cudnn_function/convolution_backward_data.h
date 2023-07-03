@@ -32,6 +32,18 @@ template <typename T1, typename T2> class ConvolutionBackwardDataFunction : publ
             this->h_desc_.desc(), this->bwd_data_algo_, &this->fwd_workspace_size_));
     }
 
+    /**
+     * @brief Find the best algorithm for cudnn convolution functions
+     */
+    virtual void find_best_algo() {
+        int algo_count;
+        cudnnConvolutionBwdDataAlgoPerf_t perf_results;
+        CHECK_CUDNN_ERROR(cudnnFindConvolutionBackwardDataAlgorithm(
+            this->cudnn_handle, this->w_desc_.desc(), this->x_desc_.desc(), this->conv_desc_.desc(),
+            this->h_desc_.desc(), 1, &algo_count, &perf_results));
+        this->algo_ = perf_results.algo;
+    }
+
   public:
     /**
      * @brief Construct a new Convolution Backward Data Function object
