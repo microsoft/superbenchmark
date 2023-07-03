@@ -31,6 +31,7 @@ from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import Ro
 from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul
 from superbench.benchmarks.micro_benchmarks.tcp_connectivity import TCPConnectivityBenchmark
 from superbench.benchmarks.micro_benchmarks.tensorrt_inference_performance import TensorRTInferenceBenchmark
+from superbench.benchmarks.micro_benchmarks.directx_gpu_copy_performance import DirectXGPUCopyBw
 
 __all__ = [
     'ComputationCommunicationOverlap',
@@ -61,4 +62,5 @@ __all__ = [
     'ShardingMatmul',
     'TCPConnectivityBenchmark',
     'TensorRTInferenceBenchmark',
+    'DirectXGPUCopyBw',
 ]
