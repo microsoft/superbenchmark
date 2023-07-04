@@ -10,6 +10,10 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 
+from superbench.common.utils import LazyImport
+
+AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
+
 
 class AnsibleClientTestCase(unittest.TestCase):
     """A class for ansible client test cases."""
@@ -29,7 +33,6 @@ class AnsibleClientTestCase(unittest.TestCase):
         )
         os.close(fd)
 
-        from superbench.runner.ansible import AnsibleClient
         self.ansible_client = AnsibleClient(
             OmegaConf.create({
                 'host_file': self.host_file,
@@ -71,7 +74,6 @@ class AnsibleClientTestCase(unittest.TestCase):
         # Test for out-of-order
         with open(self.test_mpi_host_file, 'w') as fd:
             fd.write('all:\n  hosts:\n    10.0.0.12:\n    10.0.0.11:\n    10.0.0.10:\n    10.0.0.13:\n    10.0.0.14:\n')
-        from superbench.runner.ansible import AnsibleClient
         mess_hosts = AnsibleClient(
             OmegaConf.create(
                 {

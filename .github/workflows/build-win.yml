@@ -61,7 +61,7 @@ jobs:
     - name: Run unit tests inside docker
       run: |
         $command="curl -s -L https://uploader.codecov.io/latest/windows/codecov.exe -o codecov.exe && python -m pip install .[test] && python -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx && codecov -cF directx-unit-test"
-        docker run `
+        docker run --rm `
         --isolation process `
         --device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599 `
         -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" superbench/main:win2004 cmd /c "$command"
