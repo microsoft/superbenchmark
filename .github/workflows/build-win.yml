@@ -49,9 +49,9 @@ jobs:
     runs-on: [self-hosted, windows, x64, win2004]
     steps:
     - name: Add bash to PATH
-      shell: cmd
+      shell: pwsh
       run: |
-        echo "PATH=$env:PATH;C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+        echo "$env:PATH;C:\Program Files\Git\bin" | Out-File -FilePath $env:$GITHUB_PATH -Append -Encoding utf8
     - name: Run unit tests
       run: |
         ci_env=`bash <(curl -s https://codecov.io/env)`
