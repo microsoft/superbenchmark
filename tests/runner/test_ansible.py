@@ -10,8 +10,6 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 
-from superbench.runner.ansible import AnsibleClient
-
 
 class AnsibleClientTestCase(unittest.TestCase):
     """A class for ansible client test cases."""
@@ -31,6 +29,7 @@ class AnsibleClientTestCase(unittest.TestCase):
         )
         os.close(fd)
 
+        from superbench.runner.ansible import AnsibleClient
         self.ansible_client = AnsibleClient(
             OmegaConf.create({
                 'host_file': self.host_file,
