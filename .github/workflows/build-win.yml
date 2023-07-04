@@ -44,3 +44,18 @@ jobs:
         TAG: superbench/main:win2004
         USER: ${{ secrets.DOCKERHUB_USERNAME }}
         PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+  DirectX-unit-test:
+    name: DirectX unit test
+    needs: [docker]
+    runs-on: [self-hosted, windows, x64, win2004]
+    steps:
+      - name: Run unit tests
+        run: |
+          docker run --isolation process -e SB_MICRO_PATH=$PWD $-e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" --device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599 -itd superbench/main:win2004 python3 -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx
+        shell: pwsh
+      - name: Report coverage results
+        run: |
+          curl -s https://codecov.io/bash | bash -s -- -cF directx-unit-test
+        shell: pwsh
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
