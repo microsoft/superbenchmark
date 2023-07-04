@@ -52,12 +52,12 @@ jobs:
       shell: pwsh
       run: |
         echo "$env:PATH;C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-    - name: Run unit tests
+    - name: Bash to get codecov env
       run: |
         ci_env=`bash <(curl -s https://codecov.io/env)`
         echo "ci_env=$ci_env" >> $GITHUB_ENV
       shell: bash
-    - name: Run unit tests
+    - name: Run unit tests inside docker
       run: |
         $command="curl -s -L https://uploader.codecov.io/latest/windows/codecov.exe -o codecov.exe && python -m pip install .[test] && python -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx && codecov -cF directx-unit-test"
         docker run `

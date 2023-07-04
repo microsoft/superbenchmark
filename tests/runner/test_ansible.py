@@ -71,6 +71,7 @@ class AnsibleClientTestCase(unittest.TestCase):
         # Test for out-of-order
         with open(self.test_mpi_host_file, 'w') as fd:
             fd.write('all:\n  hosts:\n    10.0.0.12:\n    10.0.0.11:\n    10.0.0.10:\n    10.0.0.13:\n    10.0.0.14:\n')
+        from superbench.runner.ansible import AnsibleClient
         mess_hosts = AnsibleClient(
             OmegaConf.create(
                 {
