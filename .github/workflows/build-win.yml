@@ -51,7 +51,7 @@ jobs:
     - name: Add bash to PATH
       shell: cmd
       run: |
-        echo ::add-path::"C:\Program Files\Git\bin"
+        echo "PATH=$env:PATH;C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
     - name: Run unit tests
       run: |
         ci_env=`bash <(curl -s https://codecov.io/env)`
