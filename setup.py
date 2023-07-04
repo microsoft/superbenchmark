@@ -97,24 +97,19 @@ class Tester(Command):
     """
 
     description = 'test the code using pytest'
-    user_options = [
-        ('type=', None, 'Type of test to run'),
-    ]
+    user_options: List[Tuple[str, str, str]] = []
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
-        self.type = None
+        pass
 
     def finalize_options(self):
         """Set final values for options that this command supports."""
-        if self.type not in {None, 'directx', 'cuda', 'rocm'}:    # replace with your test types
-            raise Exception(f'Invalid type: {self.type}')
+        pass
 
     def run(self):
         """Run pytest."""
-        command = 'python3 -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/'
-        command += f' -k test_{self.type}' if self.type else ''
-        errno = os.system(command)
+        errno = os.system('python3 -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/')
         sys.exit(0 if errno == 0 else 1)
 
 
@@ -171,6 +166,7 @@ setup(
         'numpy>=1.19.2',
         'omegaconf==2.0.6',
         'openpyxl>=3.0.7',
+        'packaging>=21.0',
         'pandas>=1.1.5',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',

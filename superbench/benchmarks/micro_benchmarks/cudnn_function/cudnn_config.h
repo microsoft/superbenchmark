@@ -58,6 +58,7 @@ class CudnnConfig {
     cudnnDataType_t input_type_;  ///< selects the data type in which the computation will be done
     cudnnDataType_t conv_type_;   ///< selects the data type in which the convolution will be done
     std::string function_str_;    ///< the str representing the cudnn function with params
+    bool auto_algo_;              ///< whether to use auto algo selection
 
   public:
     void set_num_test(int num_test) { this->num_test = num_test; }
@@ -80,6 +81,7 @@ class CudnnConfig {
     void set_input_type(const cudnnDataType_t &input_type) { input_type_ = input_type; }
     void set_conv_type(const cudnnDataType_t &conv_type) { input_type_ = conv_type; }
     void set_function(const std::string &str) { function_str_ = str; }
+    void set_auto_algo(bool auto_algo) { auto_algo_ = auto_algo; }
 
     std::vector<int> &get_input_dims() { return input_dims_; }
     std::vector<int> &get_input_stride() { return input_stride_; }
@@ -98,6 +100,7 @@ class CudnnConfig {
     std::string &get_name() { return name; }
     cudnn_function_name_enum get_e_name() { return e_name; }
     std::string &get_function_str() { return function_str_; }
+    bool get_auto_algo() { return auto_algo_; }
     /**
      * @brief Convert name string to enum name
      * @return cudnn_function_name_enum

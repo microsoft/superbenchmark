@@ -145,6 +145,17 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                         self._result.add_result(f'{model}_host_time_{tag}', float(lats[0]))
                         self._result.add_result(f'{model}_end_to_end_time_{tag}', float(lats[1]))
                     success = True
+                if '[I] Latency:' in line or '[I] GPU Compute Time:' in line:
+                    tm = 'gpu' if '[I] GPU Compute Time:' in line else 'host'
+                    self._result.add_result(
+                        f'{model}_{tm}_time_mean',
+                        float(re.findall(r'mean = (\d+\.\d+) ms', line)[0]),
+                    )
+                    self._result.add_result(
+                        f'{model}_{tm}_time_99',
+                        float(re.findall(r'\(99\%\) = (\d+\.\d+) ms', line)[0]),
+                    )
+                    success = True
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

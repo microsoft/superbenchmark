@@ -11,7 +11,7 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd
 
 # Build all targets.
 all: cuda rocm
@@ -19,6 +19,7 @@ cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcne
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
 cpu: common cpu_perftest
 common: cpu_hpl cpu_stream fio
+directx_amd: directx_amf_encoding_latency
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -148,3 +149,13 @@ ifneq (,$(wildcard stream-tests/Makefile))
 	make all
 	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
 endif
+
+# Build AMD Encoder Latency Test
+directx_amf_encoding_latency:
+	@if not exist "AMF" (git clone -b v1.4.29 https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git)
+	@if exist "AMF\amf\public\samples\CPPSamples_vs2019.sln" ( \
+		curl -L -o vs_buildtools.exe https://aka.ms/vs/16/release/vs_buildtools.exe && echo "Downloaded vs_buildtools.exe" && \
+		start /wait vs_buildtools.exe --quiet --wait --norestart --nocache --installPath C:/temp/BuildTools --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.ATLMFC --includeRecommended  && echo "Installed VS Build Tools" && \
+		del vs_buildtools.exe && echo "Deleted vs_buildtools.exe" && \
+		"C:\temp\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "AMF\amf\public\samples\CPPSamples_vs2019.sln" /t:EncoderLatency /p:Configuration=Release /p:OutDir="%SB_MICRO_PATH%\bin" \
+	)
