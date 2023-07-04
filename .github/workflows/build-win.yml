@@ -53,8 +53,8 @@ jobs:
       run: |
         bash
         ci_env=`bash <(curl -s https://codecov.io/env)`
-        $device="--device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599"
-        $command="python -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx && curl -s https://uploader.codecov.io/latest/windows/codecov.exe -o codecov.exe && codecov -cF directx-unit-test"
+        device="--device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599"
+        command="curl -s -o codecov.exe https://uploader.codecov.io/latest/windows/codecov.exe && python -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx  && codecov -cF directx-unit-test"
         docker run --isolation process -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" $device superbench/main:win2004 $command
       shell: bash
       env:
