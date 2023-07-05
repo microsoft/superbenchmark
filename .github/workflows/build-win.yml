@@ -1,4 +1,4 @@
-name: Build on Windows
+name: Build on Windows and run directx unit test
 
 on:
   push:
@@ -19,6 +19,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Clearnup docker data
+      run: |
+        docker system prune -a -f
+        docker volume prune -a -f
     - name: Build Docker image
       working-directory: .
       shell: pwsh
@@ -44,11 +48,6 @@ jobs:
         TAG: superbench/main:win2004
         USER: ${{ secrets.DOCKERHUB_USERNAME }}
         PASS: ${{ secrets.DOCKERHUB_TOKEN }}
-  directx-unit-test:
-    name: DirectX unit test
-    needs: docker
-    runs-on: [self-hosted, windows, x64, win2004]
-    steps:
     - name: Add bash to PATH
       shell: pwsh
       run: |
