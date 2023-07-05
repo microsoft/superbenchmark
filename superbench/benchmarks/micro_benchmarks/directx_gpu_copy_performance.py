@@ -44,7 +44,7 @@ class DirectXGPUCopyBw(MemBwBenchmark):
             '--num_loops',
             type=int,
             required=False,
-            default=100000,
+            default=1000,
             help='Number of copy times to run.',
         )
         self._parser.add_argument(
@@ -60,13 +60,6 @@ class DirectXGPUCopyBw(MemBwBenchmark):
             required=False,
             default=8 * 1024 * 1024,
             help='Run size from min_size to max_size for GPU copy.',
-        )
-        self._parser.add_argument(
-            '--mem_type',
-            type=str,
-            nargs='+',
-            default=self._mem_types,
-            help='Memory types to benchmark. E.g. {}.'.format(' '.join(self._mem_types)),
         )
         self._parser.add_argument(
             '--check',
@@ -96,8 +89,7 @@ class DirectXGPUCopyBw(MemBwBenchmark):
                 command += ' --maxbytes ' + str(self._args.maxbytes)
             if self._args.check:
                 command += ' --check'
-
-        self._commands.append(command)
+            self._commands.append(command)
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
@@ -110,15 +102,15 @@ class DirectXGPUCopyBw(MemBwBenchmark):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output', raw_output)
+        self._result.add_raw_data('raw_output', raw_output, self._args.log_raw_data)
 
         try:
             lines = raw_output.splitlines()
             for line in lines:
                 if 'GB' in line:
-                    type = raw_output.strip().split()[0]
-                    size = int(raw_output.strip().split()[1])
-                    bw = float(raw_output.strip().split()[-2])
+                    type = line.split()[0].strip(':')
+                    size = int(line.strip().split()[1].strip('B'))
+                    bw = float(line.strip().split()[2])
                     self._result.add_result(f'{type}_{size}_bw', bw)
                 if 'error' in line.lower():
                     logger.error(

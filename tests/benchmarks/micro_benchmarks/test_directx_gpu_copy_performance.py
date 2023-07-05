@@ -16,7 +16,7 @@ def test_directx_gpu_copy_bw():
     context = BenchmarkRegistry.create_benchmark_context(
         'directx-gpu-copy-bw',
         platform=Platform.DIRECTX,
-        parameters=r'--warm_up 20 --num_loops 100000 --minbytes 64 --maxbytes 8388608 --mem_type htod dtoh'
+        parameters=r'--warm_up 20 --num_loops 1000 --minbytes 64 --maxbytes 8388608 --mem_type htod dtoh'
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -30,7 +30,7 @@ def test_directx_gpu_copy_bw():
 
     # Check parameters specified in BenchmarkContext.
     assert (benchmark._args.warm_up == 20)
-    assert (benchmark._args.num_loops == 100000)
+    assert (benchmark._args.num_loops == 1000)
     assert (benchmark._args.minbytes == 64)
     assert (benchmark._args.maxbytes == 8388608)
     assert (sorted(benchmark._args.mem_type) == ['dtoh', 'htod'])
@@ -39,10 +39,11 @@ def test_directx_gpu_copy_bw():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     assert ('raw_output' in benchmark.raw_data)
-    assert (isinstance(benchmark.raw_data['raw_output'], str))
+    assert (isinstance(benchmark.raw_data['raw_output'][0], str))
     size = 64
     while size <= 8388608:
         for mem_type in ['htod', 'dtoh']:
             assert (f'{mem_type}_{size}_bw' in benchmark.result)
-            assert (isinstance(benchmark.result[f'{mem_type}_{size}_bw'], numbers.Number))
+            assert (len(benchmark.result[f'{mem_type}_{size}_bw']) == 1)
+            assert (isinstance(benchmark.result[f'{mem_type}_{size}_bw'][0], numbers.Number))
         size *= 2
