@@ -18,7 +18,7 @@ def create_nv12_file(file_name, num_frames, width, height):
     # Generate a UV plane of width x height/2 with values from 0-255
     uv_plane = np.random.randint(0, 256, (height // 2, width), dtype=np.uint8)
     # Create the file
-    with open(f'{file_name}.nv12', 'wb') as f:
+    with open(f'{file_name}', 'wb') as f:
         for _ in range(num_frames):
             # Write the Y plane and UV plane to the file
             f.write(y_plane.tobytes())
@@ -31,7 +31,7 @@ class DirectXGPUEncodingLatency(MicroBenchmarkWithInvoke):
         """Constructor."""
         super().__init__(name, parameters)
         self._bin_name = 'EncoderLatency.exe'
-        self._test_file = 'test_nv12'
+        self._test_file = 'test_nv12.nv12'
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -100,9 +100,9 @@ class DirectXGPUEncodingLatency(MicroBenchmarkWithInvoke):
         if self._args.input_file is not None:
             command += f' -INPUT {self._args.input_file}'
         else:
-            if not os.path.exists(f'{self._test_file}.nv12'):
+            if not os.path.exists(f'{self._test_file}'):
                 create_nv12_file(self._test_file, self._args.frames, self._args.width, self._args.height)
-            command += f' -INPUT {self._test_file}.nv12'
+            command += f' -INPUT {self._test_file}'
         if self._args.output_file is not None:
             command += f' -OUTPUT {self._args.output_file}'
         command += f' -OUTPUT_HEIGHT {self._args.output_height}'
