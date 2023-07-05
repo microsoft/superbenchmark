@@ -27,8 +27,11 @@ def run_command(command, quiet=False, flush_output=False, cwd=None):
         try:
             args = shlex.split(command)
             process = subprocess.Popen(
-                args, cwd=os.getcwd() if cwd is None else cwd, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, universal_newlines=True
+                args,
+                cwd=os.getcwd() if cwd is None else cwd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True
             )
             output = ''
             for line in process.stdout:
@@ -45,8 +48,13 @@ def run_command(command, quiet=False, flush_output=False, cwd=None):
             return subprocess.CompletedProcess(args=args, returncode=-1, stdout=str(e))
     else:
         result = subprocess.run(
-            command, cwd=os.getcwd() if cwd is None else cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            shell=True, check=False, universal_newlines=True
+            command,
+            cwd=os.getcwd() if cwd is None else cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True,
+            check=False,
+            universal_newlines=True
         )
         if not quiet:
             stdout_logger.log(result.stdout)
