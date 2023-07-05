@@ -25,7 +25,7 @@ void GPUCore::Run() {
 
     int loops = opts->num_loops;
     std::cout << "GPUCoreFLOPs" << std::endl;
-
+    gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
     switch (opts->mode_precision) {
     case Option::F32: {
         // Prepare input and output data and buffers.
@@ -37,7 +37,6 @@ void GPUCore::Run() {
             ExecuteComputeOp();
         }
         for (int i = 0; i < loops; ++i) {
-            gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
             // Do FLOPs job.
             double timeInMs = ExecuteComputeOp();
             auto flops = (int64_t(m) * n * k + m * n) * 2 * 1e-9 / timeInMs;
@@ -55,7 +54,6 @@ void GPUCore::Run() {
             ExecuteComputeOp();
         }
         for (int i = 0; i < loops; ++i) {
-            gpuTimer.init(m_device.Get(), m_commandQueue.Get(), 1, D3D12::QueueType::compute);
             // Do FLOPs job.
             double timeInMs = ExecuteComputeOp();
             auto flops = (int64_t(m) * n * k + m * n) * 2 * 1e-9 / timeInMs;
