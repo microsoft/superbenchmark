@@ -20,7 +20,7 @@ class DirectXGPUCopyBw(MemBwBenchmark):
         """
         super().__init__(name, parameters)
         self._mem_types = ['htod', 'dtoh']
-        self._bin_name = 'GPUCopyBw.exe'
+        self._bin_name = 'DirectXGPUCopyBw.exe'
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
