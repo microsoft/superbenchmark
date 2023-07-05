@@ -31,7 +31,7 @@ class DirectXGPUEncodingLatency(MicroBenchmarkWithInvoke):
         """Constructor."""
         super().__init__(name, parameters)
         self._bin_name = 'EncoderLatency.exe'
-        self._test_file = 'test_nv12.nv12'
+        self._test_file = 'test_directx_gpu_encoding_latency.nv12'
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
