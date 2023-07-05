@@ -42,10 +42,10 @@ class BenchmarkOptions : public Options {
         m = get_cmd_line_argument_int("--m", 16 * 256);
         n = get_cmd_line_argument_int("--n", 16 * 256);
         k = get_cmd_line_argument_int("--k", 16 * 256);
-        if (get_cmd_line_argument_bool("--f16")) {
+        if (get_cmd_line_argument_bool("--fp16")) {
             mode_precision = Option::F16;
         }
-        if (get_cmd_line_argument_bool("--f32")) {
+        if (get_cmd_line_argument_bool("--fp32")) {
             mode_precision = Option::F32;
         }
     }
