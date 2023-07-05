@@ -68,7 +68,7 @@ class BenchmarkOptions : public Options {
         min_size = get_cmd_line_argument_int("--minbytes", 4 * 1024);
         max_size =
             get_cmd_line_argument_ulonglong("--maxbytes", static_cast<unsigned long long>(1LL * 1024 * 1024 * 1024));
-        check_data = get_cmd_line_argument_bool("--check");
+        check_data = get_cmd_line_argument_bool("--check_data");
         if (get_cmd_line_argument_bool("--read")) {
             mem_type = Memtype::Read;
         }
