@@ -4,6 +4,7 @@
 """Module of the DirectXGPUMemBw performance benchmarks."""
 
 import os
+
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
@@ -62,8 +63,7 @@ class DirectXGPUMemBw(MicroBenchmarkWithInvoke):
         )
         self._parser.add_argument(
             '--check_data',
-            type=bool,
-            default=False,
+            action='store_true',
             required=False,
             help='Whether check data correctness.',
         )
@@ -101,7 +101,8 @@ class DirectXGPUMemBw(MicroBenchmarkWithInvoke):
             else:
                 command += (' --minbytes ' + str(self._args.minbytes))
                 command += (' --maxbytes ' + str(self._args.maxbytes))
-            command += (' --check_data ' + str(self._args.check_data))
+            if self._args.check_data:
+                command += (' --check_data')
             command += (' --' + mode)
             self._commands.append(command)
         return True
@@ -126,7 +127,7 @@ class DirectXGPUMemBw(MicroBenchmarkWithInvoke):
         content = raw_output.splitlines()
         try:
             for line in content:
-                if 'GPUMemBw: ' in line:
+                if 'GPUMemBw:' in line:
                     size = int(line.split()[-3])
                     bw = float(line.split()[-2])
                     self._result.add_result(f'{mode}_{size}_bw', bw)
