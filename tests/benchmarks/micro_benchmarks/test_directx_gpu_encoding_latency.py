@@ -13,10 +13,10 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, 
 def test_directx_gpuencodinglatency():
     """Test DirectXGPUEncodingLatency benchmark."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'directx-gpu-encoding_-latency',
+        'directx-gpu-encoding-latency',
         platform=Platform.DIRECTX,
-        parameters=r'--algo ASAP --codec H265 --format NV12 --frames 500 \
-            --height 720 --width 1080 --output_height 720 --output_width 1080 --vcn 0'
+        parameters=r'--algo ASAP --codec H265 --format NV12 --frames 500' +
+        r' --height 720 --width 1080 --output_height 720 --output_width 1080 --vcn 0'
     )
 
     assert (BenchmarkRegistry.is_benchmark_context_valid(context))
@@ -40,7 +40,7 @@ def test_directx_gpuencodinglatency():
     assert (benchmark._args.vcn == 0)
 
     # Check results and metrics.
-    assert (benchmark.run_count == 1)
+    assert (benchmark._args.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     assert ('raw_output' in benchmark.raw_data)
     assert (len(benchmark.raw_data['raw_output']) == 1)

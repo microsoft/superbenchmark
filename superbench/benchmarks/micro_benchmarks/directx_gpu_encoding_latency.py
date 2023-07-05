@@ -124,7 +124,7 @@ class DirectXGPUEncodingLatency(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output', raw_output)
+        self._result.add_raw_data('raw_output', raw_output, self._args.log_raw_data)
 
         content = raw_output.splitlines()
         metrics = {}
@@ -136,7 +136,7 @@ class DirectXGPUEncodingLatency(MicroBenchmarkWithInvoke):
                 if 'Latency' in line and 'min' in line.lower():
                     metrics['min_lat'] = float(line.split('=')[1].split(',')[1].strip('ms').strip())
                     metrics['max_lat'] = float(line.split('=')[1].split(',')[2].strip('ms').strip())
-                if 'Latency' in line and 'avg' in line.lower():
+                if 'Latency' in line and 'average' in line.lower():
                     metrics['avg_lat'] = float(line.split('=')[1].strip('ms').strip())
         except Exception as e:
             logger.error(
