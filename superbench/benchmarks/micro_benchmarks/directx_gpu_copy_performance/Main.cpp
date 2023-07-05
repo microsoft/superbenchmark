@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     } else {
         // Run all sizes
         for (SIZE_T usize = option.min_size; usize <= option.max_size; usize += usize) {
+            option.size = usize;
             GPUCopyBw benchmark(&option);
             benchmark.Run();
         }
