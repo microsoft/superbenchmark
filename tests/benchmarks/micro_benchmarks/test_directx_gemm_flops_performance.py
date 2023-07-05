@@ -14,7 +14,7 @@ def test_directx_gpucoreflops():
     """Test DirectXGPUCoreFlops benchmark."""
     # Test for default configuration
     context = BenchmarkRegistry.create_benchmark_context(
-        'directx-gpucoreflops',
+        'directx-gpu-core-flops',
         platform=Platform.DIRECTX,
         parameters=r'--num_loops 10 --n 16384 --k 16384 --m 16384 --precision fp32'
     )
@@ -25,7 +25,7 @@ def test_directx_gpucoreflops():
 
     # Check basic information.
     assert (benchmark)
-    assert (benchmark.name == 'directx-gpucoreflops')
+    assert (benchmark.name == 'directx-gpu-core-flops')
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check parameters specified in BenchmarkContext.

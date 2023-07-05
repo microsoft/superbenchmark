@@ -19,7 +19,7 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
             parameters (str): benchmark parameters.
         """
         super().__init__(name, parameters)
-        self._bin_name = 'GPUCore.exe'
+        self._bin_name = 'DirectXGPUCoreFlops.exe'
         self._support_precisions = ['fp16', 'fp32']
         self._precision_need_to_run = list()
 
@@ -32,6 +32,13 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
             default=10,
             required=False,
             help='The number of benchmark runs.',
+        )
+        self._parser.add_argument(
+            '--num_warm_up',
+            type=int,
+            default=2,
+            required=False,
+            help='The number of warm up runs.',
         )
         self._parser.add_argument(
             '--n',
@@ -92,6 +99,7 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
         for p in self._precision_need_to_run:
             command = os.path.join(self._args.bin_dir, self._bin_name)
             command += (' --num_loops ' + str(self._args.num_loops))
+            command += (' --num_warm_up ' + str(self._args.num_warm_up))
             command += (' --n ' + str(self._args.n))
             command += (' --k ' + str(self._args.k))
             command += (' --m ' + str(self._args.m))
@@ -134,4 +142,4 @@ class DirectXGPUCoreFlops(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('directx-gpucoreflops', DirectXGPUCoreFlops, platform=Platform.DIRECTX)
+BenchmarkRegistry.register_benchmark('directx-gpu-core-flops', DirectXGPUCoreFlops, platform=Platform.DIRECTX)
