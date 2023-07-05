@@ -12,7 +12,7 @@ for /r %%F in (*.vcxproj) do (
     REM Download dependencies
     "!MSBUILD!" "!PROJ_PATH!" -t:restore -p:RestorePackagesConfig=true
     REM Build project
-    "!MSBUILD!" "!PROJ_PATH!" /p:Configuration=Release /p:AdditionalLibraryDirectories="%WindowsSDKDir%\Lib" /p:AdditionalIncludeDirectories="%WindowsSDKDir%\Include" /p:OutDir="%SB_MICRO_PATH%\bin"
+    "!MSBUILD!" "!PROJ_PATH!" /p:Configuration=Release /p:Platform=x64 /p:AdditionalLibraryDirectories="%WindowsSDKDir%\Lib" /p:AdditionalIncludeDirectories="%WindowsSDKDir%\Include" /p:OutDir="%SB_MICRO_PATH%\bin"
 )
 
 endlocal

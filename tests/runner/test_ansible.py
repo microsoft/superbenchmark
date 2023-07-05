@@ -10,7 +10,9 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 
-from superbench.runner.ansible import AnsibleClient
+from superbench.common.utils import LazyImport
+
+AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
 
 
 class AnsibleClientTestCase(unittest.TestCase):

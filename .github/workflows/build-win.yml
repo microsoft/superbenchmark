@@ -44,3 +44,27 @@ jobs:
         TAG: superbench/main:win2004
         USER: ${{ secrets.DOCKERHUB_USERNAME }}
         PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+  directx-unit-test:
+    name: DirectX unit test
+    needs: docker
+    runs-on: [self-hosted, windows, x64, win2004]
+    steps:
+    - name: Add bash to PATH
+      shell: pwsh
+      run: |
+        echo "$env:PATH;C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+    - name: Bash to get codecov env
+      run: |
+        ci_env=`bash <(curl -s https://codecov.io/env)`
+        echo "ci_env=$ci_env" >> $GITHUB_ENV
+      shell: bash
+    - name: Run unit tests inside docker
+      run: |
+        $command="curl -s -L https://uploader.codecov.io/latest/windows/codecov.exe -o codecov.exe && python -m pip install .[test] && python -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx && codecov -t ${CODECOV_TOKEN} -cF directx-unit-test"
+        docker run --rm `
+        --isolation process `
+        --device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599 `
+        -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" -e CODECOV_TOKEN superbench/main:win2004 cmd /c $command
+      shell: pwsh
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
