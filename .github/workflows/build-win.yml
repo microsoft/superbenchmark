@@ -23,6 +23,7 @@ jobs:
       run: |
         docker system prune -a -f
         docker volume prune -a -f
+      shell: pwsh
     - name: Build Docker image
       working-directory: .
       shell: pwsh
