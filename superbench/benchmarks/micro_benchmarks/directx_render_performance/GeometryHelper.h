@@ -3,36 +3,34 @@
 
 #pragma once
 
-#include <wrl.h>
-#include <dxgi1_4.h>
 #include <d3d12.h>
+#include <dxgi1_4.h>
 #include <random>
+#include <wrl.h>
 
 #include <DirectXMath.h>
 
 #include "../directx_third_party/DXSampleHelper.h"
+#include "../directx_third_party/pch.h"
 #include "BufferHelper.h"
 
 using Microsoft::WRL::ComPtr;
 
-namespace MathHelper
-{
-    const float Infinity = FLT_MAX;
-    const float Pi = 3.1415926535f;
-    // Create identity4*4 matrix
-    DirectX::XMFLOAT4X4 Identity4x4();
-    // Returns random float in [0, n).
-    float genRand2N_f(int n);
-    // Returns random uint16_t in [0, n).
-    uint16_t genRand2N_large(int n);
-}
+namespace MathHelper {
+const float Infinity = FLT_MAX;
+const float Pi = 3.1415926535f;
+// Create identity4*4 matrix
+DirectX::XMFLOAT4X4 Identity4x4();
+// Returns random float in [0, n).
+float genRand2N_f(int n);
+// Returns random uint16_t in [0, n).
+uint16_t genRand2N_large(int n);
+} // namespace MathHelper
 
 // Simple struct to represent a vertex.
-class Vertex
-{
-public:
-    Vertex()
-    {
+class Vertex {
+  public:
+    Vertex() {
         x = MathHelper::genRand2N_f(2) - 1;
         y = MathHelper::genRand2N_f(2) - 1;
         z = MathHelper::genRand2N_f(2) - 1;
@@ -44,8 +42,7 @@ public:
 };
 
 // Simple struct to represent a Geometry object.
-struct Geometry
-{
+struct Geometry {
     std::unique_ptr<Vertex[]> vertexData = nullptr;
     std::vector<uint16_t> indexData;
     UINT vertexNum;
@@ -56,9 +53,7 @@ struct Geometry
 };
 
 // Create a random geometry data buffer.
-template <class T>
-std::unique_ptr<Geometry> CreateRandomGeometry(const UINT vertexNum, const UINT indexNum)
-{
+template <class T> std::unique_ptr<Geometry> CreateRandomGeometry(const UINT vertexNum, const UINT indexNum) {
     static_assert(std::is_base_of<Vertex, T>::value, "T must be a Vertex or derived from Vertex");
     std::unique_ptr<Geometry> geo = make_unique<Geometry>();
     // Create the vertices.
@@ -66,8 +61,7 @@ std::unique_ptr<Geometry> CreateRandomGeometry(const UINT vertexNum, const UINT 
     geo->vertexData.reset(reinterpret_cast<Vertex *>(new T[vertexNum]));
 
     // Fill in the random vertex data.
-    for (UINT i = 0; i < vertexNum; i++)
-    {
+    for (UINT i = 0; i < vertexNum; i++) {
         // Here you need to reinterpret_cast it back to T for accessing/modifying
         T &v = reinterpret_cast<T &>(geo->vertexData[i]);
         v = T();
@@ -75,8 +69,7 @@ std::unique_ptr<Geometry> CreateRandomGeometry(const UINT vertexNum, const UINT 
 
     // Create the indices.
     // Fill in the random index data.
-    for (UINT i = 0; i < indexNum; i++)
-    {
+    for (UINT i = 0; i < indexNum; i++) {
         geo->indexData.push_back(MathHelper::genRand2N_large(vertexNum));
     }
     geo->vertexNum = vertexNum;
@@ -88,8 +81,7 @@ std::unique_ptr<Geometry> CreateRandomGeometry(const UINT vertexNum, const UINT 
 }
 
 // Helpter class to manage geometry data buffer on GPU.
-struct GeometryResource
-{
+struct GeometryResource {
     ComPtr<ID3DBlob> VertexBufferCPU = nullptr;
     ComPtr<ID3DBlob> IndexBufferCPU = nullptr;
 
@@ -116,8 +108,7 @@ struct GeometryResource
     /*
      * @brief Get the vertex buffer view.
      */
-    D3D12_VERTEX_BUFFER_VIEW VertexBufferView() const
-    {
+    D3D12_VERTEX_BUFFER_VIEW VertexBufferView() const {
         D3D12_VERTEX_BUFFER_VIEW vbv;
         vbv.BufferLocation = VertexBufferGPU->GetGPUVirtualAddress();
         vbv.StrideInBytes = VertexByteStride;
@@ -128,8 +119,7 @@ struct GeometryResource
     /*
      * @brief Get the index buffer view.
      */
-    D3D12_INDEX_BUFFER_VIEW IndexBufferView() const
-    {
+    D3D12_INDEX_BUFFER_VIEW IndexBufferView() const {
         D3D12_INDEX_BUFFER_VIEW ibv;
         ibv.BufferLocation = IndexBufferGPU->GetGPUVirtualAddress();
         ibv.Format = IndexFormat;
@@ -140,8 +130,7 @@ struct GeometryResource
     /*
      * @brief Upload geometry data and set necessary information about the geometry.
      */
-    void Create(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, std::unique_ptr<Geometry> &geoData)
-    {
+    void Create(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, std::unique_ptr<Geometry> &geoData) {
         geometry = std::move(geoData);
 
         ThrowIfFailed(D3DCreateBlob(geometry->vertexByteSize, &this->VertexBufferCPU));
@@ -153,8 +142,8 @@ struct GeometryResource
         this->VertexBufferGPU = CreateDefaultBuffer(device, cmdList, geometry->vertexData.get(),
                                                     geometry->vertexByteSize, this->VertexBufferUploader);
 
-        this->IndexBufferGPU = CreateDefaultBuffer(device, cmdList, geometry->indexData.data(),
-                                                   geometry->indexByteSize, this->IndexBufferUploader);
+        this->IndexBufferGPU = CreateDefaultBuffer(device, cmdList, geometry->indexData.data(), geometry->indexByteSize,
+                                                   this->IndexBufferUploader);
 
         this->VertexByteStride = geometry->vertexByteStride;
         this->VertexBufferByteSize = geometry->vertexByteSize;

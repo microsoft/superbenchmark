@@ -2,40 +2,29 @@
 // Licensed under the MIT License.
 
 #include "RenderApp.h"
-#include "directx_third_party/d3dx12.h"
+#include "../directx_third_party/d3dx12.h"
 
 RenderApp::RenderApp(BenchmarkOptions *args, HINSTANCE hInstance, HWND hMainWnd, std::wstring &winTitle)
-    : m_hinstance(hInstance), m_opts(args), m_hMainWnd(hMainWnd), m_winTitle(winTitle), m_width(args->m_width), m_height(args->m_height)
-{
-    m_deviceResources = std::make_unique<DX::DeviceResources>(
-        DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
-        DXGI_FORMAT_D32_FLOAT,
-        m_swapChainBufferCount,
-        D3D_FEATURE_LEVEL_11_0,
-        DX::DeviceResources::c_AllowTearing);
+    : m_hinstance(hInstance), m_opts(args), m_hMainWnd(hMainWnd), m_winTitle(winTitle), m_width(args->m_width),
+      m_height(args->m_height) {
+    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_FORMAT_D32_FLOAT,
+                                                              m_swapChainBufferCount, D3D_FEATURE_LEVEL_11_0,
+                                                              DX::DeviceResources::c_AllowTearing);
 }
 
-RenderApp::RenderApp(BenchmarkOptions *args)
-    : m_opts(args), m_width(args->m_width), m_height(args->m_height)
-{
-    m_deviceResources = std::make_unique<DX::DeviceResources>(
-        DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
-        DXGI_FORMAT_D32_FLOAT,
-        m_swapChainBufferCount,
-        D3D_FEATURE_LEVEL_11_0,
-        DX::DeviceResources::c_AllowTearing);
+RenderApp::RenderApp(BenchmarkOptions *args) : m_opts(args), m_width(args->m_width), m_height(args->m_height) {
+    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_FORMAT_D32_FLOAT,
+                                                              m_swapChainBufferCount, D3D_FEATURE_LEVEL_11_0,
+                                                              DX::DeviceResources::c_AllowTearing);
 }
 
-RenderApp::~RenderApp()
-{
-    if (m_deviceResources)
-    {
+RenderApp::~RenderApp() {
+    if (m_deviceResources) {
         m_deviceResources->WaitForGpu();
     }
 }
 
-void RenderApp::Initialize()
-{
+void RenderApp::Initialize() {
     m_deviceResources->SetWindow(m_hMainWnd, m_width, m_height);
     m_deviceResources->CreateDeviceResources();
     CreateDeviceDependentResources();
@@ -53,8 +42,7 @@ void RenderApp::Initialize()
     m_outfile.open(m_opts->m_outfile, std::ios_base::out);
 }
 
-void RenderApp::CreateDeviceDependentResources()
-{
+void RenderApp::CreateDeviceDependentResources() {
     auto device = m_deviceResources->GetD3DDevice();
 
     // Create a fence for synchronizing between different frames
@@ -69,8 +57,7 @@ void RenderApp::CreateDeviceDependentResources()
     BuildPipelineStates(device);
 }
 
-void RenderApp::CreateWindowSizeDependentResources()
-{
+void RenderApp::CreateWindowSizeDependentResources() {
     auto device = m_deviceResources->GetD3DDevice();
     auto rtvHeap = m_deviceResources->m_rtvDescriptorHeap.Get();
     auto pCmdList = m_deviceResources->GetCommandList();
@@ -94,8 +81,7 @@ void RenderApp::CreateWindowSizeDependentResources()
     cmdQueue->ExecuteCommandLists(1, commandLists);
 }
 
-void RenderApp::CreateRootSignatures(ID3D12Device *device)
-{
+void RenderApp::CreateRootSignatures(ID3D12Device *device) {
     std::vector<CD3DX12_ROOT_PARAMETER> rootParameters;
     int numRootParameters = DefineRootParameters(rootParameters);
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
@@ -109,19 +95,20 @@ void RenderApp::CreateRootSignatures(ID3D12Device *device)
 
     ID3DBlob *serializedRootSignature = nullptr;
     ID3DBlob *errorBlob = nullptr;
-    auto hr = (D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0,
-                                           &serializedRootSignature, &errorBlob));
-    if (hr != S_OK || errorBlob != nullptr)
-    {
+    auto hr = (D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &serializedRootSignature,
+                                           &errorBlob));
+    if (hr != S_OK || errorBlob != nullptr) {
         std::cout << ((char *)errorBlob->GetBufferPointer()) << std::endl;
     }
 
     ThrowIfFailed(device->CreateRootSignature(0, serializedRootSignature->GetBufferPointer(),
-                                              serializedRootSignature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+                                              serializedRootSignature->GetBufferSize(),
+                                              IID_PPV_ARGS(&m_rootSignature)));
 }
 
-void RenderApp::CreateRenderTargetResource(ID3D12Device *device, UINT width, UINT height, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, Microsoft::WRL::ComPtr<ID3D12Resource> &renderTarget)
-{
+void RenderApp::CreateRenderTargetResource(ID3D12Device *device, UINT width, UINT height, DXGI_FORMAT format,
+                                           D3D12_RESOURCE_FLAGS flags,
+                                           Microsoft::WRL::ComPtr<ID3D12Resource> &renderTarget) {
     // Create the render target resources:
     D3D12_CLEAR_VALUE m_clearValue = {}; // Specify a clear value for the render target (optional)
     m_clearValue.Format = format;
@@ -147,29 +134,23 @@ void RenderApp::CreateRenderTargetResource(ID3D12Device *device, UINT width, UIN
     resourceDesc.Flags = flags;
 
     // Create the render target resource
-    ThrowIfFailed(device->CreateCommittedResource(
-        &heapProperties,
-        D3D12_HEAP_FLAG_NONE,
-        &resourceDesc,
-        D3D12_RESOURCE_STATE_COMMON,
-        &m_clearValue,
-        IID_PPV_ARGS(&renderTarget)));
+    ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+                                                  D3D12_RESOURCE_STATE_COMMON, &m_clearValue,
+                                                  IID_PPV_ARGS(&renderTarget)));
 }
 
-CD3DX12_CPU_DESCRIPTOR_HANDLE RenderApp::GetRenderTargetView(ID3D12Device *device)
-{
-    const CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(
-        m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+CD3DX12_CPU_DESCRIPTOR_HANDLE RenderApp::GetRenderTargetView(ID3D12Device *device) {
+    const CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
     return rtvDescriptor;
 }
 
-void RenderApp::CreateRenderTargetView(ID3D12Device *device, UINT width, UINT height, ID3D12DescriptorHeap *rtvHeap)
-{
+void RenderApp::CreateRenderTargetView(ID3D12Device *device, UINT width, UINT height, ID3D12DescriptorHeap *rtvHeap) {
     D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
     rtvDescriptorHeapDesc.NumDescriptors = m_numPassRenderTargets;
     rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    ThrowIfFailed(device->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(m_rtvDescriptorHeap.ReleaseAndGetAddressOf())));
+    ThrowIfFailed(device->CreateDescriptorHeap(&rtvDescriptorHeapDesc,
+                                               IID_PPV_ARGS(m_rtvDescriptorHeap.ReleaseAndGetAddressOf())));
     m_rtvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
     // Define the render target properties
@@ -177,16 +158,14 @@ void RenderApp::CreateRenderTargetView(ID3D12Device *device, UINT width, UINT he
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET; // Specify the resource flags
 
     // Create the render target resources.
-    for (int i = 0; i < m_numPassRenderTargets; ++i)
-    {
+    for (int i = 0; i < m_numPassRenderTargets; ++i) {
         CreateRenderTargetResource(device, width, height, format, flags, m_renderTargets[i]);
     }
 
     auto rtvHandle = GetRenderTargetView(device);
 
     // Create a RTV for each custom render target.
-    for (UINT i = 0; i < m_numPassRenderTargets; ++i)
-    {
+    for (UINT i = 0; i < m_numPassRenderTargets; ++i) {
         // Create the RTV descriptor
         device->CreateRenderTargetView(m_renderTargets[i].Get(), nullptr, rtvHandle);
         // Increment the handle to the next descriptor
@@ -194,8 +173,9 @@ void RenderApp::CreateRenderTargetView(ID3D12Device *device, UINT width, UINT he
     }
 }
 
-D3D12_GRAPHICS_PIPELINE_STATE_DESC RenderApp::DefinePSODesc(const std::vector<D3D12_INPUT_ELEMENT_DESC> &inputLayout, ComPtr<ID3DBlob> vertexShader, ComPtr<ID3DBlob> pixelShader)
-{
+D3D12_GRAPHICS_PIPELINE_STATE_DESC RenderApp::DefinePSODesc(const std::vector<D3D12_INPUT_ELEMENT_DESC> &inputLayout,
+                                                            ComPtr<ID3DBlob> vertexShader,
+                                                            ComPtr<ID3DBlob> pixelShader) {
     // Describe and create the graphics pipeline state object (PSO).
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -211,8 +191,7 @@ D3D12_GRAPHICS_PIPELINE_STATE_DESC RenderApp::DefinePSODesc(const std::vector<D3
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN; // No depth-stencil
     psoDesc.NumRenderTargets = m_numPassRenderTargets;
-    for (int i = 0; i < m_numPassRenderTargets; i++)
-    {
+    for (int i = 0; i < m_numPassRenderTargets; i++) {
         psoDesc.RTVFormats[i] = m_renderTargetFormat;
     }
     psoDesc.SampleDesc.Count = 1;
@@ -221,8 +200,7 @@ D3D12_GRAPHICS_PIPELINE_STATE_DESC RenderApp::DefinePSODesc(const std::vector<D3
     return psoDesc;
 }
 
-void RenderApp::LoadAssets()
-{
+void RenderApp::LoadAssets() {
     auto device = m_deviceResources->GetD3DDevice();
     auto pCmdList = m_deviceResources->GetCommandList();
     auto cmdListAlloc = m_deviceResources->GetCommandAllocator();
@@ -242,8 +220,7 @@ void RenderApp::LoadAssets()
     this->m_deviceResources->WaitForGpu();
 }
 
-void RenderApp::Tick()
-{
+void RenderApp::Tick() {
     auto device = m_deviceResources->GetD3DDevice();
     auto pCmdList = m_deviceResources->GetCommandList();
     auto cmdListAlloc = m_deviceResources->GetCommandAllocator();
@@ -254,65 +231,54 @@ void RenderApp::Tick()
     CalculateFrameStats();
 }
 
-void RenderApp::Update()
-{
+void RenderApp::Update() {
     // Check to see if the GPU is keeping up
     auto const frameIdx = m_frameIndex;
     auto const numBackBuffers = m_deviceResources->GetBackBufferCount();
     uint64_t completedValue = m_fence->GetCompletedValue();
-    if ((frameIdx > completedValue) // if frame index is reset to zero it may temporarily be smaller than the last GPU signal
-        && (frameIdx - completedValue > numBackBuffers))
-    {
+    if ((frameIdx >
+         completedValue) // if frame index is reset to zero it may temporarily be smaller than the last GPU signal
+        && (frameIdx - completedValue > numBackBuffers)) {
         // GPU not caught up, wait for at least one available frame
         ThrowIfFailed(m_fence->SetEventOnCompletion(frameIdx - numBackBuffers, m_fenceEvent.Get()));
         WaitForSingleObjectEx(m_fenceEvent.Get(), INFINITE, FALSE);
     }
 }
 
-void RenderApp::CalculateFrameStats()
-{
+void RenderApp::CalculateFrameStats() {
     auto timeInMs = m_gpuTimer.getElapsedMsByTimestampPair(m_gpuTimerIdx);
     m_frameTimeList.push_back(timeInMs);
     m_gpuTimerIdx++;
-    if (m_gpuTimerIdx == m_maxTimerNum)
-    {
+    if (m_gpuTimerIdx == m_maxTimerNum) {
         m_gpuTimerIdx = 0;
     }
 
     m_frameIndex++;
-    if (m_frameIndex < m_opts->m_warmup)
-    {
+    if (m_frameIndex < m_opts->m_warmup) {
         m_frameTimeList.clear();
-    }
-    else
-    {
+    } else {
         cout << m_frameTimeList.back() << endl;
         m_outfile << m_frameTimeList.back() << endl;
     }
 
-    if (m_frameIndex == m_opts->m_warmup + m_opts->m_num_frames)
-    {
+    if (m_frameIndex == m_opts->m_warmup + m_opts->m_num_frames) {
         // Calculate the median
         double median = 0;
         std::sort(m_frameTimeList.begin(), m_frameTimeList.end());
         int size = m_frameTimeList.size();
-        if (m_frameTimeList.size() % 2 == 0)
-        {
+        if (m_frameTimeList.size() % 2 == 0) {
             median = (m_frameTimeList[size / 2 - 1] + m_frameTimeList[size / 2]) / 2;
-        }
-        else
-        {
+        } else {
             median = m_frameTimeList[size / 2];
         }
         m_outfile << "Mean: " << median << std::endl;
         std::cout << "Mean: " << median << std::endl;
         m_outfile.close();
-        exit(0);
+        PostMessage(m_hMainWnd, WM_CLOSE, 0, 0);
     }
 }
 
-void RenderApp::ClearRenderTargetView()
-{
+void RenderApp::ClearRenderTargetView() {
     auto commandList = m_deviceResources->GetCommandList();
     auto device = m_deviceResources->GetD3DDevice();
 
@@ -322,8 +288,7 @@ void RenderApp::ClearRenderTargetView()
     float clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
     std::vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> rtvHandles(m_numPassRenderTargets);
-    for (int i = 0; i < m_numPassRenderTargets; i++)
-    {
+    for (int i = 0; i < m_numPassRenderTargets; i++) {
         commandList->ClearRenderTargetView(rtvDescriptor, clearColor, 0, nullptr);
         rtvHandles[i] = rtvDescriptor;
         rtvDescriptor.Offset(1, m_rtvDescriptorSize);
@@ -341,10 +306,8 @@ void RenderApp::ClearRenderTargetView()
     commandList->RSSetScissorRects(1, &scissorRect);
 }
 
-void RenderApp::PrepareRenderTarget(ID3D12GraphicsCommandList *pCommandList)
-{
-    for (int i = 0; i < m_numPassRenderTargets; i++)
-    {
+void RenderApp::PrepareRenderTarget(ID3D12GraphicsCommandList *pCommandList) {
+    for (int i = 0; i < m_numPassRenderTargets; i++) {
         // Transition from COMMON to RENDER_TARGET
         D3D12_RESOURCE_BARRIER barrier = {};
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -357,10 +320,8 @@ void RenderApp::PrepareRenderTarget(ID3D12GraphicsCommandList *pCommandList)
     }
 }
 
-void RenderApp::RestoreRenderTarget(ID3D12GraphicsCommandList *pCommandList)
-{
-    for (int i = 0; i < m_numPassRenderTargets; i++)
-    {
+void RenderApp::RestoreRenderTarget(ID3D12GraphicsCommandList *pCommandList) {
+    for (int i = 0; i < m_numPassRenderTargets; i++) {
         // Indicate that the back buffer will now be used to present.
         pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[i].Get(),
                                                                                D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -368,8 +329,7 @@ void RenderApp::RestoreRenderTarget(ID3D12GraphicsCommandList *pCommandList)
     }
 }
 
-void RenderApp::Render()
-{
+void RenderApp::Render() {
     auto device = m_deviceResources->GetD3DDevice();
     auto cmdList = m_deviceResources->GetCommandList();
     auto cmdQueue = m_deviceResources->GetCommandQueue();
@@ -386,17 +346,14 @@ void RenderApp::Render()
     m_deviceResources->GetCommandQueue()->Signal(m_fence.Get(), m_frameIndex);
 }
 
-void RenderApp::DrawRenderItems(ID3D12GraphicsCommandList *pCmdList, int drawNum)
-{
+void RenderApp::DrawRenderItems(ID3D12GraphicsCommandList *pCmdList, int drawNum) {
     auto ri = m_geometry.get();
-    for (int i = 0; i < drawNum; ++i)
-    {
+    for (int i = 0; i < drawNum; ++i) {
         pCmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
     }
 }
 
-void RenderApp::BuildShapeGeometry(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList)
-{
+void RenderApp::BuildShapeGeometry(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList) {
     // Create random geometry.
     std::unique_ptr<Geometry> geoData = CreateRandomGeometry<Vertex>(m_opts->m_vertexNum, m_opts->m_indexNum);
     m_geometry = std::make_unique<GeometryResource>();

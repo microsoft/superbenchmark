@@ -3,9 +3,7 @@
 
 #include "RenderGeometryPass.h"
 
-int RenderGeometryPass::DefineRootParameters(
-    std::vector<CD3DX12_ROOT_PARAMETER> &rootParameters)
-{
+int RenderGeometryPass::DefineRootParameters(std::vector<CD3DX12_ROOT_PARAMETER> &rootParameters) {
     int numRootParams = 5;
     rootParameters.resize(numRootParams);
 
@@ -23,9 +21,7 @@ int RenderGeometryPass::DefineRootParameters(
     return numRootParams;
 }
 
-int RenderGeometryPass::DefineStaticSamplers(
-    std::vector<CD3DX12_STATIC_SAMPLER_DESC> &samplers)
-{
+int RenderGeometryPass::DefineStaticSamplers(std::vector<CD3DX12_STATIC_SAMPLER_DESC> &samplers) {
     int samplersCount = 1;
     samplers.resize(samplersCount);
 
@@ -41,10 +37,8 @@ int RenderGeometryPass::DefineStaticSamplers(
     return samplersCount;
 }
 
-void RenderGeometryPass::CreateShaderResourceView(
-    ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, int width,
-    int height)
-{
+void RenderGeometryPass::CreateShaderResourceView(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, int width,
+                                                  int height) {
     // Create a descriptor heap that will store the SRV:
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
     srvHeapDesc.NumDescriptors = m_numShaderResource;
@@ -66,8 +60,7 @@ void RenderGeometryPass::CreateShaderResourceView(
     cpuHandle.Offset(m_cbvSrvDescriptorSize);
 
     // Small texture.
-    for (int i = 1; i < m_numShaderResource; i++)
-    {
+    for (int i = 1; i < m_numShaderResource; i++) {
         NewRandomTextureOnGPU(device, cmdList, m_shaderResources[i], width, height, m_colorFormat);
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -79,15 +72,13 @@ void RenderGeometryPass::CreateShaderResourceView(
     }
 }
 
-void RenderGeometryPass::CreateConstantBufferResources(ID3D12Device *device)
-{
+void RenderGeometryPass::CreateConstantBufferResources(ID3D12Device *device) {
     m_viewCB = std::make_unique<UploadBuffer<BaseViewConstantBuffer>>(device, 1, true);
     m_objectCB = std::make_unique<UploadBuffer<ObjectConstantBuffer>>(device, 1, true);
     m_materialCB = std::make_unique<UploadBuffer<MaterialConstantBuffer>>(device, 1, true);
 }
 
-void RenderGeometryPass::UpdateConstantBufferData()
-{
+void RenderGeometryPass::UpdateConstantBufferData() {
     BaseViewConstantBuffer viewCBData;
     ObjectConstantBuffer objectCBData;
     MaterialConstantBuffer materialCBData;
@@ -96,16 +87,14 @@ void RenderGeometryPass::UpdateConstantBufferData()
     m_materialCB->CopyData(0, materialCBData);
 }
 
-void RenderGeometryPass::BuildShapeGeometry(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList)
-{
+void RenderGeometryPass::BuildShapeGeometry(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList) {
     // Create random geometry.
     std::unique_ptr<Geometry> geoData = CreateRandomGeometry<GeometryVertex>(m_opts->m_vertexNum, m_opts->m_indexNum);
     m_geometry = std::make_unique<GeometryResource>();
     m_geometry->Create(device, cmdList, geoData);
 }
 
-void RenderGeometryPass::BuildPipelineStates(ID3D12Device *device)
-{
+void RenderGeometryPass::BuildPipelineStates(ID3D12Device *device) {
     ComPtr<ID3DBlob> vertexShader = CompileShader(L"Shaders/Base.hlsl", nullptr, "VS", "vs_5_1");
     ComPtr<ID3DBlob> pixelShader = CompileShader(L"Shaders/Base.hlsl", nullptr, "PS", "ps_5_1");
 
@@ -121,13 +110,9 @@ void RenderGeometryPass::BuildPipelineStates(ID3D12Device *device)
     ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_PSOs["deferredBase"])));
 }
 
-void RenderGeometryPass::Draw(ID3D12GraphicsCommandList *cmdList)
-{
-    DrawRenderItems(cmdList, m_opts->m_num_object);
-}
+void RenderGeometryPass::Draw(ID3D12GraphicsCommandList *cmdList) { DrawRenderItems(cmdList, m_opts->m_num_object); }
 
-void RenderGeometryPass::SetStatesBeforeDraw(ID3D12GraphicsCommandList *cmdList)
-{
+void RenderGeometryPass::SetStatesBeforeDraw(ID3D12GraphicsCommandList *cmdList) {
     cmdList->SetPipelineState(m_PSOs["deferredBase"].Get());
     cmdList->SetGraphicsRootSignature(m_rootSignature.Get());
     ID3D12DescriptorHeap *heaps[] = {m_srvDescriptorHeap.Get()};

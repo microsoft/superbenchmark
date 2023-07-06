@@ -3,11 +3,9 @@
 
 #include "RenderApp.h"
 
-class GeometryVertex : Vertex
-{
-public:
-    GeometryVertex() : Vertex()
-    {
+class GeometryVertex : Vertex {
+  public:
+    GeometryVertex() : Vertex() {
         float tx = MathHelper::genRand2N_f(2) - 1;
         float ty = MathHelper::genRand2N_f(2) - 1;
         float tz = MathHelper::genRand2N_f(2) - 1;
@@ -23,24 +21,13 @@ public:
         TangentU = {nx, ny, nz};
         TexC = {u, v};
     }
-    GeometryVertex(
-        const DirectX::XMFLOAT3 &p,
-        const DirectX::XMFLOAT3 &n,
-        const DirectX::XMFLOAT2 &uv,
-        const DirectX::XMFLOAT3 &t) : Vertex(p.x, p.y, p.z),
-                                      Normal(n),
-                                      TangentU(t),
-                                      TexC(uv) {}
-    GeometryVertex(
-        float px, float py, float pz,
-        float nx, float ny, float nz,
-        float tx, float ty, float tz,
-        float u, float v) : Vertex(px, py, pz),
-                            Normal(nx, ny, nz),
-                            TangentU(tx, ty, tz),
-                            TexC(u, v) {}
-    GeometryVertex(const GeometryVertex &rhs)
-    {
+    GeometryVertex(const DirectX::XMFLOAT3 &p, const DirectX::XMFLOAT3 &n, const DirectX::XMFLOAT2 &uv,
+                   const DirectX::XMFLOAT3 &t)
+        : Vertex(p.x, p.y, p.z), Normal(n), TangentU(t), TexC(uv) {}
+    GeometryVertex(float px, float py, float pz, float nx, float ny, float nz, float tx, float ty, float tz, float u,
+                   float v)
+        : Vertex(px, py, pz), Normal(nx, ny, nz), TangentU(tx, ty, tz), TexC(u, v) {}
+    GeometryVertex(const GeometryVertex &rhs) {
         Normal = rhs.Normal;
         TangentU = rhs.TangentU;
         TexC = rhs.TexC;
@@ -54,22 +41,19 @@ public:
     DirectX::XMFLOAT3 TangentU;
 };
 
-struct ObjectConstantBuffer
-{
+struct ObjectConstantBuffer {
     DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
     DirectX::XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
     UINT MaterialIndex;
 };
 
-struct BaseViewConstantBuffer
-{
+struct BaseViewConstantBuffer {
     DirectX::XMFLOAT4X4 View = MathHelper::Identity4x4();
     DirectX::XMFLOAT4X4 ViewProj = MathHelper::Identity4x4();
     DirectX::XMFLOAT3 EyePosW = {0.0f, 0.0f, 0.0f};
 };
 
-struct MaterialConstantBuffer
-{
+struct MaterialConstantBuffer {
     DirectX::XMFLOAT4 DiffuseAlbedo = {1.0f, 1.0f, 1.0f, 1.0f};
     DirectX::XMFLOAT3 FresnelR0 = {0.01f, 0.01f, 0.01f};
     float Roughness = 0.5f;
@@ -81,16 +65,14 @@ struct MaterialConstantBuffer
     UINT NormalMapIndex = 0;
 };
 
-class RenderGeometryPass : public RenderApp
-{
-public:
-    RenderGeometryPass(BenchmarkOptions *opts) : RenderApp(opts)
-    {
+class RenderGeometryPass : public RenderApp {
+  public:
+    RenderGeometryPass(BenchmarkOptions *opts) : RenderApp(opts) {
         m_numShaderResource = 2;
         m_numPassRenderTargets = 3;
     }
-    RenderGeometryPass(BenchmarkOptions *args, HINSTANCE hInstance, HWND hMainWnd, std::wstring &winTitle) : RenderApp(args, hInstance, hMainWnd, winTitle)
-    {
+    RenderGeometryPass(BenchmarkOptions *args, HINSTANCE hInstance, HWND hMainWnd, std::wstring &winTitle)
+        : RenderApp(args, hInstance, hMainWnd, winTitle) {
         m_numShaderResource = 2;
         m_numPassRenderTargets = 3;
     }
@@ -98,10 +80,11 @@ public:
     RenderGeometryPass &operator=(const RenderGeometryPass &rhs) = delete;
     ~RenderGeometryPass() = default;
 
-protected:
+  protected:
     virtual int DefineRootParameters(std::vector<CD3DX12_ROOT_PARAMETER> &rootParameters) override;
     virtual int DefineStaticSamplers(std::vector<CD3DX12_STATIC_SAMPLER_DESC> &samplers) override;
-    virtual void CreateShaderResourceView(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, int width, int height) override;
+    virtual void CreateShaderResourceView(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, int width,
+                                          int height) override;
     virtual void CreateConstantBufferResources(ID3D12Device *device) override;
     virtual void UpdateConstantBufferData() override;
     virtual void BuildPipelineStates(ID3D12Device *device) override;

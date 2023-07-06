@@ -3,15 +3,15 @@
 
 #pragma once
 
-#include <windows.h>
-#include <iostream>
 #include <fstream>
-#include <unordered_map>
-#include <tuple>
+#include <iostream>
 #include <system_error>
+#include <tuple>
+#include <unordered_map>
+#include <windows.h>
 
-#include "../directx_utils/D3D12Timer.h"
 #include "../directx_third_party/DeviceResources.h"
+#include "../directx_utils/D3D12Timer.h"
 
 #include "BenchmarkOptions.h"
 #include "GeometryHelper.h"
@@ -20,9 +20,8 @@ using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace std;
 
-class RenderApp
-{
-public:
+class RenderApp {
+  public:
     RenderApp(BenchmarkOptions *args);
     RenderApp(BenchmarkOptions *args, HINSTANCE hInstance, HWND hMainWnd, std::wstring &winTitle);
     RenderApp(const RenderApp &rhs) = delete;
@@ -54,7 +53,7 @@ public:
      */
     void Render();
 
-protected:
+  protected:
     /*
      * @breif: Define the root parameters.
      * @param: rootParameters The root parameters to be defined.
@@ -79,7 +78,8 @@ protected:
      * @param: width The width of the shader resource view.
      * @param: height The height of the shader resource view.
      */
-    virtual void CreateShaderResourceView(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, int width, int height) = 0;
+    virtual void CreateShaderResourceView(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, int width,
+                                          int height) = 0;
     /*
      * @breif: Create the constant buffer resources.
      * @param: device The device to create the constant buffer resources.
@@ -139,7 +139,9 @@ protected:
      * @param: flags The flags of the render target resource.
      * @param: renderTarget The render target resource to be created.
      */
-    virtual void CreateRenderTargetResource(ID3D12Device *device, UINT width, UINT height, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, Microsoft::WRL::ComPtr<ID3D12Resource> &renderTarget);
+    virtual void CreateRenderTargetResource(ID3D12Device *device, UINT width, UINT height, DXGI_FORMAT format,
+                                            D3D12_RESOURCE_FLAGS flags,
+                                            Microsoft::WRL::ComPtr<ID3D12Resource> &renderTarget);
     /*
      * @breif: Define the pipeline state description.
      * @param: inputLayout The input layout of the pipeline state description.
@@ -147,7 +149,8 @@ protected:
      * @param: pixelShader The pixel shader of the pipeline state description.
      * @return: The pipeline state description.
      */
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC DefinePSODesc(const std::vector<D3D12_INPUT_ELEMENT_DESC> &inputLayout, ComPtr<ID3DBlob> vertexShader, ComPtr<ID3DBlob> pixelShader);
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC DefinePSODesc(const std::vector<D3D12_INPUT_ELEMENT_DESC> &inputLayout,
+                                                     ComPtr<ID3DBlob> vertexShader, ComPtr<ID3DBlob> pixelShader);
     /*
      * @breif: Prepare the render target state to draw.
      */
@@ -209,13 +212,9 @@ protected:
     int m_maxTimerNum = 500;
     int m_gpuTimerIdx = 0;
 
-    void eventStart(ID3D12GraphicsCommandList *pCommandList)
-    {
-        m_gpuTimer.start(pCommandList, m_gpuTimerIdx);
-    }
+    void eventStart(ID3D12GraphicsCommandList *pCommandList) { m_gpuTimer.start(pCommandList, m_gpuTimerIdx); }
 
-    void eventEnd(ID3D12GraphicsCommandList *pCommandList)
-    {
+    void eventEnd(ID3D12GraphicsCommandList *pCommandList) {
         m_gpuTimer.stop(pCommandList, m_gpuTimerIdx);
         m_gpuTimer.resolveQueryToCPU(pCommandList, m_gpuTimerIdx);
     }

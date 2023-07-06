@@ -3,28 +3,22 @@
 
 #pragma once
 
+#include <algorithm>
+#include <codecvt>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <codecvt>
 
 #include "../directx_utils/Options.h"
 
 using namespace std;
 
 // enum class for pass type
-enum class PassType
-{
-    GeometryPass,
-    ShadowMapPass,
-    LightingPass
-};
+enum class PassType { GeometryPass, ShadowMapPass, LightingPass };
 
-class BenchmarkOptions : public Options
-{
-public:
+class BenchmarkOptions : public Options {
+  public:
     int m_textureNum = 0;
     int m_vertexNum = 3000;
     int m_indexNum = 3000;
@@ -40,8 +34,7 @@ public:
 
     BenchmarkOptions(int argc, char *argv[]) : Options(argc, argv) {}
 
-    virtual void get_option_usage()
-    {
+    virtual void get_option_usage() {
         cout << "Usage: " << endl;
         cout << "  --width <int>        set the width of the window" << endl;
         cout << "  --height <int>       set the height of the window" << endl;
@@ -57,8 +50,7 @@ public:
         cout << "  --quiet              disable window" << endl;
     }
 
-    virtual void parse_arguments()
-    {
+    virtual void parse_arguments() {
         m_width = get_cmd_line_argument_int("--width", 1080);
         m_height = get_cmd_line_argument_int("--height", 720);
         m_warmup = get_cmd_line_argument_int("--warmup", 500);
@@ -67,20 +59,13 @@ public:
         m_textureNum = get_cmd_line_argument_int("--texture", 3);
         m_outfile = get_cmd_line_argument_string("--outfile");
         auto pass = get_cmd_line_argument_string("--pass");
-        if (pass == "geometry")
-        {
+        if (pass == "geometry") {
             m_pass_type = PassType::GeometryPass;
-        }
-        else if (pass == "shadow")
-        {
+        } else if (pass == "shadow") {
             m_pass_type = PassType::ShadowMapPass;
-        }
-        else if (pass == "lighting")
-        {
+        } else if (pass == "lighting") {
             m_pass_type = PassType::LightingPass;
-        }
-        else
-        {
+        } else {
             cout << "Error: Invalid pass type: " << pass << endl;
             exit(1);
         }

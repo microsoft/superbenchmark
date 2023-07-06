@@ -44,8 +44,8 @@
 #include <dxgi1_5.h>
 #endif
 
-#include <DirectXMath.h>
 #include <DirectXColors.h>
+#include <DirectXMath.h>
 
 #include "d3dx12.h"
 
@@ -64,40 +64,34 @@
 // then add the NuGet package WinPixEventRuntime to the project.
 #include <pix.h>
 
-#include <d3dcompiler.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
 
-#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "D3Dcompiler.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 
-namespace DX
-{
-    // Helper class for COM exceptions
-    class com_exception : public std::exception
-    {
-    public:
-        com_exception(HRESULT hr) noexcept : result(hr) {}
+namespace DX {
+// Helper class for COM exceptions
+class com_exception : public std::exception {
+  public:
+    com_exception(HRESULT hr) noexcept : result(hr) {}
 
-        const char *what() const override
-        {
-            static char s_str[64] = {};
-            sprintf_s(s_str, "Failure with HRESULT of %08X", static_cast<unsigned int>(result));
-            return s_str;
-        }
+    const char *what() const override {
+        static char s_str[64] = {};
+        sprintf_s(s_str, "Failure with HRESULT of %08X", static_cast<unsigned int>(result));
+        return s_str;
+    }
 
-    private:
-        HRESULT result;
-    };
+  private:
+    HRESULT result;
+};
 
-    // Helper utility converts D3D API failures into exceptions.
-    inline void ThrowIfFailed(HRESULT hr)
-    {
-        if (FAILED(hr))
-        {
-            throw com_exception(hr);
-        }
+// Helper utility converts D3D API failures into exceptions.
+inline void ThrowIfFailed(HRESULT hr) {
+    if (FAILED(hr)) {
+        throw com_exception(hr);
     }
 }
+} // namespace DX
