@@ -96,9 +96,10 @@ void UploadTexture(ID3D12Device *device, ID3D12GraphicsCommandList *pCmdList, co
  * @param: height the height of texture.
  * @param: format the format of texture.
  * @param: textureResource the texture resource.
+ * @param: arraySize the size of texture array.
  */
 void CreateTextureResource(ID3D12Device *device, UINT width, UINT height, DXGI_FORMAT format,
-                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource);
+                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, UINT16 arraySize);
 
 /*
  * @breif: Create a random texture resource and upload it to GPU.
@@ -109,6 +110,17 @@ void CreateTextureResource(ID3D12Device *device, UINT width, UINT height, DXGI_F
  * @param: height the height of texture.
  * @param: format the format of texture.
  */
-void NewRandomTextureOnGPU(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
-                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, int width, int height,
-                           DXGI_FORMAT format);
+void Texture2D(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
+               Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, int width, int height, DXGI_FORMAT format);
+
+/*
+ * @breif: Create a random texture cube resource and upload it to GPU.
+ * @param: device the device of GPU object.
+ * @param: cmdList the command list of GPU object.
+ * @param: textureResource the texture resource.
+ * @param: width the width of texture.
+ * @param: height the height of texture.
+ * @param: format the format of texture.
+ */
+void TextureCube(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
+                 Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, int width, int height, DXGI_FORMAT format);

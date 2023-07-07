@@ -19,7 +19,8 @@ enum class PassType { GeometryPass, ShadowMapPass, LightingPass };
 
 class BenchmarkOptions : public Options {
   public:
-    int m_textureNum = 0;
+    int m_textureSize = 0;
+    int m_textureNum = 10;
     int m_vertexNum = 3000;
     int m_indexNum = 3000;
     int m_width = 1080;
@@ -41,7 +42,7 @@ class BenchmarkOptions : public Options {
         cout << "  --warmup <int>       set the warmup frames" << endl;
         cout << "  --vertex <int>       set the number of vertices" << endl;
         cout << "  --index <int>        set the number of indices" << endl;
-        cout << "  --texture <int>      set the size of textures <x,x>" << endl;
+        cout << "  --texture_size <int> set the size of textures <x,x>" << endl;
         cout << "  --outfile <string>   set the output file name" << endl;
         cout << "  --pass <string>      set the pass type" << endl;
         cout << "  --object <int>       set the number of objects" << endl;
@@ -56,7 +57,8 @@ class BenchmarkOptions : public Options {
         m_warmup = get_cmd_line_argument_int("--warmup", 500);
         m_vertexNum = get_cmd_line_argument_int("--vertex", m_vertexNum);
         m_indexNum = get_cmd_line_argument_int("--index", m_indexNum);
-        m_textureNum = get_cmd_line_argument_int("--texture", 3);
+        m_textureSize = get_cmd_line_argument_int("--texture", 3);
+        m_textureNum = get_cmd_line_argument_int("--texture_num", 3);
         m_outfile = get_cmd_line_argument_string("--outfile");
         auto pass = get_cmd_line_argument_string("--pass");
         if (pass == "geometry") {

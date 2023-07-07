@@ -36,9 +36,7 @@ void RenderLightingPass::CreateShaderResourceView(ID3D12Device *device, ID3D12Gr
 
     // Fill out the heap with actual descriptors.
     for (int i = 0; i < m_numShaderResource; i++) {
-        CreateTextureResource(device, width, height, m_colorFormat, m_shaderResources[i]);
-        auto textureData = CreateRandomTexture(width, height);
-        UploadTexture(device, cmdList, textureData, m_shaderResources[i], width, height);
+        Texture2D(device, cmdList, m_shaderResources[i], width, height, m_colorFormat);
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srvDesc.Format = m_shaderResources[i]->GetDesc().Format;

@@ -62,18 +62,19 @@ struct MaterialConstantBuffer {
     DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
 
     UINT DiffuseMapIndex = 0;
-    UINT NormalMapIndex = 0;
+    UINT NormalMapIndex = 1;
 };
 
 class RenderGeometryPass : public RenderApp {
   public:
-    RenderGeometryPass(BenchmarkOptions *opts) : RenderApp(opts) {
-        m_numShaderResource = 2;
+    RenderGeometryPass(BenchmarkOptions *args) : RenderApp(args) {
+        // screen + texture size
+        m_numShaderResource = args->m_textureNum + 1;
         m_numPassRenderTargets = 3;
     }
     RenderGeometryPass(BenchmarkOptions *args, HINSTANCE hInstance, HWND hMainWnd, std::wstring &winTitle)
         : RenderApp(args, hInstance, hMainWnd, winTitle) {
-        m_numShaderResource = 2;
+        m_numShaderResource = args->m_textureNum + 1;
         m_numPassRenderTargets = 3;
     }
     RenderGeometryPass(const RenderGeometryPass &rhs) = delete;

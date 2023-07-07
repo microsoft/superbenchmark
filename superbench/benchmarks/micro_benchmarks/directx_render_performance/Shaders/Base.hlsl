@@ -3,7 +3,7 @@ TextureCube gCubeMap : register(t0);
 
 // An array of textures, which is only supported in shader model 5.1+.  Unlike Texture2DArray, the textures
 // in this array can be different sizes and formats, making it more flexible than texture arrays.
-Texture2D gTextureMaps[1] : register(t1);
+Texture2D gTextureMaps[TEXTURECOUNT] : register(t1);
 
 
 SamplerState gsamAnisotropicWrap : register(s0);

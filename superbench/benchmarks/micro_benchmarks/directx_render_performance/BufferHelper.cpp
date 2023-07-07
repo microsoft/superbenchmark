@@ -100,12 +100,12 @@ void UploadTexture(ID3D12Device *device, ID3D12GraphicsCommandList *pCmdList, co
 }
 
 void CreateTextureResource(ID3D12Device *device, UINT width, UINT height, DXGI_FORMAT format,
-                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource) {
+                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, UINT16 arraySize) {
     D3D12_RESOURCE_DESC textureDesc = {};
     textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     textureDesc.Width = width;
     textureDesc.Height = height;
-    textureDesc.DepthOrArraySize = 1;
+    textureDesc.DepthOrArraySize = arraySize;
     textureDesc.MipLevels = 1;
     textureDesc.Format = format;
     textureDesc.SampleDesc.Count = 1;
@@ -118,10 +118,20 @@ void CreateTextureResource(ID3D12Device *device, UINT width, UINT height, DXGI_F
                                                   nullptr, IID_PPV_ARGS(&textureResource)));
 }
 
-void NewRandomTextureOnGPU(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
-                           Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, int width, int height,
-                           DXGI_FORMAT format) {
-    CreateTextureResource(device, width, height, format, textureResource);
+void Texture2D(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
+               Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, int width, int height, DXGI_FORMAT format) {
+    CreateTextureResource(device, width, height, format, textureResource, 1);
     auto textureData = CreateRandomTexture(width, height);
     UploadTexture(device, cmdList, textureData, textureResource, width, height);
+}
+
+void TextureCube(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
+                 Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, int width, int height, DXGI_FORMAT format) {
+    CreateTextureResource(device, width, height, format, textureResource, 6);
+    std::vector<UINT8> textureCubeData;
+    for (int i = 0; i < 6; ++i) {
+        auto textureData = CreateRandomTexture(width, height);
+        textureCubeData.insert(textureCubeData.end(), textureData.begin(), textureData.end());
+    }
+    UploadTexture(device, cmdList, textureCubeData, textureResource, width, height);
 }

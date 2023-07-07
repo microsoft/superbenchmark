@@ -10,7 +10,7 @@ int RenderGeometryPass::DefineRootParameters(std::vector<CD3DX12_ROOT_PARAMETER>
     std::unique_ptr<CD3DX12_DESCRIPTOR_RANGE> texTable0 = std::make_unique<CD3DX12_DESCRIPTOR_RANGE>();
     texTable0->Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
     std::unique_ptr<CD3DX12_DESCRIPTOR_RANGE> texTable1 = std::make_unique<CD3DX12_DESCRIPTOR_RANGE>();
-    texTable1->Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0);
+    texTable1->Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, m_numShaderResource - 1, 1, 0);
 
     rootParameters[0].InitAsConstantBufferView(0);                                                  // obj cb
     rootParameters[1].InitAsConstantBufferView(1);                                                  // pass cb
@@ -50,18 +50,18 @@ void RenderGeometryPass::CreateShaderResourceView(ID3D12Device *device, ID3D12Gr
     m_cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     // Whole screen texture.
-    NewRandomTextureOnGPU(device, cmdList, m_shaderResources[0], m_width, m_height, m_colorFormat);
+    TextureCube(device, cmdList, m_shaderResources[0], m_width, m_height, m_colorFormat);
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.Format = m_shaderResources[0]->GetDesc().Format;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
     srvDesc.Texture2D.MipLevels = m_shaderResources[0]->GetDesc().MipLevels;
     device->CreateShaderResourceView(m_shaderResources[0].Get(), &srvDesc, cpuHandle);
     cpuHandle.Offset(m_cbvSrvDescriptorSize);
 
     // Small texture.
     for (int i = 1; i < m_numShaderResource; i++) {
-        NewRandomTextureOnGPU(device, cmdList, m_shaderResources[i], width, height, m_colorFormat);
+        Texture2D(device, cmdList, m_shaderResources[i], width, height, m_colorFormat);
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srvDesc.Format = m_shaderResources[i]->GetDesc().Format;
@@ -95,8 +95,13 @@ void RenderGeometryPass::BuildShapeGeometry(ID3D12Device *device, ID3D12Graphics
 }
 
 void RenderGeometryPass::BuildPipelineStates(ID3D12Device *device) {
-    ComPtr<ID3DBlob> vertexShader = CompileShader(L"Shaders/Base.hlsl", nullptr, "VS", "vs_5_1");
-    ComPtr<ID3DBlob> pixelShader = CompileShader(L"Shaders/Base.hlsl", nullptr, "PS", "ps_5_1");
+    std::string textureCount_str = std::to_string(m_numShaderResource - 1);
+    LPCSTR textureCount = textureCount_str.c_str();
+    D3D_SHADER_MACRO defines[] = {
+        {"TEXTURECOUNT", textureCount},
+        {nullptr, nullptr}}; // The last entry must be nullptr to indicate the end of the array
+    ComPtr<ID3DBlob> vertexShader = CompileShader(L"Shaders/Base.hlsl", defines, "VS", "vs_5_1");
+    ComPtr<ID3DBlob> pixelShader = CompileShader(L"Shaders/Base.hlsl", defines, "PS", "ps_5_1");
 
     // Define shader input layout.
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout = {
