@@ -24,6 +24,17 @@ jobs:
         docker system prune -a -f
         docker volume prune -a -f
       shell: pwsh
+    - name: Set TAG variable based on the branch
+      run: |
+        if ($env:GITHUB_REF -match "release/(.*)") {
+          $version = $Matches[1]
+          echo "TAG=superbench/release:$version-win2004" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        } else {
+          echo "TAG=superbench/main:win2004" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        }
+      shell: pwsh
+      env:
+        GITHUB_REF: ${{ github.ref }}
     - name: Build Docker image
       working-directory: .
       shell: pwsh
@@ -37,7 +48,7 @@ jobs:
           --isolation=process `
           --tag $env:TAG .
       env:
-        TAG: superbench/main:win2004
+        TAG: ${{ env.TAG }}
     - name: Push Docker image
       if: ${{ github.event_name != 'pull_request' }}
       shell: pwsh
