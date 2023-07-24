@@ -28,9 +28,9 @@ jobs:
       run: |
         if ($env:GITHUB_REF -match "release/(.*)") {
           $version = $Matches[1]
-          echo "TAG=superbench/release:$version-win2004" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TAG=superbench/release:$version-directx12" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         } else {
-          echo "TAG=superbench/main:win2004" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TAG=superbench/main:directx12" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
       shell: pwsh
       env:
