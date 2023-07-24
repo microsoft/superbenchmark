@@ -12,7 +12,7 @@ on:
 
 jobs:
   docker:
-    name: Docker build win2004
+    name: Docker build win directx12
     runs-on: [self-hosted, windows, x64, win2004]
     steps:
     - name: Checkout
@@ -57,7 +57,7 @@ jobs:
         docker push $env:TAG
         docker logout
       env:
-        TAG: superbench/main:win2004
+        TAG: ${{ env.TAG }}
         USER: ${{ secrets.DOCKERHUB_USERNAME }}
         PASS: ${{ secrets.DOCKERHUB_TOKEN }}
     - name: Add bash to PATH
@@ -75,7 +75,8 @@ jobs:
         docker run --rm `
         --isolation process `
         --device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599 `
-        -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" -e CODECOV_TOKEN --entrypoint "python dockerfile/directx/enable-graphics-apis.py && cmd /c $command" superbench/main:win2004
+        -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" -e CODECOV_TOKEN --entrypoint "python dockerfile/directx/enable-graphics-apis.py && cmd /c $command" $env:TAG
       shell: pwsh
       env:
+        TAG: ${{ env.TAG }}
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
