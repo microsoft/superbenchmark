@@ -75,7 +75,7 @@ jobs:
         docker run --rm `
         --isolation process `
         --device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599 `
-        -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" -e CODECOV_TOKEN superbench/main:win2004 cmd /c $command
+        -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" -e CODECOV_TOKEN --entrypoint "python dockerfile/directx/enable-graphics-apis.py && cmd /c $command" superbench/main:win2004
       shell: pwsh
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
