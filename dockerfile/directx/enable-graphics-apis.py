@@ -25,16 +25,6 @@ def copy_to_system32(source_directory, filenames, rename=None):
             print(f'Warning: failed to copy file {filename}. Reason: {str(e)}')
 
 
-def copy_all_dll_to_system32(source_directory):
-    """Copies all dll files from the source directory to the system32 directory."""
-    for filename in glob.glob(os.path.join(source_directory, '*.dll')):
-        try:
-            print(f'Copying {filename} to C:\\Windows\\System32')
-            shutil.copy2(filename, 'C:\\Windows\\System32')
-        except Exception as e:
-            print(f'Warning: failed to copy file {filename}. Reason: {str(e)}')
-
-
 # Attempt to locate the NVIDIA Display Driver directory in the host system's driver store
 nvidia_sentinel_file = glob.glob('C:\\Windows\\System32\\HostDriverStore\\FileRepository\\nv*.inf_amd64_*\\nvapi64.dll')
 if nvidia_sentinel_file:
@@ -75,6 +65,5 @@ if amd_sentinel_file:
 
     print('\nEnabling AMD Advanced Media Framework (AMF) support:')
     copy_to_system32(amd_directory, ['amfrt64.dll', 'amfrtdrv64.dll', 'amdihk64.dll'])
-    copy_all_dll_to_system32(amd_directory)
 
     print('\n')
