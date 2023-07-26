@@ -3,7 +3,7 @@
 # Server:
 #   - Product: HPE Apollo 6500
 
-version: v0.8
+version: v0.9
 superbench:
   enable: null
   var:
