@@ -39,7 +39,7 @@
 #include "NvDecoder/NvDecoder.h"
 #include "../Utils/NvCodecUtils.h"
 #include "../Utils/FFmpegDemuxer.h"
-#include "../Utils/ThreadPoolUtils.h"
+#include "ThreadPoolUtils.h"
 
 simplelogger::Logger *logger = simplelogger::LoggerFactory::CreateConsoleLogger();
 

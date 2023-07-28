@@ -31,7 +31,7 @@ set(NV_DEC_HDRS
  ${NVCODEC_PUBLIC_INTERFACE_DIR}/nvcuvid.h
  ${NVCODEC_UTILS_DIR}/NvCodecUtils.h
  ${NVCODEC_UTILS_DIR}/FFmpegDemuxer.h
-
+ ${CMAKE_CURRENT_SOURCE_DIR}/ThreadPoolUtils.h
 )
 
 source_group( "headers" FILES ${NV_DEC_HDRS} )
