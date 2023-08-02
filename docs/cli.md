@@ -165,6 +165,26 @@ Execute GPT2 model benchmark in default configuration:
 sb exec --config-override superbench.enable="['gpt2_models']"
 ```
 
+### `sb node info`
+Get system info on the local node.
+
+```bash title="SB CLI"
+sb node info [--output-dir]
+```
+
+#### Optional arguments
+
+| Name           | Default | Description                                                                 |
+|----------------|---------|-----------------------------------------------------------------------------|
+| `--output-dir` | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
+
+#### Examples
+
+Get system info on the local node and save it into the `outputs` dir:
+```bash title="SB CLI"
+sb node info --output-dir outputs
+```
+
 ### `sb result diagnosis`
 
 Filter the defective machines automatically from benchmarking results according to rules defined in rule file.
@@ -284,6 +304,7 @@ sb run [--config-file]
        [--docker-image]
        [--docker-password]
        [--docker-username]
+       [--get-info]
        [--host-file]
        [--host-list]
        [--host-password]
@@ -302,6 +323,7 @@ sb run [--config-file]
 | `--docker-image` `-i`    | `superbench/superbench` | Docker image URI.                                                           |
 | `--docker-password`      | `None`                  | Docker registry password if authentication is needed.                       |
 | `--docker-username`      | `None`                  | Docker registry username if authentication is needed.                       |
+| `--get-info`             | `False`                 | Collect system info.                                                        |
 | `--host-file` `-f`       | `None`                  | Path to Ansible inventory host file.                                        |
 | `--host-list` `-l`       | `None`                  | Comma separated host list.                                                  |
 | `--host-password`        | `None`                  | Host password or key passphase if needed.                                   |
@@ -333,6 +355,16 @@ Run kernel launch benchmarks on host directly without using Docker:
 ```bash title="SB CLI"
 sb run --no-docker --host-list localhost --config-override \
   superbench.enable=kernel-launch superbench.env.SB_MICRO_PATH=/path/to/superbenchmark
+```
+
+Collect system info on all nodes in ./host.ini" distributed without running benchmarks:
+```bash title="SB CLI"
+sb run --get-info --host-file ./host.ini -C superbench.enable=none
+```
+
+Collect system info on all nodes in ./host.ini" distributed while running benchmarks:
+```bash title="SB CLI"
+sb run --get-info --host-file ./host.ini
 ```
 
 ### `sb version`

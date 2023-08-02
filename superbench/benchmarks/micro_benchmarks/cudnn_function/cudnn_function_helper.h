@@ -67,12 +67,24 @@ class Options {
         return "";
     }
 
+    /** @brief Get the bool type value of cmd line argument
+     * @param  option           the cmd line argument
+     * @return bool             the bool type value of cmd line argument 'option'
+     */
+    bool get_cmd_line_argument_bool(const std::string &option) {
+        if (std::find(begin, end, option) != end) {
+            return true;
+        }
+        return false;
+    }
+
   public:
     int num_test;
     int warm_up;
     int num_in_step;
     int random_seed;
     std::string para_info_json;
+    bool auto_algo;
 
     /**
      * @brief Construct a new Command Line object
@@ -91,6 +103,7 @@ class Options {
         random_seed = get_cmd_line_argument_int("--random_seed");
         random_seed = (random_seed == 0 ? time(NULL) : random_seed);
         para_info_json = get_cmd_line_argument_string("--config_json");
+        auto_algo = get_cmd_line_argument_bool("--enable_auto_algo");
         para_info_json =
             para_info_json == ""
                 ? R"({"algo":0,"arrayLength":2,"convType":0,"dilationA":[1,1],"filterStrideA":[1,1],"filterDims":[32,128,3,3],"inputDims":[32,128,14,14],"inputStride":[25088,196,14,1],"inputType":0,"mode":1, "name":"cudnnConvolutionBackwardFilter","outputDims":[32,32,14,14],"outputStride":[6272,196,14,1],"padA":[1,1],"tensorOp":false})"
@@ -126,8 +139,10 @@ void from_json(const json &j, cudnn_test::CudnnConfig &fn) {
     fn.set_input_stride(input_stride);
     auto output_stride = j.at("outputStride").get<std::vector<int>>();
     fn.set_output_stride(output_stride);
-    auto algo = j.at("algo").get<int>();
-    fn.set_algo(algo);
+    if (j.contains("algo")) {
+        auto algo = j.at("algo").get<int>();
+        fn.set_algo(algo);
+    }
     auto padA = j.at("padA").get<std::vector<int>>();
     fn.set_padA(padA);
     auto filter_strideA = j.at("filterStrideA").get<std::vector<int>>();
@@ -178,6 +193,7 @@ void run_benchmark(Options &options) {
         function.set_warm_up(options.warm_up);
         function.set_num_in_step(options.num_in_step);
         function.set_random_seed(options.random_seed);
+        function.set_auto_algo(options.auto_algo);
         if (function.get_input_type() == CUDNN_DATA_FLOAT && function.get_conv_type() == CUDNN_DATA_FLOAT) {
             auto p_function = get_cudnn_function_pointer<float, float>(function);
             p_function->benchmark();

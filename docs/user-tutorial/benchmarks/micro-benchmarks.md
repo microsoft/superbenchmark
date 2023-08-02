@@ -66,9 +66,9 @@ Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/
 
 #### Metrics
 
-| Name                                           | Unit           | Description                     |
-|------------------------------------------------|----------------|---------------------------------|
-| cublaslt-gemm/${dtype}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
+| Name                                                     | Unit           | Description                     |
+|----------------------------------------------------------|----------------|---------------------------------|
+| cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 
 ### `cublas-function`
 
@@ -171,6 +171,38 @@ Supports the use of double unit types and the use of tensor cores.
 | gpu-burn/gpu_[0-9]_pass | yes/no   | The result of the gpu-burn test for each GPU (1: yes, 0: no).                      |
 | gpu-burn/abort          | yes/no   | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no). |
 
+### `cpu-hpl`
+
+#### Introduction
+
+HPL or High Performance Computing Linpack evaluates compute bandwidth by solving dense linear systems in double precision arethmetic.
+Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computers](https://netlib.org/benchmark/hpl/)
+
+#### Metrics
+
+| Name               | Unit               | Description                                                               |
+|--------------------|--------------------|---------------------------------------------------------------------------|
+| cpu-hpl/tests_pass |                    | HPL completed running and correctness test has passed (1: pass, 0: fail). |
+| cpu-hpl/throughput | bandwidth (GFlops) | Compute bandwidth.                                                        |
+| cpu-hpl/time       | time (s)           | Time elapsed during HPL run.                                              |
+
+### `cpu-stream`
+
+#### Introduction
+
+Measure of memory bandwidth and computation rate for simple vector kernels.
+performed by [University of Virginia STREAM benchmark](https://www.cs.virginia.edu/stream/ref.html).
+
+#### Metrics
+
+| Name                                                     | Unit             | Description                                                    |
+|----------------------------------------------------------|------------------|----------------------------------------------------------------|
+| cpu-stream/threads                                       |                  | Number of threads used for the test. Determined by core count. |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_throughput | bandwidth (MB/s) | Memory throughput of designated kerel operation.               |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_avg   | time (s)         | Average elapsed times over all iterations.                     |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_min   | time (s)         | Minimum elapsed times over all iterations.                     |
+| cpu-stream/['copy', 'scale', 'add', 'triad']\_time_max   | time (s)         | Maximum elapsed times over all iterations.                     |
+
 ## Communication Benchmarks
 
 ### `cpu-memory-bw-latency`
@@ -184,20 +216,20 @@ performed by [Intel MLC Tool](https://www.intel.com/content/www/us/en/developer/
 
 | Name                                                                    | Unit             | Description                                                         |
 |-------------------------------------------------------------------------|------------------|---------------------------------------------------------------------|
-| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_bw  | bandwidth (GB/s) | Former NUMA to latter NUMA memory bandwidth.                        |
-| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_lat | time (us)        | Former NUMA to latter NUMA memory latency.                          |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_all\_reads\_bw               | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, full read.                      |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_3_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 3 : 1.           |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_2_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 2 : 1.           |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_1_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 1 : 1.           |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_stream-triad\_like\_bw       | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, with stream-triad like pattern. |
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_bw  | bandwidth (MB/s) | Former NUMA to latter NUMA memory bandwidth.                        |
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_lat | time (ns)        | Former NUMA to latter NUMA memory latency.                          |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_all\_reads\_bw               | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, full read.                      |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_3_1\_reads-writes\_bw        | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, read : write = 3 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_2_1\_reads-writes\_bw        | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, read : write = 2 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_1_1\_reads-writes\_bw        | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, read : write = 1 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_stream-triad\_like\_bw       | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, with stream-triad like pattern. |
 
 ### `mem-bw`
 
 #### Introduction
 
 Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between GPUs,
-performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/bandwidthTest)
+performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/1_Utilities/bandwidthTest)
 or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils/hipBusBandwidth) bandwidth test tool.
 
 #### Metrics
@@ -376,6 +408,19 @@ Test the performance of large scale matmul operation with multiple GPUs:
 |----------------------------------------|-----------|------------------------------------------|
 | pytorch-sharding-matmul/allreduce_time | time (ms) | Time of sharding matmul using allreduce. |
 | pytorch-sharding-matmul/allgather_time | time (ms) | Time of sharding matmul using allgather. |
+
+### `dist-inference`
+
+#### Introduction
+
+Test the performance of distributed model inference.
+
+#### Metrics
+
+| Name                                            | Unit      | Description                                           |
+|-------------------------------------------------|-----------|-------------------------------------------------------|
+| pytorch-dist-inference/step_times               | time (ms) | Average time of model inference runs.                 |
+| pytorch-dist-inference/step_times_${percentile} | time (ms) | Tail (50,90,95,99,99.9) time of model inference runs. |
 
 ## Storage Benchmarks
 

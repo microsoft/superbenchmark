@@ -11,6 +11,8 @@ strategy:
       imageTag: '3.6'
     python-3.7:
       imageTag: '3.7'
+    python-3.8:
+      imageTag: '3.8'
     # TODO
     #python-latest:
     #  imageTag: '3'
@@ -27,6 +29,7 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
+      python3 -m pip install --upgrade pip setuptools==65.7
       python3 -m pip install .[test,cpuworker]
       make postinstall
     displayName: Install dependencies

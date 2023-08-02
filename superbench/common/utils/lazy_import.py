@@ -50,3 +50,16 @@ class LazyImport:
         """
         self._import()
         return dir(self._module)
+
+    def __call__(self, *args, **kwargs):
+        """Override __call__.
+
+        Args:
+            *args (list): Arguments.
+            **kwargs (dict): Keyword arguments.
+
+        Returns:
+            Any: The return value of the function.
+        """
+        self._import()
+        return self._module(*args, **kwargs)

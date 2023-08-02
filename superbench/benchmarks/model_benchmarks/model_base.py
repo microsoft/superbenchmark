@@ -79,6 +79,13 @@ class ModelBenchmark(Benchmark):
             help='The number of batch size.',
         )
         self._parser.add_argument(
+            '--num_workers',
+            type=int,
+            default=8,
+            required=False,
+            help='Number of subprocesses to use for data loading.',
+        )
+        self._parser.add_argument(
             '--precision',
             type=Precision,
             default=[Precision.FLOAT32, Precision.FLOAT16],
@@ -196,6 +203,11 @@ class ModelBenchmark(Benchmark):
                 self._name, self._gpu_available, self._args.pin_memory, self._args.force_fp32
             )
         )
+
+        if self._args.num_warmup < 0:
+            logger.error('num_warmup should be positive integer, while {} is set.'.format(self._args.num_warmup))
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
 
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
@@ -367,7 +379,7 @@ class ModelBenchmark(Benchmark):
 
         if (
             (self._args.duration > 0 and (curr_time - self._sub_benchmark_start_time) >= self._args.duration)
-            or (total_steps > 0 and curr_step >= total_steps)
+            or (self._args.num_steps > 0 and curr_step >= total_steps)
         ):
             return True
 

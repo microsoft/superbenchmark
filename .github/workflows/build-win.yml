@@ -1,0 +1,91 @@
+name: Build on Windows and run directx unit test
+
+on:
+  push:
+    branches:
+    - main
+    - release/*
+  pull_request:
+    branches:
+    - main
+    - release/*
+
+jobs:
+  docker:
+    name: Docker build win directx12
+    runs-on: [self-hosted, windows, x64, win2004]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Clearnup docker data
+      run: |
+        docker system prune -a -f
+        docker volume prune -a -f
+      shell: pwsh
+    - name: Set TAG variable based on the branch
+      run: |
+        if ($env:GITHUB_EVENT_NAME -match "release") {
+          $version = $env:GITHUB_REF.Substring($env:GITHUB_REF.LastIndexOf('/') + 1)
+          echo "TAG=superbench/superbench:$version-directx12" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        } elseif ($env:GITHUB_REF -match "refs/heads/release/(.*)") {
+          $version = $Matches[1]
+          echo "TAG=superbench/release:$version-directx12" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        } elseif ($env:GITHUB_BASEREF -match "release/(.*)"){
+          $version = $Matches[1]
+          echo "TAG=superbench/release:$version-directx12" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        } else {
+          echo "TAG=superbench/main:directx12" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        }
+      shell: pwsh
+      env:
+        GITHUB_REF: ${{ github.ref }}
+        GITHUB_BASEREF: ${{ github.base_ref }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+    - name: Build Docker image
+      working-directory: .
+      shell: pwsh
+      run: |
+        docker build `
+          --file dockerfile/directx12.dockerfile `
+          --label org.opencontainers.image.source=${{ github.event.repository.html_url }} `
+          --label org.opencontainers.image.created=${{ github.event.repository.pushed_at }} `
+          --label org.opencontainers.image.revision=${{ github.sha }} `
+          --platform windows/amd64 `
+          --isolation=process `
+          --tag $env:TAG .
+      env:
+        TAG: ${{ env.TAG }}
+    - name: Push Docker image
+      if: ${{ github.event_name != 'pull_request' }}
+      shell: pwsh
+      run: |
+        docker login -u $env:USER -p $env:PASS
+        docker push $env:TAG
+        docker logout
+      env:
+        TAG: ${{ env.TAG }}
+        USER: ${{ secrets.DOCKERHUB_USERNAME }}
+        PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Add bash to PATH
+      shell: pwsh
+      run: |
+        echo "$env:PATH;C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+    - name: Bash to get codecov env
+      run: |
+        ci_env=`bash <(curl -s https://codecov.io/env)`
+        echo "ci_env=$ci_env" >> $GITHUB_ENV
+      shell: bash
+    - name: Run unit tests inside docker
+      run: |
+        $command="curl -s -L https://uploader.codecov.io/latest/windows/codecov.exe -o codecov.exe && python -m pip install .[test] && python -m pytest -v --cov=superbench --cov-report=xml --cov-report=term-missing tests/ -k test_directx && codecov -t ${CODECOV_TOKEN} -cF directx-unit-test"
+        docker run --rm `
+        --isolation process `
+        --device class/5B45201D-F2F2-4F3B-85BB-30FF1F953599 `
+        -v C:/Windows/System32/DriverStore:C:/Windows/System32/DriverStore `
+        -e CI=true $ci_env -e SB_TEST_CUDA="0" -e SB_TEST_ROCM="0" -e SB_TEST_PYTORCH="0" -e SB_TEST_DIRECTX="1" -e CODECOV_TOKEN --entrypoint "cmd" $env:TAG "/c python dockerfile/directx/enable-graphics-apis.py && cmd /c $command"
+      shell: pwsh
+      env:
+        TAG: ${{ env.TAG }}
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
