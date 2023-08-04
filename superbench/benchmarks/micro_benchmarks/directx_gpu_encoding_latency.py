@@ -98,11 +98,11 @@ class DirectXGPUEncodingLatency(MicroBenchmarkWithInvoke):
         command += f' -HEIGHT {self._args.height}'
         command += f' -WIDTH {self._args.width}'
         if self._args.input_file is not None:
-            command += f' -INPUT {self._args.input_file}'
+            command += f' -INPUT {os.path.abspath(self._args.input_file)}'
         else:
             if not os.path.exists(f'{self._test_file}'):
                 create_nv12_file(self._test_file, self._args.frames, self._args.width, self._args.height)
-            command += f' -INPUT {self._test_file}'
+            command += f' -INPUT {os.path.abspath(self._test_file)}'
         if self._args.output_file is not None:
             command += f' -OUTPUT {self._args.output_file}'
         command += f' -OUTPUT_HEIGHT {self._args.output_height}'
