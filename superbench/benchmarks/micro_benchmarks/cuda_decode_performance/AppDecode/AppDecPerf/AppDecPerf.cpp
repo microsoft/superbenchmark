@@ -87,6 +87,7 @@ void ShowHelpAndExit(const char *szBadOption = NULL)
     }
     oss << "Options:" << std::endl
         << "-i           Input file path" << std::endl
+        << "-o           Output file path" << std::endl
         << "-gpu         Ordinal of GPU to use" << std::endl
         << "-thread      Number of decoding thread" << std::endl
         << "-total       Number of total videos to test" << std::endl
@@ -104,7 +105,7 @@ void ShowHelpAndExit(const char *szBadOption = NULL)
     }
 }
 
-void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, int &nThread, int &nTotalVideo, bool &bSingle, bool &bHost, std::string &inputFilesListPath)
+void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, int &nThread, int &nTotalVideo, bool &bSingle, bool &bHost, std::string &inputFilesListPath, std::string &outputFile)
 {
     for (int i = 1; i < argc; i++)
     {
@@ -119,6 +120,15 @@ void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, 
                 ShowHelpAndExit("-i");
             }
             sprintf(szInputFileName, "%s", argv[i]);
+            continue;
+        }
+        if (!_stricmp(argv[i], "-o"))
+        {
+            if (++i == argc)
+            {
+                ShowHelpAndExit("-o");
+            }
+            outputFile = std::string(argv[i]);
             continue;
         }
         if (!_stricmp(argv[i], "-gpu"))
@@ -205,9 +215,9 @@ float DecodeVideo(size_t i, const std::vector<NvDecoder *> &vDec, const char *sz
     auto start = std::chrono::high_resolution_clock::now();
     DecProc(pDec, szInFilePath, pnFrame, ex);
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
-    float decodeDuration = (elapsedTime - NvDecoder::getDecoderSessionOverHead(i)) / 1000.0f;
-    NvDecoder::resetDecoderSessionOverHead(i);
-    return decodeDuration;
+    //float decodeDuration = (elapsedTime - NvDecoder::getDecoderSessionOverHead(i)) / 1000.0f;
+    //NvDecoder::resetDecoderSessionOverHead(i);
+    return elapsedTime / 1000.0f;
 }
 
 std::vector<std::string> ReadMultipleVideoFiles(std::string filepath)
@@ -271,7 +281,22 @@ void InitializeContext(std::vector<NvDecoder *> &vDec, int iGpu, int nThread, bo
     }
 }
 
-std::tuple<double, double, double, double, double, double, double, double> CalLatencyMetrics(std::vector<double> data){
+void WriteRawData(const std::vector<double>& data, std::vector<int>& frames, std::string filename){
+    // Open the output file stream
+    std::ofstream outputFile(filename);
+    outputFile << "latency" << std::endl;
+    for (int i=0;i<data.size();i++){
+        outputFile << data[i] << std::endl;
+    }
+    outputFile << "FPS" << std::endl;
+    for (int i=0;i<data.size();i++){
+        outputFile << frames[i]/data[i] << std::endl;
+    }
+    // Close the file stream
+    outputFile.close();
+}
+
+std::tuple<double, double, double, double, double, double, double, double> CalLatencyMetrics(std::vector<double>& data){
     double sum = std::accumulate(data.begin(), data.end(), 0.0);
     double mean = sum / data.size();
     double min = *std::min_element(data.begin(), data.end());
@@ -293,11 +318,11 @@ int main(int argc, char **argv)
     bool bSingle = false;
     bool bHost = false;
     std::string inputFilesListPath = "";
-    
+    std::string outputFilePath = "cuda_decoding_perf_raw_data.log";
     try
     {
         // Parse the command line arguments
-        ParseCommandLine(argc, argv, szInFilePath, iGpu, nThread, nTotalVideo, bSingle, bHost, inputFilesListPath);
+        ParseCommandLine(argc, argv, szInFilePath, iGpu, nThread, nTotalVideo, bSingle, bHost, inputFilesListPath, outputFilePath);
 
         std::vector<std::string> files;
         if (inputFilesListPath.size() != 0)
@@ -362,6 +387,7 @@ int main(int argc, char **argv)
         auto elapsedTime = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count())/ 1000.0f;
         double sum, mean, min, max, p50, p90, p95, p99;
         std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalLatencyMetrics(latencies);
+        WriteRawData(latencies, vnFrame, outputFilePath);  
         std::cout << "Total Frames Decoded=" << nTotalFrames << " FPS=" << nTotalFrames / elapsedTime << " LatencyPerFrame=" << elapsedTime / nTotalFrames * 1000 << " Mean Latency for each video=" << mean * 1000 << " P50 Latency=" << p50 * 1000 << " P90 Latency=" << p90 * 1000 << " P95 Latency=" << p95 * 1000 << " P99 Latency=" << p99 * 1000 << "ms" << std::endl;
         // Deinitialization
         for (int i = 0; i < nThread; i++)
