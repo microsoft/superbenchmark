@@ -30,7 +30,7 @@ std::map<std::string, cudaVideoCodec_enum> codecMap = {
     {"vp8", cudaVideoCodec_VP8},           {"vp9", cudaVideoCodec_VP9},           {"av1", cudaVideoCodec_AV1}};
 
 /**
- *   @brief  Function to decode media file using OptimizedNvDecoder interface
+ *   @brief  Function to decode video file using OptimizedNvDecoder interface
  *   @param  pDec    - Handle to OptimizedNvDecoder
  *   @param  demuxer - Pointer to an FFmpegDemuxer instance
  *   @param  pnFrame - Variable to record the number of frames decoded
@@ -41,13 +41,13 @@ void DecProc(OptimizedNvDecoder *pDec, const char *szInFilePath, int *pnFrame, s
         std::unique_ptr<FFmpegDemuxer> demuxer(new FFmpegDemuxer(szInFilePath));
         int nVideoBytes = 0, nFrameReturned = 0, nFrame = 0;
         uint8_t *pVideo = NULL, *pFrame = NULL;
-
         do {
+            // Demux video from file using FFmpegDemuxer
             demuxer->Demux(&pVideo, &nVideoBytes);
+            // Decode the video frame from demuxed packet
             nFrameReturned = pDec->Decode(pVideo, nVideoBytes);
             if (!nFrame && nFrameReturned)
                 LOG(INFO) << pDec->GetVideoInfo();
-
             nFrame += nFrameReturned;
         } while (nVideoBytes);
         *pnFrame = nFrame;
@@ -56,6 +56,9 @@ void DecProc(OptimizedNvDecoder *pDec, const char *szInFilePath, int *pnFrame, s
     }
 }
 
+/**
+ *   @brief  Function to show help message and exit
+ */
 void ShowHelpAndExit(const char *szBadOption = NULL) {
     std::ostringstream oss;
     bool bThrowError = false;
@@ -64,19 +67,15 @@ void ShowHelpAndExit(const char *szBadOption = NULL) {
         oss << "Error parsing \"" << szBadOption << "\"" << std::endl;
     }
     oss << "Options:" << std::endl
-        << "-i           Input file path" << std::endl
+        << "-i           Input single video file path" << std::endl
         << "-o           Output file path" << std::endl
         << "-gpu         Ordinal of GPU to use" << std::endl
         << "-thread      Number of decoding thread" << std::endl
         << "-total       Number of total video to test" << std::endl
-        << "-single      (No value) Use single context (this may result in suboptimal performance; default is multiple "
-           "contexts)"
-        << std::endl
-        << "-host        (No value) Copy frame to host memory (this may result in suboptimal performance; default is "
-           "device memory)"
-        << std::endl
-        << "-multi_input Multiple Input file list path" << std::endl
-        << "-codec       The codecc of video to test" << std::endl;
+        << "-single      (No value) Use single context (default is multi-context, one context per thread)" << std::endl
+        << "-host        (No value) Copy frame to host memory (default is device memory)" << std::endl
+        << "-multi_input The file path which lists the path of multiple video in each line" << std::endl
+        << "-codec       The codec of video to test" << std::endl;
     if (bThrowError) {
         throw std::invalid_argument(oss.str());
     } else {
@@ -85,6 +84,9 @@ void ShowHelpAndExit(const char *szBadOption = NULL) {
     }
 }
 
+/**
+ *   @brief  Function to parse commandline arguments
+ */
 void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, int &nThread, int &nTotalVideo,
                       bool &bSingle, bool &bHost, std::string &inputFilesListPath, std::string &outputFile,
                       cudaVideoCodec &codec) {
@@ -161,6 +163,9 @@ void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, 
     }
 }
 
+/**
+ *  @brief  Function to create cuda context and initialize decoder
+ */
 OptimizedNvDecoder *InitOptimizedNvDecoder(int i, const CUdevice &cuDevice, CUcontext &cuContext, bool bSingle,
                                            bool bHost, cudaVideoCodec codec, CUVIDDECODECAPS decodecaps) {
     if (!bSingle) {
@@ -171,10 +176,12 @@ OptimizedNvDecoder *InitOptimizedNvDecoder(int i, const CUdevice &cuDevice, CUco
     return sessionObject;
 }
 
+/**
+ *  @brief  Function to convert time_point to human-readable format
+ */
 std::string GetTime(const std::chrono::_V2::system_clock::time_point &now) {
     // Convert the time_point to a time_t
     auto now_time_t = std::chrono::system_clock::to_time_t(now);
-
     // Convert the time_t to a human-readable format
     std::tm *now_tm = std::localtime(&now_time_t);
     char time_cstr[100];
@@ -183,9 +190,12 @@ std::string GetTime(const std::chrono::_V2::system_clock::time_point &now) {
     return time_str;
 }
 
-double DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, const char *szInFilePath, int *pnFrame,
+/**
+ *  @brief  Function to decode a video in a thread and measure the latency
+ */
+double DecodeVideo(size_t thread, const std::vector<OptimizedNvDecoder *> &vDec, const char *szInFilePath, int *pnFrame,
                    std::exception_ptr &ex) {
-    OptimizedNvDecoder *pDec = vDec[i];
+    OptimizedNvDecoder *pDec = vDec[thread];
     auto start = std::chrono::high_resolution_clock::now();
     DecProc(pDec, szInFilePath, pnFrame, ex);
     auto end = std::chrono::high_resolution_clock::now();
@@ -195,6 +205,9 @@ double DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, cons
     return elapsedTime / 1000.0f;
 }
 
+/**
+ *  @brief  Function to read the video paths from a file
+ */
 std::vector<std::string> ReadMultipleVideoFiles(std::string filepath) {
     std::ifstream file(filepath);
     if (!file) {
@@ -210,6 +223,9 @@ std::vector<std::string> ReadMultipleVideoFiles(std::string filepath) {
     return tokens;
 }
 
+/**
+ * @brief  Function to get the decoder capability
+ */
 void GetDefaultDecoderCaps(CUVIDDECODECAPS &decodecaps, cudaVideoCodec codec) {
     memset(&decodecaps, 0, sizeof(decodecaps));
     decodecaps.eCodecType = codec;
@@ -218,6 +234,10 @@ void GetDefaultDecoderCaps(CUVIDDECODECAPS &decodecaps, cudaVideoCodec codec) {
     NVDEC_API_CALL(cuvidGetDecoderCaps(&decodecaps));
 }
 
+/**
+ * @brief  Function to initialize the cuda device, cuda context, query the decoder capability and create decoder for
+ * each thread
+ */
 void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nThread, bool bSingle, bool bHost,
                        cudaVideoCodec codec) {
     ck(cuInit(0));
@@ -250,6 +270,9 @@ void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nT
     }
 }
 
+/**
+ * @brief  Function to write the latency and FPS data of each video to a file
+ */
 void WriteRawData(const std::vector<double> &data, std::vector<int> &frames, std::string filename) {
     // Open the output file stream
     std::ofstream outputFile(filename);
@@ -265,6 +288,9 @@ void WriteRawData(const std::vector<double> &data, std::vector<int> &frames, std
     outputFile.close();
 }
 
+/**
+ * @brief  Function to calculate the statistical latency metrics
+ */
 std::tuple<double, double, double, double, double, double, double, double>
 CalLatencyMetrics(const std::vector<double> &originData) {
     std::vector<double> data = originData;
@@ -280,6 +306,11 @@ CalLatencyMetrics(const std::vector<double> &originData) {
     return std::make_tuple(sum, mean, min, max, p50, p90, p95, p99);
 }
 
+/**
+ * @brief  Function to generate the total file list for the given total number of videos.
+ *        If the number of videos is less than the total number of videos, the list will be repeated.
+ *        If the number of videos is greater than the total number of videos, the list will be truncated.
+ */
 std::vector<std::string> GenerateTotalFileList(std::string inputFilesListPath, int nTotalVideo,
                                                const char *szInFilePath) {
     std::vector<std::string> files;
@@ -309,6 +340,10 @@ std::vector<std::string> GenerateTotalFileList(std::string inputFilesListPath, i
     return files;
 }
 
+/**
+ * @brief  Function to run the decoding tasks in parallel with thread pool to decode all the videos and record the total
+ * latency and the total number of frames
+ */
 float run(std::vector<OptimizedNvDecoder *> &vDec, int nThread, std::vector<std::string> &files,
           std::vector<int> &vnFrame, std::vector<std::exception_ptr> &vExceptionPtrs, int *nTotalFrames,
           std::vector<double> &vnLatency) {

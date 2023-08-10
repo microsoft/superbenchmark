@@ -3,6 +3,7 @@
 
 #include "NvDecoder/NvDecoder.h"
 
+// This class is derived from NvDecoder class and is used to optimize the cuvidGetDecoderCaps overhead
 class OptimizedNvDecoder : public NvDecoder {
 
   public:
@@ -11,6 +12,8 @@ class OptimizedNvDecoder : public NvDecoder {
      *  @brief This function is used to initialize the decoder session.
      *  Application must call this function to initialize the decoder, before
      *  starting to decode any frames.
+     *  The only difference from the original function is to add a new member m_decodecaps.
+     *  Other part is the same as the original function, refer to NvDecoder.cpp in NVIDIA Video Codec SDK.
      */
     OptimizedNvDecoder(CUcontext &cuContext, bool bUseDeviceFrame, cudaVideoCodec eCodec, CUVIDDECODECAPS decodecaps,
                        bool bLowLatency = false, bool bDeviceFramePitched = false, const Rect *pCropRect = NULL,
@@ -25,7 +28,9 @@ class OptimizedNvDecoder : public NvDecoder {
         return ((OptimizedNvDecoder *)pUserData)->HandleVideoSequence(pVideoFormat);
     }
     /**
-     *   @brief  Define the new handler when decoding of sequence starts
+     *   @brief  Define the new handler when decoding of sequence starts.
+     *           The only change is to re-query decoder caps when the video codec or format change
+     *           Other part is the same as the original function, refer to NvDecoder.cpp in NVIDIA Video Codec SDK.
      */
     int HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat);
 
