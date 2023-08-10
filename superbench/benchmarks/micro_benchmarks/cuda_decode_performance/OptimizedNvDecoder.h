@@ -24,6 +24,9 @@ class OptimizedNvDecoder : public NvDecoder {
     static int CUDAAPI HandleVideoSequenceProc(void *pUserData, CUVIDEOFORMAT *pVideoFormat) {
         return ((OptimizedNvDecoder *)pUserData)->HandleVideoSequence(pVideoFormat);
     }
+    /**
+     *   @brief  Define the new handler when decoding of sequence starts
+     */
     int HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat);
 
     CUVIDDECODECAPS m_decodecaps;
@@ -70,7 +73,7 @@ OptimizedNvDecoder::OptimizedNvDecoder(CUcontext &cuContext, bool bUseDeviceFram
     videoParserParameters.pfnGetOperatingPoint = HandleOperatingPointProc;
     videoParserParameters.pfnGetSEIMsg = m_bExtractSEIMessage ? HandleSEIMessagesProc : NULL;
     NVDEC_API_CALL(cuvidCreateVideoParser(&m_hParser, &videoParserParameters));
-
+    // reuse the decodecaps queried before
     m_decodecaps = decodecaps;
     CUDA_DRVAPI_CALL(cuCtxPopCurrent(NULL));
 }
@@ -98,8 +101,7 @@ int OptimizedNvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat) {
 
     int nDecodeSurface = pVideoFormat->min_num_decode_surfaces;
 
-    // CUVIDDECODECAPS decodecaps;
-    // memset(&decodecaps, 0, sizeof(decodecaps));
+    // re-call the cuvidGetDecoderCaps when the video codeoc and format change
     if (m_decodecaps.eCodecType != pVideoFormat->codec || m_decodecaps.eChromaFormat != pVideoFormat->chroma_format ||
         m_decodecaps.nBitDepthMinus8 != pVideoFormat->bit_depth_luma_minus8) {
         m_decodecaps.eCodecType = pVideoFormat->codec;

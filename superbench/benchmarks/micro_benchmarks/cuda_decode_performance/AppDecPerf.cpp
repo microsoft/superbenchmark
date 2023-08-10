@@ -19,6 +19,16 @@
 #include "OptimizedNvDecoder.h"
 #include "ThreadPoolUtils.h"
 
+// Define logger which need in third party utils
+simplelogger::Logger *logger = simplelogger::LoggerFactory::CreateConsoleLogger();
+
+// Define the codec map
+std::map<std::string, cudaVideoCodec_enum> codecMap = {
+    {"mpeg1", cudaVideoCodec_MPEG1},       {"mpeg2", cudaVideoCodec_MPEG2},       {"mpeg4", cudaVideoCodec_MPEG4},
+    {"vc1", cudaVideoCodec_VC1},           {"h264", cudaVideoCodec_H264},         {"jpeg", cudaVideoCodec_JPEG},
+    {"h264_svc", cudaVideoCodec_H264_SVC}, {"h264_mvc", cudaVideoCodec_H264_MVC}, {"hevc", cudaVideoCodec_HEVC},
+    {"vp8", cudaVideoCodec_VP8},           {"vp9", cudaVideoCodec_VP9},           {"av1", cudaVideoCodec_AV1}};
+
 /**
  *   @brief  Function to decode media file using OptimizedNvDecoder interface
  *   @param  pDec    - Handle to OptimizedNvDecoder
@@ -58,14 +68,15 @@ void ShowHelpAndExit(const char *szBadOption = NULL) {
         << "-o           Output file path" << std::endl
         << "-gpu         Ordinal of GPU to use" << std::endl
         << "-thread      Number of decoding thread" << std::endl
-        << "-total       Number of total videos to test" << std::endl
+        << "-total       Number of total video to test" << std::endl
         << "-single      (No value) Use single context (this may result in suboptimal performance; default is multiple "
            "contexts)"
         << std::endl
         << "-host        (No value) Copy frame to host memory (this may result in suboptimal performance; default is "
            "device memory)"
         << std::endl
-        << "-multi_input  Multiple Input file list path" << std::endl;
+        << "-multi_input Multiple Input file list path" << std::endl
+        << "-codec       The codecc of video to test" << std::endl;
     if (bThrowError) {
         throw std::invalid_argument(oss.str());
     } else {
@@ -75,7 +86,8 @@ void ShowHelpAndExit(const char *szBadOption = NULL) {
 }
 
 void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, int &nThread, int &nTotalVideo,
-                      bool &bSingle, bool &bHost, std::string &inputFilesListPath, std::string &outputFile) {
+                      bool &bSingle, bool &bHost, std::string &inputFilesListPath, std::string &outputFile,
+                      cudaVideoCodec &codec) {
     for (int i = 1; i < argc; i++) {
         if (!_stricmp(argv[i], "-h")) {
             ShowHelpAndExit();
@@ -130,23 +142,23 @@ void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, 
             bHost = true;
             continue;
         }
+        if (!_stricmp(argv[i], "-codec")) {
+            if (++i == argc) {
+                ShowHelpAndExit("-codec");
+            }
+            std::string codecName = std::string(argv[i]);
+            std::transform(codecName.begin(), codecName.end(), codecName.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+            if (codecMap.find(codecName) != codecMap.end()) {
+                codec = codecMap[codecName];
+            } else {
+                std::cout << "Codec name not found in the map." << std::endl;
+                exit(1);
+            }
+            continue;
+        }
         ShowHelpAndExit(argv[i]);
     }
-}
-
-struct NvDecPerfData {
-    uint8_t *pBuf;
-    std::vector<uint8_t *> *pvpPacketData;
-    std::vector<int> *pvpPacketDataSize;
-};
-
-int CUDAAPI HandleVideoData(void *pUserData, CUVIDSOURCEDATAPACKET *pPacket) {
-    NvDecPerfData *p = (NvDecPerfData *)pUserData;
-    memcpy(p->pBuf, pPacket->payload, pPacket->payload_size);
-    p->pvpPacketData->push_back(p->pBuf);
-    p->pvpPacketDataSize->push_back(pPacket->payload_size);
-    p->pBuf += pPacket->payload_size;
-    return 1;
 }
 
 OptimizedNvDecoder *InitOptimizedNvDecoder(int i, const CUdevice &cuDevice, CUcontext &cuContext, bool bSingle,
@@ -165,14 +177,14 @@ std::string GetTime(const std::chrono::_V2::system_clock::time_point &now) {
 
     // Convert the time_t to a human-readable format
     std::tm *now_tm = std::localtime(&now_time_t);
-    char time_str[100];
-    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", now_tm);
-    std::string time_stri(time_str);
-    return time_stri;
+    char time_cstr[100];
+    strftime(time_cstr, sizeof(time_cstr), "%Y-%m-%d %H:%M:%S", now_tm);
+    std::string time_str(time_str);
+    return time_str;
 }
 
-float DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, const char *szInFilePath, int *pnFrame,
-                  std::exception_ptr &ex) {
+double DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, const char *szInFilePath, int *pnFrame,
+                   std::exception_ptr &ex) {
     OptimizedNvDecoder *pDec = vDec[i];
     auto start = std::chrono::high_resolution_clock::now();
     DecProc(pDec, szInFilePath, pnFrame, ex);
@@ -185,23 +197,29 @@ float DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, const
 
 std::vector<std::string> ReadMultipleVideoFiles(std::string filepath) {
     std::ifstream file(filepath);
-
     if (!file) {
         std::cerr << "Error opening the file." << std::endl;
         exit(1);
     }
-
     std::string line;
     std::vector<std::string> tokens;
     while (std::getline(file, line)) {
         tokens.push_back(line);
     }
-
     file.close();
     return tokens;
 }
 
-void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nThread, bool bSingle, bool bHost) {
+void GetDefaultDecoderCaps(CUVIDDECODECAPS &decodecaps, cudaVideoCodec codec) {
+    memset(&decodecaps, 0, sizeof(decodecaps));
+    decodecaps.eCodecType = codec;
+    decodecaps.eChromaFormat = cudaVideoChromaFormat_420;
+    decodecaps.nBitDepthMinus8 = 0;
+    NVDEC_API_CALL(cuvidGetDecoderCaps(&decodecaps));
+}
+
+void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nThread, bool bSingle, bool bHost,
+                       cudaVideoCodec codec) {
     ck(cuInit(0));
     int nGpu = 0;
     ck(cuDeviceGetCount(&nGpu));
@@ -218,13 +236,8 @@ void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nT
     CUcontext cuContext = NULL;
     ck(cuCtxCreate(&cuContext, 0, cuDevice));
 
-    auto codec = cudaVideoCodec_H264;
     CUVIDDECODECAPS decodecaps;
-    memset(&decodecaps, 0, sizeof(decodecaps));
-    decodecaps.eCodecType = codec;
-    decodecaps.eChromaFormat = cudaVideoChromaFormat_420;
-    decodecaps.nBitDepthMinus8 = 0;
-    NVDEC_API_CALL(cuvidGetDecoderCaps(&decodecaps));
+    GetDefaultDecoderCaps(decodecaps, codec);
 
     ThreadPool threadPool(nThread);
     std::vector<std::future<OptimizedNvDecoder *>> futures;
@@ -232,7 +245,6 @@ void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nT
         futures.push_back(
             threadPool.enqueue(InitOptimizedNvDecoder, cuDevice, cuContext, bSingle, bHost, codec, decodecaps));
     }
-
     for (auto &future : futures) {
         vDec.push_back(future.get()); // Retrieve the results from each task
     }
@@ -268,6 +280,60 @@ CalLatencyMetrics(const std::vector<double> &originData) {
     return std::make_tuple(sum, mean, min, max, p50, p90, p95, p99);
 }
 
+std::vector<std::string> GenerateTotalFileList(std::string inputFilesListPath, int nTotalVideo,
+                                               const char *szInFilePath) {
+    std::vector<std::string> files;
+    if (inputFilesListPath.size() != 0) {
+        auto videofiles = ReadMultipleVideoFiles(inputFilesListPath);
+        int smallerSize = videofiles.size();
+
+        if (nTotalVideo > smallerSize) {
+            int numIterations = nTotalVideo / smallerSize;
+
+            for (int i = 0; i < numIterations; i++) {
+                files.insert(files.end(), videofiles.begin(), videofiles.end());
+            }
+
+            int remainingElements = nTotalVideo - (numIterations * smallerSize);
+            files.insert(files.end(), videofiles.begin(), videofiles.begin() + remainingElements);
+        } else {
+            files = videofiles;
+        }
+
+        std::cout << "Multifile mode - " << nTotalVideo << "videos will be decoded" << std::endl;
+    } else {
+        for (int i = 0; i < nTotalVideo; i++) {
+            files.push_back(std::string(szInFilePath));
+        }
+    }
+    return files;
+}
+
+float run(std::vector<OptimizedNvDecoder *> &vDec, int nThread, std::vector<std::string> &files,
+          std::vector<int> &vnFrame, std::vector<std::exception_ptr> &vExceptionPtrs, int *nTotalFrames,
+          std::vector<double> &vnLatency) {
+    std::vector<std::future<double>> decodeLatencyFutures;
+    ThreadPool threadPool(nThread);
+    // Enqueue the video decoding task into thread pool
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < files.size(); i++) {
+        auto filePath = files[i].c_str();
+        CheckInputFile(filePath);
+        decodeLatencyFutures.push_back(
+            threadPool.enqueue(DecodeVideo, vDec, filePath, &vnFrame[i], std::ref(vExceptionPtrs[i])));
+    }
+    // Wait until decoding tasks finished
+    for (int i = 0; i < files.size(); i++) {
+        auto decodeLatency = decodeLatencyFutures[i].get();
+        vnLatency.push_back(decodeLatency);
+        nTotalFrames += vnFrame[i];
+    }
+    // Calculated the metrics
+    return (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start)
+                .count()) /
+           1000.0f;
+}
+
 int main(int argc, char **argv) {
     char szInFilePath[256] = "";
     int iGpu = 0;
@@ -277,76 +343,37 @@ int main(int argc, char **argv) {
     bool bHost = false;
     std::string inputFilesListPath = "";
     std::string outputFilePath = "";
+    std::vector<std::exception_ptr> vExceptionPtrs(nTotalVideo);
+    cudaVideoCodec codec = cudaVideoCodec_H264;
     try {
         // Parse the command line arguments
         ParseCommandLine(argc, argv, szInFilePath, iGpu, nThread, nTotalVideo, bSingle, bHost, inputFilesListPath,
-                         outputFilePath);
+                         outputFilePath, codec);
+        auto files = GenerateTotalFileList(inputFilesListPath, nTotalVideo, szInFilePath);
 
-        std::vector<std::string> files;
-        if (inputFilesListPath.size() != 0) {
-            auto videofiles = ReadMultipleVideoFiles(inputFilesListPath);
-            int smallerSize = videofiles.size();
-
-            if (nTotalVideo > smallerSize) {
-                // files.resize(nTotalVideo);
-                int numIterations = nTotalVideo / smallerSize;
-
-                for (int i = 0; i < numIterations; i++) {
-                    files.insert(files.end(), videofiles.begin(), videofiles.end());
-                }
-
-                int remainingElements = nTotalVideo - (numIterations * smallerSize);
-                files.insert(files.end(), videofiles.begin(), videofiles.begin() + remainingElements);
-            } else {
-                files = videofiles;
-            }
-
-            std::cout << "Multifile mode - " << nTotalVideo << "videos will be decoded" << std::endl;
-        } else {
-            for (int i = 0; i < nTotalVideo; i++) {
-                files.push_back(std::string(szInFilePath));
-            }
-        }
-        // Initialize the thread pool and decoder context
+        // Initialize and prepare the decoder context for each thread
         std::vector<OptimizedNvDecoder *> vDec;
-        InitializeContext(vDec, iGpu, nThread, bSingle, bHost);
-        std::vector<int> vnFrame;
-        std::vector<std::exception_ptr> vExceptionPtrs;
-        vnFrame.resize(nTotalVideo, 0);
-        vExceptionPtrs.resize(nTotalVideo);
-        std::vector<std::future<float>> decodeLatencyFutures;
-        ThreadPool threadPool(nThread);
-        // Enqueue the video decoding task into thread pool
-        auto start = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < nTotalVideo; i++) {
-            auto filePath = files[i].c_str();
-            CheckInputFile(filePath);
-            decodeLatencyFutures.push_back(
-                threadPool.enqueue(DecodeVideo, vDec, filePath, &vnFrame[i], std::ref(vExceptionPtrs[i])));
-        }
-        // Wait until decoding tasks finished
+        InitializeContext(vDec, iGpu, nThread, bSingle, bHost, codec);
+
+        // Decode all video with thread pool
+        std::vector<int> vnFrame(nTotalVideo);
         int nTotalFrames = 0;
-        std::vector<double> latencies;
-        for (int i = 0; i < nTotalVideo; i++) {
-            auto decodeLatency = decodeLatencyFutures[i].get();
-            latencies.push_back(decodeLatency);
-            nTotalFrames += vnFrame[i];
-        }
-        // Calculated the metrics
-        auto elapsedTime =
-            (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start)
-                 .count()) /
-            1000.0f;
+        std::vector<double> vnLatency;
+
+        auto elapsedTime = run(vDec, nThread, files, vnFrame, vExceptionPtrs, &nTotalFrames, vnLatency);
+
+        // Calculate and output the raw data into file and metrics into stdout
         double sum, mean, min, max, p50, p90, p95, p99;
-        std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalLatencyMetrics(latencies);
+        std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalLatencyMetrics(vnLatency);
         if (outputFilePath.size() != 0) {
-            WriteRawData(latencies, vnFrame, outputFilePath);
+            WriteRawData(vnLatency, vnFrame, outputFilePath);
         }
         std::cout << "Total Frames Decoded=" << nTotalFrames << " FPS=" << nTotalFrames / elapsedTime
                   << " LatencyPerFrame=" << elapsedTime / nTotalFrames * 1000
                   << " Mean Latency for each video=" << mean * 1000 << " P50 Latency=" << p50 * 1000
                   << " P90 Latency=" << p90 * 1000 << " P95 Latency=" << p95 * 1000 << " P99 Latency=" << p99 * 1000
                   << "ms" << std::endl;
+
         // Deinitialization
         for (int i = 0; i < nThread; i++) {
             delete (vDec[i]);
