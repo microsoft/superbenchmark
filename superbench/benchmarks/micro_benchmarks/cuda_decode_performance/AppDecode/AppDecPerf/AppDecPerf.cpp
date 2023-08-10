@@ -209,14 +209,27 @@ NvDecoder *InitNvDecoder(int i, const CUdevice &cuDevice, CUcontext &cuContext, 
     return sessionObject;
 }
 
+std::string GetTime(const std::chrono::_V2::system_clock::time_point &now)
+{
+    // Convert the time_point to a time_t
+    auto now_time_t = std::chrono::system_clock::to_time_t(now);
+
+    // Convert the time_t to a human-readable format
+    std::tm *now_tm = std::localtime(&now_time_t);
+    char time_str[100];
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", now_tm);
+    std::string time_stri(time_str);
+    return time_stri;
+}
+
 float DecodeVideo(size_t i, const std::vector<NvDecoder *> &vDec, const char *szInFilePath, int *pnFrame, std::exception_ptr &ex)
 {
     NvDecoder *pDec = vDec[i];
     auto start = std::chrono::high_resolution_clock::now();
     DecProc(pDec, szInFilePath, pnFrame, ex);
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
-    //float decodeDuration = (elapsedTime - NvDecoder::getDecoderSessionOverHead(i)) / 1000.0f;
-    //NvDecoder::resetDecoderSessionOverHead(i);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Decode finished --- start:" << GetTime(start) << " end:" << GetTime(end) << " duration:" << elapsedTime << " frames:" << *pnFrame << std::endl;
     return elapsedTime / 1000.0f;
 }
 
@@ -281,30 +294,35 @@ void InitializeContext(std::vector<NvDecoder *> &vDec, int iGpu, int nThread, bo
     }
 }
 
-void WriteRawData(const std::vector<double>& data, std::vector<int>& frames, std::string filename){
+void WriteRawData(const std::vector<double> &data, std::vector<int> &frames, std::string filename)
+{
     // Open the output file stream
     std::ofstream outputFile(filename);
     outputFile << "latency" << std::endl;
-    for (int i=0;i<data.size();i++){
+    for (int i = 0; i < data.size(); i++)
+    {
         outputFile << data[i] << std::endl;
     }
     outputFile << "FPS" << std::endl;
-    for (int i=0;i<data.size();i++){
-        outputFile << frames[i]/data[i] << std::endl;
+    for (int i = 0; i < data.size(); i++)
+    {
+        outputFile << frames[i] / data[i] << std::endl;
     }
     // Close the file stream
     outputFile.close();
 }
 
-std::tuple<double, double, double, double, double, double, double, double> CalLatencyMetrics(std::vector<double>& data){
+std::tuple<double, double, double, double, double, double, double, double> CalLatencyMetrics(const std::vector<double> &originData)
+{
+    std::vector<double> data = originData;
     double sum = std::accumulate(data.begin(), data.end(), 0.0);
     double mean = sum / data.size();
     double min = *std::min_element(data.begin(), data.end());
     double max = *std::max_element(data.begin(), data.end());
     std::sort(data.begin(), data.end());
-    double p50 = data[data.size() / 2];                         
-    double p90 = data[static_cast<size_t>(data.size() * 0.9)];  
-    double p95 = data[static_cast<size_t>(data.size() * 0.95)]; 
+    double p50 = data[data.size() / 2];
+    double p90 = data[static_cast<size_t>(data.size() * 0.9)];
+    double p95 = data[static_cast<size_t>(data.size() * 0.95)];
     double p99 = data[static_cast<size_t>(data.size() * 0.99)];
     return std::make_tuple(sum, mean, min, max, p50, p90, p95, p99);
 }
@@ -384,10 +402,10 @@ int main(int argc, char **argv)
             nTotalFrames += vnFrame[i];
         }
         // Calculated the metrics
-        auto elapsedTime = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count())/ 1000.0f;
+        auto elapsedTime = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count()) / 1000.0f;
         double sum, mean, min, max, p50, p90, p95, p99;
         std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalLatencyMetrics(latencies);
-        WriteRawData(latencies, vnFrame, outputFilePath);  
+        WriteRawData(latencies, vnFrame, outputFilePath);
         std::cout << "Total Frames Decoded=" << nTotalFrames << " FPS=" << nTotalFrames / elapsedTime << " LatencyPerFrame=" << elapsedTime / nTotalFrames * 1000 << " Mean Latency for each video=" << mean * 1000 << " P50 Latency=" << p50 * 1000 << " P90 Latency=" << p90 * 1000 << " P95 Latency=" << p95 * 1000 << " P99 Latency=" << p99 * 1000 << "ms" << std::endl;
         // Deinitialization
         for (int i = 0; i < nThread; i++)
