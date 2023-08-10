@@ -1,49 +1,18 @@
-# Copyright 2020-2022 NVIDIA Corporation.  All rights reserved.
-#
-# Please refer to the NVIDIA end user license agreement (EULA) associated
-# with this source code for terms and conditions that govern your use of
-# this software. Any use, reproduction, disclosure, or distribution of
-# this software and related documentation outside the terms of the EULA
-# is strictly prohibited.po
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
-# 3.7 is required for FindVulkan module support in CMake.
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.18)
 
-project(NvCodec)
+project(cuda_decode_performance)
 
-# Set C++11 for all projects and disable non-standard extensions
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_INSTALL_PREFIX .)
-
-# Check for WSL
-if (EXISTS /usr/lib/wsl/lib)
-    set(WSL_FLAG TRUE)
-endif()
-
-set(NVCODEC_PUBLIC_INTERFACE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Interface)
-set(NVCODEC_UTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
-set(NV_CODEC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/NvCodec)
-set(NV_DEC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/NvCodec/NvDecoder)
-set(NV_APPDEC_COMMON_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/AppDecode/Common)
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(NVCODEC_SAMPLES_INSTALL_DIR ${CMAKE_BINARY_DIR})
-else()
-    set(NVCODEC_SAMPLES_INSTALL_DIR ${CMAKE_BINARY_DIR})
-endif()
-
-if(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        Set(CUVID_LIB ${CMAKE_CURRENT_SOURCE_DIR}/../Lib/x64/nvcuvid.lib)
-    else()
-        Set(CUVID_LIB ${CMAKE_CURRENT_SOURCE_DIR}/../Lib/Win32/nvcuvid.lib)
-    endif()
-else()
-    find_library(CUVID_LIB nvcuvid)
-endif()
+set(THIRD_PARTY_SAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/Video_Codec_SDK/Samples)
+set(NVCODEC_PUBLIC_INTERFACE_DIR ${THIRD_PARTY_SAMPLE_DIR}/../Interface)
+set(NVCODEC_UTILS_DIR ${THIRD_PARTY_SAMPLE_DIR}/Utils)
+set(NV_CODEC_DIR ${THIRD_PARTY_SAMPLE_DIR}/NvCodec)
+set(NV_DEC_DIR ${THIRD_PARTY_SAMPLE_DIR}/NvCodec/NvDecoder)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(PkgConfig REQUIRED)
@@ -79,22 +48,51 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(SWRESAMPLE_LIB ${SWRESAMPLE_LIBRARY})
 endif()
 
-if(WIN32)
-    # check if FFMpeg, GLUT and GLEW library cmake variables are set and
-    # add projects having above dependencies accordingly for Windows
-    if(DEFINED FFMPEG_DIR)
-        add_subdirectory(AppDecode/AppDecPerf)
-    elseif((NOT DEFINED FFMPEG_DIR) AND (NOT DEFINED SKIP_FFMPEG_DEPENDENCY))
-        message("FFMPEG Libraries are needed to build the following apps :")
-        message("AppDec, AppDec3D, AppDecGL, AppDecImageProvider, AppDecLowLatency, AppDecMem,")
-        message("AppDecMultiFiles, AppDecMultiInput, AppDecPerf, AppEncDec, AppTranscode")
-        message("It is required to fetch the prebuilt LGPL FFMPEG libraries and to set the variable FFMPEG_DIR to point to this libraries")
-        message("To skip building of apps having FFMPEG dependency, add -DSKIP_FFMPEG_DEPENDENCY=TRUE to commandline")
-                message("See Windows Configuration Requirements section in Read_Me.pdf for detailed instructions")
-        message(FATAL_ERROR "FFMPEG_DIR not set")
+set(APP_SOURCES
+ ${CMAKE_CURRENT_SOURCE_DIR}/AppDecPerf.cpp
+)
+
+set(NV_DEC_SOURCES
+ ${NV_DEC_DIR}/NvDecoder.cpp
+)
+
+set(NV_DEC_HDRS
+ ${NV_DEC_DIR}/NvDecoder.h
+ ${NVCODEC_PUBLIC_INTERFACE_DIR}/cuviddec.h
+ ${NVCODEC_PUBLIC_INTERFACE_DIR}/nvcuvid.h
+ ${NVCODEC_UTILS_DIR}/NvCodecUtils.h
+ ${NVCODEC_UTILS_DIR}/FFmpegDemuxer.h
+ ${CMAKE_CURRENT_SOURCE_DIR}/ThreadPoolUtils.h
+ ${CMAKE_CURRENT_SOURCE_DIR}/OptimizedNvDecoder.h
+)
+
+source_group( "headers" FILES ${NV_DEC_HDRS} )
+source_group( "sources" FILES ${APP_SOURCES} ${NV_DEC_SOURCES})
+
+find_package(CUDA)
+set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=\"sm_50,compute_50\")
+if ( CMAKE_COMPILER_IS_GNUCC )
+    if(NOT "${CUDA_NVCC_FLAGS}" MATCHES "-std=c\\+\\+11" )
+        list(APPEND CUDA_NVCC_FLAGS -std=c++11)
     endif()
-
-else()
-    add_subdirectory(AppDecode/AppDecPerf)
 endif()
+find_library(CUVID_LIB nvcuvid)
 
+cuda_add_executable(${PROJECT_NAME}  ${APP_SOURCES} ${NV_DEC_SOURCES} ${NV_DEC_HDRS})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${CUDA_INCLUDE_DIRS}
+ ${NVCODEC_PUBLIC_INTERFACE_DIR}
+ ${NVCODEC_UTILS_DIR}
+ ${NV_CODEC_DIR}
+ ${NV_APPDEC_COMMON_DIR}
+ ${NV_FFMPEG_HDRS}
+ ${THIRD_PARTY_SAMPLE_DIR}
+)
+
+target_link_libraries(${PROJECT_NAME} ${CUDA_CUDA_LIBRARY} ${CMAKE_DL_LIBS} ${CUVID_LIB} ${AVCODEC_LIB}
+ ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWRESAMPLE_LIB})
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${NVCODEC_SAMPLES_INSTALL_DIR})
