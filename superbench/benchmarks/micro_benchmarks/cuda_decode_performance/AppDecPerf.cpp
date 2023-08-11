@@ -67,15 +67,19 @@ void ShowHelpAndExit(const char *szBadOption = NULL) {
         oss << "Error parsing \"" << szBadOption << "\"" << std::endl;
     }
     oss << "Options:" << std::endl
-        << "-i           Input single video file path" << std::endl
-        << "-o           Output file path" << std::endl
-        << "-gpu         Ordinal of GPU to use" << std::endl
-        << "-thread      Number of decoding thread" << std::endl
-        << "-total       Number of total video to test" << std::endl
-        << "-single      (No value) Use single context (default is multi-context, one context per thread)" << std::endl
-        << "-host        (No value) Copy frame to host memory (default is device memory)" << std::endl
-        << "-multi_input The file path which lists the path of multiple video in each line" << std::endl
-        << "-codec       The codec of video to test" << std::endl;
+        << "-i           Input file path. No default value. One of -i and -multi_input is required." << std::endl
+        << "-o           Output file path of raw data. No default value. Optional." << std::endl
+        << "-gpu         Ordinal of GPU to use. Default 0. Optional." << std::endl
+        << "-thread      Number of decoding thread. Default 5. Optional." << std::endl
+        << "-total       Number of total video to test. Default 100. Optional." << std::endl
+        << "-single      (No value) Use single cuda context for every thread. Default is multi-context, one context "
+           "per thread."
+        << std::endl
+        << "-host        (No value) Copy frame to host memory .Default is "
+           "device memory)"
+        << std::endl
+        << "-multi_input The file path which lists the path of multiple video in each line." << std::endl
+        << "-codec       The codec of video to test. Default H264." << std::endl;
     if (bThrowError) {
         throw std::invalid_argument(oss.str());
     } else {
@@ -177,32 +181,23 @@ OptimizedNvDecoder *InitOptimizedNvDecoder(int i, const CUdevice &cuDevice, CUco
 }
 
 /**
- *  @brief  Function to convert time_point to human-readable format
- */
-std::string GetTime(const std::chrono::_V2::system_clock::time_point &now) {
-    // Convert the time_point to a time_t
-    auto now_time_t = std::chrono::system_clock::to_time_t(now);
-    // Convert the time_t to a human-readable format
-    std::tm *now_tm = std::localtime(&now_time_t);
-    char time_cstr[100];
-    strftime(time_cstr, sizeof(time_cstr), "%Y-%m-%d %H:%M:%S", now_tm);
-    std::string time_str(time_str);
-    return time_str;
-}
-
-/**
  *  @brief  Function to decode a video in a thread and measure the latency
  */
-double DecodeVideo(size_t thread, const std::vector<OptimizedNvDecoder *> &vDec, const char *szInFilePath, int *pnFrame,
+double DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, const char *szInFilePath, int *pnFrame,
                    std::exception_ptr &ex) {
-    OptimizedNvDecoder *pDec = vDec[thread];
-    auto start = std::chrono::high_resolution_clock::now();
-    DecProc(pDec, szInFilePath, pnFrame, ex);
-    auto end = std::chrono::high_resolution_clock::now();
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "Decode finished -- start:" << GetTime(start) << " end:" << GetTime(end) << " duration:" << elapsedTime
-              << " frames:" << *pnFrame << std::endl;
-    return elapsedTime / 1000.0f;
+    try {
+        OptimizedNvDecoder *pDec = vDec[i];
+        auto start = std::chrono::high_resolution_clock::now();
+        DecProc(pDec, szInFilePath, pnFrame, ex);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "Decode finished --"
+                  << " duration:" << elapsedTime << " frames:" << *pnFrame << std::endl;
+        return elapsedTime / 1000.0f;
+    } catch (const std::exception &e) {
+        std::cerr << "Exception in deocding: " << e.what() << std::endl;
+        return 0;
+    }
 }
 
 /**
@@ -273,14 +268,23 @@ void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nT
 /**
  * @brief  Function to write the latency and FPS data of each video to a file
  */
-void WriteRawData(const std::vector<double> &data, std::vector<int> &frames, std::string filename) {
+void WriteRawData(std::vector<OptimizedNvDecoder *> &vDec, int nThread, const std::vector<double> &data,
+                  std::vector<int> &frames, std::string filename) {
     // Open the output file stream
     std::ofstream outputFile(filename);
-    outputFile << "latency" << std::endl;
+    outputFile << "Frame Latency" << std::endl;
+    for (int i = 0; i < nThread; i++) {
+        for (const auto &tuple : vDec[i]->GetFrameLatency()) {
+            int frame = std::get<0>(tuple);
+            double latency = std::get<1>(tuple);
+            outputFile << "Frame: " << frame << ", Latency: " << latency << std::endl;
+        }
+    }
+    outputFile << "Video Latency" << std::endl;
     for (int i = 0; i < data.size(); i++) {
         outputFile << data[i] << std::endl;
     }
-    outputFile << "FPS" << std::endl;
+    outputFile << "Video FPS" << std::endl;
     for (int i = 0; i < data.size(); i++) {
         outputFile << frames[i] / data[i] << std::endl;
     }
@@ -289,10 +293,10 @@ void WriteRawData(const std::vector<double> &data, std::vector<int> &frames, std
 }
 
 /**
- * @brief  Function to calculate the statistical latency metrics
+ * @brief  Function to calculate the statistical metrics
  */
 std::tuple<double, double, double, double, double, double, double, double>
-CalLatencyMetrics(const std::vector<double> &originData) {
+CalMetrics(const std::vector<double> &originData) {
     std::vector<double> data = originData;
     double sum = std::accumulate(data.begin(), data.end(), 0.0);
     double mean = sum / data.size();
@@ -346,7 +350,7 @@ std::vector<std::string> GenerateTotalFileList(std::string inputFilesListPath, i
  */
 float run(std::vector<OptimizedNvDecoder *> &vDec, int nThread, std::vector<std::string> &files,
           std::vector<int> &vnFrame, std::vector<std::exception_ptr> &vExceptionPtrs, int *nTotalFrames,
-          std::vector<double> &vnLatency) {
+          std::vector<double> &vnLatency, std::vector<double> &frLatency) {
     std::vector<std::future<double>> decodeLatencyFutures;
     ThreadPool threadPool(nThread);
     // Enqueue the video decoding task into thread pool
@@ -361,12 +365,24 @@ float run(std::vector<OptimizedNvDecoder *> &vDec, int nThread, std::vector<std:
     for (int i = 0; i < files.size(); i++) {
         auto decodeLatency = decodeLatencyFutures[i].get();
         vnLatency.push_back(decodeLatency);
-        nTotalFrames += vnFrame[i];
+        *nTotalFrames += vnFrame[i];
     }
-    // Calculated the metrics
-    return (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start)
-                .count()) /
-           1000.0f;
+    auto elapsedTime =
+        (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start)
+             .count()) /
+        1000.0f;
+    for (int i = 0; i < nThread; i++) {
+        for (const auto &tuple : vDec[i]->GetFrameLatency()) {
+            int frame = std::get<0>(tuple);
+            double latency = std::get<1>(tuple);
+            if (frame > 0) {
+                frLatency.push_back(latency / frame);
+            }
+        }
+    }
+
+    // Record the total time
+    return elapsedTime;
 }
 
 int main(int argc, char **argv) {
@@ -394,21 +410,33 @@ int main(int argc, char **argv) {
         std::vector<int> vnFrame(nTotalVideo);
         int nTotalFrames = 0;
         std::vector<double> vnLatency;
-
-        auto elapsedTime = run(vDec, nThread, files, vnFrame, vExceptionPtrs, &nTotalFrames, vnLatency);
+        std::vector<double> frLatency;
+        auto elapsedTime = run(vDec, nThread, files, vnFrame, vExceptionPtrs, &nTotalFrames, vnLatency, frLatency);
 
         // Calculate and output the raw data into file and metrics into stdout
         double sum, mean, min, max, p50, p90, p95, p99;
-        std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalLatencyMetrics(vnLatency);
-        if (outputFilePath.size() != 0) {
-            WriteRawData(vnLatency, vnFrame, outputFilePath);
-        }
+        std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalMetrics(vnLatency);
         std::cout << "Total Frames Decoded=" << nTotalFrames << " FPS=" << nTotalFrames / elapsedTime
-                  << " LatencyPerFrame=" << elapsedTime / nTotalFrames * 1000
-                  << " Mean Latency for each video=" << mean * 1000 << " P50 Latency=" << p50 * 1000
+                  << " LatencyPerFrame=" << elapsedTime / nTotalFrames * 1000 << std::endl;
+        std::cout << "Mean Latency for each video=" << mean * 1000 << " P50 Latency=" << p50 * 1000
                   << " P90 Latency=" << p90 * 1000 << " P95 Latency=" << p95 * 1000 << " P99 Latency=" << p99 * 1000
                   << "ms" << std::endl;
-
+        std::vector<double> videoFPS;
+        for (int i = 0; i < vnLatency.size(); i++) {
+            if (vnLatency[i] != 0) {
+                videoFPS.push_back(vnFrame[i] / vnLatency[i]);
+            }
+        }
+        std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalMetrics(videoFPS);
+        std::cout << "Mean FPS for each video=" << mean << " P50 FPS=" << p50 << " P90 FPS=" << p90
+                  << " P95 FPS=" << p95 << " P99 FPS=" << p99 << std::endl;
+        std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalMetrics(frLatency);
+        std::cout << "Mean Latency for each frame=" << mean * 1000 << " P50 Latency=" << p50 * 1000
+                  << " P90 Latency=" << p90 * 1000 << " P95 Latency=" << p95 * 1000 << " P99 Latency=" << p99 * 1000
+                  << "ms" << std::endl;
+        if (outputFilePath.size() != 0) {
+            WriteRawData(vDec, nThread, vnLatency, vnFrame, outputFilePath);
+        }
         // Deinitialization
         for (int i = 0; i < nThread; i++) {
             delete (vDec[i]);

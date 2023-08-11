@@ -20,6 +20,15 @@ class OptimizedNvDecoder : public NvDecoder {
                        const Dim *pResizeDim = NULL, bool extract_user_SEI_Message = false, int maxWidth = 0,
                        int maxHeight = 0, unsigned int clkRate = 1000, bool force_zero_latency = false);
 
+    /**
+     * @brief This function is to overwrite the origin Decode function to record the latency on frame level.
+     */
+    int Decode(const uint8_t *pData, int nSize, int nFlags = 0, int64_t nTimestamp = 0);
+    /**
+     * @brief This function is used to Get the frameLatency vector
+     */
+    std::vector<std::tuple<int, double>> &GetFrameLatency() { return frameLatency; }
+
   protected:
     /**
      *   @brief  Callback function to be registered for getting a callback when decoding of sequence starts
@@ -35,7 +44,29 @@ class OptimizedNvDecoder : public NvDecoder {
     int HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat);
 
     CUVIDDECODECAPS m_decodecaps;
+
+    std::vector<std::tuple<int, double>> frameLatency;
 };
+
+int OptimizedNvDecoder::Decode(const uint8_t *pData, int nSize, int nFlags, int64_t nTimestamp) {
+    m_nDecodedFrame = 0;
+    m_nDecodedFrameReturned = 0;
+    CUVIDSOURCEDATAPACKET packet = {0};
+    packet.payload = pData;
+    packet.payload_size = nSize;
+    packet.flags = nFlags | CUVID_PKT_TIMESTAMP;
+    packet.timestamp = nTimestamp;
+    if (!pData || nSize == 0) {
+        packet.flags |= CUVID_PKT_ENDOFSTREAM;
+    }
+    auto start = std::chrono::high_resolution_clock::now();
+    NVDEC_API_CALL(cuvidParseVideoData(m_hParser, &packet));
+    int64_t elapsedTime =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start)
+            .count();
+    frameLatency.push_back(std::make_tuple(m_nDecodedFrame, elapsedTime / 1000.0f / 1000.0f));
+    return m_nDecodedFrame;
+}
 
 OptimizedNvDecoder::OptimizedNvDecoder(CUcontext &cuContext, bool bUseDeviceFrame, cudaVideoCodec eCodec,
                                        CUVIDDECODECAPS decodecaps, bool bLowLatency, bool bDeviceFramePitched,
@@ -206,10 +237,11 @@ int OptimizedNvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat) {
     videoDecodeCreateInfo.ulHeight = pVideoFormat->coded_height;
     // AV1 has max width/height of sequence in sequence header
     if (pVideoFormat->codec == cudaVideoCodec_AV1 && pVideoFormat->seqhdr_data_length > 0) {
-        // dont overwrite if it is already set from cmdline or reconfig.txt
-        if (!(m_nMaxWidth > pVideoFormat->coded_width || m_nMaxHeight > pVideoFormat->coded_height)) {
-            CUVIDEOFORMATEX *vidFormatEx = (CUVIDEOFORMATEX *)pVideoFormat;
+        CUVIDEOFORMATEX *vidFormatEx = (CUVIDEOFORMATEX *)pVideoFormat;
+        if (m_nMaxWidth < pVideoFormat->coded_width) {
             m_nMaxWidth = vidFormatEx->av1.max_width;
+        }
+        if (m_nMaxHeight < pVideoFormat->coded_height) {
             m_nMaxHeight = vidFormatEx->av1.max_height;
         }
     }
