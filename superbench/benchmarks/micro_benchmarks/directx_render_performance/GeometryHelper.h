@@ -99,8 +99,6 @@ struct GeometryResource {
 
     D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-    // Target geometry.
-    std::unique_ptr<Geometry> geometry = nullptr;
     UINT IndexCount = 0;
     UINT StartIndexLocation = 0;
     INT BaseVertexLocation = 0;
@@ -131,8 +129,16 @@ struct GeometryResource {
      * @brief Upload geometry data and set necessary information about the geometry.
      */
     void Create(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, std::unique_ptr<Geometry> &geoData) {
-        geometry = std::move(geoData);
-
+        if (device == nullptr) {
+            throw std::runtime_error("device is nullptr");
+        }
+        if (cmdList == nullptr) {
+            throw std::runtime_error("cmdList is nullptr");
+        }
+        if (geoData == nullptr) {
+            throw std::runtime_error("geoData is nullptr");
+        }
+        auto geometry = geoData.get();
         ThrowIfFailed(D3DCreateBlob(geometry->vertexByteSize, &this->VertexBufferCPU));
         CopyMemory(this->VertexBufferCPU->GetBufferPointer(), geometry->vertexData.get(), geometry->vertexByteSize);
 

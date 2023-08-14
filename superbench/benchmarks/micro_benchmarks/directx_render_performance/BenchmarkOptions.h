@@ -61,6 +61,7 @@ class BenchmarkOptions : public Options {
         m_textureNum = get_cmd_line_argument_int("--texture_num", 3);
         m_outfile = get_cmd_line_argument_string("--outfile");
         auto pass = get_cmd_line_argument_string("--pass");
+        std::transform(pass.begin(), pass.end(), pass.begin(), [](unsigned char c) { return std::tolower(c); });
         if (pass == "geometry") {
             m_pass_type = PassType::GeometryPass;
         } else if (pass == "shadow") {

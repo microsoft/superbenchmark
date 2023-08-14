@@ -30,7 +30,8 @@ uint16_t genRand2N_large(int n) {
 
     // Random number generator
     std::default_random_engine generator(rd());
-    std::uniform_int_distribution<unsigned int> distribution(0, 0xFFFFFFFFFFFFFFFF);
-    return distribution(generator) % n;
+    // Use std::uniform_int_distribution<uint16_t> with the desired range
+    std::uniform_int_distribution<uint16_t> distribution(0, static_cast<uint16_t>(n));
+    return distribution(generator);
 };
 } // namespace MathHelper

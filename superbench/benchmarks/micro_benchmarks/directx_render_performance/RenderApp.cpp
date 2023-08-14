@@ -4,21 +4,29 @@
 #include "RenderApp.h"
 #include "../directx_third_party/d3dx12.h"
 
-RenderApp::RenderApp(BenchmarkOptions *args, HINSTANCE hInstance, HWND hMainWnd, std::wstring &winTitle)
-    : m_hinstance(hInstance), m_opts(args), m_hMainWnd(hMainWnd), m_winTitle(winTitle), m_width(args->m_width),
-      m_height(args->m_height) {
+RenderApp::RenderApp(BenchmarkOptions *args) {
+    if (args == nullptr) {
+        throw std::runtime_error("BenchmarkOptions is nullptr");
+    }
+    m_opts = args;
+    m_width = args->m_width;
+    m_height = args->m_height;
     m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_FORMAT_D32_FLOAT,
                                                               m_swapChainBufferCount, D3D_FEATURE_LEVEL_11_0,
                                                               DX::DeviceResources::c_AllowTearing);
 }
 
-RenderApp::RenderApp(BenchmarkOptions *args) : m_opts(args), m_width(args->m_width), m_height(args->m_height) {
-    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_FORMAT_D32_FLOAT,
-                                                              m_swapChainBufferCount, D3D_FEATURE_LEVEL_11_0,
-                                                              DX::DeviceResources::c_AllowTearing);
+RenderApp::RenderApp(BenchmarkOptions *args, HINSTANCE hInstance, HWND hMainWnd, std::wstring &winTitle)
+    : RenderApp(args) {
+    m_hinstance = hInstance;
+    m_hMainWnd = hMainWnd;
+    m_winTitle = winTitle;
 }
 
 RenderApp::~RenderApp() {
+    if (m_outfile.is_open()) {
+        m_outfile.close();
+    }
     if (m_deviceResources) {
         m_deviceResources->WaitForGpu();
     }
@@ -273,7 +281,6 @@ void RenderApp::CalculateFrameStats() {
         }
         m_outfile << "Mean: " << median << std::endl;
         std::cout << "Mean: " << median << std::endl;
-        m_outfile.close();
         PostMessage(m_hMainWnd, WM_CLOSE, 0, 0);
     }
 }

@@ -69,7 +69,7 @@ std::vector<UINT8> CreateRandomTexture(const UINT width, const UINT height, cons
     std::uniform_int_distribution<int> distribution(0, 255);
 
     // Generate random data for the texture
-    for (int i = 0; i < width * height * texturePixelSize; ++i) {
+    for (UINT i = 0; i < width * height * texturePixelSize; ++i) {
         textureData[i] = static_cast<unsigned char>(distribution(generator));
     }
     return textureData;

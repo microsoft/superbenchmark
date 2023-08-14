@@ -112,32 +112,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         std::cout << "Hello from std::cout" << std::endl;
     }
 
-    // Parse command line arguments.
-    BenchmarkOptions args(__argc, __argv);
-    args.init();
-    // Create the main window.
-    HWND hMainWnd;
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-    std::wstring winTitle = converter.from_bytes("");
-    if (!InitMainWindow(hInstance, args.m_width, args.m_height, hMainWnd, winTitle, args.m_quiet))
-        return -1;
-
-    // Create the render microbenchmark.
-    auto app_sample = get_render_pointer(args, hInstance, hMainWnd, winTitle);
-    app_sample->Initialize();
-    app_sample->LoadAssets();
     MSG msg = {0};
+    try {
+        // Parse command line arguments.
+        BenchmarkOptions args(__argc, __argv);
+        args.init();
+        // Create the main window.
+        HWND hMainWnd;
+        std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+        std::wstring winTitle = converter.from_bytes("");
+        if (!InitMainWindow(hInstance, args.m_width, args.m_height, hMainWnd, winTitle, args.m_quiet))
+            return -1;
 
-    while (msg.message != WM_QUIT) {
-        // If there are Window messages then process them.
-        // We need to handle message here otherwise it is no response.
-        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        } else {
-            // Update and render per frame.
-            app_sample->Tick();
+        // Create the render microbenchmark.
+        auto app_sample = get_render_pointer(args, hInstance, hMainWnd, winTitle);
+        app_sample->Initialize();
+        app_sample->LoadAssets();
+
+        while (msg.message != WM_QUIT) {
+            // If there are Window messages then process them.
+            // We need to handle message here otherwise it is no response.
+            if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            } else {
+                // Update and render per frame.
+                app_sample->Tick();
+            }
         }
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
     }
 
     return (int)msg.wParam;
