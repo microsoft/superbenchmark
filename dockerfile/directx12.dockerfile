@@ -64,5 +64,5 @@ RUN make -C third_party directx_amd
 
 # Run the entrypoint script for enabling vendor-specific graphics APIs
 RUN powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force"
-CMD [ "python", "dockerfile/directx/enable-graphics-apis.py" ]
-ENTRYPOINT [ "cmd.exe" ]
+ENTRYPOINT [ "python", "dockerfile/directx/enable-graphics-apis.py" ]
+CMD [ "cmd.exe" ]

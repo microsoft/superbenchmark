@@ -26,7 +26,7 @@ class GPU():
                 logger.warning('Cannot find NVIDIA GPU device.')
             return 'nvidia'
         if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
-            if not list(Path('/dev/dri').glob('card*')):
+            if not list(Path('/dev/dri').glob('renderD*')):
                 logger.warning('Cannot find AMD GPU device.')
             return 'amd'
         if list(Path(r'C:\Windows\System32').glob('*DriverStore/FileRepository/nv*.inf_amd64_*/nvapi64.dll')):
