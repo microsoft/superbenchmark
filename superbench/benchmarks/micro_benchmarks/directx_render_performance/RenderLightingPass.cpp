@@ -135,7 +135,7 @@ void RenderLightingPass::DrawLighting(ID3D12GraphicsCommandList *cmdList) {
 }
 
 /*
- * @breif: Get the samplers.
+ * @brief: Get the samplers.
  * @return: The static samplers.
  */
 int RenderLightingPass::DefineStaticSamplers(std::vector<CD3DX12_STATIC_SAMPLER_DESC> &samplerData)

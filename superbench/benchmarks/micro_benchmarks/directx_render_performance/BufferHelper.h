@@ -50,7 +50,7 @@ template <typename T> class UploadBuffer {
 };
 
 /*
- * @breif: Create a default buffer.
+ * @brief: Create a default buffer.
  * @param: device the device of GPU object.
  * @param: cmdList the command list of GPU object.
  * @param: initData the data to be copied to the default buffer.
@@ -62,12 +62,12 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(ID3D12Device *device,
                                                            Microsoft::WRL::ComPtr<ID3D12Resource> &uploadBuffer);
 
 /*
- * @breif: Calculate the size of constant buffer.
+ * @brief: Calculate the size of constant buffer.
  */
 UINT CalcConstantBufferByteSize(UINT byteSize);
 
 /*
- * @breif: Create a random texture.
+ * @brief: Create a random texture.
  * @param: width the width of texture.
  * @param: height the height of texture.
  * @param: texturePixelSize the size of texture pixel.
@@ -76,7 +76,7 @@ UINT CalcConstantBufferByteSize(UINT byteSize);
 std::vector<UINT8> CreateRandomTexture(const UINT width, const UINT height, const UINT texturePixelSize = 4);
 
 /*
- * @breif: Upload the texture to GPU.
+ * @brief: Upload the texture to GPU.
  * @param: device the device of GPU object.
  * @param: pCmdList the command list of GPU object.
  * @param: textureData the texture data to be uploaded.
@@ -90,7 +90,7 @@ void UploadTexture(ID3D12Device *device, ID3D12GraphicsCommandList *pCmdList, co
                    const UINT texturePixelSize = 4);
 
 /*
- * @breif: Create a texture resource.
+ * @brief: Create a texture resource.
  * @param: device the device of GPU object.
  * @param: width the width of texture.
  * @param: height the height of texture.
@@ -102,7 +102,7 @@ void CreateTextureResource(ID3D12Device *device, UINT width, UINT height, DXGI_F
                            Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, UINT16 arraySize);
 
 /*
- * @breif: Create a random texture resource and upload it to GPU.
+ * @brief: Create a random texture resource and upload it to GPU.
  * @param: device the device of GPU object.
  * @param: cmdList the command list of GPU object.
  * @param: textureResource the texture resource.
@@ -114,7 +114,7 @@ void Texture2D(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList,
                Microsoft::WRL::ComPtr<ID3D12Resource> &textureResource, int width, int height, DXGI_FORMAT format);
 
 /*
- * @breif: Create a random texture cube resource and upload it to GPU.
+ * @brief: Create a random texture cube resource and upload it to GPU.
  * @param: device the device of GPU object.
  * @param: cmdList the command list of GPU object.
  * @param: textureResource the texture resource.

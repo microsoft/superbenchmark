@@ -13,7 +13,7 @@
 #include <windows.h>
 
 /*
- * @breif: Main message handler for the sample.
+ * @brief: Main message handler for the sample.
  */
 LRESULT WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     // Handle window event.
@@ -31,7 +31,7 @@ LRESULT WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 /*
- * @breif: Main window procedure.
+ * @brief: Main window procedure.
  */
 static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     // Forward hwnd on because we can get messages (e.g., WM_CREATE)
@@ -40,7 +40,7 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 }
 
 /*
- * @breif: Register a window app.
+ * @brief: Register a window app.
  */
 bool InitMainWindow(HINSTANCE hInstance, int width, int height, HWND &hMainWnd, const std::wstring &winTitle,
                     bool quiet_mode) {
@@ -81,7 +81,7 @@ bool InitMainWindow(HINSTANCE hInstance, int width, int height, HWND &hMainWnd, 
 }
 
 /*
- * @breif: Load the render microbenchmark according to the pass type.
+ * @brief: Load the render microbenchmark according to the pass type.
  */
 std::unique_ptr<RenderApp> get_render_pointer(BenchmarkOptions &args, HINSTANCE hInstance, HWND hMainWnd,
                                               std::wstring &winTitle) {
@@ -96,7 +96,7 @@ std::unique_ptr<RenderApp> get_render_pointer(BenchmarkOptions &args, HINSTANCE 
 }
 
 /*
- * @breif: Main entry point for a Windows application.
+ * @brief: Main entry point for a Windows application.
  */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     // Enable console attach and redirect stdout/stderr to console.

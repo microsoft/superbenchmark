@@ -11,7 +11,7 @@ UINT CalcConstantBufferByteSize(UINT byteSize) {
 }
 
 /*
- * @breif: Create a default buffer.
+ * @brief: Create a default buffer.
  * @param: device the device of GPU object.
  * @param: cmdList the command list of GPU object.
  * @param: initData the data to be copied to the default buffer.

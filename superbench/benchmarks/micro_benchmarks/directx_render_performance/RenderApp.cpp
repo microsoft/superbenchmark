@@ -33,6 +33,9 @@ RenderApp::~RenderApp() {
 }
 
 void RenderApp::Initialize() {
+    if (m_deviceResources == nullptr) {
+        throw std::runtime_error("DeviceResources is nullptr");
+    }
     m_deviceResources->SetWindow(m_hMainWnd, m_width, m_height);
     m_deviceResources->CreateDeviceResources();
     CreateDeviceDependentResources();
@@ -52,7 +55,9 @@ void RenderApp::Initialize() {
 
 void RenderApp::CreateDeviceDependentResources() {
     auto device = m_deviceResources->GetD3DDevice();
-
+    if (device == nullptr) {
+        throw std::runtime_error("D3D12Device is nullptr");
+    }
     // Create a fence for synchronizing between different frames
     ThrowIfFailed(device->CreateFence(m_deviceResources->GetCurrentFrameIndex(), D3D12_FENCE_FLAG_NONE,
                                       IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf())));
@@ -71,6 +76,22 @@ void RenderApp::CreateWindowSizeDependentResources() {
     auto pCmdList = m_deviceResources->GetCommandList();
     auto cmdListAlloc = m_deviceResources->GetCommandAllocator();
     auto cmdQueue = m_deviceResources->GetCommandQueue();
+    if (device == nullptr) {
+        throw std::runtime_error("D3D12Device is nullptr");
+    }
+    if (rtvHeap == nullptr) {
+        throw std::runtime_error("RTVDescriptorHeap is nullptr");
+    }
+    if (pCmdList == nullptr) {
+        throw std::runtime_error("CommandList is nullptr");
+    }
+    if (cmdListAlloc == nullptr) {
+        throw std::runtime_error("CommandAllocator is nullptr");
+    }
+    if (cmdQueue == nullptr) {
+        throw std::runtime_error("CommandQueue is nullptr");
+    }
+
     ThrowIfFailed(cmdListAlloc->Reset());
     ThrowIfFailed(pCmdList->Reset(cmdListAlloc, nullptr));
 
@@ -79,7 +100,6 @@ void RenderApp::CreateWindowSizeDependentResources() {
         m_renderTargets.resize(m_numPassRenderTargets);
     if (m_numShaderResource > 0)
         m_shaderResources.resize(m_numShaderResource);
-
     CreateRenderTargetView(device, m_width, m_height, rtvHeap);
     CreateShaderResourceView(device, pCmdList, m_width, m_height);
 

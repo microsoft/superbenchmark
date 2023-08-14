@@ -29,50 +29,50 @@ class RenderApp {
     ~RenderApp();
 
     /*
-     * @breif: Execute the update and render per frame.
+     * @brief: Execute the update and render per frame.
      */
     void Tick();
     /*
-     * @breif: Initialize the application.
+     * @brief: Initialize the application.
      */
     virtual void Initialize();
     /*
-     * @breif: Prepare the data assets needed for render.
+     * @brief: Prepare the data assets needed for render.
      */
     virtual void LoadAssets();
     /*
-     * @breif: Calculate the frame stats.
+     * @brief: Calculate the frame stats.
      */
     void CalculateFrameStats();
     /*
-     * @breif: Update to run next frame.
+     * @brief: Update to run next frame.
      */
     void Update();
     /*
-     * @breif: Executes basic render loop .
+     * @brief: Executes basic render loop .
      */
     void Render();
 
   protected:
     /*
-     * @breif: Define the root parameters.
+     * @brief: Define the root parameters.
      * @param: rootParameters The root parameters to be defined.
      * @return: The number of root parameters.
      */
     virtual int DefineRootParameters(std::vector<CD3DX12_ROOT_PARAMETER> &rootParameters) = 0;
     /*
-     * @breif: Define the static samplers.
+     * @brief: Define the static samplers.
      * @param: samplers The static samplers to be defined.
      * @return: The number of static samplers.
      */
     virtual int DefineStaticSamplers(std::vector<CD3DX12_STATIC_SAMPLER_DESC> &samplers) = 0;
     /*
-     * @breif: Build the pipeline states.
+     * @brief: Build the pipeline states.
      * @param: device The device to build the pipeline states.
      */
     virtual void BuildPipelineStates(ID3D12Device *device) = 0;
     /*
-     * @breif: Create the shader resource view.
+     * @brief: Create the shader resource view.
      * @param: device The device to create the shader resource view.
      * @param: cmdList The command list to create the shader resource view.
      * @param: width The width of the shader resource view.
@@ -81,49 +81,49 @@ class RenderApp {
     virtual void CreateShaderResourceView(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList, int width,
                                           int height) = 0;
     /*
-     * @breif: Create the constant buffer resources.
+     * @brief: Create the constant buffer resources.
      * @param: device The device to create the constant buffer resources.
      */
     virtual void CreateConstantBufferResources(ID3D12Device *device) = 0;
     /*
-     * @breif: Update the constant buffer data.
+     * @brief: Update the constant buffer data.
      */
     virtual void UpdateConstantBufferData() = 0;
     /*
-     * @breif: Render and draw defined by pass.
+     * @brief: Render and draw defined by pass.
      * @param: cmdList The command list to draw the render items.
      */
     virtual void Draw(ID3D12GraphicsCommandList *cmdList) = 0;
     /*
-     * @breif: Set the states before draw.
+     * @brief: Set the states before draw.
      * @param: cmdList The command list to set the states before draw.
      */
     virtual void SetStatesBeforeDraw(ID3D12GraphicsCommandList *cmdList) = 0;
     /*
-     * @breif: Create the device dependent resources.
+     * @brief: Create the device dependent resources.
      */
     virtual void CreateDeviceDependentResources();
     /*
-     * @breif: Create the window size dependent resources.
+     * @brief: Create the window size dependent resources.
      */
     virtual void CreateWindowSizeDependentResources();
     /*
-     * @breif: Create the root signature.
+     * @brief: Create the root signature.
      * @param: device The device to create the root signature.
      */
     virtual void CreateRootSignatures(ID3D12Device *device);
     /*
-     * @breif: Build the geometry.
+     * @brief: Build the geometry.
      */
     virtual void BuildShapeGeometry(ID3D12Device *device, ID3D12GraphicsCommandList *cmdList);
     /*
-     * @breif: Draw the render items.
+     * @brief: Draw the render items.
      * @param: pCmdList The command list to draw the render item.
      * @param: drawTimes The times to draw the render item.
      */
     virtual void DrawRenderItems(ID3D12GraphicsCommandList *pCmdList, int drawTimes);
     /*
-     * @breif: Create the render target view.
+     * @brief: Create the render target view.
      * @param: device The device to create the render target view.
      * @param: width The width of the render target view.
      * @param: height The height of the render target view.
@@ -131,7 +131,7 @@ class RenderApp {
      */
     virtual void CreateRenderTargetView(ID3D12Device *device, UINT width, UINT height, ID3D12DescriptorHeap *rtvHeap);
     /*
-     * @breif: Create the Render target resource.
+     * @brief: Create the Render target resource.
      * @param: device The device to create the render target resource.
      * @param: width The width of the render target resource.
      * @param: height The height of the render target resource.
@@ -143,7 +143,7 @@ class RenderApp {
                                             D3D12_RESOURCE_FLAGS flags,
                                             Microsoft::WRL::ComPtr<ID3D12Resource> &renderTarget);
     /*
-     * @breif: Define the pipeline state description.
+     * @brief: Define the pipeline state description.
      * @param: inputLayout The input layout of the pipeline state description.
      * @param: vertexShader The vertex shader of the pipeline state description.
      * @param: pixelShader The pixel shader of the pipeline state description.
@@ -152,19 +152,19 @@ class RenderApp {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC DefinePSODesc(const std::vector<D3D12_INPUT_ELEMENT_DESC> &inputLayout,
                                                      ComPtr<ID3DBlob> vertexShader, ComPtr<ID3DBlob> pixelShader);
     /*
-     * @breif: Prepare the render target state to draw.
+     * @brief: Prepare the render target state to draw.
      */
     void PrepareRenderTarget(ID3D12GraphicsCommandList *pCommandList);
     /*
-     * @breif: restore render target state.
+     * @brief: restore render target state.
      */
     void RestoreRenderTarget(ID3D12GraphicsCommandList *pCommandList);
     /*
-     * @breif: Clear, bind the render target view and set the viewport and scissor rect.
+     * @brief: Clear, bind the render target view and set the viewport and scissor rect.
      */
     void ClearRenderTargetView();
     /*
-     * @breif: Get the first render target view of the pass.
+     * @brief: Get the first render target view of the pass.
      */
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView(ID3D12Device *device);
 
