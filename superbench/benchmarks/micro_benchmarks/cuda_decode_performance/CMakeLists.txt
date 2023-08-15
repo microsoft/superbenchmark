@@ -54,6 +54,7 @@ set(APP_SOURCES
 
 set(NV_DEC_SOURCES
  ${NV_DEC_DIR}/NvDecoder.cpp
+ ${CMAKE_CURRENT_SOURCE_DIR}/OptimizedNvDecoder.cpp
 )
 
 set(NV_DEC_HDRS
@@ -79,7 +80,7 @@ if ( CMAKE_COMPILER_IS_GNUCC )
 endif()
 find_library(CUVID_LIB nvcuvid)
 
-cuda_add_executable(${PROJECT_NAME}  ${APP_SOURCES} ${NV_DEC_SOURCES} ${NV_DEC_HDRS})
+cuda_add_executable(${PROJECT_NAME} ${APP_SOURCES} ${NV_DEC_SOURCES} ${NV_DEC_HDRS})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 

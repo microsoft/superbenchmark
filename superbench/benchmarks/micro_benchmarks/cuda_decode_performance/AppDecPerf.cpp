@@ -203,7 +203,7 @@ double DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, cons
 /**
  *  @brief  Function to read the video paths from a file
  */
-std::vector<std::string> ReadMultipleVideoFiles(std::string filepath) {
+std::vector<std::string> ReadMultipleVideoFiles(const std::string &filepath) {
     std::ifstream file(filepath);
     if (!file) {
         std::cerr << "Error opening the file." << std::endl;
@@ -288,6 +288,7 @@ void WriteRawData(std::vector<OptimizedNvDecoder *> &vDec, int nThread, const st
     for (int i = 0; i < data.size(); i++) {
         outputFile << frames[i] / data[i] << std::endl;
     }
+
     // Close the file stream
     outputFile.close();
 }
@@ -315,7 +316,7 @@ CalMetrics(const std::vector<double> &originData) {
  *        If the number of videos is less than the total number of videos, the list will be repeated.
  *        If the number of videos is greater than the total number of videos, the list will be truncated.
  */
-std::vector<std::string> GenerateTotalFileList(std::string inputFilesListPath, int nTotalVideo,
+std::vector<std::string> GenerateTotalFileList(const std::string &inputFilesListPath, int nTotalVideo,
                                                const char *szInFilePath) {
     std::vector<std::string> files;
     if (inputFilesListPath.size() != 0) {
@@ -332,7 +333,7 @@ std::vector<std::string> GenerateTotalFileList(std::string inputFilesListPath, i
             int remainingElements = nTotalVideo - (numIterations * smallerSize);
             files.insert(files.end(), videofiles.begin(), videofiles.begin() + remainingElements);
         } else {
-            files = videofiles;
+            files = std::vector<std::string>(videofiles.begin(), videofiles.begin() + nTotalVideo);
         }
 
         std::cout << "Multifile mode - " << nTotalVideo << "videos will be decoded" << std::endl;
