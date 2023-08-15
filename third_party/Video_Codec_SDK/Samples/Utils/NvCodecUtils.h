@@ -94,7 +94,7 @@ inline bool check(NVENCSTATUS e, int iLine, const char *szFile) {
         "NV_ENC_ERR_MAP_FAILED",
         "NV_ENC_ERR_NEED_MORE_INPUT",
         "NV_ENC_ERR_ENCODER_BUSY",
-        "NV_ENC_ERR_EVENT_NOT_REGISTERD",
+        "NV_ENC_ERR_EVENT_NOT_REGISTERED",
         "NV_ENC_ERR_GENERIC",
         "NV_ENC_ERR_INCOMPATIBLE_CLIENT_KEY",
         "NV_ENC_ERR_UNIMPLEMENTED",
