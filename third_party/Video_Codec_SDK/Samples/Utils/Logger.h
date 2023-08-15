@@ -27,47 +27,39 @@
 
 #pragma once
 
-#include <iostream>
 #include <fstream>
-#include <string>
-#include <sstream>
+#include <iostream>
 #include <mutex>
+#include <sstream>
+#include <string>
 #include <time.h>
 
 #ifdef _WIN32
-#include <winsock.h>
 #include <windows.h>
+#include <winsock.h>
 
 #pragma comment(lib, "ws2_32.lib")
 #undef ERROR
 #else
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #define SOCKET int
 #define INVALID_SOCKET -1
 #endif
 
-enum LogLevel {
-    TRACE,
-    INFO,
-    WARNING,
-    ERROR,
-    FATAL
-};
+enum LogLevel { TRACE, INFO, WARNING, ERROR, FATAL };
 
-namespace simplelogger{
+namespace simplelogger {
 class Logger {
-public:
+  public:
     Logger(LogLevel level, bool bPrintTimeStamp) : level(level), bPrintTimeStamp(bPrintTimeStamp) {}
     virtual ~Logger() {}
-    virtual std::ostream& GetStream() = 0;
+    virtual std::ostream &GetStream() = 0;
     virtual void FlushStream() {}
-    bool ShouldLogFor(LogLevel l) {
-        return l >= level;
-    }
-    char* GetLead(LogLevel l, const char *szFile, int nLine, const char *szFunc) {
+    bool ShouldLogFor(LogLevel l) { return l >= level; }
+    char *GetLead(LogLevel l, const char *szFile, int nLine, const char *szFunc) {
         if (l < TRACE || l > FATAL) {
             sprintf(szLead, "[?????] ");
             return szLead;
@@ -76,20 +68,16 @@ public:
         if (bPrintTimeStamp) {
             time_t t = time(NULL);
             struct tm *ptm = localtime(&t);
-            sprintf(szLead, "[%-5s][%02d:%02d:%02d] ", 
-                szLevels[l], ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+            sprintf(szLead, "[%-5s][%02d:%02d:%02d] ", szLevels[l], ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
         } else {
             sprintf(szLead, "[%-5s] ", szLevels[l]);
         }
         return szLead;
     }
-    void EnterCriticalSection() {
-        mtx.lock();
-    }
-    void LeaveCriticalSection() {
-        mtx.unlock();
-    }
-private:
+    void EnterCriticalSection() { mtx.lock(); }
+    void LeaveCriticalSection() { mtx.unlock(); }
+
+  private:
     LogLevel level;
     char szLead[80];
     bool bPrintTimeStamp;
@@ -97,53 +85,44 @@ private:
 };
 
 class LoggerFactory {
-public:
-    static Logger* CreateFileLogger(std::string strFilePath, 
-            LogLevel level = INFO, bool bPrintTimeStamp = true) {
+  public:
+    static Logger *CreateFileLogger(std::string strFilePath, LogLevel level = INFO, bool bPrintTimeStamp = true) {
         return new FileLogger(strFilePath, level, bPrintTimeStamp);
     }
-    static Logger* CreateConsoleLogger(LogLevel level = INFO, 
-            bool bPrintTimeStamp = true) {
+    static Logger *CreateConsoleLogger(LogLevel level = INFO, bool bPrintTimeStamp = true) {
         return new ConsoleLogger(level, bPrintTimeStamp);
     }
-    static Logger* CreateUdpLogger(char *szHost, unsigned uPort, LogLevel level = INFO, 
-            bool bPrintTimeStamp = true) {
+    static Logger *CreateUdpLogger(char *szHost, unsigned uPort, LogLevel level = INFO, bool bPrintTimeStamp = true) {
         return new UdpLogger(szHost, uPort, level, bPrintTimeStamp);
     }
-private:
+
+  private:
     LoggerFactory() {}
 
     class FileLogger : public Logger {
-    public:
-        FileLogger(std::string strFilePath, LogLevel level, bool bPrintTimeStamp) 
-        : Logger(level, bPrintTimeStamp) {
+      public:
+        FileLogger(std::string strFilePath, LogLevel level, bool bPrintTimeStamp) : Logger(level, bPrintTimeStamp) {
             pFileOut = new std::ofstream();
             pFileOut->open(strFilePath.c_str());
         }
-        ~FileLogger() {
-            pFileOut->close();
-        }
-        std::ostream& GetStream() {
-            return *pFileOut;
-        }
-    private:
+        ~FileLogger() { pFileOut->close(); }
+        std::ostream &GetStream() { return *pFileOut; }
+
+      private:
         std::ofstream *pFileOut;
     };
 
     class ConsoleLogger : public Logger {
-    public:
-        ConsoleLogger(LogLevel level, bool bPrintTimeStamp) 
-        : Logger(level, bPrintTimeStamp) {}
-        std::ostream& GetStream() {
-            return std::cout;
-        }
+      public:
+        ConsoleLogger(LogLevel level, bool bPrintTimeStamp) : Logger(level, bPrintTimeStamp) {}
+        std::ostream &GetStream() { return std::cout; }
     };
 
     class UdpLogger : public Logger {
-    private:
+      private:
         class UdpOstream : public std::ostream {
-        public:
-            UdpOstream(char *szHost, unsigned short uPort) : std::ostream(&sb), socket(INVALID_SOCKET){
+          public:
+            UdpOstream(char *szHost, unsigned short uPort) : std::ostream(&sb), socket(INVALID_SOCKET) {
 #ifdef _WIN32
                 WSADATA w;
                 if (WSAStartup(0x0101, &w) != 0) {
@@ -181,35 +160,34 @@ private:
 #endif
             }
             void Flush() {
-                if (sendto(socket, sb.str().c_str(), (int)sb.str().length() + 1, 
-                        0, (struct sockaddr *)&server, (int)sizeof(sockaddr_in)) == -1) {
+                if (sendto(socket, sb.str().c_str(), (int)sb.str().length() + 1, 0, (struct sockaddr *)&server,
+                           (int)sizeof(sockaddr_in)) == -1) {
                     fprintf(stderr, "sendto() failed.\n");
                 }
                 sb.str("");
             }
 
-        private:
+          private:
             std::stringbuf sb;
             SOCKET socket;
             struct sockaddr_in server;
         };
-    public:
-        UdpLogger(char *szHost, unsigned uPort, LogLevel level, bool bPrintTimeStamp) 
-        : Logger(level, bPrintTimeStamp), udpOut(szHost, (unsigned short)uPort) {}
-        UdpOstream& GetStream() {
-            return udpOut;
-        }
-        virtual void FlushStream() {
-            udpOut.Flush();
-        }
-    private:
+
+      public:
+        UdpLogger(char *szHost, unsigned uPort, LogLevel level, bool bPrintTimeStamp)
+            : Logger(level, bPrintTimeStamp), udpOut(szHost, (unsigned short)uPort) {}
+        UdpOstream &GetStream() { return udpOut; }
+        virtual void FlushStream() { udpOut.Flush(); }
+
+      private:
         UdpOstream udpOut;
     };
 };
 
 class LogTransaction {
-public:
-    LogTransaction(Logger *pLogger, LogLevel level, const char *szFile, const int nLine, const char *szFunc) : pLogger(pLogger), level(level) {
+  public:
+    LogTransaction(Logger *pLogger, LogLevel level, const char *szFile, const int nLine, const char *szFunc)
+        : pLogger(pLogger), level(level) {
         if (!pLogger) {
             std::cout << "[-----] ";
             return;
@@ -235,7 +213,7 @@ public:
             exit(1);
         }
     }
-    std::ostream& GetStream() {
+    std::ostream &GetStream() {
         if (!pLogger) {
             return std::cout;
         }
@@ -244,13 +222,14 @@ public:
         }
         return pLogger->GetStream();
     }
-private:
+
+  private:
     Logger *pLogger;
     LogLevel level;
     std::ostringstream ossNull;
 };
 
-}
+} // namespace simplelogger
 
 extern simplelogger::Logger *logger;
 #define LOG(level) simplelogger::LogTransaction(logger, level, __FILE__, __LINE__, __FUNCTION__).GetStream()

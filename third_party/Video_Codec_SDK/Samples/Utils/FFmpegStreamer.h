@@ -26,8 +26,8 @@
  */
 #pragma once
 
-#include <thread>
 #include <mutex>
+#include <thread>
 extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
@@ -59,12 +59,12 @@ static string AvErrorToString(int av_error_code) {
 }
 
 class FFmpegStreamer {
-private:
+  private:
     AVFormatContext *oc = NULL;
     AVStream *vs = NULL;
     int nFps = 0;
 
-public:
+  public:
     FFmpegStreamer(AVCodecID eCodecId, int nWidth, int nHeight, int nFps, const char *szInFilePath) : nFps(nFps) {
         avformat_network_init();
 
@@ -76,8 +76,7 @@ public:
             ret = avformat_alloc_output_context2(&oc, NULL, "ivf", NULL);
 
         if (ret < 0) {
-            LOG(ERROR) << "FFmpeg: failed to allocate an AVFormatContext. Error message: "
-                       << AvErrorToString(ret);
+            LOG(ERROR) << "FFmpeg: failed to allocate an AVFormatContext. Error message: " << AvErrorToString(ret);
             return;
         }
 
@@ -102,7 +101,7 @@ public:
         // Everything is ready. Now open the output stream.
         if (avio_open(&oc->pb, oc->url, AVIO_FLAG_WRITE) < 0) {
             LOG(ERROR) << "FFMPEG: Could not open " << oc->url;
-            return ;
+            return;
         }
 
         // Write the container header
@@ -125,14 +124,14 @@ public:
             LOG(ERROR) << "AVPacket allocation failed !";
             return false;
         }
-        pkt->pts = av_rescale_q(nPts++, AVRational {1, nFps}, vs->time_base);
+        pkt->pts = av_rescale_q(nPts++, AVRational{1, nFps}, vs->time_base);
         // No B-frames
         pkt->dts = pkt->pts;
         pkt->stream_index = vs->index;
         pkt->data = pData;
         pkt->size = nBytes;
 
-        if(!memcmp(pData, "\x00\x00\x00\x01\x67", 5)) {
+        if (!memcmp(pData, "\x00\x00\x00\x01\x67", 5)) {
             pkt->flags |= AV_PKT_FLAG_KEY;
         }
 
