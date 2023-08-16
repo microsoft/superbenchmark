@@ -75,9 +75,7 @@ void ShowHelpAndExit(const char *szBadOption = NULL) {
         << "-single      (No value) Use single cuda context for every thread. Default is multi-context, one context "
            "per thread."
         << std::endl
-        << "-host        (No value) Copy frame to host memory .Default is "
-           "device memory)"
-        << std::endl
+        << "-host        (No value) Copy frame to host memory .Default is device memory)" << std::endl
         << "-multi_input The file path which lists the path of multiple video in each line." << std::endl
         << "-codec       The codec of video to test. Default H264." << std::endl;
     if (bThrowError) {
@@ -351,7 +349,7 @@ std::vector<std::string> GenerateTotalFileList(const std::string &inputFilesList
  */
 float run(std::vector<OptimizedNvDecoder *> &vDec, int nThread, std::vector<std::string> &files,
           std::vector<int> &vnFrame, std::vector<std::exception_ptr> &vExceptionPtrs, int *nTotalFrames,
-          std::vector<double> &vnLatency, std::vector<double> &frLatency) {
+          std::vector<double> &vnLatency, std::vector<double> &frLatency, std::vector<double> &vnFPS) {
     std::vector<std::future<double>> decodeLatencyFutures;
     ThreadPool threadPool(nThread);
     // Enqueue the video decoding task into thread pool
@@ -379,6 +377,11 @@ float run(std::vector<OptimizedNvDecoder *> &vDec, int nThread, std::vector<std:
             if (frame > 0) {
                 frLatency.push_back(latency / frame);
             }
+        }
+    }
+    for (int i = 0; i < vnLatency.size(); i++) {
+        if (vnLatency[i] != 0) {
+            vnFPS.push_back(vnFrame[i] / vnLatency[i]);
         }
     }
 
@@ -412,22 +415,18 @@ int main(int argc, char **argv) {
         int nTotalFrames = 0;
         std::vector<double> vnLatency;
         std::vector<double> frLatency;
-        auto elapsedTime = run(vDec, nThread, files, vnFrame, vExceptionPtrs, &nTotalFrames, vnLatency, frLatency);
+        std::vector<double> videoFPS;
+        auto elapsedTime =
+            run(vDec, nThread, files, vnFrame, vExceptionPtrs, &nTotalFrames, vnLatency, frLatency, videoFPS);
 
         // Calculate and output the raw data into file and metrics into stdout
         double sum, mean, min, max, p50, p90, p95, p99;
         std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalMetrics(vnLatency);
-        std::cout << "Total Frames Decoded=" << nTotalFrames << " FPS=" << nTotalFrames / elapsedTime
-                  << " LatencyPerFrame=" << elapsedTime / nTotalFrames * 1000 << std::endl;
+        std::cout << "Total Frames Decoded=" << nTotalFrames << " FPS=" << nTotalFrames / elapsedTime << std::endl;
         std::cout << "Mean Latency for each video=" << mean * 1000 << " P50 Latency=" << p50 * 1000
                   << " P90 Latency=" << p90 * 1000 << " P95 Latency=" << p95 * 1000 << " P99 Latency=" << p99 * 1000
                   << "ms" << std::endl;
-        std::vector<double> videoFPS;
-        for (int i = 0; i < vnLatency.size(); i++) {
-            if (vnLatency[i] != 0) {
-                videoFPS.push_back(vnFrame[i] / vnLatency[i]);
-            }
-        }
+
         std::tie(sum, mean, min, max, p50, p90, p95, p99) = CalMetrics(videoFPS);
         std::cout << "Mean FPS for each video=" << mean << " P50 FPS=" << p50 << " P90 FPS=" << p90
                   << " P95 FPS=" << p95 << " P99 FPS=" << p99 << std::endl;
