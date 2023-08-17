@@ -65,7 +65,7 @@ jobs:
           sudo docker rmi $(sudo docker images --format "{{.Repository}}:{{.Tag}}" --filter=reference="node" --filter=reference="buildpack-deps")
           df -h
       - name: Free Up GitHub Actions Ubuntu Runner Disk Space 🔧
-        uses: jlumbroso/free-disk-space@main
+        uses: hirnidrin/free-disk-space@main
         with:
           # This might remove tools that are actually needed, if set to "true" but frees about 6 GB
           tool-cache: false
