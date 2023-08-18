@@ -16,37 +16,37 @@ if(CUDAToolkit_FOUND)
   set(NV_DEC_DIR ${THIRD_PARTY_SAMPLE_DIR}/NvCodec/NvDecoder)
 
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(PC_AVCODEC REQUIRED IMPORTED_TARGET libavcodec)
-  pkg_check_modules(PC_AVFORMAT REQUIRED IMPORTED_TARGET libavformat)
-  pkg_check_modules(PC_AVUTIL REQUIRED IMPORTED_TARGET libavutil)
-  pkg_check_modules(PC_SWRESAMPLE REQUIRED IMPORTED_TARGET libswresample)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(PC_AVCODEC REQUIRED IMPORTED_TARGET libavcodec)
+    pkg_check_modules(PC_AVFORMAT REQUIRED IMPORTED_TARGET libavformat)
+    pkg_check_modules(PC_AVUTIL REQUIRED IMPORTED_TARGET libavutil)
+    pkg_check_modules(PC_SWRESAMPLE REQUIRED IMPORTED_TARGET libswresample)
 
-  set(NV_FFMPEG_HDRS ${PC_AVCODEC_INCLUDE_DIRS})
-  find_library(AVCODEC_LIBRARY NAMES avcodec
+    set(NV_FFMPEG_HDRS ${PC_AVCODEC_INCLUDE_DIRS})
+    find_library(AVCODEC_LIBRARY NAMES avcodec
     HINTS
     ${PC_AVCODEC_LIBDIR}
     ${PC_AVCODEC_LIBRARY_DIRS}
     )
-  find_library(AVFORMAT_LIBRARY NAMES avformat
+    find_library(AVFORMAT_LIBRARY NAMES avformat
     HINTS
     ${PC_AVFORMAT_LIBDIR}
     ${PC_AVFORMAT_LIBRARY_DIRS}
     )
-  find_library(AVUTIL_LIBRARY NAMES avutil
+    find_library(AVUTIL_LIBRARY NAMES avutil
     HINTS
     ${PC_AVUTIL_LIBDIR}
     ${PC_AVUTIL_LIBRARY_DIRS}
     )
-  find_library(SWRESAMPLE_LIBRARY NAMES swresample
+    find_library(SWRESAMPLE_LIBRARY NAMES swresample
     HINTS
     ${PC_SWRESAMPLE_LIBDIR}
     ${PC_SWRESAMPLE_LIBRARY_DIRS}
     )
-  set(AVCODEC_LIB ${AVCODEC_LIBRARY})
-  set(AVFORMAT_LIB ${AVFORMAT_LIBRARY})
-  set(AVUTIL_LIB ${AVUTIL_LIBRARY})
-  set(SWRESAMPLE_LIB ${SWRESAMPLE_LIBRARY})
+    set(AVCODEC_LIB ${AVCODEC_LIBRARY})
+    set(AVFORMAT_LIB ${AVFORMAT_LIBRARY})
+    set(AVUTIL_LIB ${AVUTIL_LIBRARY})
+    set(SWRESAMPLE_LIB ${SWRESAMPLE_LIBRARY})
   endif()
 
   set(APP_SOURCES
@@ -75,9 +75,17 @@ if(CUDAToolkit_FOUND)
   set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=\"sm_50,compute_50\")
   if ( CMAKE_COMPILER_IS_GNUCC )
-  if(NOT "${CUDA_NVCC_FLAGS}" MATCHES "-std=c\\+\\+11" )
-    list(APPEND CUDA_NVCC_FLAGS -std=c++11)
+    if(NOT "${CUDA_NVCC_FLAGS}" MATCHES "-std=c\\+\\+11" )
+      list(APPEND CUDA_NVCC_FLAGS -std=c++11)
+    endif()
   endif()
+
+  execute_process(
+    COMMAND ln -s /usr/local/cuda/lib64/libnvcuvid.so /usr/local/cuda/lib64/libnvcuvid.so
+    RESULT_VARIABLE result
+  )  
+  if(result)
+    message(FATAL_ERROR "Failed to create symbolic link for nvcuvid lib: ${result}")
   endif()
   find_library(CUVID_LIB nvcuvid)
 
