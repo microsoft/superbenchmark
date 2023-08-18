@@ -18,11 +18,12 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      sudo apt update
-      sudo apt install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
       python3 -m pip install --upgrade pip setuptools==65.7
       python3 -m pip install .[test,nvworker]
       make postinstall
+      su -
+      apt update
+      apt install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
     displayName: Install dependencies
   - script: |
       python3 setup.py lint
