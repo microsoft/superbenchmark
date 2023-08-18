@@ -21,6 +21,8 @@ steps:
       python3 -m pip install --upgrade pip setuptools==65.7
       python3 -m pip install .[test,nvworker]
       make postinstall
+      sudo apt-get update
+      sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
     displayName: Install dependencies
   - script: |
       python3 setup.py lint

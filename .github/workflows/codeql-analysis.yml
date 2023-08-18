@@ -53,6 +53,10 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
           languages: cpp
+      - name: Install Dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
       - name: Build
         run: make cppbuild -j
       - name: Perform CodeQL Analysis
