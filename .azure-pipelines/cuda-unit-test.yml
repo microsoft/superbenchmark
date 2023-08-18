@@ -11,22 +11,21 @@ pool:
 
 container:
   image: nvcr.io/nvidia/pytorch:20.12-py3
-  options: '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker'
+  options: '-v /var/run/docker.sock:/var/run/docker.sock'
 
 steps:
   - script: |
-      sudo apt-get update
-      sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
+      
     displayName: Install dependencies
   - script: |
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
+      sudo apt-get update
+      sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
       python3 -m pip install --upgrade pip setuptools==65.7
       python3 -m pip install .[test,nvworker]
       make postinstall
-      bash -c "/usr/bin/sudo apt-get update"
-      bash -c "/usr/bin/sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev"
     displayName: Install dependencies
   - script: |
       python3 setup.py lint
