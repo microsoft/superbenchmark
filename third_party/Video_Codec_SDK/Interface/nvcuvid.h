@@ -440,10 +440,10 @@ typedef struct _CUVIDPARSERPARAMS {
     unsigned int uReserved1[4];          /**< IN: Reserved for future use - set to 0                                  */
     void *pUserData;                     /**< IN: User data for callbacks                                             */
     PFNVIDSEQUENCECALLBACK
-        pfnSequenceCallback; /**< IN: Called before decoding frames and/or whenever there is a fmt change */
+    pfnSequenceCallback; /**< IN: Called before decoding frames and/or whenever there is a fmt change */
     PFNVIDDECODECALLBACK pfnDecodePicture; /**< IN: Called when a picture is ready to be decoded (decode order) */
     PFNVIDDISPLAYCALLBACK
-        pfnDisplayPicture; /**< IN: Called whenever a picture is ready to be displayed (display order)  */
+    pfnDisplayPicture; /**< IN: Called whenever a picture is ready to be displayed (display order)  */
     PFNVIDOPPOINTCALLBACK pfnGetOperatingPoint; /**< IN: Called from AV1 sequence header to get operating point of a AV1
                                                          scalable bitstream */
     PFNVIDSEIMSGCALLBACK pfnGetSEIMsg; /**< IN: Called when all SEI messages are parsed for particular frame        */

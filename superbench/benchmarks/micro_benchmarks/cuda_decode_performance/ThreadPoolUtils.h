@@ -42,7 +42,7 @@ class ThreadPool {
     template <typename R, typename F, typename... Args> struct TaskWrapper {
         std::shared_ptr<std::packaged_task<R(size_t)>> task;
 
-        template <typename Callable, typename... CallableArgs> TaskWrapper(Callable &&f, CallableArgs &&... args) {
+        template <typename Callable, typename... CallableArgs> TaskWrapper(Callable &&f, CallableArgs &&...args) {
             task = std::make_shared<std::packaged_task<R(size_t)>>(
                 [f, args...](size_t threadIdx) mutable { return f(threadIdx, args...); });
         }
@@ -53,7 +53,7 @@ class ThreadPool {
      * @brief Enqueue enqueues the task with custom arguments and return the results of task when finished.
      */
     template <typename F, typename... Args>
-    auto enqueue(F &&f, Args &&... args) -> std::future<typename std::result_of<F(size_t, Args...)>::type> {
+    auto enqueue(F &&f, Args &&...args) -> std::future<typename std::result_of<F(size_t, Args...)>::type> {
         using ReturnType = typename std::result_of<F(size_t, Args...)>::type;
 
         TaskWrapper<ReturnType, F, Args...> wrapper(std::forward<F>(f), std::forward<Args>(args)...);

@@ -725,13 +725,13 @@ typedef struct _CUVIDAV1PICPARAMS {
     unsigned int enable_intra_edge_filter : 1;   // intra edge filtering process, 0 : disable 1: enabled
     unsigned int enable_interintra_compound : 1; // interintra, 0 : not present 1: present
     unsigned int enable_masked_compound : 1;     // 1: mode info for inter blocks may contain the syntax element
-                                             // compound_type. 0: syntax element compound_type will not be present
-    unsigned int enable_dual_filter : 1;     // vertical and horiz filter selection, 1: enable and 0: disable
-    unsigned int enable_order_hint : 1;      // order hint, and related tools, 1: enable and 0: disable
-    unsigned int order_hint_bits_minus1 : 3; // is used to compute OrderHintBits
-    unsigned int enable_jnt_comp : 1;        // joint compound modes, 1: enable and 0: disable
-    unsigned int enable_superres : 1;        // superres in seq level, 0 : disable 1: frame level control
-    unsigned int enable_cdef : 1;            // cdef filtering in seq level, 0 : disable 1: frame level control
+                                                 // compound_type. 0: syntax element compound_type will not be present
+    unsigned int enable_dual_filter : 1;         // vertical and horiz filter selection, 1: enable and 0: disable
+    unsigned int enable_order_hint : 1;          // order hint, and related tools, 1: enable and 0: disable
+    unsigned int order_hint_bits_minus1 : 3;     // is used to compute OrderHintBits
+    unsigned int enable_jnt_comp : 1;            // joint compound modes, 1: enable and 0: disable
+    unsigned int enable_superres : 1;            // superres in seq level, 0 : disable 1: frame level control
+    unsigned int enable_cdef : 1;                // cdef filtering in seq level, 0 : disable 1: frame level control
     unsigned int enable_restoration : 1; // loop restoration filtering in seq level, 0 : disable 1: frame level control
     unsigned int enable_fgs : 1;         // defined as film_grain_params_present in AV1 specification
     unsigned int reserved0_7bits : 7;    // reserved bits; must be set to 0
@@ -824,7 +824,7 @@ typedef struct _CUVIDAV1PICPARAMS {
     unsigned char loop_filter_delta_enabled : 1; // indicates that the filter level depends on the mode and reference
                                                  // frame used to predict a block
     unsigned char loop_filter_delta_update : 1;  // indicates that additional syntax elements are present that specify
-                                                // which mode and reference frame deltas are to be updated
+                                                 // which mode and reference frame deltas are to be updated
     unsigned char delta_lf_present : 1; // specifies whether loop filter delta values are present in the block level
     unsigned char delta_lf_res : 2;     // specifies the left shift to apply to the decoded loop filter values
     unsigned char delta_lf_multi : 1;   // separate loop filter deltas for Hy,Vy,U,V edges
@@ -837,7 +837,7 @@ typedef struct _CUVIDAV1PICPARAMS {
     // reference frames
     unsigned char primary_ref_frame; // specifies which reference frame contains the CDF values and other state that
                                      // should be loaded at the start of the frame
-    unsigned char ref_frame_map[8]; // frames in dpb that can be used as reference for current or future frames
+    unsigned char ref_frame_map[8];  // frames in dpb that can be used as reference for current or future frames
 
     unsigned char temporal_layer_id : 4; // temporal layer id
     unsigned char spatial_layer_id : 4;  // spatial layer id
