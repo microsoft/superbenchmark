@@ -15,9 +15,6 @@ container:
 
 steps:
   - script: |
-      
-    displayName: Install dependencies
-  - script: |
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
