@@ -49,14 +49,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Install Dependency
+        run: |
+          apt-get update
+          apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
           languages: cpp
-      - name: Install Dependency
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
       - name: Build
         run: make cppbuild -j
       - name: Perform CodeQL Analysis
