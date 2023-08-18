@@ -22,7 +22,7 @@ steps:
       python3 -m pip install .[test,nvworker]
       make postinstall
       sudo DEBIAN_FRONTEND=noninteractive apt-get update
-      sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
+      sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
     displayName: Install dependencies
   - script: |
       python3 setup.py lint
