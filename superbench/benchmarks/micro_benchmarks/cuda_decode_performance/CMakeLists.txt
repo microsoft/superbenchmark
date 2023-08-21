@@ -81,9 +81,9 @@ if(CUDA_FOUND)
   endif()
 
   # Check if the file exists
-  if (NOT EXISTS /usr/lib/x86_64-linux-gnu/libnvcuvid.so )
+  if (NOT EXISTS /usr/local/lib/libnvcuvid.so )
       execute_process(
-        COMMAND sudo ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
+        COMMAND sudo ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/local/lib/libnvcuvid.so
         RESULT_VARIABLE result
       )  
       if(result)
@@ -92,10 +92,6 @@ if(CUDA_FOUND)
   endif ()
 
   find_library(CUVID_LIB nvcuvid
-    HINTS 
-    "/usr/local/cuda/targets/x86_64-linux/lib/"
-    "/usr/lib/x86_64-linux-gnu/"
-    "/usr/local/cuda/lib64/"
 )
 
   cuda_add_executable(${PROJECT_NAME} ${APP_SOURCES} ${NV_DEC_SOURCES} ${NV_DEC_HDRS})
