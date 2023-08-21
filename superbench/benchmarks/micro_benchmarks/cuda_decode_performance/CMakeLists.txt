@@ -81,7 +81,7 @@ if(CUDAToolkit_FOUND)
   endif()
 
   execute_process(
-    COMMAND sudo ln -s /usr/local/cuda/lib64/libnvcuvid.so /usr/lib/libnvcuvid.so
+    COMMAND sudo ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
     RESULT_VARIABLE result
   )  
   if(result)
