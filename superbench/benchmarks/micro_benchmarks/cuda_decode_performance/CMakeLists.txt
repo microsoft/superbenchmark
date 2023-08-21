@@ -4,8 +4,8 @@
 cmake_minimum_required(VERSION 3.18)
 project(cuda_decode_performance)
 
-find_package(CUDAToolkit QUIET)
-if(CUDAToolkit_FOUND)
+find_package(CUDA QUIET)
+if(CUDA_FOUND)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -70,7 +70,7 @@ if(CUDAToolkit_FOUND)
 
   source_group( "headers" FILES ${NV_DEC_HDRS} )
   source_group( "sources" FILES ${APP_SOURCES} ${NV_DEC_SOURCES})
-
+  set(CMAKE_LIBRARY_PATH "${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs;${CUDA_TOOLKIT_ROOT_DIR}/lib/stubs;${CUDA_TOOLKIT_ROOT_DIR}/lib64;${CUDA_TOOLKIT_ROOT_DIR}/lib;${CMAKE_LIBRARY_PATH}")
   find_package(CUDA)
   set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=\"sm_50,compute_50\")
@@ -90,10 +90,13 @@ if(CUDAToolkit_FOUND)
         message(FATAL_ERROR "Failed to create symbolic link for nvcuvid lib: ${result}")
       endif()
   endif ()
-  
-  find_library(
-    CUVID_LIB nvcuvid 
-    PATHS "/usr/lib/x86_64-linux-gnu/")
+
+  find_library(CUVID_LIB nvcuvid
+    HINTS 
+    "/usr/local/cuda/targets/x86_64-linux/lib/"
+    "/usr/lib/x86_64-linux-gnu/"
+    "/usr/local/cuda/lib64/"
+)
 
   cuda_add_executable(${PROJECT_NAME} ${APP_SOURCES} ${NV_DEC_SOURCES} ${NV_DEC_HDRS})
 
@@ -111,5 +114,5 @@ if(CUDAToolkit_FOUND)
   target_link_libraries(${PROJECT_NAME} ${CUDA_CUDA_LIBRARY} ${CMAKE_DL_LIBS} ${CUVID_LIB} ${AVCODEC_LIB}
   ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWRESAMPLE_LIB})
 
-  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${NVCODEC_SAMPLES_INSTALL_DIR})
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 endif()
