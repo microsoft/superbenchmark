@@ -80,14 +80,20 @@ if(CUDAToolkit_FOUND)
     endif()
   endif()
 
-  execute_process(
-    COMMAND sudo ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
-    RESULT_VARIABLE result
-  )  
-  if(result)
-    message(FATAL_ERROR "Failed to create symbolic link for nvcuvid lib: ${result}")
-  endif()
-  find_library(CUVID_LIB nvcuvid)
+  # Check if the file exists
+  if (NOT EXISTS /usr/lib/x86_64-linux-gnu/libnvcuvid.so )
+      execute_process(
+        COMMAND sudo ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
+        RESULT_VARIABLE result
+      )  
+      if(result)
+        message(FATAL_ERROR "Failed to create symbolic link for nvcuvid lib: ${result}")
+      endif()
+  endif ()
+  
+  find_library(
+    CUVID_LIB nvcuvid 
+    PATHS "/usr/lib/x86_64-linux-gnu/")
 
   cuda_add_executable(${PROJECT_NAME} ${APP_SOURCES} ${NV_DEC_SOURCES} ${NV_DEC_HDRS})
 
