@@ -81,7 +81,7 @@ if(CUDA_FOUND)
   endif()
 
   # Check if the file exists
-  if (NOT EXISTS /usr/local/lib/libnvcuvid.so )
+  if (NOT EXISTS "/usr/local/lib/libnvcuvid.so" )
       execute_process(
         COMMAND sudo ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/local/lib/libnvcuvid.so
         RESULT_VARIABLE result
@@ -92,7 +92,10 @@ if(CUDA_FOUND)
   endif ()
 
   find_library(CUVID_LIB nvcuvid
-)
+  HINTS
+  "/usr/local/lib/"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/Video_Codec_SDK/Lib/linux/stubs/x86_64/"
+  )
 
   cuda_add_executable(${PROJECT_NAME} ${APP_SOURCES} ${NV_DEC_SOURCES} ${NV_DEC_HDRS})
 
