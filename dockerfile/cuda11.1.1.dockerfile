@@ -26,13 +26,18 @@ RUN apt-get update && \
     build-essential \
     curl \
     dmidecode \
+    ffmpeg \
     git \
     iproute2 \
     jq \
     libaio-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
     libcap2 \
     libnuma-dev \
     libpci-dev \
+    libswresample-dev \
     libtinfo5 \
     libtool \
     lshw \
