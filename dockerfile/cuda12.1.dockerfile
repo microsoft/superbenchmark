@@ -33,6 +33,7 @@ RUN apt-get update && \
     libavcodec-dev \
     libavformat-dev \
     libavutil-dev \
+    libboost-program-options-dev \
     libcap2 \
     libnuma-dev \
     libpci-dev \
