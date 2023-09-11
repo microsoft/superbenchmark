@@ -86,7 +86,7 @@ endif
 # Build rccl-tests from commit 2a18737 of default branch.
 rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
-	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=$(HIP_HOME) RCCL_HOME=$(RCCL_HOME) -j
+	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=/opt/rocm/bin/hipcc  RCCL_HOME=$(RCCL_HOME) -j
 	cp -v ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
