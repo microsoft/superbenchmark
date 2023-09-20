@@ -1,0 +1,23 @@
+# SuperBench GEMM Config
+version: v0.9
+superbench:
+  enable: ["cublaslt-gemm"]
+  monitor:
+    enable: true
+    sample_duration: 1
+    sample_interval: 10
+  benchmarks:
+    cublaslt-gemm:
+      enable: true
+      modes:
+        - name: local
+          prefix: CUDA_VISIBLE_DEVICES=0
+      parameters:
+        # sweep through different matrix shapes and sizes
+        # start with irregular matrix sizes (m=1024 to m=802816)
+        # then sweep through square matrix sizes (m=n=k=1024,2048,8192,16384)
+        # then execute tall and skinny matrices
+        shapes: 1024,2145,1024 1,4608,12288 1,12288,1536 12288,6400,12288 802816,192,192 802816,192,768 1024,1024,1024 2048,2048,2048 8192,8192,8192 16384,16384,16384 16384,16384,128 128,16384,16384
+        in_types: fp16
+        num_warmup: 100
+        num_steps: 1000

@@ -1,0 +1,28 @@
+# SuperBench rules
+version: v0.9
+superbench:
+  rules:
+    cublaslt-gemm:
+      statistics:
+        - count
+        - mean
+        - p90
+        - min
+        - max
+        - std
+      aggregate: True
+      categories: CUBLASLTGEMMFLOPS
+      metrics:
+        - cublaslt-gemm/.
+    gemm-flops:
+      statistics:
+        - count
+        - mean
+        - p90
+        - min
+        - max
+        - std
+      aggregate: True
+      categories: GEMMFLOPS
+      metrics:
+        - gemm-flops/.

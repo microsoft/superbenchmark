@@ -1,6 +1,8 @@
 // Copyright(c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include <cstdlib>
+#include <ctime>
 #include <getopt.h>
 #include <memory>
 #include <stdio.h>
@@ -64,9 +66,13 @@ void process_args(int argc, char **argv, Args *args) {
     }
 }
 
-template <typename T> __global__ void init_matrix(T *matrix, const fp32 val, const size_t N) {
+template <typename T> __global__ void init_matrix(T *matrix, const fp32 rand_val, const size_t N) {
     size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
     for (size_t i = tid; i < N; i += gridDim.x * blockDim.x) {
+        // introduce more randomness
+        fp32 val = rand_val;
+        val = val + i * 3;
+
         matrix[i] = T(val);
     }
 }
@@ -98,8 +104,14 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
     cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
 
-    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * batch);
-    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * batch);
+    std::srand(std::time(nullptr));
+    float rand_val = static_cast<float>(std::rand());
+
+    init_matrix<Ta><<<216, 1024>>>(matrix_a, rand_val, m * k * batch);
+ 
+    rand_val = static_cast<float>(std::rand());
+
+    init_matrix<Tb><<<216, 1024>>>(matrix_b, rand_val, k * n * batch);
 
     // init gemm
     size_t lda = k, ldb = k, ldd = m;
