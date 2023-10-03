@@ -177,6 +177,7 @@ setup(
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
+        'nvtx>=0.2.8',
     ],
     extras_require=(
         lambda x: {
@@ -209,7 +210,7 @@ setup(
             'torch': [
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
-                'transformers>=4.3.3, <4.23.0',
+                'transformers>=4.3.3',
             ],
             'ort': [
                 'onnx>=1.10.2',

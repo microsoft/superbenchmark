@@ -16,6 +16,7 @@ import jsonlines
 from natsort import natsorted
 from joblib import Parallel, delayed
 from omegaconf import ListConfig, OmegaConf
+import nvtx
 
 from superbench.common.utils import SuperBenchLogger, logger, gen_ibstat, gen_traffic_pattern_host_groups
 from superbench.common.utils.lazy_import import LazyImport
@@ -440,6 +441,7 @@ class SuperBenchRunner():
         Returns:
             int: Process return code.
         """
+        rng = nvtx.start_range(message="BENCHMARK", color="green")
         mode.update(vars)
         if mode.name == 'mpi' and mode.pattern:
             mode.env.update({'SB_MODE_SERIAL_INDEX': mode.serial_index, 'SB_MODE_PARALLEL_INDEX': mode.parallel_index})
@@ -474,6 +476,7 @@ class SuperBenchRunner():
         rc = self._ansible_client.run(
             ansible_runner_config, cancel_callback=lambda: None, sudo=(not self._docker_config.skip)
         )
+        nvtx.end_range(rng)
         return rc
 
     def run(self):
