@@ -17,7 +17,7 @@ FROM ${BASE_IMAGE}
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
-#   - mlc: v3.9a
+#   - mlc: v3.10
 
 LABEL maintainer="SuperBench"
 
@@ -97,7 +97,7 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/736634/mlc_v3.9a.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
