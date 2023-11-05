@@ -15,3 +15,5 @@ add_executable(rocblas_gemm_fp8 rocblas_gemm.cc)
 
 # Link the ROCBLAS library to the test executable
 target_link_libraries(rocblas_gemm_fp8 roc::rocblas)
+
+# cmake .. -D CMAKE_PREFIX_PATH=/opt/rocm
