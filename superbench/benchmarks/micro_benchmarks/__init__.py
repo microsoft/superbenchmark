@@ -27,6 +27,7 @@ from superbench.benchmarks.micro_benchmarks.ib_validation_performance import IBB
 from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import KernelLaunch
 from superbench.benchmarks.micro_benchmarks.ort_inference_performance import ORTInferenceBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_gemm_flops_performance import RocmGemmFlopsBenchmark
+from superbench.benchmarks.micro_benchmarks.hipblaslt_function import HipBlasLtBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul
 from superbench.benchmarks.micro_benchmarks.tcp_connectivity import TCPConnectivityBenchmark
@@ -62,6 +63,7 @@ __all__ = [
     'ORTInferenceBenchmark',
     'RocmGemmFlopsBenchmark',
     'RocmMemBwBenchmark',
+    'HipBlasLtBenchmark',
     'ShardingMatmul',
     'TCPConnectivityBenchmark',
     'TensorRTInferenceBenchmark',
