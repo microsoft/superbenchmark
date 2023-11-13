@@ -147,7 +147,7 @@ class GenerateStatistics(GenerateBaseline):
                     )
                     for index, out in enumerate(outputs):
                         if not out:
-                            logger.error('Analyzer: filter healthy nodese failed')
+                            logger.error('Analyzer: filter healthy nodes failed')
                             return
                         aggregated_df[metrics[index]] = out[1]
                         if plot:

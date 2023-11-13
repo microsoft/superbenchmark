@@ -49,6 +49,12 @@ superbench:
       categories: INVESTIGATING
       metrics:
         - kernel-launch:*.*/.*_time
+    tensorrt_inference:
+      function: variance
+      criteria: 'lambda x:x>0.05'
+      categories: TensorRT
+      metrics:
+        - tensorrt-inference/.*_time.*
   # Rule 1: If TensorCore test suffers > 5% downgrade, label it as Not acceptable
     tensor_core_rule:
       function: variance
