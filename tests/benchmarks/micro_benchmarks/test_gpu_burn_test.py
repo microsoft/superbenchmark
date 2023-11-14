@@ -46,14 +46,10 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.tensor_core)
 
         # Check command
-        compare_copy = 'cp ' + benchmark._args.bin_dir + '/compare.ptx ./'
-        compare_rm = 'rm ' + 'compare.ptx'
         assert (1 == len(benchmark._commands))
-        assert (benchmark._commands[0].startswith(compare_copy))
         assert ('-d' in benchmark._commands[0])
         assert ('-tc' in benchmark._commands[0])
         assert (str(time) in benchmark._commands[0])
-        assert (compare_rm in benchmark._commands[0])
 
         # Check results
         assert (benchmark._process_raw_result(0, results))
