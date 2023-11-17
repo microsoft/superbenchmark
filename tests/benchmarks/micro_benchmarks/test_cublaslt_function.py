@@ -66,7 +66,7 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             parameters='--batch 2:16:2 --shapes 2:4,4:8,8:32 32:128:4,128,128 --in_types fp16 fp32 fp64 int8',
         )
         self.assertTrue(benchmark._preprocess())
-        self.assertEqual(4 * (2 * 2 * 3 + 2) * 3, len(benchmark._commands))
+        self.assertEqual(4 * (2 * 2 * 3 + 2) * len(benchmark._args.in_types), len(benchmark._commands))
 
         def cmd(t, b, m, n, k):
             return f'{benchmark._CublasLtBenchmark__bin_path} -m {m} -n {n} -k {k} -b {b} -w 20 -i 50 -t {t}'
