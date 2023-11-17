@@ -16,7 +16,7 @@ using fp16 = half;
 using bf16 = nv_bfloat16;
 using fp8e4m3 = __nv_fp8_e4m3;
 using fp8e5m2 = __nv_fp8_e5m2;
-using int8= int8_t;
+using int8 = int8_t;
 
 struct Args {
     int m = 16;
@@ -85,7 +85,7 @@ template <typename T> cudaDataType_t get_datatype() {
         return CUDA_R_8F_E4M3;
     if (std::is_same<T, fp8e5m2>::value)
         return CUDA_R_8F_E5M2;
-    if (std:: is_same<T, int8>::value)
+    if (std::is_same<T, int8>::value)
 	    return CUDA_R_8I;
     throw std::invalid_argument("Unknown type");
 }
