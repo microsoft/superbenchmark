@@ -31,6 +31,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
         with CommandGroup(self, 'result', 'superbench.cli._result_handler#{}') as g:
             g.command('diagnosis', 'diagnosis_command_handler')
             g.command('summary', 'summary_command_handler')
+            g.command('generate-baseline', 'generate_baseline_command_handler')
         return super().load_command_table(args)
 
     def load_arguments(self, command):
@@ -74,6 +75,18 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
         with ArgumentsContext(self, 'result') as ac:
             ac.argument('raw_data_file', options_list=('--data-file', '-d'), type=str, help='Path to raw data file.')
             ac.argument('rule_file', options_list=('--rule-file', '-r'), type=str, help='Path to rule file.')
+            ac.argument(
+                'summary_rule_file',
+                options_list=('--summary-rule-file', '-sr'),
+                type=str,
+                help='Path to summary rule file.'
+            )
+            ac.argument(
+                'diagnosis_rule_file',
+                options_list=('--diagnosis-rule-file', '-dr'),
+                type=str,
+                help='Path to diagnosis rule file.'
+            )
             ac.argument(
                 'baseline_file', options_list=('--baseline-file', '-b'), type=str, help='Path to baseline file.'
             )

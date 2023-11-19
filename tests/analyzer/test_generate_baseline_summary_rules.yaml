@@ -1,0 +1,11 @@
+# SuperBench rules
+version: v0.8
+superbench:
+  rules:
+    micro-aggregation:
+      statistics: mean
+      categories: MICRO
+      aggregate: True
+      metrics:
+        - mem-bw:*.*/.*_bw
+        - kernel-launch:*.*/.*_time

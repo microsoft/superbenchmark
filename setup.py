@@ -165,7 +165,7 @@ setup(
         'openpyxl>=3.0.7',
         'pandas>=1.1.5',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
-        'python-dateutil>=2.8.2'
+        'python-dateutil>=2.8.2',
         'pyyaml>=5.3',
         'requests>=2.27.1',
         'seaborn>=0.11.2',
