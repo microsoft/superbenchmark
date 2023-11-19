@@ -201,7 +201,7 @@ helps['result generate-baseline'] = """
             --data-file outputs/results-summary.jsonl
             --summary-rule-file summary-rule.yaml
             --diagnosis-rule-file diagnosis-rule.yaml
-            --baseline_file previous-baseline.json
+            --baseline-file previous-baseline.json
 """.format(cli_name=CLI_NAME)
 
 

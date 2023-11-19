@@ -297,12 +297,12 @@ sb result summary --data-file
 
 #### Optional arguments
 
-| Name                    | Default | Description                                                                 |
-|-------------------------|---------|-----------------------------------------------------------------------------|
-| `--diagnosis-rule-file` | `None`  | Path to diagnosis rule file. Default: None.                                 |
-| `--baseline--file`      | `None`  | Path to previous baseline file. Default: None.                              |
-| `--decimal-place-value` | 2       | Number of valid decimal places to show in output. Default: 2.               |
-| `--output-dir`          | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
+| Name                          | Default | Description                                                                 |
+|-------------------------------|---------|-----------------------------------------------------------------------------|
+| `--diagnosis-rule-file` `-dr` | `None`  | Path to diagnosis rule file. Default: None.                                 |
+| `--baseline-file` `-b`        | `None`  | Path to previous baseline file. Default: None.                              |
+| `--decimal-place-value`       | 2       | Number of valid decimal places to show in output. Default: 2.               |
+| `--output-dir`                | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
 
 #### Global arguments
 
@@ -319,7 +319,7 @@ sb result generate-baseline --data-file outputs/results-summary.jsonl --summary-
 
 Run result generate-baseline and merge with previous baseline:
 ```bash title="SB CLI"
-sb result generate-baseline --data-file outputs/results-summary.jsonl --summary-rule-file summary-rule.yaml --diagnosis-rule-file diagnosis-rule.yaml --baseline_file previous-baseline.json
+sb result generate-baseline --data-file outputs/results-summary.jsonl --summary-rule-file summary-rule.yaml --diagnosis-rule-file diagnosis-rule.yaml --baseline-file previous-baseline.json
 ```
 
 ### `sb run`

@@ -12,12 +12,12 @@ This tool is to generate a baseline json file based on the raw benchmark results
 
 1. [Install SuperBench](../getting-started/installation.mdx) on the local machine.
 
-2. Prepare the raw data and rule file on the local machine.
+2. Prepare the raw data and rule files on the local machine.
 
 3. Generate the baseline file automatically using `sb result generate-baseline` command. The detailed command can be found from [SuperBench CLI](../cli.md).
 
   ```bash
-  sb result generate-baseline --data-file ./results-summary.jsonl --summary-rule-file ./summary-rule.yaml --diagnosis-rule-file ./diagnosis-rule.yaml --baseline-file ./previous-baseline.json --output-dir ${output-dir}
+  sb result generate-baseline --data-file ./results-summary.jsonl --summary-rule-file ./summary-rule.yaml --diagnosis-rule-file ./diagnosis-rule.yaml --output-dir ${output-dir}
   ```
 
 4. Find the output result file named 'baseline.json' under ${output_dir}.
@@ -39,8 +39,6 @@ Raw data file can be found at ${output-dir}/results-summary.jsonl after each suc
 - **Previous Baseline File(optional)**: It is baseline file in json format that got from previous run and plan to merge into the latest baseline.
 
 ### Rule File
-
-This section describes how to write rules in **rule file**.
 
 **Summary Rule File** is the same with rule file defined in [Result Summary](./result-summary.md)
 
