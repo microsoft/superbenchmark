@@ -62,6 +62,8 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         gemm_compute_type = CUBLAS_COMPUTE_32F;
     if (a_type == CUDA_R_64F || b_type == CUDA_R_64F)
         gemm_compute_type = CUBLAS_COMPUTE_64F;
+    if (a_type == CUDA_R_8I)
+        gemm_compute_type = CUBLAS_COMPUTE_32I;
 
     cublasLtMatmulDesc_t op_desc = nullptr;
     CUBLAS_CHECK(cublasLtMatmulDescCreate(&op_desc, gemm_compute_type, CUDA_R_32F));
