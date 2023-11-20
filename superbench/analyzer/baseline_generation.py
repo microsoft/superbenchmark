@@ -3,7 +3,6 @@
 
 """A module for baseline generation."""
 
-import argparse
 from copy import deepcopy
 import json
 import re
@@ -17,7 +16,6 @@ from superbench.analyzer import data_analysis
 from superbench.analyzer import DataDiagnosis
 from superbench.analyzer import ResultSummary
 from superbench.analyzer.diagnosis_rule_op import RuleOp, DiagnosisRuleType
-from superbench.benchmarks.context import Enum
 
 
 class BaselineGeneration(DataDiagnosis):
@@ -25,24 +23,24 @@ class BaselineGeneration(DataDiagnosis):
     def fix_threshold_outlier_detection(self, data_series, single_metric_with_baseline, metric, rule_op):
         """Fix threshold outlier detection algorithm.
 
-        Step 0: Put all data in the collection
-        Step 1: Regenerate the collection
-        Calculate the average number in the collection as the baseline
-        Remove all data which cannot pass the fix threshold based on the new baseline
-        Step 2: If no data has been removed from Step 1, go to Step 3; otherwise, go to Step 1
-        Step 3: Use the baseline and fix threshold for Outlier Detection
+        Step 0: Put all data in the collection.
+        Step 1: Regenerate the collection.
+          Calculate the average number in the collection as the baseline.
+          Remove all data which cannot pass the fix threshold based on the new baseline.
+        Step 2: If no data has been removed from Step 1, go to Step 3; otherwise, go to Step 1.
+        Step 3: Use the baseline and fix threshold for Outlier Detection.
 
         Args:
-            data_series (pd.Series): data of the metric
-            single_metric_with_baseline (dict): baseline of the single metric in 'metrics' in 2-layer dict format
-            metric (str): the name of the metric to execute the algorithm
-            rule_op (function): diagnosis rule op function
+            data_series (pd.Series): data of the metric.
+            single_metric_with_baseline (dict): baseline of the single metric in 'metrics' in 2-layer dict format.
+            metric (str): the name of the metric to execute the algorithm.
+            rule_op (function): diagnosis rule op function.
 
         Returns:
-            tuple: the baseline of the metric, normal data of the metric
+            tuple: the baseline of the metric, normal data of the metric.
         """
-        if single_metric_with_baseline['metrics'][metric] != None and single_metric_with_baseline['metrics'][metric
-                                                                                                             ] != -1:
+        if single_metric_with_baseline['metrics'][
+            metric] is not None and single_metric_with_baseline['metrics'][metric] != -1:
             return single_metric_with_baseline['metrics'][metric]
         tmp_single_metric_with_baseline = deepcopy(single_metric_with_baseline)
         tmp_single_metric_with_baseline['metrics'] = {}
@@ -68,12 +66,12 @@ class BaselineGeneration(DataDiagnosis):
     def get_aggregate_data(self, raw_data_file, summary_rule_file):
         r"""Aggregate raw data according to the summary rule file.
 
-        If the metric is aggregated by rank (:\d+), remove the rank info to generate the metric name and aggregate data
-        If the metric is aggregated by pattern in regex, aggregate the data and copy to all metrics which match this pattern
+        If the metric is aggregated by rank (:\d+), remove the rank info to generate the metric name and aggregate data.
+        If the metric is aggregated by regex pattern, aggregate the data and copy to all metrics matches this pattern.
 
         Args:
-            raw_data_file (str): the file name of the raw data file
-            summary_rule_file (str): the file name of the summary rule file
+            raw_data_file (str): the file name of the raw data file.
+            summary_rule_file (str): the file name of the summary rule file.
 
         Returns:
             DataFrame: aggregated data
@@ -114,13 +112,14 @@ class BaselineGeneration(DataDiagnosis):
         """Generate the baseline in json format.
 
         Args:
-            algo (str): the algorithm to generate the baseline
-            aggregated_df (DataFrame): aggregated data
-            diagnosis_rule_file (str): the file name of the diagnosis rules which used in fix_threshold algorithm
-            baseline (dict): existing baseline of some metrics
+            algo (str): the algorithm to generate the baseline.
+            aggregated_df (DataFrame): aggregated data.
+            diagnosis_rule_file (str): the file name of the diagnosis rules which used in fix_threshold algorithm.
+            baseline (dict): existing baseline of some metrics.
 
         Returns:
-            dict: baseline of metrics defined in diagnosis_rule_files for fix_threshold algorithm or defined in rule_summary_files for mean
+            dict: baseline of metrics defined in diagnosis_rule_files for fix_threshold algorithm or
+                  defined in rule_summary_files for mean.
         """
         # re-organize metrics by benchmark names
         self._benchmark_metrics_dict = self._get_metrics_by_benchmarks(list(self._raw_data_df.columns))
@@ -158,7 +157,7 @@ class BaselineGeneration(DataDiagnosis):
         Args:
             raw_data_file (str): Path to raw data jsonl file.
             summary_rule_file (str): the file name of the summary rule file.
-            diagnosis_rule_file (str): the file name of the diagnosis rules which used in fix_threshold algorithm
+            diagnosis_rule_file (str): the file name of the diagnosis rules which used in fix_threshold algorithm.
             pre_baseline_file (str): the file name of the previous baseline file.
             algorithm (str): the algorithm to generate the baseline.
             output_dir (str): the directory to save the baseline file.

@@ -43,15 +43,15 @@ class TestBaselineGeneration(unittest.TestCase):
         )
         baseline = file_handler.read_baseline(self.output_baseline_file)
         expected_baseline = {
-            "kernel-launch/event_time": 0.0055,
-            "kernel-launch/wall_time": 0.009,
-            "mem-bw/d2h_bw": 26.22,
-            "mem-bw/h2d_bw": 26.07
+            'kernel-launch/event_time': 0.0055,
+            'kernel-launch/wall_time': 0.009,
+            'mem-bw/d2h_bw': 26.22,
+            'mem-bw/h2d_bw': 26.07
         }
         assert (expected_baseline == baseline)
 
         # Test - generate baseline with previous baseline
-        pre_baseline = {"gemm-flops/FP32": 18318.4, "gemm-flops/FP16": 33878}
+        pre_baseline = {'gemm-flops/FP32': 18318.4, 'gemm-flops/FP16': 33878}
         with open(self.pre_baseline_file, 'w') as f:
             json.dump(pre_baseline, f)
 
@@ -66,11 +66,11 @@ class TestBaselineGeneration(unittest.TestCase):
         )
         baseline = file_handler.read_baseline(self.output_baseline_file)
         expected_baseline = {
-            "kernel-launch/event_time": 0.0055,
-            "kernel-launch/wall_time": 0.009,
-            "mem-bw/d2h_bw": 26.22,
-            "mem-bw/h2d_bw": 26.07,
-            "gemm-flops/FP32": 18318.4,
-            "gemm-flops/FP16": 33878
+            'kernel-launch/event_time': 0.0055,
+            'kernel-launch/wall_time': 0.009,
+            'mem-bw/d2h_bw': 26.22,
+            'mem-bw/h2d_bw': 26.07,
+            'gemm-flops/FP32': 18318.4,
+            'gemm-flops/FP16': 33878
         }
         assert (expected_baseline == baseline)

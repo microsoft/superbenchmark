@@ -108,7 +108,7 @@ def generate_baseline_command_handler(
             algorithm = 'fix_threshold'
             check_argument_file('rule_file', diagnosis_rule_file)
         if baseline_file:
-            check_argument_file('baseline_file', pre_baseline_file)
+            check_argument_file('baseline_file', baseline_file)
         # Run result generate-baseline
         BaselineGeneration().run(
             raw_data_file, summary_rule_file, diagnosis_rule_file, baseline_file, algorithm, sb_output_dir,
