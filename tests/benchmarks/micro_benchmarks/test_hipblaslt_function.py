@@ -40,6 +40,21 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.ROCM)
         benchmark = benchmark_cls(
             self.benchmark_name,
+            parameters='--batch 4:2:-1 --shapes 2,4,8 --in_types fp16 fp32 fp64 int8',
+        )
+        self.assertFalse(benchmark._preprocess())
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=' --shapes 2,4,8 --in_types fp16 fp32 fp64 int8',
+        )
+        self.assertFalse(benchmark._preprocess())
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=' --shapes 2:4,4:8 --in_types fp16 fp32',
+        )
+        self.assertFalse(benchmark._preprocess())
+        benchmark = benchmark_cls(
+            self.benchmark_name,
             parameters='--shapes 2:4,4:8,8:32 2:4,4:8,8:32:+4 --in_types fp16 fp32 bf16',
         )
         self.assertTrue(benchmark._preprocess())
