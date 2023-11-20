@@ -9,7 +9,9 @@ from superbench.benchmarks.micro_benchmarks.memory_bw_performance_base import Me
 
 from superbench.benchmarks.micro_benchmarks.computation_communication_overlap import ComputationCommunicationOverlap
 from superbench.benchmarks.micro_benchmarks.cublas_function import CublasBenchmark
+from superbench.benchmarks.micro_benchmarks.blaslt_function_base import BlasLtBaseBenchmark
 from superbench.benchmarks.micro_benchmarks.cublaslt_function import CublasLtBenchmark
+from superbench.benchmarks.micro_benchmarks.hipblas_function import HipBlasLtBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_gemm_flops_performance import CudaGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_memory_bw_performance import CudaMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import CudaNcclBwBenchmark
@@ -37,6 +39,7 @@ from superbench.benchmarks.micro_benchmarks.directx_mem_bw_performance import Di
 from superbench.benchmarks.micro_benchmarks.directx_gemm_flops_performance import DirectXGPUCoreFlops
 
 __all__ = [
+    'BlasLtBaseBenchmark',
     'ComputationCommunicationOverlap',
     'CpuMemBwLatencyBenchmark',
     'CpuHplBenchmark',
@@ -49,6 +52,7 @@ __all__ = [
     'CudnnBenchmark',
     'DiskBenchmark',
     'DistInference',
+    'HipBlasLtBenchmark',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
     'GpuBurnBenchmark',
