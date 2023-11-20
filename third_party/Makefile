@@ -162,14 +162,6 @@ ifneq (,$(wildcard stream-tests/Makefile))
 	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
 endif
 
-#
-intel_mlc:
-    cd /tmp && \
-    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
-    tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
-    rm -rf ./Linux mlc.tgz
-
 # Build AMD Encoder Latency Test
 directx_amf_encoding_latency:
 	@if not exist "AMF" (git clone -b v1.4.29 https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git)
