@@ -85,10 +85,10 @@ endif
 
 # Build rccl-tests from commit 2a18737 of default branch.
 rocm_rccl_tests: sb_micro_path
-ifneq (, $(wildcard rccl-tests/Makefile))
+	if [ -d rccl-tests ]; then rm -rf rccl-tests ; fi
+	git clone https://github.com/ROCmSoftwarePlatform/rccl-tests.git
 	cd ./rccl-tests && git checkout develop && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=/opt/rocm/bin/hipcc  NCCL_HOME=$(RCCL_HOME) -j
-	cp -v ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
-endif
+	cp -v -r ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 
 # Build rocblas-bench.
 # RocBLAS is released with rocm, like rocm-4.2.0 and so on.

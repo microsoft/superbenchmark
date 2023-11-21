@@ -6,11 +6,11 @@ FROM ${BASE_IMAGE}
 #   - OpenMPI: 4.0.5
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 5.5
+#   - ROCm: 6.0
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
-#   - mlc: v3.9a
+#   - mlc: v3.10
 
 LABEL maintainer="SuperBench"
 
@@ -104,10 +104,8 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
         rm -rf MLNX_OFED_LINUX-${OFED_VERSION}* ; \
     fi
 
-RUN 
-
 # Install UCX
-RUN RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
+RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
     echo "/opt/ucx is empty. Installing UCX..."; \
     cd /tmp && wget https://github.com/openucx/ucx/releases/download/v1.15.0/ucx-1.15.0.tar.gz && \
     tar xzf ucx-1.15.0.tar.gz && \
@@ -121,18 +119,20 @@ RUN RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.0.5
 # Check if Open MPI is installed
-RUN command -v mpirun >/dev/null 2>&1 || { \
-    echo "Open MPI not found. Installing Open MPI..."; \
+RUN [ -d /usr/local/mpi ] || { \
+    echo "Open MPI not found. Installing Open MPI..." && \
     cd /tmp && \
     wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
     cd openmpi-${OPENMPI_VERSION} && \
     ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct --prefix=/usr/local/mpi && \
-    make -j ${NUM_MAKE_JOBS} all && \
+    make -j ${NUM_MAKE_JOBS} && \
     make install && \
     ldconfig && \
+    cd / && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}* ;\
 }
+
 
 
 # Install Intel MLC
@@ -149,10 +149,10 @@ RUN cd /opt/ &&  \
     mkdir build && \
     cd build && \
     CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_PREFIX_PATH=/opt/rocm/ .. && \
-    make -j 64
+    make -j
 
-ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/bin/:/usr/local/bin/" \
-    LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD"
+ENV PATH="/opt/superbench/bin:/opt/rocm/hip/bin/:/opt/rocm/bin/:/usr/local/bin/:${PATH}" \
+    LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
     LD_LIBRARY_PATH="/usr/local/mpi:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
