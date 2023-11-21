@@ -86,7 +86,7 @@ endif
 # Build rccl-tests from commit 2a18737 of default branch.
 rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
-	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=/opt/rocm/bin/hipcc  RCCL_HOME=$(RCCL_HOME) -j
+	cd ./rccl-tests && git checkout develop && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=/opt/rocm/bin/hipcc  NCCL_HOME=$(RCCL_HOME) -j
 	cp -v ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
@@ -95,12 +95,12 @@ endif
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 # Since it takes several hours to build, avoid to build again if rocblas-bench exsists.
 rocm_rocblas: sb_micro_path
-ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
-	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
-	git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
-	cd ./rocBLAS && ./install.sh --dependencies --clients-only
-	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
-endif
+	@if [ ! -e $(SB_MICRO_PATH)/bin/rocblas-bench ] && [ -z `which rocblas-bench` ]; then \
+		if [ -d rocBLAS ]; then rm -rf rocBLAS; fi; \
+		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS; \
+		cd ./rocBLAS && ./install.sh --dependencies --clients-only; \
+		cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/; \
+	fi
 
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.

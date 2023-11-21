@@ -32,7 +32,7 @@ else()
         # Link with HIP
         add_executable(kernel_launch_overhead kernel_launch.cu)
         
-	target_link_libraries(kernel_launch_overhead PRIVATE hip::host)
+	target_link_libraries(kernel_launch_overhead PRIVATE)
 		# Install tergets
         install(TARGETS kernel_launch_overhead RUNTIME DESTINATION bin)
     else()

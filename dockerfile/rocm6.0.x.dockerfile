@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=rocm/ms-private:12621_ubuntu22.04_py3.9_pytorch_release-2.0_f32cab4
+ARG BASE_IMAGE=rocm/ms-private:rocm_e2e_gpt4_nightly
 FROM ${BASE_IMAGE}
 
 # OS:
@@ -52,16 +52,22 @@ RUN apt-get update && \
 
 ARG NUM_MAKE_JOBS=
 
-# Upgrade CMake from 3.16 to 3.23
-ENV CMAKE_VERSION=3.23.1
-RUN cd /tmp && \
-    wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
-    tar xzf cmake-${CMAKE_VERSION}.tar.gz && \
-    cd cmake-${CMAKE_VERSION} && \
-    ./bootstrap --prefix=/usr --no-system-curl --parallel=16 && \
-    make -j ${NUM_MAKE_JOBS} && \
-    make install && \
-    rm -rf /tmp/cmake-${CMAKE_VERSION}*
+# Check if CMake is installed and its version
+RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
+    required_version="3.26.4" && \
+    if [ "$(printf "%s\n" "$required_version" "$cmake_version" | sort -V | head -n 1)" != "$required_version" ]; then \
+        echo "existing cmake version is ${cmake_version}" && \
+        cd /tmp && \
+        wget -q https://github.com/Kitware/CMake/releases/download/v${required_version}/cmake-${required_version}.tar.gz && \
+        tar xzf cmake-${required_version}.tar.gz && \
+        cd cmake-${required_version} && \
+        ./bootstrap --prefix=/usr --no-system-curl --parallel=16 && \
+        make -j ${NUM_MAKE_JOBS} && \
+        make install && \
+        rm -rf /tmp/cmake-${required_version}* \
+    else \
+        echo "CMake version is greater than or equal to 3.23"; \
+    fi
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -80,37 +86,74 @@ RUN mkdir -p /root/.ssh && \
     echo "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
+
+# Get Ubuntu version and set as an environment variable
+RUN export UBUNTU_VERSION=$(lsb_release -r -s)
+RUN echo "Ubuntu version: $UBUNTU_VERSION"
+ENV UBUNTU_VERSION=${UBUNTU_VERSION}
+
 # Install OFED
 ENV OFED_VERSION=5.9-0.5.6.0
-ENV UBUNTU_VERSION=22.04
-RUN cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
-    PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
-    rm -rf MLNX_OFED_LINUX-${OFED_VERSION}*
+# Check if ofed_info is present and has a version
+RUN if ! command -v ofed_info >/dev/null 2>&1; then \
+        echo "OFED not found. Installing OFED..."; \
+        cd /tmp && \
+        wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
+        tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
+        PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
+        rm -rf MLNX_OFED_LINUX-${OFED_VERSION}* ; \
+    fi
+
+RUN 
+
+# Install UCX
+RUN RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
+    echo "/opt/ucx is empty. Installing UCX..."; \
+    cd /tmp && wget https://github.com/openucx/ucx/releases/download/v1.15.0/ucx-1.15.0.tar.gz && \
+    tar xzf ucx-1.15.0.tar.gz && \
+    cd ucx-1.15.0 && \
+    ./contrib/configure-release --prefix=/opt/ucx/ && \
+    make -j8 install && rm -rf /tmp/ucx-1.15.0 ; \
+    else \
+      echo "/opt/ucx is not empty. Skipping UCX installation."; \
+    fi
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.0.5
-RUN cd /tmp && \
+# Check if Open MPI is installed
+RUN command -v mpirun >/dev/null 2>&1 || { \
+    echo "Open MPI not found. Installing Open MPI..."; \
+    cd /tmp && \
     wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
     tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
     cd openmpi-${OPENMPI_VERSION} && \
-    ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct && \
+    ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct --prefix=/usr/local/mpi && \
     make -j ${NUM_MAKE_JOBS} all && \
     make install && \
     ldconfig && \
-    rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
+    rm -rf /tmp/openmpi-${OPENMPI_VERSION}* ;\
+}
+
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/736634/mlc_v3.9a.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
+# Install RCCL
+RUN cd /opt/ &&  \
+    git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    cd rccl && \
+    mkdir build && \
+    cd build && \
+    CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_PREFIX_PATH=/opt/rocm/ .. && \
+    make -j 64
 
-ENV PATH="${PATH}:/opt/rocm/hip/bin/" \
-    LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}" \
+ENV PATH="${PATH}:/opt/rocm/hip/bin/:/opt/rocm/bin/:/usr/local/bin/" \
+    LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD"
+    LD_LIBRARY_PATH="/usr/local/mpi:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -123,12 +166,12 @@ RUN echo PATH="$PATH" > /etc/environment && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN add-apt-repository universe && \
-    apt-get update
-RUN make ROCBLAS_BRANCH=release-staging/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o rocm_rocblas
+
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream
 
 ADD . .
-RUN python3 -m pip install --upgrade wheel setuptools==65.7 && \
+RUN apt install rocm-cmake -y && \
+    python3 -m pip install --upgrade wheel setuptools==65.7 && \
     python3 -m pip install .[amdworker]  && \
     make cppbuild && \
     make postinstall
