@@ -39,7 +39,7 @@ def read_raw_data(raw_data_path):
         raw_data_df = raw_data_df.rename(raw_data_df['node'])
         raw_data_df = raw_data_df.drop(columns=['node'])
     except Exception as e:
-        logger.log_and_raise(exception=IOError, msg='Analyzer: invalid raw data fomat - {}'.format(str(e)))
+        logger.log_and_raise(exception=IOError, msg='Analyzer: invalid raw data format - {}'.format(str(e)))
     return raw_data_df
 
 

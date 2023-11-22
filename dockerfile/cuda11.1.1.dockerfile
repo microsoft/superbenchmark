@@ -149,7 +149,8 @@ ADD third_party third_party
 RUN make -C third_party cuda
 
 ADD . .
-RUN python3 -m pip install --no-cache-dir .[nvworker] && \
+RUN python3 -m pip install --upgrade setuptools==65.7 && \
+    python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
     rm -rf .git
