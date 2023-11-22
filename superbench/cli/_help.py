@@ -187,6 +187,27 @@ helps['result summary'] = """
             --output-file-format html
 """.format(cli_name=CLI_NAME)
 
+helps['result generate-baseline'] = """
+    type: command
+    short-summary: >
+        Generate the baseline of benchmarking results from jsonline file
+        according to rules defined in rule file.
+    examples:
+        - name: run result generate-baseline to generate baseline.json file
+          text: >
+            {cli_name} result generate-baseline
+            --data-file outputs/results-summary.jsonl
+            --summary-rule-file summary-rule.yaml
+            --diagnosis-rule-file diagnosis-rule.yaml
+        - name: run result generate-baseline and merge with previous baseline
+          text: >
+            {cli_name} result generate-baseline
+            --data-file outputs/results-summary.jsonl
+            --summary-rule-file summary-rule.yaml
+            --diagnosis-rule-file diagnosis-rule.yaml
+            --baseline-file previous-baseline.json
+""".format(cli_name=CLI_NAME)
+
 
 class SuperBenchCLIHelp(CLIHelp):
     """SuperBench CLI help loader."""

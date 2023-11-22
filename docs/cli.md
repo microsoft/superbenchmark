@@ -295,6 +295,53 @@ Run result summary and output the results in html format:
 sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yaml --output-file-format html
 ```
 
+### `sb result generate-baseline`
+
+Generate the baseline file automatically from multiple machines results according to rules defined in rule file.
+
+```bash title="SB CLI"
+sb result generate-baseline --data-file
+                            --summary-rule-file
+                            [--diagnosis-rule-file]
+                            [--baseline-file]
+                            [--decimal-place-value]
+                            [--output-dir]
+```
+
+#### Required arguments
+
+| Name                        | Description                             |
+|-----------------------------|-----------------------------------------|
+| `--data-file` `-d`          | Path to raw data file.                  |
+| `--summary-rule-file` `-sr` | Path to summary rule file.              |
+
+#### Optional arguments
+
+| Name                          | Default | Description                                                                 |
+|-------------------------------|---------|-----------------------------------------------------------------------------|
+| `--diagnosis-rule-file` `-dr` | `None`  | Path to diagnosis rule file. Default: None.                                 |
+| `--baseline-file` `-b`        | `None`  | Path to previous baseline file. Default: None.                              |
+| `--decimal-place-value`       | 2       | Number of valid decimal places to show in output. Default: 2.               |
+| `--output-dir`                | `None`  | Path to output directory, outputs/{datetime} will be used if not specified. |
+
+#### Global arguments
+
+| Name          | Default | Description        |
+|---------------|---------|--------------------|
+| `--help` `-h` | N/A     | Show help message. |
+
+#### Examples
+
+Run result generate-baseline to generate baseline.json file:
+```bash title="SB CLI"
+sb result generate-baseline --data-file outputs/results-summary.jsonl --summary-rule-file summary-rule.yaml --diagnosis-rule-file diagnosis-rule.yaml
+```
+
+Run result generate-baseline and merge with previous baseline:
+```bash title="SB CLI"
+sb result generate-baseline --data-file outputs/results-summary.jsonl --summary-rule-file summary-rule.yaml --diagnosis-rule-file diagnosis-rule.yaml --baseline-file previous-baseline.json
+```
+
 ### `sb run`
 
 Run the SuperBench benchmarks distributedly.
