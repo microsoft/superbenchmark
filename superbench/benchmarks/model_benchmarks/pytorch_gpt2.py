@@ -71,7 +71,7 @@ class PytorchGPT2(PytorchBase):
     def add_parser_arguments(self):
         """Add the GPT2-specified arguments.
 
-        GPT2 model reference: https://huggingface.co/transformers/model_doc/gpt2.html
+        GPT2 model reference: https://huggingface.co/docs/transformers/model_doc/gpt2
         """
         super().add_parser_arguments()
 
@@ -221,25 +221,25 @@ class PytorchGPT2(PytorchBase):
 
 
 # Register GPT2 benchmark with 117M parameters.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
+# Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-gpt2-small', PytorchGPT2, parameters='--hidden_size=768 --num_hidden_layers=12 --num_attention_heads=12'
 )
 
 # Register GPT2 benchmark with 345M parameters.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
+# Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-gpt2-medium', PytorchGPT2, parameters='--hidden_size=1024 --num_hidden_layers=24 --num_attention_heads=16'
 )
 
 # Register GPT2 benchmark with 774M parameters.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
+# Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-gpt2-large', PytorchGPT2, parameters='--hidden_size=1280 --num_hidden_layers=36 --num_attention_heads=20'
 )
 
 # Register GPT2 benchmark with 1558M parameters.
-# Reference: https://huggingface.co/transformers/pretrained_models.html
+# Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html
 BenchmarkRegistry.register_benchmark(
     'pytorch-gpt2-xl', PytorchGPT2, parameters='--hidden_size=1600 --num_hidden_layers=48 --num_attention_heads=25'
 )

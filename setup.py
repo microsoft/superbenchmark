@@ -20,7 +20,10 @@ import superbench
 try:
     pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
 except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
-    print('Try update pip/setuptools versions, for example, python3 -m pip install --upgrade pip setuptools==65.7')
+    print(
+        '\033[93mTry update pip/setuptools versions, for example, '
+        'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
+    )
     raise
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -163,6 +166,7 @@ setup(
         'numpy>=1.19.2',
         'omegaconf==2.0.6',
         'openpyxl>=3.0.7',
+        'packaging>=21.0',
         'pandas>=1.1.5',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
@@ -198,6 +202,7 @@ setup(
                 'types-pkg_resources',
                 'types-pyyaml',
                 'typing-extensions>=3.10',
+                'urllib3<2.0',
                 'vcrpy>=4.1.1',
                 'yapf==0.31.0',
             ],

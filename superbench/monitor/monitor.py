@@ -38,16 +38,7 @@ class Monitor(multiprocessing.Process):
         self.__unit_MiByte = 1024 * 1024 * 1.0
 
         self.__output_handler = open(self.__output_file, 'a')
-
         self.__cgroup = 1
-        output = run_command('grep cgroup /proc/filesystems', quiet=True)
-        if output.returncode != 0:
-            logger.error('Failed to check the cgroup version, will assume using cgroup V1.')
-        else:
-            if 'cgroup2' in output.stdout:
-                self.__cgroup = 2
-
-        logger.info('cgroup version: {}.'.format(self.__cgroup))
 
     def __preprocess(self):
         """Preprocess/preparation operations before the monitoring.
@@ -77,13 +68,15 @@ class Monitor(multiprocessing.Process):
             container_pid = output.stdout
 
             try:
-                if self.__cgroup == 1:
-                    self._cpu_file = glob.glob('/sys/fs/cgroup/cpuacct/docker/{}*/cpuacct.stat'.format(container_id))[0]
+                cpu_file_cgroup_v1 = glob.glob('/sys/fs/cgroup/cpuacct/docker/{}*/cpuacct.stat'.format(container_id))
+                if len(cpu_file_cgroup_v1) > 0:
+                    self._cpu_file = cpu_file_cgroup_v1[0]
                     self._mem_file = glob.glob(
                         '/sys/fs/cgroup/memory/docker/{}*/memory.usage_in_bytes'.format(container_id)
                     )[0]
                     self._net_file = '/proc/{}/net/dev'.format(container_pid)
                 else:
+                    self.__cgroup = 2
                     self._cpu_file = glob.glob(
                         '/sys/fs/cgroup/system.slice/docker-{}*.scope/cpu.stat'.format(container_id)
                     )[0]
@@ -99,10 +92,12 @@ class Monitor(multiprocessing.Process):
                 )
                 return False
         else:
-            if self.__cgroup == 1:
-                self._cpu_file = '/sys/fs/cgroup/cpuacct/cpuacct.stat'
+            cpu_file_cgroup_v1 = '/sys/fs/cgroup/cpuacct/cpuacct.stat'
+            if os.path.exists(cpu_file_cgroup_v1):
+                self._cpu_file = cpu_file_cgroup_v1
                 self._mem_file = '/sys/fs/cgroup/memory/memory.usage_in_bytes'
             else:
+                self.__cgroup = 2
                 self._cpu_file = '/sys/fs/cgroup/cpu.stat'
                 self._mem_file = '/sys/fs/cgroup/memory.stat'
             self._net_file = '/proc/net/dev'
@@ -199,6 +194,7 @@ class Monitor(multiprocessing.Process):
         for i in range(device_count):
             record.gpu_usage.append(dm.device_manager.get_device_utilization(i))
             record.gpu_temperature.append(dm.device_manager.get_device_temperature(i))
+            record.gpu_power.append(dm.device_manager.get_device_power(i))
             record.gpu_power_limit.append(dm.device_manager.get_device_power_limit(i))
             mem_used, mem_total = dm.device_manager.get_device_memory(i)
             record.gpu_mem_used.append(mem_used)

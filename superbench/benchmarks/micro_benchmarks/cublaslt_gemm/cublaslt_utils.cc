@@ -5,12 +5,12 @@
 
 void cublasLtGemm::Init() {
     cublasLtHandle_t handle;
-    checkCublasStatus(cublasLtCreate(&handle));
+    CUBLAS_CHECK(cublasLtCreate(&handle));
     handle_.reset(handle);
 
     /* preference can be initialized without arguments */
     cublasLtMatmulPreference_t preference;
-    checkCublasStatus(cublasLtMatmulPreferenceCreate(&preference));
+    CUBLAS_CHECK(cublasLtMatmulPreferenceCreate(&preference));
     preference_.reset(preference);
 }
 
@@ -24,32 +24,32 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     // force c_type
     cudaDataType_t c_type = d_type;
     // Create matrix descriptors.
-    checkCublasStatus(
+    CUBLAS_CHECK(
         cublasLtMatrixLayoutCreate(&a_desc, a_type, transa == CUBLAS_OP_N ? m : k, transa == CUBLAS_OP_N ? k : m, lda));
-    checkCublasStatus(
+    CUBLAS_CHECK(
         cublasLtMatrixLayoutCreate(&b_desc, b_type, transb == CUBLAS_OP_N ? k : n, transb == CUBLAS_OP_N ? n : k, ldb));
-    checkCublasStatus(cublasLtMatrixLayoutCreate(&c_desc, c_type, m, n, ldd));
-    checkCublasStatus(cublasLtMatrixLayoutCreate(&d_desc, d_type, m, n, ldd));
+    CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&c_desc, c_type, m, n, ldd));
+    CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&d_desc, d_type, m, n, ldd));
 
     // strided batch gemm
     if (batch > 0) {
         int64_t stridea = m * k, strideb = k * n, stridec = m * n, strided = m * n;
-        checkCublasStatus(
+        CUBLAS_CHECK(
             cublasLtMatrixLayoutSetAttribute(a_desc, CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT, &batch, sizeof(batch)));
-        checkCublasStatus(cublasLtMatrixLayoutSetAttribute(a_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET,
-                                                           &stridea, sizeof(stridea)));
-        checkCublasStatus(
+        CUBLAS_CHECK(cublasLtMatrixLayoutSetAttribute(a_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET, &stridea,
+                                                      sizeof(stridea)));
+        CUBLAS_CHECK(
             cublasLtMatrixLayoutSetAttribute(b_desc, CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT, &batch, sizeof(batch)));
-        checkCublasStatus(cublasLtMatrixLayoutSetAttribute(b_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET,
-                                                           &strideb, sizeof(strideb)));
-        checkCublasStatus(
+        CUBLAS_CHECK(cublasLtMatrixLayoutSetAttribute(b_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET, &strideb,
+                                                      sizeof(strideb)));
+        CUBLAS_CHECK(
             cublasLtMatrixLayoutSetAttribute(c_desc, CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT, &batch, sizeof(batch)));
-        checkCublasStatus(cublasLtMatrixLayoutSetAttribute(c_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET,
-                                                           &stridec, sizeof(stridec)));
-        checkCublasStatus(
+        CUBLAS_CHECK(cublasLtMatrixLayoutSetAttribute(c_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET, &stridec,
+                                                      sizeof(stridec)));
+        CUBLAS_CHECK(
             cublasLtMatrixLayoutSetAttribute(d_desc, CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT, &batch, sizeof(batch)));
-        checkCublasStatus(cublasLtMatrixLayoutSetAttribute(d_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET,
-                                                           &strided, sizeof(strided)));
+        CUBLAS_CHECK(cublasLtMatrixLayoutSetAttribute(d_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET, &strided,
+                                                      sizeof(strided)));
     }
     a_desc_.reset(a_desc);
     b_desc_.reset(b_desc);
@@ -62,9 +62,11 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         gemm_compute_type = CUBLAS_COMPUTE_32F;
     if (a_type == CUDA_R_64F || b_type == CUDA_R_64F)
         gemm_compute_type = CUBLAS_COMPUTE_64F;
+    if (a_type == CUDA_R_8I)
+        gemm_compute_type = CUBLAS_COMPUTE_32I;
 
     cublasLtMatmulDesc_t op_desc = nullptr;
-    checkCublasStatus(cublasLtMatmulDescCreate(&op_desc, gemm_compute_type, CUDA_R_32F));
+    CUBLAS_CHECK(cublasLtMatmulDescCreate(&op_desc, gemm_compute_type, CUDA_R_32F));
     op_desc_.reset(op_desc);
 
     if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3) {
@@ -73,33 +75,31 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         cublasLtMatmulDescSetAttribute(op_desc, CUBLASLT_MATMUL_DESC_FAST_ACCUM, &fastAccuMode, sizeof(fastAccuMode));
     }
 
-    checkCublasStatus(
-        cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa)));
-    checkCublasStatus(
-        cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_TRANSB, &transb, sizeof(transb)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_TRANSB, &transb, sizeof(transb)));
 
     if (a_scale_inverse != nullptr) {
-        checkCublasStatus(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_POINTER,
-                                                         &a_scale_inverse, sizeof(a_scale_inverse)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_POINTER,
+                                                    &a_scale_inverse, sizeof(a_scale_inverse)));
     }
     if (b_scale_inverse != nullptr) {
-        checkCublasStatus(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_POINTER,
-                                                         &b_scale_inverse, sizeof(b_scale_inverse)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_POINTER,
+                                                    &b_scale_inverse, sizeof(b_scale_inverse)));
     }
-    checkCublasStatus(
+    CUBLAS_CHECK(
         cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_EPILOGUE, &epilogue, sizeof(epilogue)));
 }
 
 size_t cublasLtGemm::GetAlgorithm(int max_algorithm_count, size_t max_workspace_size) {
-    checkCublasStatus(cublasLtMatmulPreferenceSetAttribute(preference_.get(), CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
-                                                           &max_workspace_size, sizeof(max_workspace_size)));
+    CUBLAS_CHECK(cublasLtMatmulPreferenceSetAttribute(preference_.get(), CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
+                                                      &max_workspace_size, sizeof(max_workspace_size)));
 
     int found_algorithm_count = 0;
     std::vector<cublasLtMatmulHeuristicResult_t> results(max_algorithm_count);
     // Though we query all of possible algorithm, we will use the first later
-    checkCublasStatus(cublasLtMatmulAlgoGetHeuristic(handle_.get(), op_desc_.get(), a_desc_.get(), b_desc_.get(),
-                                                     c_desc_.get(), d_desc_.get(), preference_.get(),
-                                                     max_algorithm_count, results.data(), &found_algorithm_count));
+    CUBLAS_CHECK(cublasLtMatmulAlgoGetHeuristic(handle_.get(), op_desc_.get(), a_desc_.get(), b_desc_.get(),
+                                                c_desc_.get(), d_desc_.get(), preference_.get(), max_algorithm_count,
+                                                results.data(), &found_algorithm_count));
     if (found_algorithm_count == 0) {
         throw std::runtime_error("Unable to find any suitable algorithms");
     }
@@ -111,13 +111,13 @@ size_t cublasLtGemm::GetAlgorithm(int max_algorithm_count, size_t max_workspace_
 
 void cublasLtGemm::Execute(void *matrix_a, void *matrix_b, void *matrix_c, void *matrix_d, float alpha, float beta,
                            void *workspace, size_t workspace_size, cudaStream_t stream) {
-    checkCublasStatus(cublasLtMatmul(handle_.get(), op_desc_.get(), static_cast<const void *>(&alpha), /* alpha */
-                                     matrix_a,                                                         /* A */
-                                     a_desc_.get(), matrix_b,                                          /* B */
-                                     b_desc_.get(), static_cast<const void *>(&beta),                  /* beta */
-                                     matrix_c,                                                         /* C */
-                                     c_desc_.get(), matrix_d,                                          /* D */
-                                     d_desc_.get(), &heuristic_results_.front().algo,                  /* algo */
-                                     workspace,                                                        /* workspace */
-                                     workspace_size, stream));                                         /* stream */
+    CUBLAS_CHECK(cublasLtMatmul(handle_.get(), op_desc_.get(), static_cast<const void *>(&alpha), /* alpha */
+                                matrix_a,                                                         /* A */
+                                a_desc_.get(), matrix_b,                                          /* B */
+                                b_desc_.get(), static_cast<const void *>(&beta),                  /* beta */
+                                matrix_c,                                                         /* C */
+                                c_desc_.get(), matrix_d,                                          /* D */
+                                d_desc_.get(), &heuristic_results_.front().algo,                  /* algo */
+                                workspace,                                                        /* workspace */
+                                workspace_size, stream));                                         /* stream */
 }

@@ -180,11 +180,11 @@ Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computer
 
 #### Metrics
 
-| Name                | Unit               | Description                                                                |
-|---------------------|--------------------|----------------------------------------------------------------------------|
-| cpu-hpl/tests_pass  |                    | HPL completed running and correctness test has passed (1: pass, 0: fail).  |
-| cpu-hpl/throughput  | bandwidth (GFlops) | Compute bandwidth.                                                         |
-| cpu-hpl/time        | time (s)           | Time elapsed during HPL run.                                               |
+| Name               | Unit               | Description                                                               |
+|--------------------|--------------------|---------------------------------------------------------------------------|
+| cpu-hpl/tests_pass |                    | HPL completed running and correctness test has passed (1: pass, 0: fail). |
+| cpu-hpl/throughput | bandwidth (GFlops) | Compute bandwidth.                                                        |
+| cpu-hpl/time       | time (s)           | Time elapsed during HPL run.                                              |
 
 ### `cpu-stream`
 
@@ -216,20 +216,20 @@ performed by [Intel MLC Tool](https://www.intel.com/content/www/us/en/developer/
 
 | Name                                                                    | Unit             | Description                                                         |
 |-------------------------------------------------------------------------|------------------|---------------------------------------------------------------------|
-| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_bw  | bandwidth (GB/s) | Former NUMA to latter NUMA memory bandwidth.                        |
-| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_lat | time (us)        | Former NUMA to latter NUMA memory latency.                          |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_all\_reads\_bw               | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, full read.                      |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_3_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 3 : 1.           |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_2_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 2 : 1.           |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_1_1\_reads-writes\_bw        | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, read : write = 1 : 1.           |
-| cpu-memory-bw-latency/mem\_max\_bandwidth\_stream-triad\_like\_bw       | bandwidth (GB/s) | Whole-CPU maximum memory bandwidth, with stream-triad like pattern. |
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_bw  | bandwidth (MB/s) | Former NUMA to latter NUMA memory bandwidth.                        |
+| cpu-memory-bw-latency/mem\_bandwidth\_matrix\_numa\_[0-9]+\_[0-9]+\_lat | time (ns)        | Former NUMA to latter NUMA memory latency.                          |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_all\_reads\_bw               | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, full read.                      |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_3_1\_reads-writes\_bw        | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, read : write = 3 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_2_1\_reads-writes\_bw        | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, read : write = 2 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_1_1\_reads-writes\_bw        | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, read : write = 1 : 1.           |
+| cpu-memory-bw-latency/mem\_max\_bandwidth\_stream-triad\_like\_bw       | bandwidth (MB/s) | Whole-CPU maximum memory bandwidth, with stream-triad like pattern. |
 
 ### `mem-bw`
 
 #### Introduction
 
 Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between GPUs,
-performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/bandwidthTest)
+performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/1_Utilities/bandwidthTest)
 or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils/hipBusBandwidth) bandwidth test tool.
 
 #### Metrics

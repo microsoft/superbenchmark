@@ -31,6 +31,17 @@ template <typename T1, typename T2> class ConvolutionForwardFunction : public Cu
             this->cudnn_handle, this->x_desc_.desc(), this->w_desc_.desc(), this->conv_desc_.desc(),
             this->h_desc_.desc(), this->fwd_algo_, &this->fwd_workspace_size_));
     }
+    /**
+     * @brief Find the best algorithm for cudnn convolution functions
+     */
+    virtual void find_best_algo() {
+        int algo_count;
+        cudnnConvolutionFwdAlgoPerf_t perf_results;
+        CHECK_CUDNN_ERROR(cudnnFindConvolutionForwardAlgorithm(this->cudnn_handle, this->x_desc_.desc(),
+                                                               this->w_desc_.desc(), this->conv_desc_.desc(),
+                                                               this->h_desc_.desc(), 1, &algo_count, &perf_results));
+        this->algo_ = perf_results.algo;
+    }
 
   public:
     /**

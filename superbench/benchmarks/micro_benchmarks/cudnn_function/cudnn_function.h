@@ -45,6 +45,10 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
      * @brief launch the kernel/function
      */
     virtual void kernel_entry() {}
+    /**
+     * @brief Find the best algorithm for cudnn convolution functions
+     */
+    virtual void find_best_algo() {}
 
   public:
     /**
@@ -87,6 +91,9 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_func
     // Set Convolution MathType
     cudnnMathType_t algo = get_use_tensor_op() ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
     CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), algo));
+    if (this->auto_algo_) {
+        find_best_algo();
+    }
     // Set convolution algorithm and workspace size
     this->get_workspace_size();
     zeros<float>(&fwd_workspace_, std::vector<int>{static_cast<int>(this->fwd_workspace_size_ / sizeof(float)), 1});

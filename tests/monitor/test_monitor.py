@@ -44,8 +44,8 @@ class MonitorTestCase(unittest.TestCase):
 
         monitor._Monitor__sample_gpu_metrics(record)
         gpu_list_metrics = [
-            record.gpu_usage, record.gpu_temperature, record.gpu_power_limit, record.gpu_mem_used, record.gpu_mem_total,
-            record.gpu_corrected_ecc, record.gpu_uncorrected_ecc
+            record.gpu_usage, record.gpu_temperature, record.gpu_power, record.gpu_power_limit, record.gpu_mem_used,
+            record.gpu_mem_total, record.gpu_corrected_ecc, record.gpu_uncorrected_ecc
         ]
         for metric in gpu_list_metrics:
             assert (metric)

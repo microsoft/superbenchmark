@@ -16,6 +16,7 @@ using fp16 = half;
 using bf16 = nv_bfloat16;
 using fp8e4m3 = __nv_fp8_e4m3;
 using fp8e5m2 = __nv_fp8_e5m2;
+using int8 = int8_t;
 
 struct Args {
     int m = 16;
@@ -84,24 +85,27 @@ template <typename T> cudaDataType_t get_datatype() {
         return CUDA_R_8F_E4M3;
     if (std::is_same<T, fp8e5m2>::value)
         return CUDA_R_8F_E5M2;
+    if (std::is_same<T, int8>::value)
+        return CUDA_R_8I;
     throw std::invalid_argument("Unknown type");
 }
 
 template <typename Ta, typename Tb, typename Tout>
-float timing_matmul_tn(int m, int n, int k, int batch, int warmup, int iter) {
+float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, int iter) {
     // init matrix
     Ta *matrix_a = nullptr;
     Tb *matrix_b = nullptr;
     Tout *matrix_out = nullptr;
-    cudaMalloc(&matrix_a, m * k * std::max(batch, 1) * sizeof(Ta));
-    cudaMalloc(&matrix_b, k * n * std::max(batch, 1) * sizeof(Tb));
-    cudaMalloc(&matrix_out, m * n * std::max(batch, 1) * sizeof(Tout));
+    batch = std::max<size_t>(batch, 1);
+    cudaMalloc(&matrix_a, m * k * batch * sizeof(Ta));
+    cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
+    cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
 
-    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * std::max(batch, 1));
-    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * std::max(batch, 1));
+    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * batch);
+    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * batch);
 
     // init gemm
-    int lda = k, ldb = k, ldd = m;
+    size_t lda = k, ldb = k, ldd = m;
     std::unique_ptr<cublasLtGemm> gemm = std::make_unique<cublasLtGemm>();
     gemm->Init();
     gemm->Setup(m, n, k, batch, lda, ldb, ldd, get_datatype<Ta>(), get_datatype<Tb>(), get_datatype<Tout>(),
@@ -161,6 +165,8 @@ int main(int argc, char **argv) {
         run<fp8e4m3, fp8e4m3, fp16>(&args);
     else if (args.in_type == "fp8e5m2")
         run<fp8e5m2, fp8e4m3, fp16>(&args);
+    else if (args.in_type == "int8")
+        run<int8>(&args);
     else
         throw std::invalid_argument("Unknown type " + args.in_type);
 

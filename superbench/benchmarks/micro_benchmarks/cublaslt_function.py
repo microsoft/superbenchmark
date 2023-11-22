@@ -23,7 +23,7 @@ class CublasLtBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'cublaslt_gemm'
-        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2']
+        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2', 'int8']
 
     def mrange(self, start, stop=-1, multiplication_factor=2):
         """Range constructor with multiplication factor.

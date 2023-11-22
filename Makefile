@@ -14,6 +14,9 @@ cppformat:
 cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh
 
+directxbuild:
+	cd ./superbench/benchmarks/ && build.bat
+
 thirdparty:
 	cd ./third_party/ && make all
 

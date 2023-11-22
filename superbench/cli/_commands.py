@@ -68,6 +68,9 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
                 nargs='+',
                 help='Extra arguments to override config_file.'
             )
+            ac.argument(
+                'get_info', options_list=('--get-info', '-g'), action='store_true', help='Collect node system info.'
+            )
 
         with ArgumentsContext(self, 'benchmark') as ac:
             ac.argument('name', options_list=('--name', '-n'), type=str, help='Benchmark name or regular expression.')
