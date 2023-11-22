@@ -1,17 +1,18 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module of the cuBLASLt GEMM benchmark."""
+"""Module of the hipBlasLt GEMM benchmark."""
 
 import os
+import re
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import BlasLtBaseBenchmark
 
 
-class CublasLtBenchmark(BlasLtBaseBenchmark):
-    """The cuBLASLt GEMM benchmark class."""
+class HipBlasLtBenchmark(BlasLtBaseBenchmark):
+    """The hipBlasLt GEMM benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -21,8 +22,13 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'cublaslt_gemm'
-        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2', 'int8']
+        self._bin_name = 'hipblaslt-bench'
+        self._in_types = ['fp32', 'fp16', 'bf16']
+        self._in_type_map = {
+            'fp16': '--a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r',
+            'fp32': '--a_type f32_r --b_type f32_r --c_type f32_r --d_type f32_r --compute_type f32_r',
+            'bf16': '--a_type bf16_r --b_type bf16_r --c_type bf16_r --d_type bf16_r --compute_type f32_r',
+        }
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -32,7 +38,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             '--in_types',
             type=str,
             nargs='+',
-            default=['fp8e4m3'],
+            default=['fp16'],
             required=False,
             help='List of input data types, support {}.'.format(' '.join(self._in_types)),
         )
@@ -49,11 +55,14 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
         self._commands = []
-        for _m, _n, _k, _b, _in_type in self._shapes_to_run:
-            self._commands.append(
-                f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} '
-                f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}'
-            )
+        self._precision_in_commands = []
+        for (_m, _n, _k, _b, _in_type) in self._shapes_to_run:
+            command = f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -j {self._args.num_warmup}' + \
+                f' -i {self._args.num_steps} {self._in_type_map[_in_type]}'
+            command = command + f' -b {str(_b)}' if _b > 0 else command
+            logger.info(command)
+            self._commands.append(command)
+            self._precision_in_commands.append(_in_type)
 
         return True
 
@@ -72,11 +81,29 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
 
         try:
-            fields = raw_output.strip().split()
-            if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
-                raise ValueError('Invalid result.')
+            lines = raw_output.splitlines()
+            index = None
+
+            # Find the line containing 'hipblaslt-Gflops'
+            for i, line in enumerate(lines):
+                if 'hipblaslt-Gflops' in line:
+                    index = i
+                    break
+
+            if index is None:
+                raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
+
+            # Split the line into fields using a comma as the delimiter
+            fields = lines[index + 1].strip().split(',')
+
+            # Check the number of fields and the format of the first two fields
+            if len(fields) != 23 or not all(
+                re.match(r'\d*\.\d*$', item.strip()) or item.strip().isdigit() for item in fields[-2:]
+            ):
+                raise ValueError('Invalid result')
+
             self._result.add_result(
-                f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops', float(fields[-1])
+                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops', float(fields[-2])
             )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
@@ -90,4 +117,4 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark('cublaslt-gemm', CublasLtBenchmark, platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('hipblaslt-gemm', HipBlasLtBenchmark, platform=Platform.ROCM)

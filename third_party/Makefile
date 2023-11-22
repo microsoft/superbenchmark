@@ -11,12 +11,12 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd
+.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt
 
 # Build all targets.
 all: cuda rocm
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn
-rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt
 cpu: common cpu_perftest
 common: cpu_hpl cpu_stream fio
 directx_amd: directx_amf_encoding_latency
@@ -103,6 +103,18 @@ ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
 	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
 endif
 
+# Build hipblaslt-bench.
+# hipBLASLt is released with rocm, like rocm-4.2.0 and so on.
+# The version we use is the released tag which is consistent with the rocm version in the environment or docker.
+# Since it takes several hours to build, avoid to build again if hipblaslt-bench exsists.
+rocm_hipblaslt: sb_micro_path
+	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
+		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
+		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
+		cd ./hipBLASLt && ./install.sh -dc; \
+		cp -v ./hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/; \
+	fi
+
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
@@ -125,7 +137,7 @@ ifneq (,$(wildcard gpu-burn/Makefile))
 	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
 endif
 
-# Build HPL from main branch 
+# Build HPL from main branch
 cpu_hpl: sb_micro_path
 ifneq (,$(wildcard hpl-tests/Makefile))
 	cd ./hpl-tests && \
@@ -141,7 +153,7 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 	cp -v ./hpl-tests/template_hpl.dat $(SB_MICRO_PATH)/bin/
 endif
 
-# Build STREAM 
+# Build STREAM
 cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
