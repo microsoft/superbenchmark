@@ -137,6 +137,14 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help='The path of ibnetdiscover output',
         )
+        self._parser.add_argument(
+            '--direction',
+            type=str,
+            default='gpu-to-gpu',
+            choices=['gpu-to-gpu', 'cpu-to-cpu', 'cpu-to-gpu', 'gpu-to-cpu'],
+            required=False,
+            help='The direction of traffic pattern, e.g., gpu-to-gpu, cpu-to-cpu, cpu-to-gpu, gpu-to-cpu'
+        )
 
     def __one_to_many(self, n):
         """Generate one-to-many pattern config.
@@ -249,7 +257,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             return False
         return True
 
-    def __prepare_general_ib_command_params(self):
+    def __prepare_general_ib_command_params(self, device='cpu'):
         """Prepare general params for ib commands.
 
         Returns:
@@ -261,19 +269,16 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         msg_size = f'-s {self._args.msg_size}' if self._args.msg_size > 0 else '-a'
         # Add GPUDirect for ib command
         gpu_dev = ''
-        if self._args.gpu_dev is not None:
-            if 'bw' in self._args.command:
-                gpu = GPU()
-                if gpu.vendor == 'nvidia':
-                    gpu_dev = f'--use_cuda={self._args.gpu_dev}'
-                elif gpu.vendor == 'amd':
-                    gpu_dev = f'--use_rocm={self._args.gpu_dev}'
-                else:
-                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                    logger.error('No GPU found - benchmark: {}'.format(self._name))
-                    return False
-            elif 'lat' in self._args.command:
-                logger.warning('Wrong configuration: Perftest supports CUDA/ROCM only in BW tests')
+        if device == 'gpu' and self._args.gpu_dev is not None:
+            gpu = GPU()
+            if gpu.vendor == 'nvidia':
+                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
+            elif gpu.vendor == 'amd':
+                gpu_dev = f'--use_rocm={self._args.gpu_dev}'
+            else:
+                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                logger.error('No GPU found - benchmark: {}'.format(self._name))
+                return False
         # Generate ib command params
         command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size} {gpu_dev}'
         command_params = f'{command_params.strip()} --report_gbits'
@@ -293,8 +298,9 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         # Prepare general params for ib commands
-        command_params = self.__prepare_general_ib_command_params()
-        if not command_params:
+        cpu_command_params = self.__prepare_general_ib_command_params()
+        gpu_command_params = self.__prepare_general_ib_command_params() if 'gpu' in self._args.device else None
+        if not cpu_command_params or ('gpu' in self._args.device and not gpu_command_params):
             return False
         # Generate commands
         if self._args.command not in self.__support_ib_commands:
@@ -306,14 +312,20 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             )
             return False
         else:
-            ib_command_prefix = f'{os.path.join(self._args.bin_dir, self._args.command)} {command_params}'
+            cpu_ib_command_prefix = f'{os.path.join(self._args.bin_dir, self._args.command)} {cpu_command_params}'
+            gpu_ib_command_prefix = f'{os.path.join(self._args.bin_dir, self._args.command)} {gpu_command_params}' if 'gpu' in self._args.device else None
             if self._args.numa_dev is not None:
-                ib_command_prefix = f'numactl -N {self._args.numa_dev} {ib_command_prefix}'
+                cpu_ib_command_prefix = f'numactl -N {self._args.numa_dev} {cpu_ib_command_prefix}'
+                gpu_ib_command_prefix = f'numactl -N {self._args.numa_dev} {gpu_ib_command_prefix}' if 'gpu' in self._args.device else None
             if 'bw' in self._args.command and self._args.bidirectional:
-                ib_command_prefix += ' -b'
+                cpu_ib_command_prefix += ' -b'
+                gpu_ib_command_prefix += ' -b' if 'gpu' in self._args.device else None
 
             command = os.path.join(self._args.bin_dir, self._bin_name)
-            command += ' --cmd_prefix ' + "'" + ib_command_prefix + "'"
+
+            command += ' --cmd_prefix_send ' + "'" + cpu_ib_command_prefix + "'" if 'cpu-to' in self._args.direction else ' --cmd_prefix_send ' + "'" + gpu_ib_command_prefix + "'"
+            command += ' --cmd_prefix_recv ' + "'" + cpu_ib_command_prefix + "'" if 'to-cpu' in self._args.direction else ' --cmd_prefix_recv ' + "'" + gpu_ib_command_prefix + "'"
+
             command += f' --timeout {self._args.timeout} ' + \
                 f'--hostfile {self._args.hostfile} --input_config {self.__config_path}'
             self._commands.append(command)

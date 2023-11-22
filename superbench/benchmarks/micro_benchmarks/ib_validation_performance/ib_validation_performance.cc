@@ -51,7 +51,8 @@ struct Args {
     // Timeout for each command
     int timeout;
     // The prefix of command to run
-    std::string cmd_prefix;
+    std::string send_cmd_prefix;
+    std::string recv_cmd_prefix;
     // The path of input config file
     std::string input_config;
     // The path of output csv file
@@ -66,8 +67,11 @@ void load_args(int argc, char *argv[], Args &args) {
     boost::program_options::options_description opt("all options");
     opt.add_options()("timeout,t", boost::program_options::value<int>(&args.timeout)->default_value(120),
                       "timeout of each command")(
-        "cmd_prefix,c",
-        boost::program_options::value<std::string>(&args.cmd_prefix)->default_value("ib_write_bw -s 33554432 -d ib0"),
+        "send_cmd_prefix,c",
+        boost::program_options::value<std::string>(&args.send_cmd_prefix)->default_value("ib_write_bw -s 33554432 -d ib0"),
+        "ib command prefix")(
+        "recv_cmd_prefix,c",
+        boost::program_options::value<std::string>(&args.recv_cmd_prefix)->default_value("ib_write_bw -s 33554432 -d ib0"),
         "ib command prefix")(
         "input_config,i", boost::program_options::value<std::string>(&args.input_config)->default_value("config.txt"),
         "the path of input config file")(
@@ -86,7 +90,7 @@ void load_args(int argc, char *argv[], Args &args) {
     }
     if (g_world_rank == ROOT_RANK) {
         std::cout << "Timeout for each command is: " << args.timeout << std::endl;
-        std::cout << "The prefix of cmd to run is: " << args.cmd_prefix << std::endl;
+        std::cout << "The prefix of cmd to run is: " << args.send_cmd_prefix << args.recv_cmd_prefix << std::endl;
         std::cout << "Load the config file from: " << args.input_config << std::endl;
         std::cout << "Output will be saved to: " << args.output_path << std::endl;
     }
@@ -318,7 +322,7 @@ float run_cmd(string cmd_prefix, int timeout, int port, bool server, string host
 }
 
 // The ranks in vector of (server, client) run commands parallel
-vector<float> run_cmd_parallel(string cmd_prefix, int timeout, const vector<std::pair<int, int>> &run_pairs_in_parallel,
+vector<float> run_cmd_parallel(string send_cmd_prefix, string recv_cmd_prefix, int timeout, const vector<std::pair<int, int>> &run_pairs_in_parallel,
                                const vector<int> &ports, const vector<string> &hostnames) {
     // invoke function to run cmd in multi threads mode for each rank in the pairs
     unordered_map<int, std::future<float>> threads;
@@ -331,14 +335,14 @@ vector<float> run_cmd_parallel(string cmd_prefix, int timeout, const vector<std:
             if (server_index == g_world_rank) {
                 flag = index;
                 MPI_Send(&flag, 1, MPI_INT, client_index, rank_index, MPI_COMM_WORLD);
-                threads[2 * rank_index] = (std::async(std::launch::async, run_cmd, cmd_prefix, timeout,
+                threads[2 * rank_index] = (std::async(std::launch::async, run_cmd, recv_cmd_prefix, timeout,
                                                       ports[rank_index], true, hostnames[server_index / local_size]));
             }
             if (client_index == g_world_rank) {
                 // in case that client starts before server
                 MPI_Recv(&flag, 1, MPI_INT, server_index, rank_index, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 threads[2 * rank_index + 1] =
-                    (std::async(std::launch::async, run_cmd, cmd_prefix, timeout, ports[rank_index], false,
+                    (std::async(std::launch::async, run_cmd, send_cmd_prefix, timeout, ports[rank_index], false,
                                 hostnames[server_index / local_size]));
             }
         }
@@ -384,7 +388,7 @@ vector<vector<float>> run_benchmark(const Args &args, vector<vector<std::pair<in
         // Insert barrier to sync before each run
         MPI_Barrier(MPI_COMM_WORLD);
         // run commands parallel for single line of config
-        vector<float> results_single_line = run_cmd_parallel(args.cmd_prefix, args.timeout, line, ports, hostnames);
+        vector<float> results_single_line = run_cmd_parallel(args.send_cmd_prefix, args.recv_cmd_prefix, args.timeout, line, ports, hostnames);
         // collect results for each run
         results.push_back(results_single_line);
     }
@@ -451,10 +455,12 @@ int main(int argc, char **argv) {
         // Handle local size and rank
 #if defined(OPEN_MPI)
         local_size = atoi(getenv("OMPI_COMM_WORLD_LOCAL_SIZE"));
-        boost::replace_all(args.cmd_prefix, "LOCAL_RANK", "OMPI_COMM_WORLD_LOCAL_RANK");
+        boost::replace_all(args.send_cmd_prefix, "LOCAL_RANK", "OMPI_COMM_WORLD_LOCAL_RANK");
+        boost::replace_all(args.recv_cmd_prefix, "LOCAL_RANK", "OMPI_COMM_WORLD_LOCAL_RANK");
 #elif defined(MPICH)
         local_size = atoi(getenv("MPI_LOCALNRANKS"));
-        boost::replace_all(args.cmd_prefix, "LOCAL_RANK", "MPI_LOCALRANKID");
+        boost::replace_all(args.send_cmd_prefix, "LOCAL_RANK", "MPI_LOCALRANKID");
+        boost::replace_all(args.recv_cmd_prefix, "LOCAL_RANK", "MPI_LOCALRANKID");
 #else
         local_size = atoi(getenv("LOCAL_SIZE"));
         std::cout << "Warning: unknown mpi used." << std::endl;
@@ -473,7 +479,7 @@ int main(int argc, char **argv) {
         // rank ROOT_RANK output the results to file
         if (g_world_rank == ROOT_RANK) {
             if (args.output_path.size() != 0)
-                output_to_file(args.cmd_prefix, config, results, args.output_path);
+                output_to_file(args.send_cmd_prefix, config, results, args.output_path);
         }
 
         // Finalize the MPI environment. No more MPI calls can be made after this
