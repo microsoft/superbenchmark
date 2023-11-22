@@ -108,12 +108,12 @@ endif
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 # Since it takes several hours to build, avoid to build again if hipblaslt-bench exsists.
 rocm_hipblaslt: sb_micro_path
-ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/hipblaslt-bench))
-	if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi
-	git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt
-	cd ./hipBLASLt && ./install.sh -dc
-	cp -v ./rocBLAS/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/
-endif
+	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
+		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
+		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
+		cd ./hipBLASLt && ./install.sh -dc; \
+		cp -v ./hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/; \
+	fi
 
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.
