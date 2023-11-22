@@ -280,12 +280,12 @@ sb result summary --data-file outputs/results-summary.jsonl --rule-file rule.yam
 Generate the baseline file automatically from multiple machines results according to rules defined in rule file.
 
 ```bash title="SB CLI"
-sb result summary --data-file
-                  --summary-rule-file
-                  [--diagnosis-rule-file]
-                  [--baseline-file]
-                  [--decimal-place-value]
-                  [--output-dir]
+sb result generate-baseline --data-file
+                            --summary-rule-file
+                            [--diagnosis-rule-file]
+                            [--baseline-file]
+                            [--decimal-place-value]
+                            [--output-dir]
 ```
 
 #### Required arguments

@@ -4,6 +4,7 @@
 """A module for baseline generation."""
 
 from copy import deepcopy
+from pathlib import Path
 import json
 import re
 
@@ -186,7 +187,7 @@ class BaselineGeneration(DataDiagnosis):
                             logger.error('Analyzer: {} baseline is not numeric, msg: {}'.format(metric, str(e)))
             baseline = json.dumps(baseline, indent=2, sort_keys=True)
             baseline = re.sub(r': \"(\d+.?\d*)\"', r': \1', baseline)
-            with open(output_dir + '/baseline.json', mode='w') as f:
+            with (Path(output_dir) / 'baseline.json').open('w') as f:
                 f.write(baseline)
 
         except Exception as e:
