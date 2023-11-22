@@ -153,7 +153,7 @@ RUN cd /opt/ &&  \
 
 ENV PATH="/opt/superbench/bin:/opt/rocm/hip/bin/:/opt/rocm/bin/:/usr/local/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
-    LD_LIBRARY_PATH="/usr/local/mpi:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/usr/local/mpi/lib:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
