@@ -366,8 +366,8 @@ void CublasFunction::matrix_calculation_on_cpu_with_data(const T1 *Parameter_0_0
             for (int j = 0; j < n; j++) {
                 (*Result_cpu)[i + j * m + b * m * n] = beta * (T2)(Result_3_0_host[i + j * m + b * m * n]);
                 for (int p = 0; p < k; p++) {
-                    (*Result_cpu)[i + j * m + b * m * n] +=
-                        Parameter_0_0_host_op[p * m + i + b * m * k] * Parameter_1_0_host_op[j * k + p + b * k * n];
+                    (*Result_cpu)[i + j * m + b * m * n] += (T2)(Parameter_0_0_host_op[p * m + i + b * m * k] *
+                                                                 Parameter_1_0_host_op[j * k + p + b * k * n]);
                     (*Result_cpu)[i + j * m + b * m * n] *= alpha;
                 }
             }
@@ -444,7 +444,7 @@ int CublasFunction::check_result(int batch_count, T1 *Result_3_0, T2 *Result_cpu
     //     |<x, y>_cpu - <x,y>_gpu|/|<x, y>_cpu|/dot_length  < eps
     int error_count = 0;
     for (int i = 0; i < static_cast<int>(m * n) * batch_count; i++) {
-        double abs_err = fabs(Result_cpu[i] - Result_3_0_host[i]);
+        double abs_err = fabs(Result_cpu[i] - (T2)(Result_3_0_host[i]));
         double dot_length = k;
         double abs_val = fabs(Result_cpu[i]);
         double rel_err = abs_err / abs_val / dot_length;
