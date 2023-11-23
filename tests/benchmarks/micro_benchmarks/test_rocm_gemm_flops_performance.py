@@ -43,7 +43,7 @@ class RocmGemmFlopsTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.k == 8192)
 
         params = '--transposeA N --transposeB T -m 7680 -n 8192 -k 8192' + \
-            ' --alpha 1 --beta 0 --lda 8384 --ldb 8384 --ldc 8384 --ldd 8384'
+            ' --alpha 1 --beta 0 --lda 8384 --ldb 8384 --ldc 8384 --ldd 8384 --initialization hpl'
         # Check command list
         expected_command = [
             'rocblas-bench -r f64_r -f gemm ' + params,

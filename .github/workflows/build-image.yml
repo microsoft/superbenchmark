@@ -24,9 +24,9 @@ jobs:
     strategy:
       matrix:
         include:
-        - name: cuda12.1
-          dockerfile: cuda12.1
-          tags: superbench/main:cuda12.1
+        - name: cuda12.2
+          dockerfile: cuda12.2
+          tags: superbench/main:cuda12.2
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest

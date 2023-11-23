@@ -91,6 +91,14 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
             required=False,
             help='Specifies the scalar beta.',
         )
+        self._parser.add_argument(
+            '--initialization',
+            type=str,
+            default='hpl',
+            choices=['rand_int', 'trig_float', 'hpl'],
+            required=False,
+            help='Initialize with random integers, trig functions sin and cos, or hpl-like input.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -110,6 +118,7 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
             command += ' --lda {} --ldb {} --ldc {} --ldd {}'.format(
                 self._args.lda, self._args.ldb, self._args.ldc, self._args.ldd
             )
+            command += ' --initialization {}'.format(self._args.initialization)
             self._commands.append(command)
 
         return True
