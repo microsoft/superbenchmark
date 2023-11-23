@@ -216,7 +216,7 @@ setup(
                 'onnxruntime-gpu==1.10.0',
             ],
             'nvidia': ['py3nvml>=0.2.6'],
-            'amd': ['pyrsmi>=1.0.2'],
+            'amd': ['pyrsmi>=1.0.1'],
         }
     ),
     include_package_data=True,
