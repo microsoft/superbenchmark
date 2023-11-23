@@ -3,8 +3,6 @@
 
 """Device Managerment Library Utility."""
 
-import py3nvml.py3nvml as nvml
-
 from superbench.common.utils import logger
 from superbench.common.utils import process
 from superbench.common.devices import GPU
