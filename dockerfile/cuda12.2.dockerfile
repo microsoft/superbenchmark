@@ -1,16 +1,16 @@
-FROM nvcr.io/nvidia/pytorch:23.03-py3
+FROM nvcr.io/nvidia/pytorch:23.10-py3
 
 # OS:
-#   - Ubuntu: 20.04
-#   - OpenMPI: 4.1.5a1
+#   - Ubuntu: 22.04
+#   - OpenMPI: 4.1.5rc2
 #   - Docker Client: 20.10.8
 # NVIDIA:
-#   - CUDA: 12.1.0
-#   - cuDNN: 8.8.1.3
-#   - NCCL: v2.17.1-1
+#   - CUDA: 12.2.2
+#   - cuDNN: 8.9.5
+#   - NCCL: v2.19.3-1
 # Mellanox:
-#   - OFED: 5.2-2.2.3.0 # TODO
-#   - HPC-X: v2.14
+#   - OFED: 23.07-0.5.1.2
+#   - HPC-X: v2.16
 # Intel:
 #   - mlc: v3.10
 
@@ -74,20 +74,20 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
-ENV OFED_VERSION=5.2-2.2.3.0
+ENV OFED_VERSION=23.07-0.5.1.2
 RUN cd /tmp && \
-    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
-    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64.tgz && \
+    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
-ENV HPCX_VERSION=v2.14
+ENV HPCX_VERSION=v2.16
 RUN cd /opt && \
     rm -rf hpcx && \
-    wget -q https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu20.04-cuda12-gdrcopy2-nccl2.17-x86_64.tbz -O hpcx.tbz && \
+    wget -q https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-gdrcopy2-nccl2.18-x86_64.tbz -O hpcx.tbz && \
     tar xf hpcx.tbz && \
-    mv hpcx-${HPCX_VERSION}-gcc-MLNX_OFED_LINUX-5-ubuntu20.04-cuda12-gdrcopy2-nccl2.17-x86_64 hpcx && \
+    mv hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-gdrcopy2-nccl2.18-x86_64 hpcx && \
     rm hpcx.tbz
 
 # Install Intel MLC
@@ -131,7 +131,8 @@ ADD third_party third_party
 RUN make -C third_party cuda
 
 ADD . .
-RUN python3 -m pip install --no-cache-dir .[nvworker] && \
+RUN python3 -m pip install --upgrade setuptools==65.7 && \
+    python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
     rm -rf .git

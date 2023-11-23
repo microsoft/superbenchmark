@@ -9,6 +9,7 @@ from types import GeneratorType, SimpleNamespace
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 from superbench.benchmarks.result import BenchmarkResult
+from superbench.benchmarks.micro_benchmarks.blaslt_function_base import mrange, validate_mrange
 
 
 class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
@@ -37,26 +38,28 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
     def test_mrange(self):
         """Test mrange generation."""
-        benchmark = self.get_benchmark()
-        self.assertIsInstance(benchmark.mrange(1), GeneratorType)
-        self.assertListEqual([4, 8, 16, 32], list(benchmark.mrange(4, 32, 2)))
-        self.assertListEqual([2, 4, 8, 16], list(benchmark.mrange(2, 31, 2)))
-        self.assertListEqual([2, 4, 8], list(benchmark.mrange(2, 8)))
-        self.assertListEqual([2], list(benchmark.mrange(2, 0, 2)))
-        self.assertListEqual([2], list(benchmark.mrange(2)))
-        self.assertListEqual([2], list(benchmark.mrange(2, 4, 1)))
-        self.assertListEqual([2], list(benchmark.mrange(2, 4, 0)))
-        self.assertListEqual([0], list(benchmark.mrange(0, 0)))
-        self.assertListEqual([0], list(benchmark.mrange(0)))
+        self.assertIsInstance(mrange(1), GeneratorType)
+        self.assertListEqual([4, 8, 16, 32], list(mrange(4, 32, 2)))
+        self.assertListEqual([2, 4, 8, 16], list(mrange(2, 31, 2)))
+        self.assertListEqual([2, 4, 8], list(mrange(2, 8)))
+        self.assertListEqual([2], list(mrange(2, 0, 2)))
+        self.assertListEqual([2], list(mrange(2)))
+        self.assertListEqual([2], list(mrange(2, 4, 1)))
+        self.assertListEqual([2], list(mrange(2, 4, 0)))
+        self.assertListEqual([0], list(mrange(0, 0)))
+        self.assertListEqual([0], list(mrange(0)))
+        self.assertListEqual([4, 8, 16, 32], list(mrange(4, 32, 2, 'x')))
+        self.assertListEqual([4, 8, 12, 16, 20, 24, 28, 32], list(mrange(4, 32, 4, '+')))
 
     def test_validate_mrange(self):
         """Test mrange validation."""
-        benchmark = self.get_benchmark()
-        self.assertTrue(benchmark.validate_mrange('2:32:2'))
-        self.assertTrue(benchmark.validate_mrange('4:32'))
-        self.assertTrue(benchmark.validate_mrange('8'))
-        self.assertFalse(benchmark.validate_mrange('2:32:2:4'))
-        self.assertFalse(benchmark.validate_mrange('2.5:32'))
+        self.assertTrue(validate_mrange('2:32:2'))
+        self.assertTrue(validate_mrange('4:32'))
+        self.assertTrue(validate_mrange('8'))
+        self.assertFalse(validate_mrange('2:32:2:4'))
+        self.assertFalse(validate_mrange('2.5:32'))
+        self.assertFalse(validate_mrange('2:32:2:x4'))
+        self.assertFalse(validate_mrange('2:32:2:+4'))
 
     def test_cublaslt_gemm_command_generation(self):
         """Test cublaslt-gemm benchmark command generation."""
