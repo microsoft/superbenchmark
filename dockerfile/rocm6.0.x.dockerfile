@@ -105,35 +105,39 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     fi
 
 # Install UCX
+ENV UCX_VERSION=1.14.1
 RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
     echo "/opt/ucx is empty. Installing UCX..."; \
-    cd /tmp && wget https://github.com/openucx/ucx/releases/download/v1.15.0/ucx-1.15.0.tar.gz && \
-    tar xzf ucx-1.15.0.tar.gz && \
-    cd ucx-1.15.0 && \
-    ./contrib/configure-release --prefix=/opt/ucx/ && \
-    make -j8 install && rm -rf /tmp/ucx-1.15.0 ; \
+    cd /tmp && \
+    git clone https://github.com/openucx/ucx.git -b v${UCX_VERSION} && \
+    cd ucx && \
+    ./autogen.sh && \
+    mkdir build && \
+    cd build && \
+    ../configure -prefix=$UCX_DIR --with-rocm=/opt/rocm && \
+    make -j $(nproc) && make -j $(nproc) install && rm -rf /tmp/ucx-${UCX_VERSION} ; \
     else \
       echo "/opt/ucx is not empty. Skipping UCX installation."; \
     fi
 
 # Install OpenMPI
-ENV OPENMPI_VERSION=4.0.5
+ENV OPENMPI_VERSION=5.0.x
 # Check if Open MPI is installed
-RUN [ -d /usr/local/mpi ] || { \
+RUN [ -d /usr/local/bin/mpirun ] || { \
     echo "Open MPI not found. Installing Open MPI..." && \
     cd /tmp && \
-    wget -q https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz && \
-    tar xzf openmpi-${OPENMPI_VERSION}.tar.gz && \
-    cd openmpi-${OPENMPI_VERSION} && \
-    ./configure --enable-orterun-prefix-by-default --with-ucx=/opt/ucx --enable-mca-no-build=btl-uct --prefix=/usr/local/mpi && \
-    make -j ${NUM_MAKE_JOBS} && \
-    make install && \
+    git clone --recursive https://github.com/open-mpi/ompi.git -b ${OPENMPI_VERSION}  && \
+    cd ompi && \
+    ./autogen.pl && \
+    mkdir build && \
+    cd build && \
+    ../configure --prefix=/usr/local --with-ucx=/opt/ucx --with-rocm=/opt/rocm && \
+    make -j $(nproc) && \
+    make -j $(nproc) install && \
     ldconfig && \
     cd / && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}* ;\
 }
-
-
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -151,9 +155,9 @@ RUN cd /opt/ &&  \
     CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_PREFIX_PATH=/opt/rocm/ .. && \
     make -j
 
-ENV PATH="/opt/superbench/bin:/opt/rocm/hip/bin/:/opt/rocm/bin/:/usr/local/bin/:${PATH}" \
+ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
-    LD_LIBRARY_PATH="/usr/local/mpi/lib:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/opt/ucx/lib:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
