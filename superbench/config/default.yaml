@@ -3,7 +3,7 @@ version: v0.9
 superbench:
   enable: null
   monitor:
-    enable: true
+    enable: false
     sample_duration: 1
     sample_interval: 10
   var:
