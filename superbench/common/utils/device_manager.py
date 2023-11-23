@@ -127,6 +127,10 @@ class NvidiaDeviceManager(DeviceManager):
         for i in range(self._device_count):
             self._device_handlers.append(nvml.nvmlDeviceGetHandleByIndex(i))
 
+    def __del__(self):
+        """Destructor."""
+        nvml.nvmlShutdown()
+
     def get_device_count(self):
         """Get the number of device.
 
@@ -322,6 +326,10 @@ class AmdDeviceManager(DeviceManager):
         """Constructor."""
         rocml.smi_initialize()
         super().__init__()
+
+    def __del__(self):
+        """Destructor."""
+        rocml.smi_shutdown()
 
     def get_device_count(self):
         """Get the number of device.
