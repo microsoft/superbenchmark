@@ -3,6 +3,8 @@
 
 """Device Managerment Library Utility."""
 
+from typing import Optional
+
 from superbench.common.utils import logger
 from superbench.common.utils import process
 from superbench.common.devices import GPU
@@ -427,8 +429,7 @@ class AmdDeviceManager(DeviceManager):
         return None, None
 
 
-device_namager = DeviceManager()
-
+device_manager: Optional[DeviceManager] = DeviceManager()
 if gpu.vendor == 'nvidia' or gpu.vendor == 'nvidia-graphics':
     device_manager = NvidiaDeviceManager()
 elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics':
