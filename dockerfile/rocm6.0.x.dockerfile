@@ -114,24 +114,24 @@ RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
     ./autogen.sh && \
     mkdir build && \
     cd build && \
-    ../configure -prefix=$UCX_DIR --with-rocm=/opt/rocm && \
+    ../configure -prefix=$UCX_DIR --with-rocm=/opt/rocm --without-knem && \
     make -j $(nproc) && make -j $(nproc) install && rm -rf /tmp/ucx-${UCX_VERSION} ; \
     else \
       echo "/opt/ucx is not empty. Skipping UCX installation."; \
     fi
 
 # Install OpenMPI
-ENV OPENMPI_VERSION=5.0.x
+ENV OPENMPI_VERSION=4.1.x
 # Check if Open MPI is installed
 RUN [ -d /usr/local/bin/mpirun ] || { \
     echo "Open MPI not found. Installing Open MPI..." && \
     cd /tmp && \
-    git clone --recursive https://github.com/open-mpi/ompi.git -b ${OPENMPI_VERSION}  && \
+    git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION}  && \
     cd ompi && \
     ./autogen.pl && \
     mkdir build && \
     cd build && \
-    ../configure --prefix=/usr/local --with-ucx=/opt/ucx --with-rocm=/opt/rocm && \
+    ../configure --prefix=/usr/local  --enable-orterun-prefix-by-default  --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --enable-mca-no-build=btl-uct --with-ucx=/opt/ucx --with-rocm=/opt/rocm && \
     make -j $(nproc) && \
     make -j $(nproc) install && \
     ldconfig && \
