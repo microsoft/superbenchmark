@@ -218,14 +218,14 @@ class SuperBenchExecutor():
 
             monitor = None
             if self.__get_rank_id() == 0 and self._sb_monitor_config and self._sb_monitor_config.enable:
-                if self.__get_platform() == Platform.CUDA:
+                if self.__get_platform() is not Platform.CPU:
                     monitor = Monitor(
                         None, int(self._sb_monitor_config.sample_duration or 10),
                         int(self._sb_monitor_config.sample_interval or 1), self.__get_monitor_path(benchmark_name)
                     )
                     monitor.start()
                 else:
-                    logger.warning('Monitor can not support ROCM/CPU platform.')
+                    logger.warning('Monitor can not support CPU platform.')
 
             benchmark_real_name = benchmark_name.split(':')[0]
             for framework in benchmark_config.frameworks or [Framework.NONE.value]:
