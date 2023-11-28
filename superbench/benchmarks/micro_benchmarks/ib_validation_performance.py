@@ -285,7 +285,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         command_params = f'{command_params.strip()} --report_gbits'
         return command_params
 
-    def _preprocess(self):
+    def _preprocess(self):    # noqa: C901
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
@@ -309,8 +309,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                 return False
             # Prepare general params for ib commands
             cpu_command_params = self.__prepare_general_ib_command_params(msg_size)
-            gpu_command_params = self.__prepare_general_ib_command_params(msg_size) if 'gpu' in self._args.device else None
-            if not cpu_command_params or ('gpu' in self._args.device and not gpu_command_params):
+            gpu_command_params = self.__prepare_general_ib_command_params(msg_size, 'gpu')
+            if not cpu_command_params or (self._args.gpu_dev and not gpu_command_params):
                 return False
             # Generate commands
             if isinstance(self._args.command, str):
@@ -328,13 +328,13 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                     # Format the ib command type
                     ib_command = ib_command.lower()
                     cpu_ib_command_prefix = f'{os.path.join(self._args.bin_dir, ib_command)} {cpu_command_params}'
-                    gpu_ib_command_prefix = f'{os.path.join(self._args.bin_dir, ib_command)} {gpu_command_params}' if 'gpu' in self._args.device else None
+                    gpu_ib_command_prefix = f'{os.path.join(self._args.bin_dir, ib_command)} {gpu_command_params}'
                     if self._args.numa_dev is not None:
                         cpu_ib_command_prefix = f'numactl -N {self._args.numa_dev} {cpu_ib_command_prefix}'
-                        gpu_ib_command_prefix = f'numactl -N {self._args.numa_dev} {gpu_ib_command_prefix}' if 'gpu' in self._args.device else None
+                        gpu_ib_command_prefix = f'numactl -N {self._args.numa_dev} {gpu_ib_command_prefix}'
                     if 'bw' in ib_command and self._args.bidirectional:
                         cpu_ib_command_prefix += ' -b'
-                        gpu_ib_command_prefix += ' -b' if 'gpu' in self._args.device else None
+                        gpu_ib_command_prefix += ' -b'
                     if not isinstance(self._args.direction, list):
                         self._args.direction = [self._args.direction]
                     for direction in self._args.direction:
@@ -348,8 +348,10 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                             return False
                         # Generate commands
                         command = os.path.join(self._args.bin_dir, self._bin_name)
-                        command += ' --cmd_prefix_send ' + "'" + cpu_ib_command_prefix + "'" if 'cpu-to' in direction else ' --cmd_prefix_send ' + "'" + gpu_ib_command_prefix + "'"
-                        command += ' --cmd_prefix_recv ' + "'" + cpu_ib_command_prefix + "'" if 'to-cpu' in direction else ' --cmd_prefix_recv ' + "'" + gpu_ib_command_prefix + "'"
+                        command += ' --send_cmd_prefix ' + "'" + cpu_ib_command_prefix + "'" \
+                            if 'cpu-to' in direction else ' --send_cmd_prefix ' + "'" + gpu_ib_command_prefix + "'"
+                        command += ' --recv_cmd_prefix ' + "'" + cpu_ib_command_prefix + "'" \
+                            if 'to-cpu' in direction else ' --recv_cmd_prefix ' + "'" + gpu_ib_command_prefix + "'"
                         command += f' --timeout {self._args.timeout} ' + \
                             f'--hostfile {self._args.hostfile} --input_config {self.__config_path}'
                         self._commands.append(command)
@@ -400,7 +402,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                     for pair_index, pair_result in enumerate(line_result):
                         rank_results = list(filter(None, pair_result.strip().split(' ')))
                         for rank_index, rank_result in enumerate(rank_results):
-                            metric = f'{command}_{msg_size}_{direction}_{line_index}_{pair_index}:{self.__config[config_index]}:{rank_index}'
+                            metric = f'{command}_{msg_size}_{direction}_{line_index}_{pair_index}:' \
+                                + f'{self.__config[config_index]}:{rank_index}'
                             value = float(rank_result)
                             # Check if the value is valid before the base conversion
                             if 'bw' in command and value >= 0.0:
