@@ -40,9 +40,7 @@ class MegatronGPT(ModelBenchmark):
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
-        self._parser.add_argument(
-            '--code_base', type=str, required=False, default='/tmp/Megatron-DeepSpeed', help='Code base.'
-        )
+        self._parser.add_argument('--code_base', type=str, required=False, default='', help='Code base.')
         self._parser.add_argument('--dataset_url', type=str, required=False, default=None, help='Dataset URL.')
         self._parser.add_argument(
             '--vocab_url',
@@ -110,12 +108,12 @@ class MegatronGPT(ModelBenchmark):
         self._parser.add_argument('--zero_stage', type=int, default=1, help='Zero stage.')
         # Misc configs
         self._parser.add_argument('--log-interval', type=int, required=False, default=1, help='Log interval.')
-        self._parser.add_argument('--eval_iters', type=int, default=10000, help='Eval iters.')
-        self._parser.add_argument('--eval_interval', type=int, default=10000, help='Eval interval.')
+        self._parser.add_argument('--eval_iters', type=int, default=0, help='Eval iters.')
+        self._parser.add_argument('--eval_interval', type=int, default=10, help='Eval interval.')
         self._parser.add_argument('--num_save', type=int, default=10000, help='Num save.')
         self._parser.add_argument('--save_interval', type=int, default=10000, help='Save interval.')
         # Output and data configs
-        self._parser.add_argument('--seed', type=int, default=0, help='Seed.')
+        self._parser.add_argument('--seed', type=int, default=1234, help='Seed.')
         self._parser.add_argument('--data_home', type=str, default='/tmp', help='Data home.')
         self._parser.add_argument('--vocab_path', type=str, default='/tmp/gpt2-vocab.json', help='Vocab path.')
         self._parser.add_argument('--merge_path', type=str, default='/tmp/gpt2-merges.txt', help='Merge path.')
@@ -126,12 +124,14 @@ class MegatronGPT(ModelBenchmark):
         self._parser.add_argument('--data_impl', type=str, default='mmap', help='Data impl.')
         self._parser.add_argument('--data_prefix', type=str, default='dataset_text_document', help='Data prefix.')
         self._parser.add_argument('--deepspeed', action='store_true', help='Use deepspeed.')
+        self._parser.add_argument('--extra', type=str, default=None, help='Extra options for Megatron.')
 
     def _preprocess(self):
         if not super()._preprocess():
             return False
 
-        if not os.path.exists(os.path.join(self._args.code_base, 'pretrain_gpt.py')):
+        if not os.path.exists(self._args.code_base) or \
+                not os.path.exists(os.path.join(self._args.code_base, 'pretrain_gpt.py')):
             logger.error('Code base is not valid.')
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
@@ -307,13 +307,15 @@ class MegatronGPT(ModelBenchmark):
             megatron_options = f'{megatron_options} --no-bias-gelu-fusion'
         if self._args.no_bias_dropout_fusion:
             megatron_options = f'{megatron_options} --no-bias-dropout-fusion'
+        if self._args.extra:
+            megatron_options = f'{megatron_options} {self._args.extra}'
 
         command = ''
         script_path = os.path.join(self._args.code_base, 'pretrain_gpt.py')
         if self._args.deepspeed:
             deepspeed_option = self.__prepare_deespeed_config(precision_megatron.lstrip('--'))
             if self._num_nodes > 1:
-                command = f'deepspeed --hostfile {self._args.hostfile} ' + \
+                command = f'torchrun {self._distributed_args} ' + \
                     f'{script_path} {megatron_options} {self._data_options} {deepspeed_option}'
             else:
                 command = f'deepspeed {script_path} {megatron_options} {self._data_options} {deepspeed_option}'
@@ -323,34 +325,47 @@ class MegatronGPT(ModelBenchmark):
 
         return command
 
-    def __train(self, precision):    # noqa: E501
+    def _train(self, precision):    # noqa: E501
         """Train the model and get the performance."""
         command = self._megatron_command(precision)
-        if self._args.deepspeed:
-            if not self._is_rank_0():
-                return True
+        local_rank = os.environ.pop('OMPI_COMM_WORLD_LOCAL_RANK', None)
+        logger.info('Running command: {}.'.format(command))
+        output = run_command(command, flush_output=True)
+        os.environ['OMPI_COMM_WORLD_LOCAL_RANK'] = local_rank
 
-        output = run_command(command)
-
-        iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated = self._parse_log(output.stdout)
-
-        iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated = self.__process_model_result(
-            ModelAction.TRAIN, precision, iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated
-        )
-
-        if not iteration_times:
-            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
-            return False
-
-        logger.info(
-            'Average train time - round: {}, model: {}, precision: {}, \
-            iteration time: {:.6f} ms, samples per second: {:.6f}, tflops: {:.6f}, \
-            allocated mem: {:.6f}, max allocated mem: {:.6f}.'.format(
-                self._curr_run_index, self._name, precision, statistics.mean(iteration_times),
-                statistics.mean(samples_per_seconds), statistics.mean(tflops), statistics.mean(mem_allocated),
-                statistics.mean(max_mem_allocated)
+        # last rank will print the result, first rank will print the memory usage
+        if self._num_nodes == 1 or \
+            int(os.environ['OMPI_COMM_WORLD_RANK']) == int(os.environ['OMPI_COMM_WORLD_SIZE']) - 1 \
+                or self._is_rank_0():
+            iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated = self._parse_log(
+                output.stdout
             )
-        )
+
+            iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated = self.__process_model_result(
+                ModelAction.TRAIN, precision, iteration_times, samples_per_seconds, tflops, mem_allocated,
+                max_mem_allocated
+            )
+
+            if not iteration_times and not mem_allocated:
+                self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
+                return False
+
+            if iteration_times:
+                logger.info(
+                    'Average train time - round: {}, model: {}, precision: {}, \
+                    iteration time: {:.6f} ms, samples per second: {:.6f}, tflops: {:.6f}.'.format(
+                        self._curr_run_index, self._name, precision, statistics.mean(iteration_times),
+                        statistics.mean(samples_per_seconds), statistics.mean(tflops)
+                    )
+                )
+            if mem_allocated:
+                logger.info(
+                    'Average train time - round: {}, model: {}, precision: {}, \
+                    allocated mem: {:.6f}, max allocated mem: {:.6f}.'.format(
+                        self._curr_run_index, self._name, precision, statistics.mean(mem_allocated),
+                        statistics.mean(max_mem_allocated)
+                    )
+                )
 
         return True
 
@@ -358,7 +373,7 @@ class MegatronGPT(ModelBenchmark):
         self, model_action, precision, iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated
     ):
         """Process the result of model benchmarking."""
-        if len(tflops) == 0 or len(samples_per_seconds) == 0 or len(iteration_times) == 0:
+        if len(tflops) == 0 and len(mem_allocated) == 0:
             logger.error(
                 'Step time list is empty - round: {}, model: {}, model_action: {}, precision: {}.'.format(
                     self._curr_run_index, self._name, model_action, precision
@@ -376,20 +391,23 @@ class MegatronGPT(ModelBenchmark):
         metric_t = '{}_{}_tflops'.format(precision, model_action)
         metric_m = '{}_{}_mem_allocated'.format(precision, model_action)
         metric_m_max = '{}_{}_max_mem_allocated'.format(precision, model_action)
-        self._result.add_raw_data(metric_d.format(precision, model_action), iteration_times, self._args.log_raw_data)
-        self._result.add_raw_data(
-            metric_s.format(precision, model_action), samples_per_seconds, self._args.log_raw_data
-        )
-        self._result.add_raw_data(metric_t.format(precision, model_action), tflops, self._args.log_raw_data)
-        self._result.add_raw_data(metric_m.format(precision, model_action), mem_allocated, self._args.log_raw_data)
-        self._result.add_raw_data(
-            metric_m_max.format(precision, model_action), max_mem_allocated, self._args.log_raw_data
-        )
-
-        if model_action == ModelAction.TRAIN:
+        if iteration_times:
+            self._result.add_raw_data(
+                metric_d.format(precision, model_action), iteration_times, self._args.log_raw_data
+            )
+            self._result.add_raw_data(
+                metric_s.format(precision, model_action), samples_per_seconds, self._args.log_raw_data
+            )
+            self._result.add_raw_data(metric_t.format(precision, model_action), tflops, self._args.log_raw_data)
             self._result.add_result(metric_d, statistics.mean(iteration_times))
             self._result.add_result(metric_s, statistics.mean(samples_per_seconds))
             self._result.add_result(metric_t, statistics.mean(tflops))
+
+        if mem_allocated:
+            self._result.add_raw_data(metric_m.format(precision, model_action), mem_allocated, self._args.log_raw_data)
+            self._result.add_raw_data(
+                metric_m_max.format(precision, model_action), max_mem_allocated, self._args.log_raw_data
+            )
             self._result.add_result(metric_m, statistics.mean(mem_allocated))
             self._result.add_result(metric_m_max, statistics.mean(max_mem_allocated))
 
@@ -412,7 +430,13 @@ class MegatronGPT(ModelBenchmark):
         self._num_nodes = int(os.getenv('OMPI_COMM_WORLD_SIZE')) // int(os.getenv('OMPI_COMM_WORLD_LOCAL_SIZE'))
         if self._num_nodes > 1:
             if not self._args.hostfile:
-                self._args.hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
+                sb_hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
+                if os.path.exists(sb_hostfile):
+                    hosts = open(sb_hostfile).read().split('\n')
+                    hosts = [f'{host} slots={self._args.num_gpus}' for host in hosts if host != '']
+                    self._args.hostfile = os.path.join(self._args.data_home, 'hostfile')
+                    with open(self._args.hostfile, 'w') as file:
+                        file.write('\n'.join(hosts))
             if not os.path.exists(self._args.hostfile):
                 logger.error('Hostfile not found.')
                 return False
@@ -420,11 +444,12 @@ class MegatronGPT(ModelBenchmark):
             if self._num_nodes != len(hosts):
                 logger.error('MPI init failed since hostfile not match the MPI setting.')
                 return False
-        addr = os.environ['MASTER_ADDR']
-        port = os.environ['MASTER_PORT']
-        node_rank = int(os.environ['OMPI_COMM_WORLD_RANK']) // int(os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'])
-        self._distributed_args = f'--nproc_per_node {self._args.num_gpus} --nnodes {self._num_nodes} ' + \
-            f'--node_rank {node_rank} --master_addr {addr} --master_port {port}'
+
+            addr = os.getenv('MASTER_ADDR', hosts[0].split()[0])
+            port = os.getenv('MASTER_PORT', '29500')
+            node_rank = int(os.environ['OMPI_COMM_WORLD_RANK']) // int(os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'])
+            self._distributed_args = f'--nproc_per_node {self._args.num_gpus} --nnodes {self._num_nodes} ' + \
+                f'--node_rank {node_rank} --master_addr {addr} --master_port {port}'
         return True
 
     def _generate_dataset(self):
@@ -455,9 +480,9 @@ class MegatronGPT(ModelBenchmark):
                 )
 
                 # split documents
-                run_command(command)
+                run_command(command, flush_output=True)
                 # binarize dataset
-                run_command(command)
+                run_command(command, flush_output=True)
                 if not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.bin')) \
                         or not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.idx')):
                     logger.error('Dataset failed to generate.')
@@ -475,6 +500,7 @@ class MegatronGPT(ModelBenchmark):
             --data-path {self._data_path} \
             --data-impl {self._args.data_impl}'
 
+        logger.info('Dataset preparation successfully.')
         return True
 
     def _set_force_fp32(self):
@@ -495,7 +521,7 @@ class MegatronGPT(ModelBenchmark):
         Return:
             True if optimizer instance is created successfully.
         """
-        pass
+        return True
 
     def _create_model(self, precision):
         """Construct the model for benchmarking.

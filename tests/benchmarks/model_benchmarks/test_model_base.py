@@ -233,7 +233,7 @@ def test_preprocess():
 
 
 def test_train():
-    """Test interface Benchmark.__train()."""
+    """Test interface Benchmark._train()."""
     benchmark = create_benchmark()
     expected_result = (
         '{"name": "pytorch-fake-model", "type": "model", "run_count": 1, "return_code": 0, '
@@ -244,7 +244,7 @@ def test_train():
         '"reduce_op": {"return_code": null, "fp32_train_step_time": null, "fp32_train_throughput": null}}'
     )
     assert (benchmark._preprocess())
-    assert (benchmark._ModelBenchmark__train(Precision.FLOAT32))
+    assert (benchmark._ModelBenchmark_train(Precision.FLOAT32))
     assert (json.loads(benchmark.serialized_result) == json.loads(expected_result))
 
     # Step time list is empty (simulate training failure).
@@ -255,7 +255,7 @@ def test_train():
         '"result": {"return_code": [3]}, "reduce_op": {"return_code": null}}'
     )
     assert (benchmark._preprocess())
-    assert (benchmark._ModelBenchmark__train(Precision.FLOAT32) is False)
+    assert (benchmark._ModelBenchmark_train(Precision.FLOAT32) is False)
     assert (json.loads(benchmark.serialized_result) == json.loads(expected_result))
 
 

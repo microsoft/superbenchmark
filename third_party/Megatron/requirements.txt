@@ -1,0 +1,14 @@
+nltk
+parameterized
+pybind11
+regex
+six
+# versions from HF transformers
+black==21.4b0
+isort>=5.5.4
+tqdm
+sentencepiece
+tiktoken
+wandb
+einops
+typing_extensions==4.5.0

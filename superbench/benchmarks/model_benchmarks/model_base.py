@@ -244,7 +244,7 @@ class ModelBenchmark(Benchmark):
         """
         pass
 
-    def __train(self, precision):
+    def _train(self, precision):
         """Launch the training benchmark.
 
         Args:
@@ -351,7 +351,7 @@ class ModelBenchmark(Benchmark):
             for model_action in self._args.model_action:
                 self._sub_benchmark_start_time = time.time()
                 if model_action == ModelAction.TRAIN:
-                    if not self.__train(precision):
+                    if not self._train(precision):
                         return False
                 elif model_action == ModelAction.INFERENCE:
                     if not self.__inference(precision):

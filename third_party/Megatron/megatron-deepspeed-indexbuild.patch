@@ -1,0 +1,26 @@
+diff --git a/megatron/data/gpt_dataset.py b/megatron/data/gpt_dataset.py
+index 1d9b7e1..61a842b 100644
+--- a/megatron/data/gpt_dataset.py
++++ b/megatron/data/gpt_dataset.py
+@@ -389,7 +389,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
+     data_cache_success = True
+
+     # Build the indexed mapping if not exist.
+-    if build_indices and is_rank_0():
++    if build_indices and int(os.getenv('LOCAL_RANK')) == 0:
+         print_rank_0(' > WARNING: could not find index map files, building '
+                      'the indices on rank 0 ...')
+
+diff --git a/megatron/initialize.py b/megatron/initialize.py
+index 3aa035a..443a5ed 100644
+--- a/megatron/initialize.py
++++ b/megatron/initialize.py
+@@ -113,7 +113,7 @@ def _compile_dependencies():
+     # Compile dataset C++ code.
+     # =========================
+     # TODO: move this to ninja
+-    if is_rank_0():
++    if int(os.getenv('LOCAL_RANK')) == 0:
+         start_time = time.time()
+         print('> compiling dataset index builder ...')
+         from megatron.data.dataset_utils import compile_helper

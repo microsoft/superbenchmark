@@ -156,11 +156,14 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         """Test command generation."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
         assert (benchmark_cls)
-        os.environ['OMPI_COMM_WORLD_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_SIZE'] = '2'
         os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'] = '1'
         os.environ['OMPI_COMM_WORLD_RANK'] = '0'
         os.environ['MASTER_ADDR'] = 'localhost'
         os.environ['MASTER_PORT'] = '12345'
+        with open(self.hostfile_path, 'w') as f:
+            f.write('host1\n')
+            f.write('host2\n')
         # use url to process dataset
         benchmark = benchmark_cls(
             self.benchmark_name,
@@ -198,8 +201,8 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --min-lr 1e-06 \
             --split 949,50,1 \
             --log-interval 1 \
-            --eval-interval 10000 \
-            --eval-iters 10000 \
+            --eval-interval 10 \
+            --eval-iters 0 \
             --save-interval 10000 \
             --weight-decay 0.1 \
             --clip-grad 1.0 \
@@ -210,7 +213,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --optimizer adam \
             --use-distributed-optimizer \
             {precision} \
-            --seed 0 {data_options}'
+            --seed 1234 {data_options}'
 
         precision = Precision.FLOAT32
         command = benchmark._megatron_command(precision)
@@ -246,7 +249,20 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             )
         )
 
-        benchmark._args.deepspeed = True
+        os.environ['OMPI_COMM_WORLD_SIZE'] = '1'
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} \
+                --num_warmup 0 --num_steps 10 --batch_size 2 --data_prefix dataset_text_document --deepspeed',
+        )
+        mock_generate_dataset.return_value = True
+        benchmark._preprocess()
+        benchmark._data_options = f'\
+            --vocab-file {self._tmp_dir}/gpt2-vocab.json \
+            --merge-file {self._tmp_dir}/gpt2-merges.txt \
+            --data-path {self._tmp_dir}/dataset_text_document \
+            --data-impl mmap'
+
         command = benchmark._megatron_command(Precision.BFLOAT16)
         expected_command = 'deepspeed {script_path} \
             --override-opt_param-scheduler \
@@ -270,8 +286,8 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --min-lr 1e-06 \
             --split 949,50,1 \
             --log-interval 1 \
-            --eval-interval 10000 \
-            --eval-iters 10000 \
+            --eval-interval 10 \
+            --eval-iters 0 \
             --save-interval 10000 \
             --weight-decay 0.1 \
             --clip-grad 1.0 \
@@ -282,7 +298,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --optimizer adam \
             --use-distributed-optimizer \
             {precision} \
-            --seed 0 {data_options} {deepseed_options}'
+            --seed 1234 {data_options} {deepseed_options}'
 
         expect_ds_options = f'\
             --deepspeed \
@@ -295,7 +311,6 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             expected_command.format(
                 precision='--bf16',
                 data_options=benchmark._data_options,
-                distributed_args=benchmark._distributed_args,
                 script_path=script_path,
                 deepseed_options=expect_ds_options
             )
