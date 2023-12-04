@@ -244,7 +244,7 @@ class ModelBenchmark(Benchmark):
         """
         pass
 
-    def _train(self, precision):
+    def __train(self, precision):
         """Launch the training benchmark.
 
         Args:
@@ -262,9 +262,11 @@ class ModelBenchmark(Benchmark):
             return False
 
         # The unit of step time should be millisecond.
-        step_times = self._train_step(precision)
+        step_times, info = self._train_step(precision)
         step_times = self.__process_model_result(ModelAction.TRAIN, precision, step_times)
-        if not step_times:
+        if info:
+            self._process_other_info(info)
+        if not step_times and not info:
             self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
             return False
 
@@ -351,7 +353,7 @@ class ModelBenchmark(Benchmark):
             for model_action in self._args.model_action:
                 self._sub_benchmark_start_time = time.time()
                 if model_action == ModelAction.TRAIN:
-                    if not self._train(precision):
+                    if not self.__train(precision):
                         return False
                 elif model_action == ModelAction.INFERENCE:
                     if not self.__inference(precision):
@@ -418,6 +420,7 @@ class ModelBenchmark(Benchmark):
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
         if precision.value in precision_metric.keys():
             precision = precision_metric[precision.value]
+
         metric_s = '{}_{}_step_time'.format(precision, model_action)
         metric_t = '{}_{}_throughput'.format(precision, model_action)
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
@@ -428,7 +431,7 @@ class ModelBenchmark(Benchmark):
 
         if model_action == ModelAction.TRAIN:
             step_times = self._sync_result(step_times)
-            if not step_times:
+            if not step_times or statistics.mean(step_times) < 0:
                 return None
             if self._local_rank is None or self._global_rank == 0:
                 self._result.add_result(metric_s, statistics.mean(step_times))
@@ -468,3 +471,13 @@ class ModelBenchmark(Benchmark):
             step_time = statistics.mean(duration) if len(duration) < self._args.log_n_steps \
                 else statistics.mean(duration[-self._args.log_n_steps:])
             stdout_logger.log(f'{self._name} - {precision.value}: step {curr_step}, step time {step_time}\n')
+
+    def _process_other_info(self, model_action, precision, info):
+        """Process other info.
+
+        Args:
+            model_action (ModelAction): train or inference.
+            precision (Precision): precision of model.
+            info (dict): other info.
+        """
+        pass

@@ -6,13 +6,16 @@
 import json
 import os
 import statistics
+import numpy as np
 import requests
 import torch
 from pathlib import Path
 import re
 
+from mpi4py import MPI
+
 from superbench.benchmarks import BenchmarkRegistry
-from superbench.benchmarks.context import ModelAction, Precision
+from superbench.benchmarks.context import Precision
 from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
 from superbench.benchmarks.return_code import ReturnCode
 from superbench.common.utils import logger, run_command
@@ -65,9 +68,7 @@ class MegatronGPT(ModelBenchmark):
         self._parser.add_argument(
             '--num_attn_heads', type=int, required=False, default=32, help='Number of attention heads.'
         )
-        self._parser.add_argument(
-            '--global_batch_size', type=int, required=False, default=2048, help='Global batch size.'
-        )
+        self._parser.add_argument('--micro_batch_size', type=int, required=False, default=2, help='micro batch size.')
         self._parser.add_argument('--lr', type=float, required=False, default=1.2e-4, help='Learning rate.')
         self._parser.add_argument('--min_lr', type=float, required=False, default=1.0e-6, help='Minimum learning rate.')
         self._parser.add_argument('--init_std', type=float, required=False, default=0.009, help='Init std.')
@@ -138,8 +139,8 @@ class MegatronGPT(ModelBenchmark):
 
         data_parallel_size = self._args.num_gpus * self._num_nodes \
             // self._args.pipeline_model_parallel_size // self._args.tensor_model_parallel_size
-        if self._args.batch_size < 1 or \
-                self._args.batch_size > (self._args.global_batch_size // data_parallel_size):
+        if self._args.micro_batch_size < 1 or \
+                self._args.micro_batch_size > (self._args.batch_size // data_parallel_size):
             logger.error('Micro Batch size * data parallel size is larger than global batch size.')
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
@@ -167,27 +168,21 @@ class MegatronGPT(ModelBenchmark):
     def _parse_log(self, output):
         """Parse log output and get the performance."""
         tflops_pattern = re.compile(r'TFLOPs: (\d+\.\d+)')
-        samples_per_second_pattern = re.compile(r'samples per second: (\d+\.\d+)')
         elapsed_time_pattern = re.compile(r'elapsed time per iteration \(ms\): (\d+\.\d+)')
         mem_allocated_pattern = re.compile(r'MemAllocated=([\d.]+)[KMGTPEZY]?B')
         max_mem_allocated_pattern = re.compile(r'MaxMemAllocated=([\d.]+)[KMGTPEZY]?B')
         lines = output.splitlines()
         tflops = []
-        samples_per_seconds = []
         mem_allocated = []
         max_mem_allocated = []
         iteration_times = []
         for line in lines:
             if 'TFLOPs' in line:
                 tflops_matches = tflops_pattern.search(line)
-                samples_per_second_match = samples_per_second_pattern.search(line)
                 elapsed_time_match = elapsed_time_pattern.search(line)
                 if tflops_matches:
                     tflops_values = float(tflops_matches.group(1))
                     tflops.append(tflops_values)
-                if samples_per_second_match:
-                    samples_per_second_value = float(samples_per_second_match.group(1))
-                    samples_per_seconds.append(samples_per_second_value)
                 if elapsed_time_match:
                     elapsed_time_value = float(elapsed_time_match.group(1))
                     iteration_times.append(elapsed_time_value)
@@ -203,7 +198,7 @@ class MegatronGPT(ModelBenchmark):
                     max_mem_allocated_value = float(max_mem_allocated_match.group(1))
                     max_mem_allocated.append(max_mem_allocated_value)
 
-        return iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated
+        return iteration_times, tflops, mem_allocated, max_mem_allocated
 
     def __prepare_deespeed_config(self, precision_megatron):
         """Prepare deepspeed configs."""
@@ -219,8 +214,8 @@ class MegatronGPT(ModelBenchmark):
         }
 
         ds_config_template = {
-            'train_batch_size': self._args.global_batch_size,
-            'train_micro_batch_size_per_gpu': self._args.batch_size,
+            'train_batch_size': self._args.batch_size,
+            'train_micro_batch_size_per_gpu': self._args.micro_batch_size,
             'steps_per_print': self._args.log_interval,
             'zero_optimization': {
                 'stage': self._args.zero_stage
@@ -262,17 +257,17 @@ class MegatronGPT(ModelBenchmark):
             --tensor-model-parallel-size {self._args.tensor_model_parallel_size} \
             --init-method-std {self._args.init_std} \
             --lr-decay-samples 43945312 \
-            --lr-warmup-samples {self._args.num_warmup * self._args.global_batch_size} \
+            --lr-warmup-samples {self._args.num_warmup * self._args.batch_size} \
             --lr-decay-style cosine \
-            --micro-batch-size {self._args.batch_size} \
-            --global-batch-size {self._args.global_batch_size} \
+            --micro-batch-size {self._args.micro_batch_size} \
+            --global-batch-size {self._args.batch_size} \
             --num-layers {self._args.num_layers} \
             --hidden-size {self._args.hidden_size} \
             --num-attention-heads {self._args.num_attn_heads} \
             --seq-length {self._args.seq_len} \
             --max-position-embeddings {self._args.seq_len} \
             --train-tokens {self._args.train_tokens} \
-            --train-samples {self._args.num_steps * self._args.global_batch_size} \
+            --train-samples {self._args.num_steps * self._args.batch_size} \
             --lr {self._args.lr} \
             --min-lr {self._args.min_lr} \
             --split 949,50,1 \
@@ -325,7 +320,7 @@ class MegatronGPT(ModelBenchmark):
 
         return command
 
-    def _train(self, precision):    # noqa: E501
+    def _train_step(self, precision):    # noqa: E501
         """Train the model and get the performance."""
         command = self._megatron_command(precision)
         local_rank = os.environ.pop('OMPI_COMM_WORLD_LOCAL_RANK', None)
@@ -333,85 +328,46 @@ class MegatronGPT(ModelBenchmark):
         output = run_command(command, flush_output=True)
         os.environ['OMPI_COMM_WORLD_LOCAL_RANK'] = local_rank
 
+        iteration_times = []
+        info = {}
         # last rank will print the result, first rank will print the memory usage
         if self._num_nodes == 1 or \
             int(os.environ['OMPI_COMM_WORLD_RANK']) == int(os.environ['OMPI_COMM_WORLD_SIZE']) - 1 \
                 or self._is_rank_0():
-            iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated = self._parse_log(
-                output.stdout
-            )
+            iteration_times, tflops, mem_allocated, max_mem_allocated = self._parse_log(output.stdout)
+            if len(tflops) > 0:
+                info['tflops'] = tflops
+            if len(mem_allocated) > 0:
+                info['mem_allocated'] = mem_allocated
+            if len(max_mem_allocated) > 0:
+                info['max_mem_allocated'] = max_mem_allocated
+        if not iteration_times:
+            iteration_times = [-1 for i in range(self._args.num_steps)]
 
-            iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated = self.__process_model_result(
-                ModelAction.TRAIN, precision, iteration_times, samples_per_seconds, tflops, mem_allocated,
-                max_mem_allocated
-            )
+        return iteration_times, info
 
-            if not iteration_times and not mem_allocated:
-                self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
-                return False
+    def _sync_result(self, data):
+        """Sync the result of model benchmarking.
 
-            if iteration_times:
-                logger.info(
-                    'Average train time - round: {}, model: {}, precision: {}, \
-                    iteration time: {:.6f} ms, samples per second: {:.6f}, tflops: {:.6f}.'.format(
-                        self._curr_run_index, self._name, precision, statistics.mean(iteration_times),
-                        statistics.mean(samples_per_seconds), statistics.mean(tflops)
-                    )
-                )
-            if mem_allocated:
-                logger.info(
-                    'Average train time - round: {}, model: {}, precision: {}, \
-                    allocated mem: {:.6f}, max allocated mem: {:.6f}.'.format(
-                        self._curr_run_index, self._name, precision, statistics.mean(mem_allocated),
-                        statistics.mean(max_mem_allocated)
-                    )
-                )
+        Args:
+            data (list): the data to be reduced.
+        """
+        comm = MPI.COMM_WORLD
+        data = np.array(data, dtype=np.float64)
+        # Reduce the data to a single value on rank 0
+        result = np.zeros_like(data)
+        comm.Allreduce([data, MPI.DOUBLE], [result, MPI.DOUBLE], op=MPI.MAX)
+        return result.tolist()
 
-        return True
-
-    def __process_model_result(
-        self, model_action, precision, iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated
-    ):
+    def _process_other_info(self, model_action, precision, info):
         """Process the result of model benchmarking."""
-        if len(tflops) == 0 and len(mem_allocated) == 0:
-            logger.error(
-                'Step time list is empty - round: {}, model: {}, model_action: {}, precision: {}.'.format(
-                    self._curr_run_index, self._name, model_action, precision
-                )
-            )
-            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
-            return None, None, None, None, None
-
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'bfloat16': 'bf16'}
         if precision.value in precision_metric.keys():
             precision = precision_metric[precision.value]
-
-        metric_d = '{}_{}_iteration_time'.format(precision, model_action)
-        metric_s = '{}_{}_samples_per_second'.format(precision, model_action)
-        metric_t = '{}_{}_tflops'.format(precision, model_action)
-        metric_m = '{}_{}_mem_allocated'.format(precision, model_action)
-        metric_m_max = '{}_{}_max_mem_allocated'.format(precision, model_action)
-        if iteration_times:
-            self._result.add_raw_data(
-                metric_d.format(precision, model_action), iteration_times, self._args.log_raw_data
-            )
-            self._result.add_raw_data(
-                metric_s.format(precision, model_action), samples_per_seconds, self._args.log_raw_data
-            )
-            self._result.add_raw_data(metric_t.format(precision, model_action), tflops, self._args.log_raw_data)
-            self._result.add_result(metric_d, statistics.mean(iteration_times))
-            self._result.add_result(metric_s, statistics.mean(samples_per_seconds))
-            self._result.add_result(metric_t, statistics.mean(tflops))
-
-        if mem_allocated:
-            self._result.add_raw_data(metric_m.format(precision, model_action), mem_allocated, self._args.log_raw_data)
-            self._result.add_raw_data(
-                metric_m_max.format(precision, model_action), max_mem_allocated, self._args.log_raw_data
-            )
-            self._result.add_result(metric_m, statistics.mean(mem_allocated))
-            self._result.add_result(metric_m_max, statistics.mean(max_mem_allocated))
-
-        return iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated
+        for metric, values in info.items():
+            metric = '{}_{}_{}'.format(precision, model_action, metric)
+            self._result.add_raw_data(metric, values, self._args.log_raw_data)
+            self._result.add_result(metric, statistics.mean(values))
 
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
@@ -530,17 +486,6 @@ class MegatronGPT(ModelBenchmark):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         return True
-
-    def _train_step(self, precision):
-        """Define the training process.
-
-        Args:
-            precision (Precision): precision of model and input data, such as float32, float16.
-
-        Return:
-            The step-time list of every training step.
-        """
-        pass
 
     def _inference_step(self, precision):
         """Define the inference process.

@@ -82,7 +82,7 @@ class FakeModelBenchmark(ModelBenchmark):
         duration = []
         for i in range(self._args.num_steps):
             duration.append(2.0)
-        return duration
+        return duration, None
 
     def _inference_step(self, precision):
         """Define the inference process.

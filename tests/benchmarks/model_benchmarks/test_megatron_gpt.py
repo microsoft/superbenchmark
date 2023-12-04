@@ -5,6 +5,7 @@
 
 import os
 from pathlib import Path
+import statistics
 from unittest import mock
 import unittest
 from superbench.benchmarks.context import ModelAction, Precision
@@ -341,16 +342,15 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --data-path {self._tmp_dir}/dataset_text_document \
             --data-impl mmap'
 
-        iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated = benchmark._parse_log(
-            raw_output
-        )
-        iteration_times, samples_per_seconds, tflops, mem_allocated, max_mem_allocated \
-            = benchmark._MegatronGPT__process_model_result(
-                ModelAction.TRAIN, Precision.FLOAT16, iteration_times, samples_per_seconds, tflops, mem_allocated,
-                max_mem_allocated)
+        iteration_times, tflops, mem_allocated, max_mem_allocated = benchmark._parse_log(raw_output)
+        assert (statistics.mean(iteration_times) == 75239.24)
+        assert (statistics.mean(tflops) == 149.136)
+        assert (statistics.mean(mem_allocated) == 17.54)
+        assert (statistics.mean(max_mem_allocated) == 66.97)
+
+        info = {'tflops': tflops, 'mem_allocated': mem_allocated, 'max_mem_allocated': max_mem_allocated}
+        benchmark._process_other_info(ModelAction.TRAIN, Precision.FLOAT16, info)
         assert (benchmark.result is not None)
-        assert (benchmark.result['fp16_train_iteration_time'][0] == 75239.24)
-        assert (benchmark.result['fp16_train_samples_per_second'][0] == 27.221)
         assert (benchmark.result['fp16_train_tflops'][0] == 149.136)
         assert (benchmark.result['fp16_train_mem_allocated'][0] == 17.54)
         assert (benchmark.result['fp16_train_max_mem_allocated'][0] == 66.97)

@@ -135,7 +135,7 @@ class PytorchMNIST(PytorchBase):
             if idx >= self._args.num_warmup:
                 duration.append((end - start) * 1000)
 
-        return duration
+        return duration, None
 
     def _inference_step(self, precision):
         """Define the inference process.
