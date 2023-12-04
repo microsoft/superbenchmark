@@ -262,7 +262,7 @@ vm-07-05:   compression_training ............................ False
 vm-07-05:   consumed_train_samples .......................... 0
 vm-07-05:   consumed_train_tokens ........................... 0
 vm-07-05:   consumed_valid_samples .......................... 0
-vm-07-05:   contigious_checkpointing ........................ False
+vm-07-05:   contagious_checkpointing ........................ False
 vm-07-05:   cpu_optimizer ................................... False
 vm-07-05:   cpu_torch_adam .................................. False
 vm-07-05:   create_moe_param_group .......................... False
@@ -534,7 +534,7 @@ vm-07-05:   weight_decay .................................... 0.1
 vm-07-05:   weight_decay_incr_style ......................... constant
 vm-07-05:   world_size ...................................... 16
 vm-07-05:   zero_allgather_bucket_size ...................... 0.0
-vm-07-05:   zero_contigious_gradients ....................... False
+vm-07-05:   zero_contagious_gradients ....................... False
 vm-07-05:   zero_reduce_bucket_size ......................... 0.0
 vm-07-05:   zero_reduce_scatter ............................. False
 vm-07-05:   zero_stage ...................................... 1
