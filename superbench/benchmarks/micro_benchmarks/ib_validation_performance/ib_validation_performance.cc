@@ -66,12 +66,13 @@ void load_args(int argc, char *argv[], Args &args) {
     // Get and parse command line arguments
     boost::program_options::options_description opt("all options");
     opt.add_options()("timeout,t", boost::program_options::value<int>(&args.timeout)->default_value(120),
-                      "timeout of each command")(
-        "send_cmd_prefix,c",
-        boost::program_options::value<std::string>(&args.send_cmd_prefix)->default_value("ib_write_bw -s 33554432 -d ib0"),
-        "ib command prefix")(
+                      "timeout of each command")("send_cmd_prefix,c",
+                                                 boost::program_options::value<std::string>(&args.send_cmd_prefix)
+                                                     ->default_value("ib_write_bw -s 33554432 -d ib0"),
+                                                 "ib command prefix")(
         "recv_cmd_prefix,c",
-        boost::program_options::value<std::string>(&args.recv_cmd_prefix)->default_value("ib_write_bw -s 33554432 -d ib0"),
+        boost::program_options::value<std::string>(&args.recv_cmd_prefix)
+            ->default_value("ib_write_bw -s 33554432 -d ib0"),
         "ib command prefix")(
         "input_config,i", boost::program_options::value<std::string>(&args.input_config)->default_value("config.txt"),
         "the path of input config file")(
@@ -322,8 +323,9 @@ float run_cmd(string cmd_prefix, int timeout, int port, bool server, string host
 }
 
 // The ranks in vector of (server, client) run commands parallel
-vector<float> run_cmd_parallel(string send_cmd_prefix, string recv_cmd_prefix, int timeout, const vector<std::pair<int, int>> &run_pairs_in_parallel,
-                               const vector<int> &ports, const vector<string> &hostnames) {
+vector<float> run_cmd_parallel(string send_cmd_prefix, string recv_cmd_prefix, int timeout,
+                               const vector<std::pair<int, int>> &run_pairs_in_parallel, const vector<int> &ports,
+                               const vector<string> &hostnames) {
     // invoke function to run cmd in multi threads mode for each rank in the pairs
     unordered_map<int, std::future<float>> threads;
     int flag;
@@ -388,7 +390,8 @@ vector<vector<float>> run_benchmark(const Args &args, vector<vector<std::pair<in
         // Insert barrier to sync before each run
         MPI_Barrier(MPI_COMM_WORLD);
         // run commands parallel for single line of config
-        vector<float> results_single_line = run_cmd_parallel(args.send_cmd_prefix, args.recv_cmd_prefix, args.timeout, line, ports, hostnames);
+        vector<float> results_single_line =
+            run_cmd_parallel(args.send_cmd_prefix, args.recv_cmd_prefix, args.timeout, line, ports, hostnames);
         // collect results for each run
         results.push_back(results_single_line);
     }
