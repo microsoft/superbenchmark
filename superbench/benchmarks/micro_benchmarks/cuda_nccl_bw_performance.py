@@ -125,8 +125,7 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             command = os.path.join(self._args.bin_dir, self._bin_name)
             command += ' -b {} -e {} -f {} -g {} -c {} -n {} -w {} -G {}'.format(
                 self._args.minbytes, self._args.maxbytes, str(self._args.stepfactor), str(self._args.ngpus),
-                str(self._args.check), str(self._args.iters), str(self._args.warmup_iters),
-                str(self._args.graph_iters)
+                str(self._args.check), str(self._args.iters), str(self._args.warmup_iters), str(self._args.graph_iters)
             )
             self._commands.append(command)
 
