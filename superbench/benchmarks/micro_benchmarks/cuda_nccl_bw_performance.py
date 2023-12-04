@@ -88,6 +88,12 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             default=5,
             help='Number of warmup iterations. Default: 5.',
         )
+        self._parser.add_argument(
+            '--graph_iters',
+            type=int,
+            default=0,
+            help='Number of graph launch iterations. Set to 0 to disable graph mode. Default: 0.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -117,9 +123,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                 return False
 
             command = os.path.join(self._args.bin_dir, self._bin_name)
-            command += ' -b {} -e {} -f {} -g {} -c {} -n {} -w {}'.format(
+            command += ' -b {} -e {} -f {} -g {} -c {} -n {} -w {} -G {}'.format(
                 self._args.minbytes, self._args.maxbytes, str(self._args.stepfactor), str(self._args.ngpus),
-                str(self._args.check), str(self._args.iters), str(self._args.warmup_iters)
+                str(self._args.check), str(self._args.iters), str(self._args.warmup_iters),
+                str(self._args.graph_iters)
             )
             self._commands.append(command)
 

@@ -65,6 +65,7 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.check == 0)
         assert (benchmark._args.iters == 20)
         assert (benchmark._args.warmup_iters == 5)
+        assert (benchmark._args.graph_iters == 0)
 
         # Check command list
         bin_names = [
