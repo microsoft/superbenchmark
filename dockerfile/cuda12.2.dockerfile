@@ -35,6 +35,7 @@ RUN apt-get update && \
     libavutil-dev \
     libboost-program-options-dev \
     libcap2 \
+    libcurl4-openssl-dev \
     libnuma-dev \
     libpci-dev \
     libswresample-dev \
@@ -42,6 +43,7 @@ RUN apt-get update && \
     libtool \
     lshw \
     net-tools \
+    nlohmann-json3-dev \
     openssh-client \
     openssh-server \
     pciutils \
