@@ -79,6 +79,17 @@ superbench:
             NCCL_IB_DISABLE: '0'
       parameters:
         ngpus: 8
+    nccl-lat:default:
+      enable: true
+      modes:
+        - name: mpi
+          proc_num: 8
+          node_num: 1
+      parameters:
+        maxbytes: 16M
+        warmup_iters: 20
+        iters: 1000
+        graph_iters: 1
     ib-loopback:
       enable: true
       modes:
