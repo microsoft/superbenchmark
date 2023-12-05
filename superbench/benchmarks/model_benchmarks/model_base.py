@@ -265,9 +265,9 @@ class ModelBenchmark(Benchmark):
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
         if isinstance(step_times, tuple):
-            info = step_times[1]
             step_times = step_times[0]
-            self._process_other_info(ModelAction.TRAIN, precision, info)
+            info = step_times[1]
+            self._process_info(ModelAction.TRAIN, precision, info)
         step_times = self.__process_model_result(ModelAction.TRAIN, precision, step_times)
         if not step_times:
             self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
@@ -475,7 +475,7 @@ class ModelBenchmark(Benchmark):
                 else statistics.mean(duration[-self._args.log_n_steps:])
             stdout_logger.log(f'{self._name} - {precision.value}: step {curr_step}, step time {step_time}\n')
 
-    def _process_other_info(self, model_action, precision, info):
+    def _process_info(self, model_action, precision, info):
         """Process other info.
 
         Args:

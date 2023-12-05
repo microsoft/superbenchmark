@@ -350,7 +350,7 @@ class MegatronGPT(ModelBenchmark):
         comm.Allreduce([data, MPI.DOUBLE], [result, MPI.DOUBLE], op=MPI.MAX)
         return result.tolist()
 
-    def _process_other_info(self, model_action, precision, info):
+    def _process_info(self, model_action, precision, info):
         """Process the result of model benchmarking."""
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'bfloat16': 'bf16'}
         if precision.value in precision_metric.keys():

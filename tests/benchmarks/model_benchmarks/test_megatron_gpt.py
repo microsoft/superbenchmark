@@ -349,7 +349,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         assert (statistics.mean(max_mem_allocated) == 66.97)
 
         info = {'tflops': tflops, 'mem_allocated': mem_allocated, 'max_mem_allocated': max_mem_allocated}
-        benchmark._process_other_info(ModelAction.TRAIN, Precision.FLOAT16, info)
+        benchmark._process_info(ModelAction.TRAIN, Precision.FLOAT16, info)
         assert (benchmark.result is not None)
         assert (benchmark.result['fp16_train_tflops'][0] == 149.136)
         assert (benchmark.result['fp16_train_mem_allocated'][0] == 17.54)
