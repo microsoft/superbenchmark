@@ -27,6 +27,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         self.__support_ib_commands = [
             'ib_write_bw', 'ib_read_bw', 'ib_send_bw', 'ib_write_lat', 'ib_read_lat', 'ib_send_lat'
         ]
+        self.__support_directions = ['gpu-to-gpu', 'cpu-to-cpu', 'cpu-to-gpu', 'gpu-to-cpu']
         self.__patterns = ['one-to-one', 'one-to-many', 'many-to-one', 'topo-aware']
         self.__config_path = os.path.join(os.getcwd(), 'config.txt')
         self.__config = []
@@ -74,6 +75,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--msg_size',
             type=int,
+            nargs='+',
             default=8388608,
             required=False,
             help='The message size of perftest command, e.g., 8388608.',
@@ -84,6 +86,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--command',
             type=str,
+            nargs='+',
             default='ib_write_bw',
             required=False,
             help='The perftest command to use, e.g., {}.'.format(' '.join(self.__support_ib_commands)),
@@ -136,6 +139,14 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             default=None,
             required=False,
             help='The path of ibnetdiscover output',
+        )
+        self._parser.add_argument(
+            '--direction',
+            type=str,
+            nargs='+',
+            default='gpu-to-gpu',
+            required=False,
+            help='The direction of traffic pattern, e.g., gpu-to-gpu, cpu-to-cpu, cpu-to-gpu, gpu-to-cpu'
         )
 
     def __one_to_many(self, n):
@@ -249,37 +260,32 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             return False
         return True
 
-    def __prepare_general_ib_command_params(self):
+    def __prepare_general_ib_command_params(self, msg_size, device='cpu'):
         """Prepare general params for ib commands.
 
         Returns:
             Str of ib command params if arguments are valid, otherwise False.
         """
-        # Format the ib command type
-        self._args.command = self._args.command.lower()
         # Add message size for ib command
-        msg_size = f'-s {self._args.msg_size}' if self._args.msg_size > 0 else '-a'
+        msg_size = f'-s {msg_size}' if msg_size > 0 else '-a'
         # Add GPUDirect for ib command
         gpu_dev = ''
-        if self._args.gpu_dev is not None:
-            if 'bw' in self._args.command:
-                gpu = GPU()
-                if gpu.vendor == 'nvidia':
-                    gpu_dev = f'--use_cuda={self._args.gpu_dev}'
-                elif gpu.vendor == 'amd':
-                    gpu_dev = f'--use_rocm={self._args.gpu_dev}'
-                else:
-                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                    logger.error('No GPU found - benchmark: {}'.format(self._name))
-                    return False
-            elif 'lat' in self._args.command:
-                logger.warning('Wrong configuration: Perftest supports CUDA/ROCM only in BW tests')
+        if device == 'gpu' and self._args.gpu_dev is not None:
+            gpu = GPU()
+            if gpu.vendor == 'nvidia':
+                gpu_dev = f'--use_cuda={self._args.gpu_dev}'
+            elif gpu.vendor == 'amd':
+                gpu_dev = f'--use_rocm={self._args.gpu_dev}'
+            else:
+                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                logger.error('No GPU found - benchmark: {}'.format(self._name))
+                return False
         # Generate ib command params
         command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size} {gpu_dev}'
         command_params = f'{command_params.strip()} --report_gbits'
         return command_params
 
-    def _preprocess(self):
+    def _preprocess(self):    # noqa: C901
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
@@ -292,31 +298,66 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         if not self.__prepare_config():
             return False
 
-        # Prepare general params for ib commands
-        command_params = self.__prepare_general_ib_command_params()
-        if not command_params:
-            return False
-        # Generate commands
-        if self._args.command not in self.__support_ib_commands:
-            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error(
-                'Unsupported ib command - benchmark: {}, command: {}, expected: {}.'.format(
-                    self._name, self._args.command, ' '.join(self.__support_ib_commands)
-                )
-            )
-            return False
-        else:
-            ib_command_prefix = f'{os.path.join(self._args.bin_dir, self._args.command)} {command_params}'
-            if self._args.numa_dev is not None:
-                ib_command_prefix = f'numactl -N {self._args.numa_dev} {ib_command_prefix}'
-            if 'bw' in self._args.command and self._args.bidirectional:
-                ib_command_prefix += ' -b'
-
-            command = os.path.join(self._args.bin_dir, self._bin_name)
-            command += ' --cmd_prefix ' + "'" + ib_command_prefix + "'"
-            command += f' --timeout {self._args.timeout} ' + \
-                f'--hostfile {self._args.hostfile} --input_config {self.__config_path}'
-            self._commands.append(command)
+        self._commands_ib_commands = []
+        self._commands_msg_size = []
+        self._commands_direction = []
+        if not isinstance(self._args.msg_size, list):
+            self._args.msg_size = [self._args.msg_size]
+        for msg_size in self._args.msg_size:
+            if msg_size < 0:
+                logger.error('Invalid message size - benchmark: {}, message size: {}.'.format(self._name, msg_size))
+                return False
+            # Prepare general params for ib commands
+            cpu_command_params = self.__prepare_general_ib_command_params(msg_size)
+            gpu_command_params = self.__prepare_general_ib_command_params(msg_size, 'gpu')
+            if not cpu_command_params or (self._args.gpu_dev and not gpu_command_params):
+                return False
+            # Generate commands
+            if isinstance(self._args.command, str):
+                self._args.command = [self._args.command]
+            for ib_command in self._args.command:
+                if ib_command not in self.__support_ib_commands:
+                    self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                    logger.error(
+                        'Unsupported ib command - benchmark: {}, command: {}, expected: {}.'.format(
+                            self._name, ib_command, ' '.join(self.__support_ib_commands)
+                        )
+                    )
+                    return False
+                else:
+                    # Format the ib command type
+                    ib_command = ib_command.lower()
+                    cpu_ib_command_prefix = f'{os.path.join(self._args.bin_dir, ib_command)} {cpu_command_params}'
+                    gpu_ib_command_prefix = f'{os.path.join(self._args.bin_dir, ib_command)} {gpu_command_params}'
+                    if self._args.numa_dev is not None:
+                        cpu_ib_command_prefix = f'numactl -N {self._args.numa_dev} {cpu_ib_command_prefix}'
+                        gpu_ib_command_prefix = f'numactl -N {self._args.numa_dev} {gpu_ib_command_prefix}'
+                    if 'bw' in ib_command and self._args.bidirectional:
+                        cpu_ib_command_prefix += ' -b'
+                        gpu_ib_command_prefix += ' -b'
+                    if not isinstance(self._args.direction, list):
+                        self._args.direction = [self._args.direction]
+                    for direction in self._args.direction:
+                        if direction not in self.__support_directions:
+                            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                            logger.error(
+                                'Unsupported direction - benchmark: {}, direction: {}, expected: {}.'.format(
+                                    self._name, direction, ' '.join(self.__support_directions)
+                                )
+                            )
+                            return False
+                        # Generate commands
+                        command = os.path.join(self._args.bin_dir, self._bin_name)
+                        command += ' --send_cmd_prefix ' + "'" + cpu_ib_command_prefix + "'" \
+                            if 'cpu-to' in direction else ' --send_cmd_prefix ' + "'" + gpu_ib_command_prefix + "'"
+                        command += ' --recv_cmd_prefix ' + "'" + cpu_ib_command_prefix + "'" \
+                            if 'to-cpu' in direction else ' --recv_cmd_prefix ' + "'" + gpu_ib_command_prefix + "'"
+                        command += f' --timeout {self._args.timeout} ' + \
+                            f'--hostfile {self._args.hostfile} --input_config {self.__config_path}'
+                        self._commands.append(command)
+                        self._commands_ib_commands.append(ib_command)
+                        self._commands_msg_size.append(msg_size)
+                        self._commands_direction.append(direction)
 
         return True
 
@@ -332,7 +373,10 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data('raw_output_' + self._args.command, raw_output, self._args.log_raw_data)
+        command = self._commands_ib_commands[cmd_idx]
+        msg_size = self._commands_msg_size[cmd_idx]
+        direction = self._commands_direction[cmd_idx]
+        self._result.add_raw_data(f'raw_output_{command}_{msg_size}_{direction}', raw_output, self._args.log_raw_data)
 
         # If it's invoked by MPI and rank is not 0, no result is expected
         if os.getenv('OMPI_COMM_WORLD_RANK'):
@@ -343,7 +387,6 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
         valid = False
         content = raw_output.splitlines()
         config_index = 0
-        command = self._args.command
         try:
             result_index = -1
             for index, line in enumerate(content):
@@ -359,7 +402,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                     for pair_index, pair_result in enumerate(line_result):
                         rank_results = list(filter(None, pair_result.strip().split(' ')))
                         for rank_index, rank_result in enumerate(rank_results):
-                            metric = f'{command}_{line_index}_{pair_index}:{self.__config[config_index]}:{rank_index}'
+                            metric = f'{command}_{msg_size}_{direction}_{line_index}_{pair_index}:' \
+                                + f'{self.__config[config_index]}:{rank_index}'
                             value = float(rank_result)
                             # Check if the value is valid before the base conversion
                             if 'bw' in command and value >= 0.0:

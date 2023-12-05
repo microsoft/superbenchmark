@@ -355,6 +355,8 @@ gpcnet-network-load-test: Select full system network tests run with four congest
 
 Measure the InfiniBand performance under multi nodes' traffic pattern.
 
+The direction between client and server can be 'cpu-to-cpu'/'gpu-to-gpu'/'gpu-to-cpu'/'cpu-to-gpu'.
+
 The traffic pattern is defined in a config file, which is pre-defined for one-to-many, many-to-one and all-to-all patterns.
 Each row in the config is one round, and all pairs of nodes in a row run ib command simultaneously.
 
@@ -371,10 +373,10 @@ with topology distance of 2, 4, 6, respectively.
 
 #### Metrics
 
-| Metrics                                                          | Unit             | Description                                                                                                                                                                                                                        |
-|------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ib-traffic/ib\_write\_bw\_${line}\_${pair}:${server}\_${client}  | bandwidth (GB/s) | The max bandwidth of perftest (ib_write_bw, ib_send_bw, ib_read_bw) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client.  |
-| ib-traffic/ib\_write\_lat\_${line}\_${pair}:${server}\_${client} | time (us)        | The max latency of perftest (ib_write_lat, ib_send_lat, ib_read_lat) run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client. |
+| Metrics                                                                                     | Unit             | Description                                                                                                                                                                                                                                                                                                                 |
+|---------------------------------------------------------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ib-traffic/ib\_write\_bw\_${msg_size}\_${direction}\_${line}\_${pair}:${server}\_${client}  | bandwidth (GB/s) | The max bandwidth of perftest (ib_write_bw, ib_send_bw, ib_read_bw) using ${msg_size} with ${direction}('cpu-to-cpu'/'gpu-to-gpu'/'gpu-to-cpu'/'cpu-to-gpu') run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client.  |
+| ib-traffic/ib\_write\_lat\_${msg_size}\_${direction}\_${line}\_${pair}:${server}\_${client} | time (us)        | The max latency of perftest (ib_write_lat, ib_send_lat, ib_read_lat) using ${msg_size} with ${direction}('cpu-to-cpu'/'gpu-to-gpu'/'gpu-to-cpu'/'cpu-to-gpu') run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client. |
 
 
 ## Computation-communication Benchmarks
