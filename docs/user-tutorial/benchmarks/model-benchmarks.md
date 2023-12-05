@@ -37,7 +37,7 @@ For inference, supported percentiles include
 | Name                                                                                    | Unit                   | Description                                                                  |
 |-----------------------------------------------------------------------------------------|------------------------|------------------------------------------------------------------------------|
 | model-benchmarks/pytorch-${model_name}/${precision}_train_step_time                     | time (ms)              | The average training step time with fp32/fp16 precision.                     |
-| model-benchmarks/pytorch-${model_name}/${precision}_train_throughput                    | throughput (samples/s) | The average training throughput with fp32/fp16 precision.                    |
+| model-benchmarks/pytorch-${model_name}/${precision}_train_throughput                    | throughput (samples/s) | The average training throughput with fp32/fp16 precision per GPU.            |
 | model-benchmarks/pytorch-${model_name}/${precision}_inference_step_time                 | time (ms)              | The average inference step time with fp32/fp16 precision.                    |
 | model-benchmarks/pytorch-${model_name}/${precision}_inference_throughput                | throughput (samples/s) | The average inference throughput with fp32/fp16 precision.                   |
 | model-benchmarks/pytorch-${model_name}/${precision}_inference_step_time\_${percentile}  | time (ms)              | The n<sup>th</sup> percentile inference step time with fp32/fp16 precision.  |
@@ -55,11 +55,11 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 `tips: batch_size in this benchmark represents global batch size, the batch size on each GPU instance is micro_batch_size.`
 
 #### Metrics
-| Name                                              | Unit                   | Description                                                             |
-|---------------------------------------------------|------------------------|-------------------------------------------------------------------------|
-| megatron-gpt/${precision}_train_step_time         | time (ms)              | The average training step time between each whole global batch.         |
-| megatron-gpt/${precision}_train_throughput        | throughput (samples/s) | The average training throughput between each whole global batch.        |
-| megatron-gpt/${precision}_train_tflops            | tflops/s               | The average training tflops per second between each whole global batch. |
-| megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated between each whole global batch.       |
-| megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average max GPU memory allocated between each whole global batch.   |
+| Name                                              | Unit                   | Description                                             |
+|---------------------------------------------------|------------------------|---------------------------------------------------------|
+| megatron-gpt/${precision}_train_step_time         | time (ms)              | The average training step time per iteration.           |
+| megatron-gpt/${precision}_train_throughput        | throughput (samples/s) | The average training throughput per iteration.          |
+| megatron-gpt/${precision}_train_tflops            | tflops/s               | The average training tflops per second per iteration.   |
+| megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
+| megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
 

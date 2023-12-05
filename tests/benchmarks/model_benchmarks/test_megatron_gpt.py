@@ -46,7 +46,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark_cls)
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--hostfile {self.hostfile_path}',
+            parameters=f'--hostfile {self.hostfile_path} --batch_size 2048',
         )
 
         # Check init distribued setting.
@@ -66,7 +66,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters='--hostfile xxx',
+            parameters='--hostfile xxx --batch_size 2048',
         )
         mock_generate_dataset.return_value = True
         ret = benchmark._preprocess()
@@ -77,7 +77,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'] = '1'
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--hostfile {self.hostfile_path}',
+            parameters=f'--hostfile {self.hostfile_path} --batch_size 2048',
         )
         mock_generate_dataset.return_value = True
         benchmark._preprocess()
@@ -94,7 +94,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # no code_base
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path}',
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --batch_size 2048',
         )
         mock_generate_dataset.return_value = True
         ret = benchmark._preprocess()
@@ -103,14 +103,14 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # invalid micro batch size
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --batch_size -1',
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --micro_batch_size -1',
         )
         mock_generate_dataset.return_value = True
         ret = benchmark._preprocess()
         assert (ret is False)
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --batch_size 4096',
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --micro_batch_size 4096',
         )
         mock_generate_dataset.return_value = True
         ret = benchmark._preprocess()
@@ -118,7 +118,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # invalid precision
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --batch_size 2 --precision int8',
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --batch_size 2048 --precision int8',
         )
         mock_generate_dataset.return_value = True
         ret = benchmark._preprocess()
@@ -126,7 +126,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # Positive cases
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --batch_size 2',
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} --batch_size 2048',
         )
         mock_generate_dataset.return_value = True
         ret = benchmark._preprocess()
@@ -146,7 +146,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_cls(
             self.benchmark_name,
             parameters=f'--code_base /root/Megatron-DeepSpeed --data_home {self._tmp_dir} \
-                --batch_size 2 --data_prefix customdataset_text_document',
+                --batch_size 2048 --data_prefix customdataset_text_document',
         )
         ret = benchmark._preprocess()
         ret = benchmark._generate_dataset()
@@ -169,7 +169,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_cls(
             self.benchmark_name,
             parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} \
-                --num_warmup 0 --num_steps 10 --batch_size 2 --data_prefix dataset_text_document',
+                --num_warmup 0 --num_steps 10 --batch_size 2048 --data_prefix dataset_text_document',
         )
         mock_generate_dataset.return_value = True
         benchmark._preprocess()
@@ -254,7 +254,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_cls(
             self.benchmark_name,
             parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} \
-                --num_warmup 0 --num_steps 10 --batch_size 2 --data_prefix dataset_text_document --deepspeed',
+                --num_warmup 0 --num_steps 10 --batch_size 2048 --data_prefix dataset_text_document --deepspeed',
         )
         mock_generate_dataset.return_value = True
         benchmark._preprocess()
@@ -332,7 +332,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # use url to process dataset
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--code_base {self._tmp_dir} --num_warmup 0 --num_steps 10 --batch_size 2',
+            parameters=f'--code_base {self._tmp_dir} --num_warmup 0 --num_steps 10 --batch_size 2048',
         )
         mock_generate_dataset.return_value = True
         benchmark._preprocess()
