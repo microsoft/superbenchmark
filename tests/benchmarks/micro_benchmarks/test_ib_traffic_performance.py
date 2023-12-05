@@ -184,18 +184,23 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._preprocess()
         Path('config.txt').unlink()
         assert (ret)
-        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_write_bw -F -n 2000 -d $(echo mlx5_0) -s 33554432 --report_gbits' " + \
+        expect_command = "ib_validation --send_cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d $(echo mlx5_0) -s 33554432 --report_gbits'" + \
+            f" --recv_cmd_prefix '{benchmark._args.bin_dir}/ib_write_bw -F -n 2000" + \
+            " -d $(echo mlx5_0) -s 33554432 --report_gbits' " + \
             f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
 
-        parameters = '--ib_dev mlx5_0 --msg_size 0 --iters 2000 --pattern one-to-one --hostfile hostfile --gpu_dev 0'
+        parameters = '--ib_dev mlx5_0 --msg_size 0 --iters 2000 --pattern one-to-one ' \
+            + '--hostfile hostfile --gpu_dev 0 --direction gpu-to-gpu'
         mock_gpu.return_value = 'nvidia'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         ret = benchmark._preprocess()
-        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_write_bw -F -n 2000 -d mlx5_0 -a --use_cuda=0 --report_gbits' " + \
+        expect_command = "ib_validation --send_cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -a --use_cuda=0 --report_gbits'" + \
+            f" --recv_cmd_prefix '{benchmark._args.bin_dir}/ib_write_bw -F -n 2000" + \
+            " -d mlx5_0 -a --use_cuda=0 --report_gbits' " + \
             f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
@@ -207,12 +212,14 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (command == expect_command)
 
         parameters = '--command ib_read_lat --ib_dev mlx5_0 --iters 2000 --msg_size 33554432 ' + \
-            '--pattern one-to-one --hostfile hostfile --gpu_dev 0'
+            '--pattern one-to-one --hostfile hostfile --gpu_dev 0 --direction gpu-to-gpu'
         mock_gpu.return_value = 'nvidia'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         ret = benchmark._preprocess()
-        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_read_lat -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' " + \
+        expect_command = "ib_validation --send_cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_read_lat -F -n 2000 -d mlx5_0 -s 33554432 --use_cuda=0 --report_gbits'" + \
+            f" --recv_cmd_prefix '{benchmark._args.bin_dir}/ib_read_lat -F -n 2000" + \
+            " -d mlx5_0 -s 33554432 --use_cuda=0 --report_gbits' " + \
             f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
@@ -223,14 +230,16 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             for line in config:
                 f.write(line + '\n')
         parameters = '--ib_dev mlx5_0 --timeout 180 --iters 2000 --msg_size 33554432 ' + \
-            '--config test_config.txt --hostfile hostfile'
+            '--config test_config.txt --hostfile hostfile --direction cpu-to-cpu'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         os.environ['OMPI_COMM_WORLD_SIZE'] = '2'
         ret = benchmark._preprocess()
         Path('test_config.txt').unlink()
         assert (ret)
-        expect_command = "ib_validation --cmd_prefix '" + benchmark._args.bin_dir + \
-            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits' " + \
+        expect_command = "ib_validation --send_cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_0 -s 33554432 --report_gbits'" + \
+            f" --recv_cmd_prefix '{benchmark._args.bin_dir}/ib_write_bw -F -n 2000" + \
+            " -d mlx5_0 -s 33554432 --report_gbits' " + \
             '--timeout 180 --hostfile hostfile --input_config test_config.txt'
 
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
@@ -323,5 +332,5 @@ while attempting to start process rank 0.
         # Check parameters specified in BenchmarkContext.
         assert (benchmark._args.ib_dev == 'mlx5_0')
         assert (benchmark._args.iters == 2000)
-        assert (benchmark._args.msg_size == 33554432)
-        assert (benchmark._args.command == 'ib_write_bw')
+        assert (benchmark._args.msg_size == [33554432])
+        assert (benchmark._args.command == ['ib_write_bw'])
