@@ -7,6 +7,7 @@ import math
 import time
 import statistics
 from abc import abstractmethod
+from typing import Union
 
 from superbench.common.utils import logger, stdout_logger
 from superbench.benchmarks import Precision, ModelAction, DistributedImpl, DistributedBackend, BenchmarkType, ReturnCode
@@ -262,11 +263,13 @@ class ModelBenchmark(Benchmark):
             return False
 
         # The unit of step time should be millisecond.
-        step_times, info = self._train_step(precision)
+        step_times = self._train_step(precision)
+        if isinstance(step_times, tuple):
+            info = step_times[1]
+            step_times = step_times[0]
+            self._process_other_info(ModelAction.TRAIN, precision, info)
         step_times = self.__process_model_result(ModelAction.TRAIN, precision, step_times)
-        if info:
-            self._process_other_info(info)
-        if not step_times and not info:
+        if not step_times:
             self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
             return False
 
@@ -304,7 +307,7 @@ class ModelBenchmark(Benchmark):
         return True
 
     @abstractmethod
-    def _train_step(self, precision):
+    def _train_step(self, precision) -> Union[list, tuple]:
         """Define the training process.
 
         Args:

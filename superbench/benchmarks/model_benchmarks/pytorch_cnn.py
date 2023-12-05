@@ -116,7 +116,7 @@ class PytorchCNN(PytorchBase):
                     duration.append((end - start) * 1000)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    return duration, None
+                    return duration
 
     def _inference_step(self, precision):
         """Define the inference process.

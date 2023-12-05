@@ -15,7 +15,7 @@ import re
 from mpi4py import MPI
 
 from superbench.benchmarks import BenchmarkRegistry
-from superbench.benchmarks.context import Precision
+from superbench.benchmarks.context import Platform, Precision
 from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
 from superbench.benchmarks.return_code import ReturnCode
 from superbench.common.utils import logger, run_command
@@ -155,15 +155,6 @@ class MegatronGPT(ModelBenchmark):
             os.makedirs(self._args.data_home)
 
         return True
-
-    def _is_rank_0(self):
-        """Check if the rank is 0."""
-        # If it's invoked by MPI and rank is not 0, empty content is expected
-        if os.getenv('OMPI_COMM_WORLD_RANK'):
-            rank = int(os.getenv('OMPI_COMM_WORLD_RANK'))
-            if rank == 0:
-                return True
-        return False
 
     def _parse_log(self, output):
         """Parse log output and get the performance."""
@@ -333,7 +324,7 @@ class MegatronGPT(ModelBenchmark):
         # last rank will print the result, first rank will print the memory usage
         if self._num_nodes == 1 or \
             int(os.environ['OMPI_COMM_WORLD_RANK']) == int(os.environ['OMPI_COMM_WORLD_SIZE']) - 1 \
-                or self._is_rank_0():
+                or int(os.environ['OMPI_COMM_WORLD_RANK']) == 0:
             iteration_times, tflops, mem_allocated, max_mem_allocated = self._parse_log(output.stdout)
             if len(tflops) > 0:
                 info['tflops'] = tflops
@@ -364,10 +355,15 @@ class MegatronGPT(ModelBenchmark):
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'bfloat16': 'bf16'}
         if precision.value in precision_metric.keys():
             precision = precision_metric[precision.value]
-        for metric, values in info.items():
-            metric = '{}_{}_{}'.format(precision, model_action, metric)
+        for key, values in info.items():
+            metric = '{}_{}_{}'.format(precision, model_action, key)
             self._result.add_raw_data(metric, values, self._args.log_raw_data)
             self._result.add_result(metric, statistics.mean(values))
+            logger.info(
+                'Average {} - round: {}, model: {}, precision: {}, value: {:.6f}.'.format(
+                    key, self._curr_run_index, self._name, precision, statistics.mean(values)
+                )
+            )
 
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
@@ -509,4 +505,5 @@ class MegatronGPT(ModelBenchmark):
 
 
 # Register GPT3 benchmark.
-BenchmarkRegistry.register_benchmark('megatron-gpt', MegatronGPT, parameters='')
+BenchmarkRegistry.register_benchmark('megatron-gpt', MegatronGPT, parameters='', platform=Platform.CUDA)
+BenchmarkRegistry.register_benchmark('megatron-gpt', MegatronGPT, parameters='', platform=Platform.ROCM)
