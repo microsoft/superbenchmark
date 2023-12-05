@@ -183,7 +183,7 @@ ifneq (,$(wildcard msccl/executor/msccl-executor-nccl/Makefile))
 endif
 ifneq (,$(wildcard msccl/scheduler/msccl-scheduler/Makefile))
 	cd ./msccl/scheduler/msccl-scheduler && \
-	CXX=nvcc BIN_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl SRC_HOME=./msccl/executor/msccl-executor-nccl make -j && \
+	CXX=nvcc BIN_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl SRC_HOME=../../../msccl/executor/msccl-executor-nccl make -j && \
 	cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/lib/msccl-scheduler && \
 	cp -r -v ./msccl/scheduler/msccl-scheduler/build/* $(SB_MICRO_PATH)/lib/msccl-scheduler/
@@ -192,5 +192,5 @@ ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
 	cd ./msccl/tests/msccl-tests-nccl && \
 	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j && cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/bin/msccl-tests-nccl && \
-	cp -v ./msccl/tests/msccl-tests-nccl/build/* $(SB_MICRO_PATH)/bin/msccl-tests-nccl/
+	cp -r -v ./msccl/tests/msccl-tests-nccl/build/* $(SB_MICRO_PATH)/bin/msccl-tests-nccl/
 endif
