@@ -178,6 +178,7 @@ setup(
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
         'types-requests',
+        'mpi4py>=3.1.0',
     ],
     extras_require=(
         lambda x: {
