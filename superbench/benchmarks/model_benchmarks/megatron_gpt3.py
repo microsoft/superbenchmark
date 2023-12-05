@@ -12,8 +12,6 @@ import torch
 from pathlib import Path
 import re
 
-from mpi4py import MPI
-
 from superbench.benchmarks import BenchmarkRegistry
 from superbench.benchmarks.context import Platform, Precision
 from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
@@ -343,6 +341,7 @@ class MegatronGPT(ModelBenchmark):
         Args:
             data (list): the data to be reduced.
         """
+        from mpi4py import MPI
         comm = MPI.COMM_WORLD
         data = np.array(data, dtype=np.float64)
         # Reduce the data to a single value on rank 0

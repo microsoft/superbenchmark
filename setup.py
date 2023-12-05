@@ -177,16 +177,15 @@ setup(
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
-        'types-requests',
-        'mpi4py>=3.1.0',
+        'types-requests'
     ],
     extras_require=(
         lambda x: {
             **x,
             'develop': x['dev'] + x['test'],
             'cpuworker': x['torch'],
-            'amdworker': x['torch'] + x['ort'] + x['amd'],
-            'nvworker': x['torch'] + x['ort'] + x['nvidia'],
+            'amdworker': x['torch'] + x['ort'] + x['amd'] + x['mpi'],
+            'nvworker': x['torch'] + x['ort'] + x['nvidia'] + x['mpi'],
         }
     )(
         {
@@ -220,6 +219,7 @@ setup(
             ],
             'nvidia': ['py3nvml>=0.2.6'],
             'amd': ['pyrsmi>=1.0.1'],
+            'mpi': ['mpi4py>=3.1.0'],
         }
     ),
     include_package_data=True,
