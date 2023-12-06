@@ -8,7 +8,7 @@ black==21.4b0
 isort>=5.5.4
 tqdm
 sentencepiece
-tiktoken
+# tiktoken
 wandb
 einops
 typing_extensions==4.5.0
