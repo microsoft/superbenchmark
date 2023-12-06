@@ -118,7 +118,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # invalid precision
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path}' + \
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path}' +
                 '--batch_size 2048 --precision int8',
         )
         mock_generate_dataset.return_value = True
