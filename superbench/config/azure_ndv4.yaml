@@ -85,10 +85,6 @@ superbench:
         - name: mpi
           proc_num: 8
           node_num: 1
-          env:
-            LD_PRELOAD: '/opt/superbench/lib/msccl-executor-nccl/lib/libnccl.so:$LD_PRELOAD'
-            MSCCL_SCHEDULER: '/opt/superbench/lib/msccl-scheduler/lib/libmsccl-scheduler.so'
-            MSCCL_ALGO_DIR: '/opt/superbench/lib/msccl-scheduler/lib/msccl-algorithms/ndv4'
       parameters:
         maxbytes: 16M
         warmup_iters: 20
