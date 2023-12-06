@@ -43,7 +43,7 @@
 
 #if defined(__HIP_PLATFORM_AMD__)
 #include <hipblaslt/hipblaslt.h>
-#include <rccl.h>
+#include <rccl/rccl.h>
 using cublasLtHalf = hipblasLtHalf;
 #else
 #include <cuda_fp16.h>
