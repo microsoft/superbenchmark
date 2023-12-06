@@ -10,7 +10,9 @@ from superbench.benchmarks import Framework, BenchmarkRegistry
 from superbench.common.utils import logger
 
 if __name__ == '__main__':
-    context = BenchmarkRegistry.create_benchmark_context('dist-inference-cpp', parameters='', framework=Framework.PYTORCH)
+    context = BenchmarkRegistry.create_benchmark_context(
+        'dist-inference-cpp', parameters='', framework=Framework.PYTORCH
+    )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:

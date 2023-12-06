@@ -33,7 +33,9 @@ class DistInferenceCpp(MicroBenchmarkWithInvoke):
             type=str,
             nargs='+',
             default=['80,128,128'],
-            help='List of M,N,K tuples of sharded 2-layer-feed-forward block. K is input size, N is batch size, M is hidden size. E.g. {}.'.format(' '.join(self._mnk_list)),
+            help=
+            'List of M,N,K tuples of sharded 2-layer-feed-forward block. K is input size, N is batch size, M is hidden size. E.g. {}.'
+            .format(' '.join(self._mnk_list)),
         )
         self._parser.add_argument(
             '--alpha',
@@ -122,8 +124,10 @@ class DistInferenceCpp(MicroBenchmarkWithInvoke):
                     layer_latency = float(output_line.split(' us per layer')[0].split()[-1])
                     break
             return self._process_numeric_result(
-                'layer_latency_%s' % self._args.mnk_list[cmd_idx],
-                [layer_latency], reduce_type=ReduceType.MAX, cal_percentile=True)
+                'layer_latency_%s' % self._args.mnk_list[cmd_idx], [layer_latency],
+                reduce_type=ReduceType.MAX,
+                cal_percentile=True
+            )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
