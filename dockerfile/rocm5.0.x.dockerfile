@@ -41,6 +41,7 @@ RUN apt-get update && \
     libtinfo5 \
     libtool \
     lshw \
+    python3-mpi4py \
     net-tools \
     numactl \
     openssh-client \

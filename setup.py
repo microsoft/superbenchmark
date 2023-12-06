@@ -184,8 +184,8 @@ setup(
             **x,
             'develop': x['dev'] + x['test'],
             'cpuworker': x['torch'],
-            'amdworker': x['torch'] + x['ort'] + x['amd'] + x['mpi'],
-            'nvworker': x['torch'] + x['ort'] + x['nvidia'] + x['mpi'],
+            'amdworker': x['torch'] + x['ort'] + x['amd'],
+            'nvworker': x['torch'] + x['ort'] + x['nvidia'],
         }
     )(
         {
@@ -219,7 +219,6 @@ setup(
             ],
             'nvidia': ['py3nvml>=0.2.6'],
             'amd': ['pyrsmi>=1.0.1'],
-            'mpi': ['mpi4py>=3.1.0'],
         }
     ),
     include_package_data=True,
