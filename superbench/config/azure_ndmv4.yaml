@@ -179,6 +179,12 @@ superbench:
       <<: *default_pytorch_mode
     dist-inference:
       <<: *dist_inference_pytorch_mode
+    dist-inference-cpp:
+      enable: true
+      modes:
+        - name: mpi
+          proc_num: 8
+          node_num: 1
     ib-traffic:
       enable: false
       modes:

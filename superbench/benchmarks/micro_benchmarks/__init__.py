@@ -52,6 +52,7 @@ __all__ = [
     'CudnnBenchmark',
     'DiskBenchmark',
     'DistInference',
+    'DistInferenceCpp',
     'HipBlasLtBenchmark',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
