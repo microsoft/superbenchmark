@@ -183,7 +183,7 @@ setup(
             **x,
             'develop': x['dev'] + x['test'],
             'cpuworker': x['torch'],
-            'amdworker': x['torch'] + x['ort'],
+            'amdworker': x['amd'] + x['ort'],
             'nvworker': x['torch'] + x['ort'] + x['nvidia'],
         }
     )(
@@ -216,6 +216,10 @@ setup(
                 'onnxruntime-gpu==1.10.0',
             ],
             'nvidia': ['py3nvml>=0.2.6'],
+            'amd' : [
+                'torchvision>=0.8.0a0',
+                'transformers>=4.3.3, <4.23.0',
+            ]
         }
     ),
     include_package_data=True,

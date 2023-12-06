@@ -173,6 +173,8 @@ ADD third_party third_party
 
 RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream
 
+ENV CXX="/opt/rocm/bin/hipcc"
+
 ADD . .
 RUN apt install rocm-cmake -y && \
     python3 -m pip install --upgrade wheel setuptools==65.7 && \
