@@ -30,26 +30,9 @@ jobs:
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
-        - name: rocm5.1.3
-          dockerfile: rocm5.1.x
-          tags: superbench/main:rocm5.1.3
-          extra_args: >-
-            BASE_IMAGE=rocm/pytorch:rocm5.1.3_ubuntu20.04_py3.7_pytorch_1.11.0
-        - name: rocm5.1.1
-          dockerfile: rocm5.1.x
-          tags: superbench/main:rocm5.1.1
-          extra_args: >-
-            BASE_IMAGE=rocm/pytorch:rocm5.1.1_ubuntu20.04_py3.7_pytorch_1.10.0
-        - name: rocm5.0.1
-          dockerfile: rocm5.0.x
-          tags: superbench/main:rocm5.0.1
-          extra_args: >-
-            BASE_IMAGE=rocm/pytorch:rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.9.0
-        - name: rocm5.0
-          dockerfile: rocm5.0.x
-          tags: superbench/main:rocm5.0
-          extra_args: >-
-            BASE_IMAGE=rocm/pytorch:rocm5.0_ubuntu18.04_py3.7_pytorch_1.9.0
+        - name: rocm5.7
+          dockerfile: rocm5.7.x
+          tags: superbench/main:rocm5.7
     steps:
       - name: Checkout
         uses: actions/checkout@v2
