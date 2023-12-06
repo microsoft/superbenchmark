@@ -130,7 +130,7 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party cuda
+RUN make -C third_party cuda_with_msccl
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 && \
