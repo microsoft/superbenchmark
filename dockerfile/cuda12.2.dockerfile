@@ -35,6 +35,7 @@ RUN apt-get update && \
     libavutil-dev \
     libboost-program-options-dev \
     libcap2 \
+    libcurl4-openssl-dev \
     libnuma-dev \
     libpci-dev \
     libswresample-dev \
@@ -43,6 +44,7 @@ RUN apt-get update && \
     lshw \
     python3-mpi4py \
     net-tools \
+    nlohmann-json3-dev \
     openssh-client \
     openssh-server \
     pciutils \
@@ -129,7 +131,7 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party cuda
+RUN make -C third_party cuda_with_msccl
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 && \
