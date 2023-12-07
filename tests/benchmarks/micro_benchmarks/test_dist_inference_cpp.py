@@ -11,7 +11,7 @@ from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 
 
-class DistInferenceCppBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
+class DistInferenceCppTest(BenchmarkTestCase, unittest.TestCase):
     """Test class for dist-inference-cpp benchmark."""
     @classmethod
     def setUpClass(cls):

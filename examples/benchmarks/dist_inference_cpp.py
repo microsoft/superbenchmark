@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'dist-inference-cpp', parameters='', framework=Framework.PYTORCH
+        'dist-inference-cpp', platform=Platform.CUDA, parameters=''
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
