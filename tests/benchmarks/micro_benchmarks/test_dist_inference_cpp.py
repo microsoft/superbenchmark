@@ -57,8 +57,8 @@ class DistInferenceCppTest(BenchmarkTestCase, unittest.TestCase):
 
         # Check command
         assert (len(mnk_list) == len(benchmark._commands))
-        for cmd in benchmark._commands:
-            m, n, k = [int(x) for x in mnk_list[0].split(',')]
+        for cmd, mnk in zip(benchmark._commands, mnk_list):
+            m, n, k = [int(x) for x in mnk.split(',')]
             bench_params_format_str = \
                 '%s -m %d -n %d -k %d --alpha %g --beta %g ' + \
                 '--num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
@@ -98,7 +98,7 @@ class DistInferenceCppTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-        assert (1 == len(benchmark.raw_data))
+        assert (2 == len(benchmark.raw_data)) # raw_data and post-processed data
         test_latency = float(test_raw_output.splitlines()[-1].split(' us per layer')[0].split()[-1])
         assert (benchmark.default_metric_count + 1 == len(benchmark.result))
         for output_key in benchmark.result:
