@@ -69,7 +69,6 @@ class DistInferenceCppBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 )
             )
 
-
     @decorator.cuda_test
     def test_dist_inference_cpp_command_generation_cuda(self):
         """Test dist-inference-cpp benchmark command generation, CUDA case."""
