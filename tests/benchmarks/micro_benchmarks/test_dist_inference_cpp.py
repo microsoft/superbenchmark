@@ -62,8 +62,13 @@ class DistInferenceCppBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             bench_params_format_str = \
                 '%s -m %d -n %d -k %d --alpha %g --beta %g ' + \
                 '--num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
-            assert (cmd == (bench_params_format_str % (benchmark._DistInferenceCpp__bin_path,
-                    m, n, k, alpha, beta, num_layers, num_warmups, num_iters)))
+            assert (
+                cmd == (
+                    bench_params_format_str %
+                    (benchmark._DistInferenceCpp__bin_path, m, n, k, alpha, beta, num_layers, num_warmups, num_iters)
+                )
+            )
+
 
     @decorator.cuda_test
     def test_dist_inference_cpp_command_generation_cuda(self):

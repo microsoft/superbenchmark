@@ -34,7 +34,8 @@ class DistInferenceCpp(MicroBenchmarkWithInvoke):
             nargs='+',
             default=['128,80,128'],
             help='List of M(input),N(batch),K(hidden) tuples of sharded 2-layer-feed-forward block. E.g. {}.'.format(
-                ' '.join(self._mnk_list)),
+                ' '.join(self._mnk_list)
+            ),
         )
         self._parser.add_argument(
             '--alpha',
