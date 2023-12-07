@@ -30,7 +30,7 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         size = 1048576
         num_warm_up = 20
         num_loops = 10000
-        mem_types = ['htod', 'dtoh', 'dtod']
+        mem_types = ['htod', 'dtoh', 'dtod', 'one_to_all', 'all_to_one', 'all_to_all']
         copy_types = ['sm', 'dma']
 
         parameters = '--mem_type %s --copy_type %s --size %d ' \

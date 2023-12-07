@@ -116,6 +116,15 @@ struct Opts {
     // Whether device-to-device transfer needs to be evaluated.
     bool dtod_enabled = false;
 
+    // Whether one-to-all (device) transfer needs to be evaluated.
+    bool one_to_all_enabled = false;
+
+    // Whether all-to-one (device) transfer needs to be evaluated.
+    bool all_to_one_enabled = false;
+
+    // Whether all-to-all (device) transfer needs to be evaluated.
+    bool all_to_all_enabled = false;
+
     // Whether bidirectional transfer is enabled.
     bool bidirectional_enabled = false;
 
@@ -134,6 +143,9 @@ void PrintUsage() {
            "[--htod] "
            "[--dtoh] "
            "[--dtod] "
+           "[--one_to_all] "
+           "[--all_to_one] "
+           "[--all_to_all] "
            "[--bidirectional] "
            "[--check_data]\n");
 }
@@ -149,6 +161,9 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         kEnableHToD,
         kEnableDToH,
         kEnableDToD,
+        kEnableOneToAll,
+        kEnableAllToOne,
+        kEnableAllToAll,
         kEnableBidirectional,
         kEnableCheckData
     };
@@ -161,6 +176,9 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
         {"dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToH)},
         {"dtod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToD)},
+        {"one_to_all", no_argument, nullptr, static_cast<int>(OptIdx::kEnableOneToAll)},
+        {"all_to_one", no_argument, nullptr, static_cast<int>(OptIdx::kEnableAllToOne)},
+        {"all_to_all", no_argument, nullptr, static_cast<int>(OptIdx::kEnableAllToAll)},
         {"bidirectional", no_argument, nullptr, static_cast<int>(OptIdx::kEnableBidirectional)},
         {"check_data", no_argument, nullptr, static_cast<int>(OptIdx::kEnableCheckData)}};
     int getopt_ret = 0;
@@ -220,6 +238,15 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         case static_cast<int>(OptIdx::kEnableDToD):
             opts->dtod_enabled = true;
             break;
+        case static_cast<int>(OptIdx::kEnableOneToAll):
+            opts->one_to_all_enabled = true;
+            break;
+        case static_cast<int>(OptIdx::kEnableAllToOne):
+            opts->all_to_one_enabled = true;
+            break;
+        case static_cast<int>(OptIdx::kEnableAllToAll):
+            opts->all_to_all_enabled = true;
+            break;
         case static_cast<int>(OptIdx::kEnableBidirectional):
             opts->bidirectional_enabled = true;
             break;
@@ -268,10 +295,10 @@ int PrepareBufAndStream(BenchArgs *args) {
     for (int i = 0; i < args->num_subs; i++) {
         SubBenchArgs &sub = args->subs[i];
 
-        // Generate data to copy
-        sub.data_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
-
         if (args->check_data) {
+            // Generate data to copy
+            sub.data_buf = static_cast<uint8_t *>(numa_alloc_onnode(args->size, args->numa_id));
+
             for (int j = 0; j < args->size; j++) {
                 sub.data_buf[j] = static_cast<uint8_t>(j % uint8_mod);
             }
@@ -318,15 +345,17 @@ int PrepareBufAndStream(BenchArgs *args) {
         }
 
         // Initialize source buffer
-        if (sub.is_src_dev_gpu) {
-            if (SetGpu(sub.src_gpu_id)) {
+        if (args->check_data) {
+            if (sub.is_src_dev_gpu) {
+                if (SetGpu(sub.src_gpu_id)) {
+                    return -1;
+                }
+            }
+            cuda_err = cudaMemcpy(sub.src_dev_gpu_buf_ptr, sub.data_buf, args->size, cudaMemcpyDefault);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "PrepareBufAndStream::cudaMemcpy error: %d\n", cuda_err);
                 return -1;
             }
-        }
-        cuda_err = cudaMemcpy(sub.src_dev_gpu_buf_ptr, sub.data_buf, args->size, cudaMemcpyDefault);
-        if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "PrepareBufAndStream::cudaMemcpy error: %d\n", cuda_err);
-            return -1;
         }
 
         // Initialize stream on worker device
@@ -638,7 +667,12 @@ int RunCopy(BenchArgs *args) {
     }
 
     PrintResultTag(*args);
-    printf(" %g\n", args->size * args->num_loops * args->num_subs / max_time_in_ms / 1e6);
+    double bw = args->size * args->num_loops * args->num_subs / max_time_in_ms / 1e6;
+    if (args->subs[0].is_src_dev_gpu && args->subs[0].is_dst_dev_gpu &&
+        args->subs[0].src_gpu_id == args->subs[0].dst_gpu_id) {
+        bw *= 2.0;
+    }
+    printf(" %g\n", bw);
 
     return 0;
 }
@@ -744,6 +778,256 @@ void SetSubBenchArgsForDToD(int src_gpu_id, int dst_gpu_id, bool is_read, bool i
     } else {
         args->num_subs = 1;
     }
+}
+
+// dst_rank: < 0 for all ranks, else for specified rank
+__global__ void SMOneToAllCopyKernel(ulong2 **dst_buffers, ulong2 *src_buffer, uint64_t msg_size, int src_rank, int dst_rank, int gpu_count) {
+    uint64_t size_per_dst_rank = msg_size / gpu_count;
+    uint64_t num_blocks_per_dst_rank = gridDim.x / gpu_count;
+    if (dst_rank >= 0 && dst_rank != blockIdx.x / num_blocks_per_dst_rank) {
+        return;
+    } else {
+        dst_rank = blockIdx.x / num_blocks_per_dst_rank;
+    }
+    ulong2 *dst_buffer = dst_buffers[dst_rank];
+    uint64_t src_rank_elem_offset = uint64_t(src_rank) * size_per_dst_rank / sizeof(ulong2);
+    uint64_t dst_rank_elem_offset = uint64_t(dst_rank) * size_per_dst_rank / sizeof(ulong2);
+    ulong2 val;
+
+    uint64_t size_per_block = msg_size / gridDim.x;
+    uint64_t num_elems_per_block = size_per_block / sizeof(ulong2);
+    for (uint64_t idx = num_elems_per_block * blockIdx.x + threadIdx.x;
+         idx < num_elems_per_block * (blockIdx.x + 1); idx += blockDim.x) {
+        FetchULong2(val, src_buffer + idx);
+        StoreULong2(dst_buffer + idx + src_rank_elem_offset - dst_rank_elem_offset, val);
+    }
+}
+
+#define ALL_TO_ALL_NUM_THREAD_BLOCKS_PER_RANK 8
+#define ALL_TO_ALL_NUM_THREADS_IN_BLOCK 512
+
+// src_rank/dst_rank: < 0 for all ranks, else for specified rank
+int RunAllToAllBench(const Opts& opts, int gpu_count, int src_rank, int dst_rank) {
+    int ret = 0;
+    cudaError_t cuda_err = cudaSuccess;
+    int can_access = 0;
+
+    std::vector<uint8_t*> src_buffers_gpu(gpu_count, nullptr);
+    std::vector<uint8_t*> dst_buffers_gpu(gpu_count, nullptr);
+    std::vector<uint8_t**> dst_buffer_gpu_args(gpu_count, nullptr);
+    std::vector<cudaStream_t> streams(gpu_count);
+    std::vector<cudaEvent_t> start_events(gpu_count);
+    std::vector<cudaEvent_t> stop_events(gpu_count);
+
+    uint64_t* data_buffer_cpu = nullptr;
+
+    // Scan all GPUs
+    for (int i = 0; i < gpu_count; i++) {
+        for (int j = 0; j < gpu_count; j++) {
+            ret = EnablePeerAccess(i, j, &can_access);
+            if (ret != 0) {
+                fprintf(stderr, "RunAllToAllBench::EnablePeerAccess between GPU %d and GPU %d failed with %d\n", i, j, ret);
+                return -1;
+            }
+            if (!can_access) {
+                fprintf(stderr, "RunAllToAllBench: GPU %d cannot talk with GPU %d\n", i, j);
+                return -1;
+            }
+        }
+    }
+
+    // Prepare per-GPU resources
+    if (opts.check_data) {
+        data_buffer_cpu = new uint64_t[opts.size / sizeof(uint64_t)];
+    }
+
+    for (int rank = 0; rank < gpu_count; rank++) {
+        if (SetGpu(rank)) {
+            fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", cuda_err, rank);
+            return -1;
+        }
+
+        // Prepare source buffers
+        cuda_err = cudaMalloc(&(src_buffers_gpu[rank]), opts.size);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaMalloc for src_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+        if (opts.check_data) {
+            for (uint64_t i = 0; i < opts.size / sizeof(uint64_t); i++) {
+                data_buffer_cpu[i] = i * rank;
+            }
+            cuda_err = cudaMemcpy(src_buffers_gpu[rank], data_buffer_cpu, opts.size, cudaMemcpyDefault);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "RunAllToAllBench::cudaMemcpy to src_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+                return -1;
+            }
+        }
+
+        // Prepare destination buffers
+        cuda_err = cudaMalloc(&(dst_buffers_gpu[rank]), opts.size);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaMalloc for dst_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+
+        // Prepare streams
+        cuda_err = cudaStreamCreateWithFlags(&(streams[rank]), cudaStreamNonBlocking);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaStreamCreateWithFlags error: %d\n", cuda_err);
+            return -1;
+        }
+
+        // Prepare events
+        cuda_err = cudaEventCreate(&(start_events[rank]));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaEventCreate for start_events[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+        cuda_err = cudaEventCreate(&(stop_events[rank]));
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaEventCreate for stop_events[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+    }
+
+    // Prepare kernel arguments
+    for (int rank = 0; rank < gpu_count; rank++) {
+        if (SetGpu(rank)) {
+            fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", cuda_err, rank);
+            return -1;
+        }
+
+        // Prepare destination buffer args
+        cuda_err = cudaMalloc(&(dst_buffer_gpu_args[rank]), sizeof(uint8_t*) * gpu_count);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaMalloc for dst_buffer_gpu_args[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+        cuda_err = cudaMemcpy(dst_buffer_gpu_args[rank], dst_buffers_gpu.data(), sizeof(uint8_t*) * gpu_count, cudaMemcpyDefault);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaMemcpy to dst_buffer_gpu_args[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+    }
+
+    // Launch jobs and collect running time
+    for (int i = 0; i < opts.num_warm_up + opts.num_loops; i++) {
+        for (int rank = 0; rank < gpu_count; rank++) {
+            if (src_rank >= 0 && rank != src_rank) {
+                continue;
+            }
+
+            if (SetGpu(rank)) {
+                fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", cuda_err, rank);
+                return -1;
+            }
+
+            if (i == opts.num_warm_up) {
+                cuda_err = cudaEventRecord(start_events[rank], streams[rank]);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunAllToAllBench::cudaEventRecord for start_events[%d] error: %d\n", cuda_err, rank);
+                    return -1;
+                }
+            }
+            SMOneToAllCopyKernel<<<gpu_count * ALL_TO_ALL_NUM_THREAD_BLOCKS_PER_RANK, ALL_TO_ALL_NUM_THREADS_IN_BLOCK, 0, streams[rank]>>>(
+                (ulong2**)dst_buffer_gpu_args[rank], (ulong2*)src_buffers_gpu[rank], opts.size, rank, dst_rank, gpu_count);
+            if (i + 1 == opts.num_warm_up + opts.num_loops) {
+                cuda_err = cudaEventRecord(stop_events[rank], streams[rank]);
+                if (cuda_err != cudaSuccess) {
+                    fprintf(stderr, "RunAllToAllBench::cudaEventRecord for stop_events[%d] error: %d\n", cuda_err, rank);
+                    return -1;
+                }
+            }
+        }
+    }
+    for (int rank = 0; rank < gpu_count; rank++) {
+        if (src_rank >= 0 && rank != src_rank) {
+            continue;
+        }
+        cuda_err = cudaStreamSynchronize(streams[rank]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaStreamSynchronize streams[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+    }
+
+    // Calculate and display bandwidth if no problem
+    bool first_bw_seen = false;
+    double min_bw = 0.;
+    for (int rank = 0; rank < gpu_count; rank++) {
+        if (src_rank >= 0 && rank != src_rank) {
+            continue;
+        }
+        float time_in_ms = 0;
+        cuda_err = cudaEventElapsedTime(&time_in_ms, start_events[rank], stop_events[rank]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaEventElapsedTime for rank %d error: %d\n", cuda_err, rank);
+            return -1;
+        }
+        double bw = opts.size * (gpu_count - 1) * opts.num_loops / gpu_count / time_in_ms / 1e6;
+        if (!first_bw_seen) {
+            min_bw = bw;
+            first_bw_seen = true;
+        } else {
+            min_bw = std::min(min_bw, bw);
+        }
+    }
+    if (src_rank < 0 && dst_rank < 0) {
+        printf("gpu_all_to_gpu_all_write_by_sm %g\n", min_bw);
+    } else if (src_rank < 0) {
+        printf("gpu_all_to_gpu%d_write_by_sm %g\n", dst_rank, min_bw);
+    } else {
+        printf("gpu%d_to_gpu_all_write_by_sm %g\n", src_rank, min_bw);
+    }
+
+    // Check data
+    if (opts.check_data) {
+        for (int curr_dst_rank = 0; curr_dst_rank < gpu_count; curr_dst_rank++) {
+            if (dst_rank >= 0 && dst_rank != curr_dst_rank) {
+                continue;
+            }
+            cuda_err = cudaMemcpy(data_buffer_cpu, dst_buffers_gpu[curr_dst_rank], opts.size, cudaMemcpyDefault);
+            if (cuda_err != cudaSuccess) {
+                fprintf(stderr, "RunAllToAllBench::cudaMemcpy from dst_buffers_gpu[%d] error: %d\n", cuda_err, curr_dst_rank);
+                return -1;
+            }
+            for (uint64_t i = 0; i < opts.size / sizeof(uint64_t); i++) {
+                int curr_src_rank = i / (opts.size / sizeof(uint64_t) / gpu_count);
+                if (src_rank >= 0 && src_rank != curr_src_rank) {
+                    continue;
+                }
+                uint64_t offset_in_src_rank = (i % (opts.size / sizeof(uint64_t) / gpu_count)) + curr_dst_rank * (opts.size / sizeof(uint64_t) / gpu_count);
+                if (data_buffer_cpu[i] != offset_in_src_rank * curr_src_rank) {
+                    fprintf(stderr, "RunAllToAllBench: data check failure, dst_buffers_gpu[%d][%lu] (%lu) != %lu * %d\n",
+                            curr_dst_rank, i, data_buffer_cpu[i], offset_in_src_rank, curr_src_rank);
+                    return -1;
+                }
+            }
+        }
+    }
+
+    // Free buffers
+    for (int rank = 0; rank < gpu_count; rank++) {
+        cuda_err = cudaFree(src_buffers_gpu[rank]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaFree for src_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+        cuda_err = cudaFree(dst_buffers_gpu[rank]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaFree for dst_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+        cuda_err = cudaFree(dst_buffer_gpu_args[rank]);
+        if (cuda_err != cudaSuccess) {
+            fprintf(stderr, "RunAllToAllBench::cudaFree for dst_buffer_gpu_args[%d] error: %d\n", cuda_err, rank);
+            return -1;
+        }
+    }
+    delete [] data_buffer_cpu;
+
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -868,6 +1152,31 @@ int main(int argc, char **argv) {
             return -1;
         }
         ret = RunBench(&curr_args);
+        if (ret != 0) {
+            return -1;
+        }
+    }
+
+    if (opts.one_to_all_enabled) {
+        for (int i = 0; i < gpu_count; i++) {
+            ret = RunAllToAllBench(opts, gpu_count, i, -1);
+            if (ret != 0) {
+                return -1;
+            }
+        }
+    }
+
+    if (opts.all_to_one_enabled) {
+        for (int i = 0; i < gpu_count; i++) {
+            ret = RunAllToAllBench(opts, gpu_count, -1, i);
+            if (ret != 0) {
+                return -1;
+            }
+        }
+    }
+
+    if (opts.all_to_all_enabled) {
+        ret = RunAllToAllBench(opts, gpu_count, -1, -1);
         if (ret != 0) {
             return -1;
         }
