@@ -11,13 +11,13 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed
 
 # Build all targets.
 all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn
-rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed
 cpu: common cpu_perftest
 common: cpu_hpl cpu_stream fio
 directx_amd: directx_amf_encoding_latency
@@ -172,6 +172,23 @@ directx_amf_encoding_latency:
 		del vs_buildtools.exe && echo "Deleted vs_buildtools.exe" && \
 		"C:\temp\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "AMF\amf\public\samples\CPPSamples_vs2019.sln" /t:EncoderLatency /p:Platform=x64 /p:Configuration=Release /p:OutDir="%SB_MICRO_PATH%\bin" \
 	)
+
+# Install Megatron-LM
+megatron_lm:
+	if [ ! -d "Megatron/Megatron-LM" ]; then \
+        git clone "https://github.com/NVIDIA/Megatron-LM.git" "Megatron/Megatron-LM"; \
+    fi
+	cd Megatron && \
+	python -m pip install -r requirements.txt
+
+# Install Megatron-DeepSpeed
+megatron_deepspeed:
+	if [ ! -d "Megatron/Megatron-DeepSpeed" ]; then \
+        git clone "https://github.com/microsoft/Megatron-DeepSpeed.git" "Megatron/Megatron-DeepSpeed"; \
+    fi
+	cd Megatron && \
+	python -m pip install -r requirements.txt && \
+	python -m pip install DeepSpeed
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path

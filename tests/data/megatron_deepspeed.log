@@ -1,0 +1,1461 @@
+[2023-11-29 08:50:44,619] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-11-29 08:50:46,231] [INFO] [runner.py:463:main] Using IP address of 10.218.187.178 for node vm-07-05
+[2023-11-29 08:50:46,232] [INFO] [multinode_runner.py:72:get_cmd] Running on the following workers: vm-07-05,vm-07-14
+[2023-11-29 08:50:46,232] [INFO] [runner.py:570:main] cmd = pdsh -S -f 1024 -w vm-07-05,vm-07-14 export PYTHONPATH=/root/Megatron-DeepSpeed/examples_deepspeed/rebase::/root/Megatron-DeepSpeed; export UCX_HOME=/opt/ucx;  cd /root/Megatron-DeepSpeed/examples_deepspeed/rebase; /opt/conda/envs/py_3.9/bin/python -u -m deepspeed.launcher.launch --world_info=eyJ2bS0wNy0wNSI6IFswLCAxLCAyLCAzLCA0LCA1LCA2LCA3XSwgInZtLTA3LTE0IjogWzAsIDEsIDIsIDMsIDQsIDUsIDYsIDddfQ== --node_rank=%n --master_addr=10.218.187.178 --master_port=29500 /root/Megatron-DeepSpeed/examples_deepspeed/rebase/../../pretrain_gpt.py --override-opt_param-scheduler --adam-beta1 '0.9' --adam-beta2 '0.95' --tensor-model-parallel-size '1' --init-method-std '0.009' --lr-decay-samples '43945312' --lr-warmup-samples '2048000' --lr-decay-style 'cosine' --micro-batch-size '2' --exit-duration-in-mins '30000000' --global-batch-size '2048' --num-layers '32' --hidden-size '4096' --num-attention-heads '32' --seq-length '2048' --max-position-embeddings '2048' --train-tokens '300000000000' --train-samples '10240' --lr '1.2e-4' --min-lr '1.0e-6' --split '949,50,1' --log-interval '1' --eval-interval '500' --eval-iters '10' --save-interval '10000' --weight-decay '0.1' --clip-grad '1.0' --hysteresis '2' --num-workers '2' --attention-dropout '0.0' --hidden-dropout '0.0' --optimizer 'adam' --use-distributed-optimizer --sequence-parallel --fp16 --seed '1234' --load './/checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase' --save './/checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase' --no-async-tensor-model-parallel-allreduce --use-rotary-position-embeddings --no-gradient-accumulation-fusion --vocab-file 'gpt2-vocab.json' --merge-file 'gpt2-merges.txt' --data-path '/root//dataset_text_sentence' --data-impl 'mmap' --deepspeed --deepspeed_config 'ds_config_gbs2048_mbs2_log1_zero1.json' --zero-stage '1' --pipeline-model-parallel-size '1' --no-pipeline-parallel
+vm-07-05: [2023-11-29 08:50:48,288] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:48,369] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:49,536] [INFO] [launch.py:145:main] WORLD INFO DICT: {'vm-07-05': [0, 1, 2, 3, 4, 5, 6, 7], 'vm-07-14': [0, 1, 2, 3, 4, 5, 6, 7]}
+vm-07-05: [2023-11-29 08:50:49,536] [INFO] [launch.py:151:main] nnodes=2, num_local_procs=8, node_rank=0
+vm-07-05: [2023-11-29 08:50:49,536] [INFO] [launch.py:162:main] global_rank_mapping=defaultdict(<class 'list'>, {'vm-07-05': [0, 1, 2, 3, 4, 5, 6, 7], 'vm-07-14': [8, 9, 10, 11, 12, 13, 14, 15]})
+vm-07-05: [2023-11-29 08:50:49,536] [INFO] [launch.py:163:main] dist_world_size=16
+vm-07-05: [2023-11-29 08:50:49,536] [INFO] [launch.py:165:main] Setting CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+vm-07-14: [2023-11-29 08:50:49,657] [INFO] [launch.py:145:main] WORLD INFO DICT: {'vm-07-05': [0, 1, 2, 3, 4, 5, 6, 7], 'vm-07-14': [0, 1, 2, 3, 4, 5, 6, 7]}
+vm-07-14: [2023-11-29 08:50:49,657] [INFO] [launch.py:151:main] nnodes=2, num_local_procs=8, node_rank=1
+vm-07-14: [2023-11-29 08:50:49,657] [INFO] [launch.py:162:main] global_rank_mapping=defaultdict(<class 'list'>, {'vm-07-05': [0, 1, 2, 3, 4, 5, 6, 7], 'vm-07-14': [8, 9, 10, 11, 12, 13, 14, 15]})
+vm-07-14: [2023-11-29 08:50:49,657] [INFO] [launch.py:163:main] dist_world_size=16
+vm-07-14: [2023-11-29 08:50:49,657] [INFO] [launch.py:165:main] Setting CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+vm-07-05: [2023-11-29 08:50:51,594] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:51,640] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:51,644] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:51,644] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,660] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:51,675] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:51,684] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:51,705] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: [2023-11-29 08:50:51,713] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,724] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,777] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,780] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,784] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,820] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,820] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-14: [2023-11-29 08:50:51,820] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-05: Deterministic: False
+vm-07-05: Performance Mode: True
+vm-07-05: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-14: Deterministic: False
+vm-07-14: Performance Mode: True
+vm-07-14: Using QLoop: True
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-05: INFO: overriding default arguments for tokenizer_type:None                    with tokenizer_type:GPT2BPETokenizer
+vm-07-05: using world size: 16, data-parallel-size: 16, sequence-parallel size: 1, tensor-model-parallel size: 1, pipeline-model-parallel size: 1
+vm-07-05: using torch.float16 for parameters ...
+vm-07-05: ------------------------ arguments ------------------------
+vm-07-05:   accumulate_allreduce_grads_in_fp32 .............. False
+vm-07-05:   adam_beta1 ...................................... 0.9
+vm-07-05:   adam_beta2 ...................................... 0.95
+vm-07-05:   adam_eps ........................................ 1e-08
+vm-07-05:   add_bias_linear ................................. True
+vm-07-05:   add_position_embedding .......................... False
+vm-07-05:   adlr_autoresume ................................. False
+vm-07-05:   adlr_autoresume_interval ........................ 1000
+vm-07-05:   aml_data_download_path .......................... None
+vm-07-05:   apply_layernorm_1p .............................. False
+vm-07-05:   apply_query_key_layer_scaling ................... True
+vm-07-05:   apply_residual_connection_post_layernorm ........ False
+vm-07-05:   async_tensor_model_parallel_allreduce ........... False
+vm-07-05:   attention_dropout ............................... 0.0
+vm-07-05:   attention_softmax_in_fp32 ....................... False
+vm-07-05:   barrier_with_L1_time ............................ True
+vm-07-05:   bert_binary_head ................................ True
+vm-07-05:   bert_embedder_type .............................. megatron
+vm-07-05:   bert_load ....................................... None
+vm-07-05:   bf16 ............................................ False
+vm-07-05:   bias_dropout_fusion ............................. True
+vm-07-05:   bias_gelu_fusion ................................ True
+vm-07-05:   biencoder_projection_dim ........................ 0
+vm-07-05:   biencoder_shared_query_context_model ............ False
+vm-07-05:   block_data_path ................................. None
+vm-07-05:   checkpoint_activations .......................... False
+vm-07-05:   checkpoint_in_cpu ............................... False
+vm-07-05:   checkpoint_num_layers ........................... 1
+vm-07-05:   classes_fraction ................................ 1.0
+vm-07-05:   clip_grad ....................................... 1.0
+vm-07-05:   compression_training ............................ False
+vm-07-05:   consumed_train_samples .......................... 0
+vm-07-05:   consumed_train_tokens ........................... 0
+vm-07-05:   consumed_valid_samples .......................... 0
+vm-07-05:   contagious_checkpointing ........................ False
+vm-07-05:   cpu_optimizer ................................... False
+vm-07-05:   cpu_torch_adam .................................. False
+vm-07-05:   create_moe_param_group .......................... False
+vm-07-05:   curriculum_learning_legacy ...................... False
+vm-07-05:   data_cache_path ................................. None
+vm-07-05:   data_efficiency_curriculum_learning ............. False
+vm-07-05:   data_impl ....................................... mmap
+vm-07-05:   data_parallel_random_init ....................... False
+vm-07-05:   data_parallel_size .............................. 16
+vm-07-05:   data_path ....................................... ['/root//dataset_text_sentence']
+vm-07-05:   data_per_class_fraction ......................... 1.0
+vm-07-05:   data_sharding ................................... True
+vm-07-05:   dataloader_type ................................. single
+vm-07-05:   DDP_impl ........................................ local
+vm-07-05:   decoder_num_layers .............................. None
+vm-07-05:   decoder_seq_length .............................. None
+vm-07-05:   deepscale ....................................... False
+vm-07-05:   deepscale_config ................................ None
+vm-07-05:   deepspeed ....................................... True
+vm-07-05:   deepspeed_activation_checkpointing .............. False
+vm-07-05:   deepspeed_config ................................ ds_config_gbs2048_mbs2_log1_zero1.json
+vm-07-05:   deepspeed_mpi ................................... False
+vm-07-05:   dino_bottleneck_size ............................ 256
+vm-07-05:   dino_freeze_last_layer .......................... 1
+vm-07-05:   dino_head_hidden_size ........................... 2048
+vm-07-05:   dino_local_crops_number ......................... 10
+vm-07-05:   dino_local_img_size ............................. 96
+vm-07-05:   dino_norm_last_layer ............................ False
+vm-07-05:   dino_teacher_temp ............................... 0.07
+vm-07-05:   dino_warmup_teacher_temp ........................ 0.04
+vm-07-05:   dino_warmup_teacher_temp_epochs ................. 30
+vm-07-05:   distribute_checkpointed_activations ............. False
+vm-07-05:   distribute_saved_activations .................... False
+vm-07-05:   distributed_backend ............................. nccl
+vm-07-05:   distributed_timeout_minutes ..................... 10
+vm-07-05:   ds_inference .................................... False
+vm-07-05:   ds_pipeline_enabled ............................. False
+vm-07-05:   ds_sequence_parallel_size ....................... 1
+vm-07-05:   embedding_path .................................. None
+vm-07-05:   embedding_weights_in_fp32 ....................... False
+vm-07-05:   empty_unused_memory_level ....................... 0
+vm-07-05:   enable_expert_tensor_parallelism ................ False
+vm-07-05:   encoder_num_layers .............................. 32
+vm-07-05:   encoder_seq_length .............................. 2048
+vm-07-05:   end_weight_decay ................................ 0.1
+vm-07-05:   eod_mask_loss ................................... False
+vm-07-05:   eval_interval ................................... 500
+vm-07-05:   eval_iters ...................................... 10
+vm-07-05:   evidence_data_path .............................. None
+vm-07-05:   exit_duration_in_mins ........................... 30000000
+vm-07-05:   exit_interval ................................... None
+vm-07-05:   exit_on_missing_checkpoint ...................... False
+vm-07-05:   exit_signal_handler ............................. False
+vm-07-05:   expert_interval ................................. 2
+vm-07-05:   ffn_hidden_size ................................. 16384
+vm-07-05:   finetune ........................................ False
+vm-07-05:   force_ds_sequence_parallel ...................... False
+vm-07-05:   fp16 ............................................ True
+vm-07-05:   fp16_lm_cross_entropy ........................... False
+vm-07-05:   fp32_residual_connection ........................ False
+vm-07-05:   fp8_amax_compute_algo ........................... most_recent
+vm-07-05:   fp8_amax_history_len ............................ 1
+vm-07-05:   fp8_e4m3 ........................................ False
+vm-07-05:   fp8_hybrid ...................................... False
+vm-07-05:   fp8_interval .................................... 1
+vm-07-05:   fp8_margin ...................................... 0
+vm-07-05:   fp8_wgrad ....................................... True
+vm-07-05:   global_batch_size ............................... 2048
+vm-07-05:   gradient_accumulation_fusion .................... False
+vm-07-05:   head_lr_mult .................................... 1.0
+vm-07-05:   hidden_dropout .................................. 0.0
+vm-07-05:   hidden_size ..................................... 4096
+vm-07-05:   hidden_size_teacher ............................. None
+vm-07-05:   hysteresis ...................................... 2
+vm-07-05:   ict_head_size ................................... None
+vm-07-05:   ict_load ........................................ None
+vm-07-05:   img_h ........................................... 224
+vm-07-05:   img_w ........................................... 224
+vm-07-05:   indexer_batch_size .............................. 128
+vm-07-05:   indexer_log_interval ............................ 1000
+vm-07-05:   inference ....................................... False
+vm-07-05:   inference_batch_times_seqlen_threshold .......... 512
+vm-07-05:   init_method_std ................................. 0.009
+vm-07-05:   init_method_xavier_uniform ...................... False
+vm-07-05:   initial_loss_scale .............................. 4294967296
+vm-07-05:   iter_per_epoch .................................. 1250
+vm-07-05:   kd .............................................. False
+vm-07-05:   kd_alpha_ce ..................................... 1
+vm-07-05:   kd_beta_ce ...................................... 1
+vm-07-05:   kd_temp ......................................... 1.0
+vm-07-05:   kv_channels ..................................... 128
+vm-07-05:   layernorm_epsilon ............................... 1e-05
+vm-07-05:   lazy_mpu_init ................................... None
+vm-07-05:   load ............................................ .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase
+vm-07-05:   load_teacher .................................... None
+vm-07-05:   local_rank ...................................... 0
+vm-07-05:   log_batch_size_to_tensorboard ................... False
+vm-07-05:   log_interval .................................... 1
+vm-07-05:   log_learning_rate_to_tensorboard ................ True
+vm-07-05:   log_loss_scale_to_tensorboard ................... True
+vm-07-05:   log_memory_to_tensorboard ....................... False
+vm-07-05:   log_num_zeros_in_grad ........................... False
+vm-07-05:   log_optimizer_states_to_tensorboard ............. False
+vm-07-05:   log_params_norm ................................. False
+vm-07-05:   log_timers_to_tensorboard ....................... False
+vm-07-05:   log_validation_ppl_to_tensorboard ............... False
+vm-07-05:   log_world_size_to_tensorboard ................... False
+vm-07-05:   loss_scale ...................................... None
+vm-07-05:   loss_scale_window ............................... 1000
+vm-07-05:   lr .............................................. 0.00012
+vm-07-05:   lr_decay_iters .................................. None
+vm-07-05:   lr_decay_samples ................................ 43945312
+vm-07-05:   lr_decay_style .................................. cosine
+vm-07-05:   lr_decay_tokens ................................. None
+vm-07-05:   lr_warmup_fraction .............................. None
+vm-07-05:   lr_warmup_iters ................................. 0
+vm-07-05:   lr_warmup_samples ............................... 2048000
+vm-07-05:   lr_warmup_tokens ................................ None
+vm-07-05:   make_vocab_size_divisible_by .................... 128
+vm-07-05:   mask_factor ..................................... 1.0
+vm-07-05:   mask_prob ....................................... 0.15
+vm-07-05:   mask_type ....................................... random
+vm-07-05:   masked_softmax_fusion ........................... True
+vm-07-05:   max_position_embeddings ......................... 2048
+vm-07-05:   max_tokens_to_oom ............................... 12000
+vm-07-05:   mem_efficient_ln ................................ True
+vm-07-05:   memory_centric_tiled_linear ..................... False
+vm-07-05:   merge_file ...................................... gpt2-merges.txt
+vm-07-05:   micro_batch_size ................................ 2
+vm-07-05:   min_loss_scale .................................. 1.0
+vm-07-05:   min_lr .......................................... 1e-06
+vm-07-05:   mlp_type ........................................ standard
+vm-07-05:   mmap_warmup ..................................... False
+vm-07-05:   moe_eval_capacity_factor ........................ 1.0
+vm-07-05:   moe_expert_parallel_size ........................ 1
+vm-07-05:   moe_loss_coeff .................................. 0.1
+vm-07-05:   moe_min_capacity ................................ 4
+vm-07-05:   moe_token_dropping .............................. True
+vm-07-05:   moe_train_capacity_factor ....................... 1.0
+vm-07-05:   mos ............................................. False
+vm-07-05:   no_load_lr_state ................................ False
+vm-07-05:   no_load_optim ................................... None
+vm-07-05:   no_load_rng ..................................... None
+vm-07-05:   no_persist_layer_norm ........................... False
+vm-07-05:   no_pipeline_parallel ............................ True
+vm-07-05:   no_save_optim ................................... None
+vm-07-05:   no_save_rng ..................................... None
+vm-07-05:   normalization ................................... layernorm
+vm-07-05:   num_attention_heads ............................. 32
+vm-07-05:   num_attention_heads_teacher ..................... None
+vm-07-05:   num_channels .................................... 3
+vm-07-05:   num_classes ..................................... 1000
+vm-07-05:   num_experts ..................................... [1]
+vm-07-05:   num_experts_switch .............................. None
+vm-07-05:   num_experts_teacher ............................. [1]
+vm-07-05:   num_key_value_heads ............................. 32
+vm-07-05:   num_layers ...................................... 32
+vm-07-05:   num_layers_per_virtual_pipeline_stage ........... None
+vm-07-05:   num_layers_teacher .............................. None
+vm-07-05:   num_workers ..................................... 2
+vm-07-05:   onnx_safe ....................................... None
+vm-07-05:   openai_gelu ..................................... False
+vm-07-05:   optimizer ....................................... adam
+vm-07-05:   output_bert_embeddings .......................... False
+vm-07-05:   overlap_p2p_comm ................................ False
+vm-07-05:   override_opt_param_scheduler .................... True
+vm-07-05:   params_dtype .................................... torch.float16
+vm-07-05:   partition_activations ........................... False
+vm-07-05:   patch_dim ....................................... 16
+vm-07-05:   perform_initialization .......................... True
+vm-07-05:   pipeline_model_parallel_size .................... 1
+vm-07-05:   pipeline_model_parallel_split_rank .............. None
+vm-07-05:   profile_backward ................................ False
+vm-07-05:   query_in_block_prob ............................. 0.1
+vm-07-05:   rampup_batch_size ............................... None
+vm-07-05:   random_ltd ...................................... False
+vm-07-05:   rank ............................................ 0
+vm-07-05:   recompute_granularity ........................... None
+vm-07-05:   recompute_method ................................ None
+vm-07-05:   recompute_num_layers ............................ 1
+vm-07-05:   remote_device ................................... none
+vm-07-05:   reset_attention_mask ............................ False
+vm-07-05:   reset_iteration ................................. False
+vm-07-05:   reset_position_ids .............................. False
+vm-07-05:   retriever_report_topk_accuracies ................ []
+vm-07-05:   retriever_score_scaling ......................... False
+vm-07-05:   retriever_seq_length ............................ 256
+vm-07-05:   retro_add_retriever ............................. False
+vm-07-05:   retro_cyclic_train_iters ........................ None
+vm-07-05:   retro_encoder_attention_dropout ................. 0.1
+vm-07-05:   retro_encoder_hidden_dropout .................... 0.1
+vm-07-05:   retro_encoder_layers ............................ 2
+vm-07-05:   retro_num_neighbors ............................. 2
+vm-07-05:   retro_num_retrieved_chunks ...................... 2
+vm-07-05:   retro_return_doc_ids ............................ False
+vm-07-05:   retro_workdir ................................... None
+vm-07-05:   return_data_index ............................... False
+vm-07-05:   rotary_percent .................................. 1.0
+vm-07-05:   sample_rate ..................................... 1.0
+vm-07-05:   save ............................................ .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase
+vm-07-05:   save_interval ................................... 10000
+vm-07-05:   scatter_gather_tensors_in_pipeline .............. True
+vm-07-05:   scattered_embeddings ............................ False
+vm-07-05:   seed ............................................ 1234
+vm-07-05:   seq_length ...................................... 2048
+vm-07-05:   sequence_parallel ............................... False
+vm-07-05:   sgd_momentum .................................... 0.9
+vm-07-05:   short_seq_prob .................................. 0.1
+vm-07-05:   skip_train ...................................... False
+vm-07-05:   split ........................................... 949,50,1
+vm-07-05:   split_transformers .............................. False
+vm-07-05:   squared_relu .................................... False
+vm-07-05:   standalone_embedding_stage ...................... False
+vm-07-05:   start_weight_decay .............................. 0.1
+vm-07-05:   swiglu .......................................... False
+vm-07-05:   swin_backbone_type .............................. tiny
+vm-07-05:   synchronize_each_layer .......................... False
+vm-07-05:   tensor_model_parallel_size ...................... 1
+vm-07-05:   tensorboard_dir ................................. None
+vm-07-05:   tensorboard_log_interval ........................ 1
+vm-07-05:   tensorboard_queue_size .......................... 1000
+vm-07-05:   test_data_path .................................. None
+vm-07-05:   tile_factor ..................................... 1
+vm-07-05:   timing_log_level ................................ 0
+vm-07-05:   timing_log_option ............................... minmax
+vm-07-05:   titles_data_path ................................ None
+vm-07-05:   tokenizer_model ................................. None
+vm-07-05:   tokenizer_type .................................. GPT2BPETokenizer
+vm-07-05:   topk ............................................ 1
+vm-07-05:   train_data_exact_num_epochs ..................... None
+vm-07-05:   train_data_path ................................. None
+vm-07-05:   train_desc_path ................................. None
+vm-07-05:   train_doc_idx_path .............................. None
+vm-07-05:   train_idx_path .................................. None
+vm-07-05:   train_iters ..................................... None
+vm-07-05:   train_sample_idx_path ........................... None
+vm-07-05:   train_samples ................................... 10240
+vm-07-05:   train_shuffle_idx_path .......................... None
+vm-07-05:   train_tokens .................................... 300000000000
+vm-07-05:   transformer_impl ................................ local
+vm-07-05:   transformer_pipeline_model_parallel_size ........ 1
+vm-07-05:   universal_checkpoint ............................ False
+vm-07-05:   untie_embeddings_and_output_weights ............. False
+vm-07-05:   use_checkpoint_args ............................. False
+vm-07-05:   use_checkpoint_opt_param_scheduler .............. False
+vm-07-05:   use_contiguous_buffers_in_local_ddp ............. True
+vm-07-05:   use_cpu_initialization .......................... None
+vm-07-05:   use_dataset_only ................................ False
+vm-07-05:   use_distributed_optimizer ....................... True
+vm-07-05:   use_flash_attn .................................. False
+vm-07-05:   use_flash_attn_triton ........................... False
+vm-07-05:   use_flash_attn_v1 ............................... False
+vm-07-05:   use_flash_attn_v2 ............................... False
+vm-07-05:   use_one_sent_docs ............................... False
+vm-07-05:   use_pin_memory .................................. False
+vm-07-05:   use_ring_exchange_p2p ........................... False
+vm-07-05:   use_rotary_position_embeddings .................. True
+vm-07-05:   use_tutel ....................................... False
+vm-07-05:   valid_data_path ................................. None
+vm-07-05:   variable_seq_lengths ............................ False
+vm-07-05:   virtual_pipeline_model_parallel_size ............ None
+vm-07-05:   vision_backbone_type ............................ vit
+vm-07-05:   vision_pretraining .............................. False
+vm-07-05:   vision_pretraining_type ......................... classify
+vm-07-05:   vocab_extra_ids ................................. 0
+vm-07-05:   vocab_file ...................................... gpt2-vocab.json
+vm-07-05:   vocab_size ...................................... None
+vm-07-05:   weight_decay .................................... 0.1
+vm-07-05:   weight_decay_incr_style ......................... constant
+vm-07-05:   world_size ...................................... 16
+vm-07-05:   zero_allgather_bucket_size ...................... 0.0
+vm-07-05:   zero_contagious_gradients ....................... False
+vm-07-05:   zero_reduce_bucket_size ......................... 0.0
+vm-07-05:   zero_reduce_scatter ............................. False
+vm-07-05:   zero_stage ...................................... 1
+vm-07-05: -------------------- end of arguments ---------------------
+vm-07-05: setting number of micro-batches to constant 64
+vm-07-05: > building GPT2BPETokenizer tokenizer ...
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed general environment info:
+vm-07-14: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14: torch version .................... 2.1.0a0+gita09f30a
+vm-07-14: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-14: torch cuda version ............... None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-14: nvcc version ..................... None
+vm-07-14: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-14: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-05: [2023-11-29 08:50:53,882] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-05:  > padded vocab (size: 50257) with 47 dummy tokens (new size: 50304)
+vm-07-05: > initializing torch distributed ...
+vm-07-05: [2023-11-29 08:50:53,893] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-05: [2023-11-29 08:50:53,893] [INFO] [comm.py:668:init_distributed] Initializing TorchBackend in DeepSpeed with backend nccl
+vm-07-05: [2023-11-29 08:50:53,901] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-14: [2023-11-29 08:50:53,958] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed C++/CUDA extension op report
+vm-07-05: --------------------------------------------------
+vm-07-05: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-05:       runtime if needed. Op compatibility means that your system
+vm-07-05:       meet the required dependencies to JIT install the op.
+vm-07-05: --------------------------------------------------
+vm-07-05: JIT compiled ops requires ninja
+vm-07-05: ninja .................. [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: op name ................ installed .. compatible
+vm-07-05: --------------------------------------------------
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-14: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed general environment info:
+vm-07-14: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14: torch version .................... 2.1.0a0+gita09f30a
+vm-07-14: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-14: torch cuda version ............... None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-14: nvcc version ..................... None
+vm-07-14: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-14: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-05: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-05: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-05: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-05: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-05: --------------------------------------------------
+vm-07-05: DeepSpeed general environment info:
+vm-07-05: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-05: torch version .................... 2.1.0a0+gita09f30a
+vm-07-05: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-05: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-05: torch cuda version ............... None
+vm-07-05: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-05: nvcc version ..................... None
+vm-07-05: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-05: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: [2023-11-29 08:50:54,034] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-05: [2023-11-29 08:50:54,051] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-05: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed general environment info:
+vm-07-14: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14: torch version .................... 2.1.0a0+gita09f30a
+vm-07-14: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-14: torch cuda version ............... None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-14: nvcc version ..................... None
+vm-07-14: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-14: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-05: [2023-11-29 08:50:54,091] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-05: [2023-11-29 08:50:54,104] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam ............. [93m[NO][0m .......async_io [92m[OKAY][0m
+vm-07-14:  ............... [93m[NO][0m ....... cpu_adam[92m[OKAY][0m
+vm-07-14: ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam cpu_lion.............  ...............[93m[NO][0m  [93m[NO][0m.......  .......[92m[OKAY][0m
+vm-07-14: [92m[OKAY][0m
+vm-07-14: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attncpu_lion  ........................  [93m[NO][0m[93m[NO][0m  ..............  [93m[NO][0m[92m[OKAY][0m
+vm-07-14:
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... fused_lion[92m[OKAY][0m
+vm-07-14: ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... ragged_ops[92m[OKAY][0m
+vm-07-14: ............. [93m[NO][0mquantizer  .....................  [92m[OKAY][0m[93m[NO][0m
+vm-07-14:  ....... [92m[OKAY][0mrandom_ltd
+vm-07-14:  ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m .......[93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: [92m[OKAY][0m
+vm-07-14: sparse_attn ............ [93m[NO][0mragged_ops  ....................  [93m[NO][0m[93m[NO][0m
+vm-07-14:  ....... [92m[OKAY][0m
+vm-07-14: random_ltdspatial_inference  ...................  [93m[NO][0m[93m[NO][0m  ..............  [92m[OKAY][0m[92m[OKAY][0m
+vm-07-14:
+vm-07-14: transformer ............[93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: [93m[NO][0m sparse_attn.......  ............[92m[OKAY][0m
+vm-07-14: [93m[NO][0m ....... [93m[NO][0mstochastic_transformer
+vm-07-14:  . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer ............transformer_inference  [93m[NO][0m..  .......[93m[NO][0m  [92m[OKAY][0m.......
+vm-07-14:  [92m[OKAY][0m
+vm-07-14: --------------------------------------------------stochastic_transformer
+vm-07-14:  . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed general environment info:
+vm-07-14: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14: torch version .................... 2.1.0a0+gita09f30a
+vm-07-14: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14: deepspeed info DeepSpeed general environment info:...................
+vm-07-14:  0.12.3, unknown, unknown
+vm-07-14: torch install pathtorch cuda version  ..............................  None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14:
+vm-07-14: nvcc version ..................... Nonetorch version
+vm-07-14:  deepspeed wheel compiled w.....................  ...... 2.1.0a0+gita09f30atorch 2.1, hip 5.7
+vm-07-14:
+vm-07-14: deepspeed install pathshared memory (/dev/shm) size  ...............  865.10 GB['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14:
+vm-07-14: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-14: torch cuda version ............... None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-14: nvcc version ..................... None
+vm-07-14: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-14: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-14: [2023-11-29 08:50:54,109] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-05: [2023-11-29 08:50:54,130] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed C++/CUDA extension op report
+vm-07-14: --------------------------------------------------
+vm-07-14: NOTE: Ops not installed will be just-in-time (JIT) compiled at
+vm-07-14:       runtime if needed. Op compatibility means that your system
+vm-07-14:       meet the required dependencies to JIT install the op.
+vm-07-14: --------------------------------------------------
+vm-07-14: JIT compiled ops requires ninja
+vm-07-14: ninja .................. [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: op name ................ installed .. compatible
+vm-07-14: --------------------------------------------------
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed general environment info:
+vm-07-14: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14: torch version .................... 2.1.0a0+gita09f30a
+vm-07-14: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-14: torch cuda version ............... None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-14: nvcc version ..................... None
+vm-07-14: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-14: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-14: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed general environment info:
+vm-07-14: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14: torch version .................... 2.1.0a0+gita09f30a
+vm-07-14: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-14: torch cuda version ............... None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-14: nvcc version ..................... None
+vm-07-14: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-14: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-14: [2023-11-29 08:50:54,175] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: async_io ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_adam ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adam ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_adagrad ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cpu_lion ............... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: [93m [WARNING] [0m Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+vm-07-14: evoformer_attn ......... [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: fused_lamb ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: fused_lion ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: inference_core_ops ..... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: cutlass_ops ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: quantizer .............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_device_ops ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: ragged_ops ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: random_ltd ............. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: [93m [WARNING] [0m sparse_attn is not compatible with ROCM
+vm-07-14: sparse_attn ............ [93m[NO][0m ....... [93m[NO][0m
+vm-07-14: spatial_inference ...... [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer ............ [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: stochastic_transformer . [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: transformer_inference .. [93m[NO][0m ....... [92m[OKAY][0m
+vm-07-14: --------------------------------------------------
+vm-07-14: DeepSpeed general environment info:
+vm-07-14: torch install path ............... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch']
+vm-07-14: torch version .................... 2.1.0a0+gita09f30a
+vm-07-14: deepspeed install path ........... ['/opt/conda/envs/py_3.9/lib/python3.9/site-packages/deepspeed']
+vm-07-14: deepspeed info ................... 0.12.3, unknown, unknown
+vm-07-14: torch cuda version ............... None
+vm-07-14: torch hip version ................ 5.7.31920-f5021ed14
+vm-07-14: nvcc version ..................... None
+vm-07-14: deepspeed wheel compiled w. ...... torch 2.1, hip 5.7
+vm-07-14: shared memory (/dev/shm) size .... 865.10 GB
+vm-07-14: [2023-11-29 08:50:54,199] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: [2023-11-29 08:50:54,203] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: **** Git info for Megatron: git_hash=82d83b8 git_branch=main ****
+vm-07-14: [2023-11-29 08:50:54,248] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: [2023-11-29 08:50:54,255] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-14: [2023-11-29 08:50:54,282] [INFO] [comm.py:637:init_distributed] cdb=None
+vm-07-05: > initialized tensor model parallel with size 1
+vm-07-05: > initialized pipeline model parallel with size 1
+vm-07-05: > setting random seeds to 1234 ...
+vm-07-05: > initializing model parallel cuda seeds on global rank 0, model parallel rank 0, and data parallel rank 0 with model parallel seed: 3952 and data parallel seed: 1234
+vm-07-05: > compiling dataset index builder ...
+vm-07-05: make: Entering directory '/root/Megatron-DeepSpeed/megatron/data'
+vm-07-05: make: Nothing to be done for 'default'.
+vm-07-05: make: Leaving directory '/root/Megatron-DeepSpeed/megatron/data'
+vm-07-05: >>> done with dataset index builder. Compilation time: 0.047 seconds
+vm-07-05: > compiling and loading fused kernels ...
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax.cpp -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax_hip.cpp [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax_hip.h [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax_cuda.cu -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax_hip.hip [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax_hip.h [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax_hip.h [skipped, already hipified]
+vm-07-05: Total number of unsupported CUDA function calls: 0
+vm-07-05:
+vm-07-05:
+vm-07-05: Total number of replaced kernel launches: 99
+vm-07-05: [1/1] c++ scaled_upper_triang_masked_softmax_hip.o scaled_upper_triang_masked_softmax_hip.cuda.o -shared -L/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch/lib -lc10 -lc10_hip -ltorch_cpu -ltorch_hip -ltorch -ltorch_python -L/opt/rocm-6.0.0-12660/lib -lamdhip64 -o scaled_upper_triang_masked_softmax_cuda.so
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax.cpp -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax_hip.cpp [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax_cuda.cu -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax_hip.hip [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax_hip.h [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax_hip.h [skipped, already hipified]
+vm-07-05: Total number of unsupported CUDA function calls: 0
+vm-07-05:
+vm-07-05:
+vm-07-05: Total number of replaced kernel launches: 69
+vm-07-05: [1/1] c++ scaled_masked_softmax_hip.o scaled_masked_softmax_hip.cuda.o -shared -L/opt/conda/envs/py_3.9/lib/python3.9/site-packages/torch/lib -lc10 -lc10_hip -ltorch_cpu -ltorch_hip -ltorch -ltorch_python -L/opt/rocm-6.0.0-12660/lib -lamdhip64 -o scaled_masked_softmax_cuda.so
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_softmax.cpp -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_softmax_hip.cpp [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_softmax_cuda.cu -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_softmax_hip.hip [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/type_shim.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/compat.h [skipped, no changes]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_masked_softmax_hip.h [skipped, already hipified]
+vm-07-05: /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax.h -> /root/Megatron-DeepSpeed/megatron/fused_kernels/scaled_upper_triang_masked_softmax_hip.h [skipped, already hipified]
+vm-07-05: Total number of unsupported CUDA function calls: 0
+vm-07-05:
+vm-07-05:
+vm-07-05: Total number of replaced kernel launches: 69
+vm-07-05: ninja: no work to do.
+vm-07-05: >>> done with compiling and loading fused kernels. Compilation time: 2.092 seconds
+vm-07-05: time to initialize megatron (seconds): 4.207
+vm-07-05: [after megatron is initialized] datetime: 2023-11-29 08:50:57
+vm-07-05: building GPT model ...
+vm-07-05: [2023-11-29 08:50:57,577] [INFO] [utils.py:802:see_memory_usage] Before Building Model
+vm-07-05: [2023-11-29 08:50:57,578] [INFO] [utils.py:803:see_memory_usage] MA 0.0 GB         Max_MA 2.13 GB         CA 0.0 GB         Max_CA 2 GB
+vm-07-05: [2023-11-29 08:50:57,578] [INFO] [utils.py:810:see_memory_usage] CPU Virtual Memory:  used = 45.89 GB, percent = 2.7%
+vm-07-05: [2023-11-29 08:50:57,670] [INFO] [utils.py:802:see_memory_usage] After Building Model
+vm-07-05: [2023-11-29 08:50:57,671] [INFO] [utils.py:803:see_memory_usage] MA 12.39 GB         Max_MA 12.39 GB         CA 12.39 GB         Max_CA 12 GB
+vm-07-05: [2023-11-29 08:50:57,671] [INFO] [utils.py:810:see_memory_usage] CPU Virtual Memory:  used = 45.9 GB, percent = 2.7%
+vm-07-05:  > number of parameters on (tensor, pipeline) model parallel rank (0, 0): 6650208256
+vm-07-05: setting training iterations to 5
+vm-07-05: > learning rate decay style: cosine
+vm-07-05: DeepSpeed is enabled.
+vm-07-05: [2023-11-29 08:50:57,673] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed info: version=0.12.3, git-hash=unknown, git-branch=unknown
+vm-07-05: [2023-11-29 08:50:57,862] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed Flops Profiler Enabled: False
+vm-07-05: [2023-11-29 08:50:57,863] [INFO] [logging.py:96:log_dist] [Rank 0] Using client Optimizer as basic optimizer
+vm-07-05: [2023-11-29 08:50:57,863] [INFO] [logging.py:96:log_dist] [Rank 0] Removing param_group that has no 'params' in the basic Optimizer
+vm-07-05: [2023-11-29 08:50:57,874] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed Basic Optimizer = FusedAdam
+vm-07-05: [2023-11-29 08:50:57,874] [INFO] [utils.py:56:is_zero_supported_optimizer] Checking ZeRO support for optimizer=FusedAdam type=<class 'apex.optimizers.fused_adam.FusedAdam'>
+vm-07-05: [2023-11-29 08:50:57,874] [INFO] [logging.py:96:log_dist] [Rank 0] Creating torch.float16 ZeRO stage 1 optimizer
+vm-07-05: [2023-11-29 08:50:57,874] [INFO] [stage_1_and_2.py:147:__init__] Reduce bucket size 500,000,000
+vm-07-05: [2023-11-29 08:50:57,874] [INFO] [stage_1_and_2.py:148:__init__] Allgather bucket size 500,000,000
+vm-07-05: [2023-11-29 08:50:57,874] [INFO] [stage_1_and_2.py:149:__init__] CPU Offload: False
+vm-07-05: [2023-11-29 08:50:57,874] [INFO] [stage_1_and_2.py:150:__init__] Round robin gradient partitioning: False
+vm-07-05: [2023-11-29 08:51:11,210] [INFO] [utils.py:802:see_memory_usage] Before initializing optimizer states
+vm-07-05: [2023-11-29 08:51:11,211] [INFO] [utils.py:803:see_memory_usage] MA 13.94 GB         Max_MA 13.94 GB         CA 13.96 GB         Max_CA 14 GB
+vm-07-05: [2023-11-29 08:51:11,211] [INFO] [utils.py:810:see_memory_usage] CPU Virtual Memory:  used = 217.2 GB, percent = 12.6%
+vm-07-05: [2023-11-29 08:51:11,357] [INFO] [utils.py:802:see_memory_usage] After initializing optimizer states
+vm-07-05: [2023-11-29 08:51:11,358] [INFO] [utils.py:803:see_memory_usage] MA 17.04 GB         Max_MA 18.58 GB         CA 18.6 GB         Max_CA 19 GB
+vm-07-05: [2023-11-29 08:51:11,358] [INFO] [utils.py:810:see_memory_usage] CPU Virtual Memory:  used = 218.51 GB, percent = 12.6%
+vm-07-05: [2023-11-29 08:51:11,358] [INFO] [stage_1_and_2.py:514:__init__] optimizer state initialized
+vm-07-05: [2023-11-29 08:51:11,648] [INFO] [utils.py:802:see_memory_usage] After initializing ZeRO optimizer
+vm-07-05: [2023-11-29 08:51:11,648] [INFO] [utils.py:803:see_memory_usage] MA 17.04 GB         Max_MA 17.04 GB         CA 18.6 GB         Max_CA 19 GB
+vm-07-05: [2023-11-29 08:51:11,648] [INFO] [utils.py:810:see_memory_usage] CPU Virtual Memory:  used = 221.2 GB, percent = 12.8%
+vm-07-05: [2023-11-29 08:51:11,650] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed Final Optimizer = FusedAdam
+vm-07-05: [2023-11-29 08:51:11,650] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed using client LR scheduler
+vm-07-05: [2023-11-29 08:51:11,650] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed LR Scheduler = <megatron.optimizer_param_scheduler.OptimizerParamScheduler object at 0x7f4c65d55c70>
+vm-07-05: [2023-11-29 08:51:11,650] [INFO] [logging.py:96:log_dist] [Rank 0] step=0, skipped=0, lr=[0.0, 0.0], mom=[(0.9, 0.95), (0.9, 0.95)]
+vm-07-05: [2023-11-29 08:51:11,651] [INFO] [config.py:974:print] DeepSpeedEngine configuration:
+vm-07-05: [2023-11-29 08:51:11,651] [INFO] [config.py:978:print]   activation_checkpointing_config  {
+vm-07-05:     "partition_activations": false,
+vm-07-05:     "contiguous_memory_optimization": false,
+vm-07-05:     "cpu_checkpointing": false,
+vm-07-05:     "number_checkpoints": null,
+vm-07-05:     "synchronize_checkpoint_boundary": false,
+vm-07-05:     "profile": false
+vm-07-05: }
+vm-07-05: [2023-11-29 08:51:11,651] [INFO] [config.py:978:print]   aio_config ................... {'block_size': 1048576, 'queue_depth': 8, 'thread_count': 1, 'single_submit': False, 'overlap_events': True}
+vm-07-05: [2023-11-29 08:51:11,651] [INFO] [config.py:978:print]   amp_enabled .................. False
+vm-07-05: [2023-11-29 08:51:11,651] [INFO] [config.py:978:print]   amp_params ................... False
+vm-07-05: [2023-11-29 08:51:11,651] [INFO] [config.py:978:print]   autotuning_config ............ {
+vm-07-05:     "enabled": false,
+vm-07-05:     "start_step": null,
+vm-07-05:     "end_step": null,
+vm-07-05:     "metric_path": null,
+vm-07-05:     "arg_mappings": null,
+vm-07-05:     "metric": "throughput",
+vm-07-05:     "model_info": null,
+vm-07-05:     "results_dir": "autotuning_results",
+vm-07-05:     "exps_dir": "autotuning_exps",
+vm-07-05:     "overwrite": true,
+vm-07-05:     "fast": true,
+vm-07-05:     "start_profile_step": 3,
+vm-07-05:     "end_profile_step": 5,
+vm-07-05:     "tuner_type": "gridsearch",
+vm-07-05:     "tuner_early_stopping": 5,
+vm-07-05:     "tuner_num_trials": 50,
+vm-07-05:     "model_info_path": null,
+vm-07-05:     "mp_size": 1,
+vm-07-05:     "max_train_batch_size": null,
+vm-07-05:     "min_train_batch_size": 1,
+vm-07-05:     "max_train_micro_batch_size_per_gpu": 1.024000e+03,
+vm-07-05:     "min_train_micro_batch_size_per_gpu": 1,
+vm-07-05:     "num_tuning_micro_batch_sizes": 3
+vm-07-05: }
+vm-07-05: [2023-11-29 08:51:11,651] [INFO] [config.py:978:print]   bfloat16_enabled ............. False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   checkpoint_parallel_write_pipeline  False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   checkpoint_tag_validation_enabled  True
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   checkpoint_tag_validation_fail  False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   comms_config ................. <deepspeed.comm.config.DeepSpeedCommsConfig object at 0x7f4c43035bb0>
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   communication_data_type ...... None
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   compression_config ........... {'weight_quantization': {'shared_parameters': {'enabled': False, 'quantizer_kernel': False, 'schedule_offset': 0, 'quantize_groups': 1, 'quantize_verbose': False, 'quantization_type': 'symmetric', 'quantize_weight_in_forward': False, 'rounding': 'nearest', 'fp16_mixed_quantize': False, 'quantize_change_ratio': 0.001}, 'different_groups': {}}, 'activation_quantization': {'shared_parameters': {'enabled': False, 'quantization_type': 'symmetric', 'range_calibration': 'dynamic', 'schedule_offset': 1000}, 'different_groups': {}}, 'sparse_pruning': {'shared_parameters': {'enabled': False, 'method': 'l1', 'schedule_offset': 1000}, 'different_groups': {}}, 'row_pruning': {'shared_parameters': {'enabled': False, 'method': 'l1', 'schedule_offset': 1000}, 'different_groups': {}}, 'head_pruning': {'shared_parameters': {'enabled': False, 'method': 'topk', 'schedule_offset': 1000}, 'different_groups': {}}, 'channel_pruning': {'shared_parameters': {'enabled': False, 'method': 'l1', 'schedule_offset': 1000}, 'different_groups': {}}, 'layer_reduction': {'enabled': False}}
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   curriculum_enabled_legacy .... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   curriculum_params_legacy ..... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   data_efficiency_config ....... {'enabled': False, 'seed': 1234, 'data_sampling': {'enabled': False, 'num_epochs': 1000, 'num_workers': 0, 'curriculum_learning': {'enabled': False}}, 'data_routing': {'enabled': False, 'random_ltd': {'enabled': False, 'layer_token_lr_schedule': {'enabled': False}}}}
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   data_efficiency_enabled ...... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   dataloader_drop_last ......... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   disable_allgather ............ False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   dump_state ................... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   dynamic_loss_scale_args ...... {'init_scale': 2048, 'scale_window': 500, 'delayed_shift': 2, 'consecutive_hysteresis': False, 'min_scale': 1}
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_enabled ........... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_gas_boundary_resolution  1
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_layer_name ........ bert.encoder.layer
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_layer_num ......... 0
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_max_iter .......... 100
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_stability ......... 1e-06
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_tol ............... 0.01
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   eigenvalue_verbose ........... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   elasticity_enabled ........... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   flops_profiler_config ........ {
+vm-07-05:     "enabled": false,
+vm-07-05:     "recompute_fwd_factor": 0.0,
+vm-07-05:     "profile_step": 1,
+vm-07-05:     "module_depth": -1,
+vm-07-05:     "top_modules": 1,
+vm-07-05:     "detailed": true,
+vm-07-05:     "output_file": null
+vm-07-05: }
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   fp16_auto_cast ............... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   fp16_enabled ................. True
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   fp16_master_weights_and_gradients  False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   global_rank .................. 0
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   grad_accum_dtype ............. None
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   gradient_accumulation_steps .. 64
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   gradient_clipping ............ 1.0
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   gradient_predivide_factor .... 1.0
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   hybrid_engine ................ enabled=False max_out_tokens=512 inference_tp_size=1 release_inference_cache=False pin_parameters=True tp_gather_partition_size=8
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   initial_dynamic_scale ........ 2048
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   load_universal_checkpoint .... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   loss_scale ................... 0
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   memory_breakdown ............. False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   mics_hierarchial_params_gather  False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   mics_shard_size .............. -1
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   monitor_config ............... tensorboard=TensorBoardConfig(enabled=False, output_path='', job_name='DeepSpeedJobName') wandb=WandbConfig(enabled=False, group=None, team=None, project='deepspeed') csv_monitor=CSVConfig(enabled=False, output_path='', job_name='DeepSpeedJobName') enabled=False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   nebula_config ................ {
+vm-07-05:     "enabled": false,
+vm-07-05:     "persistent_storage_path": null,
+vm-07-05:     "persistent_time_interval": 100,
+vm-07-05:     "num_of_version_in_retention": 2,
+vm-07-05:     "enable_nebula_load": true,
+vm-07-05:     "load_path": null
+vm-07-05: }
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   optimizer_legacy_fusion ...... False
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   optimizer_name ............... None
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   optimizer_params ............. None
+vm-07-05: [2023-11-29 08:51:11,652] [INFO] [config.py:978:print]   pipeline ..................... {'stages': 'auto', 'partition': 'best', 'seed_layers': False, 'activation_checkpoint_interval': 0, 'pipe_partitioned': True, 'grad_partitioned': True}
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   pld_enabled .................. False
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   pld_params ................... False
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   prescale_gradients ........... False
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   scheduler_name ............... None
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   scheduler_params ............. None
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   seq_parallel_communication_data_type  torch.float32
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   sparse_attention ............. None
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   sparse_gradients_enabled ..... False
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   steps_per_print .............. 1
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   train_batch_size ............. 2048
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   train_micro_batch_size_per_gpu  2
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   use_node_local_storage ....... False
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   wall_clock_breakdown ......... False
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   weight_quantization_config ... None
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   world_size ................... 16
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   zero_allow_untested_optimizer  False
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   zero_config .................. stage=1 contiguous_gradients=True reduce_scatter=True reduce_bucket_size=500,000,000 allgather_partitions=True allgather_bucket_size=500,000,000 overlap_comm=False load_from_fp32_weights=True elastic_checkpoint=False offload_param=None offload_optimizer=None sub_group_size=1,000,000,000 cpu_offload_param=None cpu_offload_use_pin_memory=None cpu_offload=None prefetch_bucket_size=50,000,000 param_persistence_threshold=100,000 model_persistence_threshold=sys.maxsize max_live_parameters=1,000,000,000 max_reuse_distance=1,000,000,000 gather_16bit_weights_on_model_save=False stage3_gather_fp16_weights_on_model_save=False ignore_unused_parameters=True legacy_stage1=False round_robin_gradients=False zero_hpz_partition_size=1 zero_quantized_weights=False zero_quantized_nontrainable_weights=False zero_quantized_gradients=False mics_shard_size=-1 mics_hierarchical_params_gather=False memory_efficient_linear=True pipeline_loading_checkpoint=False override_module_apply=True
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   zero_enabled ................. True
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   zero_force_ds_cpu_optimizer .. True
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:978:print]   zero_optimization_stage ...... 1
+vm-07-05: [2023-11-29 08:51:11,653] [INFO] [config.py:964:print_user_config]   json = {
+vm-07-05:     "train_batch_size": 2.048000e+03,
+vm-07-05:     "train_micro_batch_size_per_gpu": 2,
+vm-07-05:     "steps_per_print": 1,
+vm-07-05:     "zero_optimization": {
+vm-07-05:         "stage": 1
+vm-07-05:     },
+vm-07-05:     "gradient_clipping": 1.0,
+vm-07-05:     "prescale_gradients": false,
+vm-07-05:     "fp16": {
+vm-07-05:         "enabled": true,
+vm-07-05:         "loss_scale": 0,
+vm-07-05:         "loss_scale_window": 500,
+vm-07-05:         "hysteresis": 2,
+vm-07-05:         "min_loss_scale": 1,
+vm-07-05:         "initial_scale_power": 11
+vm-07-05:     },
+vm-07-05:     "wall_clock_breakdown": false
+vm-07-05: }
+vm-07-05: [2023-11-29 08:51:14,000] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [2023-11-29 08:51:14,000] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [2023-11-29 08:51:14,000] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [2023-11-29 08:51:14,000] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [2023-11-29 08:51:14,000] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [2023-11-29 08:51:14,001] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-14: [2023-11-29 08:51:13,999] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: WARNING: could not find the metadata file .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase
+vm-07-14: [2023-11-29 08:51:13,999] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05:     will not load any checkpoints and will start from random
+vm-07-14: [2023-11-29 08:51:13,999] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [2023-11-29 08:51:14,001] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [2023-11-29 08:51:14,001] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-14: [2023-11-29 08:51:14,013] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-14: [2023-11-29 08:51:14,013] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-14: [2023-11-29 08:51:14,013] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-14: [2023-11-29 08:51:14,014] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-14: [2023-11-29 08:51:14,014] [WARNING] [engine.py:2699:load_checkpoint] Unable to find latest file at .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase/latest, if trying to load latest checkpoint please ensure this file exists or pass an explicit checkpoint tag when loading a checkpoint.
+vm-07-05: [after model, optimizer, and learning rate scheduler are built] datetime: 2023-11-29 08:51:14
+vm-07-14: (min, max) time across ranks (ms):
+vm-07-14:     load-checkpoint ................................: (1.15, 16.61)
+vm-07-05: > building train, validation, and test datasets ...
+vm-07-05:  > datasets target sizes (minimum size):
+vm-07-05:     train:      10240
+vm-07-05:     validation: 20480
+vm-07-05:     test:       20480
+vm-07-05: > building train, validation, and test datasets for GPT ...
+vm-07-05: Single data path provided for train, valid & test
+vm-07-05:  > building dataset index ...
+vm-07-05:     reading sizes...
+vm-07-05:     reading pointers...
+vm-07-05:     reading document index...
+vm-07-05:     creating numpy buffer of mmap...
+vm-07-05:     creating memory view of numpy buffer...
+vm-07-05:  > finished creating indexed dataset in 0.000362 seconds
+vm-07-05:     number of documents: 115876
+vm-07-05:  > dataset split:
+vm-07-05:     train:
+vm-07-05:      document indices in [0, 109966) total of 109966 documents
+vm-07-05:     validation:
+vm-07-05:      document indices in [109966, 115760) total of 5794 documents
+vm-07-05:     test:
+vm-07-05:      document indices in [115760, 115876) total of 116 documents
+vm-07-05:  > loading doc-idx mapping from /root/index-cache/06115e84e99e3b6ca4187cde686826c9_doc_idx.npy
+vm-07-05:  > loading sample-idx mapping from /root/index-cache/06115e84e99e3b6ca4187cde686826c9_sample_idx.npy
+vm-07-05:  > loading shuffle-idx mapping from /root/index-cache/06115e84e99e3b6ca4187cde686826c9_shuffle_idx.npy
+vm-07-05:     loaded indexed file in 0.001 seconds
+vm-07-05:     total number of samples: 10575
+vm-07-05:     total number of epochs: 10
+vm-07-05:  > loading doc-idx mapping from /root/index-cache/c9410219284a5371a54555ffc4190827_doc_idx.npy
+vm-07-05:  > loading sample-idx mapping from /root/index-cache/c9410219284a5371a54555ffc4190827_sample_idx.npy
+vm-07-05:  > loading shuffle-idx mapping from /root/index-cache/c9410219284a5371a54555ffc4190827_shuffle_idx.npy
+vm-07-05:     loaded indexed file in 0.001 seconds
+vm-07-05:     total number of samples: 20485
+vm-07-05:     total number of epochs: 530
+vm-07-05:  > loading doc-idx mapping from /root/index-cache/087bcc1d515023256208907c78e6a640_doc_idx.npy
+vm-07-05:  > loading sample-idx mapping from /root/index-cache/087bcc1d515023256208907c78e6a640_sample_idx.npy
+vm-07-05:  > loading shuffle-idx mapping from /root/index-cache/087bcc1d515023256208907c78e6a640_shuffle_idx.npy
+vm-07-05:     loaded indexed file in 0.001 seconds
+vm-07-05:     total number of samples: 20481
+vm-07-05:     total number of epochs: 22018
+vm-07-05: > finished creating GPT datasets ...
+vm-07-05: [after dataloaders are built] datetime: 2023-11-29 08:51:14
+vm-07-05: done with setup ...
+vm-07-05: training ...
+vm-07-14: (min, max) time across ranks (ms):
+vm-07-14:     model-and-optimizer-setup ......................: (16584.81, 16588.33)
+vm-07-14:     train/valid/test-data-iterators-setup ..........: (298.83, 342.60)
+vm-07-05: [before the start of training step] datetime: 2023-11-29 08:51:14
+vm-07-05: [2023-11-29 08:52:27,711] [INFO] [logging.py:96:log_dist] [Rank 0] step=1, skipped=0, lr=[1.2000000000000002e-07, 1.2000000000000002e-07], mom=[(0.9, 0.95), (0.9, 0.95)]
+vm-07-14:  iteration        1/       5 | consumed samples:         2048 | consumed tokens:      4194304 | elapsed time per iteration (ms): 76015.3 | learning rate: 1.200E-07 | global batch size:  2048 | lm loss: 1.100492E+01 | loss scale: 2048.0 | actual seqlen:  2048 | number of skipped iterations:   0 | number of nan iterations:   0 | samples per second: 26.942 | TFLOPs: 147.61 |
+vm-07-05: [Rank 0] (after 1 iterations) memory (MB) | allocated: 17956.4931640625 | max allocated: 68581.8095703125 | reserved: 90178.0 | max reserved: 90178.0
+vm-07-05: [2023-11-29 08:53:42,835] [INFO] [logging.py:96:log_dist] [Rank 0] step=2, skipped=0, lr=[2.4000000000000003e-07, 2.4000000000000003e-07], mom=[(0.9, 0.95), (0.9, 0.95)]
+vm-07-14:  iteration        2/       5 | consumed samples:         4096 | consumed tokens:      8388608 | elapsed time per iteration (ms): 75254.0 | learning rate: 2.400E-07 | global batch size:  2048 | lm loss: 1.100421E+01 | loss scale: 2048.0 | actual seqlen:  2048 | number of skipped iterations:   0 | number of nan iterations:   0 | samples per second: 27.215 | TFLOPs: 149.10 |
+vm-07-05: [2023-11-29 08:54:58,114] [INFO] [logging.py:96:log_dist] [Rank 0] step=3, skipped=0, lr=[3.6000000000000005e-07, 3.6000000000000005e-07], mom=[(0.9, 0.95), (0.9, 0.95)]
+vm-07-05: [2023-11-29 08:55:00,932] [INFO] [timer.py:260:stop] epoch=0/micro_step=3/global_step=3, RunningAvgSamplesPerSec=291.6169137604138, CurrSamplesPerSec=291.6169137604138, MemAllocated=17.54GB, MaxMemAllocated=66.97GB
+vm-07-14:  iteration        3/       5 | consumed samples:         6144 | consumed tokens:     12582912 | elapsed time per iteration (ms): 75249.6 | learning rate: 3.600E-07 | global batch size:  2048 | lm loss: 1.096316E+01 | loss scale: 2048.0 | actual seqlen:  2048 | number of skipped iterations:   0 | number of nan iterations:   0 | samples per second: 27.216 | TFLOPs: 149.11 |
+vm-07-05: [2023-11-29 08:56:13,554] [INFO] [logging.py:96:log_dist] [Rank 0] step=4, skipped=0, lr=[4.800000000000001e-07, 4.800000000000001e-07], mom=[(0.9, 0.95), (0.9, 0.95)]
+vm-07-05: [2023-11-29 08:56:16,103] [INFO] [timer.py:260:stop] epoch=0/micro_step=4/global_step=4, RunningAvgSamplesPerSec=303.1183419363961, CurrSamplesPerSec=315.5642580603495, MemAllocated=17.54GB, MaxMemAllocated=66.97GB
+vm-07-14:  iteration        4/       5 | consumed samples:         8192 | consumed tokens:     16777216 | elapsed time per iteration (ms): 75182.4 | learning rate: 4.800E-07 | global batch size:  2048 | lm loss: 1.055474E+01 | loss scale: 2048.0 | actual seqlen:  2048 | number of skipped iterations:   0 | number of nan iterations:   0 | samples per second: 27.240 | TFLOPs: 149.24 |
+vm-07-05: [2023-11-29 08:57:28,159] [INFO] [logging.py:96:log_dist] [Rank 0] step=5, skipped=0, lr=[6.000000000000001e-07, 6.000000000000001e-07], mom=[(0.9, 0.95), (0.9, 0.95)]
+vm-07-05: [2023-11-29 08:57:30,611] [INFO] [timer.py:260:stop] epoch=0/micro_step=5/global_step=5, RunningAvgSamplesPerSec=311.41529524062446, CurrSamplesPerSec=329.45074244342015, MemAllocated=17.54GB, MaxMemAllocated=66.97GB
+vm-07-14:  iteration        5/       5 | consumed samples:        10240 | consumed tokens:     20971520 | elapsed time per iteration (ms): 74494.9 | learning rate: 6.000E-07 | global batch size:  2048 | lm loss: 9.927882E+00 | loss scale: 2048.0 | actual seqlen:  2048 | number of skipped iterations:   0 | number of nan iterations:   0 | samples per second: 27.492 | TFLOPs: 150.62 |
+vm-07-05: [after training is done] datetime: 2023-11-29 08:57:30
+vm-07-05: saving checkpoint at iteration       5 to .//checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase
+vm-07-05: [2023-11-29 08:57:32,086] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48040
+vm-07-05: [2023-11-29 08:57:32,114] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48041
+vm-07-05: [2023-11-29 08:57:32,248] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48042
+vm-07-14: [2023-11-29 08:57:32,266] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49031
+vm-07-14: [2023-11-29 08:57:32,269] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49032
+vm-07-14: [2023-11-29 08:57:32,270] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49033
+vm-07-14: [2023-11-29 08:57:32,272] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49034
+vm-07-14: [2023-11-29 08:57:32,272] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49035
+vm-07-14: [2023-11-29 08:57:32,273] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49036
+vm-07-14: [2023-11-29 08:57:32,275] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49037
+vm-07-05: [2023-11-29 08:57:32,302] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48043
+vm-07-05: [2023-11-29 08:57:32,303] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48044
+vm-07-05: [2023-11-29 08:57:32,305] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48045
+vm-07-14: [2023-11-29 08:57:32,303] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 49038
+vm-07-14: [2023-11-29 08:57:32,304] [ERROR] [launch.py:321:sigkill_handler] ['/opt/conda/envs/py_3.9/bin/python', '-u', '/root/Megatron-DeepSpeed/examples_deepspeed/rebase/../../pretrain_gpt.py', '--local_rank=7', '--override-opt_param-scheduler', '--adam-beta1', '0.9', '--adam-beta2', '0.95', '--tensor-model-parallel-size', '1', '--init-method-std', '0.009', '--lr-decay-samples', '43945312', '--lr-warmup-samples', '2048000', '--lr-decay-style', 'cosine', '--micro-batch-size', '2', '--exit-duration-in-mins', '30000000', '--global-batch-size', '2048', '--num-layers', '32', '--hidden-size', '4096', '--num-attention-heads', '32', '--seq-length', '2048', '--max-position-embeddings', '2048', '--train-tokens', '300000000000', '--train-samples', '10240', '--lr', '1.2e-4', '--min-lr', '1.0e-6', '--split', '949,50,1', '--log-interval', '1', '--eval-interval', '500', '--eval-iters', '10', '--save-interval', '10000', '--weight-decay', '0.1', '--clip-grad', '1.0', '--hysteresis', '2', '--num-workers', '2', '--attention-dropout', '0.0', '--hidden-dropout', '0.0', '--optimizer', 'adam', '--use-distributed-optimizer', '--sequence-parallel', '--fp16', '--seed', '1234', '--load', './/checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase', '--save', './/checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase', '--no-async-tensor-model-parallel-allreduce', '--use-rotary-position-embeddings', '--no-gradient-accumulation-fusion', '--vocab-file', 'gpt2-vocab.json', '--merge-file', 'gpt2-merges.txt', '--data-path', '/root//dataset_text_sentence', '--data-impl', 'mmap', '--deepspeed', '--deepspeed_config', 'ds_config_gbs2048_mbs2_log1_zero1.json', '--zero-stage', '1', '--pipeline-model-parallel-size', '1', '--no-pipeline-parallel'] exits with return code = 1
+vm-07-05: [2023-11-29 08:57:32,306] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48046
+vm-07-05: [2023-11-29 08:57:32,306] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 48047
+vm-07-05: [2023-11-29 08:57:32,308] [ERROR] [launch.py:321:sigkill_handler] ['/opt/conda/envs/py_3.9/bin/python', '-u', '/root/Megatron-DeepSpeed/examples_deepspeed/rebase/../../pretrain_gpt.py', '--local_rank=7', '--override-opt_param-scheduler', '--adam-beta1', '0.9', '--adam-beta2', '0.95', '--tensor-model-parallel-size', '1', '--init-method-std', '0.009', '--lr-decay-samples', '43945312', '--lr-warmup-samples', '2048000', '--lr-decay-style', 'cosine', '--micro-batch-size', '2', '--exit-duration-in-mins', '30000000', '--global-batch-size', '2048', '--num-layers', '32', '--hidden-size', '4096', '--num-attention-heads', '32', '--seq-length', '2048', '--max-position-embeddings', '2048', '--train-tokens', '300000000000', '--train-samples', '10240', '--lr', '1.2e-4', '--min-lr', '1.0e-6', '--split', '949,50,1', '--log-interval', '1', '--eval-interval', '500', '--eval-iters', '10', '--save-interval', '10000', '--weight-decay', '0.1', '--clip-grad', '1.0', '--hysteresis', '2', '--num-workers', '2', '--attention-dropout', '0.0', '--hidden-dropout', '0.0', '--optimizer', 'adam', '--use-distributed-optimizer', '--sequence-parallel', '--fp16', '--seed', '1234', '--load', './/checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase', '--save', './/checkpoint/gpt_6.7B_tok300B_lr1.2e-4_min1.0e-6_wM_dB__gbs2048_mbs2_g16_z1_seed1234_rebase', '--no-async-tensor-model-parallel-allreduce', '--use-rotary-position-embeddings', '--no-gradient-accumulation-fusion', '--vocab-file', 'gpt2-vocab.json', '--merge-file', 'gpt2-merges.txt', '--data-path', '/root//dataset_text_sentence', '--data-impl', 'mmap', '--deepspeed', '--deepspeed_config', 'ds_config_gbs2048_mbs2_log1_zero1.json', '--zero-stage', '1', '--pipeline-model-parallel-size', '1', '--no-pipeline-parallel'] exits with return code = 1

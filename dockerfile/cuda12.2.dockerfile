@@ -42,6 +42,7 @@ RUN apt-get update && \
     libtinfo5 \
     libtool \
     lshw \
+    python3-mpi4py \
     net-tools \
     nlohmann-json3-dev \
     openssh-client \
