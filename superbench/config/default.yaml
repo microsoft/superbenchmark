@@ -207,6 +207,23 @@ superbench:
         seq_length: 224
         batch_size: 1
         precision: int8
+    megatron-gpt:
+      modes:
+      - name: mpi
+        proc_num: 1
+        node_num: all
+      parameters:
+        code_base: /opt/superbench/third_party/Megatron/Megatron-DeepSpeed/
+        dataset_url: https://huggingface.co/datasets/suolyer/pile_bookcorpus2/raw/main/test.json
+        batch_size: 2048
+        num_warmup: 0
+        num_steps: 10
+        precision:
+          - float16
+          - bfloat16
+        deepspeed: yes
+        sequence_parallel: yes
+        use_rotary_position_embeddings: yes
     gpt_models:
       <<: *default_pytorch_mode
       models:

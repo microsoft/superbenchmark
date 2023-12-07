@@ -37,8 +37,29 @@ For inference, supported percentiles include
 | Name                                                                                    | Unit                   | Description                                                                  |
 |-----------------------------------------------------------------------------------------|------------------------|------------------------------------------------------------------------------|
 | model-benchmarks/pytorch-${model_name}/${precision}_train_step_time                     | time (ms)              | The average training step time with fp32/fp16 precision.                     |
-| model-benchmarks/pytorch-${model_name}/${precision}_train_throughput                    | throughput (samples/s) | The average training throughput with fp32/fp16 precision.                    |
+| model-benchmarks/pytorch-${model_name}/${precision}_train_throughput                    | throughput (samples/s) | The average training throughput with fp32/fp16 precision per GPU.            |
 | model-benchmarks/pytorch-${model_name}/${precision}_inference_step_time                 | time (ms)              | The average inference step time with fp32/fp16 precision.                    |
 | model-benchmarks/pytorch-${model_name}/${precision}_inference_throughput                | throughput (samples/s) | The average inference throughput with fp32/fp16 precision.                   |
 | model-benchmarks/pytorch-${model_name}/${precision}_inference_step_time\_${percentile}  | time (ms)              | The n<sup>th</sup> percentile inference step time with fp32/fp16 precision.  |
 | model-benchmarks/pytorch-${model_name}/${precision}_inference_throughput\_${percentile} | throughput (samples/s) | The n<sup>th</sup> percentile inference throughput with fp32/fp16 precision. |
+
+
+## Megatron Model benchmarks
+
+### `megatron-gpt`
+
+#### Introduction
+
+Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) or [Megatron-DeepSpeed](https://github.com/microsoft/Megatron-DeepSpeed).
+
+`tips: batch_size in this benchmark represents global batch size, the batch size on each GPU instance is micro_batch_size.`
+
+#### Metrics
+| Name                                              | Unit                   | Description                                             |
+|---------------------------------------------------|------------------------|---------------------------------------------------------|
+| megatron-gpt/${precision}_train_step_time         | time (ms)              | The average training step time per iteration.           |
+| megatron-gpt/${precision}_train_throughput        | throughput (samples/s) | The average training throughput per iteration.          |
+| megatron-gpt/${precision}_train_tflops            | tflops/s               | The average training tflops per second per iteration.   |
+| megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
+| megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
+

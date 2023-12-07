@@ -41,6 +41,7 @@ RUN apt-get update && \
     libtinfo5 \
     libtool \
     lshw \
+    python3-mpi4py \
     net-tools \
     numactl \
     openssh-client \
@@ -141,7 +142,7 @@ RUN echo PATH="$PATH" > /etc/environment && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm -o rocm_hipblaslt
+RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm -o rocm_hipblaslt -o megatron_deepspeed -o megatron_lm 
 
 ADD . .
 RUN python3 -m pip install --no-cache-dir .[amdworker] && \
