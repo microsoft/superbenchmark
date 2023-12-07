@@ -1,0 +1,2 @@
+Parameters: m=2208, n=64, k=5608, alpha=1.000000, beta=1.000000, num_layers=50, num_warmups=20, num_iters=100, use_cuda_graph=0
+Time: 763728 us in total, 7637.28 per iteration, 152.746 us per layer
