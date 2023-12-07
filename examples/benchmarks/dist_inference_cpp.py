@@ -7,7 +7,7 @@ Commands to run:
   mpirun -np 8 examples/benchmarks/dist_inference_cpp.py
 """
 
-from superbench.benchmarks import Framework, BenchmarkRegistry
+from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.common.utils import logger
 
 if __name__ == '__main__':
