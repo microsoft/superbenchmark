@@ -98,7 +98,7 @@ class DistInferenceCppTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._process_raw_result(0, test_raw_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-        assert (2 == len(benchmark.raw_data)) # raw_data and post-processed data
+        assert (2 == len(benchmark.raw_data))    # raw_data and post-processed data
         test_latency = float(test_raw_output.splitlines()[-1].split(' us per layer')[0].split()[-1])
         assert (benchmark.default_metric_count + 1 == len(benchmark.result))
         for output_key in benchmark.result:
