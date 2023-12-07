@@ -11,10 +11,11 @@ HPCX_HOME ?= /opt/hpcx
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed
 
 # Build all targets.
 all: cuda rocm
+cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed
 cpu: common cpu_perftest
@@ -188,3 +189,26 @@ megatron_deepspeed:
 	cd Megatron && \
 	python -m pip install -r requirements.txt && \
 	python -m pip install DeepSpeed
+
+# Build MSCCL for CUDA
+cuda_msccl: sb_micro_path
+ifneq (,$(wildcard msccl/executor/msccl-executor-nccl/Makefile))
+	cd ./msccl/executor/msccl-executor-nccl && \
+	make -j4 src.build && \
+	cd ../../..
+	mkdir -p $(SB_MICRO_PATH)/lib/msccl-executor-nccl && \
+	cp -r -v ./msccl/executor/msccl-executor-nccl/build/* $(SB_MICRO_PATH)/lib/msccl-executor-nccl/
+endif
+ifneq (,$(wildcard msccl/scheduler/msccl-scheduler/Makefile))
+	cd ./msccl/scheduler/msccl-scheduler && \
+	CXX=nvcc BIN_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl SRC_HOME=../../../msccl/executor/msccl-executor-nccl make -j4 && \
+	cd ../../..
+	mkdir -p $(SB_MICRO_PATH)/lib/msccl-scheduler && \
+	cp -r -v ./msccl/scheduler/msccl-scheduler/build/* $(SB_MICRO_PATH)/lib/msccl-scheduler/
+endif
+ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
+	cd ./msccl/tests/msccl-tests-nccl && \
+	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j4 && cd ../../..
+	mkdir -p $(SB_MICRO_PATH)/bin/msccl-tests-nccl && \
+	cp -r -v ./msccl/tests/msccl-tests-nccl/build/* $(SB_MICRO_PATH)/bin/msccl-tests-nccl/
+endif
