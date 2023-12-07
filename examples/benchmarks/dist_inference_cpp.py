@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 """Micro benchmark example for distributed inference (cpp implementation).
+
 Commands to run:
   mpirun -np 8 examples/benchmarks/dist_inference_cpp.py
 """

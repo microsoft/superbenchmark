@@ -32,10 +32,9 @@ class DistInferenceCpp(MicroBenchmarkWithInvoke):
             '--mnk_list',
             type=str,
             nargs='+',
-            default=['80,128,128'],
-            help=
-            'List of M,N,K tuples of sharded 2-layer-feed-forward block. K is input size, N is batch size, M is hidden size. E.g. {}.'
-            .format(' '.join(self._mnk_list)),
+            default=['128,80,128'],
+            help='List of M(input),N(batch),K(hidden) tuples of sharded 2-layer-feed-forward block. E.g. {}.'.format(
+                ' '.join(self._mnk_list)),
         )
         self._parser.add_argument(
             '--alpha',
@@ -95,7 +94,7 @@ class DistInferenceCpp(MicroBenchmarkWithInvoke):
             m, n, k = [int(x) for x in mnk.split(',')]
             args = '-m %d -n %d -k %d' % (m, n, k)
             args += ' --alpha %g --beta %g' % (self._args.alpha, self._args.beta)
-            args += ' --num_layers %d --num_warmups --num_iters' % \
+            args += ' --num_layers %d --num_warmups %d --num_iters %d' % \
                 (self._args.num_layers, self._args.num_warmups, self._args.num_iters)
             if self._args.use_cuda_graph:
                 args += ' --use_cuda_graph'

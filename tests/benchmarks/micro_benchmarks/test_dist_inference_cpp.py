@@ -33,8 +33,9 @@ class DistInferenceCppBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         num_layers = 9
         num_warmups = 10
         num_iters = 11
-        parameters = '--mnk_list %s --alpha %g --beta %g --num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph' % \
-            (' '.join(mnk_list), alpha, beta, num_layers, num_warmups, num_iters)
+        wrapper_params_format_str = \
+            '--mnk_list %s --alpha %g --beta %g --num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
+        parameters = wrapper_params_format_str % (' '.join(mnk_list), alpha, beta, num_layers, num_warmups, num_iters)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -58,8 +59,11 @@ class DistInferenceCppBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (len(mnk_list) == len(benchmark._commands))
         for cmd in benchmark._commands:
             m, n, k = [int(x) for x in mnk_list[0].split(',')]
-            assert (cmd == ('%s -m %d -n %d -k %d --alpha %g --beta %g --num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph' % \
-                benchmark._DistInferenceCpp__bin_path, m, n, k, alpha, beta, num_layers, num_warmups, num_iters))
+            bench_params_format_str = \
+                '%s -m %d -n %d -k %d --alpha %g --beta %g ' + \
+                '--num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
+            assert (cmd == (bench_params_format_str % (benchmark._DistInferenceCpp__bin_path,
+                    m, n, k, alpha, beta, num_layers, num_warmups, num_iters)))
 
     @decorator.cuda_test
     def test_dist_inference_cpp_command_generation_cuda(self):
