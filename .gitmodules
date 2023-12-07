@@ -21,3 +21,6 @@
 [submodule "third_party/gpu-burn"]
 	path = third_party/gpu-burn
 	url = https://github.com/wilicc/gpu-burn.git
+[submodule "third_party/msccl"]
+	path = third_party/msccl
+	url = https://github.com/Azure/msccl
