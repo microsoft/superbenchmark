@@ -41,6 +41,7 @@ RUN apt-get update && \
     libtinfo5 \
     libtool \
     lshw \
+    python3-mpi4py \
     net-tools \
     numactl \
     openssh-client \
@@ -136,7 +137,7 @@ RUN echo PATH="$PATH" > /etc/environment && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party rocm -o rocm_hipblaslt
+RUN make -C third_party rocm -o rocm_hipblaslt -o megatron_deepspeed -o megatron_lm
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 && \

@@ -34,7 +34,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: true
+          submodules: recursive
       - name: Free disk space
         run: |
           mkdir /tmp/emptydir

@@ -7,6 +7,7 @@ import math
 import time
 import statistics
 from abc import abstractmethod
+from typing import Union
 
 from superbench.common.utils import logger, stdout_logger
 from superbench.benchmarks import Precision, ModelAction, DistributedImpl, DistributedBackend, BenchmarkType, ReturnCode
@@ -263,6 +264,10 @@ class ModelBenchmark(Benchmark):
 
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
+        if isinstance(step_times, tuple):
+            step_times = step_times[0]
+            info = step_times[1]
+            self._process_info(ModelAction.TRAIN, precision, info)
         step_times = self.__process_model_result(ModelAction.TRAIN, precision, step_times)
         if not step_times:
             self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_RESULT)
@@ -302,7 +307,7 @@ class ModelBenchmark(Benchmark):
         return True
 
     @abstractmethod
-    def _train_step(self, precision):
+    def _train_step(self, precision) -> Union[list, tuple]:
         """Define the training process.
 
         Args:
@@ -418,6 +423,7 @@ class ModelBenchmark(Benchmark):
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
         if precision.value in precision_metric.keys():
             precision = precision_metric[precision.value]
+
         metric_s = '{}_{}_step_time'.format(precision, model_action)
         metric_t = '{}_{}_throughput'.format(precision, model_action)
         # The unit of step time is millisecond, use it to calculate the throughput with the unit samples/sec.
@@ -428,7 +434,7 @@ class ModelBenchmark(Benchmark):
 
         if model_action == ModelAction.TRAIN:
             step_times = self._sync_result(step_times)
-            if not step_times:
+            if not step_times or statistics.mean(step_times) < 0:
                 return None
             if self._local_rank is None or self._global_rank == 0:
                 self._result.add_result(metric_s, statistics.mean(step_times))
@@ -468,3 +474,13 @@ class ModelBenchmark(Benchmark):
             step_time = statistics.mean(duration) if len(duration) < self._args.log_n_steps \
                 else statistics.mean(duration[-self._args.log_n_steps:])
             stdout_logger.log(f'{self._name} - {precision.value}: step {curr_step}, step time {step_time}\n')
+
+    def _process_info(self, model_action, precision, info):
+        """Process other info.
+
+        Args:
+            model_action (ModelAction): train or inference.
+            precision (Precision): precision of model.
+            info (dict): other info.
+        """
+        pass

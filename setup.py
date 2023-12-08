@@ -177,6 +177,7 @@ setup(
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
+        'types-requests',
     ],
     extras_require=(
         lambda x: {
