@@ -207,7 +207,7 @@ class DistInference(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--use_pytorch',
             action='store_true',
-            required=True,
+            required=False,
             help='Whether to use pytorch implementation. If not, cpp implementation will be used.',
         )
         self._parser.add_argument(
@@ -365,7 +365,7 @@ class DistInference(MicroBenchmarkWithInvoke):
             if self._args.use_cuda_graph:
                 args += ' --use_cuda_graph'
             self._commands = ['%s %s' % (self.__bin_path, args)]
-        
+
         return True
 
     def _prepare_model(

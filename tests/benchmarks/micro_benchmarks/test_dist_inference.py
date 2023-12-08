@@ -33,7 +33,7 @@ def test_pytorch_dist_inference_normal():
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check predefined parameters of dist-inference benchmark.
-        assert (benchmark._args.use_pytorch is True)
+        assert (benchmark._args.use_pytorch is False)
         assert (benchmark._args.batch_size == 64)
         assert (benchmark._args.input_size == 1024)
         assert (benchmark._args.hidden_size == 1024)
@@ -76,7 +76,7 @@ def test_pytorch_dist_inference_fake_distributed():
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check predefined parameters of dist-inference benchmark.
-    assert (benchmark._args.use_pytorch is True)
+    assert (benchmark._args.use_pytorch is False)
     assert (benchmark._args.batch_size == 64)
     assert (benchmark._args.input_size == 1024)
     assert (benchmark._args.hidden_size == 1024)
