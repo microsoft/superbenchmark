@@ -816,6 +816,9 @@ __global__ void SMOneToAllCopyKernel(ulong2 **dst_buffers, ulong2 *src_buffer, u
     } else {
         dst_rank = blockIdx.x / num_blocks_per_dst_rank;
     }
+    if (src_rank == dst_rank) {
+        return;
+    }
     ulong2 *dst_buffer = dst_buffers[dst_rank];
     uint64_t src_rank_elem_offset = uint64_t(src_rank) * size_per_dst_rank / sizeof(ulong2);
     uint64_t dst_rank_elem_offset = uint64_t(dst_rank) * size_per_dst_rank / sizeof(ulong2);
@@ -1026,6 +1029,9 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
             for (uint64_t i = 0; i < opts.size / sizeof(uint64_t); i++) {
                 int curr_src_rank = i / (opts.size / sizeof(uint64_t) / gpu_count);
                 if (src_rank >= 0 && src_rank != curr_src_rank) {
+                    continue;
+                }
+                if (curr_src_rank == curr_dst_rank) {
                     continue;
                 }
                 uint64_t offset_in_src_rank = (i % (opts.size / sizeof(uint64_t) / gpu_count)) +
