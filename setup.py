@@ -183,7 +183,7 @@ setup(
             **x,
             'develop': x['dev'] + x['test'],
             'cpuworker': x['torch'],
-            'amdworker': x['torch'] + x['ort'] + x['amd'],
+            'amdworker': x['torch'] + x['amd'],
             'nvworker': x['torch'] + x['ort'] + x['nvidia'],
         }
     )(
