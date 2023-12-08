@@ -351,7 +351,9 @@ class DistInference(MicroBenchmarkWithInvoke):
             except BaseException as e:
                 self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
                 torch.distributed.destroy_process_group()
-                logger.error('Initialize distributed env failed - benchmark: {}, message: {}.'.format(self._name, str(e)))
+                logger.error(
+                    'Initialize distributed env failed - benchmark: {}, message: {}.'.format(self._name, str(e))
+                )
                 return False
 
             if torch.cuda.is_available():
@@ -471,7 +473,8 @@ class DistInference(MicroBenchmarkWithInvoke):
 
             # Prepare model
             model = self._prepare_model(
-                input_size, hidden_size, num_layers, computation, communication, activation, precision, self.__world_size
+                input_size, hidden_size, num_layers, computation, communication, activation, precision,
+                self.__world_size
             )
 
             # Run model
