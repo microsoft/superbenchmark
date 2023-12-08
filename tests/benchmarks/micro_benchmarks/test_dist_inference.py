@@ -33,7 +33,7 @@ def test_pytorch_dist_inference_normal():
         assert (benchmark.type == BenchmarkType.MICRO)
 
         # Check predefined parameters of dist-inference benchmark.
-        assert (benchmark._args.use_cpp_impl == False)
+        assert (benchmark._args.use_cpp_impl is False)
         assert (benchmark._args.batch_size == 64)
         assert (benchmark._args.input_size == 1024)
         assert (benchmark._args.hidden_size == 1024)
@@ -48,7 +48,7 @@ def test_pytorch_dist_inference_normal():
         assert (benchmark._args.num_steps == 10000)
         assert (benchmark._args.distributed_impl == DistributedImpl.DDP)
         assert (benchmark._args.distributed_backend == DistributedBackend.NCCL)
-        assert (benchmark._args.use_cuda_graph == False)
+        assert (benchmark._args.use_cuda_graph is False)
 
         # Check results and metrics.
         assert (benchmark.run_count == 1)
@@ -76,7 +76,7 @@ def test_pytorch_dist_inference_fake_distributed():
     assert (benchmark.type == BenchmarkType.MICRO)
 
     # Check predefined parameters of dist-inference benchmark.
-    assert (benchmark._args.use_cpp_impl == False)
+    assert (benchmark._args.use_cpp_impl is False)
     assert (benchmark._args.batch_size == 64)
     assert (benchmark._args.input_size == 1024)
     assert (benchmark._args.hidden_size == 1024)
@@ -91,7 +91,7 @@ def test_pytorch_dist_inference_fake_distributed():
     assert (benchmark._args.num_steps == 10000)
     assert (benchmark._args.distributed_impl == DistributedImpl.DDP)
     assert (benchmark._args.distributed_backend == DistributedBackend.NCCL)
-    assert (benchmark._args.use_cuda_graph == False)
+    assert (benchmark._args.use_cuda_graph is False)
 
     # Check results and metrics.
     assert (benchmark.run_count == 1)
