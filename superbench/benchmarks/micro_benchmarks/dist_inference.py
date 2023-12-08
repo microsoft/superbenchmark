@@ -207,6 +207,7 @@ class DistInference(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--use_cpp_impl',
             action='store_true',
+            required=False,
             help='Whether to use cpp-based implementation.',
         )
         self._parser.add_argument(
@@ -310,6 +311,7 @@ class DistInference(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--use_cuda_graph',
             action='store_true',
+            required=False,
             help='Whether to launch kernels in CUDA graph mode.',
         )
 
@@ -364,7 +366,7 @@ class DistInference(MicroBenchmarkWithInvoke):
                 self.__device = torch.device('cpu:{}'.format(self.__local_rank))
                 self.__cuda_available = False
 
-            return True
+        return True
 
     def _prepare_model(
         self, input_size, hidden_size, num_layers, computation, communication, activation, precision, num_ranks
@@ -447,6 +449,7 @@ class DistInference(MicroBenchmarkWithInvoke):
             # Execute commands if cpp impl path
             if not super()._benchmark():
                 return False
+            return True
         else:
             # Execute PyTorch model if pytorch impl path
             batch_size = self._args.batch_size
@@ -501,7 +504,7 @@ class DistInference(MicroBenchmarkWithInvoke):
             output_lines = [x.strip() for x in raw_output.strip().splitlines()]
             step_time = None
             for output_line in output_lines:
-                if output_line.endswith(' ms per iteration'):
+                if ' ms per iteration' in output_line:
                     step_time = float(output_line.split(' ms per iteration')[0].split()[-1])
                     break
             return self._process_numeric_result(
