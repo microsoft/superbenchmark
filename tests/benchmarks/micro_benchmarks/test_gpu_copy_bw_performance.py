@@ -71,8 +71,10 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert ('--size %d' % size in benchmark._commands[0])
         assert ('--num_warm_up %d' % num_warm_up in benchmark._commands[0])
         assert ('--num_loops %d' % num_loops in benchmark._commands[0])
-        assert ('--all_to_all_num_thread_blocks_per_rank %d' %
-                all_to_all_num_thread_blocks_per_rank in benchmark._commands[0])
+        assert (
+            '--all_to_all_num_thread_blocks_per_rank %d' % all_to_all_num_thread_blocks_per_rank
+            in benchmark._commands[0]
+        )
         assert ('--all_to_all_thread_block_size %d' % all_to_all_thread_block_size in benchmark._commands[0])
         assert ('--bidirectional' in benchmark._commands[0])
         assert ('--check_data' in benchmark._commands[0])
