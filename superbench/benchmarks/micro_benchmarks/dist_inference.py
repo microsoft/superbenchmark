@@ -536,4 +536,4 @@ class DistInference(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('dist-inference', DistInference, parameters='')
+BenchmarkRegistry.register_benchmark('pytorch-dist-inference', DistInference, parameters='')
