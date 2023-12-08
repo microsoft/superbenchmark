@@ -205,10 +205,10 @@ class DistInference(MicroBenchmarkWithInvoke):
         super().add_parser_arguments()
 
         self._parser.add_argument(
-            '--use_cpp_impl',
+            '--use_pytorch',
             action='store_true',
-            required=False,
-            help='Whether to use cpp-based implementation.',
+            required=True,
+            help='Whether to use pytorch implementation. If not, cpp implementation will be used.',
         )
         self._parser.add_argument(
             '--batch_size',
@@ -324,18 +324,7 @@ class DistInference(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        if self._args.use_cpp_impl:
-            # Assemble commands if cpp impl path
-            self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
-
-            args = '-m %d -n %d -k %d' % (self._args.input_size, self._args.batch_size, self._args.hidden_size)
-            args += ' --alpha %g --beta %g' % (self._args.alpha, self._args.beta)
-            args += ' --num_layers %d --num_warmups %d --num_iters %d' % \
-                (self._args.num_layers, self._args.num_warmup, self._args.num_steps)
-            if self._args.use_cuda_graph:
-                args += ' --use_cuda_graph'
-            self._commands = ['%s %s' % (self.__bin_path, args)]
-        else:
+        if self._args.use_pytorch:
             # Initialize PyTorch if pytorch impl path
             if self._args.distributed_impl != DistributedImpl.DDP:
                 self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
@@ -365,7 +354,18 @@ class DistInference(MicroBenchmarkWithInvoke):
             else:
                 self.__device = torch.device('cpu:{}'.format(self.__local_rank))
                 self.__cuda_available = False
+        else:
+            # Assemble commands if cpp impl path
+            self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
+            args = '-m %d -n %d -k %d' % (self._args.input_size, self._args.batch_size, self._args.hidden_size)
+            args += ' --alpha %g --beta %g' % (self._args.alpha, self._args.beta)
+            args += ' --num_layers %d --num_warmups %d --num_iters %d' % \
+                (self._args.num_layers, self._args.num_warmup, self._args.num_steps)
+            if self._args.use_cuda_graph:
+                args += ' --use_cuda_graph'
+            self._commands = ['%s %s' % (self.__bin_path, args)]
+        
         return True
 
     def _prepare_model(
@@ -445,12 +445,7 @@ class DistInference(MicroBenchmarkWithInvoke):
         Return:
             True if _benchmark succeeds.
         """
-        if self._args.use_cpp_impl:
-            # Execute commands if cpp impl path
-            if not super()._benchmark():
-                return False
-            return True
-        else:
+        if self._args.use_pytorch:
             # Execute PyTorch model if pytorch impl path
             batch_size = self._args.batch_size
             input_size = self._args.input_size
@@ -485,6 +480,11 @@ class DistInference(MicroBenchmarkWithInvoke):
 
             # Process data and return
             return self._process_data(step_times)
+        else:
+            # Execute commands if cpp impl path
+            if not super()._benchmark():
+                return False
+            return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
@@ -528,7 +528,7 @@ class DistInference(MicroBenchmarkWithInvoke):
         if not super()._postprocess():
             return False
 
-        if not self._args.use_cpp_impl:
+        if self._args.use_pytorch:
             try:
                 torch.distributed.destroy_process_group()
             except BaseException as e:
