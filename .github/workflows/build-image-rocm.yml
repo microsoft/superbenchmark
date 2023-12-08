@@ -17,19 +17,16 @@ on:
 jobs:
   docker:
     name: Docker build ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, build]
     permissions:
       contents: read
       packages: write
     strategy:
       matrix:
         include:
-        - name: cuda12.2
-          dockerfile: cuda12.2
-          tags: superbench/main:cuda12.2
-        - name: cuda11.1.1
-          dockerfile: cuda11.1.1
-          tags: superbench/main:cuda11.1.1,superbench/superbench:latest
+        - name: rocm5.7
+          dockerfile: rocm5.7.x
+          tags: superbench/main:rocm5.7
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -44,17 +41,6 @@ jobs:
           sudo apt-get clean
           sudo docker rmi $(sudo docker images --format "{{.Repository}}:{{.Tag}}" --filter=reference="node" --filter=reference="buildpack-deps")
           df -h
-      - name: Free Up GitHub Actions Ubuntu Runner Disk Space 🔧
-        uses: hirnidrin/free-disk-space@main
-        with:
-          # This might remove tools that are actually needed, if set to "true" but frees about 6 GB
-          tool-cache: false
-          # All of these default to true, but feel free to set to "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
       - name: Prepare metadata
         id: metadata
         run: |
