@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
- 
+
 cmake_minimum_required(VERSION 3.18)
  
 project(gpu_copy LANGUAGES CXX)
  
 find_package(CUDAToolkit QUIET)
- 
+
 # Cuda environment
 if(CUDAToolkit_FOUND)
     message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
