@@ -128,6 +128,12 @@ struct Opts {
     // Whether bidirectional transfer is enabled.
     bool bidirectional_enabled = false;
 
+    // Number of thread blocks per rank in one-to-all/all-to-one/all-to-all tests.
+    uint64_t all_to_all_num_thread_blocks_per_rank = 8;
+
+    // Thread block size in one-to-all/all-to-one/all-to-all tests.
+    uint64_t all_to_all_thread_block_size = 512;
+
     // Whether check data after copy.
     bool check_data = false;
 };
@@ -138,6 +144,8 @@ void PrintUsage() {
            "--size <size> "
            "--num_warm_up <num_warm_up> "
            "--num_loops <num_loops> "
+           "[--all_to_all_num_thread_blocks_per_rank <all_to_all_num_thread_blocks_per_rank>] "
+           "[--all_to_all_thread_block_size <all_to_all_thread_block_size>] "
            "[--sm_copy] "
            "[--dma_copy] "
            "[--htod] "
@@ -156,6 +164,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         kSize,
         kNumWarmUp,
         kNumLoops,
+        kAllToAllNumThreadBlocksPerRank,
+        kAllToAllThreadBlockSize,
         kEnableSmCopy,
         kEnableDmaCopy,
         kEnableHToD,
@@ -171,6 +181,10 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
         {"num_warm_up", required_argument, nullptr, static_cast<int>(OptIdx::kNumWarmUp)},
         {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumLoops)},
+        {"all_to_all_num_thread_blocks_per_rank", required_argument, nullptr,
+         static_cast<int>(OptIdx::kAllToAllNumThreadBlocksPerRank)},
+        {"all_to_all_thread_block_size", required_argument, nullptr,
+         static_cast<int>(OptIdx::kAllToAllThreadBlockSize)},
         {"sm_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableSmCopy)},
         {"dma_copy", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDmaCopy)},
         {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
@@ -221,6 +235,18 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
                 parse_err = true;
             } else {
                 num_loops_specified = true;
+            }
+            break;
+        case static_cast<int>(OptIdx::kAllToAllNumThreadBlocksPerRank):
+            if (1 != sscanf(optarg, "%lu", &(opts->all_to_all_num_thread_blocks_per_rank))) {
+                fprintf(stderr, "Invalid all_to_all_num_thread_blocks_per_rank: %s\n", optarg);
+                parse_err = true;
+            }
+            break;
+        case static_cast<int>(OptIdx::kAllToAllThreadBlockSize):
+            if (1 != sscanf(optarg, "%lu", &(opts->all_to_all_thread_block_size))) {
+                fprintf(stderr, "Invalid all_to_all_thread_block_size: %s\n", optarg);
+                parse_err = true;
             }
             break;
         case static_cast<int>(OptIdx::kEnableSmCopy):
@@ -804,9 +830,6 @@ __global__ void SMOneToAllCopyKernel(ulong2 **dst_buffers, ulong2 *src_buffer, u
     }
 }
 
-#define ALL_TO_ALL_NUM_THREAD_BLOCKS_PER_RANK 8
-#define ALL_TO_ALL_NUM_THREADS_IN_BLOCK 512
-
 // src_rank/dst_rank: < 0 for all ranks, else for specified rank
 int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank) {
     int ret = 0;
@@ -934,11 +957,11 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
                     return -1;
                 }
             }
-            SMOneToAllCopyKernel<<<gpu_count * ALL_TO_ALL_NUM_THREAD_BLOCKS_PER_RANK, ALL_TO_ALL_NUM_THREADS_IN_BLOCK,
-                                   0, streams[rank]>>>((ulong2 **)dst_buffer_gpu_args[rank],
-                                                       (ulong2 *)src_buffers_gpu[rank], opts.size, rank, dst_rank,
-                                                       gpu_count);
-            if (i + 1 == opts.num_warm_up + opts.num_loops) {
+            SMOneToAllCopyKernel<<<gpu_count * opts.all_to_all_num_thread_blocks_per_rank,
+                                   opts.all_to_all_thread_block_size, 0, streams[rank]>>>(
+                (ulong2 **)dst_buffer_gpu_args[rank], (ulong2 *)src_buffers_gpu[rank], opts.size, rank, dst_rank,
+                gpu_count);
+            if (i == opts.num_warm_up + opts.num_loops - 1) {
                 cuda_err = cudaEventRecord(stop_events[rank], streams[rank]);
                 if (cuda_err != cudaSuccess) {
                     fprintf(stderr, "RunAllToAllBench::cudaEventRecord for stop_events[%d] error: %d\n", cuda_err,
