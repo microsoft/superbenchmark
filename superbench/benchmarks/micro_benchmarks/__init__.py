@@ -18,7 +18,6 @@ from superbench.benchmarks.micro_benchmarks.cuda_nccl_bw_performance import Cuda
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 from superbench.benchmarks.micro_benchmarks.disk_performance import DiskBenchmark
 from superbench.benchmarks.micro_benchmarks.dist_inference import DistInference
-from superbench.benchmarks.micro_benchmarks.dist_inference_cpp import DistInferenceCpp
 from superbench.benchmarks.micro_benchmarks.cpu_memory_bw_latency_performance import CpuMemBwLatencyBenchmark
 from superbench.benchmarks.micro_benchmarks.cpu_stream_performance import CpuStreamBenchmark
 from superbench.benchmarks.micro_benchmarks.cpu_hpl_performance import CpuHplBenchmark
@@ -53,7 +52,6 @@ __all__ = [
     'CudnnBenchmark',
     'DiskBenchmark',
     'DistInference',
-    'DistInferenceCpp',
     'HipBlasLtBenchmark',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',

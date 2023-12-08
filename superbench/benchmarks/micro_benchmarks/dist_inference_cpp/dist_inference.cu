@@ -352,8 +352,8 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
         CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
     }
     stop_time = std::chrono::steady_clock::now();
-    double duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time).count();
-    fprintf(stdout, "Time: %g us in total, %g per iteration, %g us per layer\n", duration, duration / num_iters,
+    double duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - start_time).count();
+    fprintf(stdout, "Time: %g ms in total, %g ms per iteration, %g ms per layer\n", duration, duration / num_iters,
             duration / num_iters / num_layers);
 
 #if (NCCL_MAJOR > 2 || (NCCL_MAJOR >= 2 && NCCL_MINOR >= 9)) && (CUDART_VERSION >= 11030 || HIP_VERSION >= 50221310)
