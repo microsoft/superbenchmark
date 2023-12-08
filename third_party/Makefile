@@ -100,6 +100,7 @@ rocm_rocblas: sb_micro_path
 	@if [ ! -e $(SB_MICRO_PATH)/bin/rocblas-bench ] && [ -z `which rocblas-bench` ]; then \
 		if [ -d rocBLAS ]; then rm -rf rocBLAS; fi; \
 		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS; \
+		sed -i 's|#include "gemm.hpp"|#include "Tensile/gemm.hpp"|' rocBLAS/clients/benchmarks/../../library/src/blas3/rocblas_trtri.hpp; \
 		cd ./rocBLAS && ./install.sh --dependencies --clients-only; \
 		cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/; \
 	fi
