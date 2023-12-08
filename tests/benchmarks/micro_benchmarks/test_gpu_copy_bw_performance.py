@@ -35,9 +35,9 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         mem_types = ['htod', 'dtoh', 'dtod', 'one_to_all', 'all_to_one', 'all_to_all']
         copy_types = ['sm', 'dma']
 
-        parameters = '--mem_type %s --copy_type %s --size %d ' \
+        parameters = '--mem_type %s --copy_type %s --size %d --num_warm_up %d --num_loops %d ' \
             '--all_to_all_num_thread_blocks_per_rank %d --all_to_all_thread_block_size %d ' \
-            '--num_warm_up %d --num_loops %d --bidirectional --check_data' % \
+            '--bidirectional --check_data' % \
             (' '.join(mem_types), ' '.join(copy_types), size, num_warm_up, num_loops,
              all_to_all_num_thread_blocks_per_rank, all_to_all_thread_block_size)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
