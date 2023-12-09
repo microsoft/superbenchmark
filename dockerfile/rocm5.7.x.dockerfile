@@ -46,7 +46,7 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
-ARG NUM_MAKE_JOBS=4
+ARG NUM_MAKE_JOBS=16
 
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \

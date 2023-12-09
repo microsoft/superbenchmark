@@ -35,7 +35,7 @@ jobs:
         - name: rocm5.7
           dockerfile: rocm5.7.x
           tags: superbench/main:rocm5.7
-          runner: [self-hosted, build]
+          runner: [self-hosted, rocm-build]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
