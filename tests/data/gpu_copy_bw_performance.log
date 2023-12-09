@@ -50,3 +50,8 @@ cpu_and_gpu1_by_sm_under_numa1 10.2994
 cpu_and_gpu1_by_dma_under_numa1 49.3615
 gpu1_and_cpu_by_sm_under_numa1 10.2817
 gpu1_and_cpu_by_dma_under_numa1 49.3653
+gpu0_to_gpu_all_write_by_sm 55.6522
+gpu1_to_gpu_all_write_by_sm 55.0538
+gpu_all_to_gpu0_write_by_sm 56.2637
+gpu_all_to_gpu1_write_by_sm 56.8889
+gpu_all_to_gpu_all_write_by_sm 55.6522

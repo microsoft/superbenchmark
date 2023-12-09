@@ -30,12 +30,16 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         size = 1048576
         num_warm_up = 20
         num_loops = 10000
-        mem_types = ['htod', 'dtoh', 'dtod']
+        all_to_all_num_thread_blocks_per_rank = 8
+        all_to_all_thread_block_size = 512
+        mem_types = ['htod', 'dtoh', 'dtod', 'one_to_all', 'all_to_one', 'all_to_all']
         copy_types = ['sm', 'dma']
 
-        parameters = '--mem_type %s --copy_type %s --size %d ' \
-            '--num_warm_up %d --num_loops %d --bidirectional --check_data' % \
-            (' '.join(mem_types), ' '.join(copy_types), size, num_warm_up, num_loops)
+        parameters = '--mem_type %s --copy_type %s --size %d --num_warm_up %d --num_loops %d ' \
+            '--all_to_all_num_thread_blocks_per_rank %d --all_to_all_thread_block_size %d ' \
+            '--bidirectional --check_data' % \
+            (' '.join(mem_types), ' '.join(copy_types), size, num_warm_up, num_loops,
+             all_to_all_num_thread_blocks_per_rank, all_to_all_thread_block_size)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -52,6 +56,8 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.size == size)
         assert (benchmark._args.num_warm_up == num_warm_up)
         assert (benchmark._args.num_loops == num_loops)
+        assert (benchmark._args.all_to_all_num_thread_blocks_per_rank == all_to_all_num_thread_blocks_per_rank)
+        assert (benchmark._args.all_to_all_thread_block_size == all_to_all_thread_block_size)
         assert (benchmark._args.bidirectional)
         assert (benchmark._args.check_data)
 
@@ -65,6 +71,11 @@ class GpuCopyBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert ('--size %d' % size in benchmark._commands[0])
         assert ('--num_warm_up %d' % num_warm_up in benchmark._commands[0])
         assert ('--num_loops %d' % num_loops in benchmark._commands[0])
+        assert (
+            '--all_to_all_num_thread_blocks_per_rank %d' % all_to_all_num_thread_blocks_per_rank
+            in benchmark._commands[0]
+        )
+        assert ('--all_to_all_thread_block_size %d' % all_to_all_thread_block_size in benchmark._commands[0])
         assert ('--bidirectional' in benchmark._commands[0])
         assert ('--check_data' in benchmark._commands[0])
 
