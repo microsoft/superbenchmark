@@ -39,7 +39,7 @@ docker buildx build \
 export DOCKER_BUILDKIT=1
 docker buildx build \
   --platform linux/amd64 --cache-to type=inline,mode=max \
-  --tag superbench-dev --file dockerfile/rocm5.1.x.dockerfile .
+  --tag superbench-dev --file dockerfile/rocm5.7.x.dockerfile .
 ```
 
 </TabItem>

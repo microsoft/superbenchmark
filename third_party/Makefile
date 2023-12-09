@@ -10,6 +10,7 @@ HPCX_HOME ?= /opt/hpcx
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
+HIPBLASLT_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
 .PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed
 
@@ -97,12 +98,13 @@ endif
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 # Since it takes several hours to build, avoid to build again if rocblas-bench exsists.
 rocm_rocblas: sb_micro_path
-ifeq (, $(wildcard $(SB_MICRO_PATH)/bin/rocblas-bench))
-	if [ -d rocBLAS ]; then rm -rf rocBLAS; fi
-	git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS
-	cd ./rocBLAS && ./install.sh --dependencies --clients-only
-	cp -v ./rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/
-endif
+	@if [ ! -e $(SB_MICRO_PATH)/bin/rocblas-bench ] && [ -z `which rocblas-bench` ]; then \
+		if [ -d rocBLAS ]; then rm -rf rocBLAS; fi; \
+		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS; \
+		sed -i 's|#include "gemm.hpp"|#include "Tensile/gemm.hpp"|' rocBLAS/clients/benchmarks/../../library/src/blas3/rocblas_trtri.hpp; \
+		cd ./rocBLAS && ./install.sh --dependencies --clients-only; \
+		cp -v $(SB_MICRO_PATH)/third_party/rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/; \
+	fi
 
 # Build hipblaslt-bench.
 # hipBLASLt is released with rocm, like rocm-4.2.0 and so on.
@@ -111,18 +113,18 @@ endif
 rocm_hipblaslt: sb_micro_path
 	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
 		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
-		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
+		git clone -b ${HIPBLASLT_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
 		cd ./hipBLASLt && ./install.sh -dc; \
-		cp -v ./hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/; \
+		cp -v $(SB_MICRO_PATH)/third_party/hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/;  \
 	fi
 
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 rocm_bandwidthTest: sb_micro_path
-	cp -r -v $(shell hipconfig -p)/samples/1_Utils/hipBusBandwidth ./
-	cd ./hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
-	cp -v ./hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
+	git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/HIP.git
+	cd ./HIP/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
+	cp -v ./HIP/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
