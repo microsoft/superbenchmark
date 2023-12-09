@@ -46,7 +46,7 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
-ARG NUM_MAKE_JOBS=
+ARG NUM_MAKE_JOBS=4
 
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
@@ -149,7 +149,7 @@ RUN cd /opt/ &&  \
     mkdir build && \
     cd build && \
     CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_PREFIX_PATH=/opt/rocm/ .. && \
-    make -j
+    make -j${NUM_MAKE_JOBS}
 
 ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
