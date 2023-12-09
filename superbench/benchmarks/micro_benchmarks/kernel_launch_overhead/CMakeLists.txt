@@ -23,8 +23,7 @@ else()
         message(STATUS "Found HIP: " ${HIP_VERSION})
 
         # Convert cuda code to hip code in cpp
-        execute_process(COMMAND hipify-perl-print-stats -o kernel_launch.cpp kernel_launch.cu
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+        execute_process(COMMAND hipify-perl -print-stats -o kernel_launch.cpp kernel_launch.cu WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 
         # link hip device lib
         add_executable(kernel_launch_overhead kernel_launch.cpp)
