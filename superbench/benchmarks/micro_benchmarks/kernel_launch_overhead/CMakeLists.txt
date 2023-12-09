@@ -27,7 +27,7 @@ else()
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 
         # link hip device lib
-        add_executable(kernel_launch_overhead kernel_launch.cu)
+        add_executable(kernel_launch_overhead kernel_launch.cpp)
         target_link_libraries(kernel_launch_overhead hip::device)
         # Install tergets
         install(TARGETS kernel_launch_overhead RUNTIME DESTINATION bin)
