@@ -137,7 +137,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         num_steps = 8
         wrapper_params_format_str = \
             '--batch_size %d --input_size %d --hidden_size %d ' \
-            '--alpha %g --beta %g --num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
+            '--alpha %g --beta %g --num_layers %d --num_warmup %d --num_steps %d --use_cuda_graph'
         parameters = wrapper_params_format_str % (
             batch_size, input_size, hidden_size, alpha, beta, num_layers, num_warmup, num_steps
         )
@@ -169,7 +169,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
             m, n, k = hidden_size, batch_size, input_size
             bench_params_format_str = \
                 '%s -m %d -n %d -k %d --alpha %g --beta %g ' + \
-                '--num_layers %d --num_warmup %d --num_steps %d --use_cuda_graph'
+                '--num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
             assert (
                 cmd == (
                     bench_params_format_str %
