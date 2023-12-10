@@ -215,7 +215,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
             if output_key == 'return_code':
                 assert (benchmark.result[output_key] == [0])
             else:
-                assert (output_key.startswith('steps_time'))
+                assert (output_key.startswith('step_times'))
                 assert (len(benchmark.result[output_key]) == 1)
                 assert (isinstance(benchmark.result[output_key][0], numbers.Number))
                 assert (test_latency == benchmark.result[output_key][0])
