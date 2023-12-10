@@ -24,11 +24,11 @@ else()
     find_package(hip QUIET)
     if(hip_FOUND)
         message(STATUS "Found ROCm: " ${HIP_VERSION})
-        # Convert cuda code to hip code inplace
-        execute_process(COMMAND hipify-perl -print-stats -o dist_inference.cpp dist_inference.cu
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 
-        # Add HIP targets
+        # Convert cuda code to hip code in cpp
+        execute_process(COMMAND hipify-perl -print-stats -o dist_inference.cpp dist_inference.cu WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+
+        # link hip device lib
         add_executable(dist_inference dist_inference.cpp)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -DROCM_USE_FLOAT16=1")
         target_link_libraries(dist_inference MPI::MPI_CXX rccl hipblaslt hip::device)
