@@ -358,7 +358,7 @@ class DistInference(MicroBenchmarkWithInvoke):
             # Assemble commands if cpp impl path
             self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
-            args = '-m %d -n %d -k %d' % (self._args.input_size, self._args.batch_size, self._args.hidden_size)
+            args = '-m %d -n %d -k %d' % (self._args.hidden_size, self._args.batch_size, self._args.input_size)
             args += ' --alpha %g --beta %g' % (self._args.alpha, self._args.beta)
             args += ' --num_layers %d --num_warmups %d --num_iters %d' % \
                 (self._args.num_layers, self._args.num_warmup, self._args.num_steps)
