@@ -110,7 +110,7 @@ def test_pytorch_dist_inference_fake_distributed():
 
     utils.clean_simulated_ddp_distributed_env()
 
-class DistInferenceCppBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
+class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
     """Test class for pytorch-dist-inference benchmark."""
     @classmethod
     def setUpClass(cls):
