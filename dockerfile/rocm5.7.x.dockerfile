@@ -168,7 +168,8 @@ WORKDIR ${SB_HOME}
 ADD . .
 RUN apt install rocm-cmake -y && \
     python3 -m pip install --upgrade pip wheel setuptools==65.7 && \
-    make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release-staging/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm && \
-    python3 -m pip install .[amdworker] && \
-    make postinstall && \
-    make cppbuild
+    python3 -m pip install .[amdworker]  && \
+    make postinstall
+RUN make cppbuild
+ADD third_party third_party
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release-staging/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
