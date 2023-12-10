@@ -182,7 +182,6 @@ class DistInference(MicroBenchmarkWithInvoke):
         self.__local_rank = 0
         torch.backends.cudnn.benchmark = True
         self.__device = None
-        self.__cuda_available = False
 
         # For cpp impl path
         self._bin_name = 'dist_inference'
@@ -196,8 +195,7 @@ class DistInference(MicroBenchmarkWithInvoke):
         Return:
             Current time in second.
         """
-        if self.__cuda_available:
-            torch.cuda.synchronize()
+        torch.cuda.synchronize()
         return time.time()
 
     def add_parser_arguments(self):
@@ -339,6 +337,7 @@ class DistInference(MicroBenchmarkWithInvoke):
                 torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
                 self.__world_size = int(os.environ['WORLD_SIZE'])
                 self.__local_rank = int(os.environ['LOCAL_RANK'])
+                assert (torch.cuda.is_available())
             except BaseException as e:
                 self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
                 torch.distributed.destroy_process_group()
@@ -347,13 +346,8 @@ class DistInference(MicroBenchmarkWithInvoke):
                 )
                 return False
 
-            if torch.cuda.is_available():
-                torch.cuda.set_device(self.__local_rank)
-                self.__device = torch.device('cuda:{}'.format(self.__local_rank))
-                self.__cuda_available = True
-            else:
-                self.__device = torch.device('cpu:{}'.format(self.__local_rank))
-                self.__cuda_available = False
+            torch.cuda.set_device(self.__local_rank)
+            self.__device = torch.device('cuda:{}'.format(self.__local_rank))
         else:
             # Assemble commands if cpp impl path
             self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
@@ -391,8 +385,7 @@ class DistInference(MicroBenchmarkWithInvoke):
             self.__device
         )
         model = model.to(dtype=getattr(torch, precision.value))
-        if self.__cuda_available:
-            model = model.cuda()
+        model = model.cuda()
         return model
 
     def _run_model(self, model, batch_size, input_size, precision, device, num_warmup, num_steps):
