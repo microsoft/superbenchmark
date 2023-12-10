@@ -61,7 +61,7 @@ def test_pytorch_dist_inference_normal():
         # step_times
         assert (len(benchmark.raw_data) == 1)
         # return code + (avg, 50th, 90th, 95th, 99th, 99.9th)
-        assert (benchmark.default_metric_count + 1 == len(benchmark.result))
+        assert (7 == len(benchmark.result))
 
 
 @decorator.cuda_test
@@ -137,7 +137,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         num_steps = 8
         wrapper_params_format_str = \
             '--batch_size %d --input_size %d --hidden_size %d ' \
-            '--alpha %g --beta %g --num_layers %d --num_warmup %d --num_steps %d --use_cuda_graph'
+            '--alpha %g --beta %g --num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
         parameters = wrapper_params_format_str % (
             batch_size, input_size, hidden_size, alpha, beta, num_layers, num_warmup, num_steps
         )
@@ -210,12 +210,12 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         assert (len(benchmark.raw_data) == 2)
         # return code + (avg, 50th, 90th, 95th, 99th, 99.9th)
         test_latency = float(test_raw_output.splitlines()[-1].split(' ms per iteration')[0].split()[-1])
-        assert (benchmark.default_metric_count + 1 == len(benchmark.result))
+        assert (7 == len(benchmark.result))
         for output_key in benchmark.result:
             if output_key == 'return_code':
                 assert (benchmark.result[output_key] == [0])
             else:
-                assert (output_key.startswith('steps_time_'))
+                assert (output_key.startswith('steps_time'))
                 assert (len(benchmark.result[output_key]) == 1)
                 assert (isinstance(benchmark.result[output_key][0], numbers.Number))
                 assert (test_latency == benchmark.result[output_key][0])
