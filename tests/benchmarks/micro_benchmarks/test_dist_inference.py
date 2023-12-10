@@ -110,6 +110,7 @@ def test_pytorch_dist_inference_fake_distributed():
 
     utils.clean_simulated_ddp_distributed_env()
 
+
 class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
     """Test class for pytorch-dist-inference benchmark."""
     @classmethod
@@ -169,8 +170,12 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
             bench_params_format_str = \
                 '%s -m %d -n %d -k %d --alpha %g --beta %g ' + \
                 '--num_layers %d --num_warmup %d --num_steps %d --use_cuda_graph'
-            assert (cmd == (bench_params_format_str % (benchmark._DistInferenceCpp__bin_path,
-                    m, n, k, alpha, beta, num_layers, num_warmup, num_steps)))
+            assert (
+                cmd == (
+                    bench_params_format_str %
+                    (benchmark._DistInferenceCpp__bin_path, m, n, k, alpha, beta, num_layers, num_warmup, num_steps)
+                )
+            )
 
     @decorator.cuda_test
     def test_dist_inference_command_generation_cuda(self):
