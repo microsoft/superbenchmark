@@ -11,7 +11,7 @@ from tests.helper.testcase import BenchmarkTestCase
 import tests.benchmarks.utils as utils
 from superbench.benchmarks \
     import BenchmarkRegistry, Framework, BenchmarkType, ReturnCode, Precision, DistributedImpl, DistributedBackend, \
-        Platform
+    Platform
 from superbench.benchmarks.micro_benchmarks.dist_inference \
     import DistInference, ComputationKernelType, CommunicationKernelType, ActivationKernelType
 from superbench.common.utils import network
