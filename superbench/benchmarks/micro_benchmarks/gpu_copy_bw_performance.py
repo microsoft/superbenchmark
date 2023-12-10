@@ -22,7 +22,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'gpu_copy'
-        self._mem_types = ['htod', 'dtoh', 'dtod']
+        self._mem_types = ['htod', 'dtoh', 'dtod', 'one_to_all', 'all_to_one', 'all_to_all']
         self._copy_types = ['sm', 'dma']
 
     def add_parser_arguments(self):
@@ -70,6 +70,22 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         )
 
         self._parser.add_argument(
+            '--all_to_all_num_thread_blocks_per_rank',
+            type=int,
+            default=0,
+            required=False,
+            help='Number of thread blocks per rank in one-to-all/all-to-one/all-to-all tests.',
+        )
+
+        self._parser.add_argument(
+            '--all_to_all_thread_block_size',
+            type=int,
+            default=0,
+            required=False,
+            help='Thread block size in one-to-all/all-to-one/all-to-all tests.',
+        )
+
+        self._parser.add_argument(
             '--bidirectional',
             action='store_true',
             help='Enable bidirectional test',
@@ -95,6 +111,13 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         args = '--size %d --num_warm_up %d --num_loops %d' % (
             self._args.size, self._args.num_warm_up, self._args.num_loops
         )
+
+        if self._args.all_to_all_num_thread_blocks_per_rank > 0:
+            args += ' --all_to_all_num_thread_blocks_per_rank %d' % self._args.all_to_all_num_thread_blocks_per_rank
+
+        if self._args.all_to_all_thread_block_size > 0:
+            args += ' --all_to_all_thread_block_size %d' % self._args.all_to_all_thread_block_size
+
         for mem_type in self._args.mem_type:
             args += ' --%s' % mem_type
         for copy_type in self._args.copy_type:
