@@ -33,6 +33,8 @@ superbench:
           node_num: 1
           env:
             NCCL_ASYNC_ERROR_HANDLING: '0'
+      frameworks:
+        - pytorch
     common_model_config: &common_model_config
       duration: 0
       num_warmup: 64

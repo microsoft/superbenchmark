@@ -1,0 +1,2 @@
+Parameters: m=80, n=128, k=128, alpha=1.000000, beta=1.000000, num_layers=50, num_warmups=20, num_iters=100, use_cuda_graph=0
+Time: 173 ms in total, 1.73 ms per iteration, 0.0346 ms per layer

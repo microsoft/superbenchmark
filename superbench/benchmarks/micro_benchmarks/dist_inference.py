@@ -12,7 +12,7 @@ import torch.distributed as dist
 
 from superbench.common.utils import logger
 from superbench.benchmarks import DistributedImpl, DistributedBackend, BenchmarkRegistry, ReturnCode, Precision
-from superbench.benchmarks.micro_benchmarks import MicroBenchmark
+from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 from superbench.benchmarks.context import Enum
 from superbench.benchmarks.reducer import ReduceType
 
@@ -168,7 +168,7 @@ class DistInferenceModel(torch.nn.Module):
         return activation_out
 
 
-class DistInference(MicroBenchmark):
+class DistInference(MicroBenchmarkWithInvoke):
     """The base class of micro-benchmarks."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -182,7 +182,9 @@ class DistInference(MicroBenchmark):
         self.__local_rank = 0
         torch.backends.cudnn.benchmark = True
         self.__device = None
-        self.__cuda_available = False
+
+        # For cpp impl path
+        self._bin_name = 'dist_inference'
 
     def __timer(self):
         """Returns the current time which ensures all previous CUDA events have been finished.
@@ -193,14 +195,19 @@ class DistInference(MicroBenchmark):
         Return:
             Current time in second.
         """
-        if self.__cuda_available:
-            torch.cuda.synchronize()
+        torch.cuda.synchronize()
         return time.time()
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
+        self._parser.add_argument(
+            '--use_pytorch',
+            action='store_true',
+            required=False,
+            help='Whether to use pytorch implementation. If not, cpp implementation will be used.',
+        )
         self._parser.add_argument(
             '--batch_size',
             type=int,
@@ -221,6 +228,20 @@ class DistInference(MicroBenchmark):
             default=1024,
             required=False,
             help='Hidden size.',
+        )
+        self._parser.add_argument(
+            '--alpha',
+            type=float,
+            default=1.0,
+            required=False,
+            help='Coefficient alpha in D = alpha*(A*B) + beta*(C).',
+        )
+        self._parser.add_argument(
+            '--beta',
+            type=float,
+            default=1.0,
+            required=False,
+            help='Coefficient beta in D = alpha*(A*B) + beta*(C).',
         )
         self._parser.add_argument(
             '--num_layers',
@@ -285,6 +306,12 @@ class DistInference(MicroBenchmark):
             required=False,
             help='Distributed backends. E.g. {}.'.format(' '.join(DistributedBackend.get_values())),
         )
+        self._parser.add_argument(
+            '--use_cuda_graph',
+            action='store_true',
+            required=False,
+            help='Whether to launch kernels in CUDA graph mode.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -295,32 +322,41 @@ class DistInference(MicroBenchmark):
         if not super()._preprocess():
             return False
 
-        if self._args.distributed_impl != DistributedImpl.DDP:
-            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
-            logger.error(
-                'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
-                    self._name, self._args.distributed_impl
+        if self._args.use_pytorch:
+            # Initialize PyTorch if pytorch impl path
+            if self._args.distributed_impl != DistributedImpl.DDP:
+                return self._set_error_code_and_print_error_msg(
+                    ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE,
+                    'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
+                        self._name, self._args.distributed_impl
+                    )
                 )
-            )
-            return False
 
-        try:
-            torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
-            self.__world_size = int(os.environ['WORLD_SIZE'])
-            self.__local_rank = int(os.environ['LOCAL_RANK'])
-        except BaseException as e:
-            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
-            torch.distributed.destroy_process_group()
-            logger.error('Initialize distributed env failed - benchmark: {}, message: {}.'.format(self._name, str(e)))
-            return False
+            try:
+                torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
+                self.__world_size = int(os.environ['WORLD_SIZE'])
+                self.__local_rank = int(os.environ['LOCAL_RANK'])
+                assert (torch.cuda.is_available())
+            except BaseException as e:
+                torch.distributed.destroy_process_group()
+                return self._set_error_code_and_print_error_msg(
+                    ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE,
+                    'Initialize distributed env failed - benchmark: {}, message: {}.'.format(self._name, str(e))
+                )
 
-        if torch.cuda.is_available():
             torch.cuda.set_device(self.__local_rank)
             self.__device = torch.device('cuda:{}'.format(self.__local_rank))
-            self.__cuda_available = True
         else:
-            self.__device = torch.device('cpu:{}'.format(self.__local_rank))
-            self.__cuda_available = False
+            # Assemble commands if cpp impl path
+            self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
+
+            args = '-m %d -n %d -k %d' % (self._args.hidden_size, self._args.batch_size, self._args.input_size)
+            args += ' --alpha %g --beta %g' % (self._args.alpha, self._args.beta)
+            args += ' --num_layers %d --num_warmups %d --num_iters %d' % \
+                (self._args.num_layers, self._args.num_warmup, self._args.num_steps)
+            if self._args.use_cuda_graph:
+                args += ' --use_cuda_graph'
+            self._commands = ['%s %s' % (self.__bin_path, args)]
 
         return True
 
@@ -347,8 +383,7 @@ class DistInference(MicroBenchmark):
             self.__device
         )
         model = model.to(dtype=getattr(torch, precision.value))
-        if self.__cuda_available:
-            model = model.cuda()
+        model = model.cuda()
         return model
 
     def _run_model(self, model, batch_size, input_size, precision, device, num_warmup, num_steps):
@@ -401,38 +436,78 @@ class DistInference(MicroBenchmark):
         Return:
             True if _benchmark succeeds.
         """
-        batch_size = self._args.batch_size
-        input_size = self._args.input_size
-        hidden_size = self._args.hidden_size
-        num_layers = self._args.num_layers
-        computation = self._args.computation_kernel
-        communication = self._args.communication_kernel
-        activation = self._args.activation_kernel
-        precision = self._args.precision
-        num_warmup = self._args.num_warmup
-        num_steps = self._args.num_steps
+        if self._args.use_pytorch:
+            # Execute PyTorch model if pytorch impl path
+            batch_size = self._args.batch_size
+            input_size = self._args.input_size
+            hidden_size = self._args.hidden_size
+            num_layers = self._args.num_layers
+            computation = self._args.computation_kernel
+            communication = self._args.communication_kernel
+            activation = self._args.activation_kernel
+            precision = self._args.precision
+            num_warmup = self._args.num_warmup
+            num_steps = self._args.num_steps
 
-        if self.__local_rank == 0:
-            logger.info(
-                'Distributed Inference - using {} GPUs: '
-                'batch_size={}, input_size={}, hidden_size={}, num_layers={}, '
-                'computation_kernel={}, communication_kernel={}, activation_kernel={}, precision={}, '
-                'num_warmup={} num_steps={}'.format(
-                    self.__world_size, batch_size, input_size, hidden_size, num_layers, computation, communication,
-                    activation, precision, num_warmup, num_steps
+            if self.__local_rank == 0:
+                logger.info(
+                    'Distributed Inference - using {} GPUs: '
+                    'batch_size={}, input_size={}, hidden_size={}, num_layers={}, '
+                    'computation_kernel={}, communication_kernel={}, activation_kernel={}, precision={}, '
+                    'num_warmup={} num_steps={}'.format(
+                        self.__world_size, batch_size, input_size, hidden_size, num_layers, computation, communication,
+                        activation, precision, num_warmup, num_steps
+                    )
                 )
+
+            # Prepare model
+            model = self._prepare_model(
+                input_size, hidden_size, num_layers, computation, communication, activation, precision,
+                self.__world_size
             )
 
-        # Prepare model
-        model = self._prepare_model(
-            input_size, hidden_size, num_layers, computation, communication, activation, precision, self.__world_size
-        )
+            # Run model
+            step_times = self._run_model(model, batch_size, input_size, precision, self.__device, num_warmup, num_steps)
 
-        # Run model
-        step_times = self._run_model(model, batch_size, input_size, precision, self.__device, num_warmup, num_steps)
+            # Process data and return
+            return self._process_data(step_times)
+        else:
+            # Execute commands if cpp impl path
+            if not super()._benchmark():
+                return False
+            return True
 
-        # Process data and return
-        return self._process_data(step_times)
+    def _process_raw_result(self, cmd_idx, raw_output):
+        """Function to parse raw results and save the summarized results.
+
+          self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+
+        Args:
+            cmd_idx (int): the index of command corresponding with the raw_output.
+            raw_output (str): raw output string of the micro-benchmark.
+
+        Return:
+            True if the raw output string is valid and result can be extracted.
+        """
+        self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
+
+        try:
+            output_lines = [x.strip() for x in raw_output.strip().splitlines()]
+            step_time = None
+            for output_line in output_lines:
+                if ' ms per iteration' in output_line:
+                    step_time = float(output_line.split(' ms per iteration')[0].split()[-1])
+                    break
+            return self._process_numeric_result(
+                'step_times', [step_time], reduce_type=ReduceType.MAX, cal_percentile=True
+            )
+        except BaseException as e:
+            return self._set_error_code_and_print_error_msg(
+                ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE,
+                'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
+                    self._curr_run_index, self._name, raw_output, str(e)
+                )
+            )
 
     def _postprocess(self):
         """Postprocess/cleanup operations after the benchmarking.
@@ -443,14 +518,26 @@ class DistInference(MicroBenchmark):
         if not super()._postprocess():
             return False
 
-        try:
-            torch.distributed.destroy_process_group()
-        except BaseException as e:
-            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE)
-            logger.error('Post process failed - benchmark: {}, message: {}.'.format(self._name, str(e)))
-            return False
+        if self._args.use_pytorch:
+            try:
+                torch.distributed.destroy_process_group()
+            except BaseException as e:
+                return self._set_error_code_and_print_error_msg(
+                    ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE,
+                    'Post process failed - benchmark: {}, message: {}.'.format(self._name, str(e))
+                )
 
         return True
+
+    def _set_error_code_and_print_error_msg(self, error_code, error_msg):
+        """Set error code and print error log upon error.
+
+        Return:
+            False, representing error.
+        """
+        self._result.set_return_code(error_code)
+        logger.error(error_msg)
+        return False
 
 
 BenchmarkRegistry.register_benchmark('pytorch-dist-inference', DistInference, parameters='')

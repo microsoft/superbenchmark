@@ -418,7 +418,7 @@ Test the performance of large scale matmul operation with multiple GPUs:
 
 #### Introduction
 
-Test the performance of distributed model inference.
+Test the performance of distributed model inference. Support both PyTorch implementation and cpp implementation.
 
 #### Metrics
 
