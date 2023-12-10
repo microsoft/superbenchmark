@@ -325,13 +325,12 @@ class DistInference(MicroBenchmarkWithInvoke):
         if self._args.use_pytorch:
             # Initialize PyTorch if pytorch impl path
             if self._args.distributed_impl != DistributedImpl.DDP:
-                self._set_error_code_and_print_error_msg(
+                return self._set_error_code_and_print_error_msg(
                     ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE,
                     'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
                         self._name, self._args.distributed_impl
                     )
                 )
-                return False
 
             try:
                 torch.distributed.init_process_group(backend=self._args.distributed_backend.value)
@@ -340,11 +339,10 @@ class DistInference(MicroBenchmarkWithInvoke):
                 assert (torch.cuda.is_available())
             except BaseException as e:
                 torch.distributed.destroy_process_group()
-                self._set_error_code_and_print_error_msg(
+                return self._set_error_code_and_print_error_msg(
                     ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE,
                     'Initialize distributed env failed - benchmark: {}, message: {}.'.format(self._name, str(e))
                 )
-                return False
 
             torch.cuda.set_device(self.__local_rank)
             self.__device = torch.device('cuda:{}'.format(self.__local_rank))
@@ -504,13 +502,12 @@ class DistInference(MicroBenchmarkWithInvoke):
                 'step_times', [step_time], reduce_type=ReduceType.MAX, cal_percentile=True
             )
         except BaseException as e:
-            self._set_error_code_and_print_error_msg(
+            return self._set_error_code_and_print_error_msg(
                 ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE,
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
                     self._curr_run_index, self._name, raw_output, str(e)
                 )
             )
-            return False
 
     def _postprocess(self):
         """Postprocess/cleanup operations after the benchmarking.
@@ -525,11 +522,10 @@ class DistInference(MicroBenchmarkWithInvoke):
             try:
                 torch.distributed.destroy_process_group()
             except BaseException as e:
-                self._set_error_code_and_print_error_msg(
+                return self._set_error_code_and_print_error_msg(
                     ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE,
                     'Post process failed - benchmark: {}, message: {}.'.format(self._name, str(e))
                 )
-                return False
 
         return True
 
