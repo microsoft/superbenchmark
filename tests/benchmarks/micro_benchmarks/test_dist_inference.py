@@ -173,7 +173,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
             assert (
                 cmd == (
                     bench_params_format_str %
-                    (benchmark._DistInferenceCpp__bin_path, m, n, k, alpha, beta, num_layers, num_warmup, num_steps)
+                    (benchmark._DistInference__bin_path, m, n, k, alpha, beta, num_layers, num_warmup, num_steps)
                 )
             )
 
@@ -207,7 +207,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.return_code == ReturnCode.SUCCESS)
 
         # step_times
-        assert (len(benchmark.raw_data) == 1)
+        assert (len(benchmark.raw_data) == 2)
         # return code + (avg, 50th, 90th, 95th, 99th, 99.9th)
         test_latency = float(test_raw_output.splitlines()[-1].split(' ms per iteration')[0].split()[-1])
         assert (benchmark.default_metric_count + 1 == len(benchmark.result))
