@@ -27,7 +27,7 @@ else()
 
         # link hip device lib
         add_executable(gpu_copy gpu_copy.cpp)
-        add_compile_options(-O2)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
         target_link_libraries(gpu_copy numa hip::device)
     else()
         message(FATAL_ERROR "No CUDA or ROCm environment found.")
