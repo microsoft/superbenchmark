@@ -45,7 +45,7 @@
 #include <hipblaslt/hipblaslt.h>
 #include <rccl/rccl.h>
 using cublasLtHalf = hipblasLtHalf;
-#if defined(HIPBLASLT_DATATYPE_WORKAROUND)
+#if defined(USE_HIPBLASLT_DATATYPE)
 #define DIST_INF_HIP_DATATYPE_R_16F HIPBLASLT_R_16F
 #define DIST_INF_HIP_DATATYPE_R_32F HIPBLASLT_R_32F
 #else
