@@ -94,6 +94,11 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             default=0,
             help='Number of graph launch iterations. Set to 0 to disable graph mode. Default: 0.',
         )
+        self._parser.add_argument(
+            '--in_place',
+            action='store_true',
+            help='If specified, collect in-place numbers, else collect out-of-place numbers.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -171,9 +176,9 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             content = content[out_of_place_index + 1:out_of_bound_index]
             # Parse max out of bound bus bw as the result
             size_index = -1
-            time_index = -1
-            busbw_index = -1
-            algbw_index = -1
+            time_index = None
+            busbw_index = None
+            algbw_index = None
             for line in content:
                 if 'time' in line and 'busbw' in line:
                     # Get index of selected column
@@ -181,11 +186,17 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                     line = re.sub(r' +', ' ', line).split(' ')
                     # Get first index of condition in list, if it not existing, raise exception
                     size_index = line.index('size')
-                    time_index = line.index('time') - len(line)
-                    busbw_index = line.index('busbw') - len(line)
-                    algbw_index = line.index('algbw') - len(line)
+                    # Need index from the end because sometimes previous fields (like redop) can be empty
+                    if self._args.in_place:
+                        time_index = -1 - list(reversed(line)).index('time')
+                        busbw_index = -1 - list(reversed(line)).index('busbw')
+                        algbw_index = -1 - list(reversed(line)).index('algbw')
+                    else:
+                        time_index = line.index('time') - len(line)
+                        busbw_index = line.index('busbw') - len(line)
+                        algbw_index = line.index('algbw') - len(line)
                     break
-            if size_index != -1 and busbw_index != -1 and time_index != -1 and algbw_index != -1:
+            if size_index != -1 and busbw_index is not None and time_index is not None and algbw_index is not None:
                 for line in content:
                     line = line.strip(' ')
                     line = re.sub(r' +', ' ', line).split(' ')
