@@ -92,6 +92,11 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             'alltoall': alltoall,
         }
 
+        if 'SB_MODE_SERIAL_INDEX' in os.environ:
+            os.environ.pop('SB_MODE_SERIAL_INDEX')
+        if 'SB_MODE_PARALLEL_INDEX' in os.environ:
+            os.environ.pop('SB_MODE_PARALLEL_INDEX')
+
         for op in raw_output.keys():
             benchmark._args.operation = op
             assert (benchmark._process_raw_result(0, raw_output[op]))
@@ -154,6 +159,11 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             'allreduce': allreduce,
             'alltoall': alltoall,
         }
+
+        if 'SB_MODE_SERIAL_INDEX' in os.environ:
+            os.environ.pop('SB_MODE_SERIAL_INDEX')
+        if 'SB_MODE_PARALLEL_INDEX' in os.environ:
+            os.environ.pop('SB_MODE_PARALLEL_INDEX')
 
         for op in raw_output.keys():
             benchmark._args.operation = op
