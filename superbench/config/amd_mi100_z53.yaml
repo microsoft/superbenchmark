@@ -97,6 +97,7 @@ superbench:
           - htod
           - dtoh
           - dtod
+          - ptop
         copy_type:
           - sm
           - dma
@@ -104,6 +105,7 @@ superbench:
         num_warm_up: 0
         num_loops: 1
         check_data: true
+        use_fine_grained: true
     gpu-copy-bw:perf:
       enable: true
       modes:
@@ -114,9 +116,11 @@ superbench:
           - htod
           - dtoh
           - dtod
+          - ptop
         copy_type:
           - sm
           - dma
+        use_fine_grained: true
     ort-inference:
       <<: *default_local_mode
       enable: false
