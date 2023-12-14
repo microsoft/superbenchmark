@@ -25,6 +25,11 @@ else()
         # Convert cuda code to hip code in cpp
         execute_process(COMMAND hipify-perl -print-stats -o gpu_copy.cpp gpu_copy.cu WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
 
+        check_symbol_exists("hipDeviceMallocUncached" "hip/hip_runtime_api.h" HIP_UNCACHED_MEMORY)
+        if(${HIP_UNCACHED_MEMORY})
+            target_compile_definitions(gpu_copy PRIVATE HIP_UNCACHED_MEMORY)
+        endif()
+
         # link hip device lib
         add_executable(gpu_copy gpu_copy.cpp)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
