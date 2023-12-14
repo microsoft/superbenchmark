@@ -497,6 +497,7 @@ class DistInference(MicroBenchmarkWithInvoke):
             for output_line in output_lines:
                 if output_line.startswith('Latency of step'):
                     step_times.append(float(output_line.split(' ms')[0].split()[-1]))
+            assert (self._args.num_steps == len(step_times))
             return self._process_numeric_result(
                 'step_times', step_times, reduce_type=ReduceType.MAX, cal_percentile=True
             )
