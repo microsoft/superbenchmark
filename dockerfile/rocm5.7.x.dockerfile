@@ -110,7 +110,7 @@ RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
     ./autogen.sh && \
     mkdir build && \
     cd build && \
-    ../configure -prefix=$UCX_DIR --with-rocm=/opt/rocm --without-knem && \
+    ../configure -prefix=/opt/ucx --with-rocm=/opt/rocm --without-knem && \
     make -j $(nproc) && make -j $(nproc) install && rm -rf /tmp/ucx-${UCX_VERSION} ; \
     else \
     echo "/opt/ucx is not empty. Skipping UCX installation."; \
@@ -143,12 +143,16 @@ RUN cd /tmp && \
     rm -rf ./Linux mlc.tgz
 
 # Install RCCL
+ENV ROCM_PATH="/opt/rocm" 
 RUN cd /opt/ &&  \
     git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
+    sed -i 's/gfx803;gfx900:xnack-;gfx906:xnack-;gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+;gfx1030;gfx1100;gfx1101;gfx1102/gfx90a:xnack-;gfx90a:xnack+/g' CMakeLists.txt && \
     mkdir build && \
     cd build && \
-    CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_PREFIX_PATH=/opt/rocm/ .. && \
+    CXX=/opt/rocm/bin/hipcc cmake -DHIP_COMPILER=clang -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=1 \
+        -DCMAKE_PREFIX_PATH="${ROCM_PATH}/hsa;${ROCM_PATH}/hip;${ROCM_PATH}/share/rocm/cmake/;${ROCM_PATH}" \
+        .. && \
     make -j${NUM_MAKE_JOBS}
 
 ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
@@ -163,13 +167,16 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
+RUN apt install rocm-cmake -y && \
+    python3 -m pip install --upgrade pip wheel setuptools==65.7
+
 WORKDIR ${SB_HOME}
 
-ADD . .
-RUN apt install rocm-cmake -y && \
-    python3 -m pip install --upgrade pip wheel setuptools==65.7 && \
-    python3 -m pip install .[amdworker]  && \
-    make postinstall
-RUN make cppbuild
 ADD third_party third_party
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release-staging/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=/usr/local ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release-staging/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+
+ADD . .
+ENV HIPBLASLT_DATATYPE_WORKAROUND=1
+RUN python3 -m pip install .[amdworker]  && \
+    make cppbuild  && \
+    make postinstall
