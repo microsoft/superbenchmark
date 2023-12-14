@@ -193,7 +193,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
         assert (benchmark_class)
-        benchmark = benchmark_class(benchmark_name, parameters='')
+        benchmark = benchmark_class(benchmark_name, parameters='--num_layers=100')
         assert (benchmark)
         ret = benchmark._preprocess()
         assert (ret is True)
