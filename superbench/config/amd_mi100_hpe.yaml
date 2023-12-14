@@ -105,7 +105,7 @@ superbench:
         num_loops: 1
         check_data: true
         use_fine_grained: true
-    gpu-copy-bw:perf:
+    gpu-copy-bw:perf:single:
       enable: true
       modes:
         - name: local
@@ -115,6 +115,16 @@ superbench:
           - htod
           - dtoh
           - dtod
+        copy_type:
+          - sm
+          - dma
+    gpu-copy-bw:perf:multiple:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type:
           - ptop
         copy_type:
           - sm
