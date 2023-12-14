@@ -349,21 +349,19 @@ int SetGpu(int gpu_id) {
 }
 
 #if defined(__HIP_PLATFORM_AMD__)
-cudaError_t GpuMallocDataBuf(uint8_t** ptr, uint64_t size, bool use_fine_grained) {
+cudaError_t GpuMallocDataBuf(uint8_t **ptr, uint64_t size, bool use_fine_grained) {
     if (use_fine_grained) {
 #if defined(HIP_UNCACHED_MEMORY)
-        return hipExtMallocWithFlags((void**)ptr, size, hipDeviceMallocUncached);
+        return hipExtMallocWithFlags((void **)ptr, size, hipDeviceMallocUncached);
 #else
-        return hipExtMallocWithFlags((void**)ptr, size, hipDeviceMallocFinegrained);
+        return hipExtMallocWithFlags((void **)ptr, size, hipDeviceMallocFinegrained);
 #endif
     } else {
         return cudaMalloc(ptr, size);
     }
 }
 #else
-cudaError_t GpuMallocDataBuf(uint8_t** ptr, uint64_t size) {
-    return cudaMalloc(ptr, size);
-}
+cudaError_t GpuMallocDataBuf(uint8_t **ptr, uint64_t size) { return cudaMalloc(ptr, size); }
 #endif
 
 // Prepare data buffers and streams to be used.
