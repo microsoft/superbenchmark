@@ -209,16 +209,14 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         # step_times
         assert (len(benchmark.raw_data) == 2)
         # return code + (avg, 50th, 90th, 95th, 99th, 99.9th)
-        test_latency = float(test_raw_output.splitlines()[-1].split(' ms per iteration')[0].split()[-1])
         assert (7 == len(benchmark.result))
-        for output_key in benchmark.result:
-            if output_key == 'return_code':
-                assert (benchmark.result[output_key] == [0])
-            else:
-                assert (output_key.startswith('step_times'))
-                assert (len(benchmark.result[output_key]) == 1)
-                assert (isinstance(benchmark.result[output_key][0], numbers.Number))
-                assert (test_latency == benchmark.result[output_key][0])
+        assert (benchmark.result['return_code'] == [0])
+        assert (benchmark.result['step_times'] == [1.9052048])
+        assert (benchmark.result['step_times_50'] == [1.85079])
+        assert (benchmark.result['step_times_90'] == [1.89637])
+        assert (benchmark.result['step_times_95'] == [2.12037])
+        assert (benchmark.result['step_times_99'] == [2.67155])
+        assert (benchmark.result['step_times_99.9'] == [4.4198])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
