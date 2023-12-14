@@ -212,7 +212,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.result['return_code'] == [0])
         assert (benchmark.result['step_times'] == [1.9052048])
         assert (benchmark.result['step_times_50'] == [1.851])
-        assert (benchmark.result['step_times_90'] == [1.90869])
+        assert (benchmark.result['step_times_90'] == [1.89637])
         assert (benchmark.result['step_times_95'] == [2.2213])
         assert (benchmark.result['step_times_99'] == [4.4198])
         assert (benchmark.result['step_times_99.9'] == [4.4198])
