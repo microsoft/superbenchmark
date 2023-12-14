@@ -3,7 +3,6 @@
 
 """Tests for distributed inference benchmark."""
 
-import numbers
 import unittest
 
 from tests.helper import decorator
