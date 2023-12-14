@@ -99,6 +99,12 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
             action='store_true',
             help='If specified, collect in-place numbers, else collect out-of-place numbers.',
         )
+        self._parser.add_argument(
+            '--data_type',
+            type=str,
+            default='float',
+            help='Data type used in NCCL operations. Default: float.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -128,9 +134,10 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
                 return False
 
             command = os.path.join(self._args.bin_dir, self._bin_name)
-            command += ' -b {} -e {} -f {} -g {} -c {} -n {} -w {} -G {}'.format(
+            command += ' -b {} -e {} -f {} -g {} -c {} -n {} -w {} -G {} -d {}'.format(
                 self._args.minbytes, self._args.maxbytes, str(self._args.stepfactor), str(self._args.ngpus),
-                str(self._args.check), str(self._args.iters), str(self._args.warmup_iters), str(self._args.graph_iters)
+                str(self._args.check), str(self._args.iters), str(self._args.warmup_iters),
+                str(self._args.graph_iters), self._args.data_type
             )
             self._commands.append(command)
 
