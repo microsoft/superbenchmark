@@ -67,6 +67,7 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.warmup_iters == 5)
         assert (benchmark._args.graph_iters == 0)
         assert (benchmark._args.in_place is False)
+        assert (benchmark._args.data_type == 'float')
 
         # Check command list
         bin_names = [
@@ -75,7 +76,7 @@ class CudaNcclBwBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         ]
 
         command = bin_names[0] + benchmark._commands[0].split(bin_names[0])[1]
-        expected_command = '{} -b 8 -e 8G -f 2 -g 8 -c 0 -n 20 -w 5 -G 0'.format(bin_names[0])
+        expected_command = '{} -b 8 -e 8G -f 2 -g 8 -c 0 -n 20 -w 5 -G 0 -d float'.format(bin_names[0])
         assert (command == expected_command)
 
         # Check results and metrics.
