@@ -193,7 +193,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
         assert (benchmark_class)
-        benchmark = benchmark_class(benchmark_name, parameters='--num_layers=100')
+        benchmark = benchmark_class(benchmark_name, parameters='')
         assert (benchmark)
         ret = benchmark._preprocess()
         assert (ret is True)
@@ -218,7 +218,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.result['step_times_99.9'] == [4.4198])
 
         # Negative case - invalid raw output.
-        assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
+        assert (benchmark._process_raw_result(1, 'Latency of step: NaN ms') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 
     @decorator.cuda_test
