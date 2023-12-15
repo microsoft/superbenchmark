@@ -218,7 +218,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.result['step_times_99.9'] == [4.4198])
 
         # Negative case - invalid raw output.
-        assert (benchmark._process_raw_result(1, 'Latency of step: NaN ms') is False)
+        assert (benchmark._process_raw_result(1, 'Latency of step: xxx ms') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 
     @decorator.cuda_test
