@@ -98,9 +98,6 @@ rocm_rccl_tests: sb_micro_path
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 # Since it takes several hours to build, avoid to build again if rocblas-bench exsists.
 rocm_rocblas: sb_micro_path
-	@if [ -e $(WORKSPACE_DIR)/rocBLAS/build/release/clients/staging/rocblas-bench ]; then \
-		cp -v $(WORKSPACE_DIR)/rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/; \
-	fi
 	@if [ ! -e $(SB_MICRO_PATH)/bin/rocblas-bench ] && [ -z `which rocblas-bench` ]; then \
 		if [ -d rocBLAS ]; then rm -rf rocBLAS; fi; \
 		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS; \
@@ -114,9 +111,6 @@ rocm_rocblas: sb_micro_path
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
 # Since it takes several hours to build, avoid to build again if hipblaslt-bench exsists.
 rocm_hipblaslt: sb_micro_path
-	@if [ -e $(WORKSPACE_DIR)/hipBLASLt/build/release/clients/staging/hipblaslt-bench ]; then \
-		cp -v $(WORKSPACE_DIR)/hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/; \
-	fi
 	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
 		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
 		git clone -b ${HIPBLASLT_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
@@ -189,7 +183,7 @@ megatron_lm:
 	cd Megatron && \
 	python -m pip install -r requirements.txt && \
 	git clone https://github.com/nvidia/apex && \
-	cd apex && pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext"
+	cd apex && pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
 
 # Install Megatron-DeepSpeed
 megatron_deepspeed:
@@ -200,7 +194,7 @@ megatron_deepspeed:
 	python -m pip install -r requirements.txt && \
 	python -m pip install DeepSpeed && \
 	git clone https://github.com/ROCmSoftwarePlatform/apex.git && \
-	cd apex && pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext"
+	cd apex && pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
