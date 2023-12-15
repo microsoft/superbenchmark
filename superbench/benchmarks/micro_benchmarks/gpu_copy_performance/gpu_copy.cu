@@ -121,9 +121,6 @@ struct Opts {
     // Whether device-to-device transfer needs to be evaluated.
     bool dtod_enabled = false;
 
-    // Whether peer-to-peer transfer needs to be evaluated.
-    bool ptop_enabled = false;
-
     // Whether one-to-all (device) transfer needs to be evaluated.
     bool one_to_all_enabled = false;
 
@@ -144,11 +141,6 @@ struct Opts {
 
     // Whether check data after copy.
     bool check_data = false;
-
-#if defined(__HIP_PLATFORM_AMD__)
-    // Whether to use fine-grained memory buffer for AMD GPUs.
-    bool use_fine_grained = false;
-#endif
 };
 
 // Print usage of this program.
@@ -164,16 +156,11 @@ void PrintUsage() {
            "[--htod] "
            "[--dtoh] "
            "[--dtod] "
-           "[--ptop] "
            "[--one_to_all] "
            "[--all_to_one] "
            "[--all_to_all] "
            "[--bidirectional] "
-           "[--check_data] "
-#if defined(__HIP_PLATFORM_AMD__)
-           "[--use_fine_grained]"
-#endif
-           "\n");
+           "[--check_data]\n");
 }
 
 // Parse options of this program.
@@ -189,15 +176,11 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         kEnableHToD,
         kEnableDToH,
         kEnableDToD,
-        kEnablePToP,
         kEnableOneToAll,
         kEnableAllToOne,
         kEnableAllToAll,
         kEnableBidirectional,
-        kEnableCheckData,
-#if defined(__HIP_PLATFORM_AMD__)
-        kEnableUseFineGrained,
-#endif
+        kEnableCheckData
     };
     const struct option options[] = {
         {"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
@@ -212,16 +195,11 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         {"htod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableHToD)},
         {"dtoh", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToH)},
         {"dtod", no_argument, nullptr, static_cast<int>(OptIdx::kEnableDToD)},
-        {"ptop", no_argument, nullptr, static_cast<int>(OptIdx::kEnablePToP)},
         {"one_to_all", no_argument, nullptr, static_cast<int>(OptIdx::kEnableOneToAll)},
         {"all_to_one", no_argument, nullptr, static_cast<int>(OptIdx::kEnableAllToOne)},
         {"all_to_all", no_argument, nullptr, static_cast<int>(OptIdx::kEnableAllToAll)},
         {"bidirectional", no_argument, nullptr, static_cast<int>(OptIdx::kEnableBidirectional)},
-        {"check_data", no_argument, nullptr, static_cast<int>(OptIdx::kEnableCheckData)},
-#if defined(__HIP_PLATFORM_AMD__)
-        {"use_fine_grained", no_argument, nullptr, static_cast<int>(OptIdx::kEnableUseFineGrained)},
-#endif
-    };
+        {"check_data", no_argument, nullptr, static_cast<int>(OptIdx::kEnableCheckData)}};
     int getopt_ret = 0;
     int opt_idx = 0;
     bool size_specified = false;
@@ -291,9 +269,6 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         case static_cast<int>(OptIdx::kEnableDToD):
             opts->dtod_enabled = true;
             break;
-        case static_cast<int>(OptIdx::kEnablePToP):
-            opts->ptop_enabled = true;
-            break;
         case static_cast<int>(OptIdx::kEnableOneToAll):
             opts->one_to_all_enabled = true;
             break;
@@ -309,11 +284,6 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         case static_cast<int>(OptIdx::kEnableCheckData):
             opts->check_data = true;
             break;
-#if defined(__HIP_PLATFORM_AMD__)
-        case static_cast<int>(OptIdx::kEnableUseFineGrained):
-            opts->use_fine_grained = true;
-            break;
-#endif
         default:
             parse_err = true;
         }
@@ -932,7 +902,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
 
         // Prepare source buffers
 #if defined(__HIP_PLATFORM_AMD__)
-        cuda_err = GpuMallocDataBuf(&(src_buffers_gpu[rank]), opts.size, opts.use_fine_grained);
+        cuda_err = GpuMallocDataBuf(&(src_buffers_gpu[rank]), opts.size, true);
 #else
         cuda_err = GpuMallocDataBuf(&(src_buffers_gpu[rank]), opts.size);
 #endif
@@ -953,7 +923,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
 
         // Prepare destination buffers
 #if defined(__HIP_PLATFORM_AMD__)
-        cuda_err = GpuMallocDataBuf(&(dst_buffers_gpu[rank]), opts.size, opts.use_fine_grained);
+        cuda_err = GpuMallocDataBuf(&(dst_buffers_gpu[rank]), opts.size, true);
 #else
         cuda_err = GpuMallocDataBuf(&(dst_buffers_gpu[rank]), opts.size);
 #endif
@@ -1149,9 +1119,6 @@ int main(int argc, char **argv) {
     args.num_loops = opts.num_loops;
     args.size = opts.size;
     args.check_data = opts.check_data;
-#if defined(__HIP_PLATFORM_AMD__)
-    args.use_fine_grained = opts.use_fine_grained;
-#endif
 
     // Get number of NUMA nodes
     if (numa_available()) {
@@ -1200,15 +1167,12 @@ int main(int argc, char **argv) {
             if (args.numa_id != 0) {
                 continue;
             }
-            // Device-to-device and peer-to-peer benchmark
-            if (opts.dtod_enabled || opts.ptop_enabled) {
+            // Device-to-device benchmark
+            if (opts.dtod_enabled) {
                 // Scan all peers
                 for (int k = 0; k < gpu_count; k++) {
                     // src_dev_id always <= dst_dev_id for bidirectional test
                     if (opts.bidirectional_enabled && j > k) {
-                        continue;
-                    }
-                    if (!opts.dtod_enabled && j == k || !opts.ptop_enabled && j != k) {
                         continue;
                     }
                     // P2P write
@@ -1216,6 +1180,9 @@ int main(int argc, char **argv) {
                     if (ret != 0) {
                         return -1;
                     }
+#if defined(__HIP_PLATFORM_AMD__)
+                    args.use_fine_grained = (j != k);
+#endif
                     if (can_access) {
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;

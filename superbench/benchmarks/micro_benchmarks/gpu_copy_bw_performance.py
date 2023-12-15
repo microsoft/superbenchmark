@@ -22,7 +22,7 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'gpu_copy'
-        self._mem_types = ['htod', 'dtoh', 'dtod', 'ptop', 'one_to_all', 'all_to_one', 'all_to_all']
+        self._mem_types = ['htod', 'dtoh', 'dtod', 'one_to_all', 'all_to_one', 'all_to_all']
         self._copy_types = ['sm', 'dma']
 
     def add_parser_arguments(self):
@@ -97,12 +97,6 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
             help='Enable data checking',
         )
 
-        self._parser.add_argument(
-            '--use_fine_grained',
-            action='store_true',
-            help='Whether to use fine-grained memory buffer for AMD GPUs',
-        )
-
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -134,9 +128,6 @@ class GpuCopyBwBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.check_data:
             args += ' --check_data'
-
-        if self._args.use_fine_grained:
-            args += ' --use_fine_grained'
 
         self._commands = ['%s %s' % (self.__bin_path, args)]
 

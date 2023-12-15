@@ -147,7 +147,6 @@ superbench:
           - htod
           - dtoh
           - dtod
-          - ptop
         copy_type:
           - sm
           - dma
@@ -165,7 +164,6 @@ superbench:
           - htod
           - dtoh
           - dtod
-          - ptop
         copy_type:
           - sm
           - dma

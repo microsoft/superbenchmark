@@ -96,7 +96,6 @@ superbench:
           - htod
           - dtoh
           - dtod
-          - ptop
         copy_type:
           - sm
           - dma
@@ -104,8 +103,7 @@ superbench:
         num_warm_up: 0
         num_loops: 1
         check_data: true
-        use_fine_grained: true
-    gpu-copy-bw:perf:single:
+    gpu-copy-bw:perf:
       enable: true
       modes:
         - name: local
@@ -118,18 +116,6 @@ superbench:
         copy_type:
           - sm
           - dma
-    gpu-copy-bw:perf:multiple:
-      enable: true
-      modes:
-        - name: local
-          parallel: no
-      parameters:
-        mem_type:
-          - ptop
-        copy_type:
-          - sm
-          - dma
-        use_fine_grained: true
     ib-traffic:
       enable: false
       modes:
