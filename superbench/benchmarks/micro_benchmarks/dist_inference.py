@@ -493,13 +493,12 @@ class DistInference(MicroBenchmarkWithInvoke):
 
         try:
             output_lines = [x.strip() for x in raw_output.strip().splitlines()]
-            step_time = None
+            step_times = []
             for output_line in output_lines:
-                if ' ms per iteration' in output_line:
-                    step_time = float(output_line.split(' ms per iteration')[0].split()[-1])
-                    break
+                if output_line.startswith('Latency of step'):
+                    step_times.append(float(output_line.split(' ms')[0].split()[-1]))
             return self._process_numeric_result(
-                'step_times', [step_time], reduce_type=ReduceType.MAX, cal_percentile=True
+                'step_times', step_times, reduce_type=ReduceType.MAX, cal_percentile=True
             )
         except BaseException as e:
             return self._set_error_code_and_print_error_msg(
