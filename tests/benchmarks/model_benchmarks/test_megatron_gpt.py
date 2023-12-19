@@ -177,8 +177,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark._data_options = f'\
             --vocab-file {self._tmp_dir}/gpt2-vocab.json \
             --merge-file {self._tmp_dir}/gpt2-merges.txt \
-            --data-path {self._tmp_dir}/dataset_text_document \
-            --data-impl mmap'
+            --data-path {self._tmp_dir}/dataset_text_document'
 
         script_path = str(Path(self._tmp_dir) / 'pretrain_gpt.py')
         expected_command = 'torchrun {distributed_args} {script_path} \
@@ -197,7 +196,6 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --num-attention-heads 32 \
             --seq-length 2048 \
             --max-position-embeddings 2048 \
-            --train-tokens 300000000000 \
             --train-samples 20480 \
             --lr 0.00012 \
             --min-lr 1e-06 \
@@ -215,7 +213,8 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --optimizer adam \
             --use-distributed-optimizer \
             {precision} \
-            --seed 1234 {data_options}'
+            --seed 1234 {data_options} \
+            --log-throughput'
 
         precision = Precision.FLOAT32
         command = benchmark._megatron_command(precision)
@@ -262,8 +261,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark._data_options = f'\
             --vocab-file {self._tmp_dir}/gpt2-vocab.json \
             --merge-file {self._tmp_dir}/gpt2-merges.txt \
-            --data-path {self._tmp_dir}/dataset_text_document \
-            --data-impl mmap'
+            --data-path {self._tmp_dir}/dataset_text_document'
 
         command = benchmark._megatron_command(Precision.BFLOAT16)
         expected_command = 'deepspeed {script_path} \
@@ -282,7 +280,6 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --num-attention-heads 32 \
             --seq-length 2048 \
             --max-position-embeddings 2048 \
-            --train-tokens 300000000000 \
             --train-samples 20480 \
             --lr 0.00012 \
             --min-lr 1e-06 \
@@ -300,13 +297,16 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --optimizer adam \
             --use-distributed-optimizer \
             {precision} \
-            --seed 1234 {data_options} {deepseed_options}'
+            --seed 1234 \
+            {data_options} {deepseed_options}'
 
         expect_ds_options = f'\
             --deepspeed \
             --deepspeed_config {benchmark._config_json_path} \
             --zero-stage 1 \
-            --pipeline-model-parallel-size 1 --no-pipeline-parallel'
+            --pipeline-model-parallel-size 1 \
+            --train-tokens 300000000000 \
+            --data-impl mmap --no-pipeline-parallel'
 
         self.assertEqual(
             command,

@@ -116,6 +116,7 @@ class MegatronGPT(ModelBenchmark):
         self._parser.add_argument('--data_home', type=str, default='/tmp', help='Data home.')
         self._parser.add_argument('--vocab_path', type=str, default='/tmp/gpt2-vocab.json', help='Vocab path.')
         self._parser.add_argument('--merge_path', type=str, default='/tmp/gpt2-merges.txt', help='Merge path.')
+        self._parser.add_argument('--split', type=str, default='949,50,1', help='Split dataset.')
         self._parser.add_argument('--prescale_grad', action='store_true', help='Prescale grad.')
         self._parser.add_argument(
             '--hostfile', type=str, default=None, help='Hostfile to run the mutli-node benchmark.'
@@ -128,6 +129,13 @@ class MegatronGPT(ModelBenchmark):
     def _preprocess(self):
         if not super()._preprocess():
             return False
+        if not self._args.code_base:
+            if self._args.deepspeed:
+                self._args.code_base = os.path.join(
+                    os.getenv('SB_MICRO_PATH'), 'third_party/Megatron/Megatron-DeepSpeed/'
+                )
+            else:
+                self._args.code_base = os.path.join(os.getenv('SB_MICRO_PATH'), 'third_party/Megatron/Megatron-LM')
 
         if not os.path.exists(self._args.code_base) or \
                 not os.path.exists(os.path.join(self._args.code_base, 'pretrain_gpt.py')):
@@ -156,35 +164,35 @@ class MegatronGPT(ModelBenchmark):
 
     def _parse_log(self, output):
         """Parse log output and get the performance."""
-        tflops_pattern = re.compile(r'TFLOPs: (\d+\.\d+)')
+        tflops_pattern = re.compile(r'(TFLOPs|TFLOP/s/GPU\)): (\d+\.\d+)')
         elapsed_time_pattern = re.compile(r'elapsed time per iteration \(ms\): (\d+\.\d+)')
-        mem_allocated_pattern = re.compile(r'MemAllocated=([\d.]+)[KMGTPEZY]?B')
-        max_mem_allocated_pattern = re.compile(r'MaxMemAllocated=([\d.]+)[KMGTPEZY]?B')
+        mem_allocated_pattern = re.compile(r'allocated: (\d+\.\d+)')
+        max_mem_allocated_pattern = re.compile(r'max allocated: (\d+\.\d+)')
         lines = output.splitlines()
         tflops = []
         mem_allocated = []
         max_mem_allocated = []
         iteration_times = []
         for line in lines:
-            if 'TFLOPs' in line:
+            if 'elapsed time per iteration' in line:
                 tflops_matches = tflops_pattern.search(line)
                 elapsed_time_match = elapsed_time_pattern.search(line)
                 if tflops_matches:
-                    tflops_values = float(tflops_matches.group(1))
+                    tflops_values = float(tflops_matches.group(2))
                     tflops.append(tflops_values)
                 if elapsed_time_match:
                     elapsed_time_value = float(elapsed_time_match.group(1))
                     iteration_times.append(elapsed_time_value)
 
-            if 'MaxMemAllocated' in line:
+            if 'max allocated' in line:
                 mem_allocated_match = mem_allocated_pattern.search(line)
                 max_mem_allocated_match = max_mem_allocated_pattern.search(line)
                 if mem_allocated_match:
-                    mem_allocated_value = float(mem_allocated_match.group(1))
+                    mem_allocated_value = float(mem_allocated_match.group(1)) / 1024
                     mem_allocated.append(mem_allocated_value)
 
                 if max_mem_allocated_match:
-                    max_mem_allocated_value = float(max_mem_allocated_match.group(1))
+                    max_mem_allocated_value = float(max_mem_allocated_match.group(1)) / 1024
                     max_mem_allocated.append(max_mem_allocated_value)
 
         return iteration_times, tflops, mem_allocated, max_mem_allocated
@@ -224,7 +232,9 @@ class MegatronGPT(ModelBenchmark):
             --deepspeed \
             --deepspeed_config {self._config_json_path} \
             --zero-stage {self._args.zero_stage} \
-            --pipeline-model-parallel-size {self._args.pipeline_model_parallel_size}'
+            --pipeline-model-parallel-size {self._args.pipeline_model_parallel_size} \
+            --train-tokens {self._args.train_tokens} \
+            --data-impl {self._args.data_impl}'
 
         if self._args.pipeline_model_parallel_size <= 1:
             deepspeed_options = f'{deepspeed_options} --no-pipeline-parallel'
@@ -255,11 +265,10 @@ class MegatronGPT(ModelBenchmark):
             --num-attention-heads {self._args.num_attn_heads} \
             --seq-length {self._args.seq_len} \
             --max-position-embeddings {self._args.seq_len} \
-            --train-tokens {self._args.train_tokens} \
             --train-samples {self._args.num_steps * self._args.batch_size} \
             --lr {self._args.lr} \
             --min-lr {self._args.min_lr} \
-            --split 949,50,1 \
+            --split {self._args.split} \
             --log-interval {self._args.log_interval} \
             --eval-interval {self._args.eval_interval} \
             --eval-iters {self._args.eval_iters} \
@@ -273,7 +282,8 @@ class MegatronGPT(ModelBenchmark):
             --optimizer adam \
             --use-distributed-optimizer \
             {precision_megatron} \
-            --seed {self._args.seed}'
+            --seed {self._args.seed} \
+            --log-throughput'
 
         if self._args.sequence_parallel:
             megatron_options = f'{megatron_options} --sequence-parallel'
@@ -298,6 +308,8 @@ class MegatronGPT(ModelBenchmark):
         script_path = os.path.join(self._args.code_base, 'pretrain_gpt.py')
         if self._args.deepspeed:
             deepspeed_option = self.__prepare_deespeed_config(precision_megatron.lstrip('--'))
+            # No --log-throughput in Megatron-DeepSpeed by 20231219
+            megatron_options = megatron_options.replace('--log-throughput', '')
             if self._num_nodes > 1:
                 command = f'torchrun {self._distributed_args} ' + \
                     f'{script_path} {megatron_options} {self._data_options} {deepspeed_option}'
@@ -379,28 +391,27 @@ class MegatronGPT(ModelBenchmark):
 
             return False
         self._num_nodes = int(os.getenv('OMPI_COMM_WORLD_SIZE')) // int(os.getenv('OMPI_COMM_WORLD_LOCAL_SIZE'))
-        if self._num_nodes > 1:
-            if not self._args.hostfile:
-                sb_hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
-                if os.path.exists(sb_hostfile):
-                    hosts = open(sb_hostfile).read().split('\n')
-                    hosts = [f'{host} slots={self._args.num_gpus}' for host in hosts if host != '']
-                    self._args.hostfile = os.path.join(self._args.data_home, 'hostfile')
-                    with open(self._args.hostfile, 'w') as file:
-                        file.write('\n'.join(hosts))
-            if not os.path.exists(self._args.hostfile):
-                logger.error('Hostfile not found.')
-                return False
-            hosts = open(self._args.hostfile, 'r').readlines()
-            if self._num_nodes != len(hosts):
-                logger.error('MPI init failed since hostfile not match the MPI setting.')
-                return False
+        if not self._args.hostfile:
+            sb_hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
+            if os.path.exists(sb_hostfile):
+                hosts = open(sb_hostfile).read().split('\n')
+                hosts = [f'{host} slots={self._args.num_gpus}' for host in hosts if host != '']
+                self._args.hostfile = os.path.join(self._args.data_home, 'hostfile')
+                with open(self._args.hostfile, 'w') as file:
+                    file.write('\n'.join(hosts))
+        if not os.path.exists(self._args.hostfile):
+            logger.error('Hostfile not found.')
+            return False
+        hosts = open(self._args.hostfile, 'r').readlines()
+        if self._num_nodes != len(hosts):
+            logger.error('MPI init failed since hostfile not match the MPI setting.')
+            return False
 
-            addr = os.getenv('MASTER_ADDR', hosts[0].split()[0])
-            port = os.getenv('MASTER_PORT', '29500')
-            node_rank = int(os.environ['OMPI_COMM_WORLD_RANK']) // int(os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'])
-            self._distributed_args = f'--nproc_per_node {self._args.num_gpus} --nnodes {self._num_nodes} ' + \
-                f'--node_rank {node_rank} --master_addr {addr} --master_port {port}'
+        addr = os.getenv('MASTER_ADDR', hosts[0].split()[0])
+        port = os.getenv('MASTER_PORT', '29500')
+        node_rank = int(os.environ['OMPI_COMM_WORLD_RANK']) // int(os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'])
+        self._distributed_args = f'--nproc_per_node {self._args.num_gpus} --nnodes {self._num_nodes} ' + \
+            f'--node_rank {node_rank} --master_addr {addr} --master_port {port}'
         return True
 
     def _generate_dataset(self):
@@ -448,8 +459,7 @@ class MegatronGPT(ModelBenchmark):
         self._data_options = f'\
             --vocab-file {self._vocab_path} \
             --merge-file {self._merges_path} \
-            --data-path {self._data_path} \
-            --data-impl {self._args.data_impl}'
+            --data-path {self._data_path}'
 
         logger.info('Dataset preparation successfully.')
         return True

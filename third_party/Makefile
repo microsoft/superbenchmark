@@ -181,6 +181,7 @@ megatron_lm:
         git clone "https://github.com/NVIDIA/Megatron-LM.git" "Megatron/Megatron-LM"; \
     fi
 	cd Megatron && \
+	apt install -y python3-mpi4py && \
 	python -m pip install -r requirements.txt
 
 # Install Megatron-DeepSpeed
@@ -189,6 +190,7 @@ megatron_deepspeed:
         git clone "https://github.com/microsoft/Megatron-DeepSpeed.git" "Megatron/Megatron-DeepSpeed"; \
     fi
 	cd Megatron && \
+	apt install -y python3-mpi4py && \
 	python -m pip install -r requirements.txt && \
 	python -m pip install DeepSpeed
 
