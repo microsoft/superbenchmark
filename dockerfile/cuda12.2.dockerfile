@@ -113,6 +113,13 @@ RUN cd /tmp && \
     mv amd-blis /opt/AMD && \
     rm -rf aocl-blis-linux-aocc-4.0.tar.gz
 
+# Install NCCL 2.18.3
+RUN cd /tmp && \
+    git clone -b 2.18.3-1 https://github.com/NVIDIA/nccl.git && \
+    cd nccl && \
+    make -j src.build && \
+    make install && \
+    rm -rf /tmp/nccl
 
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
