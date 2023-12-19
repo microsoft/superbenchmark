@@ -12,13 +12,13 @@ CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 HIPBLASLT_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm
 
 # Build all targets.
 all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
-rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
 cpu: common cpu_perftest
 common: cpu_hpl cpu_stream fio
 directx_amd: directx_amf_encoding_latency
@@ -181,9 +181,7 @@ megatron_lm:
         git clone "https://github.com/NVIDIA/Megatron-LM.git" "Megatron/Megatron-LM"; \
     fi
 	cd Megatron && \
-	python -m pip install -r requirements.txt && \
-	git clone https://github.com/nvidia/apex && \
-	cd apex && pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+	python -m pip install -r requirements.txt
 
 # Install Megatron-DeepSpeed
 megatron_deepspeed:
@@ -192,9 +190,27 @@ megatron_deepspeed:
     fi
 	cd Megatron && \
 	python -m pip install -r requirements.txt && \
-	python -m pip install DeepSpeed && \
-	git clone https://github.com/ROCmSoftwarePlatform/apex.git && \
-	cd apex && pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+	python -m pip install DeepSpeed
+
+# Instal apex of ROCm due to dependency of Megatron
+apex_rocm:
+	$(eval TORCH_VERSION ?= $(shell python -c "import torch; print(torch.__version__)"))
+	$(eval TORCH_MAJOR_VERSION ?= $(word 1,$(subst ., ,$(TORCH_VERSION))))
+	$(eval TORCH_MINOR_VERSION ?= $(word 2,$(subst ., ,$(TORCH_VERSION))))
+	if [ ! -d "apex" ]; then \
+		git clone https://github.com/ROCmSoftwarePlatform/apex.git ; \
+	fi
+	cd apex && \
+	if [ "$$(expr $(TORCH_MAJOR_VERSION) \> 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) \> 1)" -eq 1 ]; then \
+		git checkout master ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 1)" -eq 1 ]; then \
+		git checkout release/1.1.0 ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 0)" -eq 1 ]; then \
+		git checkout release/1.0.0 ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 1)" -eq 1 ]; then \
+	    git checkout release/1.0.0 ; \
+	fi
+	pip install -v --disable-pip-version-check --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./apex
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path

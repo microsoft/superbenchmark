@@ -283,6 +283,7 @@ Measure the performance of NCCL/RCCL operations under multi nodes' traffic patte
 performed by [nccl-tests](https://github.com/NVIDIA/nccl-tests/tree/44df0bf010dcc95e840ca0fb7466c67cff3f1f0f)
 or [rccl-tests](https://github.com/ROCmSoftwarePlatform/rccl-tests/tree/dc1ad4853d7ec738387d42a75a58a98d7af00c7b).
 Support the following operations currently: allreduce, allgather, broadcast, reduce, reducescatter, alltoall.
+Support both in-place and out-of-place measurements.
 
 Support the following traffic patterns:
 * `all-nodes`, validate the NCCL/RCCL performance across all VM nodes simultaneously.

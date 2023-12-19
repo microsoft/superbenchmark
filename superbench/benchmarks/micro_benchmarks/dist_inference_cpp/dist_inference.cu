@@ -343,8 +343,9 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
 #endif
 
     std::chrono::steady_clock::time_point start_time, stop_time;
+    std::vector<double> step_times(num_iters, 0.);
     for (int i = 0; i < num_warmups + num_iters; ++i) {
-        if (i == num_warmups) {
+        if (i >= num_warmups) {
             start_time = std::chrono::steady_clock::now();
         }
 #if (NCCL_MAJOR > 2 || (NCCL_MAJOR >= 2 && NCCL_MINOR >= 9)) && (CUDART_VERSION >= 11030 || HIP_VERSION >= 50221310)
@@ -357,11 +358,15 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
         model_forward();
 #endif
         CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
+        if (i >= num_warmups) {
+            stop_time = std::chrono::steady_clock::now();
+            double step_time = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time).count();
+            step_times[i - num_warmups] = step_time;
+        }
     }
-    stop_time = std::chrono::steady_clock::now();
-    double duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - start_time).count();
-    fprintf(stdout, "Time: %g ms in total, %g ms per iteration, %g ms per layer\n", duration, duration / num_iters,
-            duration / num_iters / num_layers);
+    for (int i = 0; i < num_iters; i++) {
+        fprintf(stdout, "Latency of step %d: %g ms\n", i, step_times[i] / 1e6);
+    }
 
 #if (NCCL_MAJOR > 2 || (NCCL_MAJOR >= 2 && NCCL_MINOR >= 9)) && (CUDART_VERSION >= 11030 || HIP_VERSION >= 50221310)
     // Destroy graph
