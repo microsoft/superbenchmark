@@ -86,12 +86,12 @@ ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) --disable-native && make -j && make install
 endif
 
-# Build rccl-tests with develop branch.
+# Build rccl-tests from commit 46375b1 of default branch.
 rocm_rccl_tests: sb_micro_path
-	if [ -d rccl-tests ]; then rm -rf rccl-tests ; fi
-	git clone https://github.com/ROCmSoftwarePlatform/rccl-tests.git
-	cd ./rccl-tests && git checkout develop && make MPI=1 MPI_HOME=$(MPI_HOME) -j
+ifneq (, $(wildcard rccl-tests/Makefile))
+	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
 	cp -v -r ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
+endif
 
 # Build rocblas-bench.
 # RocBLAS is released with rocm, like rocm-4.2.0 and so on.

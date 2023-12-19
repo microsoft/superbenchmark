@@ -100,7 +100,7 @@
         docker run -itd --name={{ container }} \
           --privileged --net=host --ipc=host \
           {{ '--gpus=all' if nvidia_gpu_exist else '' }} \
-          {{ '--security-opt seccomp=unconfined --group-add video --device=/dev/kfd --device=/dev/dri  --cap-add=SYS_PTRACE  --shm-size=16G' if amd_gpu_exist else '' }} \
+          {{ '--security-opt seccomp=unconfined --group-add video --device=/dev/kfd --device=/dev/dri --cap-add=SYS_PTRACE --shm-size=16G' if amd_gpu_exist else '' }} \
           -w /root -v {{ workspace }}:/root -v /mnt:/mnt \
           -v /var/run/docker.sock:/var/run/docker.sock \
           --entrypoint /bin/bash {{ docker_image }} && \
