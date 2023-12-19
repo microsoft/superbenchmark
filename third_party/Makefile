@@ -194,24 +194,24 @@ megatron_deepspeed:
 
 # Instal apex of ROCm due to dependency of Megatron
 apex_rocm:
-    TORCH_VERSION := $(shell python -c "import torch; print(torch.__version__)")
-    MAJOR_VERSION := $(firstword $(subst ., ,$(word 1, $(TORCH_VERSION))))
-    MINOR_VERSION := $(firstword $(subst ., ,$(word 2, $(TORCH_VERSION))))
-    if [ ! -d "apex" ]; then \
+	$(eval TORCH_VERSION ?= $(shell python -c "import torch; print(torch.__version__)"))
+	$(eval TORCH_MAJOR_VERSION ?= $(word 1,$(subst ., ,$(TORCH_VERSION))))
+	$(eval TORCH_MINOR_VERSION ?= $(word 2,$(subst ., ,$(TORCH_VERSION))))
+	if [ ! -d "apex" ]; then \
 		git clone https://github.com/ROCmSoftwarePlatform/apex.git ; \
 	fi
-	cd apex
-	ifeq ($(shell expr $(MAJOR_VERSION)  \> 2 \& $(MINOR_VERSION) \> 1), 1)
-		git checkout master
-	else ifeq ($(shell expr $(MAJOR_VERSION) == 2 \& $(MINOR_VERSION) == 1), 1)
-		git checkout release/1.1.0
-	else ifeq ($(shell expr $(MAJOR_VERSION) == 2 \& $(MINOR_VERSION) == 0), 1)
-		git checkout release/1.0.0
-	else ifeq ($(shell expr $(MAJOR_VERSION) == 1), 1)
-		git checkout release/1.0.0
-	endif
-	pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
-	
+	cd apex && \
+	if [ "$$(expr $(TORCH_MAJOR_VERSION) \> 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) \> 1)" -eq 1 ]; then \
+		git checkout master ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 1)" -eq 1 ]; then \
+		git checkout release/1.1.0 ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 0)" -eq 1 ]; then \
+		git checkout release/1.0.0 ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 1)" -eq 1 ]; then \
+	    git checkout release/1.0.0 ; \
+	fi
+	pip install -v --disable-pip-version-check --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./apex
+
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
 ifneq (,$(wildcard msccl/executor/msccl-executor-nccl/Makefile))
