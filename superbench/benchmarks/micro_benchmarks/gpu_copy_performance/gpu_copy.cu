@@ -86,11 +86,6 @@ struct BenchArgs {
     // Whether check data after copy.
     bool check_data = false;
 
-#if defined(__HIP_PLATFORM_AMD__)
-    // Whether to use fine-grained memory buffer for AMD GPUs.
-    bool use_fine_grained = false;
-#endif
-
     // Sub-benchmarks in parallel.
     SubBenchArgs subs[kMaxNumSubs];
 };
@@ -319,6 +314,9 @@ int SetGpu(int gpu_id) {
 }
 
 #if defined(__HIP_PLATFORM_AMD__)
+bool UseFineGrained(const SubBenchArgs &args) {
+    return args.is_src_dev_gpu && args.is_dst_dev_gpu && args.src_gpu_id != args.dst_gpu_id;
+}
 cudaError_t GpuMallocDataBuf(uint8_t **ptr, uint64_t size, bool use_fine_grained) {
     if (use_fine_grained) {
 #if defined(HIP_UNCACHED_MEMORY)
@@ -368,7 +366,7 @@ int PrepareBufAndStream(BenchArgs *args) {
                 }
                 *(host_buf_ptrs[j]) = nullptr;
 #if defined(__HIP_PLATFORM_AMD__)
-                cuda_err = GpuMallocDataBuf(gpu_buf_ptrs[j], args->size, args->use_fine_grained);
+                cuda_err = GpuMallocDataBuf(gpu_buf_ptrs[j], args->size, UseFineGrained(sub));
 #else
                 cuda_err = GpuMallocDataBuf(gpu_buf_ptrs[j], args->size);
 #endif
@@ -1180,9 +1178,6 @@ int main(int argc, char **argv) {
                     if (ret != 0) {
                         return -1;
                     }
-#if defined(__HIP_PLATFORM_AMD__)
-                    args.use_fine_grained = (j != k);
-#endif
                     if (can_access) {
                         if (opts.sm_copy_enabled) {
                             args.is_sm_copy = true;
