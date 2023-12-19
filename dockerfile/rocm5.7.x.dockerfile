@@ -17,6 +17,7 @@ RUN apt-get update && \
     apt-get -q install -y --no-install-recommends  \
     autoconf \
     automake \
+    bc \
     build-essential \
     curl \
     dmidecode \
@@ -27,6 +28,7 @@ RUN apt-get update && \
     libaio-dev \
     libboost-program-options-dev \
     libcap2 \
+    libcurl4-openssl-dev \
     libnuma-dev \
     libpci-dev \
     libssl-dev \
@@ -38,6 +40,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    python3-mpi4py \
     rsync \
     sudo \
     util-linux \
@@ -46,7 +49,7 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
-ARG NUM_MAKE_JOBS=16
+ARG NUM_MAKE_JOBS=
 
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
