@@ -178,8 +178,8 @@ directx_amf_encoding_latency:
 # Install Megatron-LM
 megatron_lm:
 	if [ ! -d "Megatron/Megatron-LM" ]; then \
-        git clone "https://github.com/NVIDIA/Megatron-LM.git" "Megatron/Megatron-LM"; \
-    fi
+        	git clone -b 52b7a18 "https://github.com/NVIDIA/Megatron-LM.git" "Megatron/Megatron-LM"; \
+    	fi
 	cd Megatron && \
 	apt install -y python3-mpi4py && \
 	python -m pip install -r requirements.txt
@@ -187,8 +187,8 @@ megatron_lm:
 # Install Megatron-DeepSpeed
 megatron_deepspeed:
 	if [ ! -d "Megatron/Megatron-DeepSpeed" ]; then \
-        git clone "https://github.com/microsoft/Megatron-DeepSpeed.git" "Megatron/Megatron-DeepSpeed"; \
-    fi
+        	git clone -b 71e8407 "https://github.com/microsoft/Megatron-DeepSpeed.git" "Megatron/Megatron-DeepSpeed"; \
+    	fi
 	cd Megatron && \
 	apt install -y python3-mpi4py && \
 	python -m pip install -r requirements.txt && \
