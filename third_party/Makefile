@@ -62,7 +62,7 @@ endif
 cuda_nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
-	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
+	cp -v -r ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
 # Build perftest.
