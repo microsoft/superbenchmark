@@ -88,15 +88,17 @@ jobs:
             CACHE_TO="type=inline,mode=max"
           fi
 
-          echo ::set-output name=dockerfile::${DOCKERFILE}
-          echo ::set-output name=build_args::${BUILD_ARGS}
-          echo ::set-output name=tags::${TAGS}
-          echo ::set-output name=cache_from::${CACHE_FROM}
-          echo ::set-output name=cache_to::${CACHE_TO}
+          echo "dockerfile=${DOCKERFILE}" >> "$GITHUB_OUTPUT"
+          echo "build_args=${BUILD_ARGS}" >> "$GITHUB_OUTPUT"
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "cache_from=${CACHE_FROM}" >> "$GITHUB_OUTPUT"
+          echo "cache_to=${CACHE_TO}" >> "$GITHUB_OUTPUT"
       - name: Echo build args
         run: echo ${{ steps.metadata.outputs.build_args }}
       - name: Echo image tag
         run: echo ${{ steps.metadata.outputs.tags }}
+      - name: Echo cache from
+        run: echo ${{ steps.metadata.outputs.cache_from }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
