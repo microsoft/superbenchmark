@@ -115,7 +115,7 @@ RUN cd /tmp && \
 
 # Install NCCL 2.18.3
 RUN cd /tmp && \
-    git clone -b 2.18.3-1 https://github.com/NVIDIA/nccl.git && \
+    git clone -b v2.18.3-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
     make -j src.build && \
     make install && \
