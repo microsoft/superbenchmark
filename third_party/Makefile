@@ -175,20 +175,14 @@ directx_amf_encoding_latency:
 		"C:\temp\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "AMF\amf\public\samples\CPPSamples_vs2019.sln" /t:EncoderLatency /p:Platform=x64 /p:Configuration=Release /p:OutDir="%SB_MICRO_PATH%\bin" \
 	)
 
-# Install Megatron-LM
+# Install requirements for Megatron-LM
 megatron_lm:
-	if [ ! -d "Megatron/Megatron-LM" ]; then \
-        	git clone -b 52b7a18 "https://github.com/NVIDIA/Megatron-LM.git" "Megatron/Megatron-LM"; \
-    	fi
 	cd Megatron && \
 	apt install -y python3-mpi4py && \
 	python -m pip install -r requirements.txt
 
-# Install Megatron-DeepSpeed
+# Install requirements for Megatron-DeepSpeed
 megatron_deepspeed:
-	if [ ! -d "Megatron/Megatron-DeepSpeed" ]; then \
-        	git clone -b 71e8407 "https://github.com/microsoft/Megatron-DeepSpeed.git" "Megatron/Megatron-DeepSpeed"; \
-    	fi
 	cd Megatron && \
 	apt install -y python3-mpi4py && \
 	python -m pip install -r requirements.txt && \

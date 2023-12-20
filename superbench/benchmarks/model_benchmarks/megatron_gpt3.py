@@ -116,7 +116,9 @@ class MegatronGPT(ModelBenchmark):
         self._parser.add_argument('--data_home', type=str, default='/tmp', help='Data home.')
         self._parser.add_argument('--vocab_path', type=str, default='/tmp/gpt2-vocab.json', help='Vocab path.')
         self._parser.add_argument('--merge_path', type=str, default='/tmp/gpt2-merges.txt', help='Merge path.')
-        self._parser.add_argument('--split', type=str, default='949,50,1', help='Split dataset.')
+        self._parser.add_argument(
+            '--split', type=str, default='949,50,1', help='Split dataset ratio for train/val/test.'
+        )
         self._parser.add_argument('--prescale_grad', action='store_true', help='Prescale grad.')
         self._parser.add_argument(
             '--hostfile', type=str, default=None, help='Hostfile to run the mutli-node benchmark.'
@@ -309,7 +311,7 @@ class MegatronGPT(ModelBenchmark):
         if self._args.deepspeed:
             deepspeed_option = self.__prepare_deespeed_config(precision_megatron.lstrip('--'))
             # No --log-throughput in Megatron-DeepSpeed by 20231219
-            megatron_options = megatron_options.replace('--log-throughput', '')
+            megatron_options = megatron_options.replace('--log-throughput', '').strip()
             if self._num_nodes > 1:
                 command = f'torchrun {self._distributed_args} ' + \
                     f'{script_path} {megatron_options} {self._data_options} {deepspeed_option}'
@@ -391,23 +393,26 @@ class MegatronGPT(ModelBenchmark):
 
             return False
         self._num_nodes = int(os.getenv('OMPI_COMM_WORLD_SIZE')) // int(os.getenv('OMPI_COMM_WORLD_LOCAL_SIZE'))
-        if not self._args.hostfile:
-            sb_hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
-            if os.path.exists(sb_hostfile):
-                hosts = open(sb_hostfile).read().split('\n')
-                hosts = [f'{host} slots={self._args.num_gpus}' for host in hosts if host != '']
-                self._args.hostfile = os.path.join(self._args.data_home, 'hostfile')
-                with open(self._args.hostfile, 'w') as file:
-                    file.write('\n'.join(hosts))
-        if not os.path.exists(self._args.hostfile):
-            logger.error('Hostfile not found.')
-            return False
-        hosts = open(self._args.hostfile, 'r').readlines()
-        if self._num_nodes != len(hosts):
-            logger.error('MPI init failed since hostfile not match the MPI setting.')
-            return False
+        master_addr = 'localhost'
+        if self._num_nodes > 1:
+            if not self._args.hostfile:
+                sb_hostfile = os.path.join(os.environ.get('SB_WORKSPACE', '.'), 'hostfile')
+                if os.path.exists(sb_hostfile):
+                    hosts = open(sb_hostfile).read().split('\n')
+                    hosts = [f'{host} slots={self._args.num_gpus}' for host in hosts if host != '']
+                    self._args.hostfile = os.path.join(self._args.data_home, 'hostfile')
+                    with open(self._args.hostfile, 'w') as file:
+                        file.write('\n'.join(hosts))
+            if not os.path.exists(self._args.hostfile):
+                logger.error('Hostfile not found.')
+                return False
+            hosts = open(self._args.hostfile, 'r').readlines()
+            if self._num_nodes != len(hosts):
+                logger.error('MPI init failed since hostfile not match the MPI setting.')
+                return False
+            master_addr = hosts[0].split()[0]
 
-        addr = os.getenv('MASTER_ADDR', hosts[0].split()[0])
+        addr = os.getenv('MASTER_ADDR', master_addr)
         port = os.getenv('MASTER_PORT', '29500')
         node_rank = int(os.environ['OMPI_COMM_WORLD_RANK']) // int(os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'])
         self._distributed_args = f'--nproc_per_node {self._args.num_gpus} --nnodes {self._num_nodes} ' + \
