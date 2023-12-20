@@ -243,6 +243,7 @@ or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils
 ### `gpu-copy-bw`
 
 Measure the memory copy bandwidth performed by GPU SM/DMA engine, including device-to-host, host-to-device and device-to-device.
+For measurements of peer-to-peer communication performance between AMD GPUs, GPU memory buffers are allocated in `hipDeviceMallocUncached` (previous `hipDeviceMallocFinegrained`) mode to maximize performance.
 
 #### Metrics
 
