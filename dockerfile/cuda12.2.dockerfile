@@ -7,7 +7,7 @@ FROM nvcr.io/nvidia/pytorch:23.10-py3
 # NVIDIA:
 #   - CUDA: 12.2.2
 #   - cuDNN: 8.9.5
-#   - NCCL: v2.19.3-1
+#   - NCCL: v2.18.3-1
 # Mellanox:
 #   - OFED: 23.07-0.5.1.2
 #   - HPC-X: v2.16
