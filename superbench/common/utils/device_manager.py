@@ -419,8 +419,8 @@ class AmdDeviceManager(DeviceManager):
             total (int): the total device memory in bytes, None means failed to get the data.
         """
         try:
-            mem_used = rocml.amdsmi_get_gpu_memory_usage(self._device_handlers[idx])
-            mem_total = rocml.amdsmi_get_gpu_memory_total(self._device_handlers[idx])
+            mem_used = rocml.amdsmi_get_gpu_memory_usage(self._device_handlers[idx], rocml.AmdSmiMemoryType.VRAM)
+            mem_total = rocml.amdsmi_get_gpu_memory_total(self._device_handlers[idx], rocml.AmdSmiMemoryType.VRAM)
         except Exception as err:
             logger.error('Get device memory failed: {}'.format(str(err)))
             return None, None
