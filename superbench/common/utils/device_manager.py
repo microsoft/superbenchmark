@@ -444,7 +444,7 @@ class AmdDeviceManager(DeviceManager):
                 corrected_ecc += ecc_count['correctable_count']
                 uncorrected_ecc += ecc_count['uncorrectable_count']
             except Exception as err:
-                logger.error('Get device ECC information failed: {}'.format(str(err)))
+                logger.info('Get device ECC information failed: {}'.format(str(err)))
 
         return corrected_ecc, uncorrected_ecc
 
