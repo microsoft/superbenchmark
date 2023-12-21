@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=rocm6.0_ubuntu22.04_py3.9_pytorch_2.0.1
+ARG BASE_IMAGE=rocm/pytorch:rocm6.0_ubuntu22.04_py3.9_pytorch_2.0.1
 
 FROM ${BASE_IMAGE}
 
@@ -112,7 +112,7 @@ RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942\ngfx10
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
 # Check if Open MPI is installed
-RUN [ -d /usr/local/bin/mpirun ] || { \
+RUN if [ -z "$(command -v mpirun)" ]; then \
     echo "Open MPI not found. Installing Open MPI..." && \
     cd /tmp && \
     git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION}  && \
@@ -126,7 +126,7 @@ RUN [ -d /usr/local/bin/mpirun ] || { \
     ldconfig && \
     cd / && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}* ;\
-    }
+    fi
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -164,10 +164,10 @@ RUN apt install rocm-cmake -y && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=/usr/local ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=$MPI_HOME ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 
 ADD . .
-#ENV USE_HIPBLASLT_DATATYPE=1
+ENV USE_HIP_DATATYPE=1
 ENV CXX=/opt/rocm/bin/hipcc
 RUN python3 -m pip install .[amdworker]  && \
     make cppbuild  && \
