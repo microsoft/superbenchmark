@@ -252,10 +252,10 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
     CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matF, DIST_INF_HIP_DATATYPE_R_16F, k, n, k));
     CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matG, DIST_INF_HIP_DATATYPE_R_16F, k, n, k));
 
-    CHECK_CUBLASLT_ERROR(hipblasLtMatmulDescCreate(&matmul1, DIST_INF_HIP_COMPUTETYPE_F32,
-                                                   DIST_INF_HIP_DATATYPE_R_32F));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatmulDescCreate(&matmul2, DIST_INF_HIP_COMPUTETYPE_F32,
-                                                   DIST_INF_HIP_DATATYPE_R_32F));
+    CHECK_CUBLASLT_ERROR(
+        hipblasLtMatmulDescCreate(&matmul1, DIST_INF_HIP_COMPUTETYPE_F32, DIST_INF_HIP_DATATYPE_R_32F));
+    CHECK_CUBLASLT_ERROR(
+        hipblasLtMatmulDescCreate(&matmul2, DIST_INF_HIP_COMPUTETYPE_F32, DIST_INF_HIP_DATATYPE_R_32F));
 
     hipblasOperation_t trans = HIPBLAS_OP_N;
     CHECK_CUBLASLT_ERROR(
