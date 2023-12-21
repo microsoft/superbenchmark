@@ -150,7 +150,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             cap = nvml.nvmlDeviceGetCudaComputeCapability(self._device_handlers[0])
         except Exception as err:
-            logger.error('Get device compute capability failed: {}'.format(str(err)))
+            logger.warning('Get device compute capability failed: {}'.format(str(err)))
             return None
         return cap
 
@@ -166,7 +166,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             util = nvml.nvmlDeviceGetUtilizationRates(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device utilization failed: {}'.format(str(err)))
+            logger.warning('Get device utilization failed: {}'.format(str(err)))
             return None
         return util.gpu
 
@@ -182,7 +182,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             temp = nvml.nvmlDeviceGetTemperature(self._device_handlers[idx], nvml.NVML_TEMPERATURE_GPU)
         except Exception as err:
-            logger.error('Get device temperature failed: {}'.format(str(err)))
+            logger.warning('Get device temperature failed: {}'.format(str(err)))
             temp = None
         return temp
 
@@ -198,7 +198,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             power = nvml.nvmlDeviceGetPowerUsage(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device power failed: {}'.format(str(err)))
+            logger.warning('Get device power failed: {}'.format(str(err)))
             return None
         return int(int(power) / 1000)
 
@@ -214,7 +214,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             powerlimit = nvml.nvmlDeviceGetPowerManagementLimit(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device power limitation failed: {}'.format(str(err)))
+            logger.warning('Get device power limitation failed: {}'.format(str(err)))
             return None
         return int(int(powerlimit) / 1000)
 
@@ -231,7 +231,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             mem = nvml.nvmlDeviceGetMemoryInfo(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device memory failed: {}'.format(str(err)))
+            logger.warning('Get device memory failed: {}'.format(str(err)))
             return None, None
         return mem.used, mem.total
 
@@ -304,7 +304,7 @@ class NvidiaDeviceManager(DeviceManager):
             except nvml.NVMLError:
                 pass
             except Exception as err:
-                logger.error('Get device ECC information failed: {}'.format(str(err)))
+                logger.warning('Get device ECC information failed: {}'.format(str(err)))
                 return None, None
 
             try:
@@ -316,7 +316,7 @@ class NvidiaDeviceManager(DeviceManager):
             except nvml.NVMLError:
                 pass
             except Exception as err:
-                logger.error('Get device ECC information failed: {}'.format(str(err)))
+                logger.warning('Get device ECC information failed: {}'.format(str(err)))
                 return None, None
 
         return corrected_ecc, uncorrected_ecc
@@ -354,7 +354,7 @@ class AmdDeviceManager(DeviceManager):
         try:
             engine_usage = rocml.amdsmi_get_gpu_activity(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device utilization failed: {}'.format(str(err)))
+            logger.warning('Get device utilization failed: {}'.format(str(err)))
             return None
         return engine_usage['gfx_activity']
 
@@ -372,7 +372,7 @@ class AmdDeviceManager(DeviceManager):
                 self._device_handlers[idx], rocml.AmdSmiTemperatureType.EDGE, rocml.AmdSmiTemperatureMetric.CURRENT
             )
         except Exception as err:
-            logger.error('Get device temperature failed: {}'.format(str(err)))
+            logger.warning('Get device temperature failed: {}'.format(str(err)))
             temp = None
         return temp
 
@@ -388,7 +388,7 @@ class AmdDeviceManager(DeviceManager):
         try:
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device power failed: {}'.format(str(err)))
+            logger.warning('Get device power failed: {}'.format(str(err)))
             return None
         return int(power_measure['average_socket_power'])
 
@@ -404,7 +404,7 @@ class AmdDeviceManager(DeviceManager):
         try:
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device power limit failed: {}'.format(str(err)))
+            logger.warning('Get device power limit failed: {}'.format(str(err)))
             return None
         return int(power_measure['power_limit'])
 
@@ -422,7 +422,7 @@ class AmdDeviceManager(DeviceManager):
             mem_used = rocml.amdsmi_get_gpu_memory_usage(self._device_handlers[idx], rocml.AmdSmiMemoryType.VRAM)
             mem_total = rocml.amdsmi_get_gpu_memory_total(self._device_handlers[idx], rocml.AmdSmiMemoryType.VRAM)
         except Exception as err:
-            logger.error('Get device memory failed: {}'.format(str(err)))
+            logger.warning('Get device memory failed: {}'.format(str(err)))
             return None, None
         return mem_used, mem_total
 
