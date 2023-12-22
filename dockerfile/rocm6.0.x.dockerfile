@@ -7,8 +7,12 @@ FROM ${BASE_IMAGE}
 #   - Docker Client: 20.10.8
 # ROCm:
 #   - ROCm: 6.0
-# Pytorch:
+# Lib:
 #   - torch: 2.0.1
+#   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
+#   - hipblaslt: rocm-6.0.0(tag)
+#   - openmpi: 4.1.x
+#   - apex: 1.0.0
 # Intel:
 #   - mlc: v3.10
 
@@ -107,26 +111,23 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
 
 # Add target file to help determine which device(s) to build for
 ENV ROCM_PATH=/opt/rocm
-RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942\ngfx1030\ngfx1100\ngfx1101\ngfx1102\n" >> ${ROCM_PATH}/bin/target.lst'
+RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942:sramecc+:xnack-\n" >> ${ROCM_PATH}/bin/target.lst'
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
 # Check if Open MPI is installed
-RUN if [ -z "$(command -v mpirun)" ]; then \
-    echo "Open MPI not found. Installing Open MPI..." && \
-    cd /tmp && \
+RUN cd /tmp && \
     git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION}  && \
     cd ompi && \
     ./autogen.pl && \
     mkdir build && \
     cd build && \
-    ../configure --prefix=/usr/local  --enable-orterun-prefix-by-default  --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
+    ../configure --prefix=/usr/local/mpi  --enable-orterun-prefix-by-default --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
     make -j $(nproc) && \
     make -j $(nproc) install && \
     ldconfig && \
     cd / && \
-    rm -rf /tmp/openmpi-${OPENMPI_VERSION}* ;\
-    fi
+    rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -146,6 +147,12 @@ RUN cd /opt/ &&  \
         .. && \
     make -j${NUM_MAKE_JOBS}
 
+# Apply patch
+RUN cd third_party/perftest && \
+    git apply ../perftest_rocm6.patch
+RUN cd third_party/Megatron/Megatron-DeepSpeed && \
+    git apply ../megatron_deepspeed_rocm6.patch
+
 ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
     LD_LIBRARY_PATH="/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
@@ -164,11 +171,11 @@ RUN apt install rocm-cmake -y && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=$MPI_HOME ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=$MPI_HOME ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=rocm-6.0.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
-ENV CXX=/opt/rocm/bin/hipcc
+ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install .[amdworker]  && \
-    make cppbuild  && \
+    CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
