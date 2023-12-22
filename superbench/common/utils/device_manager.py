@@ -371,6 +371,8 @@ class AmdDeviceManager(DeviceManager):
             temp = rocml.amdsmi_get_temp_metric(
                 self._device_handlers[idx], rocml.AmdSmiTemperatureType.EDGE, rocml.AmdSmiTemperatureMetric.CURRENT
             )
+        except (rocml.AmdSmiLibraryException, rocml.AmdSmiParameterException):
+            pass
         except Exception as err:
             logger.warning('Get device temperature failed: {}'.format(str(err)))
             temp = None
@@ -443,6 +445,8 @@ class AmdDeviceManager(DeviceManager):
                 ecc_count = rocml.amdsmi_get_gpu_ecc_count(self._device_handlers[idx], block)
                 corrected_ecc += ecc_count['correctable_count']
                 uncorrected_ecc += ecc_count['uncorrectable_count']
+            except (rocml.AmdSmiLibraryException, rocml.AmdSmiParameterException):
+                pass
             except Exception as err:
                 logger.info('Get device ECC information failed: {}'.format(str(err)))
 
