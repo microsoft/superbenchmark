@@ -103,7 +103,8 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 raise ValueError('Invalid result')
 
             self._result.add_result(
-                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops', float(fields[-2]) / 1000
+                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops',
+                float(fields[-2]) / 1000
             )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
