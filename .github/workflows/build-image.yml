@@ -29,14 +29,17 @@ jobs:
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
           runner: [self-hosted, rocm-build]
+          build_args: "NUM_MAKE_JOBS=64"
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
           runner: ubuntu-latest
+          build_args: "NUM_MAKE_JOBS=8"
         - name: rocm5.7
           dockerfile: rocm5.7.x
           tags: superbench/main:rocm5.7
           runner: [self-hosted, rocm-build]
+          build_args: "NUM_MAKE_JOBS=64"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -76,7 +79,7 @@ jobs:
           fi
           DOCKERFILE=dockerfile/${{ matrix.dockerfile }}.dockerfile
 
-          BUILD_ARGS="NUM_MAKE_JOBS=8"
+          BUILD_ARGS=${{ matrix.build_args }}
           if [[ "${{ matrix.extra_args }}" ]]; then
             BUILD_ARGS="${BUILD_ARGS} ${{ matrix.extra_args }}"
           fi
@@ -88,11 +91,11 @@ jobs:
             CACHE_TO="type=inline,mode=max"
           fi
 
-          echo ::set-output name=dockerfile::${DOCKERFILE}
-          echo ::set-output name=build_args::${BUILD_ARGS}
-          echo ::set-output name=tags::${TAGS}
-          echo ::set-output name=cache_from::${CACHE_FROM}
-          echo ::set-output name=cache_to::${CACHE_TO}
+          echo "dockerfile=${DOCKERFILE}" >> "$GITHUB_OUTPUT"
+          echo "build_args=${BUILD_ARGS}" >> "$GITHUB_OUTPUT"
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "cache_from=${CACHE_FROM}" >> "$GITHUB_OUTPUT"
+          echo "cache_to=${CACHE_TO}" >> "$GITHUB_OUTPUT"
       - name: Echo build args
         run: echo ${{ steps.metadata.outputs.build_args }}
       - name: Echo image tag
@@ -107,6 +110,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Pull cache image
+        run: sudo docker pull ${{ steps.metadata.outputs.tags }}
+        continue-on-error: true
       - name: Login to the GitHub Container Registry
         uses: docker/login-action@v1
         if: ${{ github.event_name == 'release' }}
