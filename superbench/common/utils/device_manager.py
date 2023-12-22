@@ -13,7 +13,7 @@ gpu = GPU()
 if gpu.vendor == 'nvidia' or gpu.vendor == 'nvidia-graphics':
     import py3nvml.py3nvml as nvml
 elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics':
-    from pyrsmi import rocml
+    import amdsmi as rocml
 
 
 class DeviceManager:
@@ -150,7 +150,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             cap = nvml.nvmlDeviceGetCudaComputeCapability(self._device_handlers[0])
         except Exception as err:
-            logger.error('Get device compute capability failed: {}'.format(str(err)))
+            logger.warning('Get device compute capability failed: {}'.format(str(err)))
             return None
         return cap
 
@@ -166,7 +166,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             util = nvml.nvmlDeviceGetUtilizationRates(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device utilization failed: {}'.format(str(err)))
+            logger.warning('Get device utilization failed: {}'.format(str(err)))
             return None
         return util.gpu
 
@@ -182,7 +182,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             temp = nvml.nvmlDeviceGetTemperature(self._device_handlers[idx], nvml.NVML_TEMPERATURE_GPU)
         except Exception as err:
-            logger.error('Get device temperature failed: {}'.format(str(err)))
+            logger.warning('Get device temperature failed: {}'.format(str(err)))
             temp = None
         return temp
 
@@ -198,7 +198,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             power = nvml.nvmlDeviceGetPowerUsage(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device power failed: {}'.format(str(err)))
+            logger.warning('Get device power failed: {}'.format(str(err)))
             return None
         return int(int(power) / 1000)
 
@@ -214,7 +214,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             powerlimit = nvml.nvmlDeviceGetPowerManagementLimit(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device power limitation failed: {}'.format(str(err)))
+            logger.warning('Get device power limitation failed: {}'.format(str(err)))
             return None
         return int(int(powerlimit) / 1000)
 
@@ -231,7 +231,7 @@ class NvidiaDeviceManager(DeviceManager):
         try:
             mem = nvml.nvmlDeviceGetMemoryInfo(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device memory failed: {}'.format(str(err)))
+            logger.warning('Get device memory failed: {}'.format(str(err)))
             return None, None
         return mem.used, mem.total
 
@@ -304,7 +304,7 @@ class NvidiaDeviceManager(DeviceManager):
             except nvml.NVMLError:
                 pass
             except Exception as err:
-                logger.error('Get device ECC information failed: {}'.format(str(err)))
+                logger.warning('Get device ECC information failed: {}'.format(str(err)))
                 return None, None
 
             try:
@@ -316,7 +316,7 @@ class NvidiaDeviceManager(DeviceManager):
             except nvml.NVMLError:
                 pass
             except Exception as err:
-                logger.error('Get device ECC information failed: {}'.format(str(err)))
+                logger.warning('Get device ECC information failed: {}'.format(str(err)))
                 return None, None
 
         return corrected_ecc, uncorrected_ecc
@@ -326,12 +326,13 @@ class AmdDeviceManager(DeviceManager):
     """Device management module for AMD."""
     def __init__(self):
         """Constructor."""
-        rocml.smi_initialize()
+        rocml.amdsmi_init()
+        self._device_handlers = rocml.amdsmi_get_processor_handles()
         super().__init__()
 
     def __del__(self):
         """Destructor."""
-        rocml.smi_shutdown()
+        rocml.amdsmi_shut_down()
 
     def get_device_count(self):
         """Get the number of device.
@@ -339,7 +340,7 @@ class AmdDeviceManager(DeviceManager):
         Return:
             count (int): count of device.
         """
-        return rocml.smi_get_device_count()
+        return len(self._device_handlers)
 
     def get_device_utilization(self, idx):
         """Get the utilization of device.
@@ -351,11 +352,11 @@ class AmdDeviceManager(DeviceManager):
             util (int): the utilization of device, None means failed to get the data.
         """
         try:
-            util = rocml.smi_get_device_utilization(idx)
+            engine_usage = rocml.amdsmi_get_gpu_activity(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device utilization failed: {}'.format(str(err)))
+            logger.warning('Get device utilization failed: {}'.format(str(err)))
             return None
-        return util
+        return engine_usage['gfx_activity']
 
     def get_device_temperature(self, idx):
         """Get the temperature of device, unit: celsius.
@@ -366,8 +367,16 @@ class AmdDeviceManager(DeviceManager):
         Return:
             temp (int): the temperature of device, None means failed to get the data.
         """
-        # Currently no API provided in rocml.
-        return None
+        try:
+            temp = rocml.amdsmi_get_temp_metric(
+                self._device_handlers[idx], rocml.AmdSmiTemperatureType.EDGE, rocml.AmdSmiTemperatureMetric.CURRENT
+            )
+        except (rocml.AmdSmiLibraryException, rocml.AmdSmiParameterException):
+            pass
+        except Exception as err:
+            logger.warning('Get device temperature failed: {}'.format(str(err)))
+            temp = None
+        return temp
 
     def get_device_power(self, idx):
         """Get the realtime power of device, unit: watt.
@@ -379,11 +388,11 @@ class AmdDeviceManager(DeviceManager):
             temp (int): the realtime power of device, None means failed to get the data.
         """
         try:
-            power = rocml.smi_get_device_average_power(idx)
+            power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
         except Exception as err:
-            logger.error('Get device power failed: {}'.format(str(err)))
+            logger.warning('Get device power failed: {}'.format(str(err)))
             return None
-        return int(int(power) / 1000)
+        return int(power_measure['average_socket_power'])
 
     def get_device_power_limit(self, idx):
         """Get the power management limit of device, unit: watt.
@@ -394,8 +403,12 @@ class AmdDeviceManager(DeviceManager):
         Return:
             temp (int): the power management limit of device, None means failed to get the data.
         """
-        # Currently no API provided in rocml.
-        return None
+        try:
+            power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
+        except Exception as err:
+            logger.warning('Get device power limit failed: {}'.format(str(err)))
+            return None
+        return int(power_measure['power_limit'])
 
     def get_device_memory(self, idx):
         """Get the memory information of device, unit: byte.
@@ -408,10 +421,10 @@ class AmdDeviceManager(DeviceManager):
             total (int): the total device memory in bytes, None means failed to get the data.
         """
         try:
-            mem_used = rocml.smi_get_device_memory_used(idx)
-            mem_total = rocml.smi_get_device_memory_total(idx)
+            mem_used = rocml.amdsmi_get_gpu_memory_usage(self._device_handlers[idx], rocml.AmdSmiMemoryType.VRAM)
+            mem_total = rocml.amdsmi_get_gpu_memory_total(self._device_handlers[idx], rocml.AmdSmiMemoryType.VRAM)
         except Exception as err:
-            logger.error('Get device memory failed: {}'.format(str(err)))
+            logger.warning('Get device memory failed: {}'.format(str(err)))
             return None, None
         return mem_used, mem_total
 
@@ -425,8 +438,19 @@ class AmdDeviceManager(DeviceManager):
             corrected_ecc (int)  : the count of single bit ecc error.
             uncorrected_ecc (int): the count of double bit ecc error.
         """
-        # Currently no API provided in rocml.
-        return None, None
+        corrected_ecc = 0
+        uncorrected_ecc = 0
+        for block in rocml.AmdSmiGpuBlock:
+            try:
+                ecc_count = rocml.amdsmi_get_gpu_ecc_count(self._device_handlers[idx], block)
+                corrected_ecc += ecc_count['correctable_count']
+                uncorrected_ecc += ecc_count['uncorrectable_count']
+            except (rocml.AmdSmiLibraryException, rocml.AmdSmiParameterException):
+                pass
+            except Exception as err:
+                logger.info('Get device ECC information failed: {}'.format(str(err)))
+
+        return corrected_ecc, uncorrected_ecc
 
 
 device_manager: Optional[DeviceManager] = DeviceManager()
