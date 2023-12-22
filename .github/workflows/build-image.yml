@@ -29,16 +29,17 @@ jobs:
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
           runner: [self-hosted, rocm-build]
-          extra_args: "NUM_MAKE_JOBS=64"
+          build_args: "NUM_MAKE_JOBS=64"
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
           runner: ubuntu-latest
+          build_args: "NUM_MAKE_JOBS=8"
         - name: rocm5.7
           dockerfile: rocm5.7.x
           tags: superbench/main:rocm5.7
           runner: [self-hosted, rocm-build]
-          extra_args: "NUM_MAKE_JOBS=64"
+          build_args: "NUM_MAKE_JOBS=64"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -78,7 +79,7 @@ jobs:
           fi
           DOCKERFILE=dockerfile/${{ matrix.dockerfile }}.dockerfile
 
-          BUILD_ARGS="NUM_MAKE_JOBS=8"
+          BUILD_ARGS=${{ matrix.build_args }}
           if [[ "${{ matrix.extra_args }}" ]]; then
             BUILD_ARGS="${BUILD_ARGS} ${{ matrix.extra_args }}"
           fi
