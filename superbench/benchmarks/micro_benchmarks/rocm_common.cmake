@@ -45,8 +45,7 @@ message(STATUS "CMAKE HIP ARCHITECTURES: ${CMAKE_HIP_ARCHITECTURES}")
 
 if(EXISTS ${HIP_PATH})
     # Search for hip in common locations
-    list(APPEND CMAKE_PREFIX_PATH ${HIP_PATH} ${ROCM_PATH})
-    set(CMAKE_PREFIX_PATH /opt/rocm ROCM_PATH)
+    list(APPEND CMAKE_PREFIX_PATH ${HIP_PATH} ${ROCM_PATH} ${ROCM_PATH}/hsa ${ROCM_PATH}/hip ${ROCM_PATH}/share/rocm/cmake/)
     set(CMAKE_CXX_COMPILER "${HIP_PATH}/bin/hipcc")
     set(CMAKE_MODULE_PATH "${HIP_PATH}/cmake" ${CMAKE_MODULE_PATH})
     set(CMAKE_MODULE_PATH "${HIP_PATH}/lib/cmake/hip" ${CMAKE_MODULE_PATH})
