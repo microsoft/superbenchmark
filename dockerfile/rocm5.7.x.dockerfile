@@ -166,11 +166,13 @@ RUN apt install rocm-cmake -y && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=/usr/local ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release-staging/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+# Apply patch
+RUN cd third_party/perftest && \
+    git apply ../perftest_rocm6.patch
+RUN make ROCM_PATH=/opt/rocm-5.7.0 RCCL_HOME=/opt/rccl/build/ MPI_HOME=/usr/local ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 
 ADD . .
 #ENV USE_HIPBLASLT_DATATYPE=1
-ENV CXX=/opt/rocm/bin/hipcc
 RUN python3 -m pip install .[amdworker]  && \
-    make cppbuild  && \
+    CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
