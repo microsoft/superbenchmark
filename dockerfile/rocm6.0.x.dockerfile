@@ -173,8 +173,7 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
 RUN make ROCM_PATH=/opt/rocm-6.0.0 RCCL_HOME=/opt/rccl/build/ MPI_HOME=$MPI_HOME ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=develop ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 
 ADD . .
-ENV USE_HIP_DATATYPE=1
-ENV USE_HIPBLAS_COMPUTETYPE=1
+ENV USE_HIPBLASLT_DATATYPE=1
 RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
