@@ -1,8 +1,8 @@
 diff --git a/configure.ac b/configure.ac
-index 20eceda..5b5c5ab 100755
+index 20eceda..c8f0c07 100755
 --- a/configure.ac
 +++ b/configure.ac
-@@ -237,13 +237,13 @@ AC_ARG_WITH([rocm],
+@@ -237,7 +237,7 @@ AC_ARG_WITH([rocm],
              ],
              [AS_CASE([$with_rocm],
                       [yes|no], [],
@@ -10,26 +10,19 @@ index 20eceda..5b5c5ab 100755
 +                     [CPPFLAGS="-I$with_rocm/include -D__HIP_PLATFORM_AMD__=1 $CPPFLAGS"
                        LDFLAGS="-L$with_rocm/lib64 -Wl,-rpath=$with_rocm/lib64 -L$with_rocm/lib -Wl,-rpath=$with_rocm/lib -lamdhip64 $LDFLAGS"])
              ])
-
- AS_IF([test "x$enable_rocm" = xyes], [
-        AC_DEFINE([__HIP_PLATFORM_HCC__], [1], [Enable ROCm])
--       AC_CHECK_HEADERS([hip/hip_runtime_api.h], [],
-+       AC_CHECK_HEADERS([/opt/rocm/include/hip/hip_runtime_api.h], [],
-                         [AC_MSG_ERROR([cannot include hip/hip_runtime_api.h])])
-        AC_SEARCH_LIBS([hipFree], [amdhip64], [],
-                       [AC_MSG_ERROR([cannot link with -lamdhip64])])
+ 
 diff --git a/src/rocm_memory.c b/src/rocm_memory.c
-index e9a9136..cc028c9 100644
+index e9a9136..b6cb23a 100644
 --- a/src/rocm_memory.c
 +++ b/src/rocm_memory.c
 @@ -44,8 +44,8 @@ static int init_rocm(int device_id) {
-
-        hipDeviceProp_t prop = {0};
-        ROCM_CHECK(hipGetDeviceProperties(&prop, device_id));
--       printf("Using ROCm Device with ID: %d, Name: %s, PCI Bus ID: 0x%x, GCN Arch: %d\n",
--              device_id, prop.name, prop.pciBusID, prop.gcnArch);
-+       printf("Using ROCm Device with ID: %d, Name: %s, PCI Bus ID: 0x%x, GCN Arch: %s\n",
-+              device_id, prop.name, prop.pciBusID, prop.gcnArchName);
-
-        return SUCCESS;
+ 
+ 	hipDeviceProp_t prop = {0};
+ 	ROCM_CHECK(hipGetDeviceProperties(&prop, device_id));
+-	printf("Using ROCm Device with ID: %d, Name: %s, PCI Bus ID: 0x%x, GCN Arch: %d\n",
+-	       device_id, prop.name, prop.pciBusID, prop.gcnArch);
++        printf("Using ROCm Device with ID: %d, Name: %s, PCI Bus ID: 0x%x, GCN Arch: %s\n",
++                device_id, prop.name, prop.pciBusID, prop.gcnArchName);
+ 
+ 	return SUCCESS;
  }
