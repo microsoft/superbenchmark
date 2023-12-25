@@ -10,7 +10,7 @@ FROM ${BASE_IMAGE}
 # Lib:
 #   - torch: 2.0.1
 #   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
-#   - hipblaslt: rocm-6.0.0(tag)
+#   - hipblaslt: 950ca43
 #   - openmpi: 4.1.x
 #   - apex: 1.0.0
 # Intel:
@@ -147,12 +147,6 @@ RUN cd /opt/ &&  \
         .. && \
     make -j${NUM_MAKE_JOBS}
 
-# Apply patch
-RUN cd third_party/perftest && \
-    git apply ../perftest_rocm6.patch
-RUN cd third_party/Megatron/Megatron-DeepSpeed && \
-    git apply ../megatron_deepspeed_rocm6.patch
-
 ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
     LD_LIBRARY_PATH="/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
@@ -171,7 +165,12 @@ RUN apt install rocm-cmake -y && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=$MPI_HOME ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=rocm-6.0.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+# Apply patch
+RUN cd third_party/perftest && \
+    git apply ../perftest_rocm6.patch
+RUN cd third_party/Megatron/Megatron-DeepSpeed && \
+    git apply ../megatron_deepspeed_rocm6.patch
+RUN make ROCM_PATH=/opt/rocm-6.0.0 RCCL_HOME=/opt/rccl/build/ MPI_HOME=$MPI_HOME ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=develop ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
