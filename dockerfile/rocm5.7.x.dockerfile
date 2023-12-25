@@ -110,21 +110,18 @@ RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942\ngfx10
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
 # Check if Open MPI is installed
-RUN [ -d /usr/local/bin/mpirun ] || { \
-    echo "Open MPI not found. Installing Open MPI..." && \
-    cd /tmp && \
+RUN cd /tmp && \
     git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION}  && \
     cd ompi && \
     ./autogen.pl && \
     mkdir build && \
     cd build && \
-    ../configure --prefix=/usr/local  --enable-orterun-prefix-by-default  --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
+    ../configure --prefix=/usr/local/mpi  --enable-orterun-prefix-by-default --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
     make -j $(nproc) && \
     make -j $(nproc) install && \
     ldconfig && \
     cd / && \
-    rm -rf /tmp/openmpi-${OPENMPI_VERSION}* ;\
-    }
+    rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -169,7 +166,7 @@ ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
     git apply ../perftest_rocm6.patch
-RUN make ROCM_PATH=/opt/rocm-5.7.0 RCCL_HOME=/opt/rccl/build/ MPI_HOME=/usr/local ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make ROCM_PATH=/opt/rocm-5.7.0 RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 
 ADD . .
 #ENV USE_HIPBLASLT_DATATYPE=1

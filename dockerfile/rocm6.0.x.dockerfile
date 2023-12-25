@@ -168,7 +168,7 @@ ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
     git apply ../perftest_rocm6.patch
-RUN make ROCM_PATH=/opt/rocm-6.0.0 RCCL_HOME=/opt/rccl/build/ MPI_HOME=$MPI_HOME ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=develop ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o megatron_deepspeed
+RUN make ROCM_PATH=/opt/rocm-6.0.0 RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=develop ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o megatron_deepspeed
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 RUN make -C third_party megatron_deepspeed
