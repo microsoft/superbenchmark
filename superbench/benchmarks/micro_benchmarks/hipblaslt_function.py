@@ -4,7 +4,6 @@
 """Module of the hipBlasLt GEMM benchmark."""
 
 import os
-import re
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
