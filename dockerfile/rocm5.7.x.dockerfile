@@ -17,6 +17,7 @@ RUN apt-get update && \
     apt-get -q install -y --no-install-recommends  \
     autoconf \
     automake \
+    bc \
     build-essential \
     curl \
     dmidecode \
@@ -27,6 +28,7 @@ RUN apt-get update && \
     libaio-dev \
     libboost-program-options-dev \
     libcap2 \
+    libcurl4-openssl-dev \
     libnuma-dev \
     libpci-dev \
     libssl-dev \
@@ -38,6 +40,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    python3-mpi4py \
     rsync \
     sudo \
     util-linux \
@@ -46,11 +49,11 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
-ARG NUM_MAKE_JOBS=16
+ARG NUM_MAKE_JOBS=
 
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
-    required_version="3.26.4" && \
+    required_version="3.24.1" && \
     if [ "$(printf "%s\n" "$required_version" "$cmake_version" | sort -V | head -n 1)" != "$required_version" ]; then \
     echo "existing cmake version is ${cmake_version}" && \
     cd /tmp && \
@@ -100,21 +103,9 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}* ; \
     fi
 
-# Install UCX
-ENV UCX_VERSION=1.14.1
-RUN if [ -z "$(ls -A /opt/ucx)" ]; then \
-    echo "/opt/ucx is empty. Installing UCX..."; \
-    cd /tmp && \
-    git clone https://github.com/openucx/ucx.git -b v${UCX_VERSION} && \
-    cd ucx && \
-    ./autogen.sh && \
-    mkdir build && \
-    cd build && \
-    ../configure -prefix=$UCX_DIR --with-rocm=/opt/rocm --without-knem && \
-    make -j $(nproc) && make -j $(nproc) install && rm -rf /tmp/ucx-${UCX_VERSION} ; \
-    else \
-    echo "/opt/ucx is not empty. Skipping UCX installation."; \
-    fi
+# Add target file to help determine which device(s) to build for
+ENV ROCM_PATH=/opt/rocm
+RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942\ngfx1030\ngfx1100\ngfx1101\ngfx1102\n" >> ${ROCM_PATH}/bin/target.lst'
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
@@ -127,7 +118,7 @@ RUN [ -d /usr/local/bin/mpirun ] || { \
     ./autogen.pl && \
     mkdir build && \
     cd build && \
-    ../configure --prefix=/usr/local  --enable-orterun-prefix-by-default  --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --enable-mca-no-build=btl-uct --with-ucx=/opt/ucx --with-rocm=/opt/rocm && \
+    ../configure --prefix=/usr/local  --enable-orterun-prefix-by-default  --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
     make -j $(nproc) && \
     make -j $(nproc) install && \
     ldconfig && \
@@ -148,12 +139,18 @@ RUN cd /opt/ &&  \
     cd rccl && \
     mkdir build && \
     cd build && \
-    CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_PREFIX_PATH=/opt/rocm/ .. && \
+    CXX=/opt/rocm/bin/hipcc cmake -DHIP_COMPILER=clang -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=1 \
+        -DCMAKE_PREFIX_PATH="${ROCM_PATH}/hsa;${ROCM_PATH}/hip;${ROCM_PATH}/share/rocm/cmake/;${ROCM_PATH}" \
+        .. && \
     make -j${NUM_MAKE_JOBS}
+
+# Install AMD SMI Python Library
+RUN cd /opt/rocm/share/amd_smi && \
+    python3 -m pip install --user .
 
 ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
-    LD_LIBRARY_PATH="/opt/ucx/lib:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -163,13 +160,17 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
+RUN apt install rocm-cmake -y && \
+    python3 -m pip install --upgrade pip wheel setuptools==65.7
+
 WORKDIR ${SB_HOME}
 
-ADD . .
-RUN apt install rocm-cmake -y && \
-    python3 -m pip install --upgrade pip wheel setuptools==65.7 && \
-    python3 -m pip install .[amdworker]  && \
-    make postinstall
-RUN make cppbuild
 ADD third_party third_party
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release-staging/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make RCCL_HOME=/opt/rccl/build/ MPI_HOME=/usr/local ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release-staging/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+
+ADD . .
+#ENV USE_HIPBLASLT_DATATYPE=1
+ENV CXX=/opt/rocm/bin/hipcc
+RUN python3 -m pip install .[amdworker]  && \
+    make cppbuild  && \
+    make postinstall

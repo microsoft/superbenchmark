@@ -313,6 +313,25 @@ int SetGpu(int gpu_id) {
     return 0;
 }
 
+#if defined(__HIP_PLATFORM_AMD__)
+bool UseFineGrained(const SubBenchArgs &args) {
+    return args.is_src_dev_gpu && args.is_dst_dev_gpu && args.src_gpu_id != args.dst_gpu_id;
+}
+cudaError_t GpuMallocDataBuf(uint8_t **ptr, uint64_t size, bool use_fine_grained) {
+    if (use_fine_grained) {
+#if defined(HIP_UNCACHED_MEMORY)
+        return hipExtMallocWithFlags((void **)ptr, size, hipDeviceMallocUncached);
+#else
+        return hipExtMallocWithFlags((void **)ptr, size, hipDeviceMallocFinegrained);
+#endif
+    } else {
+        return cudaMalloc(ptr, size);
+    }
+}
+#else
+cudaError_t GpuMallocDataBuf(uint8_t **ptr, uint64_t size) { return cudaMalloc(ptr, size); }
+#endif
+
 // Prepare data buffers and streams to be used.
 int PrepareBufAndStream(BenchArgs *args) {
     cudaError_t cuda_err = cudaSuccess;
@@ -346,7 +365,11 @@ int PrepareBufAndStream(BenchArgs *args) {
                     return -1;
                 }
                 *(host_buf_ptrs[j]) = nullptr;
-                cuda_err = cudaMalloc(gpu_buf_ptrs[j], args->size);
+#if defined(__HIP_PLATFORM_AMD__)
+                cuda_err = GpuMallocDataBuf(gpu_buf_ptrs[j], args->size, UseFineGrained(sub));
+#else
+                cuda_err = GpuMallocDataBuf(gpu_buf_ptrs[j], args->size);
+#endif
                 if (cuda_err != cudaSuccess) {
                     fprintf(stderr, "PrepareBufAndStream::cudaMalloc error: %d\n", cuda_err);
                     return -1;
@@ -876,7 +899,11 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
         }
 
         // Prepare source buffers
-        cuda_err = cudaMalloc(&(src_buffers_gpu[rank]), opts.size);
+#if defined(__HIP_PLATFORM_AMD__)
+        cuda_err = GpuMallocDataBuf(&(src_buffers_gpu[rank]), opts.size, true);
+#else
+        cuda_err = GpuMallocDataBuf(&(src_buffers_gpu[rank]), opts.size);
+#endif
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "RunAllToAllBench::cudaMalloc for src_buffers_gpu[%d] error: %d\n", cuda_err, rank);
             return -1;
@@ -893,7 +920,11 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
         }
 
         // Prepare destination buffers
-        cuda_err = cudaMalloc(&(dst_buffers_gpu[rank]), opts.size);
+#if defined(__HIP_PLATFORM_AMD__)
+        cuda_err = GpuMallocDataBuf(&(dst_buffers_gpu[rank]), opts.size, true);
+#else
+        cuda_err = GpuMallocDataBuf(&(dst_buffers_gpu[rank]), opts.size);
+#endif
         if (cuda_err != cudaSuccess) {
             fprintf(stderr, "RunAllToAllBench::cudaMalloc for dst_buffers_gpu[%d] error: %d\n", cuda_err, rank);
             return -1;

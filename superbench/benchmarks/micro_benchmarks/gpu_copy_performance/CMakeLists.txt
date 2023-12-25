@@ -27,6 +27,13 @@ else()
 
         # link hip device lib
         add_executable(gpu_copy gpu_copy.cpp)
+
+        include(CheckSymbolExists)
+        check_symbol_exists("hipDeviceMallocUncached" "hip/hip_runtime_api.h" HIP_UNCACHED_MEMORY)
+        if(${HIP_UNCACHED_MEMORY})
+            target_compile_definitions(gpu_copy PRIVATE HIP_UNCACHED_MEMORY)
+        endif()
+
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
         target_link_libraries(gpu_copy numa hip::device)
     else()

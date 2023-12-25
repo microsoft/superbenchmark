@@ -102,7 +102,7 @@ N,N,0,1,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r
         self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
 
         self.assertEqual(2, len(benchmark.result))
-        self.assertEqual(58624.5, benchmark.result['fp16_1_896_896_896_flops'][0])
+        self.assertEqual(58.6245, benchmark.result['fp16_1_896_896_896_flops'][0])
 
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'HipBLAS API failed'))
