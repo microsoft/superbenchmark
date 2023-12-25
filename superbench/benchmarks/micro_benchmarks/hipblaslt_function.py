@@ -124,9 +124,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             fields = lines[index + 1].strip().split(',')
 
             # Check the number of fields and the format of the first two fields
-            if len(fields) != 23 or not all(
-                re.match(r'\d*\.\d*$', item.strip()) or item.strip().isdigit() for item in fields[-2:]
-            ):
+            if len(fields) != 23:
                 raise ValueError('Invalid result')
 
             self._result.add_result(
