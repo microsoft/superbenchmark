@@ -115,12 +115,6 @@ rocm_rocblas: sb_micro_path
 rocm_hipblaslt: sb_micro_path
 	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
 		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
-		if [ "$$(expr $(ROCM_VER) \>= 6.0)" -eq 1 ]; then \
-		rm -rf ${ROCM_PATH}/lib/hipblaslt; \
-	    	rm -rf ${ROCM_PATH}/lib/cmake/hipblaslt; \
-        	rm -rf ${ROCM_PATH}/include/hipblaslt; \
-        	rm -rf ${ROCM_PATH}/share/doc/hipblaslt; \
-		fi; \
 		git clone -b ${HIPBLASLT_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
 		cd ./hipBLASLt && ./install.sh -dc; \
 		cp -v $(SB_MICRO_PATH)/third_party/hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/;  \

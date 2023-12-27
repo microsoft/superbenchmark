@@ -143,8 +143,8 @@ RUN cd /opt/ &&  \
     mkdir build && \
     cd build && \
     CXX=/opt/rocm/bin/hipcc cmake -DHIP_COMPILER=clang -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=1 \
-        -DCMAKE_PREFIX_PATH="${ROCM_PATH}/hsa;${ROCM_PATH}/hip;${ROCM_PATH}/share/rocm/cmake/;${ROCM_PATH}" \
-        .. && \
+    -DCMAKE_PREFIX_PATH="${ROCM_PATH}/hsa;${ROCM_PATH}/hip;${ROCM_PATH}/share/rocm/cmake/;${ROCM_PATH}" \
+    .. && \
     make -j${NUM_MAKE_JOBS}
 
 ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
@@ -168,13 +168,13 @@ ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
     git apply ../perftest_rocm6.patch
-RUN make ROCM_PATH=/opt/rocm-6.0.0 RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=develop ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o megatron_deepspeed
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=release/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
-RUN make -C third_party megatron_deepspeed
 
 ADD . .
-ENV USE_HIPBLASLT_DATATYPE=1
+ENV USE_HIP_DATATYPE=1
+ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
