@@ -180,13 +180,13 @@ directx_amf_encoding_latency:
 # Install requirements for Megatron-LM
 megatron_lm:
 	cd Megatron && \
-	apt install -y python3-mpi4py && \
+	MPICC=${MPI_HOME}/bin/mpicc python -m pip install mpi4py && \
 	python -m pip install -r requirements.txt
 
 # Install requirements for Megatron-DeepSpeed
 megatron_deepspeed:
 	cd Megatron && \
-	apt install -y python3-mpi4py && \
+	MPICC=${MPI_HOME}/bin/mpicc python -m pip install mpi4py && \
 	python -m pip install -r requirements.txt && \
 	python -m pip install DeepSpeed
 
