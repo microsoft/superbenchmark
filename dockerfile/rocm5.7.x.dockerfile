@@ -109,6 +109,7 @@ RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942\ngfx10
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
+ENV MPI_HOME=/usr/local/mpi
 # Check if Open MPI is installed
 RUN cd /tmp && \
     git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION}  && \
@@ -145,9 +146,9 @@ RUN cd /opt/ &&  \
 RUN cd /opt/rocm/share/amd_smi && \
     python3 -m pip install --user .
 
-ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
+ENV PATH="/usr/local/mpi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
-    LD_LIBRARY_PATH="/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/usr/local/mpi/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
