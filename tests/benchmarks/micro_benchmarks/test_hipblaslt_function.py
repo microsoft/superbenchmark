@@ -55,7 +55,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         self.assertFalse(benchmark._preprocess())
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters='--shapes 2:4,4:8,8:32 2:4,4:8,8:32:+4 --in_types fp16 fp32 bf16',
+            parameters='--shapes 2:4,4:8,8:32 2:4,4:8,8:32:+4 --in_types fp16 fp32 bf16 fp8',
         )
         self.assertTrue(benchmark._preprocess())
         self.assertEqual((2 * 2 * 3 + 2 * 2 * 7) * len(benchmark._args.in_types), len(benchmark._commands))
@@ -63,12 +63,16 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         def cmd(t, b, m, n, k):
             if b == 0:
                 return f'{benchmark._HipBlasLtBenchmark__bin_path} ' + \
-                    f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]}'
+                    f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]}' + \
+                    f' --transA {benchmark._args.transA} --transB {benchmark._args.transB}' + \
+                    f' --initialization {benchmark._args.initialization}'
             else:
                 return f'{benchmark._HipBlasLtBenchmark__bin_path} ' + \
-                    f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]} -b {b}'
+                    f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]} -b {b}' + \
+                    f' --transA {benchmark._args.transA} --transB {benchmark._args.transB}' + \
+                    f' --initialization {benchmark._args.initialization}'
 
-        for _t in ['fp16', 'fp32', 'bf16']:
+        for _t in ['fp16', 'fp32', 'bf16', 'fp8']:
             for _m in [2, 4]:
                 for _n in [4, 8]:
                     for _k in [8, 16, 32]:
