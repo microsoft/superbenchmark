@@ -10,7 +10,7 @@ FROM ${BASE_IMAGE}
 # Lib:
 #   - torch: 2.0.1
 #   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
-#   - hipblaslt: 950ca43
+#   - hipblaslt: release/rocm-rel-6.0
 #   - openmpi: 4.1.x
 #   - apex: 1.0.0
 # Intel:
