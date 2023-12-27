@@ -54,6 +54,8 @@ RUN curl -s -L https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -o "%
 # Run the setup script to install the visual studio components
 RUN "%SB_HOME%\\dockerfile\\directx\\install-components.bat"
 
+RUN powershell -Command "Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1;"
+RUN git config --system core.longpaths true
 # Install Superbench
 RUN python -m pip install setuptools==65.0.0 && \
     python -m pip install --no-cache-dir .[amdworker] && \

@@ -24,3 +24,9 @@
 [submodule "third_party/msccl"]
 	path = third_party/msccl
 	url = https://github.com/Azure/msccl
+[submodule "third_party/Megatron/Megatron-LM"]
+	path = third_party/Megatron/Megatron-LM
+	url = https://github.com/NVIDIA/Megatron-LM.git
+[submodule "third_party/Megatron/Megatron-DeepSpeed"]
+	path = third_party/Megatron/Megatron-DeepSpeed
+	url = https://github.com/microsoft/Megatron-DeepSpeed.git

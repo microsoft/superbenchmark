@@ -177,8 +177,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark._data_options = f'\
             --vocab-file {self._tmp_dir}/gpt2-vocab.json \
             --merge-file {self._tmp_dir}/gpt2-merges.txt \
-            --data-path {self._tmp_dir}/dataset_text_document \
-            --data-impl mmap'
+            --data-path {self._tmp_dir}/dataset_text_document'
 
         script_path = str(Path(self._tmp_dir) / 'pretrain_gpt.py')
         expected_command = 'torchrun {distributed_args} {script_path} \
@@ -197,7 +196,6 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --num-attention-heads 32 \
             --seq-length 2048 \
             --max-position-embeddings 2048 \
-            --train-tokens 300000000000 \
             --train-samples 20480 \
             --lr 0.00012 \
             --min-lr 1e-06 \
@@ -215,7 +213,8 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --optimizer adam \
             --use-distributed-optimizer \
             {precision} \
-            --seed 1234 {data_options}'
+            --seed 1234 \
+            --log-throughput {data_options}'
 
         precision = Precision.FLOAT32
         command = benchmark._megatron_command(precision)
@@ -262,12 +261,10 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark._data_options = f'\
             --vocab-file {self._tmp_dir}/gpt2-vocab.json \
             --merge-file {self._tmp_dir}/gpt2-merges.txt \
-            --data-path {self._tmp_dir}/dataset_text_document \
-            --data-impl mmap'
+            --data-path {self._tmp_dir}/dataset_text_document'
 
         command = benchmark._megatron_command(Precision.BFLOAT16)
-        expected_command = 'deepspeed {script_path} \
-            --override-opt_param-scheduler \
+        expected_command = 'deepspeed {script_path} --override-opt_param-scheduler \
             --adam-beta1 0.9 \
             --adam-beta2 0.95 \
             --tensor-model-parallel-size 1 \
@@ -282,7 +279,6 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --num-attention-heads 32 \
             --seq-length 2048 \
             --max-position-embeddings 2048 \
-            --train-tokens 300000000000 \
             --train-samples 20480 \
             --lr 0.00012 \
             --min-lr 1e-06 \
@@ -306,7 +302,9 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             --deepspeed \
             --deepspeed_config {benchmark._config_json_path} \
             --zero-stage 1 \
-            --pipeline-model-parallel-size 1 --no-pipeline-parallel'
+            --pipeline-model-parallel-size 1 \
+            --train-tokens 300000000000 \
+            --data-impl mmap --no-pipeline-parallel'
 
         self.assertEqual(
             command,
@@ -346,12 +344,12 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         iteration_times, tflops, mem_allocated, max_mem_allocated = benchmark._parse_log(raw_output)
         assert (statistics.mean(iteration_times) == 75239.24)
         assert (statistics.mean(tflops) == 149.136)
-        assert (statistics.mean(mem_allocated) == 17.54)
-        assert (statistics.mean(max_mem_allocated) == 66.97)
+        assert (statistics.mean(mem_allocated) == 17.535637855529785)
+        assert (statistics.mean(max_mem_allocated) == 66.9744234085083)
 
         info = {'tflops': tflops, 'mem_allocated': mem_allocated, 'max_mem_allocated': max_mem_allocated}
         benchmark._process_info(ModelAction.TRAIN, Precision.FLOAT16, info)
         assert (benchmark.result is not None)
         assert (benchmark.result['fp16_train_tflops'][0] == 149.136)
-        assert (benchmark.result['fp16_train_mem_allocated'][0] == 17.54)
-        assert (benchmark.result['fp16_train_max_mem_allocated'][0] == 66.97)
+        assert (benchmark.result['fp16_train_mem_allocated'][0] == 17.535637855529785)
+        assert (benchmark.result['fp16_train_max_mem_allocated'][0] == 66.9744234085083)
