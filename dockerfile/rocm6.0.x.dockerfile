@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=rocm/pytorch:rocm5.7_ubuntu22.04_py3.10_pytorch_2.0.1
+ARG BASE_IMAGE=rocm/pytorch:rocm6.0_ubuntu22.04_py3.9_pytorch_2.0.1
 
 FROM ${BASE_IMAGE}
 
@@ -6,7 +6,13 @@ FROM ${BASE_IMAGE}
 #   - Ubuntu: 22.04
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 5.7
+#   - ROCm: 6.0
+# Lib:
+#   - torch: 2.0.1
+#   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
+#   - hipblaslt: 950ca43
+#   - openmpi: 4.1.x
+#   - apex: 1.0.0
 # Intel:
 #   - mlc: v3.10
 
@@ -49,7 +55,7 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
-ARG NUM_MAKE_JOBS=
+ARG NUM_MAKE_JOBS=64
 
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
@@ -105,7 +111,7 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
 
 # Add target file to help determine which device(s) to build for
 ENV ROCM_PATH=/opt/rocm
-RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942\ngfx1030\ngfx1100\ngfx1101\ngfx1102\n" >> ${ROCM_PATH}/bin/target.lst'
+RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942:sramecc+:xnack-\n" >> ${ROCM_PATH}/bin/target.lst'
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
@@ -141,10 +147,6 @@ RUN cd /opt/ &&  \
     .. && \
     make -j${NUM_MAKE_JOBS}
 
-# Install AMD SMI Python Library
-RUN cd /opt/rocm/share/amd_smi && \
-    python3 -m pip install --user .
-
 ENV PATH="/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
     LD_LIBRARY_PATH="/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
@@ -166,10 +168,13 @@ ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
     git apply ../perftest_rocm6.patch
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=release/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN cd third_party/Megatron/Megatron-DeepSpeed && \
+    git apply ../megatron_deepspeed_rocm6.patch
 
 ADD . .
-#ENV USE_HIPBLASLT_DATATYPE=1
+ENV USE_HIP_DATATYPE=1
+ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
