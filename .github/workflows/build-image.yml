@@ -40,6 +40,11 @@ jobs:
           tags: superbench/main:rocm5.7
           runner: [self-hosted, rocm-build]
           build_args: "NUM_MAKE_JOBS=64"
+        - name: rocm6.0
+          dockerfile: rocm6.0.x
+          tags: superbench/main:rocm6.0
+          runner: [self-hosted, rocm-build]
+          build_args: "NUM_MAKE_JOBS=64"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
