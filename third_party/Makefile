@@ -180,12 +180,14 @@ directx_amf_encoding_latency:
 # Install requirements for Megatron-LM
 megatron_lm:
 	cd Megatron && \
-	python -m pip install -r requirements.txt
+	apt install -y python3-mpi4py && \
+	python -m pip install --no-cache-dir -r requirements.txt
 
 # Install requirements for Megatron-DeepSpeed
 megatron_deepspeed:
 	cd Megatron && \
-	python -m pip install -r requirements.txt && \
+	apt install -y python3-mpi4py && \
+	python -m pip install --no-cache-dir -r requirements.txt && \
 	python -m pip install DeepSpeed
 
 # Instal apex of ROCm due to dependency of Megatron
