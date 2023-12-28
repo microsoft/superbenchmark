@@ -1,4 +1,4 @@
-version: v0.9
+version: v0.10
 superbench:
   enable: null
   monitor:
