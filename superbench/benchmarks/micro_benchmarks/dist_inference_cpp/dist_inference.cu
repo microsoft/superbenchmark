@@ -45,6 +45,21 @@
 #include <hipblaslt/hipblaslt.h>
 #include <rccl/rccl.h>
 using cublasLtHalf = hipblasLtHalf;
+#if defined(USE_HIPBLASLT_DATATYPE)
+#define DIST_INF_HIP_DATATYPE_R_16F HIPBLASLT_R_16F
+#define DIST_INF_HIP_DATATYPE_R_32F HIPBLASLT_R_32F
+#elif defined(USE_HIP_DATATYPE)
+#define DIST_INF_HIP_DATATYPE_R_16F HIP_R_16F
+#define DIST_INF_HIP_DATATYPE_R_32F HIP_R_32F
+#else
+#define DIST_INF_HIP_DATATYPE_R_16F HIPBLAS_R_16F
+#define DIST_INF_HIP_DATATYPE_R_32F HIPBLAS_R_32F
+#endif
+#if defined(USE_HIPBLAS_COMPUTETYPE)
+#define DIST_INF_HIP_COMPUTETYPE_F32 HIPBLAS_COMPUTE_32F
+#else
+#define DIST_INF_HIP_COMPUTETYPE_F32 HIPBLASLT_COMPUTE_F32
+#endif
 #else
 #include <cublasLt.h>
 #include <cuda_fp16.h>
@@ -229,16 +244,18 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
 
     CHECK_CUBLASLT_ERROR(hipblasLtCreate(&handle));
 
-    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matA, HIPBLAS_R_16F, k, n, k));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matB, HIPBLAS_R_16F, m, k, m));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matC, HIPBLAS_R_16F, m, n, m));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matD, HIPBLAS_R_16F, m, n, m));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matE, HIPBLAS_R_16F, k, m, k));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matF, HIPBLAS_R_16F, k, n, k));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matG, HIPBLAS_R_16F, k, n, k));
+    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matA, DIST_INF_HIP_DATATYPE_R_16F, k, n, k));
+    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matB, DIST_INF_HIP_DATATYPE_R_16F, m, k, m));
+    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matC, DIST_INF_HIP_DATATYPE_R_16F, m, n, m));
+    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matD, DIST_INF_HIP_DATATYPE_R_16F, m, n, m));
+    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matE, DIST_INF_HIP_DATATYPE_R_16F, k, m, k));
+    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matF, DIST_INF_HIP_DATATYPE_R_16F, k, n, k));
+    CHECK_CUBLASLT_ERROR(hipblasLtMatrixLayoutCreate(&matG, DIST_INF_HIP_DATATYPE_R_16F, k, n, k));
 
-    CHECK_CUBLASLT_ERROR(hipblasLtMatmulDescCreate(&matmul1, HIPBLASLT_COMPUTE_F32, HIPBLAS_R_32F));
-    CHECK_CUBLASLT_ERROR(hipblasLtMatmulDescCreate(&matmul2, HIPBLASLT_COMPUTE_F32, HIPBLAS_R_32F));
+    CHECK_CUBLASLT_ERROR(
+        hipblasLtMatmulDescCreate(&matmul1, DIST_INF_HIP_COMPUTETYPE_F32, DIST_INF_HIP_DATATYPE_R_32F));
+    CHECK_CUBLASLT_ERROR(
+        hipblasLtMatmulDescCreate(&matmul2, DIST_INF_HIP_COMPUTETYPE_F32, DIST_INF_HIP_DATATYPE_R_32F));
 
     hipblasOperation_t trans = HIPBLAS_OP_N;
     CHECK_CUBLASLT_ERROR(
@@ -336,8 +353,9 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
 #endif
 
     std::chrono::steady_clock::time_point start_time, stop_time;
+    std::vector<double> step_times(num_iters, 0.);
     for (int i = 0; i < num_warmups + num_iters; ++i) {
-        if (i == num_warmups) {
+        if (i >= num_warmups) {
             start_time = std::chrono::steady_clock::now();
         }
 #if (NCCL_MAJOR > 2 || (NCCL_MAJOR >= 2 && NCCL_MINOR >= 9)) && (CUDART_VERSION >= 11030 || HIP_VERSION >= 50221310)
@@ -350,11 +368,15 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
         model_forward();
 #endif
         CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
+        if (i >= num_warmups) {
+            stop_time = std::chrono::steady_clock::now();
+            double step_time = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time).count();
+            step_times[i - num_warmups] = step_time;
+        }
     }
-    stop_time = std::chrono::steady_clock::now();
-    double duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - start_time).count();
-    fprintf(stdout, "Time: %g ms in total, %g ms per iteration, %g ms per layer\n", duration, duration / num_iters,
-            duration / num_iters / num_layers);
+    for (int i = 0; i < num_iters; i++) {
+        fprintf(stdout, "Latency of step %d: %g ms\n", i, step_times[i] / 1e6);
+    }
 
 #if (NCCL_MAJOR > 2 || (NCCL_MAJOR >= 2 && NCCL_MINOR >= 9)) && (CUDART_VERSION >= 11030 || HIP_VERSION >= 50221310)
     // Destroy graph

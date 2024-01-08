@@ -58,17 +58,18 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 |--------------------------------|-----------|--------------------------------|
 | pytorch-matmul/nosharding_time | time (ms) | Time of pure matmul operation. |
 
-### `cublaslt-gemm`
+### `cublaslt-gemm` / `hipblaslt-gemm`
 
 #### Introduction
 
-Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul).
+Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul) or [`hipblasLt-bench`](https://github.com/ROCm/hipBLASLt/blob/develop/clients/benchmarks/README.md).
 
 #### Metrics
 
-| Name                                                     | Unit           | Description                     |
-|----------------------------------------------------------|----------------|---------------------------------|
-| cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
+| Name                                                      | Unit           | Description                     |
+|-----------------------------------------------------------|----------------|---------------------------------|
+| cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops  | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
+| hipblaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 
 ### `cublas-function`
 
@@ -243,6 +244,7 @@ or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils
 ### `gpu-copy-bw`
 
 Measure the memory copy bandwidth performed by GPU SM/DMA engine, including device-to-host, host-to-device and device-to-device.
+For measurements of peer-to-peer communication performance between AMD GPUs, GPU memory buffers are allocated in `hipDeviceMallocUncached` (previous `hipDeviceMallocFinegrained`) mode to maximize performance.
 
 #### Metrics
 
@@ -283,6 +285,7 @@ Measure the performance of NCCL/RCCL operations under multi nodes' traffic patte
 performed by [nccl-tests](https://github.com/NVIDIA/nccl-tests/tree/44df0bf010dcc95e840ca0fb7466c67cff3f1f0f)
 or [rccl-tests](https://github.com/ROCmSoftwarePlatform/rccl-tests/tree/dc1ad4853d7ec738387d42a75a58a98d7af00c7b).
 Support the following operations currently: allreduce, allgather, broadcast, reduce, reducescatter, alltoall.
+Support both in-place and out-of-place measurements.
 
 Support the following traffic patterns:
 * `all-nodes`, validate the NCCL/RCCL performance across all VM nodes simultaneously.

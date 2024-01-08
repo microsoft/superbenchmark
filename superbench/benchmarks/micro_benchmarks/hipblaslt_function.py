@@ -4,7 +4,6 @@
 """Module of the hipBlasLt GEMM benchmark."""
 
 import os
-import re
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -23,11 +22,12 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         super().__init__(name, parameters)
 
         self._bin_name = 'hipblaslt-bench'
-        self._in_types = ['fp32', 'fp16', 'bf16']
+        self._in_types = ['fp32', 'fp16', 'bf16', 'fp8']
         self._in_type_map = {
             'fp16': '--a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r',
             'fp32': '--a_type f32_r --b_type f32_r --c_type f32_r --d_type f32_r --compute_type f32_r',
             'bf16': '--a_type bf16_r --b_type bf16_r --c_type bf16_r --d_type bf16_r --compute_type f32_r',
+            'fp8': '--a_type f8_r --b_type f8_r --c_type f8_r --d_type f8_r --compute_type f32_r',
         }
 
     def add_parser_arguments(self):
@@ -41,6 +41,30 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             default=['fp16'],
             required=False,
             help='List of input data types, support {}.'.format(' '.join(self._in_types)),
+        )
+        self._parser.add_argument(
+            '--initialization',
+            type=str,
+            default='rand_int',
+            choices=['trig_float', 'rand_int', 'hpl'],
+            required=False,
+            help='Initialize matrix data.',
+        )
+        self._parser.add_argument(
+            '--transA',
+            type=str,
+            default='N',
+            choices=['N', 'T', 'C'],
+            required=False,
+            help='Transpose matrix A.',
+        )
+        self._parser.add_argument(
+            '--transB',
+            type=str,
+            default='N',
+            choices=['N', 'T', 'C'],
+            required=False,
+            help='Transpose matrix B.',
         )
 
     def _preprocess(self):
@@ -58,7 +82,9 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         self._precision_in_commands = []
         for (_m, _n, _k, _b, _in_type) in self._shapes_to_run:
             command = f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -j {self._args.num_warmup}' + \
-                f' -i {self._args.num_steps} {self._in_type_map[_in_type]}'
+                f' -i {self._args.num_steps} {self._in_type_map[_in_type]}' + \
+                f' --transA {self._args.transA} --transB {self._args.transB}' + \
+                f' --initialization {self._args.initialization}'
             command = command + f' -b {str(_b)}' if _b > 0 else command
             logger.info(command)
             self._commands.append(command)
@@ -97,13 +123,12 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             fields = lines[index + 1].strip().split(',')
 
             # Check the number of fields and the format of the first two fields
-            if len(fields) != 23 or not all(
-                re.match(r'\d*\.\d*$', item.strip()) or item.strip().isdigit() for item in fields[-2:]
-            ):
+            if len(fields) != 23:
                 raise ValueError('Invalid result')
 
             self._result.add_result(
-                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops', float(fields[-2])
+                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops',
+                float(fields[-2]) / 1000
             )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

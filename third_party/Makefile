@@ -7,18 +7,20 @@ MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 HPCX_HOME ?= /opt/hpcx
+ROCM_PATH ?= /opt/rocm
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 HIPBLASLT_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
+ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm
 
 # Build all targets.
 all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
-rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
 cpu: common cpu_perftest
 common: cpu_hpl cpu_stream fio
 directx_amd: directx_amf_encoding_latency
@@ -62,7 +64,7 @@ endif
 cuda_nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
-	cp -v ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
+	cp -v -r ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
 # Build perftest.
@@ -86,11 +88,11 @@ ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) --disable-native && make -j && make install
 endif
 
-# Build rccl-tests from commit 2a18737 of default branch.
+# Build rccl-tests from commit 46375b1 of default branch.
 rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
-	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIP_HOME=$(HIP_HOME) RCCL_HOME=$(RCCL_HOME) -j
-	cp -v ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
+	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
+	cp -v -r ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
 # Build rocblas-bench.
@@ -175,42 +177,58 @@ directx_amf_encoding_latency:
 		"C:\temp\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "AMF\amf\public\samples\CPPSamples_vs2019.sln" /t:EncoderLatency /p:Platform=x64 /p:Configuration=Release /p:OutDir="%SB_MICRO_PATH%\bin" \
 	)
 
-# Install Megatron-LM
+# Install requirements for Megatron-LM
 megatron_lm:
-	if [ ! -d "Megatron/Megatron-LM" ]; then \
-        git clone "https://github.com/NVIDIA/Megatron-LM.git" "Megatron/Megatron-LM"; \
-    fi
 	cd Megatron && \
-	python -m pip install -r requirements.txt
+	apt install -y python3-mpi4py && \
+	python -m pip install --no-cache-dir -r requirements.txt
 
-# Install Megatron-DeepSpeed
+# Install requirements for Megatron-DeepSpeed
 megatron_deepspeed:
-	if [ ! -d "Megatron/Megatron-DeepSpeed" ]; then \
-        git clone "https://github.com/microsoft/Megatron-DeepSpeed.git" "Megatron/Megatron-DeepSpeed"; \
-    fi
 	cd Megatron && \
-	python -m pip install -r requirements.txt && \
+	apt install -y python3-mpi4py && \
+	python -m pip install --no-cache-dir -r requirements.txt && \
 	python -m pip install DeepSpeed
+
+# Instal apex of ROCm due to dependency of Megatron
+apex_rocm:
+	$(eval TORCH_VERSION ?= $(shell python -c "import torch; print(torch.__version__)"))
+	$(eval TORCH_MAJOR_VERSION ?= $(word 1,$(subst ., ,$(TORCH_VERSION))))
+	$(eval TORCH_MINOR_VERSION ?= $(word 2,$(subst ., ,$(TORCH_VERSION))))
+	if [ ! -d "apex" ]; then \
+		git clone https://github.com/ROCmSoftwarePlatform/apex.git ; \
+	fi
+	cd apex && \
+	if [ "$$(expr $(TORCH_MAJOR_VERSION) \> 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) \> 1)" -eq 1 ]; then \
+		git checkout master ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 1)" -eq 1 ]; then \
+		git checkout release/1.1.0 ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 0)" -eq 1 ]; then \
+		git checkout release/1.0.0 ; \
+	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 1)" -eq 1 ]; then \
+	    git checkout release/1.0.0 ; \
+	fi
+	pip install -v --disable-pip-version-check --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./apex
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
 ifneq (,$(wildcard msccl/executor/msccl-executor-nccl/Makefile))
 	cd ./msccl/executor/msccl-executor-nccl && \
-	make -j4 src.build && \
+	make -j $(shell nproc --ignore=2) src.build && \
 	cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/lib/msccl-executor-nccl && \
 	cp -r -v ./msccl/executor/msccl-executor-nccl/build/* $(SB_MICRO_PATH)/lib/msccl-executor-nccl/
 endif
 ifneq (,$(wildcard msccl/scheduler/msccl-scheduler/Makefile))
 	cd ./msccl/scheduler/msccl-scheduler && \
-	CXX=nvcc BIN_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl SRC_HOME=../../../msccl/executor/msccl-executor-nccl make -j4 && \
+	CXX=nvcc BIN_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl SRC_HOME=../../../msccl/executor/msccl-executor-nccl make -j $(shell nproc --ignore=2) && \
 	cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/lib/msccl-scheduler && \
 	cp -r -v ./msccl/scheduler/msccl-scheduler/build/* $(SB_MICRO_PATH)/lib/msccl-scheduler/
 endif
 ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
 	cd ./msccl/tests/msccl-tests-nccl && \
-	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j4 && cd ../../..
+	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j $(shell nproc --ignore=2) && cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/bin/msccl-tests-nccl && \
 	cp -r -v ./msccl/tests/msccl-tests-nccl/build/* $(SB_MICRO_PATH)/bin/msccl-tests-nccl/
 endif

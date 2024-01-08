@@ -1,0 +1,26 @@
+diff --git a/megatron/fused_kernels/scaled_softmax_cuda.cu b/megatron/fused_kernels/scaled_softmax_cuda.cu
+index 90e1c9f..d217aec 100644
+--- a/megatron/fused_kernels/scaled_softmax_cuda.cu
++++ b/megatron/fused_kernels/scaled_softmax_cuda.cu
+@@ -4,7 +4,7 @@
+ #include <cuda.h>
+ #include <cuda_runtime.h>
+ #include <cuda_fp16.h>
+-#ifndef __HIP_PLATFORM_HCC__
++#ifndef __HIP_PLATFORM_AMD__
+ #include <cuda_profiler_api.h>
+ #endif
+ #include <ATen/cuda/CUDAContext.h>
+diff --git a/megatron/fused_kernels/scaled_upper_triang_masked_softmax_cuda.cu b/megatron/fused_kernels/scaled_upper_triang_masked_softmax_cuda.cu
+index 74c9f3d..03b5fc8 100644
+--- a/megatron/fused_kernels/scaled_upper_triang_masked_softmax_cuda.cu
++++ b/megatron/fused_kernels/scaled_upper_triang_masked_softmax_cuda.cu
+@@ -4,7 +4,7 @@
+ #include <cuda.h>
+ #include <cuda_runtime.h>
+ #include <cuda_fp16.h>
+-#ifndef __HIP_PLATFORM_HCC__
++#ifndef __HIP_PLATFORM_AMD__
+ #include <cuda_profiler_api.h>
+ #endif
+ #include <ATen/cuda/CUDAContext.h>

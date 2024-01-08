@@ -1,0 +1,28 @@
+diff --git a/configure.ac b/configure.ac
+index 20eceda..c8f0c07 100755
+--- a/configure.ac
++++ b/configure.ac
+@@ -237,7 +237,7 @@ AC_ARG_WITH([rocm],
+             ],
+             [AS_CASE([$with_rocm],
+                      [yes|no], [],
+-                     [CPPFLAGS="-I$with_rocm/include $CPPFLAGS"
++                     [CPPFLAGS="-I$with_rocm/include -D__HIP_PLATFORM_AMD__=1 $CPPFLAGS"
+                       LDFLAGS="-L$with_rocm/lib64 -Wl,-rpath=$with_rocm/lib64 -L$with_rocm/lib -Wl,-rpath=$with_rocm/lib -lamdhip64 $LDFLAGS"])
+             ])
+ 
+diff --git a/src/rocm_memory.c b/src/rocm_memory.c
+index e9a9136..b6cb23a 100644
+--- a/src/rocm_memory.c
++++ b/src/rocm_memory.c
+@@ -44,8 +44,8 @@ static int init_rocm(int device_id) {
+ 
+ 	hipDeviceProp_t prop = {0};
+ 	ROCM_CHECK(hipGetDeviceProperties(&prop, device_id));
+-	printf("Using ROCm Device with ID: %d, Name: %s, PCI Bus ID: 0x%x, GCN Arch: %d\n",
+-	       device_id, prop.name, prop.pciBusID, prop.gcnArch);
++        printf("Using ROCm Device with ID: %d, Name: %s, PCI Bus ID: 0x%x, GCN Arch: %s\n",
++                device_id, prop.name, prop.pciBusID, prop.gcnArchName);
+ 
+ 	return SUCCESS;
+ }

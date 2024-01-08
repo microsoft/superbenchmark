@@ -265,8 +265,8 @@ class ModelBenchmark(Benchmark):
         # The unit of step time should be millisecond.
         step_times = self._train_step(precision)
         if isinstance(step_times, tuple):
-            step_times = step_times[0]
             info = step_times[1]
+            step_times = step_times[0]
             self._process_info(ModelAction.TRAIN, precision, info)
         step_times = self.__process_model_result(ModelAction.TRAIN, precision, step_times)
         if not step_times:
