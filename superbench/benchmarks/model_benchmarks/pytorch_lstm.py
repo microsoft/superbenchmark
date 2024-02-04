@@ -111,7 +111,7 @@ class PytorchLSTM(PytorchBase):
             )
             self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
-                self._model = self._model.cuda()
+                self._model = self._model.to(self._device)
         except BaseException as e:
             logger.error(
                 'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
@@ -122,7 +122,7 @@ class PytorchLSTM(PytorchBase):
 
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
-            self._target = self._target.cuda()
+            self._target = self._target.to(self._device)
 
         return True
 
@@ -143,7 +143,7 @@ class PytorchLSTM(PytorchBase):
                 sample = sample.to(dtype=getattr(torch, precision.value))
                 start = self._timer()
                 if self._gpu_available:
-                    sample = sample.cuda()
+                    sample = sample.to(self._device)
                 self._optimizer.zero_grad()
                 output = self._model(sample)
                 loss = self._loss_fn(output, self._target)
@@ -177,7 +177,7 @@ class PytorchLSTM(PytorchBase):
                     sample = sample.to(dtype=getattr(torch, precision.value))
                     start = self._timer()
                     if self._gpu_available:
-                        sample = sample.cuda()
+                        sample = sample.to(self._device)
                     self._model(sample)
                     end = self._timer()
                     curr_step += 1

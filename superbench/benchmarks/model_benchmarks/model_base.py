@@ -46,6 +46,7 @@ class ModelBenchmark(Benchmark):
         self._target = None
         self._supported_precision = []
         self._gpu_available = None
+        self._device = None
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -146,6 +147,7 @@ class ModelBenchmark(Benchmark):
             required=False,
             help='Real-time log every n steps.',
         )
+        self._parser.add_argument('--device', type=str, default='cuda', help='The device to use for training.')
 
     @abstractmethod
     def _judge_gpu_availability(self):
@@ -196,9 +198,9 @@ class ModelBenchmark(Benchmark):
         """
         if not super()._preprocess():
             return False
-
         self._judge_gpu_availability()
         self._set_force_fp32()
+        self._device = self._select_device(device=self._args.device)
         logger.info(
             'Model placement - model: {}, GPU availablility: {}, pin memory: {}, force fp32: {}.'.format(
                 self._name, self._gpu_available, self._args.pin_memory, self._args.force_fp32
@@ -226,6 +228,11 @@ class ModelBenchmark(Benchmark):
             return False
 
         return True
+
+    @abstractmethod
+    def _select_device(self, device):
+        """Select device."""
+        pass
 
     @abstractmethod
     def _create_optimizer(self):

@@ -211,23 +211,28 @@ class SuperBenchExecutor():
             if benchmark_name not in self._sb_enabled:
                 continue
             benchmark_config = self._sb_benchmarks[benchmark_name]
+            benchmark_real_name = benchmark_name.split(':')[0]
             benchmark_results = list()
-            self.__create_benchmark_dir(benchmark_name)
+            benchmark_dir_name = benchmark_name
+            if self.__get_platform() == Platform.DIRECTX:
+                benchmark_dir_name = benchmark_name.replace(':', '_')
+            self.__create_benchmark_dir(benchmark_dir_name)
             cwd = os.getcwd()
-            os.chdir(self.__get_benchmark_dir(benchmark_name))
+            
+            os.chdir(self.__get_benchmark_dir(benchmark_dir_name))
 
             monitor = None
             if self.__get_rank_id() == 0 and self._sb_monitor_config and self._sb_monitor_config.enable:
                 if self.__get_platform() is not Platform.CPU:
                     monitor = Monitor(
                         None, int(self._sb_monitor_config.sample_duration or 10),
-                        int(self._sb_monitor_config.sample_interval or 1), self.__get_monitor_path(benchmark_name)
+                        int(self._sb_monitor_config.sample_interval or 1), self.__get_monitor_path(benchmark_dir_name)
                     )
                     monitor.start()
                 else:
                     logger.warning('Monitor can not support CPU platform.')
 
-            benchmark_real_name = benchmark_name.split(':')[0]
+            
             for framework in benchmark_config.frameworks or [Framework.NONE.value]:
                 if benchmark_real_name == 'model-benchmarks' or (
                     ':' not in benchmark_name and benchmark_name.endswith('_models')
@@ -257,6 +262,7 @@ class SuperBenchExecutor():
 
             if monitor:
                 monitor.stop()
-            stdout_logger.stop()
-            self.__write_benchmark_results(benchmark_name, benchmark_results)
+            
+            self.__write_benchmark_results(benchmark_dir_name, benchmark_results)
             os.chdir(cwd)
+        stdout_logger.stop()

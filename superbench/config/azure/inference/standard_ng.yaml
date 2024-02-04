@@ -1,0 +1,185 @@
+version: v0.10
+superbench:
+  enable: null
+  monitor:
+    enable: false
+    sample_duration: 1
+    sample_interval: 10
+  var:
+    default_local_mode: &default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+    default_pytorch_mode: &default_pytorch_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+      frameworks:
+        - pytorch
+    offline_inference_config: &offline_inference_config
+      duration: 0
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 32
+      precision:
+        - float32
+        - float16
+      model_action:
+        - inference
+      pin_memory: yes
+      device: dml
+      log_flushing: yes
+      log_n_steps: 1
+    online_inference_config: &online_inference_config
+      duration: 0
+      num_warmup: 64
+      num_steps: 2048
+      sample_count: 8192
+      batch_size: 1
+      precision:
+        - float32
+        - float16
+      model_action:
+        - inference
+      pin_memory: yes
+      device: dml
+      log_flushing: yes
+      log_n_steps: 1
+  benchmarks:
+    # PyTorch offline inference
+    model-benchmarks:gpt-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - gpt2-small
+        - gpt2-large
+      parameters:
+        <<: *offline_inference_config
+        batch_size: 8
+        seq_len: 224
+    model-benchmarks:bert-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        <<: *offline_inference_config
+        seq_len: 224
+    model-benchmarks:lstm-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - lstm
+      parameters:
+        <<: *offline_inference_config
+        batch_size: 224
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
+    model-benchmarks:resnet-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - resnet50
+        - resnet101
+        - resnet152
+      parameters:
+        <<: *offline_inference_config
+        batch_size: 192
+        num_steps: 512
+    model-benchmarks:densenet-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - densenet169
+        - densenet201
+      parameters:
+        <<: *offline_inference_config
+        pin_memory: no
+    model-benchmarks:vgg-offline:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - vgg11
+        - vgg13
+        - vgg16
+        - vgg19
+      parameters:
+        <<: *offline_inference_config
+        pin_memory: no
+    # PyTorch online inference
+    model-benchmarks:gpt-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - gpt2-small
+        - gpt2-large
+      parameters:
+        <<: *online_inference_config
+        seq_len: 224
+    model-benchmarks:bert-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        <<: *online_inference_config
+        seq_len: 224
+    model-benchmarks:lstm-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - lstm
+      parameters:
+        <<: *online_inference_config
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
+    model-benchmarks:resnet-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - resnet50
+        - resnet101
+        - resnet152
+      parameters:
+        <<: *online_inference_config
+    model-benchmarks:densenet-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - densenet169
+        - densenet201
+      parameters:
+        <<: *online_inference_config
+        pin_memory: no
+    model-benchmarks:vgg-online:
+      <<: *default_local_mode
+      frameworks:
+        - pytorch
+      models:
+        - vgg11
+        - vgg13
+        - vgg16
+        - vgg19
+      parameters:
+        <<: *online_inference_config
+        pin_memory: no

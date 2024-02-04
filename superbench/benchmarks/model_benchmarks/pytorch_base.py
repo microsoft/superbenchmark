@@ -37,7 +37,15 @@ class PytorchBase(ModelBenchmark):
 
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
-        self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
+        if self._args.device == 'cuda' or self._args.device == 'cpu':
+            self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
+        elif self._args.device =='dml':
+            try:
+                import torch_directml
+                self._gpu_available = True
+            except:
+                self._gpu_available = False
+
 
     def _set_force_fp32(self):
         """Set the config that controls whether full float32 precision will be used.
@@ -45,8 +53,9 @@ class PytorchBase(ModelBenchmark):
         On Ampere or newer GPUs, pytorch and tensorflow will use TF32 instead of FP32 by default.
         We can disable TF32 execution by setting force_fp32 as True.
         """
-        torch.backends.cuda.matmul.allow_tf32 = not self._args.force_fp32
-        torch.backends.cudnn.allow_tf32 = not self._args.force_fp32
+        if self._args.device == 'cuda':
+            torch.backends.cuda.matmul.allow_tf32 = not self._args.force_fp32
+            torch.backends.cudnn.allow_tf32 = not self._args.force_fp32
 
     @torch.no_grad()
     def _to_te_model(self, model):
@@ -82,6 +91,17 @@ class PytorchBase(ModelBenchmark):
                 setattr(model, name, te_m)
             else:
                 self._to_te_model(m)
+    
+    def _select_device(self, device):
+        """Select device for torch."""
+        if self._gpu_available:
+            if device.lower() == 'cuda':
+                return torch.device('cuda:0')
+            if device.lower() == 'dml':
+                import torch_directml
+                return torch_directml.device(torch_directml.default_device())
+        else:
+            return torch.device('cpu')
 
     def _init_distributed_setting(self):
         """Initialize the distributed library and bind the worker to GPU.
@@ -136,7 +156,8 @@ class PytorchBase(ModelBenchmark):
                 return False
 
             if self._gpu_available:
-                torch.cuda.set_device(self._local_rank)
+                if self._args.device == 'cuda':
+                    torch.cuda.set_device(self._local_rank)
 
         return True
 
@@ -249,7 +270,7 @@ class PytorchBase(ModelBenchmark):
                 if self._args.distributed_impl == DistributedImpl.DDP:
                     tensor = torch.IntTensor([is_finished])
                     if self._args.distributed_backend == DistributedBackend.NCCL:
-                        tensor = tensor.cuda()
+                        tensor = tensor.to(self._device)
                     torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
                     is_finished = tensor.tolist()[0]
             else:
@@ -273,7 +294,7 @@ class PytorchBase(ModelBenchmark):
         try:
             if self._args.distributed_impl == DistributedImpl.DDP:
                 if self._args.distributed_backend == DistributedBackend.NCCL:
-                    tensor = torch.as_tensor(result).cuda()
+                    tensor = torch.as_tensor(result).to(self._device)
                 else:
                     tensor = torch.as_tensor(result)
                 torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
@@ -310,12 +331,12 @@ class PytorchBase(ModelBenchmark):
             )
             return False
 
-        if self._gpu_available:
+        if self._gpu_available and self._args.device=='cuda':
             torch.cuda.synchronize()
         del self._target
         del self._optimizer
         del self._model
-        if self._gpu_available:
+        if self._gpu_available and self._args.device=='cuda':
             torch.cuda.empty_cache()
 
         return True
@@ -337,6 +358,6 @@ class PytorchBase(ModelBenchmark):
         Returns:
             Current time in second.
         """
-        if self._gpu_available:
+        if self._gpu_available and self._args.device == 'cuda':
             torch.cuda.synchronize()
         return time.time()

@@ -164,6 +164,17 @@ class MegatronGPT(ModelBenchmark):
 
         return True
 
+    def _select_device(self, device):
+        """Select device for torch."""
+        if self._gpu_available:
+            if device.lower() == 'cuda':
+                return torch.device('cuda:0')
+            if device.lower() == 'dml':
+                import torch_directml
+                return torch_directml.device(torch_directml.default_device())
+        else:
+            return torch.device('cpu')
+
     def _parse_log(self, output):
         """Parse log output and get the performance."""
         tflops_pattern = re.compile(r'(TFLOPs|TFLOP/s/GPU\)): (\d+\.\d+)')

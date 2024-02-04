@@ -136,7 +136,7 @@ class PytorchGPT2(PytorchBase):
             else:
                 self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
-                self._model = self._model.cuda()
+                self._model = self._model.to(self._device)
         except BaseException as e:
             logger.error(
                 'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
@@ -147,7 +147,7 @@ class PytorchGPT2(PytorchBase):
 
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
-            self._target = self._target.cuda()
+            self._target = self._target.to(self._device)
 
         return True
 
@@ -167,7 +167,7 @@ class PytorchGPT2(PytorchBase):
             for idx, sample in enumerate(self._dataloader):
                 start = self._timer()
                 if self._gpu_available:
-                    sample = sample.cuda()
+                    sample = sample.to(self._device)
                 self._optimizer.zero_grad()
                 if self._fp8_recipe is not None:
                     with te.fp8_autocast(enabled=True, fp8_recipe=self._fp8_recipe):
@@ -204,7 +204,7 @@ class PytorchGPT2(PytorchBase):
                 for idx, sample in enumerate(self._dataloader):
                     start = self._timer()
                     if self._gpu_available:
-                        sample = sample.cuda()
+                        sample = sample.to(self._device)
                     if self._fp8_recipe is not None:
                         with te.fp8_autocast(enabled=True, fp8_recipe=self._fp8_recipe):
                             self._model(sample)
