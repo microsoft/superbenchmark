@@ -122,7 +122,15 @@ RUN cd /tmp && \
     rm -rf /tmp/nccl
 
 ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:\
+/opt/hpcx/nccl_rdma_sharp_plugin/lib:\
+/opt/hpcx/ucc/lib/ucc:\
+/opt/hpcx/ucc/lib:\
+/opt/hpcx/ucx/lib/ucx:\
+/opt/hpcx/ucx/lib:\
+/opt/hpcx/sharp/lib:\
+/opt/hpcx/hcoll/lib:\
+/opt/hpcx/ompi/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
