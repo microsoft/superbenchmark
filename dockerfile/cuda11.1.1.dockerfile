@@ -118,7 +118,7 @@ RUN cd /tmp && \
     rm -rf ./Linux mlc.tgz
 
 ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:/opt/hpcx/ompi/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
