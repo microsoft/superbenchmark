@@ -128,15 +128,15 @@ ENV PATH="${PATH}" \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
 
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment && \
+    echo "source /opt/hpcx/hpcx-init.sh && hpcx_load" >> /etc/bash.bashrc
+
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
 
 WORKDIR ${SB_HOME}
-
-RUN echo PATH="$PATH" > /etc/environment && \
-    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
-    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment && \
-    echo "source /opt/hpcx/hpcx-init.sh && hpcx_load" >> ${SB_HOME}/.bashrc
 
 ADD third_party third_party
 RUN make -C third_party cuda_with_msccl

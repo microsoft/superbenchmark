@@ -107,6 +107,5 @@
         docker exec {{ container }} bash -c \
           "chown -R root:root ~ && \
           sed -i 's/[# ]*Port.*/Port {{ ssh_port }}/g' /etc/ssh/sshd_config && \
-          if test -f /opt/superbench/.bashrc; then mv /opt/superbench/.bashrc /root/.bashrc; fi && \
           service ssh restart && sb help"
       become: yes
