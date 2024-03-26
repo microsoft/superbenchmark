@@ -27,6 +27,7 @@
  *
  *******************************************************************************/
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -59,6 +60,9 @@ using cublasLtHalf = hipblasLtHalf;
 #define DIST_INF_HIP_COMPUTETYPE_F32 HIPBLAS_COMPUTE_32F
 #else
 #define DIST_INF_HIP_COMPUTETYPE_F32 HIPBLASLT_COMPUTE_F32
+#endif
+#if defined(USE_HIPBLASLT_TUNING)
+#include <hipblaslt/hipblaslt-ext.hpp>
 #endif
 #else
 #include <cublasLt.h>
@@ -94,23 +98,26 @@ using cublasLtHalf = half;
 #endif
 
 static void ShowUsage(char *argv[]) {
-    std::cerr << "Usage: " << argv[0] << " <options>\n"
-              << "options:\n"
-              << "\t-h, --help\t\t\t\tShow this help message\n"
-              << "\t-m \t\t\tm\t\tGEMM_STRIDED argument m\n"
-              << "\t-n \t\t\tn\t\tGEMM_STRIDED argument n\n"
-              << "\t-k \t\t\tk \t\tGEMM_STRIDED argument k\n"
-              << "\t--alpha \t\talpha \t\tGEMM_STRIDED argument alpha\n"
-              << "\t--beta \t\t\tbeta \t\tGEMM_STRIDED argument beta\n"
-              << "\t--num_layers \t\t\tnum_layers \t\tNumber of layers in the model\n"
-              << "\t--num_warmups \t\t\tnum_warmups \t\tNumber of warmup runs\n"
-              << "\t--num_iters \t\t\tnum_iters \t\tNumber of test runs\n"
-              << "\t--use_cuda_graph \t\t\tuse_cuda_graph \t\tWhether to launch kernels in CUDA graph mode\n"
-              << std::endl;
+    std::cerr
+        << "Usage: " << argv[0] << " <options>\n"
+        << "options:\n"
+        << "\t-h, --help\t\t\t\tShow this help message\n"
+        << "\t-m \t\t\tm\t\tGEMM_STRIDED argument m\n"
+        << "\t-n \t\t\tn\t\tGEMM_STRIDED argument n\n"
+        << "\t-k \t\t\tk \t\tGEMM_STRIDED argument k\n"
+        << "\t--alpha \t\talpha \t\tGEMM_STRIDED argument alpha\n"
+        << "\t--beta \t\t\tbeta \t\tGEMM_STRIDED argument beta\n"
+        << "\t--num_layers \t\t\tnum_layers \t\tNumber of layers in the model\n"
+        << "\t--num_warmups \t\t\tnum_warmups \t\tNumber of warmup runs\n"
+        << "\t--num_iters \t\t\tnum_iters \t\tNumber of test runs\n"
+        << "\t--use_cuda_graph \t\t\tuse_cuda_graph \t\tWhether to launch kernels in CUDA graph mode\n"
+        << "\t--tune_gemm \t\t\ttune_gemm \t\tWhether to tune GEMM before testing. Currently only work for hipblasLt.\n"
+        << std::endl;
 }
 
 static int ParseArguments(int argc, char *argv[], int64_t *m, int64_t *n, int64_t *k, float *alpha, float *beta,
-                          int32_t *num_layers, int32_t *num_warmups, int32_t *num_iters, bool *use_cuda_graph) {
+                          int32_t *num_layers, int32_t *num_warmups, int32_t *num_iters, bool *use_cuda_graph,
+                          bool *tune_gemm) {
     if (argc >= 2) {
         for (int i = 1; i < argc; ++i) {
             std::string arg = argv[i];
@@ -143,6 +150,8 @@ static int ParseArguments(int argc, char *argv[], int64_t *m, int64_t *n, int64_
                     std::cerr << "not supported by current environment" << std::endl << std::endl;
                     return -1;
 #endif
+                } else if (arg == "--tune_gemm") {
+                    *tune_gemm = true;
                 } else {
                     std::cerr << "error with " << arg << std::endl;
                     std::cerr << "do not recognize option" << std::endl << std::endl;
@@ -182,10 +191,94 @@ void InitializeABCDEF(std::vector<cublasLtHalf> &ha, int64_t size_a, std::vector
     }
 }
 
+#if defined(__HIP_PLATFORM_AMD__) && defined(USE_HIPBLASLT_TUNING)
+// Tune GEMM algorithm in local rank.
+// Write <0 to ret_algo_time_in_ms if nothing found.
+// Write >=0 to ret_algo_time_in_ms and write ret_algo if something is found.
+void TuneHipblasLtGemmLocal(const hipblasLtHandle_t &handle, const hipblasLtMatmulDesc_t &matmul, float alpha, void *da,
+                            const hipblasLtMatrixLayout_t &matA, void *db, const hipblasLtMatrixLayout_t &matB,
+                            float beta, void *dc, const hipblasLtMatrixLayout_t &matC, void *dd,
+                            const hipblasLtMatrixLayout_t &matD, void *d_workspace, uint64_t workspace_size,
+                            const cudaStream_t &stream, int rank, int num_ranks, hipblasLtMatmulAlgo_t *ret_algo,
+                            float *ret_algo_time_in_ms) {
+    std::vector<hipblasLtMatmulHeuristicResult_t> gemm_heuristics;
+    // Get all possible algorithms
+    CHECK_CUBLASLT_ERROR(hipblaslt_ext::getAllAlgos(
+        handle, hipblaslt_ext::GemmType::HIPBLASLT_GEMM, HIPBLAS_OP_N, HIPBLAS_OP_N, DIST_INF_HIP_DATATYPE_R_16F,
+        DIST_INF_HIP_DATATYPE_R_16F, DIST_INF_HIP_DATATYPE_R_16F, DIST_INF_HIP_DATATYPE_R_16F,
+        DIST_INF_HIP_COMPUTETYPE_F32, gemm_heuristics));
+    // Make sure the algorithm order is deterministic
+    std::sort(gemm_heuristics.begin(), gemm_heuristics.end(),
+              [](hipblasLtMatmulHeuristicResult_t &a, hipblasLtMatmulHeuristicResult_t &b) {
+                  return hipblaslt_ext::getIndexFromAlgo(a.algo) < hipblaslt_ext::getIndexFromAlgo(b.algo);
+              });
+    // Timing utilities
+    cudaEvent_t start_event;
+    cudaEvent_t end_event;
+    const int kNumWarmups = 10;
+    const int kNumTestRuns = 100;
+    *ret_algo_time_in_ms = -1;
+    // Partition work evenly into different ranks
+    size_t num_algos_per_rank = gemm_heuristics.size() / num_ranks;
+    size_t start_algo_idx = num_algos_per_rank * rank;
+    size_t end_algo_idx = rank + 1 == num_ranks ? gemm_heuristics.size() - 1 : start_algo_idx + num_algos_per_rank;
+    // Benchmark all algorithms in given shape
+    CHECK_CUDA_ERROR(cudaEventCreate(&start_event));
+    CHECK_CUDA_ERROR(cudaEventCreate(&end_event));
+    for (; start_algo_idx <= end_algo_idx; start_algo_idx++) {
+        auto &algo = gemm_heuristics[start_algo_idx].algo;
+        size_t ret_workspace_size = 0;
+        auto status = hipblaslt_ext::matmulIsAlgoSupported(handle, matmul, &alpha, matA, matB, &beta, matC, matD, algo,
+                                                           ret_workspace_size);
+        if (status != HIPBLAS_STATUS_SUCCESS || ret_workspace_size >= workspace_size) {
+            continue;
+        }
+        for (int i = 0; i < kNumWarmups; i++) {
+            CHECK_CUBLASLT_ERROR(hipblasLtMatmul(handle, matmul, &alpha, da, matA, db, matB, &beta, dc, matC, dd, matD,
+                                                 &algo, d_workspace, workspace_size, stream));
+        }
+        CHECK_CUDA_ERROR(cudaEventRecord(start_event, stream));
+        for (int i = 0; i < kNumTestRuns; i++) {
+            CHECK_CUBLASLT_ERROR(hipblasLtMatmul(handle, matmul, &alpha, da, matA, db, matB, &beta, dc, matC, dd, matD,
+                                                 &algo, d_workspace, workspace_size, stream));
+        }
+        CHECK_CUDA_ERROR(cudaEventRecord(end_event, stream));
+        CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
+        float time_in_ms = 0;
+        CHECK_CUDA_ERROR(cudaEventElapsedTime(&time_in_ms, start_event, end_event));
+        time_in_ms /= kNumTestRuns;
+        if (*ret_algo_time_in_ms < 0 || time_in_ms < *ret_algo_time_in_ms) {
+            *ret_algo = algo;
+            *ret_algo_time_in_ms = time_in_ms;
+        }
+    }
+    CHECK_CUDA_ERROR(cudaEventDestroy(start_event));
+    CHECK_CUDA_ERROR(cudaEventDestroy(end_event));
+}
+
+// Select global best GEMM algorithms across ranks. Write global_algo if something is found.
+void TuneHipblasLtGemmGlobal(int num_ranks, const hipblasLtMatmulAlgo_t &local_algo, float local_time_in_ms,
+                             hipblasLtMatmulAlgo_t *global_algo) {
+    std::vector<hipblasLtMatmulAlgo_t> coll_algo(num_ranks);
+    std::vector<float> coll_time_in_ms(num_ranks);
+    MPI_Allgather(&local_algo, sizeof(local_algo), MPI_BYTE, coll_algo.data(), sizeof(local_algo), MPI_BYTE,
+                  MPI_COMM_WORLD);
+    MPI_Allgather(&local_time_in_ms, sizeof(local_time_in_ms), MPI_BYTE, coll_time_in_ms.data(),
+                  sizeof(local_time_in_ms), MPI_BYTE, MPI_COMM_WORLD);
+    float min_time_in_ms = -1;
+    for (int i = 0; i < num_ranks; i++) {
+        if (coll_time_in_ms[i] >= 0 && (min_time_in_ms < 0 || coll_time_in_ms[i] < min_time_in_ms)) {
+            min_time_in_ms = coll_time_in_ms[i];
+            *global_algo = coll_algo[i];
+        }
+    }
+}
+#endif
+
 // B[m, k] * A[k, n] + C[m, n] = D[m, n]
 // E[k, m] * D[m, n] + F[k, n] = G[k, n]
 void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t num_layers, int32_t num_warmups,
-               int32_t num_iters, bool use_cuda_graph, ncclComm_t nccl_comm) {
+               int32_t num_iters, bool use_cuda_graph, bool tune_gemm, ncclComm_t nccl_comm, int rank, int num_ranks) {
     const int kNcclBufAlignment = 512;
 
     int size_a = k * n;
@@ -230,7 +323,11 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
     CHECK_CUDA_ERROR(cudaMemcpy(de, he.data(), sizeof(cublasLtHalf) * size_e, cudaMemcpyHostToDevice));
     CHECK_CUDA_ERROR(cudaMemcpy(df, hf.data(), sizeof(cublasLtHalf) * size_f, cudaMemcpyHostToDevice));
 
+#if defined(__HIP_PLATFORM_AMD__)
+    uint64_t workspace_size = 256 * 1024 * 1024; // max workspace size allowed for hipblaslt
+#else
     uint64_t workspace_size = 1024 * 1024;
+#endif
     void *d_workspace;
     CHECK_CUDA_ERROR(cudaMalloc(&d_workspace, workspace_size));
     int returnedAlgoCount = 0;
@@ -279,8 +376,22 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
     // E[k, m] * D[m, n] + F[k, n] = G[k, n]
     CHECK_CUBLASLT_ERROR(hipblasLtMatmulAlgoGetHeuristic(handle, matmul1, matB, matA, matC, matD, pref, 1,
                                                          heuristicResult1, &returnedAlgoCount));
+    hipblasLtMatmulAlgo_t algo1 = heuristicResult1[0].algo;
     CHECK_CUBLASLT_ERROR(hipblasLtMatmulAlgoGetHeuristic(handle, matmul2, matE, matD, matF, matG, pref, 1,
                                                          heuristicResult2, &returnedAlgoCount));
+    hipblasLtMatmulAlgo_t algo2 = heuristicResult2[0].algo;
+#if defined(USE_HIPBLASLT_TUNING)
+    if (tune_gemm) {
+        hipblasLtMatmulAlgo_t ret_algo;
+        float ret_algo_time_in_ms;
+        TuneHipblasLtGemmLocal(handle, matmul1, alpha, db, matB, da, matA, beta, dc, matC, dd, matD, d_workspace,
+                               workspace_size, stream, rank, num_ranks, &ret_algo, &ret_algo_time_in_ms);
+        TuneHipblasLtGemmGlobal(num_ranks, ret_algo, ret_algo_time_in_ms, &algo1);
+        TuneHipblasLtGemmLocal(handle, matmul2, alpha, de, matE, dd, matD, beta, df, matF, dg, matG, d_workspace,
+                               workspace_size, stream, rank, num_ranks, &ret_algo, &ret_algo_time_in_ms);
+        TuneHipblasLtGemmGlobal(num_ranks, ret_algo, ret_algo_time_in_ms, &algo2);
+    }
+#endif
 #else
     cublasLtHandle_t handle;
     cublasLtMatrixLayout_t matA, matB, matC, matD, matE, matF, matG;
@@ -328,13 +439,13 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
             // cublasLt is not well supported by ROCm hipify tools, explicitly define ROCm logic instead.
 #if defined(__HIP_PLATFORM_AMD__)
             CHECK_CUBLASLT_ERROR(hipblasLtMatmul(handle, matmul1, &alpha, db, matB, da, matA, &beta, dc, matC, dd, matD,
-                                                 &heuristicResult1[0].algo, d_workspace, workspace_size, stream));
-            CHECK_CUBLASLT_ERROR(hipblasLtMatmul(handle, matmul1, &alpha, de, matE, dd, matD, &beta, df, matF, dg, matG,
-                                                 &heuristicResult2[0].algo, d_workspace, workspace_size, stream));
+                                                 &algo1, d_workspace, workspace_size, stream));
+            CHECK_CUBLASLT_ERROR(hipblasLtMatmul(handle, matmul2, &alpha, de, matE, dd, matD, &beta, df, matF, dg, matG,
+                                                 &algo2, d_workspace, workspace_size, stream));
 #else
             CHECK_CUBLASLT_ERROR(cublasLtMatmul(handle, matmul1, &alpha, db, matB, da, matA, &beta, dc, matC, dd, matD,
                                                 &heuristicResult1[0].algo, d_workspace, workspace_size, stream));
-            CHECK_CUBLASLT_ERROR(cublasLtMatmul(handle, matmul1, &alpha, de, matE, dd, matD, &beta, df, matF, dg, matG,
+            CHECK_CUBLASLT_ERROR(cublasLtMatmul(handle, matmul2, &alpha, de, matE, dd, matD, &beta, df, matF, dg, matG,
                                                 &heuristicResult2[0].algo, d_workspace, workspace_size, stream));
 #endif
             CHECK_NCCL_ERROR(ncclAllReduce(dg, dg, size_g, ncclFloat16, ncclSum, nccl_comm, stream));
@@ -456,18 +567,21 @@ int main(int argc, char *argv[]) {
     int32_t num_warmups = 20;
     int32_t num_iters = 100;
     bool use_cuda_graph = false;
+    bool tune_gemm = false;
 
-    if (ParseArguments(argc, argv, &m, &n, &k, &alpha, &beta, &num_layers, &num_warmups, &num_iters, &use_cuda_graph)) {
+    if (ParseArguments(argc, argv, &m, &n, &k, &alpha, &beta, &num_layers, &num_warmups, &num_iters, &use_cuda_graph,
+                       &tune_gemm)) {
         ShowUsage(argv);
         return -1;
     }
 
     fprintf(stdout,
             "Parameters: m=%ld, n=%ld, k=%ld, alpha=%f, beta=%f, num_layers=%d, num_warmups=%d, num_iters=%d, "
-            "use_cuda_graph=%d\n",
-            m, n, k, alpha, beta, num_layers, num_warmups, num_iters, (int)use_cuda_graph);
+            "use_cuda_graph=%d, tune_gemm=%d\n",
+            m, n, k, alpha, beta, num_layers, num_warmups, num_iters, (int)use_cuda_graph, (int)tune_gemm);
 
-    TestModel(m, n, k, alpha, beta, num_layers, num_warmups, num_iters, use_cuda_graph, nccl_comm);
+    TestModel(m, n, k, alpha, beta, num_layers, num_warmups, num_iters, use_cuda_graph, tune_gemm, nccl_comm, comm_rank,
+              comm_size);
 
     CHECK_NCCL_ERROR(ncclCommDestroy(nccl_comm));
 
