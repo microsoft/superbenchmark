@@ -218,15 +218,12 @@ void TuneHipblasLtGemmLocal(const hipblasLtHandle_t &handle, const hipblasLtMatm
     const int kNumWarmups = 10;
     const int kNumTestRuns = 100;
     *ret_algo_time_in_ms = -1;
-    // Partition work evenly into different ranks
-    size_t num_algos_per_rank = gemm_heuristics.size() / num_ranks;
-    size_t start_algo_idx = num_algos_per_rank * rank;
-    size_t end_algo_idx = rank + 1 == num_ranks ? gemm_heuristics.size() - 1 : start_algo_idx + num_algos_per_rank;
     // Benchmark all algorithms in given shape
     CHECK_CUDA_ERROR(cudaEventCreate(&start_event));
     CHECK_CUDA_ERROR(cudaEventCreate(&end_event));
-    for (; start_algo_idx <= end_algo_idx; start_algo_idx++) {
-        auto &algo = gemm_heuristics[start_algo_idx].algo;
+    // Partition work evenly into different ranks
+    for (size_t algo_idx = rank; algo_idx < gemm_heuristics.size(); algo_idx += num_ranks) {
+        auto &algo = gemm_heuristics[algo_idx].algo;
         size_t ret_workspace_size = 0;
         auto status = hipblaslt_ext::matmulIsAlgoSupported(handle, matmul, &alpha, matA, matB, &beta, matC, matD, algo,
                                                            ret_workspace_size);
