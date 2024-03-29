@@ -222,7 +222,7 @@ void TuneHipblasLtGemmLocal(const hipblasLtHandle_t &handle, const hipblasLtMatm
     // Make sure the algorithm order is deterministic
     std::sort(gemm_heuristics.begin(), gemm_heuristics.end(),
               [](hipblasLtMatmulHeuristicResult_t &a, hipblasLtMatmulHeuristicResult_t &b) {
-                  return hipblaslt_ext::getIndexFromAlgo(a.algo) < hipblaslt_ext::getIndexFromAlgo(b.algo);
+                  return HIPBLASLT_GETINDEXFROMALGO(a.algo) < HIPBLASLT_GETINDEXFROMALGO(b.algo);
               });
     // Timing utilities
     cudaEvent_t start_event;
