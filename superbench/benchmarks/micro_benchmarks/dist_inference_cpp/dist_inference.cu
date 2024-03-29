@@ -61,8 +61,20 @@ using cublasLtHalf = hipblasLtHalf;
 #else
 #define DIST_INF_HIP_COMPUTETYPE_F32 HIPBLASLT_COMPUTE_F32
 #endif
-#if defined(USE_HIPBLASLT_TUNING)
+#if ROCM_VERSION >= 50700
 #include <hipblaslt/hipblaslt-ext.hpp>
+#if ROCM_VERSION >= 60000
+#define HIPBLASLT_GETINDEXFROMALGO(algo) hipblaslt_ext::getIndexFromAlgo(algo)
+#else
+static int getIndexFromAlgo(hipblasLtMatmulAlgo_t& algo) {
+    int* algo_ptr = (int*)algo.data;
+    if(*algo_ptr < 0) {
+        return -1;
+    }
+    return *algo_ptr;
+}
+#define HIPBLASLT_GETINDEXFROMALGO(algo) getIndexFromAlgo(algo)
+#endif
 #endif
 #else
 #include <cublasLt.h>
@@ -191,7 +203,7 @@ void InitializeABCDEF(std::vector<cublasLtHalf> &ha, int64_t size_a, std::vector
     }
 }
 
-#if defined(__HIP_PLATFORM_AMD__) && defined(USE_HIPBLASLT_TUNING)
+#if defined(__HIP_PLATFORM_AMD__) && ROCM_VERSION >= 50700
 // Tune GEMM algorithm in local rank.
 // Write <0 to ret_algo_time_in_ms if nothing found.
 // Write >=0 to ret_algo_time_in_ms and write ret_algo if something is found.
@@ -377,7 +389,7 @@ void TestModel(int64_t m, int64_t n, int64_t k, float alpha, float beta, int32_t
     CHECK_CUBLASLT_ERROR(hipblasLtMatmulAlgoGetHeuristic(handle, matmul2, matE, matD, matF, matG, pref, 1,
                                                          heuristicResult2, &returnedAlgoCount));
     hipblasLtMatmulAlgo_t algo2 = heuristicResult2[0].algo;
-#if defined(USE_HIPBLASLT_TUNING)
+#if ROCM_VERSION >= 50700
     if (tune_gemm) {
         hipblasLtMatmulAlgo_t ret_algo;
         float ret_algo_time_in_ms;
