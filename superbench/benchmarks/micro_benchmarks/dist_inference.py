@@ -312,6 +312,12 @@ class DistInference(MicroBenchmarkWithInvoke):
             required=False,
             help='Whether to launch kernels in CUDA graph mode.',
         )
+        self._parser.add_argument(
+            '--tune_gemm',
+            action='store_true',
+            required=False,
+            help='Whether to tune GEMM performance before testing.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -356,6 +362,8 @@ class DistInference(MicroBenchmarkWithInvoke):
                 (self._args.num_layers, self._args.num_warmup, self._args.num_steps)
             if self._args.use_cuda_graph:
                 args += ' --use_cuda_graph'
+            if self._args.tune_gemm:
+                args += ' --tune_gemm'
             self._commands = ['%s %s' % (self.__bin_path, args)]
 
         return True
