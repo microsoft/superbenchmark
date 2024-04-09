@@ -97,7 +97,7 @@ RUN cd /opt && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q  -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/793041/mlc_v3.11.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
