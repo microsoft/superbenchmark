@@ -110,7 +110,7 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/793041/mlc_v3.11.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
@@ -142,7 +142,7 @@ RUN echo PATH="$PATH" > /etc/environment && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm -o rocm_hipblaslt -o megatron_deepspeed -o megatron_lm 
+RUN make ROCBLAS_BRANCH=release/rocm-rel-5.1 -C third_party rocm -o rocm_hipblaslt -o megatron_deepspeed -o megatron_lm
 
 ADD . .
 RUN python3 -m pip install --no-cache-dir .[amdworker] && \
