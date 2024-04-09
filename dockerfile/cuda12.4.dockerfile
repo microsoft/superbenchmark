@@ -90,14 +90,14 @@ RUN cd /tmp && \
 ENV HPCX_VERSION=v2.18
 RUN cd /opt && \
     rm -rf hpcx && \
-    wget -q https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-gdrcopy2-nccl2.18-x86_64.tbz -O hpcx.tbz && \
+    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64.tbz -O hpcx.tbz && \
     tar xf hpcx.tbz && \
-    mv hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-gdrcopy2-nccl2.18-x86_64 hpcx && \
+    mv hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64 hpcx && \
     rm hpcx.tbz
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/763324/mlc_v3.11.tgz -O mlc.tgz && \
+    wget -q  -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
