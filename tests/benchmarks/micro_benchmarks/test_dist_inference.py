@@ -53,6 +53,7 @@ def test_pytorch_dist_inference_normal():
         assert (benchmark._args.distributed_impl == DistributedImpl.DDP)
         assert (benchmark._args.distributed_backend == DistributedBackend.NCCL)
         assert (benchmark._args.use_cuda_graph is False)
+        assert (benchmark._args.tune_gemm is False)
 
         # Check results and metrics.
         assert (benchmark.run_count == 1)
@@ -98,6 +99,7 @@ def test_pytorch_dist_inference_fake_distributed():
     assert (benchmark._args.distributed_impl == DistributedImpl.DDP)
     assert (benchmark._args.distributed_backend == DistributedBackend.NCCL)
     assert (benchmark._args.use_cuda_graph is False)
+    assert (benchmark._args.tune_gemm is False)
 
     # Check results and metrics.
     assert (benchmark.run_count == 1)
@@ -136,7 +138,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         num_steps = 8
         wrapper_params_format_str = \
             '--batch_size %d --input_size %d --hidden_size %d ' \
-            '--alpha %g --beta %g --num_layers %d --num_warmup %d --num_steps %d --use_cuda_graph'
+            '--alpha %g --beta %g --num_layers %d --num_warmup %d --num_steps %d --use_cuda_graph --tune_gemm'
         parameters = wrapper_params_format_str % (
             batch_size, input_size, hidden_size, alpha, beta, num_layers, num_warmup, num_steps
         )
@@ -161,6 +163,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.num_warmup == num_warmup)
         assert (benchmark._args.num_steps == num_steps)
         assert (benchmark._args.use_cuda_graph is True)
+        assert (benchmark._args.tune_gemm is True)
 
         # Check command
         assert (1 == len(benchmark._commands))
@@ -168,7 +171,7 @@ class DistInferenceCppImplTest(BenchmarkTestCase, unittest.TestCase):
             m, n, k = hidden_size, batch_size, input_size
             bench_params_format_str = \
                 '%s -m %d -n %d -k %d --alpha %g --beta %g ' + \
-                '--num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph'
+                '--num_layers %d --num_warmups %d --num_iters %d --use_cuda_graph --tune_gemm'
             assert (
                 cmd == (
                     bench_params_format_str %
