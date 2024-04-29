@@ -125,15 +125,15 @@ class RocmComposableKernelBenchmark(BlasLtBaseBenchmark):
             command = f'{self.__bin_path} gemm {params} {self._args.num_warmup} {self._args.num_steps}'
             self._commands.append(command)
             logger.info(command)
-            if self._args.splitk:
+            if self._args.splitk and _in_type not in ['fp8']:
                 if not isinstance(self._args.splitk, list):
                     self._args.splitk = [self._args.splitk]
                 for splitk in self._args.splitk:
                     command = f'{self.__bin_path} gemm_splitk {params} {splitk}' + \
                         f' {self._args.num_warmup} {self._args.num_steps}'
                     self._commands.append(command)
-                logger.info(command)
-            if self._args.streamk:
+                    logger.info(command)
+            if self._args.streamk and _in_type not in ['fp8']:
                 if not isinstance(self._args.streamk, list):
                     self._args.streamk = [self._args.streamk]
                 for streamk in self._args.streamk:
@@ -203,8 +203,8 @@ class RocmComposableKernelBenchmark(BlasLtBaseBenchmark):
             return False
         finally:
             if cmd_idx == len(self._commands) - 1:
-                for metric in self.results:
-                    self.results[metric] = [max(self.results[metric])]
+                for metric in self._result.result:
+                    self._result.result[metric] = [max(self._result.result[metric])]
         return True
 
 

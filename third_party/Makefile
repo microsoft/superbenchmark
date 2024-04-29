@@ -128,8 +128,9 @@ rocm_composable_kernel: sb_micro_path
 		if [ -d composable_kernel ]; then rm -rf composable_kernel; fi; \
 		git clone -b ${COMPOSABLEKERNEL_BRANCH} https://github.com/ROCm/composable_kernel; \
 		cd composable_kernel && mkdir build && cd build; \
-		cmake -D CMAKE_PREFIX_PATH=/opt/rocm -D CMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc -D CMAKE_BUILD_TYPE=Release -D DTYPES="fp64;fp32;fp16;fp8;bf16;int8" ..; \
-		make -j ckProfiler install; \
+		cmake -D CMAKE_PREFIX_PATH=/opt/rocm -D CMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc -D CMAKE_BUILD_TYPE=Release -D DTYPES="fp64;fp32;fp16;fp8;bf16;int8" -D GPU_TARGETS="gfx941;gfx942;gfx90a;gfx908" ..; \
+		make -j ckProfiler; \
+		cp -v ./bin/ckProfiler $(SB_MICRO_PATH)/bin/; \
 	fi
 
 # Build hipBusBandwidth.

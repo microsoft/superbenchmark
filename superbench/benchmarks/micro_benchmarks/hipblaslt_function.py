@@ -66,6 +66,21 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             required=False,
             help='Transpose matrix B.',
         )
+        self._parser.add_argument(
+            '--algo_method',
+            type=str,
+            default='heuristic',
+            choices=['heuristic', 'all', 'index'],
+            required=False,
+            help='Use different algorithm search API. Options: heuristic, all, index.',
+        )
+        self._parser.add_argument(
+            '--solution_index',
+            type=int,
+            default=None,
+            required=False,
+            help='Used with --algo_method index.  Specify solution index to use in benchmark. '
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -85,7 +100,14 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 f' -i {self._args.num_steps} {self._in_type_map[_in_type]}' + \
                 f' --transA {self._args.transA} --transB {self._args.transB}' + \
                 f' --initialization {self._args.initialization}'
-            command = command + f' -b {str(_b)}' if _b > 0 else command
+            command = command + f' --batch_count {str(_b)}' if _b > 0 else command
+            if self._args.algo_method != 'heuristic':
+                command += f' --algo_method {self._args.algo_method}'
+                if self._args.algo_method == 'index':
+                    if not self._args.solution_index:
+                        logger.error('Solution index must be specified when algo_method is "index".')
+                        return False
+                    command += f' --solution_index {self._args.solution_index}'
             logger.info(command)
             self._commands.append(command)
             self._precision_in_commands.append(_in_type)
@@ -109,27 +131,24 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         try:
             lines = raw_output.splitlines()
             index = None
+            tflops = -1
+            metric = None
 
             # Find the line containing 'hipblaslt-Gflops'
             for i, line in enumerate(lines):
                 if 'hipblaslt-Gflops' in line:
                     index = i
-                    break
-
+                    # Split the line into fields using a comma as the delimiter
+                    fields = lines[index + 1].strip().split(',')
+                    # Check the number of fields and the format of the first two fields
+                    if len(fields) < 23:
+                        raise ValueError('Invalid result')
+                    metric  = f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}'
+                    tflops = max(tflops, float(fields[21])/1000)
             if index is None:
                 raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
+            self._result.add_result(f'{metric}_tflops', tflops)
 
-            # Split the line into fields using a comma as the delimiter
-            fields = lines[index + 1].strip().split(',')
-
-            # Check the number of fields and the format of the first two fields
-            if len(fields) != 23:
-                raise ValueError('Invalid result')
-
-            self._result.add_result(
-                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops',
-                float(fields[-2]) / 1000
-            )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

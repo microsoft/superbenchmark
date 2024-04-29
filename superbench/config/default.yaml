@@ -150,6 +150,39 @@ superbench:
       <<: *default_pytorch_mode
     computation-communication-overlap:
       <<: *default_pytorch_mode
+    composable-kernel-gemm:
+      <<: *default_local_mode
+      parameters:
+        in_types:
+          - fp16
+          - bf16
+          - fp32
+          - fp8
+        shapes:
+          - 8192,8192,8192
+          - 4096,4096,4096
+        splitk: [2, 4]
+        streamk: -1
+        tolerant_fail: yes
+        num_warmup: 10
+        num_steps: 100
+    hipblaslt-gemm:
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+          parallel: yes
+          env:
+            HIP_FORCE_DEV_KERNARG: '1'
+      parameters:
+        algo_method: all
+        shapes:
+          - 8192,8192,8192
+          - 4096,4096,4096
+        in_types: ["fp32", "fp16", "bf16", 'fp8']
+        tolerant_fail: yes
+        num_warmup: 10
+        num_steps: 100
     ib-traffic:
       enable: false
       modes:

@@ -114,6 +114,7 @@ class SuperBenchExecutor():
             elif isinstance(val, (str, int, float)):
                 argv.append('--{} {}'.format(name, val))
             elif isinstance(val, (list, ListConfig)):
+                val = [str(v) for v in val]
                 argv.append('--{} {}'.format(name, ' '.join(val)))
         return ' '.join(argv)
 
