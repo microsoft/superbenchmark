@@ -28,6 +28,7 @@ from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoo
 from superbench.benchmarks.micro_benchmarks.ib_validation_performance import IBBenchmark
 from superbench.benchmarks.micro_benchmarks.kernel_launch_overhead import KernelLaunch
 from superbench.benchmarks.micro_benchmarks.ort_inference_performance import ORTInferenceBenchmark
+from superbench.benchmarks.micro_benchmarks.rocm_composable_kernel_performance import RocmComposableKernelBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_gemm_flops_performance import RocmGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.sharding_matmul import ShardingMatmul
@@ -64,6 +65,7 @@ __all__ = [
     'MicroBenchmark',
     'MicroBenchmarkWithInvoke',
     'ORTInferenceBenchmark',
+    'RocmComposableKernelBenchmark',
     'RocmGemmFlopsBenchmark',
     'RocmMemBwBenchmark',
     'ShardingMatmul',

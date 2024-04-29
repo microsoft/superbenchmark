@@ -12,15 +12,16 @@ ROCM_PATH ?= /opt/rocm
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 HIPBLASLT_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
+COMPOSABLEKERNEL_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm rocm_composable_kernel
 
 # Build all targets.
 all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
-rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_composable_kernel
 cpu: common cpu_perftest
 common: cpu_hpl cpu_stream fio
 directx_amd: directx_amf_encoding_latency
@@ -118,6 +119,17 @@ rocm_hipblaslt: sb_micro_path
 		git clone -b ${HIPBLASLT_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
 		cd ./hipBLASLt && ./install.sh -dc; \
 		cp -v $(SB_MICRO_PATH)/third_party/hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/;  \
+	fi
+
+# Build composable_kernel.
+# Composable Kernel is released with rocm, like rocm-6.0 and so on.
+rocm_composable_kernel: sb_micro_path
+	@if [ ! -e $(SB_MICRO_PATH)/bin/ckProfiler ] && [ -z `which ckProfiler` ]; then \
+		if [ -d composable_kernel ]; then rm -rf composable_kernel; fi; \
+		git clone -b ${COMPOSABLEKERNEL_BRANCH} https://github.com/ROCm/composable_kernel; \
+		cd composable_kernel && mkdir build && cd build; \
+		cmake -D CMAKE_PREFIX_PATH=/opt/rocm -D CMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc -D CMAKE_BUILD_TYPE=Release -D DTYPES="fp64;fp32;fp16;fp8;bf16;int8" ..; \
+		make -j ckProfiler install; \
 	fi
 
 # Build hipBusBandwidth.
