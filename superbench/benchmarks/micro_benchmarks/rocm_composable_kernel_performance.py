@@ -159,21 +159,22 @@ class RocmComposableKernelBenchmark(BlasLtBaseBenchmark):
 
         try:
             lines = raw_output.splitlines()
-            index = None
+            line = None
 
             # Find the line containing 'hipblaslt-Gflops'
-            for i, line in enumerate(lines):
-                if 'Best Perf' in line:
-                    index = i
+            for i in lines:
+                if 'Best Perf' in i:
+                    line = i
                     break
 
-            if index is not None:
+            if line is not None:
                 # Search the text for each pattern
                 datatype_match = re.search(r"datatype = (\w+)", line)
                 m_match = re.search(r"M = (\d+)", line)
                 n_match = re.search(r"N = (\d+)", line)
                 k_match = re.search(r"K = (\d+)", line)
                 flops_match = re.search(r"(\d+\.?\d*) TFlops", line)
+                time_match = re.search(r"(\d+\.?\d*) ms", line)
 
                 # Extract the matched groups
                 datatype = datatype_match.group(1) if datatype_match else None
@@ -181,9 +182,14 @@ class RocmComposableKernelBenchmark(BlasLtBaseBenchmark):
                 n = int(n_match.group(1)) if n_match else None
                 k = int(k_match.group(1)) if k_match else None
                 flops = float(flops_match.group(1)) if flops_match else None
+                time = float(time_match.group(1)) if time_match else None
+                name = (line.split(',')[-2]).split()[0].strip()
 
                 metric = f'{datatype}_{m}_{n}_{k}_flops'
+                time_metric = f'{datatype}_{m}_{n}_{k}_time'
                 self._result.add_result(metric, flops)
+                self._result.add_result(time_metric, time)
+                self._result.add_result(f'{datatype}_{m}_{n}_{k}_kernel', name)
             else:
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
                 logger.error(

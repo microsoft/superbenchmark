@@ -92,5 +92,7 @@ Best Perf for datatype = f16 ALayout =  RowMajor BLayout =  RowMajor M = 8192 N 
         self.assertTrue(benchmark._process_raw_result(0, example_raw_output))
         self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
 
-        self.assertEqual(2, len(benchmark.result))
+        self.assertEqual(4, len(benchmark.result))
         self.assertEqual(506.113, benchmark.result['f16_8192_8192_8192_flops'][0])
+        self.assertEqual(2.17246, benchmark.result['f16_8192_8192_8192_time'][0])
+        self.assertEqual('GemmXdlSplitKCShuffle_Default_RRR_B256_Vec8x2x8_256x128x4x8', benchmark.result['f16_8192_8192_8192_kernel'][0])
