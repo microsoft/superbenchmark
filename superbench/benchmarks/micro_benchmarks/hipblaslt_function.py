@@ -4,6 +4,7 @@
 """Module of the hipBlasLt GEMM benchmark."""
 
 import os
+import sys
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -132,6 +133,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             lines = raw_output.splitlines()
             index = None
             tflops = -1
+            time = sys.maxsize
             metric = None
 
             # Find the line containing 'hipblaslt-Gflops'
@@ -144,10 +146,13 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                     if len(fields) < 23:
                         raise ValueError('Invalid result')
                     metric  = f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}'
-                    tflops = max(tflops, float(fields[21])/1000)
+                    if float(fields[21])/1000 > tflops:
+                        tflops = float(fields[21])/1000
+                        time = float(fields[22])
             if index is None:
                 raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
-            self._result.add_result(f'{metric}_tflops', tflops)
+            self._result.add_result(f'{metric}_flops', tflops)
+            self._result.add_result(f'{metric}_time', time)
 
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

@@ -68,7 +68,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                     f' --initialization {benchmark._args.initialization}'
             else:
                 return f'{benchmark._HipBlasLtBenchmark__bin_path} ' + \
-                    f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]} -b {b}' + \
+                    f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]} --batch_count {b}' + \
                     f' --transA {benchmark._args.transA} --transB {benchmark._args.transB}' + \
                     f' --initialization {benchmark._args.initialization}'
 
@@ -105,8 +105,9 @@ N,N,0,1,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r
         self.assertTrue(benchmark._process_raw_result(0, example_raw_output))
         self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
 
-        self.assertEqual(2, len(benchmark.result))
+        self.assertEqual(3, len(benchmark.result))
         self.assertEqual(58.6245, benchmark.result['fp16_1_896_896_896_flops'][0])
+        self.assertEqual(24.54, benchmark.result['fp16_1_896_896_896_time'][0])
 
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'HipBLAS API failed'))
