@@ -111,7 +111,7 @@ sb deploy [--docker-image]
 | `--docker-username`   | `None`                  | Docker registry username if authentication is needed.                             |
 | `--host-file` `-f`    | `None`                  | Path to Ansible inventory host file.                                              |
 | `--host-list` `-l`    | `None`                  | Comma separated host list.                                                        |
-| `--host-password`     | `None`                  | Host password or key passphase if needed.                                         |
+| `--host-password`     | `None`                  | Host password or key passphrase if needed.                                        |
 | `--host-username`     | `None`                  | Host username if needed.                                                          |
 | `--no-image-pull`     | `False`                 | Skip pull and use local Docker image.                                             |
 | `--output-dir`        | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified.       |
@@ -373,7 +373,7 @@ sb run [--config-file]
 | `--get-info`             | `False`                 | Collect system info.                                                        |
 | `--host-file` `-f`       | `None`                  | Path to Ansible inventory host file.                                        |
 | `--host-list` `-l`       | `None`                  | Comma separated host list.                                                  |
-| `--host-password`        | `None`                  | Host password or key passphase if needed.                                   |
+| `--host-password`        | `None`                  | Host password or key passphrase if needed.                                  |
 | `--host-username`        | `None`                  | Host username if needed.                                                    |
 | `--no-docker`            | `False`                 | Run on host directly without Docker.                                        |
 | `--output-dir`           | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified. |

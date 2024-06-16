@@ -295,7 +295,7 @@ Enable current benchmark or not, can be overwritten by [`superbench.enable`](#su
 
 ### `timeout`
 
-Set the timeout value in seconds, the benchmarking will stop early if timeout is triggerred.
+Set the timeout value in seconds, the benchmarking will stop early if timeout is triggered.
 
 * default value: none
 
@@ -336,16 +336,16 @@ A list of models to run, only supported in model-benchmark.
 
 Parameters for benchmark to use, varying for different benchmarks.
 
-There have four common parameters for all benchmarks:
-* run_count: how many times do user want to run this benchmark, default value is 1.
+There are four common parameters for all benchmarks:
+* run_count: how many times does user want to run this benchmark, default value is 1.
 * duration: the elapsed time of benchmark in seconds. It can work for all model-benchmark. But for micro-benchmark, benchmark authors should consume it by themselves.
 * log_raw_data: log raw data into file instead of saving it into result object, default value is `False`.  Benchmarks who have large raw output may want to set it as `True`, such as `nccl-bw`/`rccl-bw`.
 * log_flushing: real-time log flushing, default value is `False`.
 
-For Model-Benchmark, there have some parameters that can control the elapsed time.
+For Model-Benchmark, there are some parameters that can control the elapsed time.
 * duration: the elapsed time of benchmark in seconds.
-* num_warmup: the number of warmup step, should be positive integer.
-* num_steps: the number of test step.
+* num_warmup: the number of warmup steps, should be positive integer.
+* num_steps: the number of test steps.
 
 If `duration > 0` and `num_steps > 0`, then benchmark will take the least as the elapsed time. Otherwise only one of them will take effect.
 
@@ -429,7 +429,7 @@ while `proc_num: 8, node_num: null` will run 32-GPU distributed training on all 
 
 Command prefix to use in the mode, in Python formatted string.
 
-Available variables in formatted string includes:
+Available variables in formatted string include:
 + `proc_rank`
 + `proc_num`
 
