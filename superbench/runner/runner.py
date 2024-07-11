@@ -67,24 +67,24 @@ class SuperBenchRunner():
             InvalidConfigError: If input config is invalid.
         """
         # TODO: add validation and defaulting
-        if not self._sb_config.superbench.env:
+        if 'env' not in self._sb_config.superbench:
             self._sb_config.superbench.env = {}
         for name in self._sb_benchmarks:
-            if not self._sb_benchmarks[name].modes:
+            if 'modes' not in self._sb_benchmarks[name].modes:
                 self._sb_benchmarks[name].modes = []
             for idx, mode in enumerate(self._sb_benchmarks[name].modes):
-                if not mode.env:
+                if 'env' not in mode:
                     self._sb_benchmarks[name].modes[idx].env = {}
                 if mode.name == 'local':
-                    if not mode.proc_num:
+                    if 'proc_num' not in mode:
                         self._sb_benchmarks[name].modes[idx].proc_num = 1
-                    if not mode.prefix:
+                    if 'prefix' not in mode:
                         self._sb_benchmarks[name].modes[idx].prefix = ''
                 elif mode.name == 'torch.distributed':
-                    if not mode.proc_num:
+                    if 'proc_num' not in mode:
                         self._sb_benchmarks[name].modes[idx].proc_num = 8
                 elif mode.name == 'mpi':
-                    if not mode.mca:
+                    if 'machinefile' not in mode:
                         self._sb_benchmarks[name].modes[idx].mca = {
                             'pml': 'ob1',
                             'btl': '^openib',
@@ -93,8 +93,8 @@ class SuperBenchRunner():
                         }
                     for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH', 'SB_WORKSPACE']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
-                    if mode.pattern:
-                        if mode.pattern.type == 'topo-aware' and not mode.pattern.ibstat:
+                    if 'pattern' in mode:
+                        if mode.pattern.type == 'topo-aware' and 'ibstat' not in mode.pattern:
                             self._sb_benchmarks[name].modes[idx].pattern.ibstat = gen_ibstat(
                                 self._ansible_config, str(self._output_path / 'ibstate_file.txt')
                             )
@@ -141,7 +141,7 @@ class SuperBenchRunner():
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
-            torch_dist_params = '' if mode.node_num == 1 else \
+            torch_dist_params = '' if 'node_num' in mode and mode.node_num == 1 else \
                 '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
             mode_command = (
                 f'torchrun'
@@ -158,8 +158,8 @@ class SuperBenchRunner():
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                host_list=f'-host localhost:{mode.proc_num}' if mode.node_num == 1 else
-                f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if mode.host_list is None else '-host ' +
+                host_list=f'-host localhost:{mode.proc_num}' if 'node_num' in mode and mode.node_num == 1 else
+                f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if 'host_list' not in mode else '-host ' +
                 ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
@@ -441,11 +441,11 @@ class SuperBenchRunner():
             int: Process return code.
         """
         mode.update(vars)
-        if mode.name == 'mpi' and mode.pattern:
+        if mode.name == 'mpi' and 'pattern' in mode:
             mode.env.update({'SB_MODE_SERIAL_INDEX': mode.serial_index, 'SB_MODE_PARALLEL_INDEX': mode.parallel_index})
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
 
-        timeout = self._sb_benchmarks[benchmark_name].timeout
+        timeout = self._sb_benchmarks[benchmark_name].get('timeout', 60)
         if isinstance(timeout, int):
             timeout = max(timeout, 60)
 
@@ -463,7 +463,7 @@ class SuperBenchRunner():
         ansible_runner_config = self._ansible_client.get_shell_config(
             fcmd.format(env_list=env_list, command=self.__get_mode_command(benchmark_name, mode, timeout))
         )
-        if mode.name == 'mpi' and mode.node_num != 1:
+        if mode.name == 'mpi' and 'node_num' in mode and mode.node_num != 1:
             ansible_runner_config = self._ansible_client.update_mpi_config(ansible_runner_config)
 
         if isinstance(timeout, int):
@@ -495,7 +495,7 @@ class SuperBenchRunner():
                     )
                     ansible_rc = sum(rc_list)
                 elif mode.name == 'torch.distributed' or mode.name == 'mpi':
-                    if not mode.pattern:
+                    if 'pattern' not in mode:
                         ansible_rc = self._run_proc(benchmark_name, mode, {'proc_rank': 0})
                     else:
                         if not os.path.exists(self._output_path / 'hostfile'):

@@ -208,6 +208,7 @@ superbench:
         batch_size: 1
         precision: int8
     megatron-gpt:
+      enable: false
       modes:
       - name: mpi
         proc_num: 1

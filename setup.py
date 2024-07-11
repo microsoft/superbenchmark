@@ -164,7 +164,7 @@ setup(
         'natsort>=7.1.1',
         'networkx>=2.5',
         'numpy>=1.19.2',
-        'omegaconf==2.0.6',
+        'omegaconf==2.3.0',
         'openpyxl>=3.0.7',
         'packaging>=21.0',
         'pandas>=1.1.5',
