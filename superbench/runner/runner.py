@@ -225,7 +225,7 @@ class SuperBenchRunner():
             self._ansible_client.get_playbook_config(
                 'check_env.yaml',
                 extravars={
-                    'no_docker': bool(self._docker_config.skip),
+                    'no_docker': False if 'skip' not in self._docker_config else bool(self._docker_config.skip),
                     'output_dir': str(self._output_path),
                     'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
                 }
