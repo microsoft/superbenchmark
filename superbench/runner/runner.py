@@ -105,12 +105,12 @@ class SuperBenchRunner():
         Return:
             list: List of benchmarks which will be executed.
         """
-        if self._sb_config.superbench.enable:
+        if 'enable' in self._sb_config.superbench and self._sb_config.superbench.enable:
             if isinstance(self._sb_config.superbench.enable, str):
                 return [self._sb_config.superbench.enable]
             elif isinstance(self._sb_config.superbench.enable, (list, ListConfig)):
                 return list(self._sb_config.superbench.enable)
-        return [k for k, v in self._sb_benchmarks.items() if v.enable]
+        return [k for k, v in self._sb_benchmarks.items() if 'enable' in v and v.enable]
 
     def __get_mode_command(self, benchmark_name, mode, timeout=None):
         """Get runner command for given mode.
