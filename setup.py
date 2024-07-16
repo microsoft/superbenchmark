@@ -198,7 +198,7 @@ setup(
                 'pydocstyle>=5.1.1',
                 'pytest-cov>=2.11.1',
                 'pytest-subtests>=0.4.0',
-                'pytest>=6.2.2',
+                'pytest>=6.2.2, <=7.4.4',
                 'types-markdown',
                 'types-pkg_resources',
                 'types-pyyaml',
