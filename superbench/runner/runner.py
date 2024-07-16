@@ -70,7 +70,7 @@ class SuperBenchRunner():
         if 'env' not in self._sb_config.superbench:
             self._sb_config.superbench.env = {}
         for name in self._sb_benchmarks:
-            if 'modes' not in self._sb_benchmarks[name].modes:
+            if 'modes' not in self._sb_benchmarks[name]:
                 self._sb_benchmarks[name].modes = []
             for idx, mode in enumerate(self._sb_benchmarks[name].modes):
                 if 'env' not in mode:
