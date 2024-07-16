@@ -206,6 +206,9 @@ class SuperBenchRunner():
         logger.info('Runner is going to get node system info.')
 
         fcmd = "docker exec sb-workspace bash -c '{command}'"
+
+        if 'skip' not in self._docker_config:
+            self._docker_config.skip = False
         if self._docker_config.skip:
             fcmd = "bash -c 'cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
@@ -225,7 +228,7 @@ class SuperBenchRunner():
             self._ansible_client.get_playbook_config(
                 'check_env.yaml',
                 extravars={
-                    'no_docker': False if 'skip' not in self._docker_config else bool(self._docker_config.skip),
+                    'no_docker': False if 'skip' not in self._docker_config else self._docker_config.skip,
                     'output_dir': str(self._output_path),
                     'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
                 }
@@ -450,6 +453,8 @@ class SuperBenchRunner():
             timeout = max(timeout, 60)
 
         env_list = '--env-file /tmp/sb.env'
+        if 'skip' not in self._docker_config:
+            self._docker_config.skip = False
         if self._docker_config.skip:
             env_list = 'set -o allexport && source /tmp/sb.env && set +o allexport'
         for k, v in mode.env.items():
