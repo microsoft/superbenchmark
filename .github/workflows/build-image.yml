@@ -29,12 +29,12 @@ jobs:
           dockerfile: cuda12.4
           tags: superbench/main:cuda12.4
           runner: [self-hosted, rocm-build]
-          build_args: "NUM_MAKE_JOBS=1"
+          build_args: "NUM_MAKE_JOBS=8"
         - name: cuda12.2
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
           runner: [self-hosted, rocm-build]
-          build_args: "NUM_MAKE_JOBS=64"
+          build_args: "NUM_MAKE_JOBS=8"
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
