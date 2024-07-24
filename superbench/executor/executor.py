@@ -71,13 +71,13 @@ class SuperBenchExecutor():
         Return:
             list: List of benchmarks which will be executed.
         """
-        if self._sb_config.superbench.enable:
+        if 'enable' in self._sb_config.superbench and self._sb_config.superbench.enable:
             if isinstance(self._sb_config.superbench.enable, str):
                 return [self._sb_config.superbench.enable]
             elif isinstance(self._sb_config.superbench.enable, (list, ListConfig)):
                 return list(self._sb_config.superbench.enable)
         # TODO: may exist order issue
-        return [k for k, v in self._sb_benchmarks.items() if v.enable]
+        return [k for k, v in self._sb_benchmarks.items() if 'enable' in v and v.enable]
 
     def __get_platform(self):
         """Detect runninng platform by environment."""
@@ -228,32 +228,37 @@ class SuperBenchExecutor():
                     logger.warning('Monitor can not support CPU platform.')
 
             benchmark_real_name = benchmark_name.split(':')[0]
-            for framework in benchmark_config.frameworks or [Framework.NONE.value]:
-                if benchmark_real_name == 'model-benchmarks' or (
-                    ':' not in benchmark_name and benchmark_name.endswith('_models')
-                ):
-                    for model in benchmark_config.models:
-                        full_name = f'{benchmark_name}/{framework}-{model}'
+            if 'frameworks' in benchmark_config:
+                for framework in benchmark_config.frameworks or [Framework.NONE.value]:
+                    if benchmark_real_name == 'model-benchmarks' or (
+                        ':' not in benchmark_name and benchmark_name.endswith('_models')
+                    ):
+                        for model in benchmark_config.models:
+                            full_name = f'{benchmark_name}/{framework}-{model}'
+                            logger.info('Executor is going to execute %s.', full_name)
+                            context = BenchmarkRegistry.create_benchmark_context(
+                                model,
+                                platform=self.__get_platform(),
+                                framework=Framework(framework.lower()),
+                                parameters=self.__get_arguments(
+                                    {} if 'parameters' not in benchmark_config else benchmark_config.parameters
+                                )
+                            )
+                            result = self.__exec_benchmark(full_name, context)
+                            benchmark_results.append(result)
+                    else:
+                        full_name = benchmark_name
                         logger.info('Executor is going to execute %s.', full_name)
                         context = BenchmarkRegistry.create_benchmark_context(
-                            model,
+                            benchmark_real_name,
                             platform=self.__get_platform(),
                             framework=Framework(framework.lower()),
-                            parameters=self.__get_arguments(benchmark_config.parameters)
+                            parameters=self.__get_arguments(
+                                {} if 'parameters' not in benchmark_config else benchmark_config.parameters
+                            )
                         )
                         result = self.__exec_benchmark(full_name, context)
                         benchmark_results.append(result)
-                else:
-                    full_name = benchmark_name
-                    logger.info('Executor is going to execute %s.', full_name)
-                    context = BenchmarkRegistry.create_benchmark_context(
-                        benchmark_real_name,
-                        platform=self.__get_platform(),
-                        framework=Framework(framework.lower()),
-                        parameters=self.__get_arguments(benchmark_config.parameters)
-                    )
-                    result = self.__exec_benchmark(full_name, context)
-                    benchmark_results.append(result)
 
             if monitor:
                 monitor.stop()
