@@ -1,17 +1,18 @@
-FROM nvcr.io/nvidia/pytorch:20.12-py3
+FROM nvcr.io/nvidia/pytorch:24.03-py3
 
 # OS:
-#   - Ubuntu: 20.04
-#   - OpenMPI: 4.0.5
+#   - Ubuntu: 22.04
+#   - OpenMPI: 4.1.4+
 #   - Docker Client: 20.10.8
 # NVIDIA:
-#   - CUDA: 11.1.1
-#   - cuDNN: 8.0.5
-#   - NCCL: v2.10.3-1
+#   - CUDA: 12.4.0
+#   - cuDNN: 9.0.0.306
+#   - cuBLAS: 12.4.2.65
+#   - NCCL: v2.20
+#   - TransformerEngine 1.4
 # Mellanox:
-#   - OFED: 5.2-2.2.3.0
-#   - HPC-X: v2.8.3
-#   - NCCL RDMA SHARP plugins: 7cccbc1
+#   - OFED: 23.07-0.5.1.2
+#   - HPC-X: v2.18.0-CUDA12.x
 # Intel:
 #   - mlc: v3.11
 
@@ -34,7 +35,9 @@ RUN apt-get update && \
     libavcodec-dev \
     libavformat-dev \
     libavutil-dev \
+    libboost-program-options-dev \
     libcap2 \
+    libcurl4-openssl-dev \
     libnuma-dev \
     libpci-dev \
     libswresample-dev \
@@ -43,6 +46,7 @@ RUN apt-get update && \
     lshw \
     python3-mpi4py \
     net-tools \
+    nlohmann-json3-dev \
     openssh-client \
     openssh-server \
     pciutils \
@@ -53,7 +57,7 @@ RUN apt-get update && \
     && \
     apt-get autoremove && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
+    rm -rf /var/lib/apt/lists/* /tmp/*
 
 ARG NUM_MAKE_JOBS=
 
@@ -75,40 +79,21 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
-ENV OFED_VERSION=5.2-2.2.3.0
+ENV OFED_VERSION=23.07-0.5.1.2
 RUN cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tgz && \
-    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64.tgz && \
+    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
+ENV HPCX_VERSION=v2.18
 RUN cd /opt && \
-    wget -q https://azhpcstor.blob.core.windows.net/azhpc-images-store/hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
-    tar xf hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz && \
-    ln -s hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64 hpcx && \
-    rm hpcx-v2.8.3-gcc-MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu20.04-x86_64.tbz
-
-# Install NCCL RDMA SHARP plugins
-RUN cd /tmp && \
-    git clone https://github.com/Mellanox/nccl-rdma-sharp-plugins.git && \
-    cd nccl-rdma-sharp-plugins && \
-    git reset --hard 7cccbc1 && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr/local --with-cuda=/usr/local/cuda && \
-    make -j ${NUM_MAKE_JOBS} && \
-    make install && \
-    cd /tmp && \
-    rm -rf nccl-rdma-sharp-plugins
-
-# Install NCCL patch
-RUN cd /tmp && \
-    git clone -b v2.10.3-1 https://github.com/NVIDIA/nccl.git && \
-    cd nccl && \
-    make -j ${NUM_MAKE_JOBS} src.build && \
-    make install && \
-    cd /tmp && \
-    rm -rf nccl
+    rm -rf hpcx && \
+    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64.tbz -O hpcx.tbz && \
+    tar xf hpcx.tbz && \
+    mv hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64 hpcx && \
+    rm hpcx.tbz
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -116,17 +101,6 @@ RUN cd /tmp && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
-
-ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
-    SB_HOME=/opt/superbench \
-    SB_MICRO_PATH=/opt/superbench \
-    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
-    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
-
-RUN echo PATH="$PATH" > /etc/environment && \
-    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
-    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 # Install AOCC compiler
 RUN cd /tmp && \
@@ -141,13 +115,25 @@ RUN cd /tmp && \
     mv amd-blis /opt/AMD && \
     rm -rf aocl-blis-linux-aocc-4.0.tar.gz
 
+ENV PATH="${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/mpi/lib:${LD_LIBRARY_PATH}" \
+    SB_HOME=/opt/superbench \
+    SB_MICRO_PATH=/opt/superbench \
+    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment && \
+    echo "source /opt/hpcx/hpcx-init.sh && hpcx_load" >> /etc/bash.bashrc
+
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party cuda
+RUN make -C third_party cuda_with_msccl
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 && \
