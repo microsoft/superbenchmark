@@ -14,7 +14,7 @@ FROM ${BASE_IMAGE}
 #   - openmpi: 4.1.x
 #   - apex: 1.0.0
 # Intel:
-#   - mlc: v3.10
+#   - mlc: v3.11
 
 LABEL maintainer="SuperBench"
 
@@ -132,7 +132,7 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/793041/mlc_v3.11.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz

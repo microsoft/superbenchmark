@@ -25,6 +25,11 @@ jobs:
     strategy:
       matrix:
         include:
+        - name: cuda12.4
+          dockerfile: cuda12.4
+          tags: superbench/main:cuda12.4
+          runner: [self-hosted, rocm-build]
+          build_args: "NUM_MAKE_JOBS=32"
         - name: cuda12.2
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
