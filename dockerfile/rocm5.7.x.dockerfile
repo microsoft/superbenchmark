@@ -133,7 +133,7 @@ RUN cd /tmp && \
 
 # Install RCCL
 RUN cd /opt/ &&  \
-    git clone https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    git clone -b release/rocm-rel-5.7 https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
     mkdir build && \
     cd build && \
