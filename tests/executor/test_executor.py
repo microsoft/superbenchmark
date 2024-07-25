@@ -44,7 +44,7 @@ class ExecutorTestCase(unittest.TestCase):
     def test_get_enabled_benchmarks_enable_none(self):
         """Test enabled benchmarks when superbench.enable is none."""
         benchmarks = self.default_config.superbench.benchmarks
-        expected_enabled_benchmarks = [x for x in benchmarks if benchmarks[x]['enable']]
+        expected_enabled_benchmarks = [x for x in benchmarks if 'enable' in benchmarks[x] and benchmarks[x]['enable']]
         self.assertListEqual(self.executor._sb_enabled, expected_enabled_benchmarks)
 
     def test_get_enabled_benchmarks_enable_str(self):
