@@ -167,6 +167,17 @@ ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
     git apply ../perftest_rocm6.patch
+
+# Update package index and install dependencies of ROCBLAS
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository universe && \
+    apt-get update && \
+    apt-get install -y --fix-missing \
+    make python3 python3-yaml python3-venv python3-joblib 'python3*-pip' libmsgpack-dev gfortran libomp-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-5.7.1.1 HIPBLASLT_BRANCH=release/rocm-rel-5.7 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 
 ADD . .
