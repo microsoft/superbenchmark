@@ -47,6 +47,8 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         # Skip FP64 for RTX Turing/Ampere and Tesla T4/GA10x due to very limited FP64 TFLOP rate
         self.__kernel_map[7.5] = {k: self.__kernel_map[7.0][k] for k in self.__kernel_map[7.0] if 'fp64' not in k}
         self.__kernel_map[8.6] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'fp64' not in k}
+        # Skip FP64 for Ada Lovelace L4/L40 due to no native CUDA/Tensor Cores
+        self.__kernel_map[8.9] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'fp64' not in k}
         # Skip INT4 for Hopper due to no native CUDA/Tensor Cores
         self.__kernel_map[9.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         self.__parse_logline = [

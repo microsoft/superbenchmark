@@ -33,7 +33,7 @@ sb_micro_path:
 # Build cutlass.
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
-	$(eval ARCHS := "70;75;80;86;90")
+	$(eval ARCHS := "70;75;80;86;89;90")
 else
 	$(eval ARCHS := "70;75;80;86")
 endif
