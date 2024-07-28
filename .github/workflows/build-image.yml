@@ -18,7 +18,7 @@ jobs:
   docker:
     name: Docker build ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 600
+    timeout-minutes: 1200
     permissions:
       contents: read
       packages: write
@@ -29,7 +29,7 @@ jobs:
           dockerfile: cuda12.4
           tags: superbench/main:cuda12.4
           runner: [self-hosted, rocm-build]
-          build_args: "NUM_MAKE_JOBS=1"
+          build_args: "NUM_MAKE_JOBS=8"
         - name: cuda12.2
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
