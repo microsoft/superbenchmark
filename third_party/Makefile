@@ -14,6 +14,8 @@ ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | 
 HIPBLASLT_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
+NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
+
 .PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm
 
 # Build all targets.
@@ -214,21 +216,21 @@ apex_rocm:
 cuda_msccl: sb_micro_path
 ifneq (,$(wildcard msccl/executor/msccl-executor-nccl/Makefile))
 	cd ./msccl/executor/msccl-executor-nccl && \
-	make -j $(shell nproc --ignore=2) src.build && \
+	make -j ${NUM_MAKE_JOBS} src.build && \
 	cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/lib/msccl-executor-nccl && \
 	cp -r -v ./msccl/executor/msccl-executor-nccl/build/* $(SB_MICRO_PATH)/lib/msccl-executor-nccl/
 endif
 ifneq (,$(wildcard msccl/scheduler/msccl-scheduler/Makefile))
 	cd ./msccl/scheduler/msccl-scheduler && \
-	CXX=nvcc BIN_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl SRC_HOME=../../../msccl/executor/msccl-executor-nccl make -j $(shell nproc --ignore=2) && \
+	CXX=nvcc BIN_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl SRC_HOME=../../../msccl/executor/msccl-executor-nccl make -j ${NUM_MAKE_JOBS} && \
 	cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/lib/msccl-scheduler && \
 	cp -r -v ./msccl/scheduler/msccl-scheduler/build/* $(SB_MICRO_PATH)/lib/msccl-scheduler/
 endif
 ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
 	cd ./msccl/tests/msccl-tests-nccl && \
-	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j $(shell nproc --ignore=2) && cd ../../..
+	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j ${NUM_MAKE_JOBS} && cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/bin/msccl-tests-nccl && \
 	cp -r -v ./msccl/tests/msccl-tests-nccl/build/* $(SB_MICRO_PATH)/bin/msccl-tests-nccl/
 endif
