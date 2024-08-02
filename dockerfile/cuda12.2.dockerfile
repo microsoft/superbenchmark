@@ -131,7 +131,7 @@ ENV PATH="${PATH}" \
 RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment && \
-    echo "source /opt/hpcx/hpcx-init.sh && hpcx_load" >> /etc/profile.d/10-hpcx.sh
+    echo "source /opt/hpcx/hpcx-init.sh && hpcx_load" | tee -a /etc/bash.bashrc >> /etc/profile.d/10-hpcx.sh
 
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
