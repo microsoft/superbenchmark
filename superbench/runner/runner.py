@@ -84,7 +84,7 @@ class SuperBenchRunner():
                     if 'proc_num' not in mode:
                         self._sb_benchmarks[name].modes[idx].proc_num = 8
                 elif mode.name == 'mpi':
-                    if 'machinefile' not in mode:
+                    if 'mca' not in mode:
                         self._sb_benchmarks[name].modes[idx].mca = {
                             'pml': 'ob1',
                             'btl': '^openib',
