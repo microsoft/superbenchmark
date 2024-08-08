@@ -253,9 +253,8 @@ class SuperBenchExecutor():
                         benchmark_real_name,
                         platform=self.__get_platform(),
                         framework=Framework(framework.lower()),
-                        parameters=self.__get_arguments(
-                            {} if 'parameters' not in benchmark_config else benchmark_config.parameters
-                        )
+                        parameters=self.
+                        __get_arguments({} if 'parameters' not in benchmark_config else benchmark_config.parameters)
                     )
                     result = self.__exec_benchmark(full_name, context)
                     benchmark_results.append(result)
