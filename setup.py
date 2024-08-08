@@ -200,7 +200,7 @@ setup(
                 'pytest-subtests>=0.4.0',
                 'pytest>=6.2.2, <=7.4.4',
                 'types-markdown',
-                'types-pkg_resources',
+                'types-setuptools',
                 'types-pyyaml',
                 'typing-extensions>=3.10',
                 'urllib3<2.0',
