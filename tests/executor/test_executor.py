@@ -166,5 +166,7 @@ class ExecutorTestCase(unittest.TestCase):
             self.assertTrue(p.is_dir())
             self.assertTrue((p / 'results.json').is_file())
             with (p / 'results.json').open() as f:
-                for result in json.load(f):
+                results = json.load(f)
+                self.assertTrue(len(results) > 0)
+                for result in results:
                     self.assertIn(benchmark_name, result['name'])
