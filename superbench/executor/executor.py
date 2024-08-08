@@ -228,29 +228,16 @@ class SuperBenchExecutor():
                     logger.warning('Monitor can not support CPU platform.')
 
             benchmark_real_name = benchmark_name.split(':')[0]
-            if 'frameworks' in benchmark_config:
-                for framework in benchmark_config.frameworks or [Framework.NONE.value]:
-                    if benchmark_real_name == 'model-benchmarks' or (
-                        ':' not in benchmark_name and benchmark_name.endswith('_models')
-                    ):
-                        for model in benchmark_config.models:
-                            full_name = f'{benchmark_name}/{framework}-{model}'
-                            logger.info('Executor is going to execute %s.', full_name)
-                            context = BenchmarkRegistry.create_benchmark_context(
-                                model,
-                                platform=self.__get_platform(),
-                                framework=Framework(framework.lower()),
-                                parameters=self.__get_arguments(
-                                    {} if 'parameters' not in benchmark_config else benchmark_config.parameters
-                                )
-                            )
-                            result = self.__exec_benchmark(full_name, context)
-                            benchmark_results.append(result)
-                    else:
-                        full_name = benchmark_name
+            frameworks = benchmark_config.get('frameworks', [Framework.NONE.value])
+            for framework in frameworks:
+                if benchmark_real_name == 'model-benchmarks' or (
+                    ':' not in benchmark_name and benchmark_name.endswith('_models')
+                ):
+                    for model in benchmark_config.models:
+                        full_name = f'{benchmark_name}/{framework}-{model}'
                         logger.info('Executor is going to execute %s.', full_name)
                         context = BenchmarkRegistry.create_benchmark_context(
-                            benchmark_real_name,
+                            model,
                             platform=self.__get_platform(),
                             framework=Framework(framework.lower()),
                             parameters=self.__get_arguments(
@@ -259,6 +246,19 @@ class SuperBenchExecutor():
                         )
                         result = self.__exec_benchmark(full_name, context)
                         benchmark_results.append(result)
+                else:
+                    full_name = benchmark_name
+                    logger.info('Executor is going to execute %s.', full_name)
+                    context = BenchmarkRegistry.create_benchmark_context(
+                        benchmark_real_name,
+                        platform=self.__get_platform(),
+                        framework=Framework(framework.lower()),
+                        parameters=self.__get_arguments(
+                            {} if 'parameters' not in benchmark_config else benchmark_config.parameters
+                        )
+                    )
+                    result = self.__exec_benchmark(full_name, context)
+                    benchmark_results.append(result)
 
             if monitor:
                 monitor.stop()
