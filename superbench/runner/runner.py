@@ -448,7 +448,7 @@ class SuperBenchRunner():
             mode.env.update({'SB_MODE_SERIAL_INDEX': mode.serial_index, 'SB_MODE_PARALLEL_INDEX': mode.parallel_index})
         logger.info('Runner is going to run %s in %s mode, proc rank %d.', benchmark_name, mode.name, mode.proc_rank)
 
-        timeout = self._sb_benchmarks[benchmark_name].get('timeout', 60)
+        timeout = self._sb_benchmarks[benchmark_name].get('timeout', None)
         if isinstance(timeout, int):
             timeout = max(timeout, 60)
 
