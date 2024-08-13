@@ -243,7 +243,7 @@ def aggregate(raw_data_df, pattern=None):
                 match = re.search(pattern, metric)
                 if match:
                     metric_in_list = list(metric)
-                    for i in range(len(match.groups()) , 0, -1):
+                    for i in range(len(match.groups()), 0, -1):
                         metric_in_list[match.start(i):match.end(i)] = '*'
                     short = ''.join(metric_in_list)
             if short not in metric_store:
