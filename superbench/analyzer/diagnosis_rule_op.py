@@ -254,7 +254,7 @@ class RuleOp:
                 violated_metric_num += 1
         # return code != 0, failed test
         violated_metric_num += RuleOp.value(data_row, rule, summary_data_row, details, categories)
-        details[:] = list(dict.fromkeys(details)) # remove duplicate details
+        details[:] = list(dict.fromkeys(details))    # remove duplicate details
         return violated_metric_num
 
 
