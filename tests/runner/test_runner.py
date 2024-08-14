@@ -428,11 +428,17 @@ class RunnerTestCase(unittest.TestCase):
                 )
 
     def test_run_proc_timeout(self):
-        """Test run_proc_timeout."""
+        """Test run_proc_ timeout."""
         self.runner._sb_benchmarks = {
-            'benchmark1': {'timeout': 120},
-            'benchmark2': {'timeout': None},
-            'benchmark3': {'timeout': 30},
+            'benchmark1': {
+                'timeout': 120
+            },
+            'benchmark2': {
+                'timeout': None
+            },
+            'benchmark3': {
+                'timeout': 30
+            },
         }
 
         test_cases = [
