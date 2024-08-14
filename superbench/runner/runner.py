@@ -205,7 +205,7 @@ class SuperBenchRunner():
 
         logger.info('Runner is going to get node system info.')
 
-        fcmd = "docker exec sb-workspace bash -c '{command}'"
+        fcmd = "docker exec sb-workspace bash -lc '{command}'"
 
         if 'skip' not in self._docker_config:
             self._docker_config.skip = False
@@ -462,7 +462,7 @@ class SuperBenchRunner():
                 envvar = f'{k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
                 env_list += f' -e {envvar}' if not self._docker_config.skip else f' && export {envvar}'
 
-        fcmd = "docker exec {env_list} sb-workspace bash -c '{command}'"
+        fcmd = "docker exec {env_list} sb-workspace bash -lc '{command}'"
         if self._docker_config.skip:
             fcmd = "bash -c '{env_list} && cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
