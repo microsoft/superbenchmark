@@ -239,19 +239,22 @@ class RuleOp:
         violated_metric_num = 0
         for metric_regex in raw_rule['metrics']:
             match = False
+            violate = False
             for metric in rule['metrics']:
                 if re.search(metric_regex, metric):
                     match = True
                     # metric not in raw_data or the value is none, miss test
-                    if metric not in data_row or pd.isna(data_row[metric]):
-                        violated_metric_num += 1
-                    break
+                    if RuleOp.miss_test(metric, rule, data_row, details, categories):
+                        violate = True
             # metric_regex written in rules is not matched by any metric, miss test
             if not match:
-                violated_metric_num += 1
+                violate = True
                 RuleOp.add_categories_and_details(metric_regex + '_miss', rule['categories'], details, categories)
+            if violate:
+                violated_metric_num += 1
         # return code != 0, failed test
         violated_metric_num += RuleOp.value(data_row, rule, summary_data_row, details, categories)
+        details[:] = list(dict.fromkeys(details))    # remove duplicate details
         return violated_metric_num
 
 
