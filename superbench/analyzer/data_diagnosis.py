@@ -262,9 +262,8 @@ class DataDiagnosis(RuleBase):
                     all_data_df = data_not_accept_df[[
                         append_columns[index]
                     ]].merge(all_data_df, left_index=True, right_index=True, how='right')
-            all_data_df['Accept'] = all_data_df['Accept'].replace(np.nan, True)
-            all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].replace(np.nan, 0)
-            all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].astype(int)
+            all_data_df['Accept'] = all_data_df['Accept'].replace(np.nan, 1).astype('bool')
+            all_data_df['Number Of Issues'] = all_data_df['Number Of Issues'].replace(np.nan, 0).astype('int')
 
         return all_data_df
 
@@ -296,7 +295,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
-        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').fillna(self.na)
+        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').infer_objects().fillna(self.na)
         p = Path(output_path)
         try:
             data_not_accept_json = data_not_accept_df.to_json(orient='index')
@@ -327,7 +326,7 @@ class DataDiagnosis(RuleBase):
             data_not_accept_df (DataFrame): the DataFrame to output
             output_path (str): the path of output jsonl file
         """
-        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').fillna(self.na)
+        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').infer_objects().fillna(self.na)
         data_not_accept_df = data_not_accept_df.reset_index()
         data_not_accept_df = data_not_accept_df.rename(
             columns={
@@ -378,7 +377,7 @@ class DataDiagnosis(RuleBase):
                             data_not_accept_df = data_analysis.round_significant_decimal_places(
                                 data_not_accept_df, round, [metric]
                             )
-        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').fillna(self.na)
+        data_not_accept_df = data_not_accept_df.convert_dtypes().astype('object').infer_objects().fillna(self.na)
         lines = file_handler.generate_md_table(data_not_accept_df, header)
         return lines
 
