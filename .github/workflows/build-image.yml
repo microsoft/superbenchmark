@@ -40,14 +40,9 @@ jobs:
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
           runner: ubuntu-latest
           build_args: "NUM_MAKE_JOBS=8"
-        - name: rocm5.7
-          dockerfile: rocm5.7.x
-          tags: superbench/main:rocm5.7
-          runner: [self-hosted, rocm-build]
-          build_args: "NUM_MAKE_JOBS=64"
-        - name: rocm6.0
-          dockerfile: rocm6.0.x
-          tags: superbench/main:rocm6.0
+        - name: rocm6.2
+          dockerfile: rocm6.2.x
+          tags: superbench/main:rocm6.2
           runner: [self-hosted, rocm-build]
           build_args: "NUM_MAKE_JOBS=64"
     steps:
