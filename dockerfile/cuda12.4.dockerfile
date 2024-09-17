@@ -123,6 +123,15 @@ RUN cd /tmp && \
     make install && \
     rm -rf /tmp/nccl
 
+# Install UCX v1.16.0 with multi-threading support
+RUN cd /tmp && \
+    wget https://github.com/openucx/ucx/releases/download/v1.16.0/ucx-1.16.0.tar.gz && \
+    tar xzf ucx-1.16.0.tar.gz && \
+    cd ucx-1.16.0 && \
+    ./contrib/configure-release-mt --prefix=/usr/local && \
+    make -j && \
+    make install
+
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:/usr/local/mpi/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
