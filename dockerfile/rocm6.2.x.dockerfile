@@ -6,15 +6,15 @@ FROM ${BASE_IMAGE}
 #   - Ubuntu: 22.04
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 6.0
+#   - ROCm: 6.2
 # Lib:
-#   - torch: 2.0.1
+#   - torch: 2.3.0
 #   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
-#   - hipblaslt: release/rocm-rel-6.0
+#   - hipblaslt: release-staging/rocm-rel-6.2
+#   - rocblas: release-staging/rocm-rel-6.2
 #   - openmpi: 4.1.x
-#   - apex: 1.0.0
 # Intel:
-#   - mlc: v3.10
+#   - mlc: v3.11
 
 LABEL maintainer="SuperBench"
 
@@ -169,7 +169,7 @@ ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
     git apply ../perftest_rocm6.patch
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 COMPOSABLEKERNEL_BRANCH=rocm-6.2.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
