@@ -168,6 +168,7 @@ setup(
         'openpyxl>=3.0.7',
         'packaging>=21.0',
         'pandas>=1.1.5',
+        'protobuf<=3.20.3',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
         'requests>=2.27.1',
