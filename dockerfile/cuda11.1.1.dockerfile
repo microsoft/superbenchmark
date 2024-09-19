@@ -86,10 +86,12 @@ RUN cd /tmp && \
 ENV HPCX_VERSION=v2.9.0
 RUN cd /opt && \
     rm -rf hpcx && \
-    wget -q http://www.mellanox.com/page/hpcx_eula?mrequest=downloads&mtype=hpc&mver=hpc-x&mname=${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-inbox-ubuntu20.04-x86_64.tbz -O hpcx.tbz && \
+    wget -q https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-inbox-ubuntu20.04-x86_64.tbz -O hpcx.tbz && \
     tar xf hpcx.tbz && \
     mv hpcx-${HPCX_VERSION}-gcc-inbox-ubuntu20.04-x86_64 hpcx && \
     rm hpcx.tbz
+
+
 
 # Install NCCL RDMA SHARP plugins
 RUN cd /tmp && \
