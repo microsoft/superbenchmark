@@ -143,7 +143,8 @@ RUN cd /opt/ &&  \
     make -j${NUM_MAKE_JOBS}
 
 # Install AMD SMI Python Library
-RUN cd /opt/rocm/share/amd_smi && \
+RUN apt install amd-smi-lib && \
+    cd /opt/rocm/share/amd_smi && \
     python3 -m pip install --user .
 
 ENV PATH="/usr/local/mpi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
