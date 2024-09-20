@@ -119,7 +119,7 @@ RUN cd /tmp && \
 RUN cd /tmp && \
     git clone -b v2.23.4-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
-    make -j src.build && \
+    make -j ${NUM_MAKE_JOBS} src.build && \
     make install && \
     rm -rf /tmp/nccl
 
@@ -129,7 +129,7 @@ RUN cd /tmp && \
     tar xzf ucx-1.16.0.tar.gz && \
     cd ucx-1.16.0 && \
     ./contrib/configure-release-mt --prefix=/usr/local && \
-    make -j && \
+    make -j ${NUM_MAKE_JOBS} && \
     make install
 
 ENV PATH="${PATH}" \
