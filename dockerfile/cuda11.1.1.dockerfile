@@ -91,8 +91,6 @@ RUN cd /opt && \
     mv hpcx-${HPCX_VERSION}-gcc-inbox-ubuntu20.04-x86_64 hpcx && \
     rm hpcx.tbz
 
-
-
 # Install NCCL RDMA SHARP plugins
 RUN cd /tmp && \
     git clone https://github.com/Mellanox/nccl-rdma-sharp-plugins.git && \
