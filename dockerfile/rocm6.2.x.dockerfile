@@ -109,9 +109,7 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}* ; \
     fi
 
-# Add target file to help determine which device(s) to build for
 ENV ROCM_PATH=/opt/rocm
-RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942:sramecc+:xnack-\n" >> ${ROCM_PATH}/bin/target.lst'
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
