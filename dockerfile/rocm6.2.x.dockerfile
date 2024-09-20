@@ -181,10 +181,10 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
 # Install transformer_engine
-git clone --recursive https://github.com/ROCm/TransformerEngine.git
-cd TransformerEngine
-export NVTE_FRAMEWORK=pytorch
-pip install .
+RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
+    cd TransformerEngine && \
+    export NVTE_FRAMEWORK=pytorch && \
+    pip install .
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
