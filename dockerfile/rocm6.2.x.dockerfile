@@ -111,7 +111,7 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
 
 # Add target file to help determine which device(s) to build for
 ENV ROCM_PATH=/opt/rocm
-RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx942:sramecc+:xnack-\n" >> ${ROCM_PATH}/bin/target.lst'
+RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942:sramecc+:xnack-\n" >> ${ROCM_PATH}/bin/target.lst'
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
@@ -183,8 +183,7 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
 # Install transformer_engine
 git clone --recursive https://github.com/ROCm/TransformerEngine.git
 cd TransformerEngine
-export NVTE_FRAMEWORK=pytorch #optionally set framework, currently only support pytorch and jax
-export PYTORCH_ROCM_ARCH=gfx942 # CK fused attn only support MI200 and MI300 and fp8 features are only supported on MI300
+export NVTE_FRAMEWORK=pytorch
 pip install .
 
 ADD . .
