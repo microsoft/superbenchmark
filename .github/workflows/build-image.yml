@@ -43,6 +43,7 @@ jobs:
         - name: rocm6.0
           dockerfile: rocm6.0.x
           tags: superbench/main:rocm6.0
+          runner: [self-hosted, rocm-build]
           build_args: "NUM_MAKE_JOBS=16"
         - name: rocm6.2
           dockerfile: rocm6.2.x
