@@ -8,7 +8,7 @@ FROM nvcr.io/nvidia/pytorch:24.03-py3
 #   - CUDA: 12.4.0
 #   - cuDNN: 9.0.0.306
 #   - cuBLAS: 12.4.2.65
-#   - NCCL: v2.20
+#   - NCCL: v2.23.4-1
 #   - TransformerEngine 1.4
 # Mellanox:
 #   - OFED: 23.07-0.5.1.2
@@ -114,6 +114,23 @@ RUN cd /tmp && \
     tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
     mv amd-blis /opt/AMD && \
     rm -rf aocl-blis-linux-aocc-4.0.tar.gz
+
+# Install NCCL 2.23.4
+RUN cd /tmp && \
+    git clone -b v2.23.4-1 https://github.com/NVIDIA/nccl.git && \
+    cd nccl && \
+    make -j ${NUM_MAKE_JOBS} src.build && \
+    make install && \
+    rm -rf /tmp/nccl
+
+# Install UCX v1.16.0 with multi-threading support
+RUN cd /tmp && \
+    wget https://github.com/openucx/ucx/releases/download/v1.16.0/ucx-1.16.0.tar.gz && \
+    tar xzf ucx-1.16.0.tar.gz && \
+    cd ucx-1.16.0 && \
+    ./contrib/configure-release-mt --prefix=/usr/local && \
+    make -j ${NUM_MAKE_JOBS} && \
+    make install
 
 ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:/usr/local/mpi/lib:${LD_LIBRARY_PATH}" \
