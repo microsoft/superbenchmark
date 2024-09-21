@@ -71,7 +71,7 @@ RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(
     make install && \
     rm -rf /tmp/cmake-${required_version}* \
     else \
-    echo "CMake version is greater than or equal to 3.23"; \
+    echo "CMake version is greater than or equal to 3.24.1"; \
     fi
 
 # Install Docker
