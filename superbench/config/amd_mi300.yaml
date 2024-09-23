@@ -1,0 +1,232 @@
+# SuperBench Config
+version: v0.11
+superbench:
+  enable: null
+  var:
+    default_local_mode: &default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: HIP_VISIBLE_DEVICES={proc_rank}
+          parallel: yes
+    default_pytorch_mode: &default_pytorch_mode
+      enable: true
+      modes:
+        - name: torch.distributed
+          proc_num: 8
+          node_num: 1
+      frameworks:
+        - pytorch
+    common_model_config: &common_model_config
+    model_ddp_parameter: &model_ddp_param
+      duration: 0
+      num_warmup: 128
+      num_steps: 512
+      sample_count: 8192
+      batch_size: 128
+      precision: [float32, float16]
+      model_action: [train]
+      pin_memory: yes
+      num_workers: 0
+  benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
+      parameters:
+        m: 7680
+        n: 8192
+        k: 8192
+    hipblaslt-gemm:
+      enable: true
+      modes:
+      - name: local
+        proc_num: 8
+        prefix: HIP_VISIBLE_DEVICES={proc_rank}
+        parallel: yes
+      parameters:
+        in_types: ["fp32", "fp16", "bf16", 'fp8']
+        tolerant_fail: yes
+        num_warmup: 100
+        num_steps: 1000
+        shapes:
+        - 4096,4096,4096
+        - 8192,8192,8192
+        - 16384,16384,16384
+    rccl-bw:
+      enable: true
+      modes:
+        - name: mpi
+          proc_num: 8
+          node_num: 1
+          mca:
+            pml: ob1
+            btl: ^openib
+            btl_tcp_if_exclude: lo,docker0
+            coll_hcoll_enable: 0
+      parameters:
+        maxbytes: 16G
+        ngpus: 1
+        operation: allreduce
+    cpu-memory-bw-latency:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        tests:
+          - bandwidth_matrix
+          - latency_matrix
+          - max_bandwidth
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 8
+          prefix: HIP_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/4))
+          parallel: no
+    ib-loopback:
+      enable: true
+      modes:
+      - name: local
+        proc_num: 16
+        prefix: PROC_RANK={proc_rank} IB_DEVICES=0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7 numactl -N $(({proc_rank}/8)) -m $(({proc_rank}/8))
+        parallel: no
+      parameters:
+        msg_size: 8388608
+    disk-benchmark:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        block_devices: []
+    gpu-copy-bw:correctness:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type: [htod, dtoh, dtod, one_to_all, all_to_one, all_to_all]
+        copy_type: [sm, dma]
+        size: 4096
+        num_warm_up: 0
+        num_loops: 1
+        check_data: true
+    gpu-copy-bw:perf:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type: [htod, dtoh, dtod, one_to_all, all_to_one, all_to_all]
+        copy_type: [sm, dma]
+    ib-traffic:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            btl: tcp,self
+            pml: ob1
+            btl_tcp_if_include: ens17f0
+    gpcnet-network-test:
+      enable: false
+      modes:
+        - name: mpi
+          proc_num: 1
+          mca:
+            pml: ucx
+            btl: ^uct
+            btl_tcp_if_include: ens17f0
+    tcp-connectivity:
+      enable: false
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        port: 22
+    dist-inference:
+      modes:
+      - name: mpi
+        proc_num: 8
+        node_num: 1
+        mca:
+          pml: ob1
+          btl: ^openib
+          btl_tcp_if_exclude: lo,docker0
+          coll_hcoll_enable: 0
+      frameworks:
+        - pytorch
+      parameters:
+        num_layers: 50
+        num_warmup: 20
+        num_steps: 100
+        use_cuda_graph: true
+        precision: float16
+        hidden_size: 128
+        input_size: 128
+        batch_size: 1024
+    model-benchmarks:gpt:
+      enable: true
+      <<: *default_pytorch_mode
+      models:
+      - gpt2-small
+      - gpt2-large
+      parameters:
+        <<: *model_ddp_param
+        precision: [float32, float16, fp8_hybrid]
+        batch_size: 32
+        seq_len: 224
+    model-benchmarks:bert:
+      enable: true
+      <<: *default_pytorch_mode
+      models:
+      - bert-base
+      - bert-large
+      parameters:
+        <<: *model_ddp_param
+        precision: [float32, float16, fp8_hybrid]
+        seq_len: 224
+    model-benchmarks:lstm:
+      enable: true
+      <<: *default_pytorch_mode
+      models:
+      - lstm
+      parameters:
+        <<: *model_ddp_param
+        batch_size: 1024
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+    model-benchmarks:resnet:
+      enable: true
+      <<: *default_pytorch_mode
+      models:
+      - resnet50
+      - resnet101
+      - resnet152
+      parameters:
+        <<: *model_ddp_param
+        batch_size: 384
+    model-benchmarks:densenet:
+      enable: true
+      <<: *default_pytorch_mode
+      models:
+      - densenet169
+      - densenet201
+      parameters:
+        <<: *model_ddp_param
+    model-benchmarks:vgg:
+      enable: true
+      <<: *default_pytorch_mode
+      models:
+      - vgg11
+      - vgg13
+      - vgg16
+      - vgg19
+      parameters:
+        <<: *model_ddp_param
