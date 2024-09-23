@@ -179,11 +179,11 @@ class NvidiaDeviceManager(DeviceManager):
         Return:
             temp (int): the temperature of device, None means failed to get the data.
         """
+        temp = None
         try:
             temp = nvml.nvmlDeviceGetTemperature(self._device_handlers[idx], nvml.NVML_TEMPERATURE_GPU)
         except Exception as err:
             logger.warning('Get device temperature failed: {}'.format(str(err)))
-            temp = None
         return temp
 
     def get_device_power(self, idx):
@@ -367,6 +367,7 @@ class AmdDeviceManager(DeviceManager):
         Return:
             temp (int): the temperature of device, None means failed to get the data.
         """
+        temp = None
         try:
             temp = rocml.amdsmi_get_temp_metric(
                 self._device_handlers[idx], rocml.AmdSmiTemperatureType.EDGE, rocml.AmdSmiTemperatureMetric.CURRENT
@@ -375,7 +376,6 @@ class AmdDeviceManager(DeviceManager):
             pass
         except Exception as err:
             logger.warning('Get device temperature failed: {}'.format(str(err)))
-            temp = None
         return temp
 
     def get_device_power(self, idx):
