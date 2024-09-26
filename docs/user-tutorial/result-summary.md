@@ -70,8 +70,8 @@ superbench:
       aggregate: True
       categories: KernelLaunch
       metrics:
-        - kernel-launch/event_overhead
-        - kernel-launch/wall_overhead
+        - kernel-launch/event_time
+        - kernel-launch/wall_time
     nccl:
       statistics: mean
       categories: NCCL
