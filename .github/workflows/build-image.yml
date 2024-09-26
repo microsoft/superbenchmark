@@ -68,6 +68,8 @@ jobs:
           else
             echo "No Docker images found with the specified references."
           fi
+          sudo docker ps -q | grep build | xargs -r sudo docker stop
+          echo y | sudo docker system prune -a --volumes
           df -h
       - name: Prepare metadata
         id: metadata
