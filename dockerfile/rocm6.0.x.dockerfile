@@ -173,6 +173,11 @@ RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASL
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
+# Install AMD SMI Python Library
+RUN apt install amd-smi-lib -y && \
+    cd /opt/rocm/share/amd_smi && \
+    python3 -m pip install .
+
 ADD . .
 ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
