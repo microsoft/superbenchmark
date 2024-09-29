@@ -3,7 +3,7 @@
 # Azure NDm A100 v4
 # reference: https://docs.microsoft.com/en-us/azure/virtual-machines/ndm-a100-v4-series
 
-version: v0.10
+version: v0.11
 superbench:
   enable: null
   monitor:
