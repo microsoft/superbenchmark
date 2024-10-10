@@ -168,6 +168,7 @@ setup(
         'openpyxl>=3.0.7',
         'packaging>=21.0',
         'pandas>=1.1.5',
+        'protobuf<=3.20.3',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
         'requests>=2.27.1',
@@ -218,7 +219,7 @@ setup(
                 'onnxruntime-gpu; python_version>="3.10"',
             ],
             'nvidia': ['py3nvml>=0.2.6'],
-            'amd': ['pyrsmi>=1.0.1'],
+            'amd': ['amdsmi'],
         }
     ),
     include_package_data=True,

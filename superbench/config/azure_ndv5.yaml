@@ -1,7 +1,7 @@
 # SuperBench Config
 version: v0.11
 superbench:
-  enable: null
+  enable:
   monitor:
     enable: true
     sample_duration: 1
@@ -24,23 +24,37 @@ superbench:
         - pytorch
     common_model_config: &common_model_config
       duration: 0
-      num_warmup: 16
-      num_steps: 128
-      batch_size: 1
-      precision:
-        - float32
-        - float16
-      model_action:
-        - train
+      num_warmup: 128
+      num_steps: 512
+      sample_count: 8192
+      batch_size: 128
+      precision: [float32, float16]
+      model_action: [train]
+      pin_memory: yes
+      num_workers: 0
   benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
+      parameters:
+        precision: ["fp64", "fp32", "fp16", "fp64_tc","tf32_tc", "bf16_tc", "fp16_tc", "int8_tc"]
+    cublaslt-gemm:
+      <<: *default_local_mode
+      parameters:
+          in_types: ['fp8e4m3', 'fp8e5m2', 'fp64', 'fp32', 'fp16', 'bf16', 'int8']
+          shapes:
+            - 4096,4096,4096
+            - 8192,8192,8192
+            - 16384,16384,16384
     gpu-burn:
-      enable: true
+      enable: false
       modes:
         - name: local
           proc_num: 1
           parallel: no
       parameters:
-        time: 300
+        time: 900
         doubles: true
         tensor_core: true
     nccl-bw:default:
@@ -66,26 +80,28 @@ superbench:
             NCCL_IB_DISABLE: '0'
       parameters:
         ngpus: 8
-    ib-loopback:
+    nccl-lat:default:
       enable: true
       modes:
-        - name: local
-          proc_num: 4
-          prefix: PROC_RANK={proc_rank} IB_DEVICES=0,2,4,6 NUMA_NODES=1,0,3,2
-          parallel: yes
-        - name: local
-          proc_num: 4
-          prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=1,0,3,2
-          parallel: yes
-    disk-benchmark:
-      enable: false
-      modes:
-        - name: local
-          proc_num: 1
-          parallel: no
+        - name: mpi
+          proc_num: 8
+          node_num: 1
       parameters:
-        block_devices:
-          - /dev/nvme0n1
+        maxbytes: 16M
+        warmup_iters: 20
+        iters: 1000
+        graph_iters: 1
+    ib-loopback:
+      timeout: *default_timeout
+      modes:
+          - name: local
+            proc_num: 4
+            prefix: PROC_RANK={proc_rank} IB_DEVICES=0,2,4,6 NUMA_NODES=0,0,1,1
+            parallel: yes
+          - name: local
+            proc_num: 4
+            prefix: PROC_RANK={proc_rank} IB_DEVICES=1,3,5,7 NUMA_NODES=0,0,1,1
+            parallel: yes
     cpu-memory-bw-latency:
       enable: false
       modes:
@@ -104,19 +120,36 @@ superbench:
           proc_num: 8
           prefix: CUDA_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/2))
           parallel: no
+    disk-benchmark:
+      enable: false
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: no
+      parameters:
+        block_devices:
+          - /dev/nvme0n1
+          - /dev/nvme1n1
+          - /dev/nvme2n1
+          - /dev/nvme3n1
+          - /dev/nvme4n1
+          - /dev/nvme5n1
+          - /dev/nvme6n1
+          - /dev/nvme7n1
+        seq_read_runtime: 60
+        seq_write_runtime: 60
+        seq_readwrite_runtime: 60
+        rand_read_runtime: 60
+        rand_write_runtime: 60
+        rand_readwrite_runtime: 60
     gpu-copy-bw:correctness:
       enable: true
       modes:
         - name: local
           parallel: no
       parameters:
-        mem_type:
-          - htod
-          - dtoh
-          - dtod
-        copy_type:
-          - sm
-          - dma
+        mem_type: [htod, dtoh, dtod, one_to_all, all_to_one, all_to_all]
+        copy_type: [sm, dma]
         size: 4096
         num_warm_up: 0
         num_loops: 1
@@ -127,17 +160,8 @@ superbench:
         - name: local
           parallel: no
       parameters:
-        mem_type:
-          - htod
-          - dtoh
-          - dtod
-        copy_type:
-          - sm
-          - dma
-    kernel-launch:
-      <<: *default_local_mode
-    gemm-flops:
-      <<: *default_local_mode
+        mem_type: [htod, dtoh, dtod, one_to_all, all_to_one, all_to_all]
+        copy_type: [sm, dma]
     cudnn-function:
       <<: *default_local_mode
     cublas-function:
@@ -150,6 +174,26 @@ superbench:
       <<: *default_pytorch_mode
     computation-communication-overlap:
       <<: *default_pytorch_mode
+    dist-inference:
+      enable: true
+      timeout: 600
+      modes:
+          - name: mpi
+            proc_num: 8
+            node_num: 1
+            env:
+              NCCL_TOPO_FILE: '/opt/microsoft/ndv5-topo.xml'
+      frameworks:
+        - pytorch
+      parameters:
+        num_layers: 50
+        num_warmup: 20
+        num_steps: 100
+        use_cuda_graph: true
+        precision: float16
+        hidden_size: 128
+        input_size: 128
+        batch_size: 1024
     ib-traffic:
       enable: false
       modes:
@@ -169,8 +213,6 @@ superbench:
             pml: ucx
             btl: ^uct
             btl_tcp_if_include: eth0
-          env:
-            UCX_NET_DEVICES: mlx5_0:1
     gpcnet-network-load-test:
       enable: false
       modes:
@@ -180,8 +222,6 @@ superbench:
             pml: ucx
             btl: ^uct
             btl_tcp_if_include: eth0
-          env:
-            UCX_NET_DEVICES: mlx5_0:1
     tcp-connectivity:
       enable: false
       modes:
@@ -191,8 +231,6 @@ superbench:
         port: 22
     ort-inference:
       <<: *default_local_mode
-      parameters:
-        batch_size: 1
     tensorrt-inference:
       <<: *default_local_mode
       parameters:
@@ -205,46 +243,39 @@ superbench:
           - bert-base
           - bert-large
         seq_length: 224
-        batch_size: 1
+        batch_size: 32
         precision: int8
-    megatron-gpt:
-      modes:
-      - name: mpi
-        proc_num: 1
-        node_num: all
-      parameters:
-        code_base: /opt/superbench/third_party/Megatron/Megatron-DeepSpeed/
-        dataset_url: https://huggingface.co/datasets/suolyer/pile_bookcorpus2/raw/main/test.json
-        batch_size: 2048
-        num_warmup: 0
-        num_steps: 10
-        precision:
-          - float16
-          - bfloat16
-        deepspeed: yes
-        sequence_parallel: yes
-        use_rotary_position_embeddings: yes
-    gpt_models:
+    model-benchmarks:gpt:
       <<: *default_pytorch_mode
       models:
         - gpt2-small
         - gpt2-large
       parameters:
         <<: *common_model_config
-    bert_models:
+        precision: [float32, float16, fp8_hybrid]
+        batch_size: 32
+        seq_len: 224
+    model-benchmarks:bert:
       <<: *default_pytorch_mode
       models:
         - bert-base
         - bert-large
       parameters:
         <<: *common_model_config
-    lstm_models:
+        precision: [float32, float16, fp8_hybrid]
+        seq_len: 224
+    model-benchmarks:lstm:
       <<: *default_pytorch_mode
       models:
         - lstm
       parameters:
         <<: *common_model_config
-    resnet_models:
+        batch_size: 1024
+        input_size: 224
+        hidden_size: 1000
+        seq_len: 32
+        pin_memory: no
+    model-benchmarks:resnet:
       <<: *default_pytorch_mode
       models:
         - resnet50
@@ -252,14 +283,17 @@ superbench:
         - resnet152
       parameters:
         <<: *common_model_config
-    densenet_models:
+        batch_size: 384
+        num_steps: 512
+    model-benchmarks:densenet:
       <<: *default_pytorch_mode
       models:
         - densenet169
         - densenet201
       parameters:
         <<: *common_model_config
-    vgg_models:
+        pin_memory: no
+    model-benchmarks:vgg:
       <<: *default_pytorch_mode
       models:
         - vgg11
@@ -268,3 +302,4 @@ superbench:
         - vgg19
       parameters:
         <<: *common_model_config
+        pin_memory: no

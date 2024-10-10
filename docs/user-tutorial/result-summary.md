@@ -58,7 +58,7 @@ superbench:
 
 ```yaml title="Example"
 # SuperBench rules
-version: v0.10
+version: v0.11
 superbench:
   rules:
     kernel_launch:
@@ -70,8 +70,8 @@ superbench:
       aggregate: True
       categories: KernelLaunch
       metrics:
-        - kernel-launch/event_overhead
-        - kernel-launch/wall_overhead
+        - kernel-launch/event_time
+        - kernel-launch/wall_time
     nccl:
       statistics: mean
       categories: NCCL

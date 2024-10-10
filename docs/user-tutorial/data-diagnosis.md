@@ -65,7 +65,7 @@ superbench:
 example:
 ```yaml
 # SuperBench rules
-version: v0.10
+version: v0.11
 superbench:
   rules:
     failure-rule:
@@ -83,8 +83,8 @@ superbench:
       criteria: lambda x:x>0.05
       categories: KernelLaunch
       metrics:
-        - kernel-launch/event_overhead:\d+
-        - kernel-launch/wall_overhead:\d+
+        - kernel-launch/event_time:\d+
+        - kernel-launch/wall_time:\d+
     rule1:
     # Rule 1: If H2D_Mem_BW or D2H_Mem_BW test suffers > 5% downgrade, label it as defective
       function: variance

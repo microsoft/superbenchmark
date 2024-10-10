@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=rocm/pytorch:rocm6.0_ubuntu22.04_py3.9_pytorch_2.0.1
+ARG BASE_IMAGE=rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0
 
 FROM ${BASE_IMAGE}
 
@@ -6,13 +6,13 @@ FROM ${BASE_IMAGE}
 #   - Ubuntu: 22.04
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 6.0
+#   - ROCm: 6.2
 # Lib:
-#   - torch: 2.0.1
+#   - torch: 2.3.0
 #   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
-#   - hipblaslt: release/rocm-rel-6.0
+#   - hipblaslt: release-staging/rocm-rel-6.2
+#   - rocblas: release-staging/rocm-rel-6.2
 #   - openmpi: 4.1.x
-#   - apex: 1.0.0
 # Intel:
 #   - mlc: v3.11
 
@@ -71,7 +71,7 @@ RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(
     make install && \
     rm -rf /tmp/cmake-${required_version}* \
     else \
-    echo "CMake version is greater than or equal to 3.23"; \
+    echo "CMake version is greater than or equal to 3.24.1"; \
     fi
 
 # Install Docker
@@ -109,9 +109,7 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}* ; \
     fi
 
-# Add target file to help determine which device(s) to build for
 ENV ROCM_PATH=/opt/rocm
-RUN bash -c 'echo -e "gfx90a:xnack-\ngfx90a:xnac+\ngfx940\ngfx941\ngfx942:sramecc+:xnack-\n" >> ${ROCM_PATH}/bin/target.lst'
 
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
@@ -132,14 +130,14 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/793041/mlc_v3.11.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
 # Install RCCL
 RUN cd /opt/ &&  \
-    git clone -b release/rocm-rel-6.0 https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    git clone -b release/rocm-rel-6.2 https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
     mkdir build && \
     cd build && \
@@ -147,6 +145,11 @@ RUN cd /opt/ &&  \
     -DCMAKE_PREFIX_PATH="${ROCM_PATH}/hsa;${ROCM_PATH}/hip;${ROCM_PATH}/share/rocm/cmake/;${ROCM_PATH}" \
     .. && \
     make -j${NUM_MAKE_JOBS}
+
+# Install AMD SMI Python Library
+RUN apt install amd-smi-lib -y && \
+    cd /opt/rocm/share/amd_smi && \
+    python3 -m pip install .
 
 ENV PATH="/usr/local/mpi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
     LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
@@ -169,14 +172,17 @@ ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
     git apply ../perftest_rocm6.patch
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-6.0 HIPBLASLT_BRANCH=release/rocm-rel-6.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
+    cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
-# Install AMD SMI Python Library
-RUN apt install amd-smi-lib -y && \
-    cd /opt/rocm/share/amd_smi && \
-    python3 -m pip install .
+# Install transformer_engine
+RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
+    cd TransformerEngine && \
+    export NVTE_FRAMEWORK=pytorch && \
+    pip install .
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
@@ -184,3 +190,4 @@ ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
+
