@@ -1150,7 +1150,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < numa_count; i++) {
         args.numa_id = i;
 
-        // Avoid numa nodes without CPUS(eg. Nvidia Grace Hopper memory only numa node)
+        // Avoid numa nodes without CPUS(eg. Nvidia Grace systems have memory only numa node)
         if (!HasCPUsForNumaNode(args.numa_id)) {
             continue;
         }
