@@ -313,6 +313,21 @@ int SetGpu(int gpu_id) {
     return 0;
 }
 
+bool HasCPUsForNumaNode(int node) {
+    struct bitmask *bm = numa_allocate_nodemask();
+
+    if (numa_node_to_cpus(node, bm) < 0) {
+        fprintf(stderr, "numa_node_to_cpus error on node: %d\n", node);
+        numa_bitmask_free(bm);
+        return false; // On error
+    }
+
+    // Check if any CPU is assigned to the NUMA node, has_cpus is false for mem only numa nodes
+    bool has_cpus = (numa_bitmask_weight(bm) > 0);
+    numa_bitmask_free(bm);
+    return has_cpus;
+}
+
 #if defined(__HIP_PLATFORM_AMD__)
 bool UseFineGrained(const SubBenchArgs &args) {
     return args.is_src_dev_gpu && args.is_dst_dev_gpu && args.src_gpu_id != args.dst_gpu_id;
@@ -1134,6 +1149,12 @@ int main(int argc, char **argv) {
     // Scan all NUMA nodes
     for (int i = 0; i < numa_count; i++) {
         args.numa_id = i;
+
+        // Avoid numa nodes without CPUS(eg. Nvidia Grace Hopper memory only numa node)
+        if (!HasCPUsForNumaNode(args.numa_id)) {
+            continue;
+        }
+
         // Scan all GPUs
         for (int j = 0; j < gpu_count; j++) {
             // Host-to-device benchmark
