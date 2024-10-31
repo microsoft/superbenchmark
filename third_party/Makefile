@@ -18,7 +18,14 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
 .PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm
 
-# Build all targets.
+# Build targets.
+ifeq ($(shell uname -m), aarch64)
+all: cuda
+cuda_with_msccl: cuda cuda_msccl
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_gpuburn megatron_lm megatron_deepspeed
+cpu: common cpu_perftest
+common: cpu_stream fio
+else
 all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
@@ -26,6 +33,7 @@ rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_
 cpu: common cpu_perftest
 common: cpu_hpl cpu_stream fio
 directx_amd: directx_amf_encoding_latency
+endif
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.
 sb_micro_path:
@@ -59,7 +67,7 @@ else
 endif
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
 	git clone -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
-	cd ./$(TEST_PATH) && make clean && make TARGET_ARCH=x86_64 SMS=$(ARCHS)
+	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
 	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
 
 # Build nccl-tests from commit 8274cb4 of default branch.
