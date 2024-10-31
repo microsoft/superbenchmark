@@ -28,27 +28,22 @@ jobs:
         - name: cuda12.4
           dockerfile: cuda12.4
           tags: superbench/main:cuda12.4
-          runner: [self-hosted, rocm-build]
+          runner: [self-hosted]
           build_args: "NUM_MAKE_JOBS=8"
         - name: cuda12.2
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
-          runner: [self-hosted, rocm-build]
+          runner: [self-hosted]
           build_args: "NUM_MAKE_JOBS=8"
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
           runner: ubuntu-latest
           build_args: "NUM_MAKE_JOBS=8"
-        - name: rocm6.0
-          dockerfile: rocm6.0.x
-          tags: superbench/main:rocm6.0
-          runner: [self-hosted, rocm-build]
-          build_args: "NUM_MAKE_JOBS=16"
         - name: rocm6.2
           dockerfile: rocm6.2.x
           tags: superbench/main:rocm6.2
-          runner: [self-hosted, rocm-build]
+          runner: [self-hosted]
           build_args: "NUM_MAKE_JOBS=16"
     steps:
       - name: Checkout
@@ -62,14 +57,8 @@ jobs:
             sudo rsync -a --delete /tmp/emptydir/ ${dir}
           done
           sudo apt-get clean
-          # Check if Docker images exist before trying to remove them
-          if sudo docker images -q --filter=reference="node" --filter=reference="buildpack-deps" | grep -q .; then
-            sudo docker rmi $(sudo docker images --format "{{.Repository}}:{{.Tag}}" --filter=reference="node" --filter=reference="buildpack-deps")
-          else
-            echo "No Docker images found with the specified references."
-          fi
-          sudo docker ps -q | grep build | xargs -r sudo docker stop
-          echo y | sudo docker system prune -a --volumes
+          sudo docker rmi $(sudo docker images --format "{{.Repository}}:{{.Tag}}" --filter=reference="node" --filter=reference="buildpack-deps") ||:
+          sudo docker image prune -a --force --filter="label=maintainer=SuperBench" --filter "until=720h" ||:
           df -h
       - name: Prepare metadata
         id: metadata
