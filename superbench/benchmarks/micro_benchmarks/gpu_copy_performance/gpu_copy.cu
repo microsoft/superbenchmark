@@ -313,11 +313,13 @@ int SetGpu(int gpu_id) {
     return 0;
 }
 
+// Check if its NUMA node has CPUs.
 bool HasCPUsForNumaNode(int node) {
     struct bitmask *bm = numa_allocate_nodemask();
 
-    if (numa_node_to_cpus(node, bm) < 0) {
-        fprintf(stderr, "numa_node_to_cpus error on node: %d\n", node);
+    int numa_err = numa_node_to_cpus(node, bm);
+    if (numa_err != 0) {
+        fprintf(stderr, "numa_node_to_cpus error on node: %d, error code: %d\n", node, numa_err);
         numa_bitmask_free(bm);
         return false; // On error
     }
