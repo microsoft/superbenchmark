@@ -3,9 +3,9 @@
 
 // GPU copy benchmark tests dtoh/htod/dtod data transfer bandwidth by GPU SM/DMA.
 
+#include <cerrno> // errno
 #include <cstdio>
 #include <cstring>
-#include <string>
 #include <vector>
 
 #include <getopt.h>
@@ -319,7 +319,9 @@ bool HasCPUsForNumaNode(int node) {
 
     int numa_err = numa_node_to_cpus(node, bm);
     if (numa_err != 0) {
-        fprintf(stderr, "numa_node_to_cpus error on node: %d, error code: %d\n", node, numa_err);
+        fprintf(stderr, "HasCPUsForNumaNode::numa_node_to_cpus error on node: %d, code: %d, message: %s\n", node, errno,
+                strerror(errno));
+
         numa_bitmask_free(bm);
         return false; // On error
     }
