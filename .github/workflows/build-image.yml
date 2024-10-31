@@ -30,6 +30,12 @@ jobs:
           tags: superbench/main:cuda12.4
           runner: [self-hosted, rocm-build]
           build_args: "NUM_MAKE_JOBS=8"
+        # # TODO: Enable ARM build, check for hosted aarch64 runner availability
+        # - name: cuda12.4-arm
+        #   dockerfile: cuda12.4
+        #   tags: superbench/main:cuda12.4
+        #   runner: [self-hosted, aarch64-build]
+        #   build_args: "NUM_MAKE_JOBS=8"
         - name: cuda12.2
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
