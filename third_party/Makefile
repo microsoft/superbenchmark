@@ -19,19 +19,16 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 .PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm
 
 # Build targets.
-ifeq ($(shell uname -m), aarch64)
-all: cuda
-cuda_with_msccl: cuda cuda_msccl
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_gpuburn megatron_lm megatron_deepspeed
-cpu: common cpu_perftest
-common: cpu_stream fio
-else
 all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
-cpu: common cpu_perftest
-common: cpu_hpl cpu_stream fio
+cpu: common cpu_perftest cpu_stream
+common: fio
+
+# non aarch64 specific targets
+ifneq ($(shell uname -m), aarch64)
+common: fio cpu_hpl
 directx_amd: directx_amf_encoding_latency
 endif
 
