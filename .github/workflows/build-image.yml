@@ -142,7 +142,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          platforms: linux/amd64
+          platforms: linux/amd64, linux/arm64
           context: .
           file: ${{ steps.metadata.outputs.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
