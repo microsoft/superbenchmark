@@ -37,31 +37,25 @@ void PrintUsage() {
 }
 
 /**
- * @brief Checks if the system has CPUs available for a given NUMA node.
+ * @brief Checks if the system has memory available for a specific NUMA node.
  *
- * This function determines whether there are CPUs available for the specified
- * NUMA (Non-Uniform Memory Access) node. NUMA nodes are used in systems with
- * multiple processors to optimize memory access times.
+ * This function determines whether there is sufficient memory available on the specified
+ * NUMA (Non-Uniform Memory Access) node. It is useful for ensuring that memory allocation
+ * requests can be satisfied by the desired NUMA node, which can help optimize memory access
+ * patterns and performance in NUMA-aware applications.
  *
  * @param node_id The identifier of the NUMA node to check.
- * @return true if there are CPUs available for the specified NUMA node, false otherwise.
+ * @param required_memory The amount of memory required (in bytes).
+ * @return true if the specified NUMA node has sufficient memory available, false otherwise.
  */
-bool HasCPUsForNumaNode(int node) {
-    struct bitmask *bm = numa_allocate_nodemask();
-    std::vector<int> cpus;
-    if (numa_node_to_cpus(node, bm) < 0) {
-        perror("numa_node_to_cpus");
-        numa_bitmask_free(bm);
-        return false; // On error
+bool HasMemForNumaNode(int node) {
+    try {
+        long free_memory = numa_node_size64(node, nullptr);
+        return free_memory > 0;
+    } catch (const std::exception &e) {
+        std::cerr << "Failed to get memory size for NUMA node " << node << ". ERROR: " << e.what() << std::endl;
+        return false;
     }
-
-    for (int i = 0; i < numa_bitmask_weight(bm); i++) {
-        if (numa_bitmask_isbitset(bm, i)) {
-            numa_bitmask_free(bm);
-            return true;
-        }
-    }
-    return false;
 }
 
 /**
@@ -257,7 +251,7 @@ int main(int argc, char **argv) {
 
     // Run the benchmark
     for (int src_node = 0; src_node < num_of_numa_nodes; src_node++) {
-        if (!HasCPUsForNumaNode(src_node)) {
+        if (!HasMemForNumaNode(src_node)) {
             // Skip the NUMA node if there are no CPUs available
             continue;
         }
@@ -268,7 +262,7 @@ int main(int argc, char **argv) {
                 continue;
             }
 
-            if (!HasCPUsForNumaNode(dst_node)) {
+            if (!HasMemForNumaNode(dst_node)) {
                 // Skip the NUMA node if there are no CPUs available
                 continue;
             }
