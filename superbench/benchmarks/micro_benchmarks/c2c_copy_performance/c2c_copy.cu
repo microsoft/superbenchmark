@@ -59,6 +59,35 @@ bool HasMemForNumaNode(int node) {
 }
 
 /**
+ * @brief Checks if the system has CPUs available for a specific NUMA node.
+ *
+ * This function determines whether there are CPUs available on the specified
+ * NUMA (Non-Uniform Memory Access) node. It is useful for ensuring that CPU
+ * affinity can be set to the desired NUMA node, which can help optimize memory
+ * access patterns and performance in NUMA-aware applications.
+ *
+ * @param node The identifier of the NUMA node to check.
+ * @return true if the specified NUMA node has CPUs available, false otherwise.
+ */
+bool HasCPUsForNumaNode(int node) {
+    struct bitmask *bm = numa_allocate_nodemask();
+
+    int numa_err = numa_node_to_cpus(node, bm);
+    if (numa_err != 0) {
+        fprintf(stderr, "HasCPUsForNumaNode::numa_node_to_cpus error on node: %d, code: %d, message: %s\n", node, errno,
+                strerror(errno));
+
+        numa_bitmask_free(bm);
+        return false; // On error
+    }
+
+    // Check if any CPU is assigned to the NUMA node, has_cpus is false for mem only numa nodes
+    bool has_cpus = (numa_bitmask_weight(bm) > 0);
+    numa_bitmask_free(bm);
+    return has_cpus;
+}
+
+/**
  * @brief Parses command-line options for the CPU copy performance benchmark.
  *
  * This function processes the command-line arguments provided to the benchmark
@@ -151,8 +180,9 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
 double BenchmarkNUMACopy(int src_node, int dst_node, Opts &opts) {
     int ret = 0;
 
-    // Set CPU affinity to the source NUMA node
-    ret = numa_run_on_node(src_node);
+    // Set CPU affinity to the NUMA node with CPU cores assoiated
+    int affinity_node = HasCPUsForNumaNode(src_node) ? src_node : dst_node;
+    ret = numa_run_on_node(affinity_node);
     if (ret != 0) {
         std::cerr << "Failed to set CPU affinity to NUMA node " << src_node << std::endl;
         return 0;
@@ -264,6 +294,12 @@ int main(int argc, char **argv) {
 
             if (!HasMemForNumaNode(dst_node)) {
                 // Skip the NUMA node if there are no CPUs available
+                continue;
+            }
+
+            //
+            if (!HasCPUsForNumaNode(src_node) && !HasCPUsForNumaNode(dst_node)) {
+                // Skip the process if there are no CPUs available on both NUMA nodes
                 continue;
             }
 
