@@ -70,7 +70,7 @@ bool HasMemForNumaNode(int node) {
  * @return true if the specified NUMA node has CPUs available, false otherwise.
  */
 bool HasCPUsForNumaNode(int node) {
-    struct bitmask *bm = numa_allocate_nodemask();
+    struct bitmask *bm = numa_allocate_cpumask();
 
     int numa_err = numa_node_to_cpus(node, bm);
     if (numa_err != 0) {
