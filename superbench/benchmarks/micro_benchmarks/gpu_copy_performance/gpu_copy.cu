@@ -315,7 +315,7 @@ int SetGpu(int gpu_id) {
 
 // Check if its NUMA node has CPUs.
 bool HasCPUsForNumaNode(int node) {
-    struct bitmask *bm = numa_allocate_nodemask();
+    struct bitmask *bm = numa_allocate_cpumask();
 
     int numa_err = numa_node_to_cpus(node, bm);
     if (numa_err != 0) {
@@ -328,7 +328,7 @@ bool HasCPUsForNumaNode(int node) {
 
     // Check if any CPU is assigned to the NUMA node, has_cpus is false for mem only numa nodes
     bool has_cpus = (numa_bitmask_weight(bm) > 0);
-    numa_bitmask_free(bm);
+    numa_free_cpumask(bm);
     return has_cpus;
 }
 
