@@ -116,9 +116,9 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
     tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
     mv amd-blis /opt/AMD && \
-    rm -rf aocl-blis-linux-aocc-4.0.tar.gz \
+    rm -rf aocl-blis-linux-aocc-4.0.tar.gz; \
     else \
-    echo "Skipping Intel MLC, AOCC and AMD Bliss installations for non-amd64 architecture: $TARGETARCH" \
+    echo "Skipping Intel MLC, AOCC and AMD Bliss installations for non-amd64 architecture: $TARGETARCH"; \
     fi
 
 # Install NCCL 2.23.4
