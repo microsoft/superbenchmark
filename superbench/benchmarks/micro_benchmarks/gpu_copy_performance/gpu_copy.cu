@@ -3,9 +3,9 @@
 
 // GPU copy benchmark tests dtoh/htod/dtod data transfer bandwidth by GPU SM/DMA.
 
+#include <cerrno> // errno
 #include <cstdio>
 #include <cstring>
-#include <string>
 #include <vector>
 
 #include <getopt.h>
@@ -311,6 +311,25 @@ int SetGpu(int gpu_id) {
         return -1;
     }
     return 0;
+}
+
+// Check if its NUMA node has CPUs.
+bool HasCPUsForNumaNode(int node) {
+    struct bitmask *bm = numa_allocate_cpumask();
+
+    int numa_err = numa_node_to_cpus(node, bm);
+    if (numa_err != 0) {
+        fprintf(stderr, "HasCPUsForNumaNode::numa_node_to_cpus error on node: %d, code: %d, message: %s\n", node, errno,
+                strerror(errno));
+
+        numa_bitmask_free(bm);
+        return false; // On error
+    }
+
+    // Check if any CPU is assigned to the NUMA node, has_cpus is false for mem only numa nodes
+    bool has_cpus = (numa_bitmask_weight(bm) > 0);
+    numa_free_cpumask(bm);
+    return has_cpus;
 }
 
 #if defined(__HIP_PLATFORM_AMD__)
@@ -1134,6 +1153,12 @@ int main(int argc, char **argv) {
     // Scan all NUMA nodes
     for (int i = 0; i < numa_count; i++) {
         args.numa_id = i;
+
+        // Avoid numa nodes without CPUS(eg. Nvidia Grace systems have memory only numa node)
+        if (!HasCPUsForNumaNode(args.numa_id)) {
+            continue;
+        }
+
         // Scan all GPUs
         for (int j = 0; j < gpu_count; j++) {
             // Host-to-device benchmark
