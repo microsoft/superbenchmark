@@ -19,6 +19,7 @@ FROM nvcr.io/nvidia/pytorch:24.03-py3
 LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     autoconf \
@@ -60,11 +61,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 ARG NUM_MAKE_JOBS=
+ARG TARGETPLATFORM
+ARG TARGETARCH
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
-RUN cd /tmp && \
-    wget -q https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+RUN TARGETARCH_HW=$(uname -m) && \
+    wget -q https://download.docker.com/linux/static/stable/${TARGETARCH_HW}/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz
 
@@ -80,40 +83,43 @@ RUN mkdir -p /root/.ssh && \
 
 # Install OFED
 ENV OFED_VERSION=23.07-0.5.1.2
-RUN cd /tmp && \
-    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64.tgz && \
-    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-x86_64/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
+RUN TARGETARCH_HW=$(uname -m) && \
+    cd /tmp && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-${TARGETARCH_HW}.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-${TARGETARCH_HW}.tgz && \
+    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-${TARGETARCH_HW}/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
 ENV HPCX_VERSION=v2.18
-RUN cd /opt && \
+RUN TARGETARCH_HW=$(uname -m) && \
+    cd /opt && \
     rm -rf hpcx && \
-    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64.tbz -O hpcx.tbz && \
+    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-${TARGETARCH_HW}.tbz -O hpcx.tbz && \
     tar xf hpcx.tbz && \
-    mv hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64 hpcx && \
+    mv hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-${TARGETARCH_HW} hpcx && \
     rm hpcx.tbz
 
-# Install Intel MLC
-RUN cd /tmp && \
+# Installs specific to amd64 platform
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    # Install Intel MLC
+    cd /tmp && \
     wget -q https://downloadmirror.intel.com/793041/mlc_v3.11.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
-    rm -rf ./Linux mlc.tgz
-
-# Install AOCC compiler
-RUN cd /tmp && \
+    rm -rf ./Linux mlc.tgz && \
+    # Install AOCC compiler
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
     apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
-    rm -rf aocc-compiler-4.0.0_1_amd64.deb
-
-# Install AMD BLIS
-RUN cd /tmp && \
+    rm -rf aocc-compiler-4.0.0_1_amd64.deb && \
+    # Install AMD BLIS
     wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
     tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
     mv amd-blis /opt/AMD && \
-    rm -rf aocl-blis-linux-aocc-4.0.tar.gz
+    rm -rf aocl-blis-linux-aocc-4.0.tar.gz; \
+    else \
+    echo "Skipping Intel MLC, AOCC and AMD Bliss installations for non-amd64 architecture: $TARGETARCH"; \
+    fi
 
 # Install NCCL 2.23.4
 RUN cd /tmp && \

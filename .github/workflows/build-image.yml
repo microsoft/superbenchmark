@@ -28,21 +28,25 @@ jobs:
         - name: cuda12.4
           dockerfile: cuda12.4
           tags: superbench/main:cuda12.4
+          platforms: linux/amd64 # TODO: linux/arm64
           runner: [self-hosted]
           build_args: "NUM_MAKE_JOBS=16"
         - name: cuda12.2
           dockerfile: cuda12.2
           tags: superbench/main:cuda12.2
+          platforms: linux/amd64
           runner: [self-hosted]
           build_args: "NUM_MAKE_JOBS=16"
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
           tags: superbench/main:cuda11.1.1,superbench/superbench:latest
+          platforms: linux/amd64
           runner: ubuntu-latest
           build_args: "NUM_MAKE_JOBS=8"
         - name: rocm6.2
           dockerfile: rocm6.2.x
           tags: superbench/main:rocm6.2
+          platforms: linux/amd64
           runner: [self-hosted]
           build_args: "NUM_MAKE_JOBS=16"
     steps:
@@ -125,7 +129,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          platforms: linux/amd64
+          platforms: ${{ matrix.platforms }}
           context: .
           file: ${{ steps.metadata.outputs.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
