@@ -137,7 +137,8 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
 
         try:
             for output_line in raw_output.strip().splitlines():
-                self._result.add_result(output_line.strip())
+                name, value = output_line.split(':')
+                self._result.add_result(name.strip(), float(value.strip()))
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
@@ -162,8 +163,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        return self._process_raw_result_mlc(cmd_idx, raw_output) if "x86_64" in platform.machine(
-        ) else self._process_raw_result_genneral(cmd_idx, raw_output)
+        return self._process_raw_result_mlc(cmd_idx, raw_output) if "x86_64" in platform.machine() else self._process_raw_result_genneral(cmd_idx, raw_output)
 
     def _parse_bw_latency(self, raw_output):
         out_table = dict()
@@ -193,4 +193,5 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             out_table[key] = [vals[-1]]
         return out_table
 
+BenchmarkRegistry.
 BenchmarkRegistry.register_benchmark('cpu-memory-bw-latency', CpuMemBwLatencyBenchmark)
