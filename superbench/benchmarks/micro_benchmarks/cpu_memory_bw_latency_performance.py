@@ -29,6 +29,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
+        # Add arguments for the Intel MLC tool.
         self._parser.add_argument(
             '--tests',
             type=str,
@@ -36,6 +37,37 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             default=['bandwidth_matrix'],
             required=False,
             help='The modes to run mlc with. Possible values are {}.'.format(' '.join(self.__support_mlc_commands))
+        )
+
+        # Add arguments for the general CPU copy benchmark.
+        self._parser.add_argument(
+            '--size',
+            type=int,
+            default=256 * 1024**2,
+            required=False,
+            help='Size of data buffer in bytes for non mlc benchmark. Default is 256MB.',
+        )
+
+        self._parser.add_argument(
+            '--num_warm_up',
+            type=int,
+            default=20,
+            required=False,
+            help='Number of warm up rounds for non mlc benchmark. Default is 20.',
+        )
+
+        self._parser.add_argument(
+            '--num_loops',
+            type=int,
+            default=100,
+            required=False,
+            help='Number of data buffer copies performed for non mlc benchmark. Default is 100.',
+        )
+
+        self._parser.add_argument(
+            '--check_data',
+            action='store_true',
+            help='Enable data checking for non mlc benchmark. Default is False.',
         )
 
     def _preprocess_mlc(self):
