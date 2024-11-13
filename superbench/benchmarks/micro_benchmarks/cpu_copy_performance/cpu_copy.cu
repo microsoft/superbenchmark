@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
     // Run the benchmark
     for (int src_node = 0; src_node < num_of_numa_nodes; src_node++) {
         if (!HasMemForNumaNode(src_node)) {
-            // Skip the NUMA node if there are no CPUs available
+            // Skip the NUMA node if there are no memory available
             continue;
         }
 
@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
             }
 
             if (!HasMemForNumaNode(dst_node)) {
-                // Skip the NUMA node if there are no CPUs available
+                // Skip the NUMA node if there are no memory available
                 continue;
             }
 

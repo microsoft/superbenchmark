@@ -163,7 +163,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
 
         return True
 
-    def _process_raw_result_genneral(self, cmd_idx, raw_output):
+    def _process_raw_result_general(self, cmd_idx, raw_output):
         """Function to parse raw results for the general CPU copy benchmark and save the summarized results."""
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
 
@@ -195,7 +195,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        return self._process_raw_result_mlc(cmd_idx, raw_output) if "x86_64" in platform.machine() else self._process_raw_result_genneral(cmd_idx, raw_output)
+        return self._process_raw_result_mlc(cmd_idx, raw_output) if "x86_64" in platform.machine() else self._process_raw_result_general(cmd_idx, raw_output)
 
     def _parse_bw_latency(self, raw_output):
         out_table = dict()
