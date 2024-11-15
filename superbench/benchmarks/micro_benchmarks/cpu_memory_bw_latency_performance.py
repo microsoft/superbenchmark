@@ -195,7 +195,11 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        return self._process_raw_result_mlc(cmd_idx, raw_output) if "x86_64" in platform.machine() else self._process_raw_result_genneral(cmd_idx, raw_output)
+        return (
+            self._process_raw_result_mlc(cmd_idx, raw_output)
+            if "x86_64" in platform.machine()
+            else self._process_raw_result_genneral(cmd_idx, raw_output)
+        )
 
     def _parse_bw_latency(self, raw_output):
         out_table = dict()
