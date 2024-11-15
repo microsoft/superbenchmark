@@ -12,7 +12,7 @@ if(CUDAToolkit_FOUND)
     message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
 
     include(../cuda_common.cmake)
-    add_executable(cpu_copy cpu_copy.cu)
+    add_executable(cpu_copy cpu_copy.cpp)
     set_property(TARGET cpu_copy PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
     target_link_libraries(cpu_copy numa)
 else()

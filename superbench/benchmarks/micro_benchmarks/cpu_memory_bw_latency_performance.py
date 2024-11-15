@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Module for running the Intel MLC tool to measure memory bandwidth and latency."""
+"""Module to measure memory bandwidth and latency."""
 
 import os
 import platform
@@ -22,7 +22,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'mlc' if "x86_64" in platform.machine() else 'cpu_copy'
+        self._bin_name = 'mlc' if 'x86_64' in platform.machine() else 'cpu_copy'
         self.__support_mlc_commands = ['bandwidth_matrix', 'latency_matrix', 'max_bandwidth']
 
     def add_parser_arguments(self):
@@ -118,7 +118,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        return self._preprocess_mlc() if "x86_64" in platform.machine() else self._preprocess_general()
+        return self._preprocess_mlc() if 'x86_64' in platform.machine() else self._preprocess_general()
 
     def _process_raw_result_mlc(self, cmd_idx, raw_output):
         """Function to parse raw results for the Intel MLC tool and save the summarized results."""
@@ -197,7 +197,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         """
         return (
             self._process_raw_result_mlc(cmd_idx, raw_output)
-            if "x86_64" in platform.machine()
+            if 'x86_64' in platform.machine()
             else self._process_raw_result_genneral(cmd_idx, raw_output)
         )
 
