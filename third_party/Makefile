@@ -243,6 +243,6 @@ endif
 # Build nvbandwidth.
 nvbandwidth: sb_micro_path
 ifneq (,$(wildcard nvbandwidth/debian_install.sh))
-       cd ./nvbandwidth && ./debian_install.sh
-       cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin/
+	cd ./nvbandwidth && ./debian_install.sh && cd ..
+	cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin/
 endif
