@@ -71,7 +71,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         )
 
     def _preprocess_mlc(self):
-        """ Preprocess/preparation operations for the Intel MLC tool."""
+        """Preprocess/preparation operations for the Intel MLC tool."""
         mlc_path = os.path.join(self._args.bin_dir, self._bin_name)
         ret_val = os.access(mlc_path, os.X_OK | os.F_OK)
         if not ret_val:
@@ -197,7 +197,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         """
         return (
             self._process_raw_result_mlc(cmd_idx, raw_output)
-            if "x86_64" in platform.machine() else self._process_raw_result_general(cmd_idx, raw_output)
+            if 'x86_64' in platform.machine() else self._process_raw_result_general(cmd_idx, raw_output)
         )
 
     def _parse_bw_latency(self, raw_output):
