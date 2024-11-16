@@ -228,4 +228,5 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             out_table[key] = [vals[-1]]
         return out_table
 
+
 BenchmarkRegistry.register_benchmark('cpu-memory-bw-latency', CpuMemBwLatencyBenchmark)
