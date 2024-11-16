@@ -29,7 +29,7 @@ struct Opts {
  * including any necessary command-line arguments and their descriptions.
  */
 void PrintUsage() {
-    std::cout << "Usage: gpu_copy "
+    std::cout << "Usage: cpu_copy "
               << "--size <size> "
               << "--num_warm_up <num_warm_up> "
               << "--num_loops <num_loops> "
@@ -39,13 +39,12 @@ void PrintUsage() {
 /**
  * @brief Checks if the system has memory available for a specific NUMA node.
  *
- * This function determines whether there is sufficient memory available on the specified
- * NUMA (Non-Uniform Memory Access) node. It is useful for ensuring that memory allocation
- * requests can be satisfied by the desired NUMA node, which can help optimize memory access
- * patterns and performance in NUMA-aware applications.
+ * This function determines whether there is memory available on the specified
+ * NUMA (Non-Uniform Memory Access) node.
  *
- * @param node_id The identifier of the NUMA node to check.
- * @param required_memory The amount of memory required (in bytes).
+ * Empty NUMA nodes are reserved for GPUs that may be connected in the future.
+ *
+ * @param node The identifier of the NUMA node to check.
  * @return true if the specified NUMA node has sufficient memory available, false otherwise.
  */
 bool HasMemForNumaNode(int node) {
@@ -66,6 +65,8 @@ bool HasMemForNumaNode(int node) {
  * affinity can be set to the desired NUMA node, which can help optimize memory
  * access patterns and performance in NUMA-aware applications.
  *
+ * Memory-only or Empty NUMA nodes are not considered to have CPUs available.
+ *
  * @param node The identifier of the NUMA node to check.
  * @return true if the specified NUMA node has CPUs available, false otherwise.
  */
@@ -74,8 +75,7 @@ bool HasCPUsForNumaNode(int node) {
 
     int numa_err = numa_node_to_cpus(node, bm);
     if (numa_err != 0) {
-        fprintf(stderr, "HasCPUsForNumaNode::numa_node_to_cpus error on node: %d, code: %d, message: %s\n", node, errno,
-                strerror(errno));
+        std::cerr << "Failed to get CPU mask for NUMA node " << node << ". ERROR: " << strerror(errno) << std::endl;
 
         numa_bitmask_free(bm);
         return false; // On error
@@ -308,9 +308,9 @@ int main(int argc, char **argv) {
             double latency = time_used_ns / opts.size;          // ns/byte
 
             // Output the result
-            std::cout << "cpu_copy_bw/node" << src_node << "_to_node" << dst_node << ": " << std::setprecision(9) << bw
-                      << std::endl;
-            std::cout << "cpu_copy_latency/node" << src_node << "_to_node" << dst_node << ": " << std::setprecision(9)
+            std::cout << "mem_bandwidth_matrix_numa_" << src_node << "_" << dst_node << "_bw: " << std::setprecision(9)
+                      << bw << std::endl;
+            std::cout << "mem_bandwidth_matrix_numa_" << src_node << "_" << dst_node << "_lat: " << std::setprecision(9)
                       << latency << std::endl;
         }
     }
