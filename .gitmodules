@@ -30,3 +30,6 @@
 [submodule "third_party/Megatron/Megatron-DeepSpeed"]
 	path = third_party/Megatron/Megatron-DeepSpeed
 	url = https://github.com/microsoft/Megatron-DeepSpeed.git
+[submodule "third_party/nvbandwidth"]
+	path = third_party/nvbandwidth
+	url = https://github.com/NVIDIA/nvbandwidth.git
