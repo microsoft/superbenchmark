@@ -6,7 +6,6 @@
 import os
 import platform
 import unittest
-from typing import Callable
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
