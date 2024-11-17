@@ -165,7 +165,10 @@ Stream-triad like:      157878.32
         benchmark._commands = []
 
         # Mock os.access to return True
-        os.access: Callable[[str, int], bool] = lambda path, mode: True
+        def mock_access(path: str, mode: int) -> bool:
+            return True
+
+        os.access = mock_access
 
         ret = benchmark._preprocess()
         assert (ret is True)
