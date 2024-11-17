@@ -19,6 +19,7 @@ class CpuMemBwLatencyBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         super().setUpClass()
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/mlc'])
+        cls.createMockFiles(cls, ['bin/cpu_copy'])
 
     def test_cpu_mem_bw_latency_benchmark_empty_param(self):
         """Test cpu-memory-bw-latency benchmark command generation with empty parameter."""
