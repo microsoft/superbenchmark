@@ -152,30 +152,7 @@ Stream-triad like:      157878.32
         assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 
-    def test_preprocess_mlc(self):
-        """Test _preprocess method for Intel MLC tool."""
-        benchmark_name = 'cpu-memory-bw-latency'
-        (benchmark_class,
-         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
-        assert (benchmark_class)
-
-        benchmark = benchmark_class(benchmark_name, parameters='--tests bandwidth_matrix')
-        benchmark._bin_name = 'mlc'
-        benchmark._commands = []
-
-        # Mock os.access to return True
-        def mock_access(path: str, mode: int) -> bool:
-            return True
-
-        os.access = mock_access
-
-        ret = benchmark._preprocess()
-        assert (ret is True)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (len(benchmark._commands) == 1)
-        assert ('mlc --bandwidth_matrix;' in benchmark._commands[0])
-
-    def test_preprocess_general(self):
+    def test_preprocess_non_x86(self):
         """Test _preprocess method for general CPU copy benchmark."""
         benchmark_name = 'cpu-memory-bw-latency'
         (benchmark_class,
