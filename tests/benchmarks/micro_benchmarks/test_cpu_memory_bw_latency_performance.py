@@ -3,7 +3,6 @@
 
 """Tests for cpu-memory-bw-latency benchmark."""
 
-import os
 import platform
 import unittest
 
