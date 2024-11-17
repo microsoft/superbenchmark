@@ -154,7 +154,8 @@ Stream-triad like:      157878.32
     def test_preprocess_mlc(self):
         """Test _preprocess method for Intel MLC tool."""
         benchmark_name = 'cpu-memory-bw-latency'
-        (benchmark_class, predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
         benchmark = benchmark_class(benchmark_name, parameters='--tests bandwidth_matrix')
@@ -174,10 +175,13 @@ Stream-triad like:      157878.32
     def test_preprocess_general(self):
         """Test _preprocess method for general CPU copy benchmark."""
         benchmark_name = 'cpu-memory-bw-latency'
-        (benchmark_class, predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
-        benchmark = benchmark_class(benchmark_name, parameters='--size 1024 --num_warm_up 10 --num_loops 50 --check_data')
+        benchmark = benchmark_class(
+            benchmark_name, parameters='--size 1024 --num_warm_up 10 --num_loops 50 --check_data'
+        )
         benchmark._args = benchmark._parser.parse_args(['--bin_dir', '/mock/bin/dir'])
         benchmark._bin_name = 'cpu_copy'
         benchmark._commands = []
