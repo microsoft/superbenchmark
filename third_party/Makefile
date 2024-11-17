@@ -241,7 +241,7 @@ ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
 endif
 
 # Build nvbandwidth.
-REQUIRED_CMAKE_VERSION := 3.2.0
+REQUIRED_CMAKE_VERSION := 3.20.0
 CMAKE_VERSION := $(shell cmake --version 2>/dev/null | head -n 1 | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 nvbandwidth: sb_micro_path
 	@if [ "$(CMAKE_VERSION)" = "" ]; then \
