@@ -6,6 +6,7 @@
 import os
 import platform
 import unittest
+from typing import Callable
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
@@ -164,7 +165,7 @@ Stream-triad like:      157878.32
         benchmark._commands = []
 
         # Mock os.access to return True
-        os.access = lambda path, mode: True
+        os.access: Callable[[str, int], bool] = lambda path, mode: True
 
         ret = benchmark._preprocess()
         assert (ret is True)
