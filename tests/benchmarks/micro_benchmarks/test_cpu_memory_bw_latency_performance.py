@@ -3,6 +3,8 @@
 
 """Tests for cpu-memory-bw-latency benchmark."""
 
+import os
+import platform
 import unittest
 
 from tests.helper.testcase import BenchmarkTestCase
@@ -148,3 +150,43 @@ Stream-triad like:      157878.32
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+
+    def test_preprocess_mlc(self):
+        """Test _preprocess method for Intel MLC tool."""
+        benchmark_name = 'cpu-memory-bw-latency'
+        (benchmark_class, predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='--tests bandwidth_matrix')
+        benchmark._args = benchmark._parser.parse_args(['--bin_dir', '/mock/bin/dir'])
+        benchmark._bin_name = 'mlc'
+        benchmark._commands = []
+
+        # Mock os.access to return True
+        os.access = lambda path, mode: True
+
+        ret = benchmark._preprocess()
+        assert (ret is True)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
+        assert (len(benchmark._commands) == 1)
+        assert ('mlc --bandwidth_matrix;' in benchmark._commands[0])
+
+    def test_preprocess_general(self):
+        """Test _preprocess method for general CPU copy benchmark."""
+        benchmark_name = 'cpu-memory-bw-latency'
+        (benchmark_class, predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='--size 1024 --num_warm_up 10 --num_loops 50 --check_data')
+        benchmark._args = benchmark._parser.parse_args(['--bin_dir', '/mock/bin/dir'])
+        benchmark._bin_name = 'cpu_copy'
+        benchmark._commands = []
+
+        # Mock platform.machine to return non-x86_64
+        platform.machine = lambda: 'arm64'
+
+        ret = benchmark._preprocess()
+        assert (ret is True)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
+        assert (len(benchmark._commands) == 1)
+        assert ('cpu_copy --size 1024 --num_warm_up 10 --num_loops 50 --check_data' in benchmark._commands[0])

@@ -243,19 +243,18 @@ double BenchmarkNUMACopy(int src_node, int dst_node, Opts &opts) {
  * @param opts A reference to an Opts object containing various options and configurations for the benchmark.
  */
 double RunCPUCopyBenchmark(int src_node, int dst_node, Opts &opts) {
-    double max_time_ns = 0;
-
     // Run warm up rounds
     for (int i = 0; i < opts.num_warm_up; i++) {
         BenchmarkNUMACopy(src_node, dst_node, opts);
     }
 
+    double time_used_ns = 0;
+
     for (int i = 0; i < opts.num_loops; i++) {
-        double time_used_ns = BenchmarkNUMACopy(src_node, dst_node, opts);
-        max_time_ns = std::max(max_time_ns, time_used_ns);
+        time_used_ns += BenchmarkNUMACopy(src_node, dst_node, opts);
     }
 
-    return max_time_ns;
+    return time_used_ns / opts.num_loops;
 }
 
 int main(int argc, char **argv) {
