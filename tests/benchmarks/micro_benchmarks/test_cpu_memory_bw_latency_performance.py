@@ -159,7 +159,6 @@ Stream-triad like:      157878.32
         assert (benchmark_class)
 
         benchmark = benchmark_class(benchmark_name, parameters='--tests bandwidth_matrix')
-        benchmark._args = benchmark._parser.parse_args(['--bin_dir', '/mock/bin/dir'])
         benchmark._bin_name = 'mlc'
         benchmark._commands = []
 
@@ -185,7 +184,6 @@ Stream-triad like:      157878.32
         benchmark = benchmark_class(
             benchmark_name, parameters='--size 1024 --num_warm_up 10 --num_loops 50 --check_data'
         )
-        benchmark._args = benchmark._parser.parse_args(['--bin_dir', '/mock/bin/dir'])
         benchmark._bin_name = 'cpu_copy'
         benchmark._commands = []
 
