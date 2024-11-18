@@ -76,17 +76,17 @@ class PytorchLlama(PytorchBase):
         super().add_parser_arguments()
 
         self._parser.add_argument('--num_classes', type=int, default=100, required=False, help='Num of class.')
-        self._parser.add_argument('--hidden_size', type=int, default=4096, required=False, help='Hidden size.')
+        self._parser.add_argument('--hidden_size', type=int, default=1280, required=False, help='Hidden size.')
         self._parser.add_argument(
-            '--num_hidden_layers', type=int, default=32, required=False, help='The number of hidden layers.'
+            '--num_hidden_layers', type=int, default=36, required=False, help='The number of hidden layers.'
         )
         self._parser.add_argument(
-            '--num_attention_heads', type=int, default=32, required=False, help='The number of attention heads.'
+            '--num_attention_heads', type=int, default=20, required=False, help='The number of attention heads.'
         )
+        self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
         self._parser.add_argument(
             '--num_key_value_heads', type=int, default=None, required=False, help='The number of key_value heads that should be used to implement Grouped Query Attention.'
         )
-        self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info.

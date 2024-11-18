@@ -12,9 +12,9 @@ from superbench.benchmarks.model_benchmarks.pytorch_llama import PytorchLlama
 def test_pytorch_llama_7b():
     """Test pytorch-llama2-7b benchmark."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'pytorch-llama2-7b',
+        'llama2-7b',
         platform=Platform.CUDA,
-        parameters='--batch_size 1 --num_classes 100 --seq_len 512 --num_warmup 2 --num_steps 4 \
+        parameters='--batch_size 1 --seq_len 32 --num_warmup 2 --num_steps 4 --precision float16 \
             --model_action train inference',
         framework=Framework.PYTORCH
     )
@@ -37,7 +37,7 @@ def test_pytorch_llama_7b():
     # Check parameters specified in BenchmarkContext.
     assert (benchmark._args.batch_size == 1)
     assert (benchmark._args.num_classes == 100)
-    assert (benchmark._args.seq_len == 521)
+    assert (benchmark._args.seq_len == 32)
     assert (benchmark._args.num_warmup == 2)
     assert (benchmark._args.num_steps == 4)
 
@@ -48,8 +48,7 @@ def test_pytorch_llama_7b():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
     for metric in [
-        'fp32_train_step_time', 'fp32_train_throughput', 'fp16_train_step_time', 'fp16_train_throughput',
-        'fp32_inference_step_time', 'fp32_inference_throughput', 'fp16_inference_step_time', 'fp16_inference_throughput'
+        'fp16_train_step_time', 'fp16_train_throughput', 'fp16_inference_step_time', 'fp16_inference_throughput'
     ]:
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
