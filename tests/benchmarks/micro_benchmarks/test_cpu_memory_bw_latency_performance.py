@@ -5,6 +5,7 @@
 
 import platform
 import unittest
+from unittest import mock
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
@@ -151,6 +152,7 @@ Stream-triad like:      157878.32
         assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 
+    @mock.patch('platform.machine', return_value='arm64')
     def test_preprocess_non_x86(self):
         """Test _preprocess method for general CPU copy benchmark."""
         benchmark_name = 'cpu-memory-bw-latency'
@@ -163,9 +165,6 @@ Stream-triad like:      157878.32
         )
         benchmark._bin_name = 'cpu_copy'
         benchmark._commands = []
-
-        # Mock platform.machine to return non-x86_64
-        platform.machine = lambda: 'arm64'
 
         ret = benchmark._preprocess()
         assert (ret is True)

@@ -42,7 +42,7 @@ void PrintUsage() {
  * This function determines whether there is memory available on the specified
  * NUMA (Non-Uniform Memory Access) node.
  *
- * Empty NUMA nodes are reserved for GPUs that may be connected in the future.
+ * Empty NUMA nodes in Grace CPU are reserved for multi-instance GPUs (MIG).
  *
  * @param node The identifier of the NUMA node to check.
  * @return true if the specified NUMA node has sufficient memory available, false otherwise.
@@ -65,7 +65,7 @@ bool HasMemForNumaNode(int node) {
  * affinity can be set to the desired NUMA node, which can help optimize memory
  * access patterns and performance in NUMA-aware applications.
  *
- * Memory-only or Empty NUMA nodes are not considered to have CPUs available.
+ * Memory-only or empty NUMA nodes in Grace CPU are for GPUs.
  *
  * @param node The identifier of the NUMA node to check.
  * @return true if the specified NUMA node has CPUs available, false otherwise.
