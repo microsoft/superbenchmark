@@ -7,6 +7,7 @@ from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks.pytorch_llama import PytorchLlama
 
+
 @decorator.cuda_test
 @decorator.pytorch_test
 def test_pytorch_llama_7b():

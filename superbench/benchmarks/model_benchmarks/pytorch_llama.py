@@ -20,6 +20,7 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class LlamaBenchmarkModel(torch.nn.Module):
     """The Llama model for benchmarking."""
+
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -49,6 +50,7 @@ class LlamaBenchmarkModel(torch.nn.Module):
 
 class PytorchLlama(PytorchBase):
     """The Llama benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -85,7 +87,11 @@ class PytorchLlama(PytorchBase):
         )
         self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
         self._parser.add_argument(
-            '--num_key_value_heads', type=int, default=None, required=False, help='The number of key_value heads that should be used to implement Grouped Query Attention.'
+            '--num_key_value_heads',
+            type=int,
+            default=None,
+            required=False,
+            help='The number of key_value heads that should be used to implement Grouped Query Attention.'
         )
 
     def _generate_dataset(self):
@@ -110,7 +116,10 @@ class PytorchLlama(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         self._config = LlamaConfig(
-            hidden_size=self._args.hidden_size, num_hidden_layers=self._args.num_hidden_layers, num_attention_heads=self._args.num_attention_heads, num_key_value_heads=self._args.num_key_value_heads
+            hidden_size=self._args.hidden_size,
+            num_hidden_layers=self._args.num_hidden_layers,
+            num_attention_heads=self._args.num_attention_heads,
+            num_key_value_heads=self._args.num_key_value_heads
         )
 
         enable_fp8 = precision.name.startswith('FP8_')
@@ -235,5 +244,7 @@ BenchmarkRegistry.register_benchmark(
 
 # Register Llama2 benchmark with 70b parameters.
 BenchmarkRegistry.register_benchmark(
-    'pytorch-llama2-70b', PytorchLlama, parameters='--hidden_size=8192 --num_hidden_layers=80 --num_attention_heads=64 --num_key_value_heads=8'
+    'pytorch-llama2-70b',
+    PytorchLlama,
+    parameters='--hidden_size=8192 --num_hidden_layers=80 --num_attention_heads=64 --num_key_value_heads=8'
 )

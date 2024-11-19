@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Model benchmark example for Llama2-7b (24-layer, 3072-hidden, 24-heads, 7B parameters).
+"""Model benchmark example for Llama2-7b (32-layer, 4096-hidden, 32-heads, 7B parameters).
 
 Commands to run:
   python3 examples/benchmarks/pytorch_llama2.py (Single GPU)
