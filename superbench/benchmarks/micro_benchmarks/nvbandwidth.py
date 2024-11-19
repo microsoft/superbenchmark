@@ -61,6 +61,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             True if the raw output string is valid and result can be extracted.
         """
         try:
+            self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
             content = raw_output.splitlines()
             results = {}
             parsing_matrix = False
@@ -68,43 +69,49 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             test_name = ""
 
             # Regular expressions for summary line and matrix header detection
+            block_start_pattern = re.compile(r"^Running\s+(.+)$")
             summary_pattern = re.compile(r'SUM (\S+) (\d+\.\d+)')
-            matrix_header_line = "memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)"
+            matrix_header_line = re.compile(r'^memcpy CE CPU\(row\)')
             matrix_row_pattern = re.compile(r'^\s*\d')
 
             for line in content:
                 line = line.strip()
 
+                # Detect the start of a test
+                if block_start_pattern.match(line):
+                    test_name = block_start_pattern.match(line).group(1).lower()[:-1]
+                    continue
+
                 # Detect the start of matrix data
-                if line == matrix_header_line:
+                if test_name and matrix_header_line.match(line):
                     parsing_matrix = True
                     continue
 
                 # Parse the matrix header
-                if parsing_matrix and not matrix_header and matrix_row_pattern.match(line):
+                if test_name and parsing_matrix and not matrix_header and matrix_row_pattern.match(line):
                     matrix_header = line.split()
                     continue
 
                 # Parse matrix rows
-                if parsing_matrix and matrix_row_pattern.match(line):
+                if test_name and parsing_matrix and matrix_row_pattern.match(line):
                     row_data = line.split()
                     row_index = row_data[0]
                     for col_index, value in enumerate(row_data[1:], start=1):
                         col_header = matrix_header[col_index - 1]
-                        metric_name = f'{test_name}_bandwidth_cpu{row_index}_to_gpu{col_header}'
+                        metric_name = f'{test_name}_bandwidth_cpu{row_index}_gpu{col_header}'
                         results[metric_name] = float(value)
                     continue
-
-                # End of matrix parsing
-                if parsing_matrix and not matrix_row_pattern.match(line):
-                    parsing_matrix = False
 
                 # Parse summary results
                 summary_match = summary_pattern.search(line)
                 if summary_match:
-                    test_name = summary_match.group(1).lower()
                     value = float(summary_match.group(2))
-                    results[f'{test_name}_sum_bandwidth_gb_per_s'] = value
+                    results[f'{test_name}_sum_bandwidth'] = value
+
+                    # Reset parsing state for next test
+                    test_name = ""
+                    parsing_matrix = False
+                    matrix_header.clear()
 
             if not results:
                 self._result.add_raw_data('nvbandwidth', 'No valid results found', self._args.log_raw_data)
@@ -113,7 +120,6 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             # Store parsed results
             for metric, value in results.items():
                 self._result.add_result(metric, value)
-                self._result.add_raw_data(metric, value, self._args.log_raw_data)
 
             return True
         except Exception as e:
