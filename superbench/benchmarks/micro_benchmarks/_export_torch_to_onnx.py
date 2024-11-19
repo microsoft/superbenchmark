@@ -9,7 +9,7 @@ from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
-from transformers import BertConfig, GPT2Config
+from transformers import BertConfig, GPT2Config, ll
 
 from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
@@ -138,7 +138,7 @@ class torch2onnxExporter():
             model,
             dummy_input,
             file_name,
-            opset_version=10,
+            opset_version=14,
             operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,
             input_names=['input'],
             output_names=['output'],
@@ -179,7 +179,7 @@ class torch2onnxExporter():
             model,
             dummy_input,
             file_name,
-            opset_version=10,
+            opset_version=14,
             do_constant_folding=True,
             input_names=['input'],
             output_names=['output'],
