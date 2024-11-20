@@ -20,8 +20,9 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
 # Build targets.
 all: cuda rocm
+cuda_with_msccl_and_nvbandwidth: cuda cuda_msccl nvbandwidth
 cuda_with_msccl: cuda cuda_msccl
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
 cpu: common cpu_perftest cpu_stream
 common: fio
@@ -241,14 +242,6 @@ ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
 endif
 
 # Build nvbandwidth.
-REQUIRED_CMAKE_VERSION := 3.20.0
-CMAKE_VERSION := $(shell cmake --version 2>/dev/null | head -n 1 | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 nvbandwidth: sb_micro_path
-	@if [ "$(CMAKE_VERSION)" = "" ]; then \
-        echo "Skip nvbandwidth for CMake is not installed."; \
-    elif [ "$(shell printf '%s\n' "$(REQUIRED_CMAKE_VERSION)" "$(CMAKE_VERSION)" | sort -V | head -n 1)" = "$(REQUIRED_CMAKE_VERSION)" ]; then \
-        cd ./nvbandwidth && cmake . && make && cd ..; \
-        cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin; \
-    else \
-        echo "Skip nvbandwidth for CMake version $(CMAKE_VERSION) is too old. Required version is $(REQUIRED_CMAKE_VERSION) or higher."; \
-    fi
+	cd ./nvbandwidth && cmake . && make && cd ..
+	cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin
