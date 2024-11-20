@@ -20,7 +20,6 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class LlamaBenchmarkModel(torch.nn.Module):
     """The Llama model for benchmarking."""
-
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -50,7 +49,6 @@ class LlamaBenchmarkModel(torch.nn.Module):
 
 class PytorchLlama(PytorchBase):
     """The Llama benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 
