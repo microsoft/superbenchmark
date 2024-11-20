@@ -151,9 +151,11 @@ Stream-triad like:      157878.32
         assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 
-    @mock.patch('platform.machine', return_value='arm64')
-    def test_preprocess_non_x86(self):
+    @mock.patch('platform.machine')
+    def test_preprocess_non_x86(self, mock_platform_machine):
         """Test _preprocess method for general CPU copy benchmark."""
+        mock_platform_machine.return_value = 'arm64'
+
         benchmark_name = 'cpu-memory-bw-latency'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
