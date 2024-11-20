@@ -7,12 +7,12 @@ trigger:
 
 strategy:
   matrix:
-    python-3.6:
-      imageTag: '3.6'
     python-3.7:
       imageTag: '3.7'
     python-3.8:
       imageTag: '3.8'
+    python-3.10:
+      imageTag: '3.10'
     # TODO
     #python-latest:
     #  imageTag: '3'
