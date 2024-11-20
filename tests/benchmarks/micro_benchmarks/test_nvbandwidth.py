@@ -1,3 +1,8 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+"""Tests for nvbandwidth benchmark."""
+
 import unittest
 
 from tests.helper.testcase import BenchmarkTestCase
@@ -65,8 +70,6 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         # Parse the provided raw output
         assert benchmark._process_raw_result(0, raw_output)
         assert benchmark.return_code == ReturnCode.SUCCESS
-        print("output is: \n")
-        print(benchmark.result)
 
         # Validate parsed results
         assert benchmark.result['host_to_device_memcpy_ce_bandwidth_cpu0_gpu0'][0] == 337.55
