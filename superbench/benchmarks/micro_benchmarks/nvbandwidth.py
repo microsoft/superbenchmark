@@ -48,8 +48,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         return True
 
     def _process_raw_line(self, line, parse_status):
-        """
-        Process a single line of raw output from the nvbandwidth benchmark.
+        """Process a single line of raw output from the nvbandwidth benchmark.
 
         This function updates the `parse_status` dictionary with parsed results from the given `line`.
         It detects the start of a test, parses matrix headers and rows, and extracts summary results.
