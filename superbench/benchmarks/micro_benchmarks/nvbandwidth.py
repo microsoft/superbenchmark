@@ -13,7 +13,6 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
     """The NV Bandwidth Test benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 

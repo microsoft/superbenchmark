@@ -6,7 +6,6 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform
 
 class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
     """Test class for NV Bandwidth benchmark."""
-
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""
