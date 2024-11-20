@@ -14,7 +14,6 @@ coverage:
         target: 80%
         threshold: 1%
         flags:
-          - cpu-python3.6-unit-test
           - cpu-python3.7-unit-test
           - cuda-unit-test
           - directx-unit-test
@@ -23,7 +22,6 @@ coverage:
         target: 80%
         threshold: 1%
         flags:
-          - cpu-python3.6-unit-test
           - cpu-python3.7-unit-test
           - cuda-unit-test
           - directx-unit-test
