@@ -50,7 +50,8 @@ def test_pytorch_llama_7b():
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
     for metric in [
-        'fp8_e4m3_train_step_time', 'fp8_e4m3_train_throughput', 'fp8_e4m3_inference_step_time', 'fp8_e4m3_inference_throughput'
+        'fp8_e4m3_train_step_time', 'fp8_e4m3_train_throughput', 'fp8_e4m3_inference_step_time',
+        'fp8_e4m3_inference_throughput'
     ]:
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
