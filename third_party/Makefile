@@ -20,9 +20,8 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
 # Build targets.
 all: cuda rocm
-cuda_with_msccl_and_nvbandwidth: cuda cuda_msccl nvbandwidth
 cuda_with_msccl: cuda cuda_msccl
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
 cpu: common cpu_perftest cpu_stream
 common: fio
