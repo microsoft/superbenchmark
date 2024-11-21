@@ -9,11 +9,12 @@ from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
-from transformers import BertConfig, GPT2Config
+from transformers import BertConfig, GPT2Config, LlamaConfig
 
 from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
+from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
 
 
 class torch2onnxExporter():
@@ -84,6 +85,34 @@ class torch2onnxExporter():
                     n_embd=1600,
                     n_layer=48,
                     n_head=25,
+                ),
+                self.num_classes,
+            ),
+            'llama2-7b':
+            lambda: LlamaBenchmarkModel(
+                LlamaConfig(
+                    hidden_size=4096,
+                    num_hidden_layers=32,
+                    num_attention_heads=32,
+                ),
+                self.num_classes,
+            ),
+            'llama2-13b':
+            lambda: LlamaBenchmarkModel(
+                LlamaConfig(
+                    hidden_size=5120,
+                    num_hidden_layers=40,
+                    num_attention_heads=40,
+                ),
+                self.num_classes,
+            ),
+            'llama2-70b':
+            lambda: LlamaBenchmarkModel(
+                LlamaConfig(
+                    hidden_size=8192,
+                    num_hidden_layers=80,
+                    num_attention_heads=64,
+                    num_key_value_heads=8,
                 ),
                 self.num_classes,
             ),
