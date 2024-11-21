@@ -28,6 +28,48 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         """Add the specified arguments."""
         super().add_parser_arguments()
 
+        self._parser.add_argument(
+            '--buffer_size',
+            type=int,
+            default=64,
+            required=False,
+            help='Memcpy buffer size in MiB. Default is 64.',
+        )
+
+        self._parser.add_argument(
+            '--test_cases',
+            type=str,
+            default='',
+            required=False,
+            help='Specify the test case(s) to run, either by name or index. By default, all test cases are executed..',
+        )
+
+        self._parser.add_argument(
+            '--skip_verification',
+            action='store_true',
+            help='Skips data verification after copy. Default is False.',
+        )
+
+        self._parser.add_argument(
+            '--disable_affinity',
+            action='store_true',
+            help='Disable automatic CPU affinity control. Default is False.',
+        )
+
+        self._parser.add_argument(
+            '--use_mean',
+            action='store_true',
+            help='Use mean instead of median for results. Default is False.',
+        )
+
+        self._parser.add_argument(
+            '--num_loops',
+            type=int,
+            default=3,
+            required=False,
+            help='Iterations of the benchmark. Default is 3.',
+        )
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -43,6 +85,24 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         # Construct the command for nvbandwidth
         command = os.path.join(self._args.bin_dir, self._bin_name)
 
+        if self._args.buffer_size:
+            command += f' --bufferSize {self._args.buffer_size}'
+
+        if self._args.test_cases:
+            command += ' --testcase ' + ' '.join([testcase.strip() for testcase in self._args.test_cases.split(',')])
+
+        if self._args.skip_verification:
+            command += ' --skipVerification'
+
+        if self._args.disable_affinity:
+            command += ' --disableAffinity'
+
+        if self._args.use_mean:
+            command += ' --useMean'
+
+        if self._args.num_loops:
+            command += f' --testSamples {self._args.num_loops}'
+
         self._commands.append(command)
 
         return True
@@ -57,17 +117,17 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             line (str): A single line of raw output from the benchmark.
             parse_status (dict): A dictionary to maintain the current parsing state and results. It should contain:
                 - 'test_name' (str): The name of the current test being parsed.
-                - 'parsing_matrix' (bool): A flag indicating if matrix data is being parsed.
+                - 'benchmark_type' (str): 'bw' or 'lat'. It also indicating if matrix data is being parsed.
                 - 'matrix_header' (list): The header of the matrix being parsed.
                 - 'results' (dict): A dictionary to store the parsed results.
 
-        Returns:
+        Return:
             None
         """
         # Regular expressions for summary line and matrix header detection
         block_start_pattern = re.compile(r'^Running\s+(.+)$')
         summary_pattern = re.compile(r'SUM (\S+) (\d+\.\d+)')
-        matrix_header_line = re.compile(r'^memcpy CE CPU\(row\)')
+        matrix_header_line = re.compile(r'^(memcpy|memory latency)')
         matrix_row_pattern = re.compile(r'^\s*\d')
 
         line = line.strip()
@@ -79,25 +139,26 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         # Detect the start of matrix data
         if parse_status['test_name'] and matrix_header_line.match(line):
-            parse_status['parsing_matrix'] = True
+            parse_status['benchmark_type'] = 'bw' if 'bandwidth' in line else 'lat'
             return
 
         # Parse the matrix header
         if (
-            parse_status['test_name'] and parse_status['parsing_matrix'] and not parse_status['matrix_header']
+            parse_status['test_name'] and parse_status['benchmark_type'] and not parse_status['matrix_header']
             and matrix_row_pattern.match(line)
         ):
             parse_status['matrix_header'] = line.split()
             return
 
         # Parse matrix rows
-        if parse_status['test_name'] and parse_status['parsing_matrix'] and matrix_row_pattern.match(line):
+        if parse_status['test_name'] and parse_status['benchmark_type'] and matrix_row_pattern.match(line):
             row_data = line.split()
             row_index = row_data[0]
             for col_index, value in enumerate(row_data[1:], start=1):
                 col_header = parse_status['matrix_header'][col_index - 1]
                 test_name = parse_status['test_name']
-                metric_name = f'{test_name}_bandwidth_cpu{row_index}_gpu{col_header}'
+                benchmark_type = parse_status['benchmark_type']
+                metric_name = f'{test_name}_cpu{row_index}_gpu{col_header}_{benchmark_type}'
                 parse_status['results'][metric_name] = float(value)
             return
 
@@ -106,11 +167,12 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         if summary_match:
             value = float(summary_match.group(2))
             test_name = parse_status['test_name']
-            parse_status['results'][f'{test_name}_sum_bandwidth'] = value
+            benchmark_type = parse_status['benchmark_type']
+            parse_status['results'][f'{test_name}_sum_{benchmark_type}'] = value
 
             # Reset parsing state for next test
             parse_status['test_name'] = ''
-            parse_status['parsing_matrix'] = False
+            parse_status['benchmark_type'] = None
             parse_status['matrix_header'].clear()
 
     def _process_raw_result(self, cmd_idx, raw_output):
@@ -130,7 +192,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             content = raw_output.splitlines()
             parsing_status = {
                 'results': {},
-                'parsing_matrix': False,
+                'benchmark_type': None,
                 'matrix_header': [],
                 'test_name': '',
             }
