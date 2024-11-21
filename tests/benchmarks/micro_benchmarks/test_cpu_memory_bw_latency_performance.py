@@ -4,6 +4,7 @@
 """Tests for cpu-memory-bw-latency benchmark."""
 
 import unittest
+from unittest import mock
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
@@ -17,6 +18,7 @@ class CpuMemBwLatencyBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         super().setUpClass()
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/mlc'])
+        cls.createMockFiles(cls, ['bin/cpu_copy'])
 
     def test_cpu_mem_bw_latency_benchmark_empty_param(self):
         """Test cpu-memory-bw-latency benchmark command generation with empty parameter."""
@@ -148,3 +150,25 @@ Stream-triad like:      157878.32
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+
+    @mock.patch('platform.machine')
+    def test_preprocess_non_x86(self, mock_platform_machine):
+        """Test _preprocess method for general CPU copy benchmark."""
+        mock_platform_machine.return_value = 'arm64'
+
+        benchmark_name = 'cpu-memory-bw-latency'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(
+            benchmark_name, parameters='--size 1024 --num_warm_up 10 --num_loops 50 --check_data'
+        )
+        benchmark._bin_name = 'cpu_copy'
+        benchmark._commands = []
+
+        ret = benchmark._preprocess()
+        assert (ret is True)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
+        assert (len(benchmark._commands) == 1)
+        assert ('cpu_copy --size 1024 --num_warm_up 10 --num_loops 50 --check_data' in benchmark._commands[0])
