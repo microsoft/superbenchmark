@@ -93,7 +93,6 @@ class Benchmark(ABC):
             message = message.replace("options:", "optional arguments:")
         return message
 
-
     def parse_args(self, ignore_invalid=False):
         """Parse the arguments.
 
