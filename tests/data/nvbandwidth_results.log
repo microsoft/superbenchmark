@@ -1,0 +1,134 @@
+nvbandwidth Version: v0.6
+Built from Git version: v0.6
+
+CUDA Runtime Version: 12040
+CUDA Driver Version: 12040
+Driver Version: 550.54.15
+
+Device 0: NVIDIA GH200 480GB (00000009:01:00)
+
+Running host_to_device_memcpy_ce.
+memcpy CE CPU(row) -> GPU(column) bandwidth (GB/s)
+           0         1         2
+ 0    369.36    269.33    412.11
+ 1    323.36    299.33    312.11
+
+SUM host_to_device_memcpy_ce 1985.60
+
+Running device_to_host_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) bandwidth (GB/s)
+           0         1
+ 0    295.15    312.11
+
+SUM device_to_host_memcpy_ce 607.26
+
+Running host_to_device_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+           0
+ 0    176.92
+
+SUM host_to_device_bidirectional_memcpy_ce 176.92
+
+Running device_to_host_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+           0
+ 0    187.26
+
+SUM device_to_host_bidirectional_memcpy_ce 187.26
+
+Waived:
+Waived:
+Waived:
+Waived:
+Running all_to_host_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) bandwidth (GB/s)
+           0
+ 0    295.15
+
+SUM all_to_host_memcpy_ce 295.15
+
+Running all_to_host_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+           0
+ 0    187.00
+
+SUM all_to_host_bidirectional_memcpy_ce 187.00
+
+Running host_to_all_memcpy_ce.
+memcpy CE CPU(row) -> GPU(column) bandwidth (GB/s)
+           0
+ 0    370.13
+
+SUM host_to_all_memcpy_ce 370.13
+
+Running host_to_all_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+           0
+ 0    176.86
+
+SUM host_to_all_bidirectional_memcpy_ce 176.86
+
+Waived:
+Waived:
+Waived:
+Waived:
+Running host_to_device_memcpy_sm.
+memcpy SM CPU(row) -> GPU(column) bandwidth (GB/s)
+           0
+ 0    372.33
+
+SUM host_to_device_memcpy_sm 372.33
+
+Running device_to_host_memcpy_sm.
+memcpy SM CPU(row) <- GPU(column) bandwidth (GB/s)
+           0
+ 0    351.93
+
+SUM device_to_host_memcpy_sm 351.93
+
+Waived:
+Waived:
+Waived:
+Waived:
+Running all_to_host_memcpy_sm.
+memcpy SM CPU(row) <- GPU(column) bandwidth (GB/s)
+           0
+ 0    352.98
+
+SUM all_to_host_memcpy_sm 352.98
+
+Running all_to_host_bidirectional_memcpy_sm.
+memcpy SM CPU(row) <-> GPU(column) bandwidth (GB/s)
+           0
+ 0    156.53
+
+SUM all_to_host_bidirectional_memcpy_sm 156.53
+
+Running host_to_all_memcpy_sm.
+memcpy SM CPU(row) -> GPU(column) bandwidth (GB/s)
+           0
+ 0    360.93
+
+SUM host_to_all_memcpy_sm 360.93
+
+Running host_to_all_bidirectional_memcpy_sm.
+memcpy SM CPU(row) <-> GPU(column) bandwidth (GB/s)
+           0
+ 0    247.56
+
+SUM host_to_all_bidirectional_memcpy_sm 247.56
+
+Waived:
+Waived:
+Waived:
+Waived:
+Running host_device_latency_sm.
+memory latency SM CPU(row) <-> GPU(column) (ns)
+           0
+ 0    772.58
+
+SUM host_device_latency_sm 772.58
+
+Waived:
+NOTE: The reported results may not reflect the full capabilities of the platform.
+Performance can vary with software drivers, hardware clocks, and system topology.
