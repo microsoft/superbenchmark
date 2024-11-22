@@ -384,11 +384,12 @@ with topology distance of 2, 4, 6, respectively.
 | ib-traffic/ib\_write\_bw\_${msg_size}\_${direction}\_${line}\_${pair}:${server}\_${client}  | bandwidth (GB/s) | The max bandwidth of perftest (ib_write_bw, ib_send_bw, ib_read_bw) using ${msg_size} with ${direction}('cpu-to-cpu'/'gpu-to-gpu'/'gpu-to-cpu'/'cpu-to-gpu') run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client.  |
 | ib-traffic/ib\_write\_lat\_${msg_size}\_${direction}\_${line}\_${pair}:${server}\_${client} | time (us)        | The max latency of perftest (ib_write_lat, ib_send_lat, ib_read_lat) using ${msg_size} with ${direction}('cpu-to-cpu'/'gpu-to-gpu'/'gpu-to-cpu'/'cpu-to-gpu') run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client. |
 
-### `nvbenchmark`
+### `nvbandwidth`
 
 #### Introduction
 
-Measures bandwidth and latency for various memcpy patterns across different links using copy engine or kernel copy methods.
+Measures bandwidth and latency for various memcpy patterns across different links using copy engine or kernel copy methods,
+performed by [nvbandwidth](https://github.com/NVIDIA/nvbandwidth)
 
 #### Metrics
 
