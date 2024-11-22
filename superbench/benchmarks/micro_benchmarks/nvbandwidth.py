@@ -41,7 +41,10 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             type=str,
             default='',
             required=False,
-            help='Specify the test case(s) to run, either by name or index. By default, all test cases are executed..',
+            help=(
+                'Specify the test case(s) to run, either by name or index. By default, all test cases are executed. '
+                'Example: --test_cases 0,1,2,19,20'
+            ),
         )
 
         self._parser.add_argument(
