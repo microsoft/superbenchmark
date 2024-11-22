@@ -83,6 +83,13 @@ class PytorchLlama(PytorchBase):
         self._parser.add_argument(
             '--num_attention_heads', type=int, default=20, required=False, help='The number of attention heads.'
         )
+        self._parser.add_argument(
+            '--intermediate_size',
+            type=int,
+            default=11008,
+            required=False,
+            help='Dimension of the MLP representations.'
+        )
         self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
         self._parser.add_argument(
             '--num_key_value_heads',
@@ -113,11 +120,15 @@ class PytorchLlama(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
+
         self._config = LlamaConfig(
             hidden_size=self._args.hidden_size,
             num_hidden_layers=self._args.num_hidden_layers,
             num_attention_heads=self._args.num_attention_heads,
-            num_key_value_heads=self._args.num_key_value_heads
+            num_key_value_heads=self._args.num_key_value_heads,
+            intermediate_size=self._args.intermediate_size,
+            max_position_embeddings=4096,    # Maximum sequence length that llama2 supports
+            rms_norm_eps=1e-05,    # Llama2 default for epsilon used by the rms normalization layers
         )
 
         enable_fp8 = precision.name.startswith('FP8_')
@@ -232,17 +243,24 @@ class PytorchLlama(PytorchBase):
 
 # Register Llama2 benchmark with 7b parameters.
 BenchmarkRegistry.register_benchmark(
-    'pytorch-llama2-7b', PytorchLlama, parameters='--hidden_size=4096 --num_hidden_layers=32 --num_attention_heads=32'
+    'pytorch-llama2-7b',
+    PytorchLlama,
+    parameters='--hidden_size=4096 --num_hidden_layers=32 --num_attention_heads=32 --num_key_value_heads=32 \
+        --intermediate_size=11008'
 )
 
 # Register Llama2 benchmark with 13b parameters.
 BenchmarkRegistry.register_benchmark(
-    'pytorch-llama2-13b', PytorchLlama, parameters='--hidden_size=5120 --num_hidden_layers=40 --num_attention_heads=40'
+    'pytorch-llama2-13b',
+    PytorchLlama,
+    parameters='--hidden_size=5120 --num_hidden_layers=40 --num_attention_heads=40 --num_key_value_heads=40 \
+        --intermediate_size=13824'
 )
 
 # Register Llama2 benchmark with 70b parameters.
 BenchmarkRegistry.register_benchmark(
     'pytorch-llama2-70b',
     PytorchLlama,
-    parameters='--hidden_size=8192 --num_hidden_layers=80 --num_attention_heads=64 --num_key_value_heads=8'
+    parameters='--hidden_size=8192 --num_hidden_layers=80 --num_attention_heads=64 --num_key_value_heads=8 \
+        --intermediate_size=28672'
 )
