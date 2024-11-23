@@ -20,8 +20,10 @@ steps:
     displayName: Export path
   - script: |
       docker exec -t -u root -e DEBIAN_FRONTEND=noninteractive cuda-ci bash -c \
-        "apt-get update -y -q && yes | apt-get install -y -q \
-        ffmpeg libavcodec-dev libavformat-dev libavutil-dev libboost-program-options-dev libswresample-dev sudo"
+        "apt-get update -y -q && \
+        yes '' | apt-get install -y -q sudo && \
+        apt-get install -y -q \
+        ffmpeg libavcodec-dev libavformat-dev libavutil-dev libboost-program-options-dev libswresample-dev"
       python3 -m pip install --upgrade pip setuptools==65.7
       python3 -m pip install .[test,nvworker]
       make postinstall
