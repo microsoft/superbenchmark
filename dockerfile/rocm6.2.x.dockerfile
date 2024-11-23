@@ -20,7 +20,8 @@ LABEL maintainer="SuperBench"
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get -q install -y --no-install-recommends  \
+    apt-get -q install -y --no-install-recommends \
+    amd-smi-lib \
     autoconf \
     automake \
     bc \
@@ -47,6 +48,7 @@ RUN apt-get update && \
     openssh-server \
     pciutils \
     python3-mpi4py \
+    rocm-cmake \
     rsync \
     sudo \
     util-linux \
@@ -55,7 +57,7 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
-ARG NUM_MAKE_JOBS=64
+ARG NUM_MAKE_JOBS=16
 
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
@@ -91,12 +93,6 @@ RUN mkdir -p /root/.ssh && \
     echo "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
-
-# Get Ubuntu version and set as an environment variable
-RUN export UBUNTU_VERSION=$(lsb_release -r -s)
-RUN echo "Ubuntu version: $UBUNTU_VERSION"
-ENV UBUNTU_VERSION=${UBUNTU_VERSION}
-
 # Install OFED
 ENV OFED_VERSION=5.9-0.5.6.0
 # Check if ofed_info is present and has a version
@@ -110,22 +106,21 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     fi
 
 ENV ROCM_PATH=/opt/rocm
+RUN bash -c 'echo -e "gfx90a:xnack-\ngfx940\ngfx941\ngfx942:sramecc+:xnack-\n" >> ${ROCM_PATH}/bin/target.lst'
 
 # Install OpenMPI
-ENV OPENMPI_VERSION=4.1.x
-ENV MPI_HOME=/usr/local/mpi
-# Check if Open MPI is installed
+ENV OPENMPI_VERSION=4.1.x \
+    MPI_HOME=/usr/local/mpi
 RUN cd /tmp && \
-    git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION}  && \
+    git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION} && \
     cd ompi && \
     ./autogen.pl && \
     mkdir build && \
     cd build && \
-    ../configure --prefix=/usr/local/mpi  --enable-orterun-prefix-by-default --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
-    make -j $(nproc) && \
-    make -j $(nproc) install && \
+    ../configure --prefix=/usr/local/mpi --enable-orterun-prefix-by-default --enable-mpirun-prefix-by-default --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
+    make -j ${NUM_MAKE_JOBS} && \
+    make install && \
     ldconfig && \
-    cd / && \
     rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
 
 # Install Intel MLC
@@ -136,7 +131,7 @@ RUN cd /tmp && \
     rm -rf ./Linux mlc.tgz
 
 # Install RCCL
-RUN cd /opt/ &&  \
+RUN cd /opt/ && \
     git clone -b release/rocm-rel-6.2 https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
     mkdir build && \
@@ -144,15 +139,20 @@ RUN cd /opt/ &&  \
     CXX=/opt/rocm/bin/hipcc cmake -DHIP_COMPILER=clang -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=1 \
     -DCMAKE_PREFIX_PATH="${ROCM_PATH}/hsa;${ROCM_PATH}/hip;${ROCM_PATH}/share/rocm/cmake/;${ROCM_PATH}" \
     .. && \
-    make -j${NUM_MAKE_JOBS}
+    make -j ${NUM_MAKE_JOBS}
 
-# Install AMD SMI Python Library
-RUN apt install amd-smi-lib -y && \
+RUN python3 -m pip install --upgrade pip wheel setuptools==65.7 && \
+    # Install AMD SMI Python Library
     cd /opt/rocm/share/amd_smi && \
-    python3 -m pip install .
+    python3 -m pip install . && \
+    # Install transformer_engine
+    cd /opt && \
+    git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
+    cd TransformerEngine && \
+    NVTE_FRAMEWORK=pytorch pip install .
 
 ENV PATH="/usr/local/mpi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
-    LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
+    LD_PRELOAD="/opt/rccl/build/librccl.so:${LD_PRELOAD}" \
     LD_LIBRARY_PATH="/usr/local/mpi/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
@@ -163,31 +163,20 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
-RUN apt install rocm-cmake -y && \
-    python3 -m pip install --upgrade pip wheel setuptools==65.7
-
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
 # Apply patch
 RUN cd third_party/perftest && \
-    git apply ../perftest_rocm6.patch
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
-RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
-    cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
-RUN cd third_party/Megatron/Megatron-DeepSpeed && \
+    git apply ../perftest_rocm6.patch && \
+    cd ../Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
-
-# Install transformer_engine
-RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
-    cd TransformerEngine && \
-    export NVTE_FRAMEWORK=pytorch && \
-    pip install .
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 ROCM_VER=rocm-5.5.0 \
+    -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm && \
+    cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/* /opt/rocm/lib/ && \
+    cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/* /opt/rocm/include/
 
 ADD . .
-ENV USE_HIP_DATATYPE=1
-ENV USE_HIPBLAS_COMPUTETYPE=1
-RUN python3 -m pip install .[amdworker]  && \
-    CXX=/opt/rocm/bin/hipcc make cppbuild  && \
+RUN python3 -m pip install .[amdworker] && \
+    make CXX=/opt/rocm/bin/hipcc USE_HIP_DATATYPE=1 USE_HIPBLAS_COMPUTETYPE=1 cppbuild && \
     make postinstall
-

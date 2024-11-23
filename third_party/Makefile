@@ -16,13 +16,13 @@ ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed rocm_apex
 
 # Build targets.
 all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed
-rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
+rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed rocm_apex
 cpu: common cpu_perftest cpu_stream
 common: fio
 
@@ -111,8 +111,9 @@ rocm_rocblas: sb_micro_path
 		if [ -d rocBLAS ]; then rm -rf rocBLAS; fi; \
 		git clone -b ${ROCBLAS_BRANCH} https://github.com/ROCmSoftwarePlatform/rocBLAS.git ./rocBLAS; \
 		sed -i 's|#include "gemm.hpp"|#include "Tensile/gemm.hpp"|' rocBLAS/clients/benchmarks/../../library/src/blas3/rocblas_trtri.hpp; \
-		cd ./rocBLAS && ./install.sh --dependencies --clients-only; \
-		cp -v $(SB_MICRO_PATH)/third_party/rocBLAS/build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/; \
+		cd ./rocBLAS && ./install.sh -idc -a gfx90a:xnack-;gfx940;gfx941;gfx942:sramecc+:xnack- && \
+		cp -v ./build/release/clients/staging/rocblas-bench $(SB_MICRO_PATH)/bin/ && \
+		rm -rf build; \
 	fi
 
 # Build hipblaslt-bench.
@@ -123,8 +124,9 @@ rocm_hipblaslt: sb_micro_path
 	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
 		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
 		git clone -b ${HIPBLASLT_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
-		cd ./hipBLASLt && ./install.sh -dc; \
-		cp -v $(SB_MICRO_PATH)/third_party/hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/;  \
+		cd ./hipBLASLt && ./install.sh -idc -a gfx90a:xnack-;gfx940;gfx941;gfx942:sramecc+:xnack- && \
+		cp -v ./build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/ && \
+		rm -rf build; \
 	fi
 
 # Build hipBusBandwidth.
@@ -197,8 +199,8 @@ megatron_deepspeed:
 	python -m pip install --no-cache-dir -r requirements.txt && \
 	python -m pip install DeepSpeed
 
-# Instal apex of ROCm due to dependency of Megatron
-apex_rocm:
+# Install apex of ROCm due to dependency of Megatron
+rocm_apex:
 	$(eval TORCH_VERSION ?= $(shell python -c "import torch; print(torch.__version__)"))
 	$(eval TORCH_MAJOR_VERSION ?= $(word 1,$(subst ., ,$(TORCH_VERSION))))
 	$(eval TORCH_MINOR_VERSION ?= $(word 2,$(subst ., ,$(TORCH_VERSION))))
@@ -214,7 +216,8 @@ apex_rocm:
 		git checkout release/1.0.0 ; \
 	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 1)" -eq 1 ]; then \
 	    git checkout release/1.0.0 ; \
-	fi
+	fi && \
+	sed -i 's/= hipBLASlt_supported()/= True/' setup.py
 	pip install -v --disable-pip-version-check --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./apex
 
 # Build MSCCL for CUDA
