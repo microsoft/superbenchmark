@@ -252,7 +252,6 @@ def test_pytorch_empty_cache():
 
     # Get initial memory reserved
     init_res_memory = torch.cuda.memory_reserved()
-    assert (init_res_memory >= 0)
 
     # Test cache empty by manually calling torch.cuda.empty_cache().
     parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train'
