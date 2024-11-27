@@ -211,6 +211,7 @@ setup(
             'torch': [
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
+                'tokenizers <= 0.20.3',
                 'transformers>=4.28.0',
             ],
             'ort': [
