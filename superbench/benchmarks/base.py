@@ -48,6 +48,8 @@ class Benchmark(ABC):
             allow_abbrev=False,
             formatter_class=SortedMetavarTypeHelpFormatter,
         )
+        # Fix optionals title in Python 3.10
+        self._parser._optionals.title = 'optional arguments'
         self._args = None
         self._curr_run_index = 0
         self._result = None

@@ -37,6 +37,7 @@ from superbench.benchmarks.micro_benchmarks.directx_gpu_encoding_latency import 
 from superbench.benchmarks.micro_benchmarks.directx_gpu_copy_performance import DirectXGPUCopyBw
 from superbench.benchmarks.micro_benchmarks.directx_mem_bw_performance import DirectXGPUMemBw
 from superbench.benchmarks.micro_benchmarks.directx_gemm_flops_performance import DirectXGPUCoreFlops
+from superbench.benchmarks.micro_benchmarks.nvbandwidth import NvBandwidthBenchmark
 
 __all__ = [
     'BlasLtBaseBenchmark',
@@ -73,4 +74,5 @@ __all__ = [
     'DirectXGPUCopyBw',
     'DirectXGPUMemBw',
     'DirectXGPUCoreFlops',
+    'NvBandwidthBenchmark',
 ]

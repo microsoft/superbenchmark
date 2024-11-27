@@ -4,7 +4,7 @@
 """Tests for SummaryOp module."""
 
 import unittest
-from numpy import NaN, float64
+from numpy import nan, float64
 
 import pandas as pd
 
@@ -55,7 +55,7 @@ class TestSummaryOp(unittest.TestCase):
         # Test - std
         result = SummaryOp.std(raw_data_df)
         print(result)
-        expectedResult = pd.Series([3.0, 3.0, 2.1213203435596424, NaN], index=['a', 'b', 'c', 'd'], dtype=float64)
+        expectedResult = pd.Series([3.0, 3.0, 2.1213203435596424, nan], index=['a', 'b', 'c', 'd'], dtype=float64)
         pd.testing.assert_series_equal(result, expectedResult)
         # Test - count
         result = SummaryOp.count(raw_data_df)
