@@ -15,7 +15,7 @@ def test_pytorch_llama_7b():
     context = BenchmarkRegistry.create_benchmark_context(
         'llama2-7b',
         platform=Platform.CUDA,
-        parameters='--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision fp16 \
+        parameters='--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float16 \
             --model_action train inference',
         framework=Framework.PYTORCH
     )
