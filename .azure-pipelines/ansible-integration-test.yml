@@ -7,6 +7,7 @@ trigger:
 
 pool:
   name: SuperBench CI
+  demands: ansible-agent
   vmImage: ubuntu-latest
 
 container:

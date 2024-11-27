@@ -384,6 +384,82 @@ with topology distance of 2, 4, 6, respectively.
 | ib-traffic/ib\_write\_bw\_${msg_size}\_${direction}\_${line}\_${pair}:${server}\_${client}  | bandwidth (GB/s) | The max bandwidth of perftest (ib_write_bw, ib_send_bw, ib_read_bw) using ${msg_size} with ${direction}('cpu-to-cpu'/'gpu-to-gpu'/'gpu-to-cpu'/'cpu-to-gpu') run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client.  |
 | ib-traffic/ib\_write\_lat\_${msg_size}\_${direction}\_${line}\_${pair}:${server}\_${client} | time (us)        | The max latency of perftest (ib_write_lat, ib_send_lat, ib_read_lat) using ${msg_size} with ${direction}('cpu-to-cpu'/'gpu-to-gpu'/'gpu-to-cpu'/'cpu-to-gpu') run between the ${pair}<sup>th</sup> node pair in the ${line}<sup>th</sup> line of the config, ${server} and ${client} are the hostname of server and client. |
 
+### `nvbandwidth`
+
+#### Introduction
+
+Measures bandwidth and latency for various memcpy patterns across different links using copy engine or kernel copy methods,
+performed by [nvbandwidth](https://github.com/NVIDIA/nvbandwidth)
+
+#### Metrics
+
+| Metrics                                                 | Unit                   | Description                                                                                                                                                                |
+|---------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| host_to_device_memcpy_ce_cpu[0-9]_gpu[0-9]_bw      | GB/s                | Host to device CE memcpy using cuMemcpyAsync                      |
+| host_to_device_memcpy_ce_sum_bw                    | GB/s                | Sum of the output matrix                                           |
+| device_to_host_memcpy_ce_cpu[0-9]_gpu[0-9]_bw      | GB/s                | Device to host CE memcpy using cuMemcpyAsync                      |
+| device_to_host_memcpy_ce_sum_bw                    | GB/s                | Sum of the output matrix                                           |
+| host_to_device_bidirectional_memcpy_ce_cpu[0-9]_gpu[0-9]_bw | GB/s      | A host to device copy is measured while a device to host copy is run simultaneously. Only the host to device copy bandwidth is reported. |
+| host_to_device_bidirectional_memcpy_ce_sum_bw      | GB/s                | Sum of the output matrix                                           |
+| device_to_host_bidirectional_memcpy_ce_cpu[0-9]_gpu[0-9]_bw | GB/s      | A device to host copy is measured while a host to device copy is run simultaneously. Only the device to host copy bandwidth is reported. |
+| device_to_host_bidirectional_memcpy_ce_sum_bw      | GB/s                | Sum of the output matrix                                           |
+| device_to_device_memcpy_read_ce_gpu[0-9]_gpu[0-9]_bw | GB/s               | Measures bandwidth of cuMemcpyAsync between each pair of accessible peers. Read tests launch a copy from the peer device to the target using the target's context. |
+| device_to_device_memcpy_read_ce_sum_bw             | GB/s                | Sum of the output matrix                                           |
+| device_to_device_memcpy_write_ce_gpu[0-9]_gpu[0-9]_bw | GB/s              | Measures bandwidth of cuMemcpyAsync between each pair of accessible peers. Write tests launch a copy from the target device to the peer using the target's context. |
+| device_to_device_memcpy_write_ce_sum_bw            | GB/s                | Sum of the output matrix                                           |
+| device_to_device_bidirectional_memcpy_read_ce_gpu[0-9]_gpu[0-9]_bw | GB/s | Measures bandwidth of cuMemcpyAsync between each pair of accessible peers. A copy in the opposite direction of the measured copy is run simultaneously but not measured. Read tests launch a copy from the peer device to the target using the target's context. |
+| device_to_device_bidirectional_memcpy_read_ce_sum_bw | GB/s               | Sum of the output matrix                                           |
+| device_to_device_bidirectional_memcpy_write_ce_gpu[0-9]_gpu[0-9]_bw | GB/s | Measures bandwidth of cuMemcpyAsync between each pair of accessible peers. A copy in the opposite direction of the measured copy is run simultaneously but not measured. Write tests launch a copy from the target device to the peer using the target's context. |
+| device_to_device_bidirectional_memcpy_write_ce_sum_bw | GB/s               | Sum of the output matrix                                           |
+| all_to_host_memcpy_ce_cpu[0-9]_gpu[0-9]_bw         | GB/s                | Measures bandwidth of cuMemcpyAsync between a single device and the host while simultaneously running copies from all other devices to the host. |
+| all_to_host_memcpy_ce_sum_bw                       | GB/s                | Sum of the output matrix                                           |
+| all_to_host_bidirectional_memcpy_ce_cpu[0-9]_gpu[0-9]_bw | GB/s              | A device to host copy is measured while a host to device copy is run simultaneously. Only the device to host copy bandwidth is reported. All other devices generate simultaneous host to device and device to host interfering traffic. |
+| all_to_host_bidirectional_memcpy_ce_sum_bw         | GB/s                | Sum of the output matrix                                           |
+| host_to_all_memcpy_ce_cpu[0-9]_gpu[0-9]_bw         | GB/s                | Measures bandwidth of cuMemcpyAsync between the host to a single device while simultaneously running copies from the host to all other devices. |
+| host_to_all_memcpy_ce_sum_bw                       | GB/s                | Sum of the output matrix                                           |
+| host_to_all_bidirectional_memcpy_ce_cpu[0-9]_gpu[0-9]_bw | GB/s              | A host to device copy is measured while a device to host copy is run simultaneously. Only the host to device copy bandwidth is reported. All other devices generate simultaneous host to device and device to host interfering traffic. |
+| host_to_all_bidirectional_memcpy_ce_sum_bw         | GB/s                | Sum of the output matrix                                           |
+| all_to_one_write_ce_gpu[0-9]_gpu[0-9]_bw           | GB/s                | Measures the total bandwidth of copies from all accessible peers to a single device, for each device. Bandwidth is reported as the total inbound bandwidth for each device. Write tests launch a copy from the target device to the peer using the target's context. |
+| all_to_one_write_ce_sum_bw                         | GB/s                | Sum of the output matrix                                           |
+| all_to_one_read_ce_gpu[0-9]_gpu[0-9]_bw            | GB/s                | Measures the total bandwidth of copies from all accessible peers to a single device, for each device. Bandwidth is reported as the total outbound bandwidth for each device. Read tests launch a copy from the peer device to the target using the target's context. |
+| all_to_one_read_ce_sum_bw                          | GB/s                | Sum of the output matrix                                           |
+| one_to_all_write_ce_gpu[0-9]_gpu[0-9]_bw           | GB/s                | Measures the total bandwidth of copies from a single device to all accessible peers, for each device. Bandwidth is reported as the total outbound bandwidth for each device. Write tests launch a copy from the target device to the peer using the target's context. |
+| one_to_all_write_ce_sum_bw                         | GB/s                | Sum of the output matrix                                           |
+| one_to_all_read_ce_gpu[0-9]_gpu[0-9]_bw            | GB/s                | Measures the total bandwidth of copies from a single device to all accessible peers, for each device. Bandwidth is reported as the total inbound bandwidth for each device. Read tests launch a copy from the peer device to the target using the target's context. |
+| one_to_all_read_ce_sum_bw                          | GB/s                | Sum of the output matrix                                           |
+| host_to_device_memcpy_sm_cpu[0-9]_gpu[0-9]_bw      | GB/s                | Host to device SM memcpy using a copy kernel                      |
+| host_to_device_memcpy_sm_sum_bw                    | GB/s                | Sum of the output matrix                                           |
+| device_to_host_memcpy_sm_cpu[0-9]_gpu[0-9]_bw      | GB/s                | Device to host SM memcpy using a copy kernel                      |
+| device_to_host_memcpy_sm_sum_bw                    | GB/s                | Sum of the output matrix                                           |
+| device_to_device_memcpy_read_sm_gpu[0-9]_gpu[0-9]_bw | GB/s               | Measures bandwidth of a copy kernel between each pair of accessible peers. Read tests launch a copy from the peer device to the target using the target's context. |
+| device_to_device_memcpy_read_sm_sum_bw             | GB/s                | Sum of the output matrix                                           |
+| device_to_device_memcpy_write_sm_gpu[0-9]_gpu[0-9]_bw | GB/s              | Measures bandwidth of a copy kernel between each pair of accessible peers. Write tests launch a copy from the target device to the peer using the target's context. |
+| device_to_device_memcpy_write_sm_sum_bw            | GB/s                | Sum of the output matrix                                           |
+| device_to_device_bidirectional_memcpy_read_sm_gpu[0-9]_gpu[0-9]_bw | GB/s | Measures bandwidth of a copy kernel between each pair of accessible peers. Copies are run in both directions between each pair, and the sum is reported. Read tests launch a copy from the peer device to the target using the target's context. |
+| device_to_device_bidirectional_memcpy_read_sm_sum_bw | GB/s               | Sum of the output matrix                                           |
+| device_to_device_bidirectional_memcpy_write_sm_gpu[0-9]_gpu[0-9]_bw | GB/s | Measures bandwidth of a copy kernel between each pair of accessible peers. Copies are run in both directions between each pair, and the sum is reported. Write tests launch a copy from the target device to the peer using the target's context. |
+| device_to_device_bidirectional_memcpy_write_sm_sum_bw | GB/s               | Sum of the output matrix                                           |
+| all_to_host_memcpy_sm_cpu[0-9]_gpu[0-9]_bw         | GB/s                | Measures bandwidth of a copy kernel between a single device and the host while simultaneously running copies from all other devices to the host. |
+| all_to_host_memcpy_sm_sum_bw                       | GB/s                | Sum of the output matrix                                           |
+| all_to_host_bidirectional_memcpy_sm_cpu[0-9]_gpu[0-9]_bw | GB/s              | A device to host bandwidth of a copy kernel is measured while a host to device copy is run simultaneously. Only the device to host copy bandwidth is reported. All other devices generate simultaneous host to device and device to host interfering traffic using copy kernels. |
+| all_to_host_bidirectional_memcpy_sm_sum_bw         | GB/s                | Sum of the output matrix                                           |
+| host_to_all_memcpy_sm_cpu[0-9]_gpu[0-9]_bw         | GB/s                | Measures bandwidth of a copy kernel between the host to a single device while simultaneously running copies from the host to all other devices. |
+| host_to_all_memcpy_sm_sum_bw                       | GB/s                | Sum of the output matrix                                           |
+| host_to_all_bidirectional_memcpy_sm_cpu[0-9]_gpu[0-9]_bw | GB/s              | A host to device bandwidth of a copy kernel is measured while a device to host copy is run simultaneously. Only the host to device copy bandwidth is reported. All other devices generate simultaneous host to device and device to host interfering traffic using copy kernels. |
+| host_to_all_bidirectional_memcpy_sm_sum_bw         | GB/s                | Sum of the output matrix                                           |
+| all_to_one_write_sm_gpu[0-9]_gpu[0-9]_bw           | GB/s                | Measures the total bandwidth of copies from all accessible peers to a single device, for each device. Bandwidth is reported as the total inbound bandwidth for each device. Write tests launch a copy from the target device to the peer using the target's context. |
+| all_to_one_write_sm_sum_bw                         | GB/s                | Sum of the output matrix                                           |
+| all_to_one_read_sm_gpu[0-9]_gpu[0-9]_bw            | GB/s                | Measures the total bandwidth of copies from all accessible peers to a single device, for each device. Bandwidth is reported as the total outbound bandwidth for each device. Read tests launch a copy from the peer device to the target using the target's context. |
+| all_to_one_read_sm_sum_bw                          | GB/s                | Sum of the output matrix                                           |
+| one_to_all_write_sm_gpu[0-9]_gpu[0-9]_bw           | GB/s                | Measures the total bandwidth of copies from a single device to all accessible peers, for each device. Bandwidth is reported as the total outbound bandwidth for each device. Write tests launch a copy from the target device to the peer using the target's context. |
+| one_to_all_write_sm_sum_bw                         | GB/s                | Sum of the output matrix                                           |
+| one_to_all_read_sm_gpu[0-9]_gpu[0-9]_bw            | GB/s                | Measures the total bandwidth of copies from a single device to all accessible peers, for each device. Bandwidth is reported as the total inbound bandwidth for each device. Read tests launch a copy from the peer device to the target using the target's context. |
+| one_to_all_read_sm_sum_bw                          | GB/s                | Sum of the output matrix                                           |
+| host_device_latency_sm_cpu[0-9]_gpu[0-9]_lat       | µs                  | Host - device SM copy latency using a ptr chase kernel            |
+| host_device_latency_sm_sum_lat                     | µs                  | Sum of the output matrix                                           |
+| device_to_device_latency_sm_gpu[0-9]_gpu[0-9]_lat  | µs                  | Measures latency of a pointer dereference operation between each pair of accessible peers. Memory is allocated on a GPU and is accessed by the peer GPU to determine latency. |
+| device_to_device_latency_sm_sum_lat                | µs                  | Sum of the output matrix                                           |
+
 
 ## Computation-communication Benchmarks
 

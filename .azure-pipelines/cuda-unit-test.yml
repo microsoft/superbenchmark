@@ -7,22 +7,26 @@ trigger:
 
 pool:
   name: SuperBench CI
+  demands: cuda-agent
   vmImage: ubuntu-latest
 
 container:
-  image: nvcr.io/nvidia/pytorch:20.12-py3
-  options: '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /usr/bin/sudo:/usr/bin/sudo -v /usr/lib/sudo/:/usr/lib/sudo/'
+  image: nvcr.io/nvidia/pytorch:24.03-py3
+  options: '--name cuda-ci -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker:ro'
 
 steps:
   - script: |
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
+      docker exec -t -u root -e DEBIAN_FRONTEND=noninteractive cuda-ci bash -c \
+        "apt-get update -y -q && \
+        yes '' | apt-get install -y -q sudo && \
+        apt-get install -y -q \
+        ffmpeg libavcodec-dev libavformat-dev libavutil-dev libboost-program-options-dev libswresample-dev"
       python3 -m pip install --upgrade pip setuptools==65.7
       python3 -m pip install .[test,nvworker]
       make postinstall
-      sudo DEBIAN_FRONTEND=noninteractive apt-get update
-      sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
     displayName: Install dependencies
   - script: |
       python3 setup.py lint
