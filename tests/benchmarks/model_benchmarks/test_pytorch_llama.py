@@ -11,7 +11,7 @@ from superbench.benchmarks.model_benchmarks.pytorch_llama import PytorchLlama
 @decorator.cuda_test
 @decorator.pytorch_test
 def test_pytorch_llama_7b():
-    """Test pytorch-llama2-7b benchmark for fp16 inference."""
+    """Test pytorch-llama2-7b benchmark for fp16 train and inference."""
     context = BenchmarkRegistry.create_benchmark_context(
         'llama2-7b',
         platform=Platform.CUDA,
@@ -50,8 +50,7 @@ def test_pytorch_llama_7b():
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
     for metric in [
-        'fp16_train_step_time', 'fp16_train_throughput', 'fp16_inference_step_time',
-        'fp16_inference_throughput'
+        'fp16_train_step_time', 'fp16_train_throughput', 'fp16_inference_step_time', 'fp16_inference_throughput'
     ]:
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
