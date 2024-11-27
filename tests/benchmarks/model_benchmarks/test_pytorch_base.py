@@ -250,16 +250,35 @@ def test_pytorch_empty_cache():
     # Register mnist benchmark.
     BenchmarkRegistry.register_benchmark('pytorch-mnist', PytorchMNIST)
 
+    # Get initial memory reserved
+    init_res_memory = torch.cuda.memory_reserved()
+
     # Test cache empty by manually calling torch.cuda.empty_cache().
     parameters = '--batch_size 32 --num_warmup 8 --num_steps 64 --model_action train'
     benchmark = PytorchMNIST('pytorch-mnist', parameters=parameters)
+
     assert (benchmark)
     assert (benchmark._preprocess())
     assert (benchmark._benchmark())
     del benchmark
-    assert (torch.cuda.memory_stats()['reserved_bytes.all.current'] > 0)
+
+    # Get current reserved memory after benchmark
+    post_bm_res_memory = torch.cuda.memory_reserved()
+
+    # Assert that memory is increased after benchmark
+    assert (post_bm_res_memory >= init_res_memory)
+
+    # Manually empty cache and get reserved memory
+    # Calling empty_cache() releases all unused cached memory from PyTorch so that those can be used by
+    # other GPU applications. However, the occupied GPU memory by tensors will not be freed so it can not
+    # increase the amount of GPU memory available for PyTorch.
+    # https://pytorch.org/docs/stable/notes/cuda.html#cuda-memory-management
     torch.cuda.empty_cache()
-    assert (torch.cuda.memory_stats()['reserved_bytes.all.current'] == 0)
+    post_empty_cache_res_memory = torch.cuda.memory_reserved()
+
+    # Assert that some memory is released after manually empty cache. The cache is not guaranteed to be reset
+    # back to the init_res_memory due to some tensors not being released.
+    assert (post_empty_cache_res_memory <= post_bm_res_memory)
 
     # Test automatic cache empty.
     context = BenchmarkRegistry.create_benchmark_context(
@@ -268,4 +287,4 @@ def test_pytorch_empty_cache():
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     assert (benchmark)
-    assert (torch.cuda.memory_stats()['reserved_bytes.all.current'] == 0)
+    assert (torch.cuda.memory_reserved() == post_empty_cache_res_memory)
