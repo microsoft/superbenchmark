@@ -90,9 +90,6 @@ class Benchmark(ABC):
             All configurable settings in raw string.
         """
         message = self._parser.format_help().strip()
-        # Ensure consistent header across diff python argparse format_help output.
-        if 'options:' in message:
-            message = message.replace('options:', 'optional arguments:')
         return message
 
     def parse_args(self, ignore_invalid=False):
