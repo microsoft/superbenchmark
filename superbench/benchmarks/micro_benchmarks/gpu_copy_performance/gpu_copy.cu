@@ -913,7 +913,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
 
     for (int rank = 0; rank < gpu_count; rank++) {
         if (SetGpu(rank)) {
-            fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", rank, cuda_err);
             return -1;
         }
 
@@ -924,7 +924,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
         cuda_err = GpuMallocDataBuf(&(src_buffers_gpu[rank]), opts.size);
 #endif
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaMalloc for src_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaMalloc for src_buffers_gpu[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
         if (opts.check_data) {
@@ -933,7 +933,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
             }
             cuda_err = cudaMemcpy(src_buffers_gpu[rank], data_buffer_cpu, opts.size, cudaMemcpyDefault);
             if (cuda_err != cudaSuccess) {
-                fprintf(stderr, "RunAllToAllBench::cudaMemcpy to src_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+                fprintf(stderr, "RunAllToAllBench::cudaMemcpy to src_buffers_gpu[%d] error: %d\n", rank, cuda_err);
                 return -1;
             }
         }
@@ -945,7 +945,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
         cuda_err = GpuMallocDataBuf(&(dst_buffers_gpu[rank]), opts.size);
 #endif
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaMalloc for dst_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaMalloc for dst_buffers_gpu[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
 
@@ -959,12 +959,12 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
         // Prepare events
         cuda_err = cudaEventCreate(&(start_events[rank]));
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaEventCreate for start_events[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaEventCreate for start_events[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
         cuda_err = cudaEventCreate(&(stop_events[rank]));
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaEventCreate for stop_events[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaEventCreate for stop_events[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
     }
@@ -972,20 +972,20 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
     // Prepare kernel arguments
     for (int rank = 0; rank < gpu_count; rank++) {
         if (SetGpu(rank)) {
-            fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", rank, cuda_err);
             return -1;
         }
 
         // Prepare destination buffer args
         cuda_err = cudaMalloc(&(dst_buffer_gpu_args[rank]), sizeof(uint8_t *) * gpu_count);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaMalloc for dst_buffer_gpu_args[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaMalloc for dst_buffer_gpu_args[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
         cuda_err = cudaMemcpy(dst_buffer_gpu_args[rank], dst_buffers_gpu.data(), sizeof(uint8_t *) * gpu_count,
                               cudaMemcpyDefault);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaMemcpy to dst_buffer_gpu_args[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaMemcpy to dst_buffer_gpu_args[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
     }
@@ -998,15 +998,15 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
             }
 
             if (SetGpu(rank)) {
-                fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", cuda_err, rank);
+                fprintf(stderr, "RunAllToAllBench::SetGpu for rank %d error: %d\n", rank, cuda_err);
                 return -1;
             }
 
             if (i == opts.num_warm_up) {
                 cuda_err = cudaEventRecord(start_events[rank], streams[rank]);
                 if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "RunAllToAllBench::cudaEventRecord for start_events[%d] error: %d\n", cuda_err,
-                            rank);
+                    fprintf(stderr, "RunAllToAllBench::cudaEventRecord for start_events[%d] error: %d\n", rank,
+                            cuda_err);
                     return -1;
                 }
             }
@@ -1017,8 +1017,8 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
             if (i == opts.num_warm_up + opts.num_loops - 1) {
                 cuda_err = cudaEventRecord(stop_events[rank], streams[rank]);
                 if (cuda_err != cudaSuccess) {
-                    fprintf(stderr, "RunAllToAllBench::cudaEventRecord for stop_events[%d] error: %d\n", cuda_err,
-                            rank);
+                    fprintf(stderr, "RunAllToAllBench::cudaEventRecord for stop_events[%d] error: %d\n", rank,
+                            cuda_err);
                     return -1;
                 }
             }
@@ -1030,7 +1030,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
         }
         cuda_err = cudaStreamSynchronize(streams[rank]);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaStreamSynchronize streams[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaStreamSynchronize streams[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
     }
@@ -1045,7 +1045,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
         float time_in_ms = 0;
         cuda_err = cudaEventElapsedTime(&time_in_ms, start_events[rank], stop_events[rank]);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaEventElapsedTime for rank %d error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaEventElapsedTime for rank %d error: %d\n", rank, cuda_err);
             return -1;
         }
         double bw = opts.size * (gpu_count - 1) * opts.num_loops / gpu_count / time_in_ms / 1e6;
@@ -1072,8 +1072,8 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
             }
             cuda_err = cudaMemcpy(data_buffer_cpu, dst_buffers_gpu[curr_dst_rank], opts.size, cudaMemcpyDefault);
             if (cuda_err != cudaSuccess) {
-                fprintf(stderr, "RunAllToAllBench::cudaMemcpy from dst_buffers_gpu[%d] error: %d\n", cuda_err,
-                        curr_dst_rank);
+                fprintf(stderr, "RunAllToAllBench::cudaMemcpy from dst_buffers_gpu[%d] error: %d\n", curr_dst_rank,
+                        cuda_err);
                 return -1;
             }
             for (uint64_t i = 0; i < opts.size / sizeof(uint64_t); i++) {
@@ -1100,17 +1100,17 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
     for (int rank = 0; rank < gpu_count; rank++) {
         cuda_err = cudaFree(src_buffers_gpu[rank]);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaFree for src_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaFree for src_buffers_gpu[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
         cuda_err = cudaFree(dst_buffers_gpu[rank]);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaFree for dst_buffers_gpu[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaFree for dst_buffers_gpu[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
         cuda_err = cudaFree(dst_buffer_gpu_args[rank]);
         if (cuda_err != cudaSuccess) {
-            fprintf(stderr, "RunAllToAllBench::cudaFree for dst_buffer_gpu_args[%d] error: %d\n", cuda_err, rank);
+            fprintf(stderr, "RunAllToAllBench::cudaFree for dst_buffer_gpu_args[%d] error: %d\n", rank, cuda_err);
             return -1;
         }
     }
