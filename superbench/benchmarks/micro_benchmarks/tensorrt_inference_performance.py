@@ -138,7 +138,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 line = line.strip()
                 if '[I] mean:' in line or '[I] percentile:' in line:
                     tag = 'mean' if '[I] mean:' in line else '99'
-                    lats = re.findall(r'(\d+\.\d+) ms', line)
+                    lats = re.findall(r'(\d+\.*\d*) ms', line)
                     if len(lats) == 1:
                         self._result.add_result(f'{model}_gpu_time_{tag}', float(lats[0]))
                     elif len(lats) == 2:
@@ -149,11 +149,11 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                     tm = 'gpu' if '[I] GPU Compute Time:' in line else 'host'
                     self._result.add_result(
                         f'{model}_{tm}_time_mean',
-                        float(re.findall(r'mean = (\d+\.\d+) ms', line)[0]),
+                        float(re.findall(r'mean = (\d+\.*\d*) ms', line)[0]),
                     )
                     self._result.add_result(
                         f'{model}_{tm}_time_99',
-                        float(re.findall(r'\(99\%\) = (\d+\.\d+) ms', line)[0]),
+                        float(re.findall(r'\(99\%\) = (\d+\.*\d*) ms', line)[0]),
                     )
                     success = True
         except BaseException as e:
