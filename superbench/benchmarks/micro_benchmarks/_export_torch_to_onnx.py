@@ -9,11 +9,12 @@ from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
-from transformers import BertConfig, GPT2Config
+from transformers import BertConfig, GPT2Config, LlamaConfig
 
 from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
+from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
 
 
 class torch2onnxExporter():
@@ -87,6 +88,39 @@ class torch2onnxExporter():
                 ),
                 self.num_classes,
             ),
+            'llama2-7b':
+            lambda: LlamaBenchmarkModel(
+                LlamaConfig(
+                    hidden_size=4096,
+                    num_hidden_layers=32,
+                    num_attention_heads=32,
+                    num_key_value_heads=32,
+                    intermediate_size=11008,
+                ),
+                self.num_classes,
+            ),
+            'llama2-13b':
+            lambda: LlamaBenchmarkModel(
+                LlamaConfig(
+                    hidden_size=5120,
+                    num_hidden_layers=40,
+                    num_attention_heads=40,
+                    num_key_value_heads=40,
+                    intermediate_size=13824,
+                ),
+                self.num_classes,
+            ),
+            'llama2-70b':
+            lambda: LlamaBenchmarkModel(
+                LlamaConfig(
+                    hidden_size=8192,
+                    num_hidden_layers=80,
+                    num_attention_heads=64,
+                    num_key_value_heads=8,
+                    intermediate_size=28672,
+                ),
+                self.num_classes,
+            ),
         }
         self._onnx_model_path = Path(torch.hub.get_dir()) / 'onnx'
         self._onnx_model_path.mkdir(parents=True, exist_ok=True)
@@ -138,7 +172,7 @@ class torch2onnxExporter():
             model,
             dummy_input,
             file_name,
-            opset_version=10,
+            opset_version=14,
             operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,
             input_names=['input'],
             output_names=['output'],
@@ -179,7 +213,7 @@ class torch2onnxExporter():
             model,
             dummy_input,
             file_name,
-            opset_version=10,
+            opset_version=14,
             do_constant_folding=True,
             input_names=['input'],
             output_names=['output'],

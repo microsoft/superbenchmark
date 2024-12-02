@@ -89,7 +89,8 @@ class Benchmark(ABC):
         Return:
             All configurable settings in raw string.
         """
-        return self._parser.format_help().strip()
+        message = self._parser.format_help().strip()
+        return message
 
     def parse_args(self, ignore_invalid=False):
         """Parse the arguments.

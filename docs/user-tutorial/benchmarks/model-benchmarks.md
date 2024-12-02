@@ -13,6 +13,7 @@ id: model-benchmarks
 Run training or inference tasks with single or half precision for deep learning models,
 including the following categories:
 * GPT: gpt2-small, gpt2-medium, gpt2-large and gpt2-xl
+* LLAMA: llama2-7b, llama2-13b, llama2-70b
 * BERT: bert-base and bert-large
 * LSTM
 * CNN, listed in [`torchvision.models`](https://pytorch.org/vision/0.8/models.html), including:
