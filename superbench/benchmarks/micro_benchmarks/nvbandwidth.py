@@ -38,12 +38,14 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         self._parser.add_argument(
             '--test_cases',
+            nargs='+',
             type=str,
-            default='',
+            default=[],
             required=False,
             help=(
-                'Specify the test case(s) to run, either by name or index. By default, all test cases are executed. '
-                'Example: --test_cases 0,1,2,19,20'
+                'Specify the test case(s) to execute, either by name or index. '
+                'To view the available test case names or indices, run the command nvbandwidth on the host. '
+                'If no specific test case is specified, all test cases will be executed by default.'
             ),
         )
 
@@ -92,7 +94,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             command += f' --bufferSize {self._args.buffer_size}'
 
         if self._args.test_cases:
-            command += ' --testcase ' + ' '.join([testcase.strip() for testcase in self._args.test_cases.split(',')])
+            command += ' --testcase ' + ' '.join(self._args.test_cases)
 
         if self._args.skip_verification:
             command += ' --skipVerification'
@@ -158,6 +160,10 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             row_data = line.split()
             row_index = row_data[0]
             for col_index, value in enumerate(row_data[1:], start=1):
+                # Skip 'N/A' values
+                if value == 'N/A':
+                    continue
+
                 col_header = parse_status['matrix_header'][col_index - 1]
                 test_name = parse_status['test_name']
                 benchmark_type = parse_status['benchmark_type']
@@ -168,10 +174,12 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         # Parse summary results
         summary_match = summary_pattern.search(line)
         if summary_match:
-            value = float(summary_match.group(2))
-            test_name = parse_status['test_name']
-            benchmark_type = parse_status['benchmark_type']
-            parse_status['results'][f'{test_name}_sum_{benchmark_type}'] = value
+            value = summary_match.group(2)
+            # Skip 'N/A' values
+            if value != 'N/A':
+                test_name = parse_status['test_name']
+                benchmark_type = parse_status['benchmark_type']
+                parse_status['results'][f'{test_name}_sum_{benchmark_type}'] = float(value)
 
             # Reset parsing state for next test
             parse_status['test_name'] = ''
