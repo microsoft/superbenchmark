@@ -159,7 +159,6 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         if parse_status['test_name'] and parse_status['benchmark_type'] and matrix_row_pattern.match(line):
             row_data = line.split()
             row_index = row_data[0]
-
             for col_index, value in enumerate(row_data[1:], start=1):
                 # Skip 'N/A' values
                 if value == 'N/A':
@@ -170,7 +169,6 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
                 benchmark_type = parse_status['benchmark_type']
                 metric_name = f'{test_name}_cpu{row_index}_gpu{col_header}_{benchmark_type}'
                 parse_status['results'][metric_name] = float(value)
-
             return
 
         # Parse summary results

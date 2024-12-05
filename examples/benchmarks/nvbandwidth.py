@@ -16,7 +16,7 @@ if __name__ == '__main__':
         platform=Platform.CUDA,
         parameters=(
             '--buffer_size 128 '
-            '--test_cases 0,1,19,20 '
+            '--test_cases 0 1 19 20 '
             '--skip_verification '
             '--disable_affinity '
             '--use_mean '

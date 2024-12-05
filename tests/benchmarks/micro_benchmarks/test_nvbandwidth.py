@@ -34,7 +34,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         # Test preprocess with specified parameters
         parameters = (
             '--buffer_size 256 '
-            '--test_cases 0 1 2 19  20 '
+            '--test_cases 0 1 2 19 20 '
             '--skip_verification '
             '--disable_affinity '
             '--use_mean '
