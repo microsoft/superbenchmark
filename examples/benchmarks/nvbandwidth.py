@@ -16,7 +16,7 @@ if __name__ == '__main__':
         platform=Platform.CUDA,
         parameters=(
             '--buffer_size 128 '
-            '--test_cases 0 1 19 20 '
+            '--test_cases host_to_device_memcpy_ce device_to_host_bidirectional_memcpy_ce '
             '--skip_verification '
             '--disable_affinity '
             '--use_mean '

@@ -34,7 +34,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         # Test preprocess with specified parameters
         parameters = (
             '--buffer_size 256 '
-            '--test_cases 0 1 2 19 20 '
+            '--test_cases host_to_device_memcpy_ce device_to_host_bidirectional_memcpy_ce '
             '--skip_verification '
             '--disable_affinity '
             '--use_mean '
@@ -47,7 +47,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         # Check command
         assert (1 == len(benchmark._commands))
         assert ('--bufferSize 256' in benchmark._commands[0])
-        assert ('--testcase 0 1 2 19 20' in benchmark._commands[0])
+        assert ('--testcase host_to_device_memcpy_ce device_to_host_bidirectional_memcpy_ce' in benchmark._commands[0])
         assert ('--skipVerification' in benchmark._commands[0])
         assert ('--disableAffinity' in benchmark._commands[0])
         assert ('--useMean' in benchmark._commands[0])
