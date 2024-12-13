@@ -134,6 +134,22 @@ superbench:
         copy_type:
           - sm
           - dma
+    nvbandwidth:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        buffer_size: 128
+        test_cases:
+          - host_to_device_memcpy_ce
+          - device_to_host_memcpy_ce
+          - host_to_device_memcpy_sm
+          - device_to_host_memcpy_sm
+        num_loops: 6
+        skip_verification: false
+        disable_affinity: false
+        use_mean: false
     kernel-launch:
       <<: *default_local_mode
     gemm-flops:
