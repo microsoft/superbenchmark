@@ -9,12 +9,13 @@ from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
-from transformers import BertConfig, GPT2Config, LlamaConfig
+from transformers import BertConfig, GPT2Config, LlamaConfig, MixtralConfig
 
 from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
+from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
 
 
 class torch2onnxExporter():
@@ -118,6 +119,32 @@ class torch2onnxExporter():
                     num_attention_heads=64,
                     num_key_value_heads=8,
                     intermediate_size=28672,
+                ),
+                self.num_classes,
+            ),
+            'mixtral-8x7b':
+            lambda: MixtralBenchmarkModel(
+                MixtralConfig(
+                    hidden_size=4096,
+                    num_hidden_layers=32,
+                    num_attention_heads=32,
+                    num_key_value_heads=8,
+                    intermediate_size=14336,
+                    max_position_embeddings=32768,
+                    router_aux_loss_coef=0.02,
+                ),
+                self.num_classes,
+            ),
+            'mixtral-8x22b':
+            lambda: MixtralBenchmarkModel(
+                MixtralConfig(
+                    hidden_size=6144,
+                    num_hidden_layers=56,
+                    num_attention_heads=48,
+                    num_key_value_heads=8,
+                    intermediate_size=16384,
+                    max_position_embeddings=65536,
+                    router_aux_loss_coef=0.001,
                 ),
                 self.num_classes,
             ),
