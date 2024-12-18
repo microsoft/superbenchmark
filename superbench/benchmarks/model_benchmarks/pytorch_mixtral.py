@@ -94,7 +94,7 @@ class PytorchMixtral(PytorchBase):
         self._parser.add_argument(
             '--num_key_value_heads',
             type=int,
-            default=1,
+            default=8,
             required=False,
             help='The number of key_value heads that should be used to implement Grouped Query Attention.'
         )
