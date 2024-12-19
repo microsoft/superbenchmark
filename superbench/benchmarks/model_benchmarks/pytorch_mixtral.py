@@ -253,6 +253,7 @@ class PytorchMixtral(PytorchBase):
                     if self._is_finished(curr_step, end):
                         return duration
 
+
 # Register Mixtral benchmark with 8x7b parameters.
 BenchmarkRegistry.register_benchmark(
     'pytorch-mixtral-8x7b',
