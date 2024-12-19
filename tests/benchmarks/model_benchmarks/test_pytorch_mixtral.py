@@ -15,8 +15,8 @@ def test_pytorch_mixtral_8x7b():
     context = BenchmarkRegistry.create_benchmark_context(
         'mixtral-8x7b',
         platform=Platform.CUDA,
-        parameters='--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float16 \
-            --model_action train inference',
+        parameters='--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision fp8_e4m3 \
+            --model_action inference',
         framework=Framework.PYTORCH
     )
 
@@ -54,7 +54,7 @@ def test_pytorch_mixtral_8x7b():
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
     for metric in [
-        'fp16_train_step_time', 'fp16_train_throughput', 'fp16_inference_step_time', 'fp16_inference_throughput'
+        'fp8_e4m3_inference_step_time', 'fp8_e4m3_inference_throughput'
     ]:
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
