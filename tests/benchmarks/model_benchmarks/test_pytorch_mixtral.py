@@ -10,6 +10,7 @@ from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtra
 
 @decorator.cuda_test
 @decorator.pytorch_test
+@decorator.python_eol_test
 def test_pytorch_mixtral_8x7b():
     """Test pytorch-mixtral-8x7b benchmark for fp16 train and inference."""
     context = BenchmarkRegistry.create_benchmark_context(
