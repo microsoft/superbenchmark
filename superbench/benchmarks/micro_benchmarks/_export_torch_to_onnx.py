@@ -27,7 +27,6 @@ else:
 
 class torch2onnxExporter():
     """PyTorch model to ONNX exporter."""
-
     def __init__(self):
         """Constructor."""
         self.num_classes = 100
