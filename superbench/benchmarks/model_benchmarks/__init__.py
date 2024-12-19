@@ -9,6 +9,10 @@ from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import PytorchGPT2
 from superbench.benchmarks.model_benchmarks.pytorch_cnn import PytorchCNN
 from superbench.benchmarks.model_benchmarks.pytorch_lstm import PytorchLSTM
 from superbench.benchmarks.model_benchmarks.megatron_gpt3 import MegatronGPT
+from superbench.benchmarks.model_benchmarks.pytorch_llama import PytorchLlama
+from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtral
 
-__all__ = ['ModelBenchmark', 'PytorchBERT', 'PytorchGPT2', 'PytorchCNN', 'PytorchLSTM', 'MegatronGPT',
-           'PytorchLlama', 'PytorchMixtral']
+__all__ = [
+    'ModelBenchmark', 'PytorchBERT', 'PytorchGPT2', 'PytorchCNN', 'PytorchLSTM', 'MegatronGPT', 'PytorchLlama',
+    'PytorchMixtral'
+]

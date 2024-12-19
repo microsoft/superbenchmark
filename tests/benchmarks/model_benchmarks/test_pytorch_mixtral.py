@@ -53,9 +53,7 @@ def test_pytorch_mixtral_8x7b():
     assert (benchmark.run_count == 1)
     assert (benchmark.return_code == ReturnCode.SUCCESS)
 
-    for metric in [
-        'fp8_e4m3_inference_step_time', 'fp8_e4m3_inference_throughput'
-    ]:
+    for metric in [ 'fp8_e4m3_inference_step_time', 'fp8_e4m3_inference_throughput']:
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
         assert (len(benchmark.result[metric]) == benchmark.run_count)
