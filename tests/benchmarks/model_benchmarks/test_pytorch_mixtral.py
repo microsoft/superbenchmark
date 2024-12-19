@@ -3,9 +3,14 @@
 
 """Tests for mixtral model benchmarks."""
 
+import sys
+
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
-from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtral
+
+# Check for Python version 3.8 or greater and conditionally import PytorchMixtral
+if sys.version_info > (3, 7):
+    from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtral
 
 
 @decorator.cuda_test

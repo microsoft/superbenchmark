@@ -255,6 +255,7 @@ class PytorchMixtral(PytorchBase):
 
 
 # Register Mixtral benchmark with 8x7b parameters.
+# Ref: https://huggingface.co/mistralai/Mixtral-8x7B-v0.1/blob/main/config.json
 BenchmarkRegistry.register_benchmark(
     'pytorch-mixtral-8x7b',
     PytorchMixtral,
@@ -263,6 +264,7 @@ BenchmarkRegistry.register_benchmark(
 )
 
 # Register Mixtral benchmark with 8x22b parameters.
+# Ref: https://huggingface.co/mistralai/Mixtral-8x22B-v0.1/blob/main/config.json
 BenchmarkRegistry.register_benchmark(
     'pytorch-mixtral-8x22b',
     PytorchMixtral,
