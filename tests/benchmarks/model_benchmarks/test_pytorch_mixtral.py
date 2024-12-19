@@ -9,7 +9,7 @@ from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
 
 # Check for Python version 3.8 or greater and conditionally import PytorchMixtral
-if sys.version_info > (3, 7):
+if sys.version_info >= (3, 8):
     from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtral
 
 

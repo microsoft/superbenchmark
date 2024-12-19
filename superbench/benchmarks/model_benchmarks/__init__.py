@@ -16,7 +16,7 @@ from superbench.benchmarks.model_benchmarks.pytorch_llama import PytorchLlama
 
 # Check for Python version > 3.7 and conditionally import PytorchMixtral
 PytorchMixtral: Optional[type] = None
-if sys.version_info > (3, 7):
+if sys.version_info >= (3, 8):
     from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtral
 
 __all__ = ['ModelBenchmark', 'PytorchBERT', 'PytorchGPT2', 'PytorchCNN', 'PytorchLSTM', 'MegatronGPT', 'PytorchLlama']
