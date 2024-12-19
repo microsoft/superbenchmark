@@ -5,6 +5,7 @@
 
 import sys
 from pathlib import Path
+from typing import Optional
 
 from packaging import version
 import torch.hub
@@ -18,11 +19,10 @@ from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkMod
 from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
 
 # Check Python version and skip Mixtral if Python is 3.7 or lower
+MixtralBenchmarkModel: Optional[type] = None
 if sys.version_info >= (3, 8):
     from transformers import MixtralConfig
     from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
-else:
-    MixtralBenchmarkModel = None
 
 
 class torch2onnxExporter():
