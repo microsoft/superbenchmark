@@ -17,7 +17,7 @@ if sys.version_info >= (3, 8):
 @decorator.pytorch_test
 @decorator.python_eol_test
 def test_pytorch_mixtral_8x7b():
-    """Test pytorch-mixtral-8x7b benchmark for fp16 train and inference."""
+    """Test pytorch-mixtral-8x7b benchmark for fp8 inference."""
     context = BenchmarkRegistry.create_benchmark_context(
         'mixtral-8x7b',
         platform=Platform.CUDA,
