@@ -24,7 +24,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
 
         self._bin_name = 'cutlass_profiler'
 
-        # TODO - To support more architecutres, currently only support compute capability = 7.0, 7.5, 8.0, 8.6, 10.0
+        # TODO - To support more architecutres, currently only support compute capability = 7.0, 7.5, 8.0, 8.6, 8.9, 9.0, 10.0
         self.__kernel_map = {
             7.0: {
                 'fp64': 'cutlass_simt_dgemm_128x128_8x2_*',
@@ -44,12 +44,14 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
                 'int4_tc': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
             },
             10.0: {
+                'fp64': 'cutlass_simt_dgemm_128x128_8x2_*',
+                'fp32': 'cutlass_simt_sgemm_128x128_8x2_*',
+                'fp16': 'cutlass_simt_hgemm_256x128_8x2_*',
                 'fp64_tc': 'cutlass_tensorop_d884gemm_128x128_16x3_*',
                 'tf32_tc': 'cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*',
                 'bf16_tc': 'cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*',
                 'fp16_tc': 'cutlass_tensorop_h16816gemm_256x128_32x3_*',
                 'int8_tc': 'cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*',
-                'int4_tc': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
             }
         }
         # Skip FP64 for RTX Turing/Ampere and Tesla T4/GA10x due to very limited FP64 TFLOP rate
