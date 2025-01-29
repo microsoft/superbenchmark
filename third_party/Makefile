@@ -38,12 +38,18 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
+# for cuda 12.8 and later Build from commit 389e493 (3.8 release commit) for blackwell support
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	$(eval ARCHS := "75;80;86;89;90a;100;100a")
+	if [ -d cutlass ]; then rm -rf cutlass; fi
+	git clone --single-branch --branch main https://github.com/NVIDIA/cutlass.git && cd cutlass && git checkout 389e493
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval ARCHS := "70;75;80;86;89;90")
 else
 	$(eval ARCHS := "70;75;80;86")
 endif
+
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
 	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
 		-DCUTLASS_NVCC_ARCHS=$(ARCHS) -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
@@ -54,20 +60,28 @@ endif
 # cuda-samples is released together with CUDA, they have the exact same version. Like v10.0, v11.1 and so on.
 # The version we use is the released tag of cuda-samples which is consistent with the cuda version in the environment or docker.
 # The Makefile of bandwidthTest does not have 'install' target, so need to copy bin to $(SB_MICRO_PATH)/bin/ and create $(SB_MICRO_PATH)/bin/ if not existing.
+# TODO: update cuda sample version when 12.8 is released and add blackwell arch(100). the current latest version is 12.5
 cuda_bandwidthTest: sb_micro_path
-ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
+	$(eval ARCHS := "75 80 86 90 100")
+	$(eval CUDA_SAMPLE_VER := 12.5)
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86 90")
+	$(eval CUDA_SAMPLE_VER := $(CUDA_VER))
 else
 	$(eval TEST_PATH := "./cuda-samples/Samples/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86")
+	$(eval CUDA_SAMPLE_VER := $(CUDA_VER))
 endif
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
-	git clone -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
+	git clone --depth 1 -b v$(CUDA_SAMPLE_VER) https://github.com/NVIDIA/cuda-samples.git
 	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
 	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
 
-# Build nccl-tests from commit 8274cb4 of default branch.
+# Build nccl-tests.
+# The version we use is the tag v2.13.13
 cuda_nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j

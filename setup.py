@@ -18,10 +18,13 @@ from setuptools import setup, find_packages, Command
 import superbench
 
 try:
-    pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
+    if sys.version_info <= (3, 10):
+        pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
+    else:
+        pkg_resources.require(['pip>=18', 'setuptools>=65'])
 except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
     print(
-        '\033[93mTry update pip/setuptools versions, for example, '
+        '\033[93mTry update pip/setuptools versions as per the requirments and python version, for example, '
         'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
     )
     raise
@@ -135,6 +138,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.12',
         'Topic :: System :: Benchmark',
         'Topic :: System :: Clustering',
         'Topic :: System :: Hardware',
@@ -151,8 +155,9 @@ setup(
         'setuptools_scm',
     ],
     install_requires=[
-        'ansible_base>=2.10.9;os_name=="posix"',
-        'ansible_runner>=2.0.0rc1, <2.3.2',
+        'ansible_base>=2.10.9; os_name=="posix" and python_version <= "3.10"',
+        'ansible_runner>=2.0.0rc1, <2.3.2; python_version <= "3.10"',
+        'ansible; python_version > "3.10"',
         'colorlog>=6.7.0',
         'importlib_metadata',
         'jinja2>=2.10.1',
