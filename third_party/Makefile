@@ -38,7 +38,7 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.8 and later Build from commit 389e493 (3.8 release commit) for blackwell support
+for cuda 12.8 and later Build from commit 389e493 (3.8 release commit) for blackwell support
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval ARCHS := "75;80;86;89;90a;100;100a")
@@ -233,9 +233,21 @@ apex_rocm:
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+    # Get commit 87048bd from msscl to support updated nccl and sm_100
+	$(eval ARCHS := 75 80 86 89 90 100)
+	if [ -d msccl ]; then rm -rf msccl; fi; \
+	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
+    && git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+	$(eval ARCHS := 70 75 80 86 89 90)
+else
+	$(eval ARCHS := 70 75 80 86")
+endif
+	$(eval NVCC_GENCODE := "$(foreach arch, $(ARCHS), $(NVCC_GENCODE) -gencode=arch=compute_$(arch),code=sm_$(arch))")
 ifneq (,$(wildcard msccl/executor/msccl-executor-nccl/Makefile))
 	cd ./msccl/executor/msccl-executor-nccl && \
-	make -j ${NUM_MAKE_JOBS} src.build && \
+	make -j ${NUM_MAKE_JOBS} src.build NVCC_GENCODE=$(NVCC_GENCODE) && \
 	cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/lib/msccl-executor-nccl && \
 	cp -r -v ./msccl/executor/msccl-executor-nccl/build/* $(SB_MICRO_PATH)/lib/msccl-executor-nccl/
@@ -249,7 +261,7 @@ ifneq (,$(wildcard msccl/scheduler/msccl-scheduler/Makefile))
 endif
 ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
 	cd ./msccl/tests/msccl-tests-nccl && \
-	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j ${NUM_MAKE_JOBS} && cd ../../..
+	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl NVCC_GENCODE=$(NVCC_GENCODE) -j ${NUM_MAKE_JOBS} && cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/bin/msccl-tests-nccl && \
 	cp -r -v ./msccl/tests/msccl-tests-nccl/build/* $(SB_MICRO_PATH)/bin/msccl-tests-nccl/
 endif
