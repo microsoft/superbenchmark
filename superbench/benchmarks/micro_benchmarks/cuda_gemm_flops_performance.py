@@ -43,16 +43,6 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
                 'fp16_tc': 'cutlass_tensorop_h16816gemm_256x128_32x3_*',
                 'int8_tc': 'cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*',
                 'int4_tc': 'cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*',
-            },
-            10.0: {
-                'fp64': 'cutlass_simt_dgemm_128x128_8x2_*',
-                'fp32': 'cutlass_simt_sgemm_128x128_8x2_*',
-                'fp16': 'cutlass_simt_hgemm_256x128_8x2_*',
-                'fp64_tc': 'cutlass_tensorop_d884gemm_128x128_16x3_*',
-                'tf32_tc': 'cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*',
-                'bf16_tc': 'cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*',
-                'fp16_tc': 'cutlass_tensorop_h16816gemm_256x128_32x3_*',
-                'int8_tc': 'cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*',
             }
         }
         # Skip FP64 for RTX Turing/Ampere and Tesla T4/GA10x due to very limited FP64 TFLOP rate
@@ -62,6 +52,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self.__kernel_map[8.9] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'fp64' not in k}
         # Skip INT4 for Hopper due to no native CUDA/Tensor Cores
         self.__kernel_map[9.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
+        self.__kernel_map[10.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         self.__parse_logline = [
             'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
             'gemm,cutlass_simt_hgemm_256x128_8x2', 'gemm,cutlass_tensorop_d884gemm_128x128_16x3',
