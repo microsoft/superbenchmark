@@ -10,7 +10,7 @@ Reference:
 import os
 import sys
 import pathlib
-from typing import List, Tuple
+from typing import List, Tuple, ClassVar
 
 import pkg_resources
 from setuptools import setup, find_packages, Command
@@ -39,7 +39,7 @@ class Formatter(Command):
     """
 
     description = 'format the code using yapf'
-    user_options: List[Tuple[str, str, str]] = []
+    user_options: ClassVar[List[Tuple[str, str, str]]] = []
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
@@ -64,7 +64,7 @@ class Linter(Command):
     """
 
     description = 'lint the code using flake8'
-    user_options: List[Tuple[str, str, str]] = []
+    user_options: ClassVar[List[Tuple[str, str, str]]] = []
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
@@ -97,7 +97,7 @@ class Tester(Command):
     """
 
     description = 'test the code using pytest'
-    user_options: List[Tuple[str, str, str]] = []
+    user_options: ClassVar[List[Tuple[str, str, str]]] = []
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
@@ -209,6 +209,7 @@ setup(
                 'yapf==0.31.0',
             ],
             'torch': [
+                'safetensors==0.4.5',
                 'tokenizers<=0.20.3',
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
