@@ -22,8 +22,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
     def test_nvbandwidth_preprocess(self):
         """Test NV Bandwidth benchmark preprocess."""
         benchmark_name = 'nvbandwidth'
-        (benchmark_class,
-         _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
         # Test preprocess with default parameters
@@ -57,8 +56,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
     def test_nvbandwidth_result_parsing_real_output(self, results):
         """Test NV Bandwidth benchmark result parsing."""
         benchmark_name = 'nvbandwidth'
-        (benchmark_class,
-         _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
         benchmark = benchmark_class(benchmark_name, parameters='')
@@ -82,9 +80,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
     def test_nvbandwidth_process_raw_result_unsupported_testcases(self):
         """Test NV Bandwidth benchmark result parsing with unsupported test cases."""
         benchmark_name = 'nvbandwidth'
-        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(
-            benchmark_name, Platform.CUDA
-        )
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
         benchmark = benchmark_class(benchmark_name, parameters='')
@@ -110,9 +106,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
     def test_nvbandwidth_process_raw_result_waived_testcases(self):
         """Test NV Bandwidth benchmark result parsing with waived test cases."""
         benchmark_name = 'nvbandwidth'
-        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(
-            benchmark_name, Platform.CUDA
-        )
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
         benchmark = benchmark_class(benchmark_name, parameters='')
@@ -139,9 +133,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
     def test_get_all_test_cases(self):
         """Test _get_all_test_cases method."""
         benchmark_name = 'nvbandwidth'
-        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(
-            benchmark_name, Platform.CUDA
-        )
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
         benchmark = benchmark_class(benchmark_name, parameters='')
@@ -155,10 +147,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
             )
             mock_run.return_value.stderr = ''
             test_cases = benchmark._get_all_test_cases()
-            assert test_cases == [
-                'host_to_device_memcpy_ce',
-                'device_to_host_bidirectional_memcpy_ce'
-            ]
+            assert test_cases == ['host_to_device_memcpy_ce', 'device_to_host_bidirectional_memcpy_ce']
 
         # Mock subprocess.run for execution with non-zero return code
         with unittest.mock.patch('subprocess.run') as mock_run:
