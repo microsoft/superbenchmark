@@ -24,8 +24,8 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
 
         self._bin_name = 'cutlass_profiler'
 
-        # TODO - To support more architectures,
-        # currently only support compute capability = 7.0, 7.5, 8.0, 8.6, 8.9, 9.0, 10.0
+        # TODO - To support more architectures
+        # Currently only support compute capability = 7.0, 7.5, 8.0, 8.6, 8.9, 9.0, 10.0
         self.__kernel_map = {
             7.0: {
                 'fp64': 'cutlass_simt_dgemm_128x128_8x2_*',
