@@ -52,8 +52,8 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help=(
                 'Specify the test case(s) to execute by name only. '
-                'To view the available test case names, run the command "nvbandwidth -l" on the host. '
                 'If no specific test case is specified, all test cases will be executed by default.'
+                'Supported test cases are: ' + ', '.join(self._get_all_test_cases())
             ),
         )
 

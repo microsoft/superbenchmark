@@ -146,7 +146,7 @@ superbench:
           - device_to_host_memcpy_ce
           - host_to_device_memcpy_sm
           - device_to_host_memcpy_sm
-        num_loops: 6
+        num_loops: 18
         skip_verification: false
         disable_affinity: false
         use_mean: false
