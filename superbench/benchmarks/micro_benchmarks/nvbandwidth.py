@@ -269,7 +269,14 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         try:
             # Execute the command and capture output
-            result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            result = subprocess.run(
+                command,
+                shell=True,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False
+            )
 
             # Check the return code
             if result.returncode != 0:
