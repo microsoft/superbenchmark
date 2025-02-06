@@ -52,8 +52,8 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help=(
                 'Specify the test case(s) to execute by name only. '
+                'To view the available test case names, run the command "nvbandwidth -l" on the host. '
                 'If no specific test case is specified, all test cases will be executed by default.'
-                'Supported test cases are: ' + ', '.join(self._get_all_test_cases())
             ),
         )
 
@@ -263,14 +263,15 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             self._result.add_result('abort', 1)
             return False
 
-    @staticmethod
-    def _get_all_test_cases():
-        command = 'nvbandwidth -l'
+    def _get_all_test_cases(self):
+        command = os.path.join(self._args.bin_dir, self._bin_name) + ' --list'
         test_case_pattern = re.compile(r'(\d+),\s+([\w_]+):')
 
         try:
             # Execute the command and capture output
-            result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            result = subprocess.run(
+                command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False
+            )
 
             # Check the return code
             if result.returncode != 0:
