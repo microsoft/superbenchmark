@@ -99,7 +99,7 @@ class GPUMemRwBw {
     void LoadAssets();
 
     /**
-     * @brief Allocate resouce on both CPU side and GPU side and construct a array of buffers with given length.
+     * @brief Allocate resource on both CPU side and GPU side and construct a array of buffers with given length.
      * @param numElement the length of data array.
      */
     void PrepareDataAndBuffer(SIZE_T numElement);

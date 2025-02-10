@@ -160,7 +160,7 @@ class TCPConnectivityBenchmark(MicroBenchmark):
             # If socket error or exception happens on TCPing, add result values as failed
             suc = 0
             fail = self._args.count
-            mininum = 0.00
+            minimum = 0.00
             maximum = 0.00
             average = 0.00
             rate = 0
@@ -179,13 +179,13 @@ class TCPConnectivityBenchmark(MicroBenchmark):
                         suc = int(res[labels.index('Successed')])
                         fail = int(res[labels.index('Failed')])
                         rate = float(res[labels.index('Success Rate')].strip('%'))
-                        mininum = float(res[labels.index('Minimum')].strip('ms'))
+                        minimum = float(res[labels.index('Minimum')].strip('ms'))
                         maximum = float(res[labels.index('Maximum')].strip('ms'))
                         average = float(res[labels.index('Average')].strip('ms'))
             self._result.add_result(host + '_successed_count', suc)
             self._result.add_result(host + '_failed_count', fail)
             self._result.add_result(host + '_success_rate', rate)
-            self._result.add_result(host + '_time_min', mininum)
+            self._result.add_result(host + '_time_min', minimum)
             self._result.add_result(host + '_time_max', maximum)
             self._result.add_result(host + '_time_avg', average)
         except Exception as e:
