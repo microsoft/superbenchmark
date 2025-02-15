@@ -138,6 +138,9 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
 
         benchmark = benchmark_class(benchmark_name, parameters='')
 
+        # Call preprocess to initialize _args
+        assert benchmark._preprocess()
+
         # Mock subprocess.run for successful execution with valid output
         with unittest.mock.patch('subprocess.run') as mock_run:
             mock_run.return_value.returncode = 0
