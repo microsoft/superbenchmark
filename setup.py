@@ -87,10 +87,10 @@ class Linter(Command):
 
     def run(self):
         """Lint the code with yapf, mypy, and flake8."""
+        # Disable yapf for Python 3.12 due to the compatibility issue.
         errno = os.system(
             ' && '.join(
                 [
-                    # Disable yapf for Python 3.12 due to the compatibility issue.
                     'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .' if sys.version_info[:2] !=
                     (3, 12) else ':',
                     'python3 -m mypy .',
