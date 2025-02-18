@@ -91,8 +91,8 @@ class Linter(Command):
             ' && '.join(
                 [
                     # Disable yapf for Python 3.12 due to the compatibility issue.
-                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .'
-                    if sys.version_info[:2] != (3, 12) else ':',
+                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .' if sys.version_info[:2] !=
+                    (3, 12) else ':',
                     'python3 -m mypy .',
                     'python3 -m flake8',
                 ]
