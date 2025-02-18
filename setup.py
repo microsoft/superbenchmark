@@ -17,14 +17,21 @@ from setuptools import setup, find_packages, Command
 
 import superbench
 
-try:
-    pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
-except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
+print(f'Python {sys.version_info.major}.{sys.version_info.minor} detected.')
+if sys.version_info[:2] in [(3, 7), (3, 8), (3, 9), (3, 10)]:
+    try:
+        pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
+    except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
+        print(
+            '\033[93mTry update pip/setuptools versions, for example, '
+            'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
+        )
+        raise
+elif sys.version_info[:2] != (3, 12):
     print(
-        '\033[93mTry update pip/setuptools versions, for example, '
-        'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
+        f'\033[0mPython {sys.version_info.major}.{sys.version_info.minor} is not supported yet, please use Python 3.7, 3.8, 3.9, 3.10 or 3.12.\033[0m'
     )
-    raise
+    sys.exit(1)
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
@@ -51,7 +58,11 @@ class Formatter(Command):
 
     def run(self):
         """Fromat the code using yapf."""
-        errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
+        if sys.version_info[:2] <= (3, 10):
+            errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
+        else:
+            # TODO: yapf is not compatible with Python 3.12, skip for now.
+            errno = 0
         sys.exit(0 if errno == 0 else 1)
 
 
@@ -135,6 +146,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.12',
         'Topic :: System :: Benchmark',
         'Topic :: System :: Clustering',
         'Topic :: System :: Hardware',
@@ -151,8 +163,11 @@ setup(
         'setuptools_scm',
     ],
     install_requires=[
-        'ansible_base>=2.10.9;os_name=="posix"',
-        'ansible_runner>=2.0.0rc1, <2.3.2',
+        'ansible;python_version>"3.10"',
+        'ansible_base>=2.10.9;os_name=="posix" and python_version<="3.10"',
+        'ansible_core;python_version>"3.10"',
+        'ansible_runner>=2.0.0rc1, <2.3.2;python_version<="3.10"',
+        'ansible_runner;python_version>"3.10"',
         'colorlog>=6.7.0',
         'importlib_metadata',
         'jinja2>=2.10.1',
