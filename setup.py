@@ -12,13 +12,13 @@ import sys
 import pathlib
 from typing import List, Tuple, ClassVar
 
-import pkg_resources
 from setuptools import setup, find_packages, Command
 
 import superbench
 
 print(f'Python {sys.version_info.major}.{sys.version_info.minor} detected.')
 if sys.version_info[:2] in [(3, 7), (3, 8), (3, 9), (3, 10)]:
+    import pkg_resources
     try:
         pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
     except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
@@ -59,12 +59,11 @@ class Formatter(Command):
 
     def run(self):
         """Fromat the code using yapf."""
-        if sys.version_info[:2] <= (3, 10):
-            errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
+        if sys.version_info[:2] == (3, 12):
+            print('Disable yapf for Python 3.12 due to the compatibility issue.')
         else:
-            # TODO: yapf is not compatible with Python 3.12, skip for now.
-            errno = 0
-        sys.exit(0 if errno == 0 else 1)
+            errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
+            sys.exit(0 if errno == 0 else 1)
 
 
 class Linter(Command):
@@ -91,7 +90,8 @@ class Linter(Command):
         errno = os.system(
             ' && '.join(
                 [
-                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .',
+                    # Disable yapf for Python 3.12 due to the compatibility issue.
+                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .' if sys.version_info[:2] != (3, 12) else ':',
                     'python3 -m mypy .',
                     'python3 -m flake8',
                 ]
