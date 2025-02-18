@@ -29,7 +29,8 @@ if sys.version_info[:2] in [(3, 7), (3, 8), (3, 9), (3, 10)]:
         raise
 elif sys.version_info[:2] != (3, 12):
     print(
-        f'\033[0mPython {sys.version_info.major}.{sys.version_info.minor} is not supported yet, please use Python 3.7, 3.8, 3.9, 3.10 or 3.12.\033[0m'
+        f'\033[0mPython {sys.version_info.major}.{sys.version_info.minor} is not supported yet, '
+        'please use Python 3.7, 3.8, 3.9, 3.10 or 3.12.\033[0m'
     )
     sys.exit(1)
 
