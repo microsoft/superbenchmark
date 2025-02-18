@@ -28,7 +28,11 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      python3 -m pip install --upgrade pip setuptools==65.7
+      if [[ "$(echo $(imageTag) '< 3.12' | bc -l)" == 1 ]]; then
+        python3 -m pip install --upgrade pip setuptools==65.7
+      else
+        python3 -m pip install --upgrade pip
+      fi
       python3 -m pip install .[test,cpuworker]
       make postinstall
     displayName: Install dependencies

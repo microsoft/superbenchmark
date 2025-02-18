@@ -91,7 +91,8 @@ class Linter(Command):
             ' && '.join(
                 [
                     # Disable yapf for Python 3.12 due to the compatibility issue.
-                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .' if sys.version_info[:2] != (3, 12) else ':',
+                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .'
+                    if sys.version_info[:2] != (3, 12) else ':',
                     'python3 -m mypy .',
                     'python3 -m flake8',
                 ]
@@ -199,7 +200,7 @@ setup(
     extras_require=(
         lambda x: {
             **x,
-            'develop': x['dev'] + x['test'],
+            'develop': x['dev'] + x['test'] + x['torch'],
             'cpuworker': x['torch'],
             'amdworker': x['torch'] + x['amd'],
             'nvworker': x['torch'] + x['ort'] + x['nvidia'],
