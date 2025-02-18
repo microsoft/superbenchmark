@@ -13,10 +13,9 @@ strategy:
       imageTag: '3.8'
     python-3.10:
       imageTag: '3.10'
-    # TODO
-    #python-latest:
-    #  imageTag: '3'
-  maxParallel: 3
+    python-3.12:
+      imageTag: '3.12'
+  maxParallel: 4
 
 pool:
   vmImage: ubuntu-latest
