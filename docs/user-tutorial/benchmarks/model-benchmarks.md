@@ -14,6 +14,7 @@ Run training or inference tasks with single or half precision for deep learning 
 including the following categories:
 * GPT: gpt2-small, gpt2-medium, gpt2-large and gpt2-xl
 * LLAMA: llama2-7b, llama2-13b, llama2-70b
+* MoE: mixtral-8x7b, mixtral-8x22b
 * BERT: bert-base and bert-large
 * LSTM
 * CNN, listed in [`torchvision.models`](https://pytorch.org/vision/0.8/models.html), including:
