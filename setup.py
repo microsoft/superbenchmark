@@ -17,7 +17,7 @@ from setuptools import setup, find_packages, Command
 import superbench
 
 print(f'Python {sys.version_info.major}.{sys.version_info.minor} detected.')
-if sys.version_info[:2] in [(3, 7), (3, 8), (3, 9), (3, 10)]:
+if sys.version_info[:2] < (3, 11):
     import pkg_resources
     try:
         pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
@@ -141,8 +141,6 @@ setup(
         'Operating System :: POSIX',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
@@ -154,7 +152,7 @@ setup(
     ],
     keywords='benchmark, AI systems',
     packages=find_packages(exclude=['tests']),
-    python_requires='>=3.7, <4',
+    python_requires='>=3.9, <4',
     use_scm_version={
         'local_scheme': 'node-and-date',
         'version_scheme': lambda _: superbench.__version__,
