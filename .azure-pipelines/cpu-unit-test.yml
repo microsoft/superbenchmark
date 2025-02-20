@@ -13,9 +13,13 @@ strategy:
       imageTag: '3.8'
     python-3.10:
       imageTag: '3.10'
+    python-3.11:
+      imageTag: '3.11'
     python-3.12:
       imageTag: '3.12'
-  maxParallel: 4
+    python-3.13:
+      imageTag: '3.13'
+  maxParallel: 6
 
 pool:
   vmImage: ubuntu-latest
@@ -28,7 +32,7 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      if [[ "$(echo $(imageTag) '< 3.12' | bc -l)" == 1 ]]; then
+      if [[ "$(echo $(imageTag) '< 3.11' | bc -l)" == 1 ]]; then
         python3 -m pip install --upgrade pip setuptools==65.7
       else
         python3 -m pip install --upgrade pip

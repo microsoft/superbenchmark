@@ -27,12 +27,6 @@ if sys.version_info[:2] in [(3, 7), (3, 8), (3, 9), (3, 10)]:
             'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
         )
         raise
-elif sys.version_info[:2] != (3, 12):
-    print(
-        f'\033[0mPython {sys.version_info.major}.{sys.version_info.minor} is not supported yet, '
-        'please use Python 3.7, 3.8, 3.9, 3.10 or 3.12.\033[0m'
-    )
-    sys.exit(1)
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
@@ -59,8 +53,8 @@ class Formatter(Command):
 
     def run(self):
         """Fromat the code using yapf."""
-        if sys.version_info[:2] == (3, 12):
-            print('Disable yapf for Python 3.12 due to the compatibility issue.')
+        if sys.version_info[:2] >= (3, 12):
+            print('Disable yapf for Python 3.12+ due to the compatibility issue.')
         else:
             errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
             sys.exit(0 if errno == 0 else 1)
@@ -87,11 +81,12 @@ class Linter(Command):
 
     def run(self):
         """Lint the code with yapf, mypy, and flake8."""
-        # Disable yapf for Python 3.12 due to the compatibility issue.
+        if sys.version_info[:2] >= (3, 12):
+            print('Disable lint for Python 3.12+ due to the compatibility issue.')
         errno = os.system(
             ' && '.join(
                 [
-                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .' if sys.version_info[:2] !=
+                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .' if sys.version_info[:2] <
                     (3, 12) else ':',
                     'python3 -m mypy .',
                     'python3 -m flake8',
@@ -200,7 +195,7 @@ setup(
     extras_require=(
         lambda x: {
             **x,
-            'develop': x['dev'] + x['test'] + x['torch'],
+            'develop': x['dev'] + x['test'],
             'cpuworker': x['torch'],
             'amdworker': x['torch'] + x['amd'],
             'nvworker': x['torch'] + x['ort'] + x['nvidia'],
