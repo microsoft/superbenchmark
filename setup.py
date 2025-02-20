@@ -52,8 +52,9 @@ class Formatter(Command):
         pass
 
     def run(self):
-        """Fromat the code using yapf."""
+        """Format the code using yapf."""
         if sys.version_info[:2] >= (3, 12):
+            # TODO: Remove this block when yapf is compatible with Python 3.12+.
             print('Disable yapf for Python 3.12+ due to the compatibility issue.')
         else:
             errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
@@ -82,6 +83,7 @@ class Linter(Command):
     def run(self):
         """Lint the code with yapf, mypy, and flake8."""
         if sys.version_info[:2] >= (3, 12):
+            # TODO: Remove this block when yapf is compatible with Python 3.12+.
             print('Disable lint for Python 3.12+ due to the compatibility issue.')
         errno = os.system(
             ' && '.join(
@@ -143,7 +145,9 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Topic :: System :: Benchmark',
         'Topic :: System :: Clustering',
         'Topic :: System :: Hardware',
@@ -161,7 +165,7 @@ setup(
     ],
     install_requires=[
         'ansible;python_version>"3.10"',
-        'ansible_base>=2.10.9;os_name=="posix" and python_version<="3.10"',
+        'ansible_base>=2.10.9;python_version<="3.10"',
         'ansible_core;python_version>"3.10"',
         'ansible_runner>=2.0.0rc1, <2.3.2;python_version<="3.10"',
         'ansible_runner;python_version>"3.10"',
