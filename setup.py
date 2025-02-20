@@ -152,7 +152,7 @@ setup(
     ],
     keywords='benchmark, AI systems',
     packages=find_packages(exclude=['tests']),
-    python_requires='>=3.9, <4',
+    python_requires='>=3.7, <4',
     use_scm_version={
         'local_scheme': 'node-and-date',
         'version_scheme': lambda _: superbench.__version__,
