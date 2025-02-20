@@ -1,7 +1,4 @@
 [flake8]
-# E221: Multiple spaces before operator
-# E231: Missing whitespace after
-extend-ignore = E221,E231
 max-complexity = 10
 max-line-length = 120
 # flake8-docstrings extension
@@ -9,4 +6,4 @@ inline-quotes = single
 multiline-quotes = double
 docstring-quotes = double
 docstring-convention = google
-extend-exclude = build/
+extend-exclude = .*,build

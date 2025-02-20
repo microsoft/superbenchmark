@@ -208,7 +208,7 @@ setup(
             'test': [
                 'flake8-docstrings>=1.5.0',
                 'flake8-quotes>=3.2.0',
-                'flake8>=3.8.4, <6.0.0',
+                'flake8>=3.8.4',
                 'mypy>=0.800',
                 'pydocstyle>=5.1.1',
                 'pytest-cov>=2.11.1',
