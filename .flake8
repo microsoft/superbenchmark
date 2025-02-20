@@ -6,3 +6,4 @@ inline-quotes = single
 multiline-quotes = double
 docstring-quotes = double
 docstring-convention = google
+extend-exclude = .*,build
