@@ -9,13 +9,10 @@ strategy:
   matrix:
     python-3.7:
       imageTag: '3.7'
-    python-3.8:
-      imageTag: '3.8'
     python-3.10:
       imageTag: '3.10'
-    # TODO
-    #python-latest:
-    #  imageTag: '3'
+    python-3.12:
+      imageTag: '3.12'
   maxParallel: 3
 
 pool:
@@ -29,7 +26,11 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      python3 -m pip install --upgrade pip setuptools==65.7
+      if [[ "$(echo $(imageTag) '< 3.11' | bc -l)" == 1 ]]; then
+        python3 -m pip install --upgrade pip setuptools==65.7
+      else
+        python3 -m pip install --upgrade pip
+      fi
       python3 -m pip install .[test,cpuworker]
       make postinstall
     displayName: Install dependencies
