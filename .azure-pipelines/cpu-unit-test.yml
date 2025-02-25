@@ -7,15 +7,13 @@ trigger:
 
 strategy:
   matrix:
+    python-3.7:
+      imageTag: '3.7'
     python-3.10:
       imageTag: '3.10'
-    python-3.11:
-      imageTag: '3.11'
     python-3.12:
       imageTag: '3.12'
-    python-3.13:
-      imageTag: '3.13'
-  maxParallel: 4
+  maxParallel: 3
 
 pool:
   vmImage: ubuntu-latest
