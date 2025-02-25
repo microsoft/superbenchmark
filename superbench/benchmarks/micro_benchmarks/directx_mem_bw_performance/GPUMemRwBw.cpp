@@ -184,15 +184,15 @@ void GPUMemRwBw::CreatePipeline() {
  */
 void GPUMemRwBw::LoadAssets() {
     // Prepare root signature, root parameter can be a table, root descriptor or root constants.
-    const int nParamter = 3;
-    CD3DX12_ROOT_PARAMETER slotRootParameter[nParamter];
+    const int nParameter = 3;
+    CD3DX12_ROOT_PARAMETER slotRootParameter[nParameter];
     // Bind the SRV, CBV and UAV descriptor tables to the root parameters.
     slotRootParameter[0].InitAsShaderResourceView(0);
     slotRootParameter[1].InitAsConstantBufferView(0);
     slotRootParameter[2].InitAsUnorderedAccessView(0);
     // Create the root signature.
     // A root signature is an array of root parameters.
-    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(nParamter, slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_NONE);
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(nParameter, slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_NONE);
     ComPtr<ID3DBlob> serializedRootSig = nullptr;
     ComPtr<ID3DBlob> errorBlob = nullptr;
     HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
