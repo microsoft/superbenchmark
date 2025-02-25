@@ -65,18 +65,15 @@ cuda_bandwidthTest: sb_micro_path
 ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	$(eval ARCHS := "75 80 86 90 100")
-	$(eval CUDA_SAMPLE_VER := 12.5)
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86 90")
-	$(eval CUDA_SAMPLE_VER := $(CUDA_VER))
 else
 	$(eval TEST_PATH := "./cuda-samples/Samples/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86")
-	$(eval CUDA_SAMPLE_VER := $(CUDA_VER))
 endif
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
-	git clone --depth 1 -b v$(CUDA_SAMPLE_VER) https://github.com/NVIDIA/cuda-samples.git
+	git clone --depth 1 -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
 	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
 	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
 
