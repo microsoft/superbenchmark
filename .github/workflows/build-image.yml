@@ -25,6 +25,12 @@ jobs:
     strategy:
       matrix:
         include:
+        - name: cuda12.8
+          dockerfile: cuda12.8
+          tags: superbench/main:cuda12.8
+          platforms: linux/amd64 # TODO: linux/arm64
+          runner: [self-hosted]
+          build_args: "NUM_MAKE_JOBS=16"
         - name: cuda12.4
           dockerfile: cuda12.4
           tags: superbench/main:cuda12.4
