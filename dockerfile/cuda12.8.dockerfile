@@ -121,9 +121,9 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     echo "Skipping Intel MLC, AOCC and AMD Bliss installations for non-amd64 architecture: $TARGETARCH"; \
     fi
 
-# Install NCCL 2.23.4
+# Install NCCL 2.25.1
 RUN cd /tmp && \
-    git clone -b v2.23.4-1 https://github.com/NVIDIA/nccl.git && \
+    git clone -b v2.25.1-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
     make -j ${NUM_MAKE_JOBS} src.build NVCC_GENCODE="-gencode=arch=compute_100,code=sm_100" && \
     make install && \
