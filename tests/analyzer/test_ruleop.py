@@ -86,7 +86,14 @@ class TestRuleOp(unittest.TestCase):
         ]
 
         for rule in false_rule_and_baselines:
-            self.assertRaises(ValueError, RuleOp.variance, data_row, rule, summary_data_row, details, categories)
+            with self.assertRaises(ValueError) as cm:
+                RuleOp.variance(data_row, rule, summary_data_row, details, categories)
+            error_msg = str(cm.exception)
+            self.assertIn('the baseline value', error_msg)
+            self.assertIn('is invalid', error_msg)
+            # Verify metric name appears in error
+            metric = next(iter(rule['metrics'].keys()))
+            self.assertIn(f'For metric: {metric}', error_msg)
 
         # Positive case
         true_baselines = [
