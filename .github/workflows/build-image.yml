@@ -31,7 +31,7 @@ jobs:
           platforms: linux/arm64
           runner: [self-hosted, linux/arm64]
           build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda12.8 arm64
+        - name: cuda12.8
           dockerfile: cuda12.8
           tags: superbench/main:cuda12.8
           platforms: linux/amd64

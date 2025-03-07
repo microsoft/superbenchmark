@@ -1,15 +1,15 @@
-FROM nvcr.io/nvidia/pytorch:25.01-py3
+FROM nvcr.io/nvidia/pytorch:25.02-py3
 
 # OS:
 #   - Ubuntu: 24.04
 #   - OpenMPI: 4.1.7+
 #   - Docker Client: 20.10.8
 # NVIDIA:
-#   - CUDA: 12.8.0
-#   - cuDNN: 9.7.0.66
+#   - CUDA: 12.8.0.38
+#   - cuDNN: 9.7.1.26
 #   - cuBLAS: 12.8.3.14
 #   - NCCL: v2.25.1
-#   - TransformerEngine 1.14.0
+#   - TransformerEngine 2.0
 # Mellanox:
 #   - MOFED_VERSION; 5.4-rdmacore39.0
 #   - HPC-X: v2.21.0-CUDA12.x

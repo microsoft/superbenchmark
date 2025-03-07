@@ -60,22 +60,24 @@ endif
 # cuda-samples is released together with CUDA, they have the exact same version. Like v10.0, v11.1 and so on.
 # The version we use is the released tag of cuda-samples which is consistent with the cuda version in the environment or docker.
 # The Makefile of bandwidthTest does not have 'install' target, so need to copy bin to $(SB_MICRO_PATH)/bin/ and create $(SB_MICRO_PATH)/bin/ if not existing.
-# TODO: update cuda sample version when 12.8 is released and add blackwell arch(100). the current latest version is 12.5
 cuda_bandwidthTest: sb_micro_path
+	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
+	git clone --depth 1 -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
 ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
-	$(eval ARCHS := "75 80 86 90 100")
+	cd ./$(TEST_PATH) && mkdir build && cd build && cmake .. && make
+	cp -v ./$(TEST_PATH)/build/bandwidthTest $(SB_MICRO_PATH)/bin/
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86 90")
+	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
+	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
 else
 	$(eval TEST_PATH := "./cuda-samples/Samples/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86")
-endif
-	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
-	git clone --depth 1 -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
 	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
 	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
+endif
 
 # Build nccl-tests.
 # The version we use is the tag v2.13.13
