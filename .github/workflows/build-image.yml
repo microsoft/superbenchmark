@@ -23,7 +23,6 @@ jobs:
       contents: read
       packages: write
     strategy:
-      fail-fast: false
       matrix:
         include:
         - name: cuda12.4 arm64
@@ -50,12 +49,6 @@ jobs:
           platforms: linux/amd64
           runner: ubuntu-latest
           build_args: "NUM_MAKE_JOBS=8"
-        - name: rocm6.2
-          dockerfile: rocm6.2.x
-          tags: superbench/main:rocm6.2
-          platforms: linux/amd64
-          runner: [self-hosted, linux/amd64]
-          build_args: "NUM_MAKE_JOBS=16"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
