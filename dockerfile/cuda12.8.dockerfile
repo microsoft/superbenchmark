@@ -55,6 +55,7 @@ RUN apt-get update && \
     util-linux \
     vim \
     wget \
+    rsync \
     && \
     apt-get autoremove && \
     apt-get clean && \
