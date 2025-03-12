@@ -53,7 +53,7 @@ jobs:
           dockerfile: rocm6.2.x
           tags: superbench/main:rocm6.2
           platforms: linux/amd64
-          runner: [self-hosted, rocm]
+          runner: [self-hosted, linux/amd64, rocm]
           build_args: "NUM_MAKE_JOBS=16"
     steps:
       - name: Checkout
