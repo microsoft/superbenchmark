@@ -38,12 +38,18 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
+# for cuda 12.8 and later Build from commit 389e493 (3.8 release commit) for blackwell support
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	$(eval ARCHS := "75;80;86;89;90a;100;100a")
+	if [ -d cutlass ]; then rm -rf cutlass; fi
+	git clone --single-branch --branch main https://github.com/NVIDIA/cutlass.git && cd cutlass && git checkout 389e493
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval ARCHS := "70;75;80;86;89;90")
 else
 	$(eval ARCHS := "70;75;80;86")
 endif
+
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
 	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
 		-DCUTLASS_NVCC_ARCHS=$(ARCHS) -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
@@ -55,19 +61,26 @@ endif
 # The version we use is the released tag of cuda-samples which is consistent with the cuda version in the environment or docker.
 # The Makefile of bandwidthTest does not have 'install' target, so need to copy bin to $(SB_MICRO_PATH)/bin/ and create $(SB_MICRO_PATH)/bin/ if not existing.
 cuda_bandwidthTest: sb_micro_path
-ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
+	git clone --depth 1 -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
+	cd ./$(TEST_PATH) && mkdir build && cd build && cmake .. && make
+	cp -v ./$(TEST_PATH)/build/bandwidthTest $(SB_MICRO_PATH)/bin/
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86 90")
+	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
+	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
 else
 	$(eval TEST_PATH := "./cuda-samples/Samples/bandwidthTest")
 	$(eval ARCHS := "70 75 80 86")
-endif
-	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
-	git clone -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
 	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
 	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
+endif
 
-# Build nccl-tests from commit 8274cb4 of default branch.
+# Build nccl-tests.
+# The version we use is the tag v2.13.13
 cuda_nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
 	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
@@ -219,9 +232,21 @@ apex_rocm:
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+    # Get commit 87048bd from msscl to support updated nccl and sm_100
+	$(eval ARCHS := 75 80 86 89 90 100)
+	if [ -d msccl ]; then rm -rf msccl; fi; \
+	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
+    && git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+	$(eval ARCHS := 70 75 80 86 89 90)
+else
+	$(eval ARCHS := 70 75 80 86")
+endif
+	$(eval NVCC_GENCODE := "$(foreach arch, $(ARCHS), $(NVCC_GENCODE) -gencode=arch=compute_$(arch),code=sm_$(arch))")
 ifneq (,$(wildcard msccl/executor/msccl-executor-nccl/Makefile))
 	cd ./msccl/executor/msccl-executor-nccl && \
-	make -j ${NUM_MAKE_JOBS} src.build && \
+	make -j ${NUM_MAKE_JOBS} src.build NVCC_GENCODE=$(NVCC_GENCODE) && \
 	cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/lib/msccl-executor-nccl && \
 	cp -r -v ./msccl/executor/msccl-executor-nccl/build/* $(SB_MICRO_PATH)/lib/msccl-executor-nccl/
@@ -235,7 +260,7 @@ ifneq (,$(wildcard msccl/scheduler/msccl-scheduler/Makefile))
 endif
 ifneq (,$(wildcard msccl/tests/msccl-tests-nccl/Makefile))
 	cd ./msccl/tests/msccl-tests-nccl && \
-	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl -j ${NUM_MAKE_JOBS} && cd ../../..
+	make MPI=1 MPI_HOME=$(MPI_HOME) NCCL_HOME=$(SB_MICRO_PATH)/lib/msccl-executor-nccl NVCC_GENCODE=$(NVCC_GENCODE) -j ${NUM_MAKE_JOBS} && cd ../../..
 	mkdir -p $(SB_MICRO_PATH)/bin/msccl-tests-nccl && \
 	cp -r -v ./msccl/tests/msccl-tests-nccl/build/* $(SB_MICRO_PATH)/bin/msccl-tests-nccl/
 endif
