@@ -55,8 +55,8 @@
   hosts: all
   gather_facts: false
   vars:
-    workspace: '{{ ansible_user_dir }}/sb-workspace'
-    container: sb-workspace
+    workspace: '{{ ansible_user_dir }}/sigma-workspace'
+    container: sigma
   tasks:
     - name: Creating Workspace
       file:
@@ -88,24 +88,24 @@
       become: yes
       when: docker_registry is defined
       ignore_errors: true
-    - name: Pulling Container Image
-      shell: |
-        docker pull {{ docker_image }}
-      become: yes
-      when: docker_pull | default(true)
-      throttle: 32
+    # - name: Pulling Container Image
+    #   shell: |
+    #     docker pull {{ docker_image }}
+    #   become: yes
+    #   when: docker_pull | default(true)
+    #   throttle: 32
     - name: Starting Container
       shell: |
         docker rm --force {{ container }} ||: && \
         docker run -itd --name={{ container }} \
           --privileged --net=host --ipc=host \
           {{ '--gpus=all' if nvidia_gpu_exist else '' }} \
-          {{ '--security-opt seccomp=unconfined --group-add video --device=/dev/kfd --device=/dev/dri --cap-add=SYS_PTRACE --shm-size=16G' if amd_gpu_exist else '' }} \
-          -w /root -v {{ workspace }}:/root -v /mnt:/mnt \
+          {{ '--security-opt seccomp=unconfined --group-add video --device=/dev/kfd --device=/dev/dri --cap-add=SYS_PTRACE --shm-size=64G --ulimit memlock=-1 --ulimit stack=67108864' if amd_gpu_exist else '' }} \
+          -w /root -v {{ workspace }}:/root -v /mnt/md0:/mnt -v /home/azureuser/deepseek/:/deepseek \
           -v /var/run/docker.sock:/var/run/docker.sock \
           --entrypoint /bin/bash {{ docker_image }} && \
         docker exec {{ container }} bash -c \
           "chown -R root:root ~ && \
           sed -i 's/[# ]*Port.*/Port {{ ssh_port }}/g' /etc/ssh/sshd_config && \
-          service ssh restart && sb help"
+          service ssh restart"
       become: yes
