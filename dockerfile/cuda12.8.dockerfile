@@ -126,7 +126,10 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 RUN cd /tmp && \
     git clone -b v2.25.1-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
-    make -j ${NUM_MAKE_JOBS} src.build NVCC_GENCODE="-gencode=arch=compute_100,code=sm_100" && \
+    make -j ${NUM_MAKE_JOBS} src.build \
+    NVCC_GENCODE="-gencode=arch=compute_100,code=sm_100 \
+    -gencode=arch=compute_100,code=sm_100 \
+    -gencode=arch=compute_100,code=sm_100" && \
     make install && \
     rm -rf /tmp/nccl
 
