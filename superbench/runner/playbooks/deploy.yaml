@@ -88,12 +88,12 @@
       become: yes
       when: docker_registry is defined
       ignore_errors: true
-    # - name: Pulling Container Image
-    #   shell: |
-    #     docker pull {{ docker_image }}
-    #   become: yes
-    #   when: docker_pull | default(true)
-    #   throttle: 32
+      - name: Pulling Container Image
+        shell: |
+          docker pull {{ docker_image }}
+        become: yes
+        when: docker_pull | default(true)
+        throttle: 32
     - name: Starting Container
       shell: |
         docker rm --force {{ container }} ||: && \
