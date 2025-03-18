@@ -128,8 +128,8 @@ RUN cd /tmp && \
     cd nccl && \
     make -j ${NUM_MAKE_JOBS} src.build \
     NVCC_GENCODE="-gencode=arch=compute_100,code=sm_100 \
-    -gencode=arch=compute_100,code=sm_100 \
-    -gencode=arch=compute_100,code=sm_100" && \
+    -gencode=arch=compute_90,code=sm_90 \
+    -gencode=arch=compute_80,code=sm_80" && \
     make install && \
     rm -rf /tmp/nccl
 
