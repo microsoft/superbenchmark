@@ -170,7 +170,7 @@ jobs:
         include:
         - name: cuda12.8
           tags: superbench/main:cuda12.8
-          sources: |
+          sources: >-
             superbench/main:cuda12.8-amd64
             superbench/main:cuda12.8-arm64
     steps:
@@ -180,7 +180,7 @@ jobs:
       id: metadata
       run: |
         TAGS=${{ matrix.tags }}
-        SOURCES=${{ matrix.sources }}
+        SOURCES="${{ matrix.sources }}"
         if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/release/"* ]]; then
           TAGS=$(sed "s/main:/release:${GITHUB_REF##*/}-/g" <<< ${TAGS})
           SOURCES=$(sed "s/main:/release:${GITHUB_REF##*/}-/g" <<< ${SOURCES})
@@ -223,19 +223,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Merge and push
+      if: ${{ github.event_name == 'pull_request' }}
       run: |
         docker buildx imagetools create \
-          --annotation "org.opencontainers.image.source=${{ github.event.repository.html_url }}" \
-          --annotation "org.opencontainers.image.created=${{ github.event.repository.pushed_at }}" \
-          --annotation "org.opencontainers.image.revision=${{ github.sha }}" \
+          --annotation "index:org.opencontainers.image.source=${{ github.event.repository.html_url }}" \
+          --annotation "index:org.opencontainers.image.created=${{ github.event.repository.pushed_at }}" \
+          --annotation "index:org.opencontainers.image.revision=${{ github.sha }}" \
           --tag ${{ steps.metadata.outputs.tags }} \
           ${{ steps.metadata.outputs.sources }}
-
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          for tag in $(echo "${{ steps.metadata.outputs.tags }}" | tr "," "\n"); do
-            docker push $tag
-          done
-        fi
     - name: Inspect image
       run: |
         docker buildx imagetools inspect $(echo "${{ steps.metadata.outputs.tags }}" | cut -d, -f1)
