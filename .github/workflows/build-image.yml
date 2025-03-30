@@ -232,5 +232,6 @@ jobs:
           --tag ${{ steps.metadata.outputs.tags }} \
           ${{ steps.metadata.outputs.sources }}
     - name: Inspect image
+      if: ${{ github.event_name != 'pull_request' }}
       run: |
         docker buildx imagetools inspect $(echo "${{ steps.metadata.outputs.tags }}" | cut -d, -f1)
