@@ -6,8 +6,6 @@
 // sustainable memory bandwidth (in MB/s) and the corresponding computation rate for simple (COPY, SCALE, ADD, TRIAD)
 // kernels.
 
-// TODO: naming convention for variables and functions
-
 #include "gpu_stream.hpp"
 #include <iostream>
 #include <cassert>
