@@ -1,0 +1,41 @@
+STREAM Benchmark
+Buffer size(bytes): 4294967296
+Number of warm up runs: 10
+Number of loops: 40
+Check data: No
+
+Device 0: "NVIDIA Graphics Device"  152 SMs(10.0)  Memory: 4000MHz x 8192-bit = 8192 GB/s PEAK   ECC is ON
+STREAM_COPY_double_gpu_0_buffer_4294967296_block_128    6711.67 81.93
+STREAM_COPY_double_gpu_0_buffer_4294967296_block_256    6549.50 79.95
+STREAM_COPY_double_gpu_0_buffer_4294967296_block_512    6195.43 75.63
+STREAM_COPY_double_gpu_0_buffer_4294967296_block_1024   5721.52 69.84
+STREAM_SCALE_double_gpu_0_buffer_4294967296_block_128   6680.42 81.55
+STREAM_SCALE_double_gpu_0_buffer_4294967296_block_256   6515.51 79.54
+STREAM_SCALE_double_gpu_0_buffer_4294967296_block_512   6106.69 74.54
+STREAM_SCALE_double_gpu_0_buffer_4294967296_block_1024  5626.68 68.69
+STREAM_ADD_double_gpu_0_buffer_4294967296_block_128     7379.25 90.08
+STREAM_ADD_double_gpu_0_buffer_4294967296_block_256     7407.27 90.42
+STREAM_ADD_double_gpu_0_buffer_4294967296_block_512     7309.59 89.23
+STREAM_ADD_double_gpu_0_buffer_4294967296_block_1024    6788.64 82.87
+STREAM_TRIAD_double_gpu_0_buffer_4294967296_block_128   7378.19 90.07
+STREAM_TRIAD_double_gpu_0_buffer_4294967296_block_256   7414.01 90.50
+STREAM_TRIAD_double_gpu_0_buffer_4294967296_block_512   7295.50 89.06
+STREAM_TRIAD_double_gpu_0_buffer_4294967296_block_1024  6730.42 82.16
+
+Device 1: "NVIDIA Graphics Device"  152 SMs(10.0)  Memory: 4000.00MHz x 8192-bit = 8192.00 GB/s PEAK   ECC is ON
+STREAM_COPY_double_gpu_1_buffer_4294967296_block_128    6708.74 81.89
+STREAM_COPY_double_gpu_1_buffer_4294967296_block_256    6549.47 79.95
+STREAM_COPY_double_gpu_1_buffer_4294967296_block_512    6195.39 75.63
+STREAM_COPY_double_gpu_1_buffer_4294967296_block_1024   5725.07 69.89
+STREAM_SCALE_double_gpu_1_buffer_4294967296_block_128   6678.56 81.53
+STREAM_SCALE_double_gpu_1_buffer_4294967296_block_256   6514.05 79.52
+STREAM_SCALE_double_gpu_1_buffer_4294967296_block_512   6103.80 74.51
+STREAM_SCALE_double_gpu_1_buffer_4294967296_block_1024  5630.41 68.73
+STREAM_ADD_double_gpu_1_buffer_4294967296_block_128     7377.74 90.06
+STREAM_ADD_double_gpu_1_buffer_4294967296_block_256     7410.97 90.47
+STREAM_ADD_double_gpu_1_buffer_4294967296_block_512     7310.80 89.24
+STREAM_ADD_double_gpu_1_buffer_4294967296_block_1024    6789.91 82.88
+STREAM_TRIAD_double_gpu_1_buffer_4294967296_block_128   7379.03 90.08
+STREAM_TRIAD_double_gpu_1_buffer_4294967296_block_256   7414.04 90.50
+STREAM_TRIAD_double_gpu_1_buffer_4294967296_block_512   7298.26 89.09
+STREAM_TRIAD_double_gpu_1_buffer_4294967296_block_1024  6732.15 82.18
