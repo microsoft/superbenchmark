@@ -20,7 +20,7 @@ all: NEO2
 else
 CC := /opt/AMD/aocc-compiler-4.0.0/bin/clang
 CFLAGS := -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -lomp -fopenmp -fnt-store=aggressive -DNTIMES=10
-all: ZEN3 ZEN4 X86
+all: ZEN3 ZEN4 X86 NEO2
 endif
 
 ZEN3: stream.c

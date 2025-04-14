@@ -52,6 +52,15 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             For HBv3/Zen3 please see: ' + core_link
         )
 
+        self._parser.add_argument(
+            '--numa_mem_nodes',
+            nargs='+',
+            type=int,
+            default=None,  # None means system default
+            required=False,
+            help='List of NUMA memory nodes to bind to. If not set, system default will be used.'
+        )
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -67,7 +76,13 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         # zen4
         # cores=[0, 8, 16, 24, 32, 38, 44, 52, 60, 68, 76, 82, 88, 96, 104, 112, 120,
         # 126, 132, 140, 148, 156, 164, 170]
-
+        # neo2
+        #  BM:
+        #   numa node1: cores=[0, 1, 2,... 70, 71]
+        #   numa node2: cores=[0, 1, 2,... 63, 64]
+        #  VM:
+        #   numa node1: cores=[72, 73,... 142, 143]
+        #   numa node2: cores=[72, 73,... 63, ]
         # parse cores argument
         omp_places = ''
         for core in self._args.cores:
@@ -75,6 +90,12 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
 
         envar = 'OMP_SCHEDULE=static && OMP_DYNAMIC=false && OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && \
             OMP_PROC_BIND=true && OMP_NUM_THREADS={} && OMP_PLACES={}'.format(len(self._args.cores), omp_places)
+
+        if self._args.numa_mem_nodes is not None:
+            # Convert numa mem nodes list [0, 1] → "0,1"
+            mem_node_str = ','.join(map(str, self._args.numa_mem_nodes))
+            cmd += f" numactl -m{mem_node_str} "
+            envar += cmd
 
         if self._args.cpu_arch == 'zen3':
             exe = 'streamZen3.exe'
