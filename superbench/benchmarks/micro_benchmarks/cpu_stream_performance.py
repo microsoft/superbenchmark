@@ -76,13 +76,9 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         # zen4
         # cores=[0, 8, 16, 24, 32, 38, 44, 52, 60, 68, 76, 82, 88, 96, 104, 112, 120,
         # 126, 132, 140, 148, 156, 164, 170]
-        # neo2
-        #  BM:
-        #   numa node1: cores=[0, 1, 2,... 70, 71]
-        #   numa node2: cores=[0, 1, 2,... 63, 64]
-        #  VM:
+        # neo2: grace dual socket has 2 sockets, each socket has 72 cores
+        #   numa node0: cores=[0, 1, 2,... 70, 71]
         #   numa node1: cores=[72, 73,... 142, 143]
-        #   numa node2: cores=[72, 73,... 63, ]
         # parse cores argument
         omp_places = ''
         for core in self._args.cores:
