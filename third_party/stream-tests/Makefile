@@ -14,7 +14,7 @@ NEO2_OUTPUT := streamNeo2.exe
 ARCH := $(shell uname -m)
 
 ifeq ($(ARCH), aarch64)
-CFLAGS := -Ofast -fopenmp -DNTIMES=200
+CFLAGS := -Ofast -fopenmp -mcmodel=large -fno-PIC -DNTIMES=200
 CC := gcc
 all: NEO2
 else
