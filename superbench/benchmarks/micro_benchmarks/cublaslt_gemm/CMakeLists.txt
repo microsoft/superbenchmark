@@ -17,6 +17,6 @@ if(CUDAToolkit_FOUND AND NOT CUDAToolkit_VERSION VERSION_LESS 11.8)
 
     add_executable(cublaslt_gemm cublaslt_gemm.cu)
     target_link_libraries(cublaslt_gemm cublaslt_utils)
-    set_target_properties(cublaslt_gemm PROPERTIES CUDA_ARCHITECTURES "80;86;90")
+    set_target_properties(cublaslt_gemm PROPERTIES CUDA_ARCHITECTURES "80;86;90;100")
     install(TARGETS cublaslt_gemm RUNTIME DESTINATION bin)
 endif()
