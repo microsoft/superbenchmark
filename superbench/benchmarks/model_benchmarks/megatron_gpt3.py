@@ -127,6 +127,10 @@ class MegatronGPT(ModelBenchmark):
         self._parser.add_argument('--data_prefix', type=str, default='dataset_text_document', help='Data prefix.')
         self._parser.add_argument('--deepspeed', action='store_true', help='Use deepspeed.')
         self._parser.add_argument('--extra', type=str, default=None, help='Extra options for Megatron.')
+        self._parser.add_argument('--mock-data', action='store_true', help='Use mock data.')
+        self._parser.add_argument('--model', type=str, default='gpt', help='Model to run. Current supported: "gpt" and "deepseek".')
+        self._parser.add_argument('--dataloader-type', type=str, default=None, help='Data loader type to load data.')
+        self._parser.add_argument('--max-padding-length', type=int, default=None, help='Max padding legth to embedding.')
 
     def _preprocess(self):
         if not super()._preprocess():
@@ -140,7 +144,7 @@ class MegatronGPT(ModelBenchmark):
                 self._args.code_base = os.path.join(os.getenv('SB_MICRO_PATH'), 'third_party/Megatron/Megatron-LM')
 
         if not os.path.exists(self._args.code_base) or \
-                not os.path.exists(os.path.join(self._args.code_base, 'pretrain_gpt.py')):
+                not os.path.exists(os.path.join(self._args.code_base, f'pretrain_{self._args.model}.py')):
             logger.error('Code base is not valid.')
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
@@ -256,6 +260,7 @@ class MegatronGPT(ModelBenchmark):
             --adam-beta1 0.9 \
             --adam-beta2 0.95 \
             --tensor-model-parallel-size {self._args.tensor_model_parallel_size} \
+            --pipeline-model-parallel-size {self._args.pipeline_model_parallel_size} \
             --init-method-std {self._args.init_std} \
             --lr-decay-samples 43945312 \
             --lr-warmup-samples {self._args.num_warmup * self._args.batch_size} \
@@ -307,7 +312,7 @@ class MegatronGPT(ModelBenchmark):
             megatron_options = f'{megatron_options} {self._args.extra}'
 
         command = ''
-        script_path = os.path.join(self._args.code_base, 'pretrain_gpt.py')
+        script_path = os.path.join(self._args.code_base, f'pretrain_{self._args.model}.py')
         if self._args.deepspeed:
             deepspeed_option = self.__prepare_deespeed_config(precision_megatron.lstrip('--'))
             # No --log-throughput in Megatron-DeepSpeed by 20231219
@@ -425,47 +430,55 @@ class MegatronGPT(ModelBenchmark):
         Return:
             True if dataset is created successfully.
         """
-        self._vocab_path = str(Path(self._args.data_home) / 'gpt2-vocab.json')
-        download_file(self._args.vocab_url, self._vocab_path)
-        self._merges_path = str(Path(self._args.data_home) / 'gpt2-merges.txt')
-        download_file(self._args.merges_url, self._merges_path)
+        self._data_options = ''
+        if self._args.mock_data:
+            logger.info(f'Using mock data.')
+            self._data_options = '--mock-data'
+        else:
+        
+            self._vocab_path = str(Path(self._args.data_home) / 'gpt2-vocab.json')
+            download_file(self._args.vocab_url, self._vocab_path)
+            self._merges_path = str(Path(self._args.data_home) / 'gpt2-merges.txt')
+            download_file(self._args.merges_url, self._merges_path)
 
-        if not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.bin')) \
-                or not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.idx')):
-            if self._args.dataset_url:
-                self._raw_data_path = str(Path(self._args.data_home) / 'data.json')
-                download_file(self._args.dataset_url, self._raw_data_path)
-                command = (
-                    'python3 '
-                    f'{os.path.join(self._args.code_base, "tools/preprocess_data.py")} '
-                    f'--input {self._raw_data_path} '
-                    f'--tokenizer-type {self._args.tokenizer_type} '
-                    f'--output-prefix {os.path.join(self._args.data_home, "dataset")} '
-                    f'--workers {str(self._args.num_workers)} '
-                    f'--vocab-file {self._vocab_path} '
-                    f'--merge-file {self._merges_path}'
-                )
+            if not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.bin')) \
+                    or not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.idx')):
+                if self._args.dataset_url:
+                    self._raw_data_path = str(Path(self._args.data_home) / 'data.json')
+                    download_file(self._args.dataset_url, self._raw_data_path)
+                    command = (
+                        'python3 '
+                        f'{os.path.join(self._args.code_base, "tools/preprocess_data.py")} '
+                        f'--input {self._raw_data_path} '
+                        f'--tokenizer-type {self._args.tokenizer_type} '
+                        f'--output-prefix {os.path.join(self._args.data_home, "dataset")} '
+                        f'--workers {str(self._args.num_workers)} '
+                        f'--vocab-file {self._vocab_path} '
+                        f'--merge-file {self._merges_path}'
+                    )
 
-                # split documents
-                run_command(command, flush_output=True)
-                # binarize dataset
-                run_command(command, flush_output=True)
-                if not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.bin')) \
-                        or not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.idx')):
-                    logger.error('Dataset failed to generate.')
+                    # split documents
+                    run_command(command, flush_output=True)
+                    # binarize dataset
+                    run_command(command, flush_output=True)
+                    if not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.bin')) \
+                            or not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.idx')):
+                        logger.error('Dataset failed to generate.')
+                        self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
+                        return False
+
+                else:
+                    logger.error('No dataset or dataset url provided.')
                     self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
                     return False
-            else:
-                logger.error('No dataset or dataset url provided.')
-                self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
-                return False
 
-        self._data_path = os.path.join(self._args.data_home, f'{self._args.data_prefix}')
-        self._data_options = f'\
-            --vocab-file {self._vocab_path} \
-            --merge-file {self._merges_path} \
-            --data-path {self._data_path}'
-
+            self._data_path = os.path.join(self._args.data_home, f'{self._args.data_prefix}')
+            self._data_options = f'\
+                --vocab-file {self._vocab_path} \
+                --merge-file {self._merges_path} \
+                --data-path {self._data_path}'
+        if self._args.dataloader_type:
+            self._data_options += f' --dataloader-type {self._args.dataloader_type}'
         logger.info('Dataset preparation successfully.')
         return True
 
