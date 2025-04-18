@@ -247,12 +247,12 @@ superbench:
         batch_size: 256
         num_layers: 27
         hidden_size: 2048
-        seq_len: 2048
+        seq_len: 4096
         num_attn_heads: 16
         transformer_impl: transformer_engine
         num_experts: 64
         expert_model_parallel_size: 8
-        max_padding_length: 64
+        max_padding_length: 4096
         dataloader_type: cyclic
         model: deepseek
         tokenizer_type: DeepSeekV2Tokenizer
@@ -266,4 +266,4 @@ superbench:
         no_gradient_accumulation_fusion: yes
         mock_data: yes
         use_flash_attn: yes
-        extra: "\"--data-cache-path /root/cache --dataset LLama-Pretrain-Idxmap --ffn-hidden-size 10944 --patch-tokenizer-type DeepSeekV2Tokenizer --swiglu --normalization RMSNorm --norm-epsilon 1e-06 --use-rotary-position-embeddings --no-bias-swiglu-fusion --no-rope-fusion --position-embedding-type rope --untie-embeddings-and-output-weights --disable-bias-linear --use-mcore-models --use-legacy-models --ckpt-format torch --rotary-base 10000 --rotary-scaling-factor 40 --transformer-impl transformer_engine --eod-mask-loss --data-cache-path /root/cache --bf16 --use-distributed-optimizer --moe-ffn-hidden-size 1408 --enable-shared-expert --moe-layer-freq 1 --num-shared-experts 2 --moe-router-topk 6 --num-experts 64 --moe-aux-loss-coeff 1e-2 --expert-model-parallel-size 8 --kv-lora-rank 512 --qk-nope-head-dim 128 --qk-rope-head-dim 64 --v-head-dim 128 --moe-router-load-balancing-type aux_loss --train-mode pretrain --extra-vocab-size 2400\""
+        extra: "\"--no-load-optim --load deepseek-ai/DeepSeek-V2-Lite --no-load-rng --dataset LLama-Pretrain-Idxmap --ffn-hidden-size 10944 --patch-tokenizer-type DeepSeekV2Tokenizer --swiglu --normalization RMSNorm --norm-epsilon 1e-06 --no-bias-swiglu-fusion --no-rope-fusion --position-embedding-type rope --untie-embeddings-and-output-weights --disable-bias-linear --ckpt-format torch --rotary-base 10000 --rotary-scaling-factor 40 --eod-mask-loss --data-cache-path /root/cache --moe-ffn-hidden-size 1408 --enable-shared-expert --moe-layer-freq 1 --num-shared-experts 2 --moe-router-topk 6 --moe-aux-loss-coeff 1e-2 --kv-lora-rank 512 --qk-nope-head-dim 128 --qk-rope-head-dim 64 --v-head-dim 128 --moe-router-load-balancing-type aux_loss --train-mode pretrain --extra-vocab-size 2400\""
