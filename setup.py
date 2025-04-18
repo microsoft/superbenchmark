@@ -193,7 +193,7 @@ setup(
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
         'types-requests==0.1.13',
-        'urllib3==1.26.20
+        'urllib3==1.26.20'
     ],
     extras_require=(
         lambda x: {
@@ -225,7 +225,7 @@ setup(
             ],
             'torch': [
                 'safetensors==0.4.5',
-                'tokenizers<=0.20.3',
+                'tokenizers>=0.20.3',
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
                 'transformers>=4.48.1',

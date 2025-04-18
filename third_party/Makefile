@@ -136,7 +136,7 @@ rocm_hipblaslt: sb_micro_path
 	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
 		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
 		git clone -b ${HIPBLASLT_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
-		cd ./hipBLASLt && ./install.sh -dc; \
+		cd ./hipBLASLt && python3 -m pip install -r tensilelite/requirements.txt && ./install.sh -dc; \
 		cp -v $(SB_MICRO_PATH)/third_party/hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/;  \
 	fi
 
