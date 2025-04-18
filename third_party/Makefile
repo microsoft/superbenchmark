@@ -211,6 +211,7 @@ megatron_deepspeed:
 	python -m pip install DeepSpeed
 
 rocm_megatron_lm:
+    apt install -y python3-mpi4py
 	cd Megatron && mkdir -p rocm && cd rocm && \
 	if [ ! -d "Megatron-LM" ]; then \
 		git clone -b rocm_dev https://github.com/ROCm/Megatron-LM.git ; \

@@ -243,7 +243,7 @@ superbench:
           HIP_FORCE_DEV_KERNARG: '1'
          #PYTORCH_TUNABLEOP_ENABLED: '1'
       parameters:
-        code_base: /root/superbenchmark/third_party/Megatron/rocm/Megatron-LM/
+        code_base: /opt/superbench/third_party/Megatron/rocm/Megatron-LM/
         batch_size: 256
         num_layers: 27
         hidden_size: 2048
@@ -256,7 +256,7 @@ superbench:
         dataloader_type: cyclic
         model: deepseek
         tokenizer_type: DeepSeekV2Tokenizer
-        micro_batch_size: 4
+        micro_batch_size: 2
         num_warmup: 0
         num_steps: 10
         precision:

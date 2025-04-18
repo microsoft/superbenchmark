@@ -434,7 +434,7 @@ class MegatronGPT(ModelBenchmark):
             --tensor-model-parallel-size {self._args.tensor_model_parallel_size} \
             --pipeline-model-parallel-size {self._args.pipeline_model_parallel_size} \
             --init-method-std {self._args.init_std} \
-            --lr-decay-iters 18
+            --lr-decay-samples 38400  \
             --lr-warmup-samples {self._args.num_warmup * self._args.batch_size} \
             --lr-decay-style cosine \
             --micro-batch-size {self._args.micro_batch_size} \
