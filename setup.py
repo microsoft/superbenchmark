@@ -189,11 +189,11 @@ setup(
         'requests>=2.27.1',
         'seaborn>=0.11.2',
         'tcping>=0.1.1rc1',
-        'urllib3>=1.26.9',
         'xlrd>=2.0.1',
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
-        'types-requests',
+        'types-requests==0.1.13',
+        'urllib3==1.26.20
     ],
     extras_require=(
         lambda x: {
@@ -228,7 +228,7 @@ setup(
                 'tokenizers<=0.20.3',
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
-                'transformers>=4.28.0',
+                'transformers>=4.48.1',
             ],
             'ort': [
                 'onnx>=1.10.2',

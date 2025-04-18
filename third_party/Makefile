@@ -212,11 +212,15 @@ megatron_deepspeed:
 
 rocm_megatron_lm:
 	cd Megatron && mkdir -p rocm && cd rocm && \
-	if [! -d "Megatron-LM"]; then \
+	if [ ! -d "Megatron-LM" ]; then \
 		git clone -b rocm_dev https://github.com/ROCm/Megatron-LM.git ; \
 	fi 
 	cp Megatron/rocm/Megatron-LM/examples/deepseek_v2/pretrain_deepseek.py Megatron/rocm/Megatron-LM/
-	cd Megatron/rocm/Megatron-LM && python -m pip install --no-cache-dir -r requirements.txt
+	git clone https://github.com/caaatch22/grouped_gemm.git &&\
+    	cd grouped_gemm &&\
+    	git checkout 8a9b438 &&\
+    	git submodule update --init --recursive &&\
+    	pip install .
 
 # Instal apex of ROCm due to dependency of Megatron
 apex_rocm:
