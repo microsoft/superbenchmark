@@ -193,7 +193,7 @@ setup(
         'xlsxwriter>=1.3.8',
         'xmltodict>=0.12.0',
         'types-requests==0.1.13',
-        'urllib3==1.26.20'
+        'urllib3==1.26.20',
     ],
     extras_require=(
         lambda x: {

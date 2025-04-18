@@ -220,7 +220,7 @@ class MegatronGPT(ModelBenchmark):
         self._parser.add_argument(
             "--split",
             type=str,
-            default="949,50,1",
+            default=None,
             help="Split dataset ratio for train/val/test.",
         )
         self._parser.add_argument(
@@ -428,13 +428,13 @@ class MegatronGPT(ModelBenchmark):
             precision_megatron = "--bf16"
 
         megatron_options = f"\
-            --override-opt_param-scheduler \
             --adam-beta1 0.9 \
             --adam-beta2 0.95 \
+            --tokenizer-type {self._args.tokenizer_type} \
             --tensor-model-parallel-size {self._args.tensor_model_parallel_size} \
             --pipeline-model-parallel-size {self._args.pipeline_model_parallel_size} \
             --init-method-std {self._args.init_std} \
-            --lr-decay-samples 43945312 \
+            --lr-decay-iters 18
             --lr-warmup-samples {self._args.num_warmup * self._args.batch_size} \
             --lr-decay-style cosine \
             --micro-batch-size {self._args.micro_batch_size} \
@@ -447,18 +447,15 @@ class MegatronGPT(ModelBenchmark):
             --train-samples {self._args.num_steps * self._args.batch_size} \
             --lr {self._args.lr} \
             --min-lr {self._args.min_lr} \
-            --split {self._args.split} \
             --log-interval {self._args.log_interval} \
             --eval-interval {self._args.eval_interval} \
             --eval-iters {self._args.eval_iters} \
             --save-interval {self._args.save_interval} \
             --weight-decay 0.1 \
             --clip-grad 1.0 \
-            --hysteresis 2 \
             --num-workers {self._args.num_workers} \
             --attention-dropout 0.0 \
             --hidden-dropout 0.0 \
-            --optimizer adam \
             --use-distributed-optimizer \
             {precision_megatron} \
             --seed {self._args.seed} \
@@ -482,6 +479,8 @@ class MegatronGPT(ModelBenchmark):
             megatron_options = f"{megatron_options} --no-bias-gelu-fusion"
         if self._args.no_bias_dropout_fusion:
             megatron_options = f"{megatron_options} --no-bias-dropout-fusion"
+        if self._args.split:
+            megatron_options = f"{megatron_options} --split {self._args.split}"
         if self._args.extra and len(self._args.extra) > 0:
             #self._args.extra = self._args.extra.split(",")
             print(
