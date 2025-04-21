@@ -189,8 +189,7 @@ double DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, cons
         DecProc(pDec, szInFilePath, pnFrame, ex);
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        std::cout << "Decode finished --"
-                  << " duration:" << elapsedTime << " frames:" << *pnFrame << std::endl;
+        std::cout << "Decode finished --" << " duration:" << elapsedTime << " frames:" << *pnFrame << std::endl;
         return elapsedTime / 1000.0f;
     } catch (const std::exception &e) {
         std::cerr << "Exception in decoding: " << e.what() << std::endl;

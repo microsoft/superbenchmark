@@ -18,8 +18,7 @@ void throw_cudnn_err(cudnnStatus_t result, const char *func, const char *file, i
     if (result != CUDNN_STATUS_SUCCESS) {
         const char *msg = cudnnGetErrorString(result);
         std::stringstream safe_call_ss;
-        safe_call_ss << func << " failed with error"
-                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
+        safe_call_ss << func << " failed with error" << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
         throw std::runtime_error(safe_call_ss.str());
     }
 }
@@ -30,8 +29,7 @@ void check_cuda(cudaError_t result, const char *func, const char *file, int cons
     if (result != cudaSuccess) {
         const char *msg = cudaGetErrorString(result);
         std::stringstream safe_call_ss;
-        safe_call_ss << func << " failed with error"
-                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
+        safe_call_ss << func << " failed with error" << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
         // Make sure we call CUDA Device Reset before exiting
         throw std::runtime_error(safe_call_ss.str());
     }
