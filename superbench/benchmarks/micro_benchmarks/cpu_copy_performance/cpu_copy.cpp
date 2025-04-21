@@ -29,7 +29,10 @@ struct Opts {
  * including any necessary command-line arguments and their descriptions.
  */
 void PrintUsage() {
-    std::cout << "Usage: cpu_copy " << "--size <size> " << "--num_warm_up <num_warm_up> " << "--num_loops <num_loops> "
+    std::cout << "Usage: cpu_copy "
+              << "--size <size> "
+              << "--num_warm_up <num_warm_up> "
+              << "--num_loops <num_loops> "
               << "[--check_data]" << std::endl;
 }
 

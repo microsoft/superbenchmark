@@ -177,7 +177,8 @@ class FFmpegDemuxer {
         if (bMp4H264) {
             const AVBitStreamFilter *bsf = av_bsf_get_by_name("h264_mp4toannexb");
             if (!bsf) {
-                LOG(ERROR) << "FFmpeg error: " << __FILE__ << " " << __LINE__ << " " << "av_bsf_get_by_name() failed";
+                LOG(ERROR) << "FFmpeg error: " << __FILE__ << " " << __LINE__ << " "
+                           << "av_bsf_get_by_name() failed";
                 av_packet_free(&pkt);
                 av_packet_free(&pktFiltered);
                 return;
@@ -189,7 +190,8 @@ class FFmpegDemuxer {
         if (bMp4HEVC) {
             const AVBitStreamFilter *bsf = av_bsf_get_by_name("hevc_mp4toannexb");
             if (!bsf) {
-                LOG(ERROR) << "FFmpeg error: " << __FILE__ << " " << __LINE__ << " " << "av_bsf_get_by_name() failed";
+                LOG(ERROR) << "FFmpeg error: " << __FILE__ << " " << __LINE__ << " "
+                           << "av_bsf_get_by_name() failed";
                 av_packet_free(&pkt);
                 av_packet_free(&pktFiltered);
                 return;

@@ -15,7 +15,8 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     if (result != cudaSuccess) {
         const char *msg = cudaGetErrorString(result);
         std::stringstream safe_call_ss;
-        safe_call_ss << func << " failed with error" << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
+        safe_call_ss << func << " failed with error"
+                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << msg;
         // Make sure we call CUDA Device Reset before exiting
         throw std::runtime_error(safe_call_ss.str());
     }
@@ -28,7 +29,8 @@ void check_cublas(cublasStatus_t result, char const *const func, const char *con
     if (result != CUBLAS_STATUS_SUCCESS) {
 
         std::stringstream safe_call_ss;
-        safe_call_ss << func << " failed with error" << "\nfile: " << file << "\nline: " << line << "\nmsg: " << result;
+        safe_call_ss << func << " failed with error"
+                     << "\nfile: " << file << "\nline: " << line << "\nmsg: " << result;
         // Make sure we call CUDA Device Reset before exiting
         throw std::runtime_error(safe_call_ss.str());
     }
