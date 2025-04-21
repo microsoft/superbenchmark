@@ -23,11 +23,15 @@ jobs:
     name: CPP code lint
     runs-on: ubuntu-latest
     steps:
+    - name: Install clang-format-14
+      run: |
+      sudo apt-get update
+      sudo apt-get install -y clang-format-14
     - name: Checkout
       uses: actions/checkout@v2
     - name: Echo clang-format version
       run: |
-        clang-format --version
+        clang-format-14 --version
     - name: Lint
       run: |
         make cpplint

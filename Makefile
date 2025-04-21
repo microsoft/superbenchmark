@@ -6,10 +6,10 @@ CPPSOURCES := $(shell find $(CURDIR) -regextype posix-extended -regex '.*\.(c|cp
 .PHONY: cpplint cppformat cppbuild thirdparty postinstall
 
 cpplint:
-	clang-format --verbose --dry-run --Werror $(CPPSOURCES)
+	clang-format-14 --verbose --dry-run --Werror $(CPPSOURCES)
 
 cppformat:
-	clang-format --verbose -i $(CPPSOURCES)
+	clang-format-14 --verbose -i $(CPPSOURCES)
 
 cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh
