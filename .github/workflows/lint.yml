@@ -33,7 +33,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Echo clang-format version
       run: |
-        clang-format-14 --version
+        clang-format --version
     - name: Lint
       run: |
         make cpplint
