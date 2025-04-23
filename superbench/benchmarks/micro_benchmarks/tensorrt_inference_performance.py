@@ -104,7 +104,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 # build options
                 '--explicitBatch',
                 f'--optShapes=input:{input_shape}',
-                '--workspace=8192',
+                '–-memPoolSize=8G',
                 None if self._args.precision == 'fp32' else f'--{self._args.precision}',
                 # inference options
                 f'--iterations={self._args.iterations}',
