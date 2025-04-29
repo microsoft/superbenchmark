@@ -52,9 +52,7 @@ jobs:
           build_args: "NUM_MAKE_JOBS=16"
         - name: cuda11.1.1
           dockerfile: cuda11.1.1
-          tags:
-            - superbench/main:cuda11.1.1
-            - superbench/superbench:latest
+          tags: superbench/main:cuda11.1.1,superbench/superbench:latest
           platforms: linux/amd64
           runner: ubuntu-latest
           build_args: "NUM_MAKE_JOBS=8"
@@ -133,7 +131,8 @@ jobs:
       - name: Pull cache image
         run: |
           TAGS="${{ steps.metadata.outputs.tags }}"
-          echo "$TAGS" | while read -r TAG; do
+          IFS=',' read -ra TAG_ARRAY <<< "$TAGS"
+          for TAG in "${TAG_ARRAY[@]}"; do
             echo "Pulling $TAG"
             sudo docker pull "$TAG" || true
           done
