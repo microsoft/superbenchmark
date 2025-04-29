@@ -131,7 +131,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Pull cache image
-        run: sudo docker pull ${{ steps.metadata.outputs.tags }}
+        run: |
+          TAGS="${{ steps.metadata.outputs.tags }}"
+          echo "$TAGS" | while read -r TAG; do
+            echo "Pulling $TAG"
+            sudo docker pull "$TAG" || true
+          done
         continue-on-error: true
       - name: Login to the GitHub Container Registry
         uses: docker/login-action@v1
