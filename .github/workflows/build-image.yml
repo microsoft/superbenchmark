@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker:
+  docker-build:
     name: Docker build ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 1200
@@ -23,25 +23,20 @@ jobs:
       contents: read
       packages: write
     strategy:
+      fail-fast: true
       matrix:
         include:
-        - name: cuda12.8 arm64
+        - name: cuda12.8-arm64
           dockerfile: cuda12.8
-          tags: superbench/main:cuda12.8
+          tags: superbench/main:cuda12.8-arm64
           platforms: linux/arm64
           runner: [self-hosted, linux/arm64]
           build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda12.8
+        - name: cuda12.8-amd64
           dockerfile: cuda12.8
-          tags: superbench/main:cuda12.8
+          tags: superbench/main:cuda12.8-amd64
           platforms: linux/amd64
           runner: [self-hosted, linux/amd64]
-          build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda12.4 arm64
-          dockerfile: cuda12.4
-          tags: superbench/main:cuda12.4
-          platforms: linux/arm64
-          runner: [self-hosted, linux/arm64]
           build_args: "NUM_MAKE_JOBS=16"
         - name: cuda12.4
           dockerfile: cuda12.4
@@ -61,12 +56,12 @@ jobs:
           platforms: linux/amd64
           runner: ubuntu-latest
           build_args: "NUM_MAKE_JOBS=8"
-        - name: rocm6.2
-          dockerfile: rocm6.2.x
-          tags: superbench/main:rocm6.2
-          platforms: linux/amd64
-          runner: [self-hosted, linux/amd64, rocm]
-          build_args: "NUM_MAKE_JOBS=16"
+        # - name: rocm6.2
+        #   dockerfile: rocm6.2.x
+        #   tags: superbench/main:rocm6.2
+        #   platforms: linux/amd64
+        #   runner: [self-hosted, linux/amd64, rocm]
+        #   build_args: "NUM_MAKE_JOBS=16"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -162,3 +157,81 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
       - name: Echo image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+  docker-merge:
+    needs: docker-build
+    name: Docker merge ${{ matrix.name }}
+    runs-on: self-hosted
+    timeout-minutes: 300
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+        - name: cuda12.8
+          tags: superbench/main:cuda12.8
+          sources: >-
+            superbench/main:cuda12.8-amd64
+            superbench/main:cuda12.8-arm64
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Prepare metadata
+      id: metadata
+      run: |
+        TAGS=${{ matrix.tags }}
+        SOURCES="${{ matrix.sources }}"
+        if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/release/"* ]]; then
+          TAGS=$(sed "s/main:/release:${GITHUB_REF##*/}-/g" <<< ${TAGS})
+          SOURCES=$(sed "s/main:/release:${GITHUB_REF##*/}-/g" <<< ${SOURCES})
+        fi
+        if [[ "${{ github.event_name }}" == "pull_request" ]] && [[ "${{ github.base_ref }}" == "release/"* ]]; then
+          TAGS=$(sed "s/main:/release:${GITHUB_BASE_REF##*/}-/g" <<< ${TAGS})
+          SOURCES=$(sed "s/main:/release:${GITHUB_BASE_REF##*/}-/g" <<< ${SOURCES})
+        fi
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          TAGS=$(sed "s/main:/superbench:${GITHUB_REF##*/}-/g" <<< ${TAGS})
+          GHCR_TAG=$(cut -d, -f1 <<< ${TAGS} | sed "s#superbench/superbench#ghcr.io/${{ github.repository }}/superbench#g")
+          TAGS="${TAGS},${GHCR_TAG}"
+        fi
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          TAGS=$(sed "s/main:/dev:/g" <<< ${TAGS})
+          SOURCES=$(sed "s/main:/dev:/g" <<< ${SOURCES})
+        fi
+
+        echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+        echo "sources=${SOURCES}" >> "$GITHUB_OUTPUT"
+    - name: Echo image tags
+      run: echo ${{ steps.metadata.outputs.tags }}
+    - name: Echo image sourcs
+      run: echo ${{ steps.metadata.outputs.sources }}
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      if: ${{ github.event_name != 'pull_request' }}
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Login to the GitHub Container Registry
+      uses: docker/login-action@v3
+      if: ${{ github.event_name == 'release' }}
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Merge and push
+      if: ${{ github.event_name != 'pull_request' }}
+      run: |
+        docker buildx imagetools create \
+          --annotation "index:org.opencontainers.image.source=${{ github.event.repository.html_url }}" \
+          --annotation "index:org.opencontainers.image.created=${{ github.event.repository.pushed_at }}" \
+          --annotation "index:org.opencontainers.image.revision=${{ github.sha }}" \
+          --tag ${{ steps.metadata.outputs.tags }} \
+          ${{ steps.metadata.outputs.sources }}
+    - name: Inspect image
+      if: ${{ github.event_name != 'pull_request' }}
+      run: |
+        docker buildx imagetools inspect $(echo "${{ steps.metadata.outputs.tags }}" | cut -d, -f1)
