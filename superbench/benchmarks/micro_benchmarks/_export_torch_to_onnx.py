@@ -3,7 +3,9 @@
 
 """Export PyTorch models to ONNX format."""
 
+import sys
 from pathlib import Path
+from typing import Optional
 
 from packaging import version
 import torch.hub
@@ -15,6 +17,12 @@ from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkMod
 from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
+
+# Check Python version and skip Mixtral if Python is 3.7 or lower
+MixtralBenchmarkModel: Optional[type] = None
+if sys.version_info >= (3, 8):
+    from transformers import MixtralConfig
+    from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
 
 
 class torch2onnxExporter():
@@ -122,6 +130,40 @@ class torch2onnxExporter():
                 self.num_classes,
             ),
         }
+
+        # Only include Mixtral models if MixtralBenchmarkModel is available
+        if MixtralBenchmarkModel is not None:
+            self.benchmark_models.update(
+                {
+                    'mixtral-8x7b':
+                    lambda: MixtralBenchmarkModel(
+                        MixtralConfig(
+                            hidden_size=4096,
+                            num_hidden_layers=32,
+                            num_attention_heads=32,
+                            num_key_value_heads=8,
+                            intermediate_size=14336,
+                            max_position_embeddings=32768,
+                            router_aux_loss_coef=0.02,
+                        ),
+                        self.num_classes,
+                    ),
+                    'mixtral-8x22b':
+                    lambda: MixtralBenchmarkModel(
+                        MixtralConfig(
+                            hidden_size=6144,
+                            num_hidden_layers=56,
+                            num_attention_heads=48,
+                            num_key_value_heads=8,
+                            intermediate_size=16384,
+                            max_position_embeddings=65536,
+                            router_aux_loss_coef=0.001,
+                        ),
+                        self.num_classes,
+                    ),
+                }
+            )
+
         self._onnx_model_path = Path(torch.hub.get_dir()) / 'onnx'
         self._onnx_model_path.mkdir(parents=True, exist_ok=True)
 
