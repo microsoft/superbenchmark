@@ -224,7 +224,7 @@ setup(
                 'yapf==0.31.0',
             ],
             'torch': [
-                ''safetensors<=0.5.3',
+                'safetensors<=0.5.3',
                 'tokenizers<=0.20.3',
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
