@@ -23,6 +23,7 @@ from superbench.benchmarks.micro_benchmarks.cpu_stream_performance import CpuStr
 from superbench.benchmarks.micro_benchmarks.cpu_hpl_performance import CpuHplBenchmark
 from superbench.benchmarks.micro_benchmarks.gpcnet_performance import GPCNetBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_copy_bw_performance import GpuCopyBwBenchmark
+from superbench.benchmarks.micro_benchmarks.gpu_stream import GpuStreamBenchmark
 from superbench.benchmarks.micro_benchmarks.gpu_burn_test import GpuBurnBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_loopback_performance import IBLoopbackBenchmark
 from superbench.benchmarks.micro_benchmarks.ib_validation_performance import IBBenchmark
@@ -58,6 +59,7 @@ __all__ = [
     'GemmFlopsBenchmark',
     'GpuBurnBenchmark',
     'GpuCopyBwBenchmark',
+    'GpuStreamBenchmark',
     'IBBenchmark',
     'IBLoopbackBenchmark',
     'KernelLaunch',
