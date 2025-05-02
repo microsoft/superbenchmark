@@ -5,9 +5,9 @@ FROM nvcr.io/nvidia/pytorch:25.03-py3
 #   - OpenMPI: 4.1.7+
 #   - Docker Client: 20.10.8
 # NVIDIA:
-#   - CUDA: 12.8.0.38
-#   - cuDNN: 9.7.1.26
-#   - cuBLAS: 12.8.3.14
+#   - CUDA: 12.8.1.012
+#   - cuDNN: 9.8.0.87
+#   - cuBLAS: 12.8.4.1
 #   - NCCL: v2.25.1
 #   - TransformerEngine 2.0
 # Mellanox:
