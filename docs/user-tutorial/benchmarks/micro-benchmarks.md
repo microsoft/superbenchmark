@@ -272,14 +272,14 @@ Measure the memory bandwidth of GPU using the STREAM benchmark. The benchmark te
 
 | Metric Name                                                | Unit             | Description                                                                                                                             |
 |------------------------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the copy operation with specified buffer size and block size.                         |
-| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the scale operation with specified buffer size and block size.                        |
-| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw   | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the add operation with specified buffer size and block size.                          |
-| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the triad operation with specified buffer size and block size.                          |                        |
-| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_pct | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the copy operation with specified buffer size and block size.                         |
-| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_pct | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the scale operation with specified buffer size and block size.                        |
-| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_pct   | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the add operation with specified buffer size and block size.                          |
-| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_pct | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the triad operation with specified buffer size and block size.                        |
+| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw  | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the copy operation with specified buffer size and block size.                         |
+| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the scale operation with specified buffer size and block size.                         |
+| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw   | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the add operation with specified buffer size and block size.                         |
+| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the triad operation with specified buffer size and block size.                         |
+| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio  | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the copy operation with specified buffer size and block size.                         |
+| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the scale operation with specified buffer size and block size.                         |
+| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio   | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the add operation with specified buffer size and block size.                         |
+| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the triad operation with specified buffer size and block size.                         |
 
 ### `ib-loopback`
 

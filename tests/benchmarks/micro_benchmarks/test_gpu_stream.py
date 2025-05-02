@@ -101,8 +101,8 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                     assert (output_key.strip('_bw') in test_raw_output_dict)
                     assert (test_raw_output_dict[output_key.strip('_bw')][0] == benchmark.result[output_key][0])
                 else:
-                    assert (output_key.strip('_pct') in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key.strip('_pct')][1] == benchmark.result[output_key][0])
+                    assert (output_key.strip('_ratio') in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key.strip('_ratio')][1] == benchmark.result[output_key][0])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)

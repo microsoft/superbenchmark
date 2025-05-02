@@ -99,9 +99,9 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
             for output_line in output_lines:
                 if output_line.startswith("STREAM_"):
                     count += 1
-                    tag, bw_str, pct = output_line.split()
+                    tag, bw_str, ratio = output_line.split()
                     self._result.add_result(tag + '_bw', float(bw_str))
-                    self._result.add_result(tag + '_pct', float(pct))
+                    self._result.add_result(tag + '_ratio', float(ratio))
             if count == 0:
                 raise BaseException("No valid results found.")
         except BaseException as e:

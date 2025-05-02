@@ -39,7 +39,7 @@ std::string KernelToString(int kernel_idx) {
  * @return void.
  * */
 void PrintUsage() {
-    std::cout << "Usage: gpu_copy "
+    std::cout << "Usage: gpu_stream "
               << "--size <size in bytes> "
               << "--num_warm_up <num_warm_up> "
               << "--num_loops <num_loops> "
@@ -101,7 +101,7 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         switch (opt_idx) {
         case static_cast<int>(OptIdx::kSize):
             if (1 != sscanf(optarg, "%lu", &(opts->size))) {
-                std::cerr << "Invalid size:: " << optarg << std::endl;
+                std::cerr << "Invalid size: " << optarg << std::endl;
                 parse_err = true;
             } else {
                 size_specified = true;
