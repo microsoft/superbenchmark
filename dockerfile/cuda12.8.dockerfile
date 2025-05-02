@@ -1,13 +1,13 @@
-FROM nvcr.io/nvidia/pytorch:25.02-py3
+FROM nvcr.io/nvidia/pytorch:25.03-py3
 
 # OS:
 #   - Ubuntu: 24.04
 #   - OpenMPI: 4.1.7+
 #   - Docker Client: 20.10.8
 # NVIDIA:
-#   - CUDA: 12.8.0.38
-#   - cuDNN: 9.7.1.26
-#   - cuBLAS: 12.8.3.14
+#   - CUDA: 12.8.1.012
+#   - cuDNN: 9.8.0.87
+#   - cuBLAS: 12.8.4.1
 #   - NCCL: v2.25.1
 #   - TransformerEngine 2.0
 # Mellanox:
@@ -164,7 +164,7 @@ ADD third_party third_party
 RUN make -C third_party cuda_with_msccl
 
 ADD . .
-RUN python3 -m pip install --upgrade setuptools==70.3.0 && \
+RUN python3 -m pip install --upgrade setuptools==75.8.2 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
