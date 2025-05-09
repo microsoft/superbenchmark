@@ -40,7 +40,7 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     
     // strided batch gemm
     if (batch > 0) {
-        int64_t stridea = m * k, strideb = k * n, stridec = m * n, strided = m * n;
+        int64_t stridea = static_cast<int64_t>(m) * k, strideb = static_cast<int64_t>(k) * n, stridec = static_cast<int64_t>(m) * n, strided = static_cast<int64_t>(m) * n;
         CUBLAS_CHECK(
             cublasLtMatrixLayoutSetAttribute(a_desc, CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT, &batch, sizeof(batch)));
         CUBLAS_CHECK(cublasLtMatrixLayoutSetAttribute(a_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET, &stridea,
@@ -126,36 +126,6 @@ size_t cublasLtGemm::GetAlgorithm(int max_algorithm_count, size_t max_workspace_
     return heuristic_results_.front().workspaceSize;
 }
 
-float median(std::vector<float>& times) {
-        const size_t size = times.size();
-        if (size == 0) {
-            return 0;
-        }
-
-        std::sort(times.begin(), times.end());
-
-        const size_t mid = size / 2;
-        if (size % 2 == 0) {
-            return (times[mid] + times[mid - 1]) / 2;
-        }
-        else {
-            return times[mid];
-        }
-    }
-
-float mean(std::vector<float>& times) {
-        const size_t size = times.size();
-        if (size == 0) {
-            return 0;
-        }
-
-        float sum = 0.0f;
-        for (const float& time : times) {
-            sum += time;
-        }
-        return sum / size;
-    }
-
 size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_workspace_size, float alpha, float beta,
                                            void* matrix_a, void* matrix_b, void* matrix_c, void* matrix_d,
                                            int repeat_iterations, int warmup_iterations) {
@@ -185,8 +155,6 @@ size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_
 
     // Test each algorithm multiple times to find the best one
     std::vector<float> algoTimes(repeat_iterations);
-    float bestAlgoTime = std::numeric_limits<float>::max();
-    int bestAlgoIdx = 0;
 
     // Allocate workspace
     void* workspace = nullptr;
@@ -240,22 +208,16 @@ size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_
         cudaEventElapsedTime(&time, startEvent, stopEvent);
         algoTimes[algoIdx] = time / repeat_iterations;
         
-        float medianTime = algoTimes[algoIdx];
-        float flops = 2.0f * m_ * n_ * k_ / (medianTime * 1e-3f);       
+        float meanTime = algoTimes[algoIdx];
+        float flops = 2.0f * m_ * n_ * k_ / (meanTime * 1e-3f);       
 
         // Store metrics
         AlgorithmMetrics metrics;
         metrics.algo = heuristic_results_[algoIdx].algo;
         metrics.workspace_size = heuristic_results_[algoIdx].workspaceSize;
-        metrics.time = medianTime;
+        metrics.time = meanTime;
         metrics.flops = flops;
         algo_metrics_.push_back(metrics);
-
-        // Update best algorithm if this one is faster
-        if (medianTime < bestAlgoTime) {
-            bestAlgoTime = medianTime;
-            bestAlgoIdx = algoIdx;
-        }
     }
 
     std::sort(algo_metrics_.begin(), algo_metrics_.end(), [](const AlgorithmMetrics& a, const AlgorithmMetrics& b) {

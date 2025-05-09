@@ -65,7 +65,6 @@ class cublasLtGemm {
         float time;
         float flops;
     };
-    std::vector<AlgorithmMetrics> GetAlgorithmMetrics() const { return algo_metrics_; }
 
   private:
     UniqueHandle handle_;
