@@ -6,8 +6,8 @@
 #include <stdio.h>
 
 #include <cuda_fp16.h>
-#include <cuda_fp8.h>
 #include <cuda_fp4.h>
+#include <cuda_fp8.h>
 
 #include "cublaslt_utils.h"
 
@@ -115,8 +115,8 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     size_t lda = k, ldb = k, ldc = m, ldd = m;
     std::unique_ptr<cublasLtGemm> gemm = std::make_unique<cublasLtGemm>();
     gemm->Init();
-    gemm->Setup(m, n, k, batch, lda, ldb, ldc, ldd, get_datatype<Ta>(), get_datatype<Tb>(), get_datatype<Tc>(), get_datatype<Tout>(),
-                CUBLAS_OP_T, CUBLAS_OP_N, CUBLASLT_EPILOGUE_DEFAULT);
+    gemm->Setup(m, n, k, batch, lda, ldb, ldc, ldd, get_datatype<Ta>(), get_datatype<Tb>(), get_datatype<Tc>(),
+                get_datatype<Tout>(), CUBLAS_OP_T, CUBLAS_OP_N, CUBLASLT_EPILOGUE_DEFAULT);
 
     void *workspace = nullptr;
     size_t workspace_size = gemm->GetAlgorithm(1, 2 * m * n);
@@ -150,7 +150,8 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
 }
 
 template <typename Ta, typename Tb = Ta, typename Tout = Ta, typename Tc = Tout> void run(Args *args) {
-    float time_us = timing_matmul_tn<Ta, Tb, Tout, Tc>(args->m, args->n, args->k, args->batch, args->warmup, args->iter);
+    float time_us =
+        timing_matmul_tn<Ta, Tb, Tout, Tc>(args->m, args->n, args->k, args->batch, args->warmup, args->iter);
     // m n k batch time_us tflops
     printf("%d\t%d\t%d\t%d\t%f\t%f\n", args->m, args->n, args->k, args->batch, time_us,
            float(args->m) * float(args->n) * float(2 * args->k - 1) / 1e6 / time_us * std::max(args->batch, 1));
