@@ -16,8 +16,8 @@ void cublasLtGemm::Init() {
     preference_.reset(preference);
 }
 
-void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int ldd, cudaDataType_t a_type,
-                         cudaDataType_t b_type, cudaDataType_t d_type, cublasOperation_t transa,
+void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int ldc, int ldd, cudaDataType_t a_type,
+                         cudaDataType_t b_type, cudaDataType_t c_type, cudaDataType_t d_type, cublasOperation_t transa,
                          cublasOperation_t transb, cublasLtEpilogue_t epilogue,
                          void *a_scale_inverse, /* only need to be set for fp8 */
                          void *b_scale_inverse  /* only need to be set for fp8 */
@@ -28,14 +28,12 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     k_ = k;
 
     cublasLtMatrixLayout_t a_desc = nullptr, b_desc = nullptr, c_desc = nullptr, d_desc = nullptr;
-    // force c_type
-    cudaDataType_t c_type = d_type;
     // Create matrix descriptors.
     CUBLAS_CHECK(
         cublasLtMatrixLayoutCreate(&a_desc, a_type, transa == CUBLAS_OP_N ? m : k, transa == CUBLAS_OP_N ? k : m, lda));
     CUBLAS_CHECK(
         cublasLtMatrixLayoutCreate(&b_desc, b_type, transb == CUBLAS_OP_N ? k : n, transb == CUBLAS_OP_N ? n : k, ldb));
-    CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&c_desc, c_type, m, n, ldd));
+    CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&c_desc, c_type, m, n, ldc));
     CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&d_desc, d_type, m, n, ldd));
 
     // strided batch gemm
@@ -67,8 +65,10 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     // Set compute type and scale type based on input types
     cublasComputeType_t gemm_compute_type;
     cudaDataType_t scale_type;
-
-    if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3) {
+    if (a_type == CUDA_R_4F_E2M1 || b_type == CUDA_R_4F_E2M1) {
+        gemm_compute_type = CUBLAS_COMPUTE_32F;
+        scale_type = CUDA_R_32F;
+    } else if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3) {
         gemm_compute_type = CUBLAS_COMPUTE_32F;
         scale_type = CUDA_R_32F;
     } else if (a_type == CUDA_R_16F || b_type == CUDA_R_16F || a_type == CUDA_R_16BF || b_type == CUDA_R_16BF) {
@@ -108,6 +108,36 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     }
     CUBLAS_CHECK(
         cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_EPILOGUE, &epilogue, sizeof(epilogue)));
+
+    if (a_type == CUDA_R_4F_E2M1 || b_type == CUDA_R_4F_E2M1) {
+        // Allocate and copy device scale values
+        float a_scale = 1.0f, b_scale = 1.0f, d_scale = 1.0f, d_out_scale = 1.0f;
+        void *AscaleDev, *BscaleDev, *DscaleDev, *DOutscaleDev;
+        cudaMalloc(&AscaleDev, sizeof(float));
+        cudaMalloc(&BscaleDev, sizeof(float));
+        cudaMalloc(&DscaleDev, sizeof(float));
+        cudaMalloc(&DOutscaleDev, sizeof(float));
+        cudaMemcpy(AscaleDev, &a_scale, sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(BscaleDev, &b_scale, sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(DscaleDev, &d_scale, sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(DOutscaleDev, &d_out_scale, sizeof(float), cudaMemcpyHostToDevice);
+
+        // Set scale modes
+        cublasLtMatmulMatrixScale_t AScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3;
+        cublasLtMatmulMatrixScale_t BScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3;
+        cublasLtMatmulMatrixScale_t DScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F;
+        cublasLtMatmulMatrixScale_t DOutScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3;
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_MODE, &AScaleMode, sizeof(AScaleMode)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_MODE, &BScaleMode, sizeof(BScaleMode)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_SCALE_MODE, &DScaleMode, sizeof(DScaleMode)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_MODE, &DOutScaleMode, sizeof(DOutScaleMode)));
+
+        // Use device scale pointer attributes
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_POINTER, &AscaleDev, sizeof(void*)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_POINTER, &BscaleDev, sizeof(void*)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_SCALE_POINTER, &DscaleDev, sizeof(void*)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_POINTER, &DOutscaleDev, sizeof(void*)));
+    }
 }
 
 size_t cublasLtGemm::GetAlgorithm(int max_algorithm_count, size_t max_workspace_size) {
