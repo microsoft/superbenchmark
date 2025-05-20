@@ -22,7 +22,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'streamZen3.exe'
+        self._bin_name = 'stream.exe'
         self.__cpu_arch = ['other', 'zen3', 'zen4', 'neo2']
 
     def add_parser_arguments(self):
@@ -32,7 +32,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--cpu_arch',
             type=str,
-            default='zen4',
+            default='other',
             required=False,
             help='The targeted cpu architectures to run \
                 STREAM. Default is zen4. Possible values are {}.'.format(' '.join(self.__cpu_arch))
@@ -83,7 +83,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         elif self._args.cpu_arch == 'neo2':
             exe = 'streamNeo2.exe'
         else:
-            exe = 'streamx86.exe'
+            exe = 'stream.exe'
 
         command = envar + ' ' + os.path.join(self._args.bin_dir, exe)
         self._bin_name = exe
