@@ -134,7 +134,9 @@ rocm_rocblas: sb_micro_path
 # Since it takes several hours to build, avoid to build again if hipblaslt-bench exsists.
 rocm_hipblaslt: sb_micro_path
 	@if [ ! -e $(SB_MICRO_PATH)/bin/hipblaslt-bench ] && [ -z `which hipblaslt-bench` ]; then \
-		cd ./hipBLASLt && python3 -m pip install -r tensilelite/requirements.txt && ./install.sh -dc; \
+		if [ -d hipBLASLt ]; then rm -rf hipBLASLt; fi; \
+		git clone -b ${HIPBLASLT_BRANCH} https://github.com/ROCmSoftwarePlatform/hipBLASLt.git ./hipBLASLt; \
+		cd ./hipBLASLt && ./install.sh -dc; \\
 		cp -v $(SB_MICRO_PATH)/third_party/hipBLASLt/build/release/clients/staging/hipblaslt-bench $(SB_MICRO_PATH)/bin/;  \
 	fi
 
@@ -212,7 +214,7 @@ rocm_megatron_lm:
 	cd Megatron && mkdir -p rocm && cd rocm && \
 	if [ ! -d "Megatron-LM" ]; then \
 		git clone -b rocm_dev https://github.com/ROCm/Megatron-LM.git ; \
-	fi 
+	fi
 	cp Megatron/rocm/Megatron-LM/examples/deepseek_v2/pretrain_deepseek.py Megatron/rocm/Megatron-LM/
 	git clone https://github.com/caaatch22/grouped_gemm.git &&\
     	cd grouped_gemm &&\
