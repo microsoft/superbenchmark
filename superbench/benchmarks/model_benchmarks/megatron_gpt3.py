@@ -735,7 +735,10 @@ class MegatronGPT(ModelBenchmark):
 BenchmarkRegistry.register_benchmark('megatron-gpt', MegatronGPT, parameters='', platform=Platform.CUDA)
 BenchmarkRegistry.register_benchmark('megatron-gpt', MegatronGPT, parameters='', platform=Platform.ROCM)
 BenchmarkRegistry.register_benchmark(
-    'megatron-deepseek',
+    'megatron-deepseek-v2', MegatronGPT, parameters='--model=deepseek', platform=Platform.ROCM
+)
+BenchmarkRegistry.register_benchmark(
+    'megatron-deepseek-v2',
     MegatronGPT,
     parameters=(
         '--model=deepseek '

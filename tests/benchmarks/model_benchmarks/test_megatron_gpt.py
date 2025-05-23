@@ -351,7 +351,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         with open(self.hostfile_path, 'w') as f:
             f.write('host1\n')
 
-        benchmark_name = 'megatron-deepseek'
+        benchmark_name = 'megatron-deepseek-v2'
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.ROCM)
         assert (benchmark_cls)
         benchmark = benchmark_cls(
