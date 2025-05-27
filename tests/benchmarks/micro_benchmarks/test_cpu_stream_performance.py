@@ -17,6 +17,7 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Hook method for setting up class fixture before running tests in the class."""
         super().setUpClass()
         cls.createMockEnvs(cls)
+        cls.createMockFiles(cls, ['bin/stream.exe'])
         cls.createMockFiles(cls, ['bin/streamZen3.exe'])
         return True
 
