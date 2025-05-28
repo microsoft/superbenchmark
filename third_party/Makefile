@@ -65,7 +65,7 @@ cuda_bandwidthTest: sb_micro_path
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
 	git clone --depth 1 -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
 ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
-        @echo "Skip cuda-samples build for CUDA>=12.9"
+	@echo "Skip cuda-samples build for CUDA>=12.9"
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	cd ./$(TEST_PATH) && mkdir build && cd build && cmake .. && make
