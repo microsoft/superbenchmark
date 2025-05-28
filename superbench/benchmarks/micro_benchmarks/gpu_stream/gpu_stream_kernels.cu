@@ -17,8 +17,7 @@
  * @param[out] v The register to write the fetched value to.
  * @param[in] p The source memory location to fetch the value from.
  */
-template <typename T>
-inline __device__ void Fetch(T &v, const T *p) {
+template <typename T> inline __device__ void Fetch(T &v, const T *p) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
     v = *p;
 #else
@@ -44,15 +43,14 @@ inline __device__ void Fetch(T &v, const T *p) {
  * @param[out] p The target memory location to write the value to.
  * @param[in] v The register containing the value to be stored.
  */
-template <typename T>
-inline __device__ void Store(T *p, const T &v) {
+template <typename T> inline __device__ void Store(T *p, const T &v) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
     *p = v;
 #else
     if constexpr (std::is_same<T, float>::value) {
-        asm volatile("st.volatile.global.f32 [%0], %1;" :: "l"(p), "f"(v) : "memory");
+        asm volatile("st.volatile.global.f32 [%0], %1;" ::"l"(p), "f"(v) : "memory");
     } else if constexpr (std::is_same<T, double>::value) {
-        asm volatile("st.volatile.global.f64 [%0], %1;" :: "l"(p), "d"(v) : "memory");
+        asm volatile("st.volatile.global.f64 [%0], %1;" ::"l"(p), "d"(v) : "memory");
     }
 #endif
 }
@@ -66,7 +64,7 @@ inline __device__ void Store(T *p, const T &v) {
  * @param[out] tgt The target array where data will be copied to.
  * @param[in] src The source array from which data will be copied.
  */
- __global__ void CopyKernel(double *tgt, const double *src) {
+__global__ void CopyKernel(double *tgt, const double *src) {
     uint64_t index = blockIdx.x * blockDim.x * kNumLoopUnrollAlias + threadIdx.x;
     double val[kNumLoopUnrollAlias];
 #pragma unroll
@@ -87,7 +85,7 @@ inline __device__ void Store(T *p, const T &v) {
  * @param[in] src The source array containing the data to be scaled.
  * @param[in] scalar The scalar value used to scale the source data.
  */
- __global__ void ScaleKernel(double *tgt, const double *src, const long scalar) {
+__global__ void ScaleKernel(double *tgt, const double *src, const long scalar) {
     uint64_t index = blockIdx.x * blockDim.x * kNumLoopUnrollAlias + threadIdx.x;
     double val[kNumLoopUnrollAlias];
 #pragma unroll
@@ -110,7 +108,7 @@ inline __device__ void Store(T *p, const T &v) {
  * @param[in] src_a The first source array containing the first set of operands.
  * @param[in] src_b The second source array containing the second set of operands.
  */
- __global__ void AddKernel(double *tgt, const double *src_a, const double *src_b) {
+__global__ void AddKernel(double *tgt, const double *src_a, const double *src_b) {
     uint64_t index = blockIdx.x * blockDim.x * kNumLoopUnrollAlias + threadIdx.x;
     double val_a[kNumLoopUnrollAlias];
     double val_b[kNumLoopUnrollAlias];

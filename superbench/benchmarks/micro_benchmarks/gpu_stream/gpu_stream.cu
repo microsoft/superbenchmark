@@ -7,8 +7,8 @@
 // kernels.
 
 #include "gpu_stream.hpp"
-#include <iostream>
 #include <cassert>
+#include <iostream>
 
 /**
  * @brief Destroys the CUDA events used for benchmarking.
@@ -21,8 +21,7 @@
  *
  * @return int The status code indicating success or failure of the destruction process.
  */
-template <typename T>
-int GpuStream::DestroyEvent(std::unique_ptr<BenchArgs<T>> &args) {
+template <typename T> int GpuStream::DestroyEvent(std::unique_ptr<BenchArgs<T>> &args) {
 
     cudaError_t cuda_err = cudaSuccess;
     if (SetGpu(args->gpu_id)) {
@@ -96,8 +95,7 @@ int GpuStream::GetGpuCount(int *gpu_count) {
  *
  * @return int The status code indicating success or failure.
  */
-template <typename T>
-int GpuStream::Destroy(std::unique_ptr<BenchArgs<T>> &args) {
+template <typename T> int GpuStream::Destroy(std::unique_ptr<BenchArgs<T>> &args) {
     int ret = DestroyBufAndStream(args);
     if (ret == 0) {
         ret = DestroyEvent(args);
@@ -136,8 +134,7 @@ void GpuStream::PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop) {
  *
  * @return cudaError_t The status code indicating success or failure of the memory allocation.
  */
-template <typename T>
-cudaError_t GpuStream::GpuMallocDataBuf(T **ptr, uint64_t size) { return cudaMalloc(ptr, size); }
+template <typename T> cudaError_t GpuStream::GpuMallocDataBuf(T **ptr, uint64_t size) { return cudaMalloc(ptr, size); }
 
 /**
  * @brief Prepares validation buffers for GPU stream benchmark.
@@ -151,8 +148,7 @@ cudaError_t GpuStream::GpuMallocDataBuf(T **ptr, uint64_t size) { return cudaMal
  *
  * @return int The status code indicating success or failure of the preparation.
  */
-template <typename T>
-int GpuStream::PrepareValidationBuf(std::unique_ptr<BenchArgs<T>> &args) {
+template <typename T> int GpuStream::PrepareValidationBuf(std::unique_ptr<BenchArgs<T>> &args) {
     args->sub.validation_buf_ptrs.resize(kNumValidationBuffers);
 
     // Compute and allocate validation buffers for add, scale and triad
@@ -167,7 +163,6 @@ int GpuStream::PrepareValidationBuf(std::unique_ptr<BenchArgs<T>> &args) {
         args->sub.validation_buf_ptrs[1][j] = static_cast<T>(j % kUInt8Mod) * scalar;
         args->sub.validation_buf_ptrs[2][j] = static_cast<T>(j % kUInt8Mod) + static_cast<T>(j % kUInt8Mod);
         args->sub.validation_buf_ptrs[3][j] = static_cast<T>(j % kUInt8Mod) + static_cast<T>(j % kUInt8Mod) * scalar;
-        
     }
     return 0;
 }
@@ -183,8 +178,7 @@ int GpuStream::PrepareValidationBuf(std::unique_ptr<BenchArgs<T>> &args) {
  *
  * @return int The status code indicating success or failure of the preparation.
  */
-template <typename T>
-int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchArgs<T>> &args) {
+template <typename T> int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchArgs<T>> &args) {
 
     cudaError_t cuda_err = cudaSuccess;
 
@@ -234,7 +228,7 @@ int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchArgs<T>> &args) {
         }
 
         PrepareValidationBuf<T>(args);
-  }
+    }
 
     cuda_err = cudaStreamCreateWithFlags(&(args->sub.stream), cudaStreamNonBlocking);
     if (cuda_err != cudaSuccess) {
@@ -255,8 +249,7 @@ int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchArgs<T>> &args) {
  *
  * @return int The status code indicating success or failure of the preparation.
  */
-template <typename T>
-int GpuStream::PrepareEvent(std::unique_ptr<BenchArgs<T>> &args) {
+template <typename T> int GpuStream::PrepareEvent(std::unique_ptr<BenchArgs<T>> &args) {
 
     cudaError_t cuda_err = cudaSuccess;
     if (SetGpu(args->gpu_id)) {
@@ -290,8 +283,7 @@ int GpuStream::PrepareEvent(std::unique_ptr<BenchArgs<T>> &args) {
  *
  * @return int The status code indicating success or failure of the validation.
  */
-template <typename T>
-int GpuStream::CheckBuf(std::unique_ptr<BenchArgs<T>> &args, int kernel_idx) {
+template <typename T> int GpuStream::CheckBuf(std::unique_ptr<BenchArgs<T>> &args, int kernel_idx) {
     cudaError_t cuda_err = cudaSuccess;
     int memcmp_result = 0;
 
@@ -328,8 +320,7 @@ int GpuStream::CheckBuf(std::unique_ptr<BenchArgs<T>> &args, int kernel_idx) {
  *
  * @return int The status code indicating success or failure of the destruction process.
  */
-template <typename T>
-int GpuStream::DestroyBufAndStream(std::unique_ptr<BenchArgs<T>> &args) {
+template <typename T> int GpuStream::DestroyBufAndStream(std::unique_ptr<BenchArgs<T>> &args) {
 
     int ret = 0;
     cudaError_t cuda_err = cudaSuccess;
@@ -479,8 +470,7 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
  *
  * @return int The status code indicating success or failure of the benchmark execution.
  * */
-template <typename T>
-int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string &data_type) {
+template <typename T> int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string &data_type) {
     int ret = 0;
     ret = PrepareBufAndStream<T>(args);
 
@@ -513,11 +503,13 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
     // Tags are of format:
     // STREAM_<Kernelname>_datatype_gpu_<gpu_id>_buffer_<buffer_size>_block_<block_size>
     for (int i = 0; i < args->sub.times_in_ms.size(); i++) {
-        std::string tag = "STREAM_" + KernelToString(i) +"_" + data_type + "_gpu_" + std::to_string(args->gpu_id) + "_buffer_" + std::to_string(args->size);
+        std::string tag = "STREAM_" + KernelToString(i) + "_" + data_type + "_gpu_" + std::to_string(args->gpu_id) +
+                          "_buffer_" + std::to_string(args->size);
         for (int j = 0; j < args->sub.times_in_ms[i].size(); j++) {
             // Calculate and display bandwidth
             double bw = args->size * args->num_loops / args->sub.times_in_ms[i][j] / 1e6;
-            std::cout << tag << "_block_" << kThreadsPerBlock[j]  << "\t" << bw << "\t" << std::fixed << std::setprecision(2) << bw / peak_bw * 100 << std::endl;
+            std::cout << tag << "_block_" << kThreadsPerBlock[j] << "\t" << bw << "\t" << std::fixed
+                      << std::setprecision(2) << bw / peak_bw * 100 << std::endl;
         }
     }
     // cleanup buffer and streams for the curr arg
@@ -573,34 +565,36 @@ int GpuStream::Run() {
     bool has_error = false;
     // Run the benchmark for all the configured data
     for (auto &variant_args : bench_args_) {
-        std::visit([&](auto &curr_args) {
-            PrintCudaDeviceInfo(curr_args->gpu_id, curr_args->gpu_device_prop);
-            // Set the NUMA node
-            ret = numa_run_on_node(curr_args->numa_id);
-            if (ret != 0) {
-                std::cerr << "Run::numa_run_on_node error: " << errno << std::endl;
-                has_error = true;
-                return;
-            }
-    
-            // Run the stream benchmark for the configued data
-            if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<float>>) {
-                ret = RunStream<float>(curr_args, "float");
-            } else if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<double>>) {
-                ret = RunStream<double>(curr_args, "double");
-            } else {
-                std::cerr << "Run::Unknown type error" << std::endl;
-                has_error = true;
-                return;
-            }
+        std::visit(
+            [&](auto &curr_args) {
+                PrintCudaDeviceInfo(curr_args->gpu_id, curr_args->gpu_device_prop);
+                // Set the NUMA node
+                ret = numa_run_on_node(curr_args->numa_id);
+                if (ret != 0) {
+                    std::cerr << "Run::numa_run_on_node error: " << errno << std::endl;
+                    has_error = true;
+                    return;
+                }
 
-            if (ret != 0) {
-                std::cerr << "Run::RunStream error: " << errno << std::endl;
-                has_error = true;
-            }
-        }, variant_args);
+                // Run the stream benchmark for the configued data
+                if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<float>>) {
+                    ret = RunStream<float>(curr_args, "float");
+                } else if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<double>>) {
+                    ret = RunStream<double>(curr_args, "double");
+                } else {
+                    std::cerr << "Run::Unknown type error" << std::endl;
+                    has_error = true;
+                    return;
+                }
+
+                if (ret != 0) {
+                    std::cerr << "Run::RunStream error: " << errno << std::endl;
+                    has_error = true;
+                }
+            },
+            variant_args);
     }
-    if(has_error) {
+    if (has_error) {
         return -1;
     }
     return ret;
