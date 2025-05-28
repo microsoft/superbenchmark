@@ -232,6 +232,7 @@ performed by [Intel MLC Tool](https://www.intel.com/content/www/us/en/developer/
 Measure the memory copy bandwidth across PCI-e and memory copy bandwidth between GPUs,
 performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/1_Utilities/bandwidthTest)
 or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils/hipBusBandwidth) bandwidth test tool.
+The bandwidthTest sample was out-of-date and has been removed as of the CUDA Samples 12.9 release. For up-to-date bandwidth measurements, refer instead to the nvbandwidth(#nvbandwidth) benchmark.
 
 #### Metrics
 
