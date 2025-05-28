@@ -30,7 +30,7 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--size',
             type=int,
-            default= 4096 * 1024**2,
+            default=4096 * 1024**2,
             required=False,
             help='Size of data buffer in bytes.',
         )
@@ -97,13 +97,13 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
             output_lines = [x.strip() for x in raw_output.strip().splitlines()]
             count = 0
             for output_line in output_lines:
-                if output_line.startswith("STREAM_"):
+                if output_line.startswith('STREAM_'):
                     count += 1
                     tag, bw_str, ratio = output_line.split()
                     self._result.add_result(tag + '_bw', float(bw_str))
                     self._result.add_result(tag + '_ratio', float(ratio))
             if count == 0:
-                raise BaseException("No valid results found.")
+                raise BaseException('No valid results found.')
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

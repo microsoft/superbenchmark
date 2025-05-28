@@ -89,7 +89,10 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         assert (1 == len(benchmark.raw_data))
         # print(test_raw_output.splitlines())
-        test_raw_output_dict = {x.split()[0]: [float(x.split()[1]), float(x.split()[2])] for x in test_raw_output.strip().splitlines() if x.startswith("STREAM_")}
+        test_raw_output_dict = {
+            x.split()[0]: [float(x.split()[1]), float(x.split()[2])]
+            for x in test_raw_output.strip().splitlines() if x.startswith('STREAM_')
+        }
         assert (len(test_raw_output_dict) * 2 + benchmark.default_metric_count == len(benchmark.result))
         for output_key in benchmark.result:
             if output_key == 'return_code':
