@@ -9,7 +9,7 @@ FROM nvcr.io/nvidia/pytorch:25.04-py3
 #   - cuDNN: 9.9.0.52
 #   - cuBLAS: 12.9.0.2
 #   - NCCL: v2.26.3
-#   - TransformerEngine 2.0
+#   - TransformerEngine 2.2.0
 # Mellanox:
 #   - MOFED_VERSION; 5.4-rdmacore39.0
 #   - HPC-X: v2.21.0-CUDA12.x
