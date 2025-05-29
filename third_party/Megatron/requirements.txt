@@ -4,12 +4,12 @@ pybind11
 regex
 six
 # versions from HF transformers
-black==21.4b0
+black
 isort>=5.5.4
 tqdm
 sentencepiece
 wandb
 einops
-typing_extensions==4.9.0
+typing_extensions
 apex
 mpi4py

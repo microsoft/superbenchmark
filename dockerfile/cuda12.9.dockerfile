@@ -164,7 +164,7 @@ ADD third_party third_party
 RUN make -C third_party cuda_with_msccl
 
 ADD . .
-RUN python3 -m pip install --upgrade setuptools==70.3.0 && \
+RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
