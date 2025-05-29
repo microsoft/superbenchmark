@@ -4,7 +4,8 @@ pybind11
 regex
 six
 # versions from HF transformers
-black==25.1.0
+black==21.4b0; python_version < '3.12'
+black==25.1.0; python_version >= '3.12'
 isort>=5.5.4
 tqdm
 sentencepiece
