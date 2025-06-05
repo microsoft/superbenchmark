@@ -52,8 +52,8 @@ class cublasLtGemm {
     size_t GetAlgorithm(int max_algorithm_count, size_t max_workspace_size);
 
     size_t GetAlgorithmExhaustive(int max_algorithm_count, size_t max_workspace_size, float alpha, float beta,
-                                void* matrix_a, void* matrix_b, void* matrix_c, void* matrix_d,
-                                int repeat_iterations = 100, int warmup_iterations = 100);
+                                  void *matrix_a, void *matrix_b, void *matrix_c, void *matrix_d,
+                                  int repeat_iterations = 100, int warmup_iterations = 100);
 
     void Execute(void *matrix_a, void *matrix_b, void *matrix_c, void *matrix_d, float alpha, float beta,
                  void *workspace, size_t workspace_size, cudaStream_t stream);

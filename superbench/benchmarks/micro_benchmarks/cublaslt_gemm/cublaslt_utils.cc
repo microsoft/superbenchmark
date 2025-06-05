@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 #include "cublaslt_utils.h"
-#include <algorithm>  // for std::sort
-#include <cassert>    // for assert
+#include <algorithm> // for std::sort
+#include <cassert>   // for assert
 
 void cublasLtGemm::Init() {
     cublasLtHandle_t handle;
@@ -37,10 +37,11 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         cublasLtMatrixLayoutCreate(&b_desc, b_type, transb == CUBLAS_OP_N ? k : n, transb == CUBLAS_OP_N ? n : k, ldb));
     CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&c_desc, c_type, m, n, ldd));
     CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&d_desc, d_type, m, n, ldd));
-    
+
     // strided batch gemm
     if (batch > 0) {
-        int64_t stridea = static_cast<int64_t>(m) * k, strideb = static_cast<int64_t>(k) * n, stridec = static_cast<int64_t>(m) * n, strided = static_cast<int64_t>(m) * n;
+        int64_t stridea = static_cast<int64_t>(m) * k, strideb = static_cast<int64_t>(k) * n,
+                stridec = static_cast<int64_t>(m) * n, strided = static_cast<int64_t>(m) * n;
         CUBLAS_CHECK(
             cublasLtMatrixLayoutSetAttribute(a_desc, CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT, &batch, sizeof(batch)));
         CUBLAS_CHECK(cublasLtMatrixLayoutSetAttribute(a_desc, CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET, &stridea,
@@ -88,9 +89,10 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     CUBLAS_CHECK(cublasLtMatmulDescCreate(&op_desc, gemm_compute_type, scale_type));
     op_desc_.reset(op_desc);
 
-    if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3) {        
+    if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3) {
         int8_t fastAccuMode = 1;
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc, CUBLASLT_MATMUL_DESC_FAST_ACCUM, &fastAccuMode, sizeof(fastAccuMode)));
+        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc, CUBLASLT_MATMUL_DESC_FAST_ACCUM, &fastAccuMode,
+                                                    sizeof(fastAccuMode)));
     }
 
     CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa)));
@@ -126,11 +128,11 @@ size_t cublasLtGemm::GetAlgorithm(int max_algorithm_count, size_t max_workspace_
 }
 
 size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_workspace_size, float alpha, float beta,
-                                           void* matrix_a, void* matrix_b, void* matrix_c, void* matrix_d,
-                                           int repeat_iterations, int warmup_iterations) {
+                                            void *matrix_a, void *matrix_b, void *matrix_c, void *matrix_d,
+                                            int repeat_iterations, int warmup_iterations) {
     // Set workspace size in preference
     CUBLAS_CHECK(cublasLtMatmulPreferenceSetAttribute(preference_.get(), CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
-                                                    &max_workspace_size, sizeof(max_workspace_size)));
+                                                      &max_workspace_size, sizeof(max_workspace_size)));
 
     // Get heuristic algorithms
     int found_algorithm_count = 0;
@@ -156,9 +158,9 @@ size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_
     std::vector<float> algoTimes(repeat_iterations);
 
     // Allocate workspace
-    void* workspace = nullptr;
+    void *workspace = nullptr;
     cudaMalloc(&workspace, max_workspace_size);
-    
+
     // Test each algorithm
     algo_metrics_.clear();
     algo_metrics_.reserve(found_algorithm_count);
@@ -171,44 +173,36 @@ size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_
 
         // warmup
         for (int warmupIdx = 0; warmupIdx < warmup_iterations; warmupIdx++) {
-            cublasStatus_t status = cublasLtMatmul(handle_.get(), op_desc_.get(), 
-                                                  &alpha, matrix_a, a_desc_.get(),
-                                                  matrix_b, b_desc_.get(), 
-                                                  &beta, matrix_c, c_desc_.get(),
-                                                  matrix_d, d_desc_.get(),
-                                                  &heuristic_results_[algoIdx].algo,
-                                                  workspace, max_workspace_size,
-                                                  stream);
+            cublasStatus_t status =
+                cublasLtMatmul(handle_.get(), op_desc_.get(), &alpha, matrix_a, a_desc_.get(), matrix_b, b_desc_.get(),
+                               &beta, matrix_c, c_desc_.get(), matrix_d, d_desc_.get(),
+                               &heuristic_results_[algoIdx].algo, workspace, max_workspace_size, stream);
         }
 
         // Test each algorithm multiple times
         cudaEventRecord(startEvent, stream);
         for (int checkIdx = 0; checkIdx < repeat_iterations; checkIdx++) {
-            cublasStatus_t status = cublasLtMatmul(handle_.get(), op_desc_.get(), 
-                                                  &alpha, matrix_a, a_desc_.get(),
-                                                  matrix_b, b_desc_.get(), 
-                                                  &beta, matrix_c, c_desc_.get(),
-                                                  matrix_d, d_desc_.get(),
-                                                  &heuristic_results_[algoIdx].algo,                                                  
-                                                  workspace, max_workspace_size,
-                                                  stream);
+            cublasStatus_t status =
+                cublasLtMatmul(handle_.get(), op_desc_.get(), &alpha, matrix_a, a_desc_.get(), matrix_b, b_desc_.get(),
+                               &beta, matrix_c, c_desc_.get(), matrix_d, d_desc_.get(),
+                               &heuristic_results_[algoIdx].algo, workspace, max_workspace_size, stream);
 
             // Skip if algorithm fails
             if (status != CUBLAS_STATUS_SUCCESS) {
                 algoTimes[checkIdx] = std::numeric_limits<float>::max();
                 continue;
-            }         
+            }
         }
 
         cudaEventRecord(stopEvent, stream);
         cudaEventSynchronize(stopEvent);
-                    
+
         float time = 0;
         cudaEventElapsedTime(&time, startEvent, stopEvent);
         algoTimes[algoIdx] = time / repeat_iterations;
-        
+
         float meanTime = algoTimes[algoIdx];
-        float flops = 2.0f * m_ * n_ * k_ / (meanTime * 1e-3f);       
+        float flops = 2.0f * m_ * n_ * k_ / (meanTime * 1e-3f);
 
         // Store metrics
         AlgorithmMetrics metrics;
@@ -219,10 +213,9 @@ size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_
         algo_metrics_.push_back(metrics);
     }
 
-    std::sort(algo_metrics_.begin(), algo_metrics_.end(), [](const AlgorithmMetrics& a, const AlgorithmMetrics& b) {
-        return a.time < b.time;
-    });
-    
+    std::sort(algo_metrics_.begin(), algo_metrics_.end(),
+              [](const AlgorithmMetrics &a, const AlgorithmMetrics &b) { return a.time < b.time; });
+
     if (!algo_metrics_.empty())
         heuristic_results_[0].algo = algo_metrics_.front().algo;
 
@@ -242,15 +235,12 @@ size_t cublasLtGemm::GetAlgorithmExhaustive(int max_algorithm_count, size_t max_
 void cublasLtGemm::Execute(void *matrix_a, void *matrix_b, void *matrix_c, void *matrix_d, float alpha, float beta,
                            void *workspace, size_t workspace_size, cudaStream_t stream) {
 
-        CUBLAS_CHECK(cublasLtMatmul(handle_.get(), op_desc_.get(), static_cast<const void *>(&alpha), /* alpha */
-                                    matrix_a,                                                         /* A */
-                                    a_desc_.get(), matrix_b,                                          /* B */
-                                    b_desc_.get(), static_cast<const void *>(&beta),                  /* beta */
-                                    matrix_c,                                                         /* C */
-                                    c_desc_.get(), matrix_d,                                          /* D */
-                                    d_desc_.get(), 
-                                    &heuristic_results_.front().algo,
-                                    workspace,                                                        /* workspace */
-                                    workspace_size, stream));                                         /* stream */
-
+    CUBLAS_CHECK(cublasLtMatmul(handle_.get(), op_desc_.get(), static_cast<const void *>(&alpha), /* alpha */
+                                matrix_a,                                                         /* A */
+                                a_desc_.get(), matrix_b,                                          /* B */
+                                b_desc_.get(), static_cast<const void *>(&beta),                  /* beta */
+                                matrix_c,                                                         /* C */
+                                c_desc_.get(), matrix_d,                                          /* D */
+                                d_desc_.get(), &heuristic_results_.front().algo, workspace,       /* workspace */
+                                workspace_size, stream));                                         /* stream */
 }
