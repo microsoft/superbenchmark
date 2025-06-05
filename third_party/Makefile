@@ -184,7 +184,7 @@ ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
     wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
 	make all
-	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
+	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
 
 # Build AMD Encoder Latency Test
