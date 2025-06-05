@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:25.04-py3
+FROM nvcr.io/nvidia/pytorch:25.05-py3
 
 # OS:
 #   - Ubuntu: 24.04
@@ -92,7 +92,7 @@ RUN TARGETARCH_HW=$(uname -m) && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
-ENV HPCX_VERSION=v2.21
+ENV HPCX_VERSION=v2.23
 RUN TARGETARCH_HW=$(uname -m) && \
     cd /opt && \
     rm -rf hpcx && \
