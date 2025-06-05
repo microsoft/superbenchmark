@@ -22,7 +22,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'stream.exe'
+        self._bin_name = 'stream'
         self.__cpu_arch = ['other', 'zen3', 'zen4', 'neo2']
 
     def add_parser_arguments(self):
@@ -76,17 +76,15 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         envar = 'OMP_SCHEDULE=static && OMP_DYNAMIC=false && OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && \
             OMP_PROC_BIND=true && OMP_NUM_THREADS={} && OMP_PLACES={}'.format(len(self._args.cores), omp_places)
 
+        # set the binary name based on cpu architecture
         if self._args.cpu_arch == 'zen3':
-            exe = 'streamZen3.exe'
+            self._bin_name = 'streamZen3'
         elif self._args.cpu_arch == 'zen4':
-            exe = 'streamZen4.exe'
+            self._bin_name = 'streamZen4'
         elif self._args.cpu_arch == 'neo2':
-            exe = 'streamNeo2.exe'
-        else:
-            exe = 'stream.exe'
+            self._bin_name = 'streamNeo2'
 
-        command = envar + ' ' + os.path.join(self._args.bin_dir, exe)
-        self._bin_name = exe
+        command = envar + ' ' + os.path.join(self._args.bin_dir, self._bin_name)
 
         if not self._set_binary_path():
             logger.error(

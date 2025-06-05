@@ -6,10 +6,10 @@ ZEN3FLAGS := -DSTREAM_ARRAY_SIZE=400000000 -march=znver3
 ZEN4FLAGS := -DSTREAM_ARRAY_SIZE=800000000 -march=znver4
 NEO2FLAGS := -DSTREAM_ARRAY_SIZE=120000000 -mcpu=neoverse-v2
 
-GEN_OUTPUT := stream.exe
-ZEN3_OUTPUT := streamZen3.exe
-ZEN4_OUTPUT := streamZen4.exe
-NEO2_OUTPUT := streamNeo2.exe
+GEN_OUTPUT := stream
+ZEN3_OUTPUT := streamZen3
+ZEN4_OUTPUT := streamZen4
+NEO2_OUTPUT := streamNeo2
 
 ALL_TARGETS := GEN
 
