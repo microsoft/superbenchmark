@@ -72,7 +72,7 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         self.assertEqual(4 * (2 * 2 * 3 + 2) * len(benchmark._args.in_types), len(benchmark._commands))
 
         def cmd(t, b, m, n, k):
-            return f'{benchmark._CublasLtBenchmark__bin_path} -m {m} -n {n} -k {k} -b {b} -w 20 -i 50 -t {t}'
+            return f'{benchmark._CublasLtBenchmark__bin_path} -m {m} -n {n} -k {k} -b {b} -w 20 -i 50 -t {t} -a -W 20 -I 50 '
 
         for _t in ['fp16', 'fp32', 'fp64', 'int8']:
             for _b in [2, 4, 8, 16]:
