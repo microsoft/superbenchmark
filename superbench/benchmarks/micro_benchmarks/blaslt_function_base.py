@@ -100,20 +100,6 @@ class BlasLtBaseBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help='Number of steps to measure.',
         )
-        self._parser.add_argument(
-            '--num_warmup_autotune',
-            type=int,
-            default=20,
-            required=False,
-            help='Number of warm up steps for autotune.',
-        )
-        self._parser.add_argument(
-            '--num_steps_autotune',
-            type=int,
-            default=50,
-            required=False,
-            help='Number of steps to measure for autotune.',
-        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
