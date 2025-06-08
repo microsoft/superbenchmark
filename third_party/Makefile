@@ -41,7 +41,7 @@ sb_micro_path:
 # for cuda 12.8 and later Build from commit 389e493 (3.8 release commit) for blackwell support
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
-	$(eval ARCHS := "75;80;86;89;90a;100;100a")
+	$(eval ARCHS := "80;90;90a;100;100a")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v3.9.2 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
