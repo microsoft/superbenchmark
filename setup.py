@@ -229,7 +229,8 @@ setup(
                 'tokenizers<=0.20.3',
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
-                'transformers>=4.28.0',
+                'transformers>=4.28.0; python_version<"3.12"',
+                'transformers==4.52.4; python_version>="3.12"',
             ],
             'ort': [
                 'onnx>=1.10.2',
