@@ -207,7 +207,7 @@ class PytorchBase(ModelBenchmark):
         elif self._optimizer_type == Optimizer.ADAM:
             self._optimizer = torch.optim.Adam(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
         elif self._optimizer_type == Optimizer.ADAMW:
-            if hasattr(torch.optim, "AdamW"):
+            if hasattr(torch.optim, 'AdamW'):
                 self._optimizer = torch.optim.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
             else:
                 self._optimizer = transformers.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
