@@ -224,7 +224,7 @@ def test_pytorch_base():
     # Test _create_optimizer().
     if hasattr(torch.optim, 'AdamW'):
         assert (isinstance(benchmark._optimizer, torch.optim.AdamW))
-    else
+    else:
         assert (isinstance(benchmark._optimizer, transformers.AdamW))
     benchmark._optimizer_type = Optimizer.ADAM
     assert (benchmark._create_optimizer() is True)
