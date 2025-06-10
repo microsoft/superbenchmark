@@ -38,12 +38,12 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.8 and later Build from commit 389e493 (3.8 release commit) for blackwell support
+# for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
-	$(eval ARCHS := "75;80;86;89;90a;100;100a")
+	$(eval ARCHS := "90;100")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
-	git clone --single-branch --branch main https://github.com/NVIDIA/cutlass.git && cd cutlass && git checkout 389e493
+	git clone --branch v3.9.2 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval ARCHS := "70;75;80;86;89;90")
 else
@@ -60,10 +60,13 @@ endif
 # cuda-samples is released together with CUDA, they have the exact same version. Like v10.0, v11.1 and so on.
 # The version we use is the released tag of cuda-samples which is consistent with the cuda version in the environment or docker.
 # The Makefile of bandwidthTest does not have 'install' target, so need to copy bin to $(SB_MICRO_PATH)/bin/ and create $(SB_MICRO_PATH)/bin/ if not existing.
+# The bandwidthTest sample was out-of-date and has been removed as of the CUDA Samples 12.9 release (see the change log). For up-to-date bandwidth measurements, refer instead to the NVBandwith utility.
 cuda_bandwidthTest: sb_micro_path
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
 	git clone --depth 1 -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
-ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+	@echo "Skip cuda-samples build for CUDA>=12.9"
+else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	cd ./$(TEST_PATH) && mkdir build && cd build && cmake .. && make
 	cp -v ./$(TEST_PATH)/build/bandwidthTest $(SB_MICRO_PATH)/bin/
