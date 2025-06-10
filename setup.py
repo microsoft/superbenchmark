@@ -225,7 +225,7 @@ setup(
             ],
             'torch': [
                 'safetensors==0.4.5; python_version<"3.12"',
-                'safetensors==0.5.3; python_version>="3.12"',
+                'safetensors>=0.5.3; python_version>="3.12"',
                 'tokenizers<=0.20.3; python_version<"3.12"',
                 'tokenizers<0.22; python_version>="3.12"',
                 'torch>=1.7.0a0',
