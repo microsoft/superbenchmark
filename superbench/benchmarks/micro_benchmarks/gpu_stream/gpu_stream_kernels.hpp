@@ -7,7 +7,7 @@
 #include <cuda_runtime.h>
 
 #include "gpu_stream_utils.hpp"
-__device__ constexpr auto kNumLoopUnrollAlias = stream_config::kNumLoopUnroll;
+constexpr auto kNumLoopUnrollAlias = stream_config::kNumLoopUnroll;
 
 // Function declarations
 template <typename T> inline __device__ void Fetch(T &v, const T *p);
