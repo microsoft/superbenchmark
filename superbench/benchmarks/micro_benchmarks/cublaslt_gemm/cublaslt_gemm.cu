@@ -25,8 +25,10 @@ struct Args {
     int batch = 0;
     int warmup = 20;
     int iter = 50;
-    int warmup_autotune = 20;  // Default warmup iterations for autotune
-    int iter_autotune = 50;  // Default repeat iterations for autotune
+    // Default warmup iterations for autotune
+    int warmup_autotune = 20;
+    // Default repeat iterations for autotune
+    int iter_autotune = 50;
     std::string in_type = "fp8e4m3";
     bool autotune = false;
 };

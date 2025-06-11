@@ -73,7 +73,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             self._commands.append(
                 f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} '
                 f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type} '
-                f'{"-a -W " + str(self._args.num_warmup_autotune) + " -I " + str(self._args.num_steps_autotune) if self._args.enable_autotune else ""}'
+                f'{f" -a -W {self._args.num_warmup_autotune} -I {self._args.num_steps_autotune}" if self._args.enable_autotune else ""}'
             )
 
         return True
