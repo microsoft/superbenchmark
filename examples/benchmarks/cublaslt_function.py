@@ -14,9 +14,7 @@ if __name__ == '__main__':
     # Basic usage without autotune
     print("Running cuBLASLt benchmark without autotune...")
     parameters = '--num_warmup 10 --num_steps 50 --shapes 512,512,512 --in_types fp16 fp32'
-    context = BenchmarkRegistry.create_benchmark_context(
-        'cublaslt-gemm', platform=Platform.CUDA, parameters=parameters
-    )
+    context = BenchmarkRegistry.create_benchmark_context('cublaslt-gemm', platform=Platform.CUDA, parameters=parameters)
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:
