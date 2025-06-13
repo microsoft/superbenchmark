@@ -1,9 +1,35 @@
 // Copyright(c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include <algorithm>
+
+#include <cuda_fp8.h>
+
 #include "cublaslt_utils.h"
 #include <algorithm> // for std::sort
 #include <cassert>   // for assert
+
+int GetScaleTensorSize(int inner, int outer, cublasLtMatmulMatrixScale_t scale_mode) {
+    if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {
+        return 1;
+    }
+    if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0 ||
+        scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3) {
+        const auto s_vscale = scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0 ? 32 : 16;
+        const auto s_block_cols = 32;
+        const auto s_block_rows = 4;
+        const auto s_block_inner = 4;
+        const auto block_rows = s_block_inner * s_vscale;
+        const auto block_cols = s_block_cols * s_block_rows;
+        const auto round_off = [](auto x, auto granularity) {
+            return granularity * ((x + (granularity - 1)) / granularity);
+        };
+        const auto s_rows = round_off(inner, block_rows) / s_vscale;
+        const auto s_cols = round_off(outer, block_cols);
+        return s_rows * s_cols;
+    }
+    return 0;
+}
 
 void cublasLtGemm::Init() {
     cublasLtHandle_t handle;
@@ -111,16 +137,9 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
 
     if (a_type == CUDA_R_4F_E2M1 || b_type == CUDA_R_4F_E2M1) {
         // Allocate and copy device scale values
-        float a_scale = 1.0f, b_scale = 1.0f, d_scale = 1.0f, d_out_scale = 1.0f;
+        const auto a_scale = __nv_fp8_e4m3{1.f}, b_scale = __nv_fp8_e4m3{1.f}, d_out_scale = __nv_fp8_e4m3{1.f};
+        const auto d_scale = 1.f;
         void *AscaleDev, *BscaleDev, *DscaleDev, *DOutscaleDev;
-        cudaMalloc(&AscaleDev, sizeof(float));
-        cudaMalloc(&BscaleDev, sizeof(float));
-        cudaMalloc(&DscaleDev, sizeof(float));
-        cudaMalloc(&DOutscaleDev, sizeof(float));
-        cudaMemcpy(AscaleDev, &a_scale, sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(BscaleDev, &b_scale, sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(DscaleDev, &d_scale, sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(DOutscaleDev, &d_out_scale, sizeof(float), cudaMemcpyHostToDevice);
 
         // Set scale modes
         cublasLtMatmulMatrixScale_t AScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3;
@@ -135,6 +154,43 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
                                                     sizeof(DScaleMode)));
         CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_MODE,
                                                     &DOutScaleMode, sizeof(DOutScaleMode)));
+
+        const auto a_scale_size =
+            GetScaleTensorSize(transa != CUBLAS_OP_N ? k : m, transa != CUBLAS_OP_N ? m : k, AScaleMode);
+        const auto b_scale_size =
+            GetScaleTensorSize(transb != CUBLAS_OP_N ? n : k, transb != CUBLAS_OP_N ? k : n, BScaleMode);
+        const auto d_scale_size = GetScaleTensorSize(m, n, DScaleMode);
+        const auto d_out_scale_size = GetScaleTensorSize(m, n, DOutScaleMode);
+
+        if (a_scale_size > 0) {
+            __nv_fp8_e4m3 *a_scale_host = new __nv_fp8_e4m3[a_scale_size];
+            std::fill_n(a_scale_host, a_scale_size, a_scale);
+            cudaMalloc(&AscaleDev, a_scale_size * sizeof(__nv_fp8_e4m3));
+            cudaMemcpy(AscaleDev, a_scale_host, a_scale_size * sizeof(__nv_fp8_e4m3), cudaMemcpyHostToDevice);
+            delete[] a_scale_host;
+        }
+        if (b_scale_size > 0) {
+            __nv_fp8_e4m3 *b_scale_host = new __nv_fp8_e4m3[b_scale_size];
+            std::fill_n(b_scale_host, b_scale_size, b_scale);
+            cudaMalloc(&BscaleDev, b_scale_size * sizeof(__nv_fp8_e4m3));
+            cudaMemcpy(BscaleDev, b_scale_host, b_scale_size * sizeof(__nv_fp8_e4m3), cudaMemcpyHostToDevice);
+            delete[] b_scale_host;
+        }
+        if (d_scale_size > 0) {
+            float *d_scale_host = new float[d_scale_size];
+            std::fill_n(d_scale_host, d_scale_size, d_scale);
+            cudaMalloc(&DscaleDev, d_scale_size * sizeof(float));
+            cudaMemcpy(DscaleDev, d_scale_host, d_scale_size * sizeof(float), cudaMemcpyHostToDevice);
+            delete[] d_scale_host;
+        }
+        if (d_out_scale_size > 0) {
+            __nv_fp8_e4m3 *d_out_scale_host = new __nv_fp8_e4m3[d_out_scale_size];
+            std::fill_n(d_out_scale_host, d_out_scale_size, d_out_scale);
+            cudaMalloc(&DOutscaleDev, d_out_scale_size * sizeof(__nv_fp8_e4m3));
+            cudaMemcpy(DOutscaleDev, d_out_scale_host, d_out_scale_size * sizeof(__nv_fp8_e4m3),
+                       cudaMemcpyHostToDevice);
+            delete[] d_out_scale_host;
+        }
 
         // Use device scale pointer attributes
         CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_POINTER, &AscaleDev,
