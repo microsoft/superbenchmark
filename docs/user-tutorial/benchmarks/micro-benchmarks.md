@@ -262,6 +262,25 @@ For measurements of peer-to-peer communication performance between AMD GPUs, GPU
 | gpu\_all\_to\_gpu[0-9]+\_write\_by\_sm\_bw                  | bandwidth (GB/s) | The unidirectional bandwidth of all peer GPUs writing one GPU's memory using GPU SM with peer communication enabled.                     |
 | gpu\_all\_to\_gpu\_all\_write\_by\_sm\_bw                   | bandwidth (GB/s) | The unidirectional bandwidth of all peer GPUs writing all peer GPUs' memory using GPU SM with peer communication enabled.                |
 
+### `gpu-stream`
+
+#### Introduction
+
+Measure the memory bandwidth of GPU using the STREAM benchmark. The benchmark tests various memory operations including copy, scale, add, and triad for double datatype.
+
+#### Metrics
+
+| Metric Name                                                | Unit             | Description                                                                                                                             |
+|------------------------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw  | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the copy operation with specified buffer size and block size.                         |
+| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the scale operation with specified buffer size and block size.                         |
+| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw   | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the add operation with specified buffer size and block size.                         |
+| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the triad operation with specified buffer size and block size.                         |
+| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio  | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the copy operation with specified buffer size and block size.                         |
+| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the scale operation with specified buffer size and block size.                         |
+| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio   | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the add operation with specified buffer size and block size.                         |
+| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the triad operation with specified buffer size and block size.                         |
+
 ### `ib-loopback`
 
 #### Introduction
