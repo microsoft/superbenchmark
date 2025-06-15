@@ -36,6 +36,26 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             required=False,
             help='List of input data types, support {}.'.format(' '.join(self._in_types)),
         )
+        self._parser.add_argument(
+            '--enable_autotune',
+            action='store_true',
+            required=False,
+            help='Enable exhaustive autotune mode to find best algorithm.',
+        )
+        self._parser.add_argument(
+            '--num_warmup_autotune',
+            type=int,
+            default=20,
+            required=False,
+            help='Number of warm up steps for autotune.',
+        )
+        self._parser.add_argument(
+            '--num_steps_autotune',
+            type=int,
+            default=50,
+            required=False,
+            help='Number of steps to measure for autotune.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -52,7 +72,8 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         for _m, _n, _k, _b, _in_type in self._shapes_to_run:
             self._commands.append(
                 f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} '
-                f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}'
+                f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type} '
+                f'{f" -a -W {self._args.num_warmup_autotune} -I {self._args.num_steps_autotune}" if self._args.enable_autotune else ""}'
             )
 
         return True
