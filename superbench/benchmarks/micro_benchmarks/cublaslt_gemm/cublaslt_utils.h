@@ -45,9 +45,10 @@ class cublasLtGemm {
 
     void Init();
 
-    void Setup(int m, int n, int k, int batch, int lda, int ldb, int ldd, cudaDataType_t a_type, cudaDataType_t b_type,
-               cudaDataType_t d_type, cublasOperation_t transa, cublasOperation_t transb, cublasLtEpilogue_t epilogue,
-               void *a_scale_inverse = nullptr, void *b_scale_inverse = nullptr);
+    void Setup(int m, int n, int k, int batch, int lda, int ldb, int ldc, int ldd, cudaDataType_t a_type,
+               cudaDataType_t b_type, cudaDataType_t c_type, cudaDataType_t d_type, cublasOperation_t transa,
+               cublasOperation_t transb, cublasLtEpilogue_t epilogue, void *a_scale_inverse = nullptr,
+               void *b_scale_inverse = nullptr);
 
     size_t GetAlgorithm(int max_algorithm_count, size_t max_workspace_size);
 
