@@ -23,12 +23,12 @@ all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm
-cpu: common cpu_perftest cpu_stream
-common: fio
+cpu: common cpu_perftest
+common: fio cpu_stream
 
 # non aarch64 specific targets
 ifneq ($(shell uname -m), aarch64)
-common: fio cpu_hpl
+common: cpu_hpl
 directx_amd: directx_amf_encoding_latency
 endif
 
@@ -184,7 +184,7 @@ ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
     wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
 	make all
-	cp -v ./stream-tests/stream*.exe $(SB_MICRO_PATH)/bin/
+	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
 
 # Build AMD Encoder Latency Test
