@@ -12,9 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'cpu-stream', parameters='--cpu_arch neo2 '
-        '--numa_mem_nodes 0 '
-        '--cores 0 1 2 3'
+        'cpu-stream', parameters='--cpu_arch neo2 --numa_mem_nodes 0 --cores 0 1 2 3'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

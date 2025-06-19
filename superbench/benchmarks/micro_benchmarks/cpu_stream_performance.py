@@ -105,10 +105,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             self._bin_name = 'streamNeo2'
 
         binary_path = os.path.join(self._args.bin_dir, self._bin_name)
-        if numa_cmd:
-            command = f'{envar} {numa_cmd} {binary_path}'
-        else:
-            command = f'{envar} {binary_path}'
+        command = f'{envar} {numa_cmd} {binary_path}'
 
         if not self._set_binary_path():
             logger.error(
