@@ -106,5 +106,6 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             result = float(benchmark.result[functions[index] + '_throughput'][0])
             assert (result == values[index])
 
+
 if __name__ == '__main__':
     unittest.main()
