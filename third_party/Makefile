@@ -30,8 +30,6 @@ common: fio cpu_stream
 ifneq ($(shell uname -m), aarch64)
 common: cpu_hpl
 directx_amd: directx_amf_encoding_latency
-else
-common: fio cpu_stream
 endif
 
 # Create $(SB_MICRO_PATH)/bin and $(SB_MICRO_PATH)/lib, no error if existing, make parent directories as needed.

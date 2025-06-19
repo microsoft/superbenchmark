@@ -4,7 +4,7 @@
 GENFLAGS := -DSTREAM_ARRAY_SIZE=120000000
 ZEN3FLAGS := -DSTREAM_ARRAY_SIZE=400000000 -march=znver3
 ZEN4FLAGS := -DSTREAM_ARRAY_SIZE=800000000 -march=znver4
-NEO2FLAGS := -DSTREAM_ARRAY_SIZE=240000000 -mcpu=neoverse-v2
+NEO2FLAGS := -DSTREAM_ARRAY_SIZE=120000000 -mcpu=neoverse-v2
 
 GEN_OUTPUT := stream
 ZEN3_OUTPUT := streamZen3
@@ -18,12 +18,8 @@ ARCH := $(shell uname -m)
 # ARM64 build gets NEO2 added
 ifeq ($(ARCH), aarch64)
   CC      := gcc
-  CFLAGS  := -Ofast -fopenmp -mcmodel=large -fno-PIC -DNTIMES=200
+  CFLAGS  := -Ofast -fopenmp -DNTIMES=200
   ALL_TARGETS += NEO2
-else
-  CC := /opt/AMD/aocc-compiler-4.0.0/bin/clang
-  CFLAGS := -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -lomp -fopenmp -fnt-store=aggressive -DNTIMES=10
-  all: ZEN3 ZEN4 X86 NEO2
 endif
 
 # AMD AOCC clang present? add ZEN3 and ZEN4
