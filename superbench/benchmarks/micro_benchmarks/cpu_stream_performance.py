@@ -56,7 +56,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             '--numa_mem_nodes',
             nargs='+',
             type=int,
-            default=None,  # None means system default
+            default=None,    # None means system default
             required=False,
             help='List of NUMA memory nodes to bind to. If not set, system default will be used.'
         )
