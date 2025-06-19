@@ -13,8 +13,9 @@ from superbench.common.utils import logger
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
         'cpu-stream',
-        parameters='--cpu_arch zen3 \
-        --cores 0 4 8 12 16 20 24 28 30 34 38 42 46 50 54 58 60 64 68 72 76 80 84 88 90 94 98 102 106 110 114 118'
+        parameters='--cpu_arch neo2 ' \
+        '--numa_mem_nodes 0 ' \
+        '--cores 0 1 2 3'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

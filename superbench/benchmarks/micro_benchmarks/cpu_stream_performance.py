@@ -79,18 +79,22 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         # neo2: grace dual socket has 2 sockets, each socket has 72 cores
         #   numa node0: cores=[0, 1, 2,... 70, 71]
         #   numa node1: cores=[72, 73,... 142, 143]
-        # parse cores argument
-        omp_places = ''
-        for core in self._args.cores:
-            omp_places += '{' + '{}:1'.format(core) + '}'
 
-        envar = 'OMP_SCHEDULE=static && OMP_DYNAMIC=false && OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && \
-            OMP_PROC_BIND=true && OMP_NUM_THREADS={} && OMP_PLACES={}'.format(len(self._args.cores), omp_places)
+        # parse cores into a comma-separated list of places for libgomp
+        omp_places = ','.join(f'{{{core}}}' for core in self._args.cores)
 
+        envar = (
+            'OMP_SCHEDULE=static && OMP_DYNAMIC=false && '
+            'OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && '
+            'OMP_PROC_BIND=true && OMP_NUM_THREADS={} && '
+            'OMP_PLACES={}'
+        ).format(len(self._args.cores), omp_places)
+
+        # if binding to NUMA memory nodes, prefix with numactl
+        numa_cmd = ''
         if self._args.numa_mem_nodes is not None:
-            # Convert numa mem nodes list [0, 1] → "0,1"
             mem_node_str = ','.join(map(str, self._args.numa_mem_nodes))
-            envar += f" numactl -m{mem_node_str} "
+            numa_cmd = f"numactl -m{mem_node_str}"
 
         # set the binary name based on cpu architecture
         if self._args.cpu_arch == 'zen3':
@@ -100,7 +104,11 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         elif self._args.cpu_arch == 'neo2':
             self._bin_name = 'streamNeo2'
 
-        command = envar + ' ' + os.path.join(self._args.bin_dir, self._bin_name)
+        binary_path = os.path.join(self._args.bin_dir, self._bin_name)
+        if numa_cmd:
+            command = f"{envar} {numa_cmd} {binary_path}"
+        else:
+            command = f"{envar} {binary_path}"
 
         if not self._set_binary_path():
             logger.error(
@@ -123,6 +131,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
+        cmd = self._commands[cmd_idx]
         functions = ['Copy', 'Scale', 'Add', 'Triad']
         records = []
         content = raw_output.splitlines()
