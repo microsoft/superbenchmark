@@ -152,7 +152,7 @@ ADD third_party third_party
 RUN make -C third_party cuda -o nvbandwidth
 
 ADD . .
-RUN python3 -m pip install --upgrade setuptools==65.7 && \
+RUN python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
