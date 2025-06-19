@@ -94,7 +94,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         numa_cmd = ''
         if self._args.numa_mem_nodes is not None:
             mem_node_str = ','.join(map(str, self._args.numa_mem_nodes))
-            numa_cmd = f"numactl -m{mem_node_str}"
+            numa_cmd = f'numactl -m{mem_node_str}'
 
         # set the binary name based on cpu architecture
         if self._args.cpu_arch == 'zen3':
@@ -106,9 +106,9 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
 
         binary_path = os.path.join(self._args.bin_dir, self._bin_name)
         if numa_cmd:
-            command = f"{envar} {numa_cmd} {binary_path}"
+            command = f'{envar} {numa_cmd} {binary_path}'
         else:
-            command = f"{envar} {binary_path}"
+            command = f'{envar} {binary_path}'
 
         if not self._set_binary_path():
             logger.error(
@@ -131,7 +131,6 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        cmd = self._commands[cmd_idx]
         functions = ['Copy', 'Scale', 'Add', 'Triad']
         records = []
         content = raw_output.splitlines()
