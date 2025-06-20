@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 cmake_minimum_required(VERSION 3.18)
+set(CMAKE_CUDA_RUNTIME_LIBRARY SHARED)
 project(cublaslt_gemm LANGUAGES CXX)
 
 find_package(CUDAToolkit QUIET)
