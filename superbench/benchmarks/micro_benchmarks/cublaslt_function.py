@@ -70,10 +70,16 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
 
         self._commands = []
         for _m, _n, _k, _b, _in_type in self._shapes_to_run:
+            # pull out the autotune args onto their own short f-string
+            autotune_args = (
+                f' -a -W {self._args.num_warmup_autotune}'
+                f' -I {self._args.num_steps_autotune}'
+            ) if self._args.enable_autotune else ''
+
             self._commands.append(
                 f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} '
                 f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type} '
-                f'{f" -a -W {self._args.num_warmup_autotune} -I {self._args.num_steps_autotune}" if self._args.enable_autotune else ""}'
+                f'{autotune_args}'
             )
 
         return True

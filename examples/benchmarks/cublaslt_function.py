@@ -12,7 +12,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     # Basic usage without autotune
-    print("Running cuBLASLt benchmark without autotune...")
+    print('Running cuBLASLt benchmark without autotune...')
     parameters = '--num_warmup 10 --num_steps 50 --shapes 512,512,512 --in_types fp16 fp32'
     context = BenchmarkRegistry.create_benchmark_context('cublaslt-gemm', platform=Platform.CUDA, parameters=parameters)
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         )
 
     # Enhanced usage with autotune enabled
-    print("\nRunning cuBLASLt benchmark with autotune enabled...")
+    print('\nRunning cuBLASLt benchmark with autotune enabled...')
     parameters_autotune = (
         '--num_warmup 10 --num_steps 50 '
         '--shapes 512,512,512 1024,1024,1024 --in_types fp16 fp32 '
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         )
 
     # FP8 specific usage with autotune
-    print("\nRunning cuBLASLt benchmark with FP8 and autotune...")
+    print('\nRunning cuBLASLt benchmark with FP8 and autotune...')
     parameters_fp8 = (
         '--num_warmup 5 --num_steps 20 '
         '--shapes 512,512,512 --in_types fp8e4m3 fp8e5m2 '
