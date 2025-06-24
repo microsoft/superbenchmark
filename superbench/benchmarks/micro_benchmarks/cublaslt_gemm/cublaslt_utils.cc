@@ -1,11 +1,11 @@
 // Copyright(c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include "cublaslt_utils.h"
 #include <algorithm> // for std::sort
 #include <cassert>   // for assert
 #include <cuda.h>
 #include <cuda_fp8.h>
-#include "cublaslt_utils.h"
 
 int GetScaleTensorSize(int inner, int outer, cublasLtMatmulMatrixScale_t scale_mode) {
     if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {

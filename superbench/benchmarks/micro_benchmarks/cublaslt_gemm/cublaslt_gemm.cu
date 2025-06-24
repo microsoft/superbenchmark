@@ -184,7 +184,7 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
 
 template <typename Ta, typename Tb = Ta, typename Tout = Ta, typename Tc = Tout> void run(const Args *args) {
     float time_us = timing_matmul_tn<Ta, Tb, Tout, Tc>(args->m, args->n, args->k, args->batch, args->warmup, args->iter,
-                                                   args->autotune, args->iter_autotune, args->warmup_autotune);
+                                                       args->autotune, args->iter_autotune, args->warmup_autotune);
     // m n k batch time_us tflops
     printf("%d\t%d\t%d\t%d\t%f\t%f\n", args->m, args->n, args->k, args->batch, time_us,
            float(args->m) * float(args->n) * float(2 * args->k - 1) / 1e6 / time_us * std::max(args->batch, 1));
