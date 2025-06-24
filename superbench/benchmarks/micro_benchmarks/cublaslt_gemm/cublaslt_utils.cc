@@ -7,6 +7,7 @@
 #include <cuda.h>
 #include <cuda_fp8.h>
 
+#if CUDA_VERSION >= 12080
 int GetScaleTensorSize(int inner, int outer, cublasLtMatmulMatrixScale_t scale_mode) {
     if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {
         return 1;
@@ -28,6 +29,7 @@ int GetScaleTensorSize(int inner, int outer, cublasLtMatmulMatrixScale_t scale_m
     }
     return 0;
 }
+#endif
 
 void cublasLtGemm::Init() {
     cublasLtHandle_t handle;
