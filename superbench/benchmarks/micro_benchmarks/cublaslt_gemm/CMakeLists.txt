@@ -16,7 +16,7 @@ if(CUDAToolkit_FOUND AND NOT CUDAToolkit_VERSION VERSION_LESS 11.8)
     endif()
 
     add_library(cublaslt_utils SHARED cublaslt_utils.cc)
-    target_link_libraries(cublaslt_utils CUDA::cublas CUDA::cublasLt)
+    target_link_libraries(cublaslt_utils CUDA::cublas CUDA::cublasLt CUDA::cudart)
     set_target_properties(cublaslt_utils PROPERTIES LINK_FLAGS_RELEASE -s)
     install(TARGETS cublaslt_utils LIBRARY DESTINATION lib)
 

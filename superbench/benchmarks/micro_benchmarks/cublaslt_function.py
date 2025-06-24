@@ -22,7 +22,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         super().__init__(name, parameters)
 
         self._bin_name = 'cublaslt_gemm'
-        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2', 'int8']
+        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2', 'fp4e2m1', 'int8']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
