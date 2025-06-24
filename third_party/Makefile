@@ -51,8 +51,24 @@ else
 endif
 
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
-	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin -DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib -DCMAKE_BUILD_TYPE=Release \
-		-DCUTLASS_NVCC_ARCHS=$(ARCHS) -DCUTLASS_ENABLE_EXAMPLES=OFF -DCUTLASS_ENABLE_TESTS=OFF -S ./cutlass -B ./cutlass/build
+	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin \
+		-DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCUTLASS_NVCC_ARCHS=$(ARCHS) \
+		-DCUTLASS_ENABLE_EXAMPLES=OFF \
+		-DCUTLASS_ENABLE_TESTS=OFF \
+		-S ./cutlass \
+		-B ./cutlass/build \
+		-DCUTLASS_LIBRARY_KERNELS="cutlass_simt_dgemm_128x128_8x2_*,\
+cutlass_simt_sgemm_128x128_8x2_*,\
+cutlass_simt_hgemm_256x128_8x2_*,\
+cutlass_tensorop_h884gemm_256x128_32x2_*,\
+cutlass_tensorop_d884gemm_128x128_16x3_*,\
+cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*,\
+cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*,\
+cutlass_tensorop_h16816gemm_256x128_32x3_*,\
+cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*,\
+cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*"
 	cmake --build ./cutlass/build -j $(shell nproc --ignore=2) --target install
 endif
 
