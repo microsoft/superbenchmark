@@ -3,6 +3,7 @@
 
 #include <algorithm> // for std::sort
 #include <cassert>   // for assert
+#include <cuda.h>
 #include <cuda_fp8.h>
 #include "cublaslt_utils.h"
 
