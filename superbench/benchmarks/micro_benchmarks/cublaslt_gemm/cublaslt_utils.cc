@@ -1,13 +1,10 @@
 // Copyright(c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include <algorithm>
-
-#include <cuda_fp8.h>
-
-#include "cublaslt_utils.h"
 #include <algorithm> // for std::sort
 #include <cassert>   // for assert
+#include <cuda_fp8.h>
+#include "cublaslt_utils.h"
 
 int GetScaleTensorSize(int inner, int outer, cublasLtMatmulMatrixScale_t scale_mode) {
     if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {
@@ -91,15 +88,17 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     // Set compute type and scale type based on input types
     cublasComputeType_t gemm_compute_type;
     cudaDataType_t scale_type;
-    if (a_type == CUDA_R_4F_E2M1 || b_type == CUDA_R_4F_E2M1) {
-        gemm_compute_type = CUBLAS_COMPUTE_32F;
-        scale_type = CUDA_R_32F;
-    } else if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3) {
+    if (a_type == CUDA_R_8F_E5M2 || b_type == CUDA_R_8F_E5M2 || a_type == CUDA_R_8F_E4M3 || b_type == CUDA_R_8F_E4M3) {
         gemm_compute_type = CUBLAS_COMPUTE_32F;
         scale_type = CUDA_R_32F;
     } else if (a_type == CUDA_R_16F || b_type == CUDA_R_16F || a_type == CUDA_R_16BF || b_type == CUDA_R_16BF) {
         gemm_compute_type = CUBLAS_COMPUTE_32F;
         scale_type = CUDA_R_32F;
+#if CUDA_VERSION >= 12080
+    } else if (a_type == CUDA_R_4F_E2M1 || b_type == CUDA_R_4F_E2M1) {
+        gemm_compute_type = CUBLAS_COMPUTE_32F;
+        scale_type = CUDA_R_32F;
+#endif
     } else if (a_type == CUDA_R_64F || b_type == CUDA_R_64F) {
         gemm_compute_type = CUBLAS_COMPUTE_64F;
         scale_type = CUDA_R_64F;
@@ -135,6 +134,7 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     CUBLAS_CHECK(
         cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_EPILOGUE, &epilogue, sizeof(epilogue)));
 
+#if CUDA_VERSION >= 12080
     if (a_type == CUDA_R_4F_E2M1 || b_type == CUDA_R_4F_E2M1) {
         // Allocate and copy device scale values
         const auto a_scale = __nv_fp8_e4m3{1.f}, b_scale = __nv_fp8_e4m3{1.f}, d_out_scale = __nv_fp8_e4m3{1.f};
@@ -202,6 +202,7 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_POINTER,
                                                     &DOutscaleDev, sizeof(void *)));
     }
+#endif
 }
 
 size_t cublasLtGemm::GetAlgorithm(int max_algorithm_count, size_t max_workspace_size) {

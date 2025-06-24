@@ -6,8 +6,12 @@
 #include <stdio.h>
 
 #include <cuda_fp16.h>
-#include <cuda_fp4.h>
 #include <cuda_fp8.h>
+
+#if CUDA_VERSION >= 12080
+#include <cuda_fp4.h>
+using fp4e2m1 = __nv_fp4_e2m1;
+#endif
 
 #include "cublaslt_utils.h"
 
@@ -17,7 +21,6 @@ using fp16 = half;
 using bf16 = nv_bfloat16;
 using fp8e4m3 = __nv_fp8_e4m3;
 using fp8e5m2 = __nv_fp8_e5m2;
-using fp4e2m1 = __nv_fp4_e2m1;
 using int8 = int8_t;
 
 struct Args {
@@ -104,8 +107,10 @@ template <typename T> cudaDataType_t get_datatype() {
         return CUDA_R_8F_E4M3;
     if (std::is_same<T, fp8e5m2>::value)
         return CUDA_R_8F_E5M2;
+#if CUDA_VERSION >= 12080
     if (std::is_same<T, fp4e2m1>::value)
         return CUDA_R_4F_E2M1;
+#endif
     if (std::is_same<T, int8>::value)
         return CUDA_R_8I;
     throw std::invalid_argument("Unknown type");
@@ -200,8 +205,10 @@ int main(int argc, char **argv) {
         run<fp8e4m3, fp8e4m3, fp16>(&args);
     else if (args.in_type == "fp8e5m2")
         run<fp8e5m2, fp8e4m3, fp16>(&args);
+#if CUDA_VERSION >= 12080
     else if (args.in_type == "fp4e2m1")
         run<fp4e2m1, fp4e2m1, fp4e2m1, fp16>(&args);
+#endif
     else if (args.in_type == "int8")
         run<int8>(&args);
     else
