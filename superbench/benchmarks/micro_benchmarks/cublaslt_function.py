@@ -22,7 +22,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         super().__init__(name, parameters)
 
         self._bin_name = 'cublaslt_gemm'
-        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2', 'int8']
+        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2', 'fp4e2m1', 'int8']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -35,6 +35,26 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             default=['fp8e4m3'],
             required=False,
             help='List of input data types, support {}.'.format(' '.join(self._in_types)),
+        )
+        self._parser.add_argument(
+            '--enable_autotune',
+            action='store_true',
+            required=False,
+            help='Enable exhaustive autotune mode to find best algorithm.',
+        )
+        self._parser.add_argument(
+            '--num_warmup_autotune',
+            type=int,
+            default=20,
+            required=False,
+            help='Number of warm up steps for autotune.',
+        )
+        self._parser.add_argument(
+            '--num_steps_autotune',
+            type=int,
+            default=50,
+            required=False,
+            help='Number of steps to measure for autotune.',
         )
 
     def _preprocess(self):
@@ -50,9 +70,16 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
 
         self._commands = []
         for _m, _n, _k, _b, _in_type in self._shapes_to_run:
+            # pull out the autotune args onto their own short f-string
+            autotune_args = (
+                f' -a -W {self._args.num_warmup_autotune}'
+                f' -I {self._args.num_steps_autotune}'
+            ) if self._args.enable_autotune else ''
+
             self._commands.append(
                 f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} '
                 f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}'
+                f'{(" " + autotune_args) if autotune_args else ""}'
             )
 
         return True
