@@ -70,6 +70,7 @@ cutlass_tensorop_h16816gemm_256x128_32x3_*,\
 cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*,\
 cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*"
 	cmake --build ./cutlass/build -j $(shell nproc --ignore=2) --target install
+	rm -rf ./cutlass/build
 endif
 
 # Build cuda-samples/Samples/bandwidthTest.
