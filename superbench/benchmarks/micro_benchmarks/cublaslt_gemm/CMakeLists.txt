@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 cmake_minimum_required(VERSION 3.18)
+set(CMAKE_CUDA_RUNTIME_LIBRARY SHARED)
 project(cublaslt_gemm LANGUAGES CXX)
 
 find_package(CUDAToolkit QUIET)
@@ -15,7 +16,7 @@ if(CUDAToolkit_FOUND AND NOT CUDAToolkit_VERSION VERSION_LESS 11.8)
     endif()
 
     add_library(cublaslt_utils SHARED cublaslt_utils.cc)
-    target_link_libraries(cublaslt_utils CUDA::cublas CUDA::cublasLt)
+    target_link_libraries(cublaslt_utils CUDA::cublas CUDA::cublasLt CUDA::cudart)
     set_target_properties(cublaslt_utils PROPERTIES LINK_FLAGS_RELEASE -s)
     install(TARGETS cublaslt_utils LIBRARY DESTINATION lib)
 
