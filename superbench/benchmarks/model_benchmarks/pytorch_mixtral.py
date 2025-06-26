@@ -171,7 +171,7 @@ class PytorchMixtral(PytorchBase):
                 self._model = self._model.to(dtype=getattr(torch, precision.value))
             if self._gpu_available:
                 self._model = self._model.cuda()
-        except BaseException as e:
+        except Exception as e:
             logger.error(
                 'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
                     self._name, precision, str(e)
