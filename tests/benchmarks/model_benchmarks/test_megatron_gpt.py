@@ -191,7 +191,8 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_cls(
             self.benchmark_name,
             parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} \
-                --num_warmup 0 --num_steps 10 --batch_size 2048 --data_prefix dataset_text_document --override_opt_param_scheduler',
+                --num_warmup 0 --num_steps 10 --batch_size 2048 --data_prefix dataset_text_document \
+                --override_opt_param_scheduler',
         )
         mock_generate_dataset.return_value = True
         benchmark._preprocess()
@@ -278,7 +279,8 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_cls(
             self.benchmark_name,
             parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} \
-                --num_warmup 0 --num_steps 10 --batch_size 2048 --data_prefix dataset_text_document --deepspeed --override_opt_param_scheduler',
+                --num_warmup 0 --num_steps 10 --batch_size 2048 --data_prefix dataset_text_document \
+                --deepspeed --override_opt_param_scheduler',
         )
         benchmark._preprocess()
         benchmark._data_options = f'\
@@ -342,6 +344,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         self.assertEqual(actual_units, expected_units)
 
     def test_deepseek_v2_command(self):
+        """Test v2 command."""
         # test deepspeed with megatron
         os.environ['OMPI_COMM_WORLD_SIZE'] = '1'
         os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'] = '1'
@@ -408,7 +411,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         )
 
         benchmark._preprocess()
-        benchmark._data_options = f'\
+        benchmark._data_options = '\
             --mock-data \
             --dataloader-type cyclic \
             --data-cache-path /root/cache \

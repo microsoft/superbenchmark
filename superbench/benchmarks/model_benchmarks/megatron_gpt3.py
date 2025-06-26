@@ -420,26 +420,33 @@ class MegatronGPT(ModelBenchmark):
         return opts
 
     def _append_tokenizer_flags(self, opts):
-        if self._args.tokenizer_type:
-            opts += f' --tokenizer-type {self._args.tokenizer_type}'
-        if self._args.patch_tokenizer_type:
-            opts += f' --patch-tokenizer-type {self._args.patch_tokenizer_type}'
-        if self._args.position_embedding_type:
-            opts += f' --position-embedding-type {self._args.position_embedding_type}'
-        if self._args.no_rope_fusion:
-            opts += ' --no-rope-fusion'
-        if self._args.rotary_base:
-            opts += f' --rotary-base {self._args.rotary_base}'
-        if self._args.rotary_scaling_factor:
-            opts += f' --rotary-scaling-factor {self._args.rotary_scaling_factor}'
-        if self._args.qk_nope_head_dim:
-            opts += f' --qk-nope-head-dim {self._args.qk_nope_head_dim}'
-        if self._args.qk_rope_head_dim:
-            opts += f' --qk-rope-head-dim {self._args.qk_rope_head_dim}'
-        if self._args.v_head_dim:
-            opts += f' --v-head-dim {self._args.v_head_dim}'
-        if self._args.kv_lora_rank:
-            opts += f' --kv-lora-rank {self._args.kv_lora_rank}'
+        args = self._args
+
+        # map of arg-attribute → flag string
+        flag_map = {
+            'tokenizer_type': '--tokenizer-type',
+            'patch_tokenizer_type': '--patch-tokenizer-type',
+            'position_embedding_type': '--position-embedding-type',
+            'rotary_base': '--rotary-base',
+            'rotary_scaling_factor': '--rotary-scaling-factor',
+            'qk_nope_head_dim': '--qk-nope-head-dim',
+            'qk_rope_head_dim': '--qk-rope-head-dim',
+            'v_head_dim': '--v-head-dim',
+            'kv_lora_rank': '--kv-lora-rank',
+            'no_rope_fusion': '--no-rope-fusion',
+        }
+
+        for attr, flag in flag_map.items():
+            val = getattr(args, attr, None)
+            if not val:
+                continue
+
+            # boolean flags get no value
+            if isinstance(val, bool):
+                opts += f' {flag}'
+            else:
+                opts += f' {flag} {val}'
+
         return opts
 
     def _append_misc_flags(self, opts):
@@ -517,7 +524,9 @@ class MegatronGPT(ModelBenchmark):
             deepspeed_option = self.__prepare_deespeed_config(precision_megatron.lstrip('--'))
             megatron_options = megatron_options.replace('--log-throughput', '').strip()
             if self._num_nodes > 1:
-                command = f'torchrun {self._distributed_args} {script_path} {megatron_options} {self._data_options} {deepspeed_option}'
+                command = f'torchrun {self._distributed_args} {script_path} \
+                        {megatron_options} {self._data_options} {deepspeed_option}'
+
             else:
                 command = f'deepspeed {script_path} {megatron_options} {self._data_options} {deepspeed_option}'
         else:
@@ -627,10 +636,10 @@ class MegatronGPT(ModelBenchmark):
         Return:
             True if dataset is created successfully.
         """
-        self._data_options = ""
+        self._data_options = ''
         if self._args.mock_data:
-            logger.info(f"Using mock data.")
-            self._data_options = "--mock-data"
+            logger.info('Using mock data.')
+            self._data_options = '--mock-data'
         else:
             self._vocab_path = str(Path(self._args.data_home) / 'gpt2-vocab.json')
             download_file(self._args.vocab_url, self._vocab_path)
@@ -674,13 +683,15 @@ class MegatronGPT(ModelBenchmark):
                 --data-path {self._data_path}'
 
         if self._args.dataloader_type:
-            self._data_options += f" --dataloader-type {self._args.dataloader_type}"
+            self._data_options += f' --dataloader-type {self._args.dataloader_type}'
         if self._args.split:
-            self._data_options += f" --split {self._args.split}"
+            self._data_options += f' --split {self._args.split}'
         if self._args.data_cache_path:
             self._data_options += f' --data-cache-path {self._args.data_cache_path}'
         if self._args.dataset:
             self._data_options += f' --dataset {self._args.dataset}'
+
+        return True
 
     def _set_force_fp32(self):
         """Set force FP32."""
