@@ -131,9 +131,12 @@ class RuleOp:
                 val = data_row[metric]
                 baseline = rule['metrics'][metric]
                 if baseline is None or baseline == 0:
-                    logger.log_and_raise(
-                        exception=ValueError, msg='invalid baseline 0 or baseline not found in variance rule'
-                    )
+                    error_msg = (
+                        'For metric: {}, the baseline value {} is invalid for variance calculation. '
+                        'The node measured value for this metric is: {:.4f}. '
+                        'Review your baseline and rule files.'
+                    ).format(metric, baseline, val)
+                    logger.log_and_raise(exception=ValueError, msg=error_msg)
                 var = (val - baseline) / baseline
                 summary_data_row[metric] = var
                 violate_metric = eval(rule['criteria'])(var)

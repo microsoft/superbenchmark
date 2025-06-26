@@ -22,7 +22,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         """
         super().__init__(name, parameters)
 
-        self._bin_name = 'streamZen3.exe'
+        self._bin_name = 'stream'
         self.__cpu_arch = ['other', 'zen3', 'zen4', 'neo2']
 
     def add_parser_arguments(self):
@@ -32,7 +32,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--cpu_arch',
             type=str,
-            default='zen4',
+            default='other',
             required=False,
             help='The targeted cpu architectures to run \
                 STREAM. Default is zen4. Possible values are {}.'.format(' '.join(self.__cpu_arch))
@@ -52,6 +52,15 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             For HBv3/Zen3 please see: ' + core_link
         )
 
+        self._parser.add_argument(
+            '--numa_mem_nodes',
+            nargs='+',
+            type=int,
+            default=None,    # None means system default
+            required=False,
+            help='List of NUMA memory nodes to bind to. If not set, system default will be used.'
+        )
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -67,26 +76,36 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         # zen4
         # cores=[0, 8, 16, 24, 32, 38, 44, 52, 60, 68, 76, 82, 88, 96, 104, 112, 120,
         # 126, 132, 140, 148, 156, 164, 170]
+        # neo2: grace dual socket has 2 sockets, each socket has 72 cores
+        #   numa node0: cores=[0, 1, 2,... 70, 71]
+        #   numa node1: cores=[72, 73,... 142, 143]
 
-        # parse cores argument
-        omp_places = ''
-        for core in self._args.cores:
-            omp_places += '{' + '{}:1'.format(core) + '}'
+        # parse cores into a comma-separated list of places for libgomp
+        omp_places = ','.join(f'{{{core}}}' for core in self._args.cores)
 
-        envar = 'OMP_SCHEDULE=static && OMP_DYNAMIC=false && OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && \
-            OMP_PROC_BIND=true && OMP_NUM_THREADS={} && OMP_PLACES={}'.format(len(self._args.cores), omp_places)
+        envar = (
+            'OMP_SCHEDULE=static && OMP_DYNAMIC=false && '
+            'OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && '
+            'OMP_PROC_BIND=true && OMP_NUM_THREADS={} && '
+            'OMP_PLACES={}'
+        ).format(len(self._args.cores), omp_places)
 
+        # if binding to NUMA memory nodes, prefix with numactl
+        numa_cmd = ''
+        if self._args.numa_mem_nodes is not None:
+            mem_node_str = ','.join(map(str, self._args.numa_mem_nodes))
+            numa_cmd = f'numactl -m{mem_node_str}'
+
+        # set the binary name based on cpu architecture
         if self._args.cpu_arch == 'zen3':
-            exe = 'streamZen3.exe'
+            self._bin_name = 'streamZen3'
         elif self._args.cpu_arch == 'zen4':
-            exe = 'streamZen4.exe'
+            self._bin_name = 'streamZen4'
         elif self._args.cpu_arch == 'neo2':
-            exe = 'streamNeo2.exe'
-        else:
-            exe = 'streamx86.exe'
+            self._bin_name = 'streamNeo2'
 
-        command = envar + ' ' + os.path.join(self._args.bin_dir, exe)
-        self._bin_name = exe
+        binary_path = os.path.join(self._args.bin_dir, self._bin_name)
+        command = f'{envar} {numa_cmd} {binary_path}'
 
         if not self._set_binary_path():
             logger.error(

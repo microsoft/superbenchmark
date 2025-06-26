@@ -45,14 +45,27 @@ class cublasLtGemm {
 
     void Init();
 
-    void Setup(int m, int n, int k, int batch, int lda, int ldb, int ldd, cudaDataType_t a_type, cudaDataType_t b_type,
-               cudaDataType_t d_type, cublasOperation_t transa, cublasOperation_t transb, cublasLtEpilogue_t epilogue,
-               void *a_scale_inverse = nullptr, void *b_scale_inverse = nullptr);
+    void Setup(int m, int n, int k, int batch, int lda, int ldb, int ldc, int ldd, cudaDataType_t a_type,
+               cudaDataType_t b_type, cudaDataType_t c_type, cudaDataType_t d_type, cublasOperation_t transa,
+               cublasOperation_t transb, cublasLtEpilogue_t epilogue, void *a_scale_inverse = nullptr,
+               void *b_scale_inverse = nullptr);
 
     size_t GetAlgorithm(int max_algorithm_count, size_t max_workspace_size);
 
+    size_t GetAlgorithmExhaustive(int max_algorithm_count, size_t max_workspace_size, float alpha, float beta,
+                                  void *matrix_a, void *matrix_b, void *matrix_c, void *matrix_d,
+                                  int repeat_iterations = 100, int warmup_iterations = 100);
+
     void Execute(void *matrix_a, void *matrix_b, void *matrix_c, void *matrix_d, float alpha, float beta,
                  void *workspace, size_t workspace_size, cudaStream_t stream);
+
+    // Type to store algorithm performance metrics
+    struct AlgorithmMetrics {
+        cublasLtMatmulAlgo_t algo;
+        size_t workspace_size;
+        float time;
+        float flops;
+    };
 
   private:
     UniqueHandle handle_;
@@ -63,4 +76,10 @@ class cublasLtGemm {
     UniqueLayoutDesc d_desc_;
     UniqueMatmulPreference preference_;
     std::vector<cublasLtMatmulHeuristicResult_t> heuristic_results_;
+    std::vector<AlgorithmMetrics> algo_metrics_;
+    cublasComputeType_t compute_type_ = CUBLAS_COMPUTE_32F;
+    cudaDataType_t scale_type_ = CUDA_R_32F;
+    int m_ = 0;
+    int n_ = 0;
+    int k_ = 0;
 };

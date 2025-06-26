@@ -193,7 +193,7 @@ double DecodeVideo(size_t i, const std::vector<OptimizedNvDecoder *> &vDec, cons
                   << " duration:" << elapsedTime << " frames:" << *pnFrame << std::endl;
         return elapsedTime / 1000.0f;
     } catch (const std::exception &e) {
-        std::cerr << "Exception in deocding: " << e.what() << std::endl;
+        std::cerr << "Exception in decoding: " << e.what() << std::endl;
         return 0;
     }
 }

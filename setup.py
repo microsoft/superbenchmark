@@ -10,21 +10,23 @@ Reference:
 import os
 import sys
 import pathlib
-from typing import List, Tuple
+from typing import List, Tuple, ClassVar
 
-import pkg_resources
 from setuptools import setup, find_packages, Command
 
 import superbench
 
-try:
-    pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
-except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
-    print(
-        '\033[93mTry update pip/setuptools versions, for example, '
-        'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
-    )
-    raise
+print(f'Python {sys.version_info.major}.{sys.version_info.minor} detected.')
+if sys.version_info[:2] < (3, 11):
+    import pkg_resources
+    try:
+        pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
+    except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
+        print(
+            '\033[93mTry update pip/setuptools versions, for example, '
+            'python3 -m pip install --upgrade pip wheel setuptools==65.7\033[0m'
+        )
+        raise
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
@@ -39,7 +41,7 @@ class Formatter(Command):
     """
 
     description = 'format the code using yapf'
-    user_options: List[Tuple[str, str, str]] = []
+    user_options: ClassVar[List[Tuple[str, str, str]]] = []
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
@@ -50,9 +52,13 @@ class Formatter(Command):
         pass
 
     def run(self):
-        """Fromat the code using yapf."""
-        errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
-        sys.exit(0 if errno == 0 else 1)
+        """Format the code using yapf."""
+        if sys.version_info[:2] >= (3, 12):
+            # TODO: Remove this block when yapf is compatible with Python 3.12+.
+            print('Disable yapf for Python 3.12+ due to the compatibility issue.')
+        else:
+            errno = os.system('python3 -m yapf --in-place --recursive --exclude .git --exclude .eggs .')
+            sys.exit(0 if errno == 0 else 1)
 
 
 class Linter(Command):
@@ -64,7 +70,7 @@ class Linter(Command):
     """
 
     description = 'lint the code using flake8'
-    user_options: List[Tuple[str, str, str]] = []
+    user_options: ClassVar[List[Tuple[str, str, str]]] = []
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
@@ -76,10 +82,14 @@ class Linter(Command):
 
     def run(self):
         """Lint the code with yapf, mypy, and flake8."""
+        if sys.version_info[:2] >= (3, 12):
+            # TODO: Remove this block when yapf is compatible with Python 3.12+.
+            print('Disable lint for Python 3.12+ due to the compatibility issue.')
         errno = os.system(
             ' && '.join(
                 [
-                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .',
+                    'python3 -m yapf --diff --recursive --exclude .git --exclude .eggs .' if sys.version_info[:2] <
+                    (3, 12) else ':',
                     'python3 -m mypy .',
                     'python3 -m flake8',
                 ]
@@ -97,7 +107,7 @@ class Tester(Command):
     """
 
     description = 'test the code using pytest'
-    user_options: List[Tuple[str, str, str]] = []
+    user_options: ClassVar[List[Tuple[str, str, str]]] = []
 
     def initialize_options(self):
         """Set default values for options that this command supports."""
@@ -135,6 +145,9 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Topic :: System :: Benchmark',
         'Topic :: System :: Clustering',
         'Topic :: System :: Hardware',
@@ -151,8 +164,10 @@ setup(
         'setuptools_scm',
     ],
     install_requires=[
-        'ansible_base>=2.10.9;os_name=="posix"',
-        'ansible_runner>=2.0.0rc1, <2.3.2',
+        'ansible;os_name=="posix" and python_version>"3.10"',
+        'ansible_base>=2.10.9;os_name=="posix" and python_version<="3.10"',
+        'ansible_runner>=2.0.0rc1, <2.3.2;python_version<="3.10"',
+        'ansible_runner;python_version>"3.10"',
         'colorlog>=6.7.0',
         'importlib_metadata',
         'jinja2>=2.10.1',
@@ -168,7 +183,7 @@ setup(
         'openpyxl>=3.0.7',
         'packaging>=21.0',
         'pandas>=1.1.5',
-        'protobuf<=3.20.3',
+        'protobuf',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
         'requests>=2.27.1',
@@ -194,7 +209,7 @@ setup(
             'test': [
                 'flake8-docstrings>=1.5.0',
                 'flake8-quotes>=3.2.0',
-                'flake8>=3.8.4, <6.0.0',
+                'flake8>=3.8.4',
                 'mypy>=0.800',
                 'pydocstyle>=5.1.1',
                 'pytest-cov>=2.11.1',
@@ -209,10 +224,14 @@ setup(
                 'yapf==0.31.0',
             ],
             'torch': [
-                'tokenizers<=0.20.3',
+                'safetensors==0.4.5; python_version<"3.12"',
+                'safetensors>=0.5.3; python_version>="3.12"',
+                'tokenizers<=0.20.3; python_version<"3.12"',
+                'tokenizers<0.22; python_version>="3.12"',
                 'torch>=1.7.0a0',
                 'torchvision>=0.8.0a0',
-                'transformers>=4.28.0',
+                'transformers>=4.28.0; python_version<"3.12"',
+                'transformers==4.52.4; python_version>="3.12"',
             ],
             'ort': [
                 'onnx>=1.10.2',
