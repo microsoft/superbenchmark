@@ -4,7 +4,6 @@
 """Unittest decorator helpers."""
 
 import os
-import sys
 import unittest
 import functools
 from pathlib import Path
