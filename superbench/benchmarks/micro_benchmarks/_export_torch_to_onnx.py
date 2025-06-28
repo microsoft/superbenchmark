@@ -9,13 +9,16 @@ from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
-from transformers import BertConfig, GPT2Config, LlamaConfig, MixtralConfig
+from transformers import BertConfig, GPT2Config, LlamaConfig
 
 from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
+
+if MixtralBenchmarkModel is not None:
+    from transformers import MixtralConfig
 
 
 class torch2onnxExporter():
