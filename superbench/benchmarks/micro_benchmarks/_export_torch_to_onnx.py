@@ -3,26 +3,19 @@
 
 """Export PyTorch models to ONNX format."""
 
-import sys
 from pathlib import Path
-from typing import Optional
 
 from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
-from transformers import BertConfig, GPT2Config, LlamaConfig
+from transformers import BertConfig, GPT2Config, LlamaConfig, MixtralConfig
 
 from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
 from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
-
-# Check Python version and skip Mixtral if Python is 3.7 or lower
-MixtralBenchmarkModel: Optional[type] = None
-if sys.version_info >= (3, 8):
-    from transformers import MixtralConfig
-    from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
+from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
 
 
 class torch2onnxExporter():
