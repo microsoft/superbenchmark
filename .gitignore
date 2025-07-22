@@ -151,6 +151,9 @@ cython_debug/
 *.userosscache
 *.sln.docstates
 
+# Build temporary files
+compile_commands.json
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
