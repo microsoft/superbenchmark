@@ -305,12 +305,19 @@ nvbandwidth: sb_micro_path
 
 # Build nvbench
 nvbench: sb_micro_path
-	cd ./nvbench && mkdir -p build && cd build && \
-	cmake                                         \
-	-DCMAKE_INSTALL_PREFIX=$(SB_MICRO_PATH)       \
-	-DCMAKE_CUDA_ARCHITECTURES=100                \
-	-DNVBench_ENABLE_CUPTI=ON                     \
-	-DCMAKE_BUILD_TYPE=Release                    \
-	.. &&                                         \
-	make -j $(NUM_MAKE_JOBS) &&                   \
-	make install
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+    $(eval ARCHS := "90;100")
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+    $(eval ARCHS := "70;75;80;86;89;90")
+else
+    $(eval ARCHS := "70;75;80;86")
+endif
+    cd ./nvbench && mkdir -p build && cd build && \
+    cmake                                         \
+    -DCMAKE_INSTALL_PREFIX=$(SB_MICRO_PATH)       \
+    -DCMAKE_CUDA_ARCHITECTURES=$(ARCHS)           \
+    -DNVBench_ENABLE_CUPTI=ON                     \
+    -DCMAKE_BUILD_TYPE=Release                    \
+    .. &&                                         \
+    make -j $(NUM_MAKE_JOBS) &&                   \
+    make install
