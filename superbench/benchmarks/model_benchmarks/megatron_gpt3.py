@@ -749,7 +749,7 @@ BenchmarkRegistry.register_benchmark(
     'megatron-deepseek-v2', MegatronGPT, parameters='--model=deepseek', platform=Platform.ROCM
 )
 BenchmarkRegistry.register_benchmark(
-    'megatron-deepseek-v2',
+    'megatron-deepseek-v2-lite',
     MegatronGPT,
     parameters=(
         '--model=deepseek '
