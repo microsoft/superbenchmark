@@ -68,12 +68,12 @@ jobs:
           platforms: linux/amd64
           runner: ubuntu-latest
           build_args: "NUM_MAKE_JOBS=8"
-        # - name: rocm6.2
-        #   dockerfile: rocm6.2.x
-        #   tags: superbench/main:rocm6.2
-        #   platforms: linux/amd64
-        #   runner: [self-hosted, linux/amd64, rocm]
-        #   build_args: "NUM_MAKE_JOBS=16"
+        - name: rocm6.2
+          dockerfile: rocm6.2.x
+          tags: superbench/main:rocm6.2
+          platforms: linux/amd64
+          runner: [self-hosted, linux/amd64, rocm]
+          build_args: "NUM_MAKE_JOBS=16"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
