@@ -3,6 +3,7 @@
 
 """Module of the Pytorch Llama2 model."""
 
+import random
 import torch
 from transformers import LlamaModel, LlamaConfig
 try:
@@ -68,6 +69,20 @@ class PytorchLlama(PytorchBase):
         self._optimizer_type = Optimizer.ADAMW
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
+    def _enable_deterministic_training(self):
+        """Enable deterministic training settings for reproducible results."""
+        if hasattr(self._args, 'random_seed'):
+            torch.manual_seed(self._args.random_seed)
+            random.seed(self._args.random_seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(self._args.random_seed)
+                torch.cuda.manual_seed_all(self._args.random_seed)
+        
+        # Enable deterministic algorithms
+        torch.use_deterministic_algorithms(True, warn_only=True)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     def add_parser_arguments(self):
         """Add the Llama-specified arguments.
 
@@ -98,6 +113,19 @@ class PytorchLlama(PytorchBase):
             required=False,
             help='The number of key_value heads that should be used to implement Grouped Query Attention.'
         )
+        self._parser.add_argument(
+            '--random_seed',
+            type=int,
+            default=42,
+            required=False,
+            help='Random seed for deterministic training.'
+        )
+        self._parser.add_argument(
+            '--deterministic',
+            action='store_true',
+            default=False,
+            help='Enable deterministic training for reproducible results.'
+        )
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info.
@@ -105,6 +133,10 @@ class PytorchLlama(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
+        # Set seed before dataset generation if deterministic training is enabled
+        if self._args.deterministic and hasattr(self._args, 'random_seed'):
+            torch.manual_seed(self._args.random_seed)
+            
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
         )
@@ -120,6 +152,10 @@ class PytorchLlama(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
+        # Enable deterministic training if requested
+        if self._args.deterministic:
+            self._enable_deterministic_training()
+            
         self._config = LlamaConfig(
             hidden_size=self._args.hidden_size,
             num_hidden_layers=self._args.num_hidden_layers,
@@ -165,6 +201,10 @@ class PytorchLlama(PytorchBase):
             )
             return False
 
+        # Generate targets - use seed if deterministic training is enabled
+        if self._args.deterministic and hasattr(self._args, 'random_seed'):
+            torch.manual_seed(self._args.random_seed + 1)  # +1 to avoid same seed as dataset
+            
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
