@@ -185,6 +185,11 @@ jobs:
           sources: >-
             superbench/main:cuda12.8-amd64
             superbench/main:cuda12.8-arm64
+        - name: cuda12.9
+          tags: superbench/main:cuda12.9
+          sources: >-
+            superbench/main:cuda12.9-amd64
+            superbench/main:cuda12.9-arm64
     steps:
     - name: Checkout
       uses: actions/checkout@v4
