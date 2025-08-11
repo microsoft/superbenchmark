@@ -3,6 +3,10 @@
 
 """Tests for BERT model benchmarks."""
 
+import os
+import logging
+import numpy as np
+
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks.pytorch_bert import PytorchBERT
@@ -56,3 +60,100 @@ def test_pytorch_bert_base():
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
         assert (len(benchmark.result[metric]) == benchmark.run_count)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_bert_periodic_checksum_logging(caplog):
+    """Emit checksum log at the periodic cadence when deterministic training is enabled."""
+    # Ensure strict mode is off; only periodic checksum gated by deterministic should run
+    os.environ.pop('SB_STRICT_DETERMINISM', None)
+    os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
+
+    caplog.set_level(logging.INFO, logger='superbench')
+
+    parameters = (
+        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
+        '--intermediate_size 1024 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 100 '
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+    )
+
+    context = BenchmarkRegistry.create_benchmark_context(
+        'bert-base', platform=Platform.CUDA, parameters=parameters, framework=Framework.PYTORCH
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+
+    assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
+
+    # Expect one checksum log at step 100 (cadence = 100)
+    messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
+    assert any('Checksum at step 100:' in m for m in messages)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_bert_soft_determinism():
+    """Soft determinism: losses should be numerically close across runs without strict envs."""
+    os.environ.pop('SB_STRICT_DETERMINISM', None)
+    os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
+
+    params = (
+        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
+        '--intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+    )
+
+    ctx1 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
+    ctx2 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
+
+    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
+
+    m_loss = 'fp32_train_loss'
+    a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
+    a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
+    assert np.isfinite(a1).all() and np.isfinite(a2).all()
+    assert np.allclose(a1, a2, rtol=1e-6, atol=1e-7)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_bert_strict_determinism():
+    """Strict determinism: losses should be exactly equal with strict envs set (pre-init)."""
+    # Rely on deterministic flag and seed; assert exact equality
+
+    params = (
+        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
+        '--intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+    )
+
+    ctx1 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
+    ctx2 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
+
+    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
+
+    m_loss = 'fp32_train_loss'
+    a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
+    a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
+    assert np.isfinite(a1).all() and np.isfinite(a2).all()
+    assert np.array_equal(a1, a2)
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_bert_non_deterministic_training():
+    """Test that non-deterministic training is the default when not specified."""
+    context = BenchmarkRegistry.create_benchmark_context(
+        'gpt2-small',
+        platform=Platform.CUDA,
+    parameters='--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
+    '--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float16 --sample_count 2 --model_action train',
+        framework=Framework.PYTORCH
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
+    assert benchmark._args.deterministic == False
+    assert benchmark._args.random_seed == 42

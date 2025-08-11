@@ -122,7 +122,7 @@ def test_pytorch_llama_non_deterministic_training():
     context = BenchmarkRegistry.create_benchmark_context(
         'llama2-7b',
         platform=Platform.CUDA,
-    parameters='--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 --num_key_value_heads 4 --intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float16 --model_action train',
+        parameters='--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 --num_key_value_heads 4 --intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float16 --model_action train',
         framework=Framework.PYTORCH
     )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
