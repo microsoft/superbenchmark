@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
 """Module of the Pytorch Llama2 model."""
 
+import os
 import random
 import torch
 from transformers import LlamaModel, LlamaConfig
@@ -77,9 +79,11 @@ class PytorchLlama(PytorchBase):
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(self._args.random_seed)
                 torch.cuda.manual_seed_all(self._args.random_seed)
-        
+
         # Enable deterministic algorithms
-        torch.use_deterministic_algorithms(True, warn_only=True)
+        # If SB_STRICT_DETERMINISM=1, raise on non-deterministic ops (required for cuBLAS/FlashAttention strictness)
+        strict = os.environ.get('SB_STRICT_DETERMINISM', '0') == '1'
+        torch.use_deterministic_algorithms(True, warn_only=not strict)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
@@ -136,7 +140,7 @@ class PytorchLlama(PytorchBase):
         # Set seed before dataset generation if deterministic training is enabled
         if self._args.deterministic and hasattr(self._args, 'random_seed'):
             torch.manual_seed(self._args.random_seed)
-            
+
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
         )
@@ -155,7 +159,7 @@ class PytorchLlama(PytorchBase):
         # Enable deterministic training if requested
         if self._args.deterministic:
             self._enable_deterministic_training()
-            
+
         self._config = LlamaConfig(
             hidden_size=self._args.hidden_size,
             num_hidden_layers=self._args.num_hidden_layers,
@@ -204,7 +208,7 @@ class PytorchLlama(PytorchBase):
         # Generate targets - use seed if deterministic training is enabled
         if self._args.deterministic and hasattr(self._args, 'random_seed'):
             torch.manual_seed(self._args.random_seed + 1)  # +1 to avoid same seed as dataset
-            
+
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
@@ -218,11 +222,13 @@ class PytorchLlama(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
-            The step-time list of every training step.
+            A tuple of (step_times_ms, info) where info may include per-step loss.
         """
         duration = []
-        curr_step = 0
+        losses = []
+        # Use a periodic cadence for any extra work (aligns with base default)
         check_frequency = 100
+        curr_step = 0
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = self._timer()
@@ -234,17 +240,34 @@ class PytorchLlama(PytorchBase):
                         output = self._model(sample)
                 else:
                     output = self._model(sample)
-                loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
+                # Compute loss in float32 to avoid fp16 overflow/NaNs while keeping model in desired precision
+                logits = output[range(self._args.batch_size), -1]
+                loss = self._loss_fn(logits.float(), self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
-                    # Save the step time of every training/inference step, unit is millisecond.
+                    # Save the step time of every training step, unit is millisecond.
                     duration.append((end - start) * 1000)
+                    # Record per-step loss for determinism checks
+                    try:
+                        losses.append(float(loss.detach().item()))
+                    except Exception:
+                        pass
+                    # Simple periodic checksum when deterministic is enabled; log only.
+                    if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
+                        try:
+                            checksum = sum(p.detach().float().sum().item() for p in self._model.parameters())
+                            logger.info(f"Checksum at step {curr_step}: {checksum}")
+                        except Exception:
+                            # Never fail training due to checksum computation/logging
+                            pass
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    return duration
+                    # Return optional info for additional raw metrics (loss)
+                    info = {'loss': losses}
+                    return (duration, info)
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -258,6 +281,7 @@ class PytorchLlama(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = 100
         with torch.no_grad():
             self._model.eval()
             while True:
@@ -273,11 +297,41 @@ class PytorchLlama(PytorchBase):
                     end = self._timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
-                        # Save the step time of every training/inference step, unit is millisecond.
+                        # Save the step time of every inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
                         self._log_step_time(curr_step, precision, duration)
-                    if self._is_finished(curr_step, end):
+                    if self._is_finished(curr_step, end, check_frequency):
                         return duration
+
+    def _process_info(self, model_action, precision, info):
+        """Persist extra step-level signals (e.g., loss) into raw_data.
+
+        Purpose:
+            The base runner captures timing/throughput by default. When a step implementation
+            returns additional information (like per-step loss), this hook translates that info
+            into standardized raw_data entries (for example, fp16_train_loss) so tests and
+            diagnostics can assert/inspect them consistently without altering summarization logic.
+
+        Args:
+            model_action: 'train' or 'inference'. Used to compose metric names.
+            precision: model precision enum used to prefix metric names (e.g., fp16).
+            info (dict): auxiliary data returned by _train_step/_inference_step, such as {'loss': [...]}.
+        """
+        try:
+            if not info:
+                return
+            # Map precision enum to metric prefix
+            precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
+            prec_value = precision.value if hasattr(precision, 'value') else str(precision)
+            prefix = precision_metric.get(prec_value, prec_value)
+            # Enum string formatting in base uses the enum directly; mimic that here
+            metric_loss = f"{prefix}_{model_action}_loss"
+            if 'loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0:
+                # Store loss as raw data for assertions; do not add to summary statistics
+                self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
+        except Exception:
+            # Be conservative: don't fail benchmark due to aux metrics
+            pass
 
 
 # Register Llama2 benchmark with 7b parameters.
