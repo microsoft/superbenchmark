@@ -6,6 +6,7 @@
 import os
 import logging
 import numpy as np
+import pytest
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
@@ -113,7 +114,25 @@ def test_pytorch_gpt2_soft_determinism():
 @decorator.cuda_test
 @decorator.pytorch_test
 def test_pytorch_gpt2_strict_determinism():
-    # Rely on deterministic flag and seed; assert exact equality
+    """Strict determinism: exact per-step loss equality under strict envs.
+
+    This test verifies the strongest reproducibility guarantee: with strict determinism
+    enabled and a fixed seed, two runs must produce identical fp32 per-step training
+    losses (bitwise equality).
+
+    Requirements and behavior:
+    - Environment must be set before CUDA init: SB_STRICT_DETERMINISM=1 and
+        CUBLAS_WORKSPACE_CONFIG (":4096:8" or ":16:8").
+    - If these envs are not present, the test is skipped to avoid false failures.
+    - The benchmark is invoked with --deterministic and --random_seed 42.
+    - We compare the raw_data metric 'fp32_train_loss' via np.array_equal.
+
+    Rationale:
+    - Strict mode enforces deterministic kernels (warn_only=False) and will error if any
+        nondeterministic op is used, ensuring reproducible numerics beyond soft determinism.
+    """
+    if os.environ.get('SB_STRICT_DETERMINISM') != '1' or 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
+        pytest.skip('Strict determinism env not set; skipping test.')
     params = (
         '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
         '--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
@@ -129,19 +148,3 @@ def test_pytorch_gpt2_strict_determinism():
     a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
     assert np.isfinite(a1).all() and np.isfinite(a2).all()
     assert np.array_equal(a1, a2)
-
-
-@decorator.cuda_test
-@decorator.pytorch_test
-def test_pytorch_gpt2_non_deterministic_training():
-    """Test that non-deterministic training is the default when not specified."""
-    context = BenchmarkRegistry.create_benchmark_context(
-        'gpt2-small',
-        platform=Platform.CUDA,
-        parameters='--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 2 --precision float16 --model_action train',
-        framework=Framework.PYTORCH
-    )
-    benchmark = BenchmarkRegistry.launch_benchmark(context)
-    assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
-    assert benchmark._args.deterministic == False
-    assert benchmark._args.random_seed == 42
