@@ -4,6 +4,9 @@
 """Tests for mixtral model benchmarks."""
 
 import sys
+import os
+import logging
+import numpy as np
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
@@ -65,3 +68,96 @@ def test_pytorch_mixtral_8x7b():
         assert (len(benchmark.raw_data[metric]) == benchmark.run_count)
         assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
         assert (len(benchmark.result[metric]) == benchmark.run_count)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_mixtral_periodic_checksum_logging(caplog):
+    """Emit checksum log at the periodic cadence when deterministic training is enabled."""
+    if sys.version_info < (3, 8):
+        return
+    os.environ.pop('SB_STRICT_DETERMINISM', None)
+    os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
+
+    caplog.set_level(logging.INFO, logger='superbench')
+
+    parameters = (
+        '--hidden_size 1024 --num_hidden_layers 2 --num_attention_heads 8 --num_key_value_heads 4 '
+        '--intermediate_size 2048 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 100 '
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+    )
+
+    context = BenchmarkRegistry.create_benchmark_context(
+        'mixtral-8x7b', platform=Platform.CUDA, parameters=parameters, framework=Framework.PYTORCH
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+
+    assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
+
+    messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
+    assert any('Checksum at step 100:' in m for m in messages)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_mixtral_soft_determinism():
+    if sys.version_info < (3, 8):
+        return
+    os.environ.pop('SB_STRICT_DETERMINISM', None)
+    os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
+    params = (
+        '--hidden_size 1024 --num_hidden_layers 2 --num_attention_heads 8 --num_key_value_heads 4 '
+        '--intermediate_size 2048 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 2 '
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+    )
+    ctx1 = BenchmarkRegistry.create_benchmark_context('mixtral-8x7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
+    ctx2 = BenchmarkRegistry.create_benchmark_context('mixtral-8x7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
+    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
+    m_loss = 'fp32_train_loss'
+    a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
+    a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
+    assert np.isfinite(a1).all() and np.isfinite(a2).all()
+    assert np.allclose(a1, a2, rtol=1e-6, atol=1e-7)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_mixtral_strict_determinism():
+    if sys.version_info < (3, 8):
+        return
+    # Rely on deterministic flag and seed; assert exact equality
+    params = (
+        '--hidden_size 1024 --num_hidden_layers 2 --num_attention_heads 8 --num_key_value_heads 4 '
+        '--intermediate_size 2048 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 2 '
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+    )
+    ctx1 = BenchmarkRegistry.create_benchmark_context('mixtral-8x7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
+    ctx2 = BenchmarkRegistry.create_benchmark_context('mixtral-8x7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
+    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
+    m_loss = 'fp32_train_loss'
+    a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
+    a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
+    assert np.isfinite(a1).all() and np.isfinite(a2).all()
+    assert np.array_equal(a1, a2)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_mixtral_non_deterministic_training():
+    if sys.version_info < (3, 8):
+        return
+    """Test that non-deterministic training is the default when not specified."""
+    context = BenchmarkRegistry.create_benchmark_context(
+        'mixtral-8x7b',
+        platform=Platform.CUDA,
+        parameters='--hidden_size 1024 --num_hidden_layers 2 --num_attention_heads 8 --num_key_value_heads 4 --intermediate_size 2048 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 2 --precision float16 --model_action train',
+        framework=Framework.PYTORCH
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+    assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
+    assert benchmark._args.deterministic == False
+    assert benchmark._args.random_seed == 42

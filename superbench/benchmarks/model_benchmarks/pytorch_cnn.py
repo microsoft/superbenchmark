@@ -3,6 +3,8 @@
 
 """Module of the Pytorch CNN models."""
 
+import os
+import random
 import torch
 from torchvision import models
 
@@ -35,6 +37,20 @@ class PytorchCNN(PytorchBase):
         self._optimizer_type = Optimizer.SGD
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
+    def _enable_deterministic_training(self):
+        """Enable deterministic training settings for reproducible results."""
+        if hasattr(self._args, 'random_seed'):
+            torch.manual_seed(self._args.random_seed)
+            random.seed(self._args.random_seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(self._args.random_seed)
+                torch.cuda.manual_seed_all(self._args.random_seed)
+
+        strict = os.environ.get('SB_STRICT_DETERMINISM', '0') == '1'
+        torch.use_deterministic_algorithms(True, warn_only=not strict)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     def add_parser_arguments(self):
         """Add the CNN-specified arguments."""
         super().add_parser_arguments()
@@ -42,6 +58,19 @@ class PytorchCNN(PytorchBase):
         self._parser.add_argument('--model_type', type=str, required=True, help='The cnn benchmark to run.')
         self._parser.add_argument('--image_size', type=int, default=224, required=False, help='Image size.')
         self._parser.add_argument('--num_classes', type=int, default=1000, required=False, help='Num of class.')
+        self._parser.add_argument(
+            '--random_seed',
+            type=int,
+            default=42,
+            required=False,
+            help='Random seed for deterministic training.'
+        )
+        self._parser.add_argument(
+            '--deterministic',
+            action='store_true',
+            default=False,
+            help='Enable deterministic training for reproducible results.'
+        )
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info.
@@ -49,6 +78,9 @@ class PytorchCNN(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
+            torch.manual_seed(self._args.random_seed)
+
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, 3, self._args.image_size, self._args.image_size],
             self._world_size,
@@ -67,6 +99,8 @@ class PytorchCNN(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         try:
+            if getattr(self._args, 'deterministic', False):
+                self._enable_deterministic_training()
             self._model = getattr(models, self._args.model_type)()
             self._model = self._model.to(dtype=getattr(torch, precision.value))
             self._model = _keep_BatchNorm_as_float(self._model)
@@ -80,6 +114,8 @@ class PytorchCNN(PytorchBase):
             )
             return False
 
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
+            torch.manual_seed(self._args.random_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
@@ -96,6 +132,7 @@ class PytorchCNN(PytorchBase):
             The step-time list of every training step.
         """
         duration = []
+        losses = []
         curr_step = 0
         check_frequency = 100
         while True:
@@ -106,7 +143,8 @@ class PytorchCNN(PytorchBase):
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
                 output = self._model(sample)
-                loss = self._loss_fn(output, self._target)
+                # Compute loss in float32 for stability
+                loss = self._loss_fn(output.float(), self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
@@ -114,9 +152,20 @@ class PytorchCNN(PytorchBase):
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
+                    try:
+                        losses.append(float(loss.detach().item()))
+                    except Exception:
+                        pass
+                    if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
+                        try:
+                            checksum = sum(p.detach().float().sum().item() for p in self._model.parameters())
+                            logger.info(f"Checksum at step {curr_step}: {checksum}")
+                        except Exception:
+                            pass
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    return duration
+                    info = {'loss': losses}
+                    return (duration, info)
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -130,6 +179,7 @@ class PytorchCNN(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = 100
         with torch.no_grad():
             self._model.eval()
             while True:
@@ -145,8 +195,22 @@ class PytorchCNN(PytorchBase):
                         # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
                         self._log_step_time(curr_step, precision, duration)
-                    if self._is_finished(curr_step, end):
+                    if self._is_finished(curr_step, end, check_frequency):
                         return duration
+
+    def _process_info(self, model_action, precision, info):
+        """Persist extra step-level signals (e.g., loss) into raw_data."""
+        try:
+            if not info:
+                return
+            precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
+            prec_value = precision.value if hasattr(precision, 'value') else str(precision)
+            prefix = precision_metric.get(prec_value, prec_value)
+            metric_loss = f"{prefix}_{model_action}_loss"
+            if 'loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0:
+                self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
+        except Exception:
+            pass
 
 
 # Register CNN benchmarks.
