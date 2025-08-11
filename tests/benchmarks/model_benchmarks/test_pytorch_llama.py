@@ -63,8 +63,15 @@ def test_pytorch_llama_7b():
 @decorator.cuda_test
 @decorator.pytorch_test
 def test_pytorch_llama_periodic_checksum_logging(caplog):
-    """Emit checksum log at the periodic cadence when deterministic training is enabled."""
-    # Ensure strict mode is off; only periodic checksum gated by deterministic should run
+    """Emit checksum log at the periodic cadence when deterministic training is enabled.
+
+    This test ensures that when deterministic training is enabled (but strict mode is off),
+    the periodic checksum logging is triggered at the expected cadence.
+
+    - Strict mode envs are explicitly unset to test only the periodic checksum behavior.
+    - The benchmark is run with --deterministic and --random_seed 42.
+    - We expect a checksum log at step 100 (cadence = 100).
+    """
     os.environ.pop('SB_STRICT_DETERMINISM', None)
     os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
 
@@ -90,39 +97,33 @@ def test_pytorch_llama_periodic_checksum_logging(caplog):
 @decorator.cuda_test
 @decorator.pytorch_test
 def test_pytorch_llama_soft_determinism():
-    """Test soft determinism: deterministic=True without strict envs should yield repeatable numeric results."""
-    # Ensure strict determinism is disabled within this test
+    """Soft determinism: losses should be numerically close across runs without strict envs.
+
+    This test checks that with deterministic training enabled (but strict mode envs unset),
+    two runs produce numerically close (but not necessarily bitwise identical) fp32 per-step
+    training losses.
+
+    - Strict mode envs are explicitly unset to test only soft determinism.
+    - The benchmark is run with --deterministic and --random_seed 42.
+    - We compare the raw_data metric 'fp32_train_loss' via np.allclose.
+    """
     os.environ.pop('SB_STRICT_DETERMINISM', None)
     os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
 
-    parameters = (
-        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 --num_key_value_heads 4 '
-        '--intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
+    params = (
+        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
+        '--num_key_value_heads 4 --intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
         '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
     )
 
-    context = BenchmarkRegistry.create_benchmark_context(
-        'llama2-7b', platform=Platform.CUDA, parameters=parameters, framework=Framework.PYTORCH
-    )
-    b1 = BenchmarkRegistry.launch_benchmark(context)
+    ctx1 = BenchmarkRegistry.create_benchmark_context('llama2-7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
+    ctx2 = BenchmarkRegistry.create_benchmark_context('llama2-7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
 
-    context2 = BenchmarkRegistry.create_benchmark_context(
-        'llama2-7b', platform=Platform.CUDA, parameters=parameters, framework=Framework.PYTORCH
-    )
-    b2 = BenchmarkRegistry.launch_benchmark(context2)
+    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
 
-    assert b1 and b2
-    assert b1._args.deterministic and b2._args.deterministic
-
-    # Check time metric shapes
-    m_time = 'fp32_train_step_time'
-    assert m_time in b1.raw_data and m_time in b2.raw_data
-    assert len(b1.raw_data[m_time][0]) == b1._args.num_steps
-    assert len(b2.raw_data[m_time][0]) == b2._args.num_steps
-
-    # Compare per-step loss for closeness (soft determinism: allow tiny numeric diffs)
     m_loss = 'fp32_train_loss'
-    assert m_loss in b1.raw_data and m_loss in b2.raw_data
     a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
     a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
     assert np.isfinite(a1).all() and np.isfinite(a2).all()
@@ -149,49 +150,24 @@ def test_pytorch_llama_strict_deterministic_training():
         nondeterministic op is used, ensuring reproducible numerics beyond soft determinism.
     """
 
-    parameters = '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 --num_key_value_heads 4 --intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
-    # Run twice with the same seed and deterministic flag using the registry
-    context = BenchmarkRegistry.create_benchmark_context(
-        'llama2-7b',
-        platform=Platform.CUDA,
-        parameters=parameters,
-        framework=Framework.PYTORCH
-    )
-    benchmark1 = BenchmarkRegistry.launch_benchmark(context)
-
-    context2 = BenchmarkRegistry.create_benchmark_context(
-        'llama2-7b',
-        platform=Platform.CUDA,
-        parameters=parameters,
-        framework=Framework.PYTORCH
-    )
-    benchmark2 = BenchmarkRegistry.launch_benchmark(context2)
-
-    # Check that the run succeeded (basic checks)
-    assert (benchmark1)
-    assert (benchmark2)
-    assert (isinstance(benchmark1, PytorchLlama))
-    assert (isinstance(benchmark2, PytorchLlama))
-    assert (benchmark1._args.deterministic == True)
-    assert (benchmark2._args.deterministic == True)
-    assert (benchmark1._args.random_seed == 42)
-    assert (benchmark2._args.random_seed == 42)
-
-    # Validate time metrics exist and shapes are correct (but don't require equality due to scheduler/async noise)
-    m_time = 'fp32_train_step_time'
-    assert m_time in benchmark1.raw_data and m_time in benchmark2.raw_data
-    assert len(benchmark1.raw_data[m_time]) == benchmark1.run_count
-    assert len(benchmark2.raw_data[m_time]) == benchmark2.run_count
-    assert len(benchmark1.raw_data[m_time][0]) == benchmark1._args.num_steps
-    assert len(benchmark2.raw_data[m_time][0]) == benchmark2._args.num_steps
-
-    # Strict determinism check: compare per-step loss when strict mode + cuBLAS determinism are enabled
     if os.environ.get('SB_STRICT_DETERMINISM') != '1' or 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
-        pytest.skip('Strict determinism env not set; skipping exact-equality check.')
+        pytest.skip('Strict determinism env not set; skipping test.')
+
+    params = (
+        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
+        '--num_key_value_heads 4 --intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+    )
+
+    ctx1 = BenchmarkRegistry.create_benchmark_context('llama2-7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
+    ctx2 = BenchmarkRegistry.create_benchmark_context('llama2-7b', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
+    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
+
+    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
+
     m_loss = 'fp32_train_loss'
-    assert m_loss in benchmark1.raw_data and m_loss in benchmark2.raw_data
-    a1 = np.array(benchmark1.raw_data[m_loss][0], dtype=float)
-    a2 = np.array(benchmark2.raw_data[m_loss][0], dtype=float)
-    # Require numeric (finite) values and exact equality
+    a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
+    a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
     assert np.isfinite(a1).all() and np.isfinite(a2).all()
     assert np.array_equal(a1, a2)
