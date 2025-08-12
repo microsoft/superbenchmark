@@ -226,9 +226,15 @@ class PytorchGPT2(PytorchBase):
                     except Exception:
                         pass
                     if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
+                        # Loss fingerprint
                         try:
-                            checksum = sum(p.detach().float().sum().item() for p in self._model.parameters())
-                            logger.info(f"Checksum at step {curr_step}: {checksum}")
+                            logger.info(f"Loss at step {curr_step}: {float(loss.detach().item())}")
+                        except Exception:
+                            pass
+                        # Activation fingerprint: mean over last-token logits for sample 0
+                        try:
+                            act_mean = float(logits[0].detach().float().mean().item())
+                            logger.info(f"ActMean at step {curr_step}: {act_mean}")
                         except Exception:
                             pass
                     self._log_step_time(curr_step, precision, duration)

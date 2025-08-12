@@ -62,15 +62,15 @@ def test_pytorch_llama_7b():
 
 @decorator.cuda_test
 @decorator.pytorch_test
-def test_pytorch_llama_periodic_checksum_logging(caplog):
-    """Emit checksum log at the periodic cadence when deterministic training is enabled.
+def test_pytorch_llama_periodic_fingerprint_logging(caplog):
+    """Emit loss and activation fingerprints at the periodic cadence with deterministic training.
 
     This test ensures that when deterministic training is enabled (but strict mode is off),
-    the periodic checksum logging is triggered at the expected cadence.
+    the periodic loss and activation fingerprint logging is triggered at the expected cadence.
 
-    - Strict mode envs are explicitly unset to test only the periodic checksum behavior.
+    - Strict mode envs are explicitly unset to test only the periodic fingerprint behavior.
     - The benchmark is run with --deterministic and --random_seed 42.
-    - We expect a checksum log at step 100 (cadence = 100).
+    - We expect both a Loss and an ActMean log at step 100 (cadence = 100).
     """
     os.environ.pop('SB_STRICT_DETERMINISM', None)
     os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
@@ -90,9 +90,10 @@ def test_pytorch_llama_periodic_checksum_logging(caplog):
 
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
-    # Expect one checksum log at step 100 (cadence = 100)
+    # Expect one loss and one activation fingerprint log at step 100 (cadence = 100)
     messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-    assert any('Checksum at step 100:' in m for m in messages)
+    assert any('Loss at step 100:' in m for m in messages)
+    assert any('ActMean at step 100:' in m for m in messages)
 
 @decorator.cuda_test
 @decorator.pytorch_test
