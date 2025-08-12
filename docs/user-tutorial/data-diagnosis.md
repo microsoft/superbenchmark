@@ -65,7 +65,7 @@ superbench:
 example:
 ```yaml
 # SuperBench rules
-version: v0.12
+version: v0.11
 superbench:
   rules:
     failure-rule:
