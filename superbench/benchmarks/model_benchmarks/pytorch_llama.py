@@ -255,13 +255,19 @@ class PytorchLlama(PytorchBase):
                         losses.append(float(loss.detach().item()))
                     except Exception:
                         pass
-                    # Simple periodic checksum when deterministic is enabled; log only.
+                    # Lightweight periodic fingerprints when deterministic is enabled; log only.
                     if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
+                        # 1) Loss fingerprint (reuses computed loss; near-zero overhead)
                         try:
-                            checksum = sum(p.detach().float().sum().item() for p in self._model.parameters())
-                            logger.info(f"Checksum at step {curr_step}: {checksum}")
+                            logger.info(f"Loss at step {curr_step}: {float(loss.detach().item())}")
                         except Exception:
-                            # Never fail training due to checksum computation/logging
+                            pass
+                        # 2) Tiny activation fingerprint (mean of last-token logits for sample 0)
+                        try:
+                            act_mean = float(logits[0].detach().float().mean().item())
+                            logger.info(f"ActMean at step {curr_step}: {act_mean}")
+                        except Exception:
+                            # Never fail training due to fingerprint logging
                             pass
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):

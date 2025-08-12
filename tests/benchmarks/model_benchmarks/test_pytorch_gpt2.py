@@ -64,8 +64,8 @@ def test_pytorch_gpt2_small():
 
 @decorator.cuda_test
 @decorator.pytorch_test
-def test_pytorch_gpt2_periodic_checksum_logging(caplog):
-    """Emit checksum log at the periodic cadence when deterministic training is enabled."""
+def test_pytorch_gpt2_periodic_fingerprint_logging(caplog):
+    """Emit loss and activation fingerprints at the periodic cadence when deterministic training is enabled."""
     os.environ.pop('SB_STRICT_DETERMINISM', None)
     os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
 
@@ -85,7 +85,8 @@ def test_pytorch_gpt2_periodic_checksum_logging(caplog):
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
     messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-    assert any('Checksum at step 100:' in m for m in messages)
+    assert any('Loss at step 100:' in m for m in messages)
+    assert any('ActMean at step 100:' in m for m in messages)
 
 
 @decorator.cuda_test

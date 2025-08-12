@@ -82,8 +82,8 @@ def run_pytorch_lstm(parameters='', check_metrics=[]):
 
 @decorator.cuda_test
 @decorator.pytorch_test
-def test_pytorch_lstm_periodic_checksum_logging(caplog):
-    """Emit checksum log at the periodic cadence when deterministic training is enabled."""
+def test_pytorch_lstm_periodic_fingerprint_logging(caplog):
+    """Emit Loss and ActMean logs at the periodic cadence under deterministic training."""
     os.environ.pop('SB_STRICT_DETERMINISM', None)
     os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
 
@@ -102,7 +102,8 @@ def test_pytorch_lstm_periodic_checksum_logging(caplog):
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
     messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-    assert any('Checksum at step 100:' in m for m in messages)
+    assert any('Loss at step 100:' in m for m in messages)
+    assert any('ActMean at step 100:' in m for m in messages)
 
 
 @decorator.cuda_test
