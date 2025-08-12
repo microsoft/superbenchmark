@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunksuperbench_website=self.webpackChunksuperbench_website||[]).push([[1917],{6066:e=>{e.exports=JSON.parse('{"allTagsPath":"/superbenchmark/blog/tags","slug":"superbench","name":"superbench","count":11,"permalink":"/superbenchmark/blog/tags/superbench"}')}}]);
