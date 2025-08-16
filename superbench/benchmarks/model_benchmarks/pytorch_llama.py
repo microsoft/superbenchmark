@@ -79,13 +79,27 @@ class PytorchLlama(PytorchBase):
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(self._args.random_seed)
                 torch.cuda.manual_seed_all(self._args.random_seed)
-
         # Enable deterministic algorithms
-        # If SB_STRICT_DETERMINISM=1, raise on non-deterministic ops (required for cuBLAS/FlashAttention strictness)
-        strict = os.environ.get('SB_STRICT_DETERMINISM', '0') == '1'
-        torch.use_deterministic_algorithms(True, warn_only=not strict)
+        torch.use_deterministic_algorithms(True, warn_only=False)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+        # Disable TF32 to remove potential numerical variability
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = False
+        except Exception:
+            pass
+        try:
+            torch.backends.cudnn.allow_tf32 = False
+        except Exception:
+            pass
+        # Force Scaled Dot-Product Attention to use deterministic math kernel
+        # Avoid FlashAttention and mem-efficient kernels which are not deterministic
+        try:
+            from torch.backends.cuda import sdp_kernel
+            sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False)
+        except Exception:
+            # Older PyTorch versions may not expose sdp_kernel; ignore in that case
+            pass
 
     def add_parser_arguments(self):
         """Add the Llama-specified arguments.
@@ -213,6 +227,22 @@ class PytorchLlama(PytorchBase):
         if self._gpu_available:
             self._target = self._target.cuda()
 
+        # Assign model_run_metadata for determinism log
+        self._model_run_metadata = {
+            'model_name': self._name,
+            'precision': precision.value if hasattr(precision, 'value') else str(precision),
+            'seed': getattr(self._args, 'random_seed', None),
+            'batch_size': getattr(self._args, 'batch_size', None),
+            'seq_len': getattr(self._args, 'seq_len', None),
+            'num_steps': getattr(self._args, 'num_steps', None),
+            'num_classes': getattr(self._args, 'num_classes', None),
+            'hidden_size': getattr(self._args, 'hidden_size', None),
+            'num_hidden_layers': getattr(self._args, 'num_hidden_layers', None),
+            'num_attention_heads': getattr(self._args, 'num_attention_heads', None),
+            'num_key_value_heads': getattr(self._args, 'num_key_value_heads', None),
+            'intermediate_size': getattr(self._args, 'intermediate_size', None),
+        }
+
         return True
 
     def _train_step(self, precision):
@@ -226,6 +256,7 @@ class PytorchLlama(PytorchBase):
         """
         duration = []
         losses = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         # Use a periodic cadence for any extra work (aligns with base default)
         check_frequency = 100
         curr_step = 0
@@ -260,12 +291,15 @@ class PytorchLlama(PytorchBase):
                         # 1) Loss fingerprint (reuses computed loss; near-zero overhead)
                         try:
                             logger.info(f"Loss at step {curr_step}: {float(loss.detach().item())}")
+                            periodic['loss'].append(float(loss.detach().item()))
+                            periodic['step'].append(curr_step)
                         except Exception:
                             pass
                         # 2) Tiny activation fingerprint (mean of last-token logits for sample 0)
                         try:
                             act_mean = float(logits[0].detach().float().mean().item())
                             logger.info(f"ActMean at step {curr_step}: {act_mean}")
+                            periodic['act_mean'].append(act_mean)
                         except Exception:
                             # Never fail training due to fingerprint logging
                             pass
@@ -273,7 +307,15 @@ class PytorchLlama(PytorchBase):
                 if self._is_finished(curr_step, end, check_frequency):
                     # Return optional info for additional raw metrics (loss)
                     info = {'loss': losses}
+                    # Assign model_run_losses and model_run_periodic for determinism log
+                    self._model_run_losses = list(losses)
+                    self._model_run_periodic = dict(periodic)
                     return (duration, info)
+    def _benchmark(self):
+        # Override to call base logic, then post-run model log
+        ok = super()._benchmark()
+        self._post_run_model_log()
+        return ok
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -309,35 +351,6 @@ class PytorchLlama(PytorchBase):
                     if self._is_finished(curr_step, end, check_frequency):
                         return duration
 
-    def _process_info(self, model_action, precision, info):
-        """Persist extra step-level signals (e.g., loss) into raw_data.
-
-        Purpose:
-            The base runner captures timing/throughput by default. When a step implementation
-            returns additional information (like per-step loss), this hook translates that info
-            into standardized raw_data entries (for example, fp16_train_loss) so tests and
-            diagnostics can assert/inspect them consistently without altering summarization logic.
-
-        Args:
-            model_action: 'train' or 'inference'. Used to compose metric names.
-            precision: model precision enum used to prefix metric names (e.g., fp16).
-            info (dict): auxiliary data returned by _train_step/_inference_step, such as {'loss': [...]}.
-        """
-        try:
-            if not info:
-                return
-            # Map precision enum to metric prefix
-            precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
-            prec_value = precision.value if hasattr(precision, 'value') else str(precision)
-            prefix = precision_metric.get(prec_value, prec_value)
-            # Enum string formatting in base uses the enum directly; mimic that here
-            metric_loss = f"{prefix}_{model_action}_loss"
-            if 'loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0:
-                # Store loss as raw data for assertions; do not add to summary statistics
-                self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
-        except Exception:
-            # Be conservative: don't fail benchmark due to aux metrics
-            pass
 
 
 # Register Llama2 benchmark with 7b parameters.

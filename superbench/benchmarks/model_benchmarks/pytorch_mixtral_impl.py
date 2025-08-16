@@ -78,11 +78,27 @@ class PytorchMixtral(PytorchBase):
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(self._args.random_seed)
                 torch.cuda.manual_seed_all(self._args.random_seed)
-
-        strict = os.environ.get('SB_STRICT_DETERMINISM', '0') == '1'
-        torch.use_deterministic_algorithms(True, warn_only=not strict)
+        # Enable deterministic algorithms
+        torch.use_deterministic_algorithms(True, warn_only=False)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+        # Disable TF32 to remove potential numerical variability
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = False
+        except Exception:
+            pass
+        try:
+            torch.backends.cudnn.allow_tf32 = False
+        except Exception:
+            pass
+        # Force Scaled Dot-Product Attention to use deterministic math kernel
+        # Avoid FlashAttention and mem-efficient kernels which are not deterministic
+        try:
+            from torch.backends.cuda import sdp_kernel
+            sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False)
+        except Exception:
+            # Older PyTorch versions may not expose sdp_kernel; ignore in that case
+            pass
 
     def add_parser_arguments(self):
         """Add the Mixtral-specified arguments.
@@ -220,6 +236,27 @@ class PytorchMixtral(PytorchBase):
         if self._gpu_available:
             self._target = self._target.cuda()
 
+        # Assign model_run_metadata for determinism log
+        try:
+            self._model_run_metadata = {
+                'model_name': self._name,
+                'precision': precision.value if hasattr(precision, 'value') else str(precision),
+                'seed': getattr(self._args, 'random_seed', None),
+                'batch_size': getattr(self._args, 'batch_size', None),
+                'seq_len': getattr(self._args, 'seq_len', None),
+                'num_steps': getattr(self._args, 'num_steps', None),
+                'num_classes': getattr(self._args, 'num_classes', None),
+                'hidden_size': getattr(self._args, 'hidden_size', None),
+                'num_hidden_layers': getattr(self._args, 'num_hidden_layers', None),
+                'num_attention_heads': getattr(self._args, 'num_attention_heads', None),
+                'num_key_value_heads': getattr(self._args, 'num_key_value_heads', None),
+                'intermediate_size': getattr(self._args, 'intermediate_size', None),
+                'max_position_embeddings': getattr(self._args, 'max_position_embeddings', None),
+                'router_aux_loss_coef': getattr(self._args, 'router_aux_loss_coef', None),
+            }
+        except Exception:
+            # Metadata should never break the run
+            pass
         return True
 
     def _train_step(self, precision):
@@ -233,6 +270,7 @@ class PytorchMixtral(PytorchBase):
         """
         duration = []
         losses = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = 100
         while True:
@@ -264,17 +302,35 @@ class PytorchMixtral(PytorchBase):
                         try:
                             fp32_loss = float(loss.detach().float().item())
                             logger.info(f"Loss at step {curr_step}: {fp32_loss}")
+                            periodic['loss'].append(fp32_loss)
+                            periodic['step'].append(curr_step)
                         except Exception:
                             pass
                         try:
                             act_mean = float(logits.detach().float()[0].mean().item())
                             logger.info(f"ActMean at step {curr_step}: {act_mean}")
+                            periodic['act_mean'].append(act_mean)
                         except Exception:
                             pass
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     info = {'loss': losses}
+                    # Save in-memory signals for determinism model log
+                    try:
+                        self._model_run_losses = list(losses)
+                        self._model_run_periodic = dict(periodic)
+                    except Exception:
+                        pass
                     return (duration, info)
+
+    def _benchmark(self):
+        """Run benchmark and emit post-run model log if requested."""
+        ok = super()._benchmark()
+        try:
+            self._post_run_model_log()
+        except Exception:
+            pass
+        return ok
 
     def _inference_step(self, precision):
         """Define the inference process.

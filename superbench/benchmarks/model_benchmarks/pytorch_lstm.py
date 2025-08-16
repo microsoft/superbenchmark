@@ -70,11 +70,19 @@ class PytorchLSTM(PytorchBase):
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(self._args.random_seed)
                 torch.cuda.manual_seed_all(self._args.random_seed)
-
-        strict = os.environ.get('SB_STRICT_DETERMINISM', '0') == '1'
-        torch.use_deterministic_algorithms(True, warn_only=not strict)
+        # Deterministic implies strict
+        torch.use_deterministic_algorithms(True, warn_only=False)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+        # Disable TF32 to remove potential numerical variability
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = False
+        except Exception:
+            pass
+        try:
+            torch.backends.cudnn.allow_tf32 = False
+        except Exception:
+            pass
 
     def add_parser_arguments(self):
         """Add the LSTM-specified arguments.
@@ -160,6 +168,21 @@ class PytorchLSTM(PytorchBase):
         if self._gpu_available:
             self._target = self._target.cuda()
 
+        # Assign model_run_metadata for determinism fingerprinting/logging
+        self._model_run_metadata = {
+            'model_name': self._name,
+            'precision': precision.value if hasattr(precision, 'value') else str(precision),
+            'seed': getattr(self._args, 'random_seed', None),
+            'batch_size': getattr(self._args, 'batch_size', None),
+            'seq_len': getattr(self._args, 'seq_len', None),
+            'num_steps': getattr(self._args, 'num_steps', None),
+            'num_classes': getattr(self._args, 'num_classes', None),
+            'input_size': getattr(self._args, 'input_size', None),
+            'hidden_size': getattr(self._args, 'hidden_size', None),
+            'num_layers': getattr(self._args, 'num_layers', None),
+            'bidirectional': getattr(self._args, 'bidirectional', None),
+        }
+
         return True
 
     def _train_step(self, precision):
@@ -173,6 +196,7 @@ class PytorchLSTM(PytorchBase):
         """
         duration = []
         losses = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = 100
         while True:
@@ -198,19 +222,31 @@ class PytorchLSTM(PytorchBase):
                     if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
                         # Emit lightweight periodic fingerprints instead of parameter checksum.
                         try:
-                            fp32_loss = float(loss.detach().float().item())
-                            logger.info(f"Loss at step {curr_step}: {fp32_loss}")
+                            v = float(loss.detach().float().item())
+                            logger.info(f"Loss at step {curr_step}: {v}")
+                            periodic['loss'].append(v)
+                            periodic['step'].append(curr_step)
                         except Exception:
                             pass
                         try:
                             act_mean = float(output.detach().float()[0].mean().item())
                             logger.info(f"ActMean at step {curr_step}: {act_mean}")
+                            periodic['act_mean'].append(act_mean)
                         except Exception:
                             pass
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     info = {'loss': losses}
+                    # Persist for post-run logging/comparison
+                    self._model_run_losses = list(losses)
+                    self._model_run_periodic = dict(periodic)
                     return (duration, info)
+
+    def _benchmark(self):
+        """Run the benchmark then handle post-run model log save/compare."""
+        ok = super()._benchmark()
+        self._post_run_model_log()
+        return ok
 
     def _inference_step(self, precision):
         """Define the inference process.

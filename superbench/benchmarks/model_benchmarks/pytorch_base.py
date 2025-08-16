@@ -35,9 +35,91 @@ class PytorchBase(ModelBenchmark):
         self._framework = Framework.PYTORCH
         torch.backends.cudnn.benchmark = True
 
+        # New: log/fingerprint comparison flags
+        self._generate_log = False
+        self._compare_log = None
+        self._model_run_metadata = {}
+        self._model_run_losses = []
+        self._model_run_periodic = {}
+
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
         self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
+    def add_parser_arguments(self):
+        super().add_parser_arguments()
+        import argparse
+        # Support both kebab-case and underscore-case to work with sb config-file param injection
+        self._parser.add_argument(
+            '--generate-log', '--generate_log', dest='generate_log', action='store_true', default=False,
+            help='Save fingerprint log to file.'
+        )
+        self._parser.add_argument(
+            '--log-path', '--log_path', dest='log_path', type=str, default=None,
+            help='Path to save or load fingerprint log.'
+        )
+        self._parser.add_argument(
+            '--compare-log', '--compare_log', dest='compare_log', type=str, default=None,
+            help='Compare this run to a reference fingerprint log.'
+        )
+
+    def _post_run_model_log(self):
+        """Save or compare model run logs after run, if requested."""
+        from superbench.common import model_log_utils
+        import time, os
+        if getattr(self._args, 'generate_log', False):
+            log_path = getattr(self._args, 'log_path', None)
+            if not log_path:
+                model = getattr(self._args, 'model_name', self._name if hasattr(self, '_name') else 'model')
+                timestamp = time.strftime('%Y%m%d_%H%M%S')
+                os.makedirs('./outputs', exist_ok=True)
+                log_path = f'./outputs/model_run_{model}_{timestamp}.json'
+            else:
+                # Ensure destination directory exists when a custom path is provided
+                try:
+                    dirpath = os.path.dirname(log_path) or '.'
+                    os.makedirs(dirpath, exist_ok=True)
+                except Exception:
+                    pass
+            model_log_utils.save_model_log(
+                log_path,
+                self._model_run_metadata,
+                self._model_run_losses,
+                self._model_run_periodic
+            )
+            logger.info(f"Saved model log to {log_path}")
+        if getattr(self._args, 'compare_log', None):
+            logger.info(f"Comparing model log to {self._args.compare_log}")
+            ref = model_log_utils.load_model_log(self._args.compare_log)
+            curr = {
+                'metadata': self._model_run_metadata,
+                'per_step_fp32_loss': self._model_run_losses,
+                'fingerprints': self._model_run_periodic,
+            }
+            ok = model_log_utils.compare_model_logs(curr, ref)
+            if not ok:
+                raise RuntimeError(f"Determinism check failed: this run does not match reference log {self._args.compare_log}")
+            logger.info(f"Determinism check PASSED against {self._args.compare_log}")
+
+    def _preprocess(self):
+        """Preprocess and apply PyTorch-specific defaults.
+
+        Additionally, if deterministic mode is requested and neither generate_log nor compare_log
+        is provided, default to enabling generate_log so a reference is produced automatically.
+        """
+        ok = super()._preprocess()
+        if not ok:
+            return False
+        try:
+            if getattr(self._args, 'deterministic', False):
+                has_gen = bool(getattr(self._args, 'generate_log', False))
+                has_cmp = bool(getattr(self._args, 'compare_log', None))
+                if not has_gen and not has_cmp:
+                    setattr(self._args, 'generate_log', True)
+                    logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')
+        except Exception:
+            # Never fail preprocessing due to optional defaulting
+            pass
+        return True
 
     def _set_force_fp32(self):
         """Set the config that controls whether full float32 precision will be used.

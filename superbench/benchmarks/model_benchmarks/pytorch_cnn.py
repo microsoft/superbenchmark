@@ -45,11 +45,19 @@ class PytorchCNN(PytorchBase):
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(self._args.random_seed)
                 torch.cuda.manual_seed_all(self._args.random_seed)
-
-        strict = os.environ.get('SB_STRICT_DETERMINISM', '0') == '1'
-        torch.use_deterministic_algorithms(True, warn_only=not strict)
+        # Deterministic algorithms and cuDNN settings
+        torch.use_deterministic_algorithms(True, warn_only=False)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+        # Disable TF32 to avoid numeric variability on Ampere+
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = False
+        except Exception:
+            pass
+        try:
+            torch.backends.cudnn.allow_tf32 = False
+        except Exception:
+            pass
 
     def add_parser_arguments(self):
         """Add the CNN-specified arguments."""
@@ -120,6 +128,18 @@ class PytorchCNN(PytorchBase):
         if self._gpu_available:
             self._target = self._target.cuda()
 
+        # Assign run metadata for logging/compare
+        self._model_run_metadata = {
+            'model_name': self._name,
+            'precision': precision.value if hasattr(precision, 'value') else str(precision),
+            'seed': getattr(self._args, 'random_seed', None),
+            'batch_size': getattr(self._args, 'batch_size', None),
+            'image_size': getattr(self._args, 'image_size', None),
+            'num_steps': getattr(self._args, 'num_steps', None),
+            'num_classes': getattr(self._args, 'num_classes', None),
+            'model_type': getattr(self._args, 'model_type', None),
+        }
+
         return True
 
     def _train_step(self, precision):
@@ -133,6 +153,7 @@ class PytorchCNN(PytorchBase):
         """
         duration = []
         losses = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = 100
         while True:
@@ -159,19 +180,32 @@ class PytorchCNN(PytorchBase):
                     if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
                         # Loss fingerprint
                         try:
-                            logger.info(f"Loss at step {curr_step}: {float(loss.detach().item())}")
+                            v = float(loss.detach().item())
+                            logger.info(f"Loss at step {curr_step}: {v}")
+                            periodic['loss'].append(v)
+                            periodic['step'].append(curr_step)
                         except Exception:
                             pass
                         # Activation fingerprint: mean over logits for sample 0
                         try:
                             act_mean = float(output[0].detach().float().mean().item())
                             logger.info(f"ActMean at step {curr_step}: {act_mean}")
+                            periodic['act_mean'].append(act_mean)
                         except Exception:
                             pass
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     info = {'loss': losses}
+                    # Persist for post-run logging/comparison
+                    self._model_run_losses = list(losses)
+                    self._model_run_periodic = dict(periodic)
                     return (duration, info)
+
+    def _benchmark(self):
+        """Run the benchmark then handle post-run model log save/compare."""
+        ok = super()._benchmark()
+        self._post_run_model_log()
+        return ok
 
     def _inference_step(self, precision):
         """Define the inference process.

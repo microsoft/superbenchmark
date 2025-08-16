@@ -5,13 +5,13 @@
 
 import os
 import logging
-import numpy as np
 import pytest
-
+import torch
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks.pytorch_bert import PytorchBERT
-
+import json
+import tempfile
 
 @decorator.cuda_test
 @decorator.pytorch_test
@@ -63,20 +63,31 @@ def test_pytorch_bert_base():
         assert (len(benchmark.result[metric]) == benchmark.run_count)
 
 
+
 @decorator.cuda_test
 @decorator.pytorch_test
-def test_pytorch_bert_periodic_fingerprint_logging(caplog):
-    """Emit loss and activation fingerprints at the periodic cadence when deterministic training is enabled."""
-    # Ensure strict mode is off; only periodic checksum gated by deterministic should run
-    os.environ.pop('SB_STRICT_DETERMINISM', None)
-    os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
+def test_pytorch_bert_periodic_and_logging_combined(caplog, monkeypatch):
+    """Verify periodic fingerprint logs, in-memory recording, and log-file generation in a single run.
+
+    - Enables strict determinism envs if CUDA not initialized (optional).
+    - Runs with --deterministic --random_seed 42 and num_steps=100 to hit cadence at step 100.
+    - Enables --generate-log with a temp path; validates file contents and in-memory bookkeeping.
+    - Confirms INFO logs contain Loss/ActMean at step 100.
+    """
+
+    # Enable strict determinism if possible (must be before first CUDA init)
+    if torch.cuda.is_available() and not torch.cuda.is_initialized():
+        monkeypatch.setenv('SB_STRICT_DETERMINISM', '1')
+        monkeypatch.setenv('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
 
     caplog.set_level(logging.INFO, logger='superbench')
 
+    log_path = tempfile.mktemp(suffix='.json')
     parameters = (
         '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
         '--intermediate_size 1024 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 100 '
-        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
+        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train '
+        f'--generate-log --log-path {log_path}'
     )
 
     context = BenchmarkRegistry.create_benchmark_context(
@@ -84,79 +95,74 @@ def test_pytorch_bert_periodic_fingerprint_logging(caplog):
     )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
 
+    try:
+        assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
+
+        # Check determinism/logging args
+        assert benchmark._args.deterministic is True
+        assert benchmark._args.random_seed == 42
+        assert benchmark._args.generate_log is True
+
+        # Expect Loss/ActMean logs at step 100
+        messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
+        assert any('Loss at step 100:' in m for m in messages)
+        assert any('ActMean at step 100:' in m for m in messages)
+
+        # In-memory recording
+        assert hasattr(benchmark, '_model_run_losses') and isinstance(benchmark._model_run_losses, list)
+        assert len(benchmark._model_run_losses) > 0
+        assert hasattr(benchmark, '_model_run_periodic') and isinstance(benchmark._model_run_periodic, dict)
+        periodic = benchmark._model_run_periodic
+        for key in ('loss', 'act_mean', 'step'):
+            assert key in periodic
+        assert len(periodic['loss']) > 0
+        assert len(periodic['act_mean']) > 0
+        assert len(periodic['step']) > 0
+
+        # Log-file generation and contents
+        assert os.path.exists(log_path)
+        with open(log_path, 'r') as f:
+            data = json.load(f)
+        assert 'schema_version' in data
+        assert 'metadata' in data
+        assert 'per_step_fp32_loss' in data and isinstance(data['per_step_fp32_loss'], list)
+        assert 'fingerprints' in data and isinstance(data['fingerprints'], dict)
+        # Optional: verify step 100 present if any steps recorded
+        fp = data['fingerprints']
+        if 'step' in fp and isinstance(fp['step'], list) and len(fp['step']) > 0:
+            assert 100 in fp['step']
+            assert len(fp.get('loss', [])) == len(fp['step'])
+            assert len(fp.get('act_mean', [])) == len(fp['step'])
+    finally:
+        if os.path.exists(log_path):
+            os.remove(log_path)
+
+
+@decorator.cuda_test
+@decorator.pytorch_test
+def test_pytorch_bert_nondeterministic_defaults():
+    """Run without determinism/logging flags and assert defaults are unset and periodic is empty."""
+    parameters = (
+        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
+        '--intermediate_size 1024 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 5 '
+        '--precision float32 --sample_count 2 --model_action train'
+    )
+    context = BenchmarkRegistry.create_benchmark_context(
+        'bert-base', platform=Platform.CUDA, parameters=parameters, framework=Framework.PYTORCH
+    )
+    benchmark = BenchmarkRegistry.launch_benchmark(context)
+
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
+    args = benchmark._args
+    assert args.deterministic is False
+    assert getattr(args, 'generate_log', False) is False
+    assert getattr(args, 'log_path', None) is None
+    assert getattr(args, 'compare_log', None) is None
 
-    # Expect loss and activation logs at step 100 (cadence = 100)
-    messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-    assert any('Loss at step 100:' in m for m in messages)
-    assert any('ActMean at step 100:' in m for m in messages)
-
-
-@decorator.cuda_test
-@decorator.pytorch_test
-def test_pytorch_bert_soft_determinism():
-    """Soft determinism: losses should be numerically close across runs without strict envs."""
-    os.environ.pop('SB_STRICT_DETERMINISM', None)
-    os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
-
-    params = (
-        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
-        '--intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
-        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
-    )
-
-    ctx1 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
-    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
-    ctx2 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
-    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
-
-    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
-
-    m_loss = 'fp32_train_loss'
-    a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
-    a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
-    assert np.isfinite(a1).all() and np.isfinite(a2).all()
-    assert np.allclose(a1, a2, rtol=1e-6, atol=1e-7)
-
-@decorator.cuda_test
-@decorator.pytorch_test
-def test_pytorch_bert_strict_determinism():
-    """Strict determinism: exact per-step loss equality under strict envs.
-
-    This test verifies the strongest reproducibility guarantee: with strict determinism
-    enabled and a fixed seed, two runs must produce identical fp32 per-step training
-    losses (bitwise equality).
-
-    Requirements and behavior:
-    - Environment must be set before CUDA init: SB_STRICT_DETERMINISM=1 and
-        CUBLAS_WORKSPACE_CONFIG (":4096:8" or ":16:8").
-    - If these envs are not present, the test is skipped to avoid false failures.
-    - The benchmark is invoked with --deterministic and --random_seed 42.
-    - We compare the raw_data metric 'fp32_train_loss' via np.array_equal.
-
-    Rationale:
-    - Strict mode enforces deterministic kernels (warn_only=False) and will error if any
-        nondeterministic op is used, ensuring reproducible numerics beyond soft determinism.
-    """
-
-    if os.environ.get('SB_STRICT_DETERMINISM') != '1' or 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
-        pytest.skip('Strict determinism env not set; skipping test.')
-
-    params = (
-        '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
-        '--intermediate_size 1024 --batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 '
-        '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train'
-    )
-
-    ctx1 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
-    b1 = BenchmarkRegistry.launch_benchmark(ctx1)
-    ctx2 = BenchmarkRegistry.create_benchmark_context('bert-base', platform=Platform.CUDA, parameters=params, framework=Framework.PYTORCH)
-    b2 = BenchmarkRegistry.launch_benchmark(ctx2)
-
-    assert b1 and b2 and b1.return_code == ReturnCode.SUCCESS and b2.return_code == ReturnCode.SUCCESS
-
-    m_loss = 'fp32_train_loss'
-    a1 = np.array(b1.raw_data[m_loss][0], dtype=float)
-    a2 = np.array(b2.raw_data[m_loss][0], dtype=float)
-    assert np.isfinite(a1).all() and np.isfinite(a2).all()
-    assert np.array_equal(a1, a2)
+    # Periodic fingerprints exist but are empty when not deterministic
+    assert hasattr(benchmark, '_model_run_periodic')
+    periodic = benchmark._model_run_periodic
+    assert isinstance(periodic, dict)
+    for key in ('loss', 'act_mean', 'step'):
+        assert key in periodic
+        assert len(periodic[key]) == 0

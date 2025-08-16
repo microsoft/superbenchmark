@@ -1,21 +1,21 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Model benchmark example for bert-large (24-layer, 1024-hidden, 16-heads, 340M parameters).
+"""Model benchmark example for BERT-Large (24-layer, 1024-hidden, 16-heads).
 
 Commands to run:
-  python3 examples/benchmarks/pytorch_bert_large.py (Single GPU)
-  python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_bert_large.py \
-      --distributed (Distributed)
+  python3 examples/benchmarks/pytorch_bert_large.py            # Single GPU
+  python3 -m torch.distributed.launch --use_env --nproc_per_node=8 \
+      examples/benchmarks/pytorch_bert_large.py --distributed  # Distributed
 
-
-  Deterministic examples:
-  # Soft determinism:
-  python3 examples/benchmarks/pytorch_bert_large.py --deterministic --random_seed 42
-
-  # Strict determinism (requires cuBLAS env):
+Deterministic + logging:
+  # Generate reference log (determinism). Requires cuBLAS env.
   CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_bert_large.py \
-  --deterministic --random_seed 42 --strict_determinism
+      --deterministic --random_seed 42 --generate_log --log_path ./outputs/bert_ref.json
+
+  # Compare against reference
+  CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_bert_large.py \
+      --deterministic --random_seed 42 --compare_log ./outputs/bert_ref.json
 """
 import os
 import argparse
@@ -30,15 +30,16 @@ if __name__ == '__main__':
     )
     parser.add_argument('--deterministic', action='store_true', default=False, help='Enable deterministic training.')
     parser.add_argument('--random_seed', type=int, default=None, help='Fixed seed when using --deterministic.')
-    parser.add_argument(
-        '--strict_determinism', action='store_true', default=False,
-        help='Enable strict determinism checks (set SB_STRICT_DETERMINISM=1). Requires CUBLAS_WORKSPACE_CONFIG env.'
-    )
+    # Logging / comparison
+    parser.add_argument('--generate_log', action='store_true', default=False, help='Save fingerprint log to file.')
+    parser.add_argument('--log_path', type=str, default=None, help='Path to save or load fingerprint log.')
+    parser.add_argument('--compare_log', type=str, default=None, help='Compare this run to a reference fingerprint log.')
     args = parser.parse_args()
 
     # Specify the model name and benchmark parameters.
     model_name = 'bert-large'
-    parameters = '--batch_size 1 --duration 120 --seq_len 128 --precision float32 --run_count 2'
+    # Align with benchmark flags: use num_steps/num_warmup instead of duration
+    parameters = '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 128 --precision float16 --model_action train'
     if args.distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'
 
@@ -46,10 +47,16 @@ if __name__ == '__main__':
         parameters += ' --deterministic --precision float32'
     if args.random_seed is not None:
         parameters += f' --random_seed {args.random_seed}'
+    if args.generate_log:
+        logger.info('Log generation enabled')
+        parameters += ' --generate-log'
+        if args.log_path:
+            parameters += f' --log-path {args.log_path}'
+    if args.compare_log:
+        parameters += f' --compare-log {args.compare_log}'
 
-    if args.strict_determinism:
-        os.environ['SB_STRICT_DETERMINISM'] = '1'
-        logger.info('Strict determinism enabled (SB_STRICT_DETERMINISM=1). Ensure CUBLAS_WORKSPACE_CONFIG is set.')
+    if args.deterministic:
+        logger.info('Deterministic run. Ensure CUBLAS_WORKSPACE_CONFIG is set before CUDA init (e.g., :4096:8).')
 
     # Create context for bert-large benchmark and run it for 120 * 2 seconds.
     context = BenchmarkRegistry.create_benchmark_context(
