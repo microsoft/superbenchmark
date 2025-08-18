@@ -136,6 +136,7 @@ class PytorchCNN(PytorchBase):
             'batch_size': getattr(self._args, 'batch_size', None),
             'image_size': getattr(self._args, 'image_size', None),
             'num_steps': getattr(self._args, 'num_steps', None),
+            'check_frequency': getattr(self._args, 'check_frequency', None),
             'num_classes': getattr(self._args, 'num_classes', None),
             'model_type': getattr(self._args, 'model_type', None),
         }
@@ -155,7 +156,7 @@ class PytorchCNN(PytorchBase):
         losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         while True:
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
@@ -219,7 +220,7 @@ class PytorchCNN(PytorchBase):
         """
         duration = []
         curr_step = 0
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         with torch.no_grad():
             self._model.eval()
             while True:

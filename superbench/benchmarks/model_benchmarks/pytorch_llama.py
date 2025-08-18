@@ -235,6 +235,7 @@ class PytorchLlama(PytorchBase):
             'batch_size': getattr(self._args, 'batch_size', None),
             'seq_len': getattr(self._args, 'seq_len', None),
             'num_steps': getattr(self._args, 'num_steps', None),
+            'check_frequency': getattr(self._args, 'check_frequency', None),
             'num_classes': getattr(self._args, 'num_classes', None),
             'hidden_size': getattr(self._args, 'hidden_size', None),
             'num_hidden_layers': getattr(self._args, 'num_hidden_layers', None),
@@ -258,7 +259,7 @@ class PytorchLlama(PytorchBase):
         losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         # Use a periodic cadence for any extra work (aligns with base default)
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         curr_step = 0
         while True:
             for idx, sample in enumerate(self._dataloader):
@@ -329,7 +330,7 @@ class PytorchLlama(PytorchBase):
         """
         duration = []
         curr_step = 0
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         with torch.no_grad():
             self._model.eval()
             while True:

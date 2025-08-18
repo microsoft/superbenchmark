@@ -4,21 +4,20 @@
 """Model benchmark example for lstm (8-layer, 1024-hidden, 256-input_size, False-bidirectional).
 
 Commands to run:
-    # Single GPU
-    python3 examples/benchmarks/pytorch_lstm.py
-
-    # Distributed
-    python3 -m torch.distributed.launch --use_env --nproc_per_node=8 \
-            examples/benchmarks/pytorch_lstm.py --distributed
+  python3 examples/benchmarks/pytorch_lstm.py (Single GPU)
+  python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_lstm.py \
+      --distributed (Distributed)
 
 Deterministic + logging:
     # Generate reference log (determinism). Requires cuBLAS env.
     CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_lstm.py \
-            --deterministic --random_seed 42 --generate_log --log_path ./outputs/lstm_ref.json
+            --deterministic --random_seed 42 --generate_log --log_path ./outputs/lstm_ref.json \
+            --check_frequency 50
 
     # Compare against reference
     CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_lstm.py \
-            --deterministic --random_seed 42 --compare_log ./outputs/lstm_ref.json
+            --deterministic --random_seed 42 --compare_log ./outputs/lstm_ref.json \
+            --check_frequency 50
 """
 
 import argparse
@@ -34,6 +33,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--deterministic', action='store_true', default=False, help='Enable deterministic training.')
     parser.add_argument('--random_seed', type=int, default=None, help='Fixed seed when using --deterministic.')
+    parser.add_argument('--check_frequency', type=int, default=None, help='Step cadence for periodic checks/logging.')
     # Logging / comparison
     parser.add_argument('--generate_log', action='store_true', default=False, help='Save fingerprint log to file.')
     parser.add_argument('--log_path', type=str, default=None, help='Path to save or load fingerprint log.')
@@ -50,6 +50,8 @@ if __name__ == '__main__':
         parameters += ' --deterministic --precision float32'
     if args.random_seed is not None:
         parameters += f' --random_seed {args.random_seed}'
+    if args.check_frequency is not None:
+        parameters += f' --check_frequency {args.check_frequency}'
     if args.generate_log:
         logger.info('Log generation enabled')
         parameters += ' --generate-log'

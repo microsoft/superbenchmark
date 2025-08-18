@@ -218,6 +218,7 @@ class PytorchBERT(PytorchBase):
             'batch_size': getattr(self._args, 'batch_size', None),
             'seq_len': getattr(self._args, 'seq_len', None),
             'num_steps': getattr(self._args, 'num_steps', None),
+            'check_frequency': getattr(self._args, 'check_frequency', None),
             'num_classes': getattr(self._args, 'num_classes', None),
             'hidden_size': getattr(self._args, 'hidden_size', None),
             'num_hidden_layers': getattr(self._args, 'num_hidden_layers', None),
@@ -240,7 +241,7 @@ class PytorchBERT(PytorchBase):
         losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = self._timer()
@@ -310,7 +311,7 @@ class PytorchBERT(PytorchBase):
         """
         duration = []
         curr_step = 0
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         with torch.no_grad():
             self._model.eval()
             while True:
