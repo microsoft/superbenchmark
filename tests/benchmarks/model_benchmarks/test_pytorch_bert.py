@@ -87,7 +87,7 @@ def test_pytorch_bert_periodic_and_logging_combined(caplog, monkeypatch):
         '--hidden_size 256 --num_hidden_layers 2 --num_attention_heads 4 '
         '--intermediate_size 1024 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 100 '
         '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train '
-        f'--generate-log --log-path {log_path}'
+        f'--generate-log --log-path {log_path} --check_frequency 10'
     )
 
     context = BenchmarkRegistry.create_benchmark_context(
@@ -102,6 +102,7 @@ def test_pytorch_bert_periodic_and_logging_combined(caplog, monkeypatch):
         assert benchmark._args.deterministic is True
         assert benchmark._args.random_seed == 42
         assert benchmark._args.generate_log is True
+        assert benchmark._args.check_frequency == 10
 
         # Expect Loss/ActMean logs at step 100
         messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
@@ -158,6 +159,7 @@ def test_pytorch_bert_nondeterministic_defaults():
     assert getattr(args, 'generate_log', False) is False
     assert getattr(args, 'log_path', None) is None
     assert getattr(args, 'compare_log', None) is None
+    assert getattr(args, 'check_frequency', None) is 100
 
     # Periodic fingerprints exist but are empty when not deterministic
     assert hasattr(benchmark, '_model_run_periodic')

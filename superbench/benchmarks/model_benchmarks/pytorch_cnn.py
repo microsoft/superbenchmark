@@ -187,7 +187,6 @@ class PytorchCNN(PytorchBase):
                             periodic['step'].append(curr_step)
                         except Exception:
                             pass
-                        # Activation fingerprint: mean over logits for sample 0
                         try:
                             act_mean = float(output[0].detach().float().mean().item())
                             logger.info(f"ActMean at step {curr_step}: {act_mean}")
@@ -197,7 +196,6 @@ class PytorchCNN(PytorchBase):
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     info = {'loss': losses}
-                    # Persist for post-run logging/comparison
                     self._model_run_losses = list(losses)
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)

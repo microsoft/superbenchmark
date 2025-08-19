@@ -42,7 +42,6 @@ if __name__ == '__main__':
 
     # Specify the model name and benchmark parameters.
     model_name = 'lstm'
-    # Align with benchmark flags: use num_steps/num_warmup instead of duration
     parameters = '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 256 --precision float16 --model_action train'
     if args.distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'

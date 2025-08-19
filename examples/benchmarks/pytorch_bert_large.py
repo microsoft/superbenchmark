@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 """Model benchmark example for bert-large (24-layer, 1024-hidden, 16-heads, 340M parameters).
+
 Commands to run:
   python3 examples/benchmarks/pytorch_bert_large.py (Single GPU)
   python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_bert_large.py \
@@ -40,7 +41,6 @@ if __name__ == '__main__':
 
     # Specify the model name and benchmark parameters.
     model_name = 'bert-large'
-    # Align with benchmark flags: use num_steps/num_warmup instead of duration
     parameters = '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 128 --precision float16 --model_action train'
     if args.distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'

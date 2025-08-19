@@ -78,7 +78,6 @@ class PytorchBERT(PytorchBase):
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(self._args.random_seed)
                 torch.cuda.manual_seed_all(self._args.random_seed)
-        # Deterministic implies strict
         torch.use_deterministic_algorithms(True, warn_only=False)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
@@ -203,7 +202,7 @@ class PytorchBERT(PytorchBase):
             )
             return False
 
-        # Seed before target generation when deterministic (offset to decouple from dataset)
+        # Seed before target generation when deterministic
         if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
             torch.manual_seed(self._args.random_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
@@ -235,7 +234,7 @@ class PytorchBERT(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
-            A tuple of (step_times_ms, info) where info may include per-step loss.
+            A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
         losses = []
@@ -268,7 +267,6 @@ class PytorchBERT(PytorchBase):
                         losses.append(float(loss.detach().item()))
                     except Exception:
                         pass
-                    # Periodic lightweight fingerprints when deterministic is enabled (near-zero overhead)
                     if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
                         # 1) Loss fingerprint
                         try:
@@ -288,7 +286,6 @@ class PytorchBERT(PytorchBase):
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     info = {'loss': losses}
-                    # Persist for post-run logging/comparison
                     self._model_run_losses = list(losses)
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)

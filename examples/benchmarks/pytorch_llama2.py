@@ -4,8 +4,8 @@
 """Model benchmark example for Llama2-7b (32-layer, 4096-hidden, 32-heads, 7B parameters).
 
 Commands to run:
-    python3 examples/benchmarks/pytorch_llama2.py (Single GPU)
-    python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_llama2.py \
+  python3 examples/benchmarks/pytorch_llama2.py (Single GPU)
+  python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_llama2.py \
       --distributed (Distributed)
 
   Deterministic + logging:
@@ -21,6 +21,7 @@ Commands to run:
 """
 
 import argparse
+
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
 from superbench.common.utils import logger
 
@@ -39,9 +40,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Specify the model name and benchmark parameters.
-    # Note: when passing Framework.PYTORCH, use the unprefixed name to avoid 'pytorch-' duplication
     model_name = 'llama2-7b'
-    # Align with benchmark flags: use num_steps/num_warmup instead of duration
     parameters = '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 512 --precision float16 --model_action train'
     if args.distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'

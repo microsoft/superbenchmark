@@ -219,9 +219,8 @@ class PytorchLlama(PytorchBase):
             )
             return False
 
-        # Generate targets - use seed if deterministic training is enabled
         if self._args.deterministic and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed + 1)  # +1 to avoid same seed as dataset
+            torch.manual_seed(self._args.random_seed + 1)
 
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
@@ -253,12 +252,11 @@ class PytorchLlama(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
-            A tuple of (step_times_ms, info) where info may include per-step loss.
+            A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
         losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
-        # Use a periodic cadence for any extra work (aligns with base default)
         check_frequency = self._args.check_frequency
         curr_step = 0
         while True:
@@ -289,26 +287,23 @@ class PytorchLlama(PytorchBase):
                         pass
                     # Lightweight periodic fingerprints when deterministic is enabled; log only.
                     if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
-                        # 1) Loss fingerprint (reuses computed loss; near-zero overhead)
+                        # 1) Loss fingerprint
                         try:
                             logger.info(f"Loss at step {curr_step}: {float(loss.detach().item())}")
                             periodic['loss'].append(float(loss.detach().item()))
                             periodic['step'].append(curr_step)
                         except Exception:
                             pass
-                        # 2) Tiny activation fingerprint (mean of last-token logits for sample 0)
+                        # 2) Tiny activation fingerprint
                         try:
                             act_mean = float(logits[0].detach().float().mean().item())
                             logger.info(f"ActMean at step {curr_step}: {act_mean}")
                             periodic['act_mean'].append(act_mean)
                         except Exception:
-                            # Never fail training due to fingerprint logging
                             pass
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    # Return optional info for additional raw metrics (loss)
                     info = {'loss': losses}
-                    # Assign model_run_losses and model_run_periodic for determinism log
                     self._model_run_losses = list(losses)
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)
@@ -351,7 +346,6 @@ class PytorchLlama(PytorchBase):
                         self._log_step_time(curr_step, precision, duration)
                     if self._is_finished(curr_step, end, check_frequency):
                         return duration
-
 
 
 # Register Llama2 benchmark with 7b parameters.

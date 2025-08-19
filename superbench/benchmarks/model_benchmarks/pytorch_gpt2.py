@@ -78,7 +78,6 @@ class PytorchGPT2(PytorchBase):
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(self._args.random_seed)
                 torch.cuda.manual_seed_all(self._args.random_seed)
-        # Deterministic implies strict
         torch.use_deterministic_algorithms(True, warn_only=False)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
@@ -225,7 +224,7 @@ class PytorchGPT2(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
-            A tuple of (step_times_ms, info) where info may include per-step loss.
+           A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
         losses = []
@@ -265,7 +264,7 @@ class PytorchGPT2(PytorchBase):
                             periodic['step'].append(curr_step)
                         except Exception:
                             pass
-                        # Activation fingerprint: mean over last-token logits for sample 0
+                        # Activation fingerprint
                         try:
                             act_mean = float(logits[0].detach().float().mean().item())
                             logger.info(f"ActMean at step {curr_step}: {act_mean}")
@@ -275,7 +274,6 @@ class PytorchGPT2(PytorchBase):
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     info = {'loss': losses}
-                    # Persist for post-run logging/comparison
                     self._model_run_losses = list(losses)
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)

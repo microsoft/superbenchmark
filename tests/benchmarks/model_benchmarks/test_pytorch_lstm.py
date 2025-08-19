@@ -97,7 +97,7 @@ def test_pytorch_lstm_periodic_fingerprint_logging(caplog):
     parameters = (
         '--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 1 --num_steps 100 '
         '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train '
-        f'--generate-log --log-path {log_path}'
+        f'--generate-log --log-path {log_path} --check_frequency 10'
     )
 
     context = BenchmarkRegistry.create_benchmark_context(
@@ -112,6 +112,7 @@ def test_pytorch_lstm_periodic_fingerprint_logging(caplog):
         assert benchmark._args.deterministic is True
         assert benchmark._args.random_seed == 42
         assert benchmark._args.generate_log is True
+        assert benchmark._args.check_frequency == 10
 
         # Expect Loss/ActMean logs at step 100
         messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
@@ -166,6 +167,7 @@ def test_pytorch_lstm_nondeterministic_defaults():
     assert getattr(args, 'generate_log', False) is False
     assert getattr(args, 'log_path', None) is None
     assert getattr(args, 'compare_log', None) is None
+    assert getattr(args, 'check_frequency', None) is 100
 
     # Periodic fingerprints exist but are empty when not deterministic
     assert hasattr(benchmark, '_model_run_periodic')
