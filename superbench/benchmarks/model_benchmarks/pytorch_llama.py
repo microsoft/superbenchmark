@@ -227,11 +227,6 @@ class PytorchLlama(PytorchBase):
                     self._model_run_losses = list(periodic['loss'])
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)
-    def _benchmark(self):
-        # Override to call base logic, then post-run model log
-        ok = super()._benchmark()
-        self._post_run_model_log()
-        return ok
 
     def _inference_step(self, precision):
         """Define the inference process.

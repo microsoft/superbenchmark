@@ -8,7 +8,6 @@ Commands to run:
   python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_bert_large.py \
       --distributed (Distributed)
 """
-import os
 import argparse
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry

@@ -133,6 +133,12 @@ class PytorchBase(ModelBenchmark):
             except Exception:
                 pass
 
+    def _benchmark(self):
+        """Run the benchmark then handle post-run model log save/compare."""
+        ok = super()._benchmark()
+        self._post_run_model_log()
+        return ok
+
     def add_parser_arguments(self):
         super().add_parser_arguments()
         import argparse

@@ -205,11 +205,6 @@ class PytorchBERT(PytorchBase):
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)
 
-    def _benchmark(self):
-        """Run the benchmark then handle post-run model log save/compare."""
-        ok = super()._benchmark()
-        self._post_run_model_log()
-        return ok
 
     def _inference_step(self, precision):
         """Define the inference process.

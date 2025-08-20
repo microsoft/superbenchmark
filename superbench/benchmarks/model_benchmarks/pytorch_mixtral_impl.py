@@ -234,11 +234,6 @@ class PytorchMixtral(PytorchBase):
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)
 
-    def _benchmark(self):
-        """Run benchmark and emit post-run model log if requested."""
-        ok = super()._benchmark()
-        self._post_run_model_log()
-        return ok
 
     def _inference_step(self, precision):
         """Define the inference process.
