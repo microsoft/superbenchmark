@@ -70,34 +70,6 @@ class PytorchBERT(PytorchBase):
         self._optimizer_type = Optimizer.ADAMW
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
-    def _enable_deterministic_training(self):
-        """Enable deterministic training settings for reproducible results."""
-        if hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed)
-            random.seed(self._args.random_seed)
-            if torch.cuda.is_available():
-                torch.cuda.manual_seed(self._args.random_seed)
-                torch.cuda.manual_seed_all(self._args.random_seed)
-        torch.use_deterministic_algorithms(True, warn_only=False)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        # Disable TF32 to remove potential numerical variability
-        try:
-            torch.backends.cuda.matmul.allow_tf32 = False
-        except Exception:
-            pass
-        try:
-            torch.backends.cudnn.allow_tf32 = False
-        except Exception:
-            pass
-        # Force Scaled Dot-Product Attention to use deterministic math kernel
-        try:
-            from torch.backends.cuda import sdp_kernel
-            sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False)
-        except Exception:
-            # Older PyTorch versions may not expose sdp_kernel; ignore in that case
-            pass
-
     def add_parser_arguments(self):
         """Add the BERT-specified arguments.
 
@@ -117,19 +89,6 @@ class PytorchBERT(PytorchBase):
             '--intermediate_size', type=int, default=4096, required=False, help='Intermediate size.'
         )
         self._parser.add_argument('--seq_len', type=int, default=512, required=False, help='Sequence length.')
-        self._parser.add_argument(
-            '--random_seed',
-            type=int,
-            default=42,
-            required=False,
-            help='Random seed for deterministic training.'
-        )
-        self._parser.add_argument(
-            '--deterministic',
-            action='store_true',
-            default=False,
-            help='Enable deterministic training for reproducible results.'
-        )
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info.
@@ -209,21 +168,7 @@ class PytorchBERT(PytorchBase):
         if self._gpu_available:
             self._target = self._target.cuda()
 
-        # Assign model_run_metadata for determinism fingerprinting/logging
-        self._model_run_metadata = {
-            'model_name': self._name,
-            'precision': precision.value if hasattr(precision, 'value') else str(precision),
-            'seed': getattr(self._args, 'random_seed', None),
-            'batch_size': getattr(self._args, 'batch_size', None),
-            'seq_len': getattr(self._args, 'seq_len', None),
-            'num_steps': getattr(self._args, 'num_steps', None),
-            'check_frequency': getattr(self._args, 'check_frequency', None),
-            'num_classes': getattr(self._args, 'num_classes', None),
-            'hidden_size': getattr(self._args, 'hidden_size', None),
-            'num_hidden_layers': getattr(self._args, 'num_hidden_layers', None),
-            'num_attention_heads': getattr(self._args, 'num_attention_heads', None),
-            'intermediate_size': getattr(self._args, 'intermediate_size', None),
-        }
+        self._assign_model_run_metadata(precision)
 
         return True
 
@@ -329,21 +274,6 @@ class PytorchBERT(PytorchBase):
                         self._log_step_time(curr_step, precision, duration)
                     if self._is_finished(curr_step, end, check_frequency):
                         return duration
-
-    def _process_info(self, model_action, precision, info):
-        """Persist extra step-level signals (e.g., loss) into raw_data."""
-        try:
-            if not info:
-                return
-            precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
-            prec_value = precision.value if hasattr(precision, 'value') else str(precision)
-            prefix = precision_metric.get(prec_value, prec_value)
-            metric_loss = f"{prefix}_{model_action}_loss"
-            if 'loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0:
-                self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
-        except Exception:
-            pass
-
 
 # Register BERT Large benchmark.
 # Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html

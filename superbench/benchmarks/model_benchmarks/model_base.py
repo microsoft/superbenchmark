@@ -66,13 +66,6 @@ class ModelBenchmark(Benchmark):
             help='The number of test step.',
         )
         self._parser.add_argument(
-            '--check_frequency',
-            type=int,
-            default=100,
-            required=False,
-            help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
-        )
-        self._parser.add_argument(
             '--sample_count',
             type=int,
             default=1024,
@@ -152,6 +145,14 @@ class ModelBenchmark(Benchmark):
             default=0,
             required=False,
             help='Real-time log every n steps.',
+        )
+
+        self._parser.add_argument(
+            '--check_frequency',
+            type=int,
+            default=100,
+            required=False,
+            help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
         )
 
     @abstractmethod

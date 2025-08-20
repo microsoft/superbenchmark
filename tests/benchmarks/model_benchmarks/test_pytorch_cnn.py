@@ -117,10 +117,9 @@ def test_pytorch_cnn_periodic_and_logging_combined(caplog, monkeypatch):
         assert benchmark._args.generate_log is True
         assert benchmark._args.check_frequency == 10
 
-        # Expect one loss and one activation fingerprint log at step 100 (cadence = 100)
         messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-        assert any('Loss at step 100:' in m for m in messages)
-        assert any('ActMean at step 100:' in m for m in messages)
+        assert any(f'Loss at step {benchmark._args.check_frequency}:' in m for m in messages)
+        assert any(f'ActMean at step {benchmark._args.check_frequency}:' in m for m in messages)
 
         # In-memory records
         assert hasattr(benchmark, '_model_run_losses') and isinstance(benchmark._model_run_losses, list)
@@ -170,7 +169,7 @@ def test_pytorch_cnn_nondeterministic_defaults():
     assert getattr(args, 'generate_log', False) is False
     assert getattr(args, 'log_path', None) is None
     assert getattr(args, 'compare_log', None) is None
-    assert getattr(args, 'check_frequency', None) is 100
+    assert getattr(args, 'check_frequency', None) == 100
 
     # Periodic fingerprints should exist but be empty when not running in deterministic mode
     assert hasattr(benchmark, '_model_run_periodic')

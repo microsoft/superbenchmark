@@ -85,7 +85,7 @@ def test_pytorch_gpt2_periodic_and_logging_combined(caplog, monkeypatch):
     parameters = (
         '--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 --num_steps 100 '
         '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train '
-        f'--generate-log --log-path {log_path} check_frequency 10'
+        f'--generate-log --log-path {log_path} --check_frequency 10'
     )
 
     context = BenchmarkRegistry.create_benchmark_context(
@@ -104,8 +104,8 @@ def test_pytorch_gpt2_periodic_and_logging_combined(caplog, monkeypatch):
 
         # Expect Loss/ActMean logs at step 100
         messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-        assert any('Loss at step 100:' in m for m in messages)
-        assert any('ActMean at step 100:' in m for m in messages)
+        assert any(f'Loss at step {benchmark._args.check_frequency}:' in m for m in messages)
+        assert any(f'ActMean at step {benchmark._args.check_frequency}:' in m for m in messages)
 
         # In-memory recording
         assert hasattr(benchmark, '_model_run_losses') and isinstance(benchmark._model_run_losses, list)

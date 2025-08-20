@@ -37,28 +37,6 @@ class PytorchCNN(PytorchBase):
         self._optimizer_type = Optimizer.SGD
         self._loss_fn = torch.nn.CrossEntropyLoss()
 
-    def _enable_deterministic_training(self):
-        """Enable deterministic training settings for reproducible results."""
-        if hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed)
-            random.seed(self._args.random_seed)
-            if torch.cuda.is_available():
-                torch.cuda.manual_seed(self._args.random_seed)
-                torch.cuda.manual_seed_all(self._args.random_seed)
-        # Deterministic algorithms and cuDNN settings
-        torch.use_deterministic_algorithms(True, warn_only=False)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        # Disable TF32 to avoid numeric variability on Ampere+
-        try:
-            torch.backends.cuda.matmul.allow_tf32 = False
-        except Exception:
-            pass
-        try:
-            torch.backends.cudnn.allow_tf32 = False
-        except Exception:
-            pass
-
     def add_parser_arguments(self):
         """Add the CNN-specified arguments."""
         super().add_parser_arguments()
@@ -66,19 +44,6 @@ class PytorchCNN(PytorchBase):
         self._parser.add_argument('--model_type', type=str, required=True, help='The cnn benchmark to run.')
         self._parser.add_argument('--image_size', type=int, default=224, required=False, help='Image size.')
         self._parser.add_argument('--num_classes', type=int, default=1000, required=False, help='Num of class.')
-        self._parser.add_argument(
-            '--random_seed',
-            type=int,
-            default=42,
-            required=False,
-            help='Random seed for deterministic training.'
-        )
-        self._parser.add_argument(
-            '--deterministic',
-            action='store_true',
-            default=False,
-            help='Enable deterministic training for reproducible results.'
-        )
 
     def _generate_dataset(self):
         """Generate dataset for benchmarking according to shape info.
@@ -128,18 +93,7 @@ class PytorchCNN(PytorchBase):
         if self._gpu_available:
             self._target = self._target.cuda()
 
-        # Assign run metadata for logging/compare
-        self._model_run_metadata = {
-            'model_name': self._name,
-            'precision': precision.value if hasattr(precision, 'value') else str(precision),
-            'seed': getattr(self._args, 'random_seed', None),
-            'batch_size': getattr(self._args, 'batch_size', None),
-            'image_size': getattr(self._args, 'image_size', None),
-            'num_steps': getattr(self._args, 'num_steps', None),
-            'check_frequency': getattr(self._args, 'check_frequency', None),
-            'num_classes': getattr(self._args, 'num_classes', None),
-            'model_type': getattr(self._args, 'model_type', None),
-        }
+        self._assign_model_run_metadata(precision)
 
         return True
 
@@ -236,21 +190,6 @@ class PytorchCNN(PytorchBase):
                         self._log_step_time(curr_step, precision, duration)
                     if self._is_finished(curr_step, end, check_frequency):
                         return duration
-
-    def _process_info(self, model_action, precision, info):
-        """Persist extra step-level signals (e.g., loss) into raw_data."""
-        try:
-            if not info:
-                return
-            precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'float64': 'fp64', 'bfloat16': 'bf16'}
-            prec_value = precision.value if hasattr(precision, 'value') else str(precision)
-            prefix = precision_metric.get(prec_value, prec_value)
-            metric_loss = f"{prefix}_{model_action}_loss"
-            if 'loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0:
-                self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
-        except Exception:
-            pass
-
 
 # Register CNN benchmarks.
 # Reference: https://pytorch.org/vision/0.8/models.html

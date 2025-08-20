@@ -116,8 +116,8 @@ def test_pytorch_lstm_periodic_fingerprint_logging(caplog):
 
         # Expect Loss/ActMean logs at step 100
         messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-        assert any('Loss at step 100:' in m for m in messages)
-        assert any('ActMean at step 100:' in m for m in messages)
+        assert any(f'Loss at step {benchmark._args.check_frequency}:' in m for m in messages)
+        assert any(f'ActMean at step {benchmark._args.check_frequency}:' in m for m in messages)
 
         # In-memory recording
         assert hasattr(benchmark, '_model_run_losses') and isinstance(benchmark._model_run_losses, list)

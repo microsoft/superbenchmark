@@ -94,7 +94,7 @@ def test_pytorch_llama_periodic_and_logging_combined(caplog, monkeypatch):
         '--hidden_size 128 --num_hidden_layers 2 --num_attention_heads 4 --num_key_value_heads 4 '
         '--intermediate_size 512 --batch_size 1 --seq_len 16 --num_warmup 1 --num_steps 100 '
         '--precision float32 --sample_count 2 --deterministic --random_seed 42 --model_action train '
-        f'--generate-log --log-path {log_path} check_frequency 10'
+        f'--generate-log --log-path {log_path} --check_frequency 10'
     )
 
     context = BenchmarkRegistry.create_benchmark_context(
@@ -109,12 +109,12 @@ def test_pytorch_llama_periodic_and_logging_combined(caplog, monkeypatch):
         assert(benchmark._args.deterministic == True)
         assert(benchmark._args.random_seed == 42)
         assert(benchmark._args.generate_log == True)
-        assert benchmark._args.check_frequency == 10
+        assert(benchmark._args.check_frequency == 10)
 
         # Expect one loss and one activation fingerprint log at step 100 (cadence = 100)
         messages = [rec.getMessage() for rec in caplog.records if rec.name == 'superbench']
-        assert any('Loss at step 100:' in m for m in messages)
-        assert any('ActMean at step 100:' in m for m in messages)
+        assert any(f'Loss at step {benchmark._args.check_frequency}:' in m for m in messages)
+        assert any(f'ActMean at step {benchmark._args.check_frequency}:' in m for m in messages)
 
         # Check that losses are recorded in-memory
         assert hasattr(benchmark, '_model_run_losses')
