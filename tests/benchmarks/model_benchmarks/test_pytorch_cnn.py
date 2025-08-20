@@ -3,7 +3,6 @@
 
 """Tests for CNN model benchmarks."""
 
-import numpy as np
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks.pytorch_cnn import PytorchCNN

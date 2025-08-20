@@ -2,8 +2,6 @@
 # Licensed under the MIT License.
 
 """Tests for LSTM model benchmarks."""
-import numpy as np
-
 
 from tests.helper import decorator
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode

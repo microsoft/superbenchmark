@@ -147,14 +147,6 @@ class ModelBenchmark(Benchmark):
             help='Real-time log every n steps.',
         )
 
-        self._parser.add_argument(
-            '--check_frequency',
-            type=int,
-            default=100,
-            required=False,
-            help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
-        )
-
     @abstractmethod
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""

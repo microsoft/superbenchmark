@@ -173,6 +173,12 @@ class PytorchBERT(PytorchBase):
         return True
 
     def _train_step(self, precision):
+        """Define the training process.
+        Args:
+            precision (Precision): precision of model and input data, such as float32, float16.
+        Return:
+            The step-time list of every training step.
+        """
         duration = []
         losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
@@ -200,10 +206,7 @@ class PytorchBERT(PytorchBase):
                     self.record_determinism_fingerprint(curr_step, loss, logits, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    info = {'loss': periodic['loss']}
-                    self._model_run_losses = list(periodic['loss'])
-                    self._model_run_periodic = dict(periodic)
-                    return (duration, info)
+                    return self._finalize_periodic_logging(duration, periodic)
 
 
     def _inference_step(self, precision):

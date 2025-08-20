@@ -135,10 +135,7 @@ class PytorchCNN(PytorchBase):
                     self.record_determinism_fingerprint(curr_step, loss, output, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    info = {'loss': losses}
-                    self._model_run_losses = list(losses)
-                    self._model_run_periodic = dict(periodic)
-                    return (duration, info)
+                    return self._finalize_periodic_logging(duration, periodic)
 
 
     def _inference_step(self, precision):

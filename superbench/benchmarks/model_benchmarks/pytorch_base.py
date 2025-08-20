@@ -133,6 +133,13 @@ class PytorchBase(ModelBenchmark):
             except Exception:
                 pass
 
+    def _finalize_periodic_logging(self, duration, periodic, info_key='loss'):
+        """Finalize periodic logging and return results tuple for training step."""
+        info = {info_key: periodic.get(info_key, [])}
+        self._model_run_losses = list(periodic.get(info_key, []))
+        self._model_run_periodic = dict(periodic)
+        return (duration, info)
+
     def _benchmark(self):
         """Run the benchmark then handle post-run model log save/compare."""
         ok = super()._benchmark()
@@ -167,6 +174,13 @@ class PytorchBase(ModelBenchmark):
             action='store_true',
             default=False,
             help='Enable deterministic training for reproducible results.'
+        )
+        self._parser.add_argument(
+            '--check_frequency',
+            type=int,
+            default=100,
+            required=False,
+            help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
         )
 
     def _post_run_model_log(self):
