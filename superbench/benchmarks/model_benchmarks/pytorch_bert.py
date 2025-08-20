@@ -205,7 +205,6 @@ class PytorchBERT(PytorchBase):
                 if self._is_finished(curr_step, end, check_frequency):
                     return self._finalize_periodic_logging(duration, periodic)
 
-
     def _inference_step(self, precision):
         """Define the inference process.
 

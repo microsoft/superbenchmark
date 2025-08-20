@@ -106,7 +106,7 @@ class PytorchLlama(PytorchBase):
             True if dataset is created successfully.
         """
         # Set seed before dataset generation if deterministic training is enabled
-        if self._args.deterministic and hasattr(self._args, 'random_seed'):
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
             torch.manual_seed(self._args.random_seed)
 
         self._dataset = TorchRandomDataset(
@@ -125,7 +125,7 @@ class PytorchLlama(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         # Enable deterministic training if requested
-        if self._args.deterministic:
+        if getattr(self._args, 'deterministic', False):
             self._enable_deterministic_training()
 
         self._config = LlamaConfig(
@@ -173,7 +173,8 @@ class PytorchLlama(PytorchBase):
             )
             return False
 
-        if self._args.deterministic and hasattr(self._args, 'random_seed'):
+        # Seed before target generation when deterministic
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
             torch.manual_seed(self._args.random_seed + 1)
 
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
@@ -249,7 +250,6 @@ class PytorchLlama(PytorchBase):
                     end = self._timer()
                     curr_step += 1
                     if curr_step > self._args.num_warmup:
-                        # Save the step time of every inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
                         self._log_step_time(curr_step, precision, duration)
                     if self._is_finished(curr_step, end, check_frequency):

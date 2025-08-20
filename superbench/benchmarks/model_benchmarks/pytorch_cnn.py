@@ -70,8 +70,10 @@ class PytorchCNN(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         try:
+            # Enable deterministic training if requested
             if getattr(self._args, 'deterministic', False):
                 self._enable_deterministic_training()
+
             self._model = getattr(models, self._args.model_type)()
             self._model = self._model.to(dtype=getattr(torch, precision.value))
             self._model = _keep_BatchNorm_as_float(self._model)
@@ -105,7 +107,6 @@ class PytorchCNN(PytorchBase):
             The step-time list of every training step.
         """
         duration = []
-        losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = self._args.check_frequency
@@ -117,7 +118,6 @@ class PytorchCNN(PytorchBase):
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
                 output = self._model(sample)
-                # Compute loss in float32 for stability
                 loss = self._loss_fn(output.float(), self._target)
                 loss.backward()
                 self._optimizer.step()
@@ -130,7 +130,6 @@ class PytorchCNN(PytorchBase):
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     return self._finalize_periodic_logging(duration, periodic)
-
 
     def _inference_step(self, precision):
         """Define the inference process.
