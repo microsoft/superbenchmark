@@ -201,6 +201,12 @@ class PytorchMixtral(PytorchBase):
         return True
 
     def _train_step(self, precision):
+        """Define the training process.
+        Args:
+            precision (Precision): precision of model and input data, such as float32, float16.
+        Return:
+            The step-time list of every training step.
+        """
         duration = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
