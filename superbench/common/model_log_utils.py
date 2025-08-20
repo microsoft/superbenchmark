@@ -18,11 +18,6 @@ def load_model_log(filepath):
         return json.load(f)
 
 def compare_model_logs(current, reference):
-    """Compare two model run logs using strict, bit-exact equality.
-
-    This function checks metadata equality, then enforces exact equality for the
-    full per-step FP32 loss series and periodic fingerprint series.
-    """
     # Check metadata match (model, params, etc.)
     for key in ['model_name', 'precision', 'seed', 'batch_size', 'seq_len', 'num_steps']:
         if str(current['metadata'].get(key)) != str(reference['metadata'].get(key)):

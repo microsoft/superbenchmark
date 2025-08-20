@@ -23,8 +23,6 @@ MODELS = [
 
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_determinism(model_name, params):
-    print("**********", model_name)
-
     log_path = tempfile.mktemp(suffix='.json')
     parameters = params + f' --deterministic --random_seed 42 --generate-log --log-path {log_path} --check_frequency 10'
     context = BenchmarkRegistry.create_benchmark_context(
