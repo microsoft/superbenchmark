@@ -99,6 +99,40 @@ class PytorchBase(ModelBenchmark):
             metadata[key] = getattr(self._args, key, None)
         self._model_run_metadata = metadata
 
+    def record_determinism_fingerprint(self, curr_step, loss, logits, periodic, check_frequency):
+        """Centralized logic for recording per-step loss and periodic fingerprints for deterministic runs.
+
+        Args:
+            curr_step (int): Current training step.
+            loss (torch.Tensor or float): Loss value for this step.
+            logits (torch.Tensor or float): Logits output for this step (sample 0).
+            periodic (dict): Dictionary to store periodic fingerprints ('loss', 'act_mean', 'step').
+            check_frequency (int): Frequency for fingerprint logging.
+        """
+        # Record per-step loss for determinism checks (for full history)
+        try:
+            v = float(loss.detach().item()) if hasattr(loss, 'detach') else float(loss)
+        except Exception:
+            v = None
+        # Periodic fingerprint logging
+        if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
+            # 1) Loss fingerprint (only at fingerprinting frequency)
+            try:
+                if 'loss' in periodic and v is not None:
+                    periodic['loss'].append(v)
+                logger.info(f"Loss at step {curr_step}: {v}")
+                periodic['step'].append(curr_step)
+            except Exception:
+                pass
+            # 2) Tiny activation fingerprint: mean over logits for sample 0
+            try:
+                if logits is not None:
+                    act_mean = float(logits[0].detach().float().mean().item()) if hasattr(logits[0], 'detach') else float(logits[0])
+                    logger.info(f"ActMean at step {curr_step}: {act_mean}")
+                    periodic['act_mean'].append(act_mean)
+            except Exception:
+                pass
+
     def add_parser_arguments(self):
         super().add_parser_arguments()
         import argparse

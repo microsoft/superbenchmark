@@ -49,8 +49,6 @@ def main():
     parser.add_argument('--compare-log', type=str, default=None, help='Path to reference fingerprint log for comparison.')
     args = parser.parse_args()
 
-    print("******", args.model)
-
     parameters = DEFAULT_PARAMS[args.model]
     if args.generate_log:
         parameters += ' --generate-log'

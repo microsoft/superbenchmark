@@ -165,32 +165,12 @@ class PytorchLSTM(PytorchBase):
                 end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
-                    # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                    try:
-                        losses.append(float(loss.detach().item()))
-                    except Exception:
-                        pass
-                    if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
-                        # Emit lightweight periodic fingerprints instead of parameter checksum.
-                        try:
-                            v = float(loss.detach().float().item())
-                            logger.info(f"Loss at step {curr_step}: {v}")
-                            periodic['loss'].append(v)
-                            periodic['step'].append(curr_step)
-                        except Exception:
-                            pass
-                        try:
-                            act_mean = float(output.detach().float()[0].mean().item())
-                            logger.info(f"ActMean at step {curr_step}: {act_mean}")
-                            periodic['act_mean'].append(act_mean)
-                        except Exception:
-                            pass
+                    self.record_determinism_fingerprint(curr_step, loss, output, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    info = {'loss': losses}
-                    # Persist for post-run logging/comparison
-                    self._model_run_losses = list(losses)
+                    info = {'loss': periodic['loss']}
+                    self._model_run_losses = list(periodic['loss'])
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)
 

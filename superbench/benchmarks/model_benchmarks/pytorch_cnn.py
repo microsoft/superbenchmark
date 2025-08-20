@@ -132,21 +132,7 @@ class PytorchCNN(PytorchBase):
                         losses.append(float(loss.detach().item()))
                     except Exception:
                         pass
-                    if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
-                        # Loss fingerprint
-                        try:
-                            v = float(loss.detach().item())
-                            logger.info(f"Loss at step {curr_step}: {v}")
-                            periodic['loss'].append(v)
-                            periodic['step'].append(curr_step)
-                        except Exception:
-                            pass
-                        try:
-                            act_mean = float(output[0].detach().float().mean().item())
-                            logger.info(f"ActMean at step {curr_step}: {act_mean}")
-                            periodic['act_mean'].append(act_mean)
-                        except Exception:
-                            pass
+                    self.record_determinism_fingerprint(curr_step, loss, output, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     info = {'loss': losses}

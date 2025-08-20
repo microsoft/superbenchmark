@@ -199,8 +199,8 @@ class PytorchLlama(PytorchBase):
         duration = []
         losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
-        check_frequency = self._args.check_frequency
         curr_step = 0
+        check_frequency = self._args.check_frequency
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = self._timer()
@@ -212,7 +212,6 @@ class PytorchLlama(PytorchBase):
                         output = self._model(sample)
                 else:
                     output = self._model(sample)
-                # Compute loss in float32 to avoid fp16 overflow/NaNs while keeping model in desired precision
                 logits = output[range(self._args.batch_size), -1]
                 loss = self._loss_fn(logits.float(), self._target)
                 loss.backward()
@@ -220,33 +219,12 @@ class PytorchLlama(PytorchBase):
                 end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
-                    # Save the step time of every training step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                    # Record per-step loss for determinism checks
-                    try:
-                        losses.append(float(loss.detach().item()))
-                    except Exception:
-                        pass
-                    # Lightweight periodic fingerprints when deterministic is enabled; log only.
-                    if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
-                        # 1) Loss fingerprint
-                        try:
-                            logger.info(f"Loss at step {curr_step}: {float(loss.detach().item())}")
-                            periodic['loss'].append(float(loss.detach().item()))
-                            periodic['step'].append(curr_step)
-                        except Exception:
-                            pass
-                        # 2) Tiny activation fingerprint
-                        try:
-                            act_mean = float(logits[0].detach().float().mean().item())
-                            logger.info(f"ActMean at step {curr_step}: {act_mean}")
-                            periodic['act_mean'].append(act_mean)
-                        except Exception:
-                            pass
+                    self.record_determinism_fingerprint(curr_step, loss, logits, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    info = {'loss': losses}
-                    self._model_run_losses = list(losses)
+                    info = {'loss': periodic['loss']}
+                    self._model_run_losses = list(periodic['loss'])
                     self._model_run_periodic = dict(periodic)
                     return (duration, info)
     def _benchmark(self):
