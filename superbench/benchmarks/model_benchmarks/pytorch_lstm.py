@@ -3,8 +3,6 @@
 
 """Module of the Pytorch LSTM model."""
 
-import os
-import random
 import torch
 
 from superbench.common.utils import logger
@@ -147,7 +145,6 @@ class PytorchLSTM(PytorchBase):
             The step-time list of every training step.
         """
         duration = []
-        losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = self._args.check_frequency

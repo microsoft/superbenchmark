@@ -3,8 +3,6 @@
 
 """Module of the Pytorch Mixtral model implementation."""
 
-import os
-import random
 import torch
 from transformers import MixtralModel, MixtralConfig
 try:

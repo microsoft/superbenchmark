@@ -3,8 +3,6 @@
 
 """Module of the Pytorch GPT2 model."""
 
-import os
-import random
 import torch
 from transformers import GPT2Model, GPT2Config
 try:
@@ -173,7 +171,6 @@ class PytorchGPT2(PytorchBase):
            A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
-        losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = self._args.check_frequency

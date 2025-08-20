@@ -3,8 +3,6 @@
 
 """Module of the Pytorch BERT model."""
 
-import os
-import random
 import torch
 from transformers import BertModel, BertConfig
 try:
@@ -180,7 +178,6 @@ class PytorchBERT(PytorchBase):
             The step-time list of every training step.
         """
         duration = []
-        losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = self._args.check_frequency

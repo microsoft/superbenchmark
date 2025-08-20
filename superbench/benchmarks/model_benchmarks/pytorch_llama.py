@@ -4,8 +4,6 @@
 
 """Module of the Pytorch Llama2 model."""
 
-import os
-import random
 import torch
 from transformers import LlamaModel, LlamaConfig
 try:
@@ -197,7 +195,6 @@ class PytorchLlama(PytorchBase):
             A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
-        losses = []
         periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
         check_frequency = self._args.check_frequency

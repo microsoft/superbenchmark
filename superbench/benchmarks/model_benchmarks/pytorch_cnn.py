@@ -3,8 +3,6 @@
 
 """Module of the Pytorch CNN models."""
 
-import os
-import random
 import torch
 from torchvision import models
 
@@ -128,10 +126,6 @@ class PytorchCNN(PytorchBase):
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
-                    try:
-                        losses.append(float(loss.detach().item()))
-                    except Exception:
-                        pass
                     self.record_determinism_fingerprint(curr_step, loss, output, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
