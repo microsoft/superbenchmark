@@ -10,7 +10,6 @@ Commands to run:
 """
 
 import argparse
-import os
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
 from superbench.common.utils import logger

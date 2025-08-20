@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     # Specify the model name and benchmark parameters.
     model_name = 'llama2-7b'
-    parameters = '--batch_size 1 --duration 120 --seq_len 128 --precision float32 --run_count 2'
+    parameters = '--batch_size 1 --duration 120 --seq_len 512 --precision float16'
     if args.distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'
 

@@ -4,24 +4,12 @@
 """Model benchmark example for gpt2-large (36-layer, 1280-hidden, 20-heads, 774M parameters).
 
 Commands to run:
-    python3 examples/benchmarks/pytorch_gpt2_large.py (Single GPU)
+  python3 examples/benchmarks/pytorch_gpt2_large.py (Single GPU)
   python3 -m torch.distributed.launch --use_env --nproc_per_node=8 examples/benchmarks/pytorch_gpt2_large.py \
       --distributed (Distributed)
-
-Deterministic + logging:
-    # Generate reference log (determinism). Requires cuBLAS env.
-    CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_gpt2_large.py \
-            --deterministic --random_seed 42 --generate_log --log_path ./outputs/gpt2_ref.json \
-            --check_frequency 50
-
-    # Compare against reference
-    CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_gpt2_large.py \
-            --deterministic --random_seed 42 --compare_log ./outputs/gpt2_ref.json \
-            --check_frequency 50
 """
 
 import argparse
-import os
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
 from superbench.common.utils import logger
