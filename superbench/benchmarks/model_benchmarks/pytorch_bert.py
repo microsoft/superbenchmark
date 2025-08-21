@@ -20,7 +20,6 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class BertBenchmarkModel(torch.nn.Module):
     """The BERT model for benchmarking."""
-
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -50,7 +49,6 @@ class BertBenchmarkModel(torch.nn.Module):
 
 class PytorchBERT(PytorchBase):
     """The BERT benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 

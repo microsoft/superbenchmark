@@ -14,7 +14,6 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class LSTMBenchmarkModel(torch.nn.Module):
     """The LSTM model for benchmarking."""
-
     def __init__(self, input_size, hidden_size, num_layers, bidirectional, num_classes):
         """Constructor.
 
@@ -48,7 +47,6 @@ class LSTMBenchmarkModel(torch.nn.Module):
 
 class PytorchLSTM(PytorchBase):
     """The LSTM benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 

@@ -20,7 +20,6 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class GPT2BenchmarkModel(torch.nn.Module):
     """The GPT2 model for benchmarking."""
-
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -50,7 +49,6 @@ class GPT2BenchmarkModel(torch.nn.Module):
 
 class PytorchGPT2(PytorchBase):
     """The GPT2 benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 

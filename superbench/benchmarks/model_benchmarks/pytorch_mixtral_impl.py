@@ -20,7 +20,6 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class MixtralBenchmarkModel(torch.nn.Module):
     """The Mixtral model for benchmarking."""
-
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -50,7 +49,6 @@ class MixtralBenchmarkModel(torch.nn.Module):
 
 class PytorchMixtral(PytorchBase):
     """The Mixtral benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 

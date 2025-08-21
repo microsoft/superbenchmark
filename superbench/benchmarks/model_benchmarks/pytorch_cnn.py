@@ -23,7 +23,6 @@ def _keep_BatchNorm_as_float(module):
 
 class PytorchCNN(PytorchBase):
     """The CNN benchmark class."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 
