@@ -20,6 +20,7 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class BertBenchmarkModel(torch.nn.Module):
     """The BERT model for benchmarking."""
+
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -49,6 +50,7 @@ class BertBenchmarkModel(torch.nn.Module):
 
 class PytorchBERT(PytorchBase):
     """The BERT benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -95,8 +97,8 @@ class PytorchBERT(PytorchBase):
             True if dataset is created successfully.
         """
         # Seed before dataset generation when deterministic
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed)
 
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
@@ -160,8 +162,8 @@ class PytorchBERT(PytorchBase):
             return False
 
         # Seed before target generation when deterministic
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed + 1)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
@@ -238,6 +240,7 @@ class PytorchBERT(PytorchBase):
                         self._log_step_time(curr_step, precision, duration)
                     if self._is_finished(curr_step, end, check_frequency):
                         return duration
+
 
 # Register BERT Large benchmark.
 # Reference: https://huggingface.co/transformers/v3.3.1/pretrained_models.html

@@ -24,6 +24,7 @@ from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBe
 
 class PytorchBase(ModelBenchmark):
     """The base class of Pytorch model benchmarks."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -49,12 +50,12 @@ class PytorchBase(ModelBenchmark):
 
     def _enable_deterministic_training(self):
         """Enable deterministic training settings for reproducible results."""
-        if hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed)
-            random.seed(self._args.random_seed)
+        if hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed)
+            random.seed(self._args.deterministic_seed)
             if torch.cuda.is_available():
-                torch.cuda.manual_seed(self._args.random_seed)
-                torch.cuda.manual_seed_all(self._args.random_seed)
+                torch.cuda.manual_seed(self._args.deterministic_seed)
+                torch.cuda.manual_seed_all(self._args.deterministic_seed)
         torch.use_deterministic_algorithms(True, warn_only=False)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
@@ -81,7 +82,7 @@ class PytorchBase(ModelBenchmark):
         metadata = {
             'model_name': self._name,
             'precision': precision.value if hasattr(precision, 'value') else str(precision),
-            'seed': getattr(self._args, 'random_seed', None),
+            'seed': getattr(self._args, 'deterministic_seed', None),
             'batch_size': getattr(self._args, 'batch_size', None),
             'seq_len': getattr(self._args, 'seq_len', None),
             'num_steps': getattr(self._args, 'num_steps', None),
@@ -90,8 +91,8 @@ class PytorchBase(ModelBenchmark):
         }
         # Add any extra keys present in args (for model-specific fields)
         keys = [
-            'hidden_size', 'num_hidden_layers', 'num_attention_heads', 'intermediate_size',
-            'input_size', 'num_layers', 'bidirectional'
+            'hidden_size', 'num_hidden_layers', 'num_attention_heads', 'intermediate_size', 'input_size', 'num_layers',
+            'bidirectional'
         ]
         if extra_keys:
             keys += extra_keys
@@ -127,7 +128,8 @@ class PytorchBase(ModelBenchmark):
             # 2) Tiny activation fingerprint: mean over logits for sample 0
             try:
                 if logits is not None:
-                    act_mean = float(logits[0].detach().float().mean().item()) if hasattr(logits[0], 'detach') else float(logits[0])
+                    act_mean = float(logits[0].detach().float().mean().item()
+                                     ) if hasattr(logits[0], 'detach') else float(logits[0])
                     logger.info(f"ActMean at step {curr_step}: {act_mean}")
                     periodic['act_mean'].append(act_mean)
             except Exception:
@@ -151,19 +153,31 @@ class PytorchBase(ModelBenchmark):
         import argparse
         # Support both kebab-case and underscore-case to work with sb config-file param injection
         self._parser.add_argument(
-            '--generate-log', '--generate_log', dest='generate_log', action='store_true', default=False,
+            '--generate-log',
+            '--generate_log',
+            dest='generate_log',
+            action='store_true',
+            default=False,
             help='Save fingerprint log to file.'
         )
         self._parser.add_argument(
-            '--log-path', '--log_path', dest='log_path', type=str, default=None,
+            '--log-path',
+            '--log_path',
+            dest='log_path',
+            type=str,
+            default=None,
             help='Path to save or load fingerprint log.'
         )
         self._parser.add_argument(
-            '--compare-log', '--compare_log', dest='compare_log', type=str, default=None,
+            '--compare-log',
+            '--compare_log',
+            dest='compare_log',
+            type=str,
+            default=None,
             help='Compare this run to a reference fingerprint log.'
         )
         self._parser.add_argument(
-            '--random_seed',
+            '--deterministic_seed',
             type=int,
             default=42,
             required=False,
@@ -202,10 +216,7 @@ class PytorchBase(ModelBenchmark):
                 except Exception:
                     pass
             model_log_utils.save_model_log(
-                log_path,
-                self._model_run_metadata,
-                self._model_run_losses,
-                self._model_run_periodic
+                log_path, self._model_run_metadata, self._model_run_losses, self._model_run_periodic
             )
             logger.info(f"Saved model log to {log_path}")
         if getattr(self._args, 'compare_log', None):
@@ -218,7 +229,9 @@ class PytorchBase(ModelBenchmark):
             }
             ok = model_log_utils.compare_model_logs(curr, ref)
             if not ok:
-                raise RuntimeError(f"Determinism check failed: this run does not match reference log {self._args.compare_log}")
+                raise RuntimeError(
+                    f"Determinism check failed: this run does not match reference log {self._args.compare_log}"
+                )
             logger.info(f"Determinism check PASSED against {self._args.compare_log}")
 
     def _preprocess(self):
@@ -560,4 +573,3 @@ class PytorchBase(ModelBenchmark):
                 self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
         except Exception:
             pass
-

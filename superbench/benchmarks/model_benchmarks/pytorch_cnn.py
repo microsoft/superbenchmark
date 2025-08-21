@@ -23,6 +23,7 @@ def _keep_BatchNorm_as_float(module):
 
 class PytorchCNN(PytorchBase):
     """The CNN benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -49,8 +50,8 @@ class PytorchCNN(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed)
 
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, 3, self._args.image_size, self._args.image_size],
@@ -87,8 +88,8 @@ class PytorchCNN(PytorchBase):
             )
             return False
 
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed + 1)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
@@ -161,6 +162,7 @@ class PytorchCNN(PytorchBase):
                         self._log_step_time(curr_step, precision, duration)
                     if self._is_finished(curr_step, end, check_frequency):
                         return duration
+
 
 # Register CNN benchmarks.
 # Reference: https://pytorch.org/vision/0.8/models.html

@@ -20,6 +20,7 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class LlamaBenchmarkModel(torch.nn.Module):
     """The Llama model for benchmarking."""
+
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -49,6 +50,7 @@ class LlamaBenchmarkModel(torch.nn.Module):
 
 class PytorchLlama(PytorchBase):
     """The Llama benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -106,8 +108,8 @@ class PytorchLlama(PytorchBase):
             True if dataset is created successfully.
         """
         # Set seed before dataset generation if deterministic training is enabled
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed)
 
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
@@ -174,8 +176,8 @@ class PytorchLlama(PytorchBase):
             return False
 
         # Seed before target generation when deterministic
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed + 1)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed + 1)
 
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:

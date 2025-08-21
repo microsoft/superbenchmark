@@ -17,6 +17,7 @@ def load_model_log(filepath):
     with open(filepath, 'r') as f:
         return json.load(f)
 
+
 def compare_model_logs(current, reference):
     # Check metadata match (model, params, etc.)
     for key in ['model_name', 'precision', 'seed', 'batch_size', 'seq_len', 'num_steps']:
@@ -24,7 +25,6 @@ def compare_model_logs(current, reference):
             raise ValueError(
                 f"Metadata mismatch for {key}: {current['metadata'].get(key)} vs {reference['metadata'].get(key)}"
             )
-
     # Compare per-step loss (full series)
     curr_loss = torch.tensor(current['per_step_fp32_loss'])
     ref_loss = torch.tensor(reference['per_step_fp32_loss'])
@@ -44,6 +44,7 @@ def compare_model_logs(current, reference):
             return False
         curr_t = torch.tensor(curr_list)
         ref_t = torch.tensor(ref_list)
+
         return torch.equal(curr_t, ref_t)
 
     equal_fp_loss = _cmp_series(curr_fp.get('loss'), ref_fp.get('loss'))

@@ -20,6 +20,7 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class MixtralBenchmarkModel(torch.nn.Module):
     """The Mixtral model for benchmarking."""
+
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -49,6 +50,7 @@ class MixtralBenchmarkModel(torch.nn.Module):
 
 class PytorchMixtral(PytorchBase):
     """The Mixtral benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -119,8 +121,8 @@ class PytorchMixtral(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed)
 
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
@@ -185,16 +187,17 @@ class PytorchMixtral(PytorchBase):
             )
             return False
 
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'random_seed'):
-            torch.manual_seed(self._args.random_seed + 1)
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
 
         # Assign model_run_metadata for determinism log
         try:
-            self._assign_model_run_metadata(precision, extra_keys=[
-                'num_key_value_heads', 'max_position_embeddings', 'router_aux_loss_coef'])
+            self._assign_model_run_metadata(
+                precision, extra_keys=['num_key_value_heads', 'max_position_embeddings', 'router_aux_loss_coef']
+            )
         except Exception:
             # Metadata should never break the run
             pass
@@ -234,7 +237,6 @@ class PytorchMixtral(PytorchBase):
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
                     return self._finalize_periodic_logging(duration, periodic)
-
 
     def _inference_step(self, precision):
         """Define the inference process.
