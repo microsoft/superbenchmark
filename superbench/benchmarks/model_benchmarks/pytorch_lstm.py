@@ -144,6 +144,8 @@ class PytorchLSTM(PytorchBase):
                 start = self._timer()
                 if self._gpu_available:
                     sample = sample.cuda()
+                if self._args.no_copy:
+                    start = self._timer()
                 self._optimizer.zero_grad()
                 output = self._model(sample)
                 loss = self._loss_fn(output, self._target)

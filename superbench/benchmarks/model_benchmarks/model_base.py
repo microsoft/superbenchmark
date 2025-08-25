@@ -147,6 +147,13 @@ class ModelBenchmark(Benchmark):
             help='Real-time log every n steps.',
         )
 
+        self._parser.add_argument(
+            '--no_copy',
+            action='store_true',
+            default=False,
+            help='Enable option to exclude data copy time.',
+        )
+
     @abstractmethod
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
