@@ -8,9 +8,16 @@ Generate log:
 
 CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py --model <model_from_MODEL_CHOICES> --generate-log --log-path ./outputs/determinism_ref.json
 
+CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py --model bert-large --generate-log --log-path ./outputs/determinism_ref.json
+
+
+
 Compare log:
 
 CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py --model <model_from_MODEL_CHOICES> --compare-log ./outputs/determinism_ref.json
+
+
+CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py --model bert-large --compare-log ./outputs/determinism_ref.json
 """
 
 import argparse

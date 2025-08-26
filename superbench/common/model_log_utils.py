@@ -3,6 +3,15 @@ import torch
 
 
 def save_model_log(filepath, metadata, losses, fingerprints):
+    """
+    Save model run log to a JSON file.
+
+    Args:
+        filepath (str): Path to save the log file.
+        metadata (dict): Model and run metadata.
+        losses (list): List of per-step loss values.
+        fingerprints (dict): Dictionary of periodic fingerprints (loss, act_mean, step).
+    """
     data = {
         'schema_version': 1,
         'metadata': metadata,
@@ -14,11 +23,33 @@ def save_model_log(filepath, metadata, losses, fingerprints):
 
 
 def load_model_log(filepath):
+    """
+    Load model run log from a JSON file.
+
+    Args:
+        filepath (str): Path to the log file.
+
+    Returns:
+        dict: Loaded log data.
+    """
     with open(filepath, 'r') as f:
         return json.load(f)
 
 
 def compare_model_logs(current, reference):
+    """
+    Compare two model run logs for determinism.
+
+    Args:
+        current (dict): Current run log data.
+        reference (dict): Reference run log data.
+
+    Returns:
+        bool: True if logs match (deterministic), False otherwise.
+
+    Raises:
+        ValueError: If metadata does not match.
+    """
     # Check metadata match (model, params, etc.)
     for key in ['model_name', 'precision', 'seed', 'batch_size', 'seq_len', 'num_steps']:
         if str(current['metadata'].get(key)) != str(reference['metadata'].get(key)):
@@ -40,6 +71,16 @@ def compare_model_logs(current, reference):
     steps_match = curr_steps == ref_steps
 
     def _cmp_series(curr_list, ref_list):
+        """
+        Compare two lists of values for exact equality using torch.
+
+        Args:
+            curr_list (list): Current values.
+            ref_list (list): Reference values.
+
+        Returns:
+            bool: True if lists are equal, False otherwise.
+        """
         if curr_list is None or ref_list is None:
             return False
         curr_t = torch.tensor(curr_list)

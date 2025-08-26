@@ -10,6 +10,8 @@ import time
 
 import torch
 import transformers
+import argparse
+
 try:
     import transformer_engine.pytorch as te
 except ImportError:
@@ -20,6 +22,9 @@ from torch.distributed import TCPStore, PrefixStore
 from superbench.common.utils import logger
 from superbench.benchmarks import Framework, ReturnCode, DistributedBackend, DistributedImpl
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBenchmark
+from torch.backends.cuda import sdp_kernel
+from superbench.common import model_log_utils
+import time, os
 
 
 class PytorchBase(ModelBenchmark):
@@ -36,7 +41,6 @@ class PytorchBase(ModelBenchmark):
         self._framework = Framework.PYTORCH
         torch.backends.cudnn.benchmark = True
 
-        # New: log/fingerprint comparison flags
         self._generate_log = False
         self._compare_log = None
         self._model_run_metadata = {}
@@ -66,17 +70,28 @@ class PytorchBase(ModelBenchmark):
         try:
             torch.backends.cudnn.allow_tf32 = False
         except Exception:
+            logger.info("Failed to disable TF32 in cuDNN")
             pass
         # Force Scaled Dot-Product Attention to use deterministic math kernel
         try:
-            from torch.backends.cuda import sdp_kernel
             sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False)
         except Exception:
+            logger.info("SDP kernel not available")
             # Older PyTorch versions may not expose sdp_kernel; ignore in that case
             pass
 
     def _assign_model_run_metadata(self, precision, extra_keys=None):
-        """Assign model_run_metadata for determinism fingerprinting/logging."""
+        """
+        Assign model_run_metadata for determinism fingerprinting/logging.
+
+        Args:
+            precision: Model precision (can be enum or string).
+            extra_keys: List of additional argument keys to include in metadata.
+            self._args: Benchmark arguments containing model configuration.
+
+        Returns:
+            None
+        """
         # Common metadata keys
         metadata = {
             'model_name': self._name,
@@ -98,6 +113,7 @@ class PytorchBase(ModelBenchmark):
         for key in keys:
             metadata[key] = getattr(self._args, key, None)
         self._model_run_metadata = metadata
+        return None
 
     def record_determinism_fingerprint(self, curr_step, loss, logits, periodic, check_frequency):
         """Centralized logic for recording per-step loss and periodic fingerprints for deterministic runs.
@@ -149,8 +165,6 @@ class PytorchBase(ModelBenchmark):
 
     def add_parser_arguments(self):
         super().add_parser_arguments()
-        import argparse
-        # Support both kebab-case and underscore-case to work with sb config-file param injection
         self._parser.add_argument(
             '--generate-log',
             '--generate_log',
@@ -198,8 +212,6 @@ class PytorchBase(ModelBenchmark):
 
     def _post_run_model_log(self):
         """Save or compare model run logs after run, if requested."""
-        from superbench.common import model_log_utils
-        import time, os
         if getattr(self._args, 'generate_log', False):
             log_path = getattr(self._args, 'log_path', None)
             if not log_path:
@@ -213,6 +225,7 @@ class PytorchBase(ModelBenchmark):
                     dirpath = os.path.dirname(log_path) or '.'
                     os.makedirs(dirpath, exist_ok=True)
                 except Exception:
+                    logger.info(f"Failed to create directory for log path: {log_path}")
                     pass
             model_log_utils.save_model_log(
                 log_path, self._model_run_metadata, self._model_run_losses, self._model_run_periodic
@@ -226,8 +239,8 @@ class PytorchBase(ModelBenchmark):
                 'per_step_fp32_loss': self._model_run_losses,
                 'fingerprints': self._model_run_periodic,
             }
-            ok = model_log_utils.compare_model_logs(curr, ref)
-            if not ok:
+            compare_ok = model_log_utils.compare_model_logs(curr, ref)
+            if not compare_ok:
                 raise RuntimeError(
                     f"Determinism check failed: this run does not match reference log {self._args.compare_log}"
                 )
@@ -239,13 +252,13 @@ class PytorchBase(ModelBenchmark):
         Additionally, if deterministic mode is requested and neither generate_log nor compare_log
         is provided, default to enabling generate_log so a reference is produced automatically.
         """
-        ok = super()._preprocess()
-        if not ok:
+        preprocess_ok = super()._preprocess()
+        if not preprocess_ok:
             return False
         try:
             if getattr(self._args, 'deterministic', False):
-                has_gen = bool(getattr(self._args, 'generate_log', False))
-                has_cmp = bool(getattr(self._args, 'compare_log', None))
+                has_gen = getattr(self._args, 'generate_log', False)
+                has_cmp = getattr(self._args, 'compare_log', None)
                 if not has_gen and not has_cmp:
                     setattr(self._args, 'generate_log', True)
                     logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')
@@ -570,5 +583,11 @@ class PytorchBase(ModelBenchmark):
             metric_loss = f"{prefix}_{model_action}_loss"
             if 'loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0:
                 self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(
+                f"Exception in _process_info: {e}\n"
+                f"  model_action: {model_action}\n"
+                f"  precision: {precision} (type: {type(precision)})\n"
+                f"  info: {info}\n"
+                "Possible causes: info dict missing expected keys, precision type mismatch, or result object not initialized."
+            )
