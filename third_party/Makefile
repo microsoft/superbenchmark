@@ -6,7 +6,6 @@ SB_MICRO_PATH ?= /usr/local
 MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
-HPCX_HOME ?= /opt/hpcx
 ROCM_PATH ?= /opt/rocm
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
@@ -20,8 +19,14 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
 # Build targets.
 all: cuda rocm
+# msccl: api change in cudaStreamUpdateCaptureDependencies
 cuda_with_msccl: cuda cuda_msccl
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
+# cuda: 
+# removed cuda_perftest & nvbandwidth due to API change in cuCtxCreate_v4 - CUresult CUDAAPI cuCtxCreate(CUcontext *pctx, CUctxCreateParams *ctxCreateParams, unsigned int flags, CUdevice dev);
+# removed cuda_gpuburn due to API change:
+# warning: ‘CUresult cuParamSetv(CUfunction, int, void*, unsigned int)’ is deprecated [-Wdeprecated-declarations]
+# __CUDA_DEPRECATED CUresult CUDAAPI cuFuncSetBlockShape(CUfunction hfunc, int x, int y, int z);
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests gpcnet megatron_lm megatron_deepspeed
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
 cpu: common cpu_perftest
 common: fio cpu_stream
@@ -40,8 +45,12 @@ sb_micro_path:
 # Build cutlass.
 # for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
-	$(eval ARCHS := "90;100;103")
+ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+	$(eval ARCHS := "100;103")
+	if [ -d cutlass ]; then rm -rf cutlass; fi
+	git clone --branch v4.1.0 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
+else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	$(eval ARCHS := "90;100")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v3.9.2 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
@@ -170,7 +179,7 @@ rocm_bandwidthTest: sb_micro_path
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
-	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
+	make CC=mpicc -C GPCNET all
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
 
@@ -299,5 +308,7 @@ endif
 
 # Build nvbandwidth.
 nvbandwidth: sb_micro_path
-	cd ./nvbandwidth && cmake . && make && cd ..
-	cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin
+	cd ./nvbandwidth && mkdir -p build && cd build && \
+	cmake .. -DCMAKE_CUDA_ARCHITECTURES="75;80;86;90;100;103" && \
+	make -j && cd ../..
+	cp -v ./nvbandwidth/build/nvbandwidth $(SB_MICRO_PATH)/bin
