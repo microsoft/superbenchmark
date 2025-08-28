@@ -18,7 +18,8 @@ def run_deterministic_benchmark(model_name, params, log_path=None, extra_args=No
     Helper to launch a deterministic benchmark and return the result.
     """
     if log_path is None:
-        log_path = tempfile.mktemp(suffix=".json")
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmpfile:
+            log_path = tmpfile.name
     parameters = params + " --deterministic --deterministic_seed 42"
     if extra_args:
         parameters += " " + extra_args
