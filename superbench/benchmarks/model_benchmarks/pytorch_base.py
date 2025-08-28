@@ -321,21 +321,14 @@ class PytorchBase(ModelBenchmark):
                 # check 16-byte alignment
                 if any(p % 16 != 0 for p in m.weight.shape):
                     return
-                te_m = te.Linear(
-                    m.in_features,
-                    m.out_features,
-                    bias=(m.bias is not None),
-                    params_dtype=m.weight.dtype,
-                )
+                te_m = te.Linear(m.in_features, m.out_features, bias=(m.bias is not None), params_dtype=m.weight.dtype)
                 te_m.weight.copy_(m.weight)
                 if m.bias is not None:
                     te_m.bias.copy_(m.bias)
                 setattr(model, name, te_m)
             elif isinstance(m, torch.nn.LayerNorm):
-                te_m = te.LayerNorm(
-                    m.normalized_shape[0], eps=m.eps, params_dtype=m.weight.dtype
-                )
-                if hasattr(te_m, "weight"):
+                te_m = te.LayerNorm(m.normalized_shape[0], eps=m.eps, params_dtype=m.weight.dtype)
+                if hasattr(te_m, 'weight'):
                     te_m.weight.copy_(m.weight)
                     te_m.bias.copy_(m.bias)
                 else:
@@ -353,62 +346,45 @@ class PytorchBase(ModelBenchmark):
         """
         if self._args.distributed_impl:
             logger.info(
-                "Distributed training is enabled - model: {}, distributed implementation: {}.".format(
+                'Distributed training is enabled - model: {}, distributed implementation: {}.'.format(
                     self._name, self._args.distributed_impl
                 )
             )
             if self._args.distributed_impl == DistributedImpl.HOROVOD:
                 import horovod.torch as hvd
-
                 hvd.init()
                 self._world_size = int(hvd.size())
                 self._local_rank = int(hvd.local_rank())
                 self._global_rank = int(hvd.rank())
             elif self._args.distributed_impl == DistributedImpl.DDP:
-                if (
-                    os.environ.get("WORLD_SIZE") is None
-                    or os.environ.get("LOCAL_RANK") is None
-                ):
+                if os.environ.get('WORLD_SIZE') is None or os.environ.get('LOCAL_RANK') is None:
                     logger.error(
-                        "Can not find WORLD_SIZE or LOCAL_RANK in env variables - model: {},"
-                        " distributed implementation: {}.".format(
-                            self._name, self._args.distributed_impl
-                        )
+                        'Can not find WORLD_SIZE or LOCAL_RANK in env variables - model: {},'
+                        ' distributed implementation: {}.'.format(self._name, self._args.distributed_impl)
                     )
                     return False
                 # torch >= 1.9.0a0 torch.distributed.elastic is used by default
-                port = int(os.environ.get("MASTER_PORT", "29500")) + 1
-                os.environ["MASTER_PORT"] = str(port)
-                addr = os.environ["MASTER_ADDR"]
-                self._global_rank = int(os.environ["RANK"])
-                self._local_rank = int(os.environ["LOCAL_RANK"])
-                self._world_size = int(os.environ["WORLD_SIZE"])
-                logger.debug(
-                    "ip:{},port:{},rank:{},world:{}".format(
-                        addr, port, self._global_rank, self._world_size
-                    )
-                )
+                port = int(os.environ.get('MASTER_PORT', '29500')) + 1
+                os.environ['MASTER_PORT'] = str(port)
+                addr = os.environ['MASTER_ADDR']
+                self._global_rank = int(os.environ['RANK'])
+                self._local_rank = int(os.environ['LOCAL_RANK'])
+                self._world_size = int(os.environ['WORLD_SIZE'])
+                logger.debug('ip:{},port:{},rank:{},world:{}'.format(addr, port, self._global_rank, self._world_size))
                 store = PrefixStore(
-                    self._name,
-                    TCPStore(
-                        addr,
-                        port,
-                        self._world_size,
-                        self._global_rank == 0,
-                        timedelta(seconds=300),
-                    ),
+                    self._name, TCPStore(addr, port, self._world_size, self._global_rank == 0, timedelta(seconds=300))
                 )
                 torch.distributed.init_process_group(
                     backend=self._args.distributed_backend.value,
                     timeout=timedelta(seconds=300),
                     rank=self._global_rank,
                     world_size=self._world_size,
-                    store=store,
+                    store=store
                 )
 
             else:
                 logger.error(
-                    "Unsupported distributed implementation - model: {}, distributed implementation: {}.".format(
+                    'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
                         self._name, self._args.distributed_impl
                     )
                 )
@@ -430,24 +406,28 @@ class PytorchBase(ModelBenchmark):
             if self._args.distributed_impl == DistributedImpl.HOROVOD:
                 import horovod.torch as hvd
 
-                train_sampler = torch.utils.data.distributed.DistributedSampler(
-                    self._dataset, num_replicas=hvd.size(), rank=hvd.rank()
-                )
+                train_sampler = \
+                    torch.utils.data.distributed.DistributedSampler(
+                        self._dataset,
+                        num_replicas=hvd.size(),
+                        rank=hvd.rank()
+                    )
             elif self._args.distributed_impl == DistributedImpl.DDP:
                 try:
-                    train_sampler = torch.utils.data.distributed.DistributedSampler(
-                        self._dataset
-                    )
+                    train_sampler = \
+                        torch.utils.data.distributed.DistributedSampler(
+                            self._dataset
+                        )
                 except BaseException as e:
                     logger.error(
-                        "Init dataloader failed - model: {}, distributed implementation: {}, message: {}.".format(
+                        'Init dataloader failed - model: {}, distributed implementation: {}, message: {}.'.format(
                             self._name, self._args.distributed_impl, str(e)
                         )
                     )
                     return False
             else:
                 logger.error(
-                    "Unsupported distributed implementation - model: {}, distributed implementation: {}.".format(
+                    'Unsupported distributed implementation - model: {}, distributed implementation: {}.'.format(
                         self._name, self._args.distributed_impl
                     )
                 )
@@ -460,7 +440,7 @@ class PytorchBase(ModelBenchmark):
             num_workers=self._args.num_workers,
             sampler=train_sampler,
             drop_last=True,
-            pin_memory=self._args.pin_memory,
+            pin_memory=self._args.pin_memory
         )
 
         return True
@@ -473,51 +453,36 @@ class PytorchBase(ModelBenchmark):
         """
         if self._args.distributed_impl == DistributedImpl.DDP:
             self._model = torch.nn.parallel.DistributedDataParallel(
-                self._model,
-                device_ids=[self._local_rank],
-                output_device=self._local_rank,
+                self._model, device_ids=[self._local_rank], output_device=self._local_rank
             )
 
         if self._optimizer_type == Optimizer.SGD:
             self._optimizer = torch.optim.SGD(
-                self._model.parameters(),
-                lr=1e-5,
-                momentum=0.9,
-                weight_decay=1e-4,
-                nesterov=True,
+                self._model.parameters(), lr=1e-5, momentum=0.9, weight_decay=1e-4, nesterov=True
             )
         elif self._optimizer_type == Optimizer.ADAM:
-            self._optimizer = torch.optim.Adam(
-                self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08
-            )
+            self._optimizer = torch.optim.Adam(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
         elif self._optimizer_type == Optimizer.ADAMW:
             if hasattr(torch.optim, "AdamW"):
-                self._optimizer = torch.optim.AdamW(
-                    self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08
-                )
+                self._optimizer = torch.optim.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
             else:
-                self._optimizer = transformers.AdamW(
-                    self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08
-                )
+                self._optimizer = transformers.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
         else:
             self._optimizer = None
 
         if not self._optimizer:
             logger.error(
-                "Create optimizer failed - model: {}, optimizer type: {}.".format(
-                    self._name, self._optimizer_type
-                )
+                'Create optimizer failed - model: {}, optimizer type: {}.'.format(self._name, self._optimizer_type)
             )
             return False
 
         if self._args.distributed_impl == DistributedImpl.HOROVOD:
             import horovod.torch as hvd
-
             self._optimizer = hvd.DistributedOptimizer(
                 self._optimizer,
                 named_parameters=self._model.named_parameters(),
                 compression=hvd.Compression.none,
-                op=hvd.Average,
+                op=hvd.Average
             )
             hvd.broadcast_parameters(self._model.state_dict(), root_rank=0)
             hvd.broadcast_optimizer_state(self._optimizer, root_rank=0)
@@ -544,14 +509,12 @@ class PytorchBase(ModelBenchmark):
                     tensor = torch.IntTensor([is_finished])
                     if self._args.distributed_backend == DistributedBackend.NCCL:
                         tensor = tensor.cuda()
-                    torch.distributed.all_reduce(
-                        tensor, op=torch.distributed.ReduceOp.MAX
-                    )
+                    torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
                     is_finished = tensor.tolist()[0]
             else:
                 is_finished = 0
 
-        return is_finished == 1
+        return (is_finished == 1)
 
     def _sync_result(self, result):
         """Function to reduce the result to rank 0.
@@ -576,7 +539,7 @@ class PytorchBase(ModelBenchmark):
                 result = tensor.tolist()
         except BaseException as e:
             logger.error(
-                "Sync train result failed - model: {}, distributed implementation: {}, message: {}.".format(
+                'Sync train result failed - model: {}, distributed implementation: {}, message: {}.'.format(
                     self._name, self._args.distributed_impl, str(e)
                 )
             )
@@ -600,7 +563,7 @@ class PytorchBase(ModelBenchmark):
         except BaseException as e:
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_DESTROY_FAILURE)
             logger.error(
-                "Post process failed - model: {}, distributed implementation: {}, message: {}.".format(
+                'Post process failed - model: {}, distributed implementation: {}, message: {}.'.format(
                     self._name, self._args.distributed_impl, str(e)
                 )
             )
