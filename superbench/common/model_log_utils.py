@@ -58,7 +58,7 @@ def compare_model_logs(current, reference):
     ]:
         if str(current['metadata'].get(key)) != str(reference['metadata'].get(key)):
             raise ValueError(
-                f'Metadata mismatch for {key}: {current['metadata'].get(key)} vs {reference['metadata'].get(key)}'
+                f'Metadata mismatch for {key}: {current["metadata"].get(key)} vs {reference["metadata"].get(key)}'
             )
     # Compare per-step loss (full series)
     curr_loss = torch.tensor(current['per_step_fp32_loss'])

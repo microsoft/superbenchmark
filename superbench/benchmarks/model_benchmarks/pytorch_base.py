@@ -32,7 +32,7 @@ from superbench.common import model_log_utils
 
 class PytorchBase(ModelBenchmark):
     """The base class of Pytorch model benchmarks."""
-    def __init__(self, name, parameters=""):
+    def __init__(self, name, parameters=''):
         """Constructor.
 
         Args:
@@ -55,8 +55,8 @@ class PytorchBase(ModelBenchmark):
         self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
 
     def _enable_deterministic_training(self):
-        """Enable deterministic training settings for reproducible results."""
-        if hasattr(self._args, "deterministic_seed"):
+        """Enable deterministic training settings for reproducible results"""
+        if hasattr(self._args, 'deterministic_seed'):
             torch.manual_seed(self._args.deterministic_seed)
             random.seed(self._args.deterministic_seed)
             if torch.cuda.is_available():
@@ -73,13 +73,13 @@ class PytorchBase(ModelBenchmark):
         try:
             torch.backends.cudnn.allow_tf32 = False
         except Exception:
-            logger.info("Failed to disable TF32 in cuDNN")
+            logger.info('Failed to disable TF32 in cuDNN')
             pass
         # Force Scaled Dot-Product Attention to use deterministic math kernel
         try:
             sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False)
         except Exception:
-            logger.info("SDP kernel not available")
+            logger.info('SDP kernel not available')
             # Older PyTorch versions may not expose sdp_kernel; ignore in that case
             pass
 
@@ -96,24 +96,24 @@ class PytorchBase(ModelBenchmark):
         """
         # Common metadata keys
         metadata = {
-            "model_name": self._name,
-            "precision": (precision.value if hasattr(precision, "value") else str(precision)),
-            "seed": getattr(self._args, "deterministic_seed", None),
-            "batch_size": getattr(self._args, "batch_size", None),
-            "seq_len": getattr(self._args, "seq_len", None),
-            "num_steps": getattr(self._args, "num_steps", None),
-            "check_frequency": getattr(self._args, "check_frequency", None),
-            "num_classes": getattr(self._args, "num_classes", None),
+            'model_name': self._name,
+            'precision': (precision.value if hasattr(precision, 'value') else str(precision)),
+            'seed': getattr(self._args, 'deterministic_seed', None),
+            'batch_size': getattr(self._args, 'batch_size', None),
+            'seq_len': getattr(self._args, 'seq_len', None),
+            'num_steps': getattr(self._args, 'num_steps', None),
+            'check_frequency': getattr(self._args, 'check_frequency', None),
+            'num_classes': getattr(self._args, 'num_classes', None),
         }
         # Add any extra keys present in args (for model-specific fields)
         keys = [
-            "hidden_size",
-            "num_hidden_layers",
-            "num_attention_heads",
-            "intermediate_size",
-            "input_size",
-            "num_layers",
-            "bidirectional",
+            'hidden_size',
+            'num_hidden_layers',
+            'num_attention_heads',
+            'intermediate_size',
+            'input_size',
+            'num_layers',
+            'bidirectional',
         ]
         if extra_keys:
             keys += extra_keys
@@ -134,17 +134,17 @@ class PytorchBase(ModelBenchmark):
         """
         # Record per-step loss for determinism checks (for full history)
         try:
-            v = float(loss.detach().item()) if hasattr(loss, "detach") else float(loss)
+            v = float(loss.detach().item()) if hasattr(loss, 'detach') else float(loss)
         except Exception:
             v = None
         # Periodic fingerprint logging
-        if getattr(self._args, "deterministic", False) and (curr_step % check_frequency == 0):
+        if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
             # 1) Loss fingerprint (only at fingerprinting frequency)
             try:
-                if "loss" in periodic and v is not None:
-                    periodic["loss"].append(v)
-                logger.info(f"Loss at step {curr_step}: {v}")
-                periodic["step"].append(curr_step)
+                if 'loss' in periodic and v is not None:
+                    periodic['loss'].append(v)
+                logger.info(f'Loss at step {curr_step}: {v}')
+                periodic['step'].append(curr_step)
             except Exception:
                 pass
             # 2) Tiny activation fingerprint: mean over logits for sample 0
@@ -152,14 +152,14 @@ class PytorchBase(ModelBenchmark):
                 if logits is not None:
                     act_mean = (
                         float(logits[0].detach().float().mean().item())
-                        if hasattr(logits[0], "detach") else float(logits[0])
+                        if hasattr(logits[0], 'detach') else float(logits[0])
                     )
-                    logger.info(f"ActMean at step {curr_step}: {act_mean}")
-                    periodic["act_mean"].append(act_mean)
+                    logger.info(f'ActMean at step {curr_step}: {act_mean}')
+                    periodic['act_mean'].append(act_mean)
             except Exception:
                 pass
 
-    def _finalize_periodic_logging(self, duration, periodic, info_key="loss"):
+    def _finalize_periodic_logging(self, duration, periodic, info_key='loss'):
         """Finalize periodic logging and return results tuple for training step."""
         info = {info_key: periodic.get(info_key, [])}
         self._model_run_losses = list(periodic.get(info_key, []))
@@ -173,78 +173,75 @@ class PytorchBase(ModelBenchmark):
         return ok
 
     def add_parser_arguments(self):
-        """
-        Add PyTorch model benchmark-specific arguments to the argument parser.
+        """Add PyTorch model benchmark-specific arguments to the argument parser.
 
-        This includes options for deterministic training, fingerprint logging, log file paths,
-        and periodic check frequency, in addition to any arguments added by the base class.
         """
         super().add_parser_arguments()
         self._parser.add_argument(
-            "--generate-log",
-            "--generate_log",
-            dest="generate_log",
-            action="store_true",
+            '--generate-log',
+            '--generate_log',
+            dest='generate_log',
+            action='store_true',
             default=False,
-            help="Save fingerprint log to file.",
+            help='Save fingerprint log to file.',
         )
         self._parser.add_argument(
-            "--log-path",
-            "--log_path",
-            dest="log_path",
+            '--log-path',
+            '--log_path',
+            dest='log_path',
             type=str,
             default=None,
-            help="Path to save or load fingerprint log.",
+            help='Path to save or load fingerprint log.',
         )
         self._parser.add_argument(
-            "--compare-log",
-            "--compare_log",
-            dest="compare_log",
+            '--compare-log',
+            '--compare_log',
+            dest='compare_log',
             type=str,
             default=None,
-            help="Compare this run to a reference fingerprint log.",
+            help='Compare this run to a reference fingerprint log.',
         )
         self._parser.add_argument(
-            "--deterministic_seed",
+            '--deterministic_seed',
             type=int,
             default=42,
             required=False,
-            help="Random seed for deterministic training.",
+            help='Random seed for deterministic training.',
         )
         self._parser.add_argument(
-            "--deterministic",
-            action="store_true",
+            '--deterministic',
+            action='store_true',
             default=False,
-            help="Enable deterministic training for reproducible results.",
+            help='Enable deterministic training for reproducible results.',
         )
         self._parser.add_argument(
-            "--check_frequency",
+            '--check_frequency',
             type=int,
             default=100,
             required=False,
-            help="How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.",
+            help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
         )
 
     def _post_run_model_log(self):
         """Save or compare model run logs after run, if requested."""
-        if getattr(self._args, "generate_log", False):
-            log_path = getattr(self._args, "log_path", None)
+        if getattr(self._args, 'generate_log', False):
+            log_path = getattr(self._args, 'log_path', None)
             if not log_path:
                 model = getattr(
                     self._args,
-                    "model_name",
-                    self._name if hasattr(self, "_name") else "model",
+                    'model_name',
+                    self._name if hasattr(self, '_name') else 'model',
                 )
-                timestamp = time.strftime("%Y%m%d_%H%M%S")
-                os.makedirs("./outputs", exist_ok=True)
-                log_path = f"./outputs/model_run_{model}_{timestamp}.json"
+                timestamp = time.strftime('%Y%m%d_%H%M%S')
+                os.makedirs('./outputs', exist_ok=True)
+                log_path = f'./outputs/model_run_{model}_{timestamp}.json'
             else:
                 # Ensure destination directory exists when a custom path is provided
                 try:
-                    dirpath = os.path.dirname(log_path) or "."
+                    dirpath = os.path.dirname(log_path) or '.'
                     os.makedirs(dirpath, exist_ok=True)
                 except Exception:
-                    logger.info(f"Failed to create directory for log path: {log_path}")
+                    logger.info(f'Failed to create directory for log path: {log_path}')
                     pass
             model_log_utils.save_model_log(
                 log_path,
@@ -252,21 +249,21 @@ class PytorchBase(ModelBenchmark):
                 self._model_run_losses,
                 self._model_run_periodic,
             )
-            logger.info(f"Saved model log to {log_path}")
-        if getattr(self._args, "compare_log", None):
-            logger.info(f"Comparing model log to {self._args.compare_log}")
+            logger.info(f'Saved model log to {log_path}')
+        if getattr(self._args, 'compare_log', None):
+            logger.info(f'Comparing model log to {self._args.compare_log}')
             ref = model_log_utils.load_model_log(self._args.compare_log)
             curr = {
-                "metadata": self._model_run_metadata,
-                "per_step_fp32_loss": self._model_run_losses,
-                "fingerprints": self._model_run_periodic,
+                'metadata': self._model_run_metadata,
+                'per_step_fp32_loss': self._model_run_losses,
+                'fingerprints': self._model_run_periodic,
             }
             compare_ok = model_log_utils.compare_model_logs(curr, ref)
             if not compare_ok:
                 raise RuntimeError(
-                    f"Determinism check failed: this run does not match reference log {self._args.compare_log}"
+                    f'Determinism check failed: this run does not match reference log {self._args.compare_log}'
                 )
-            logger.info(f"Determinism check PASSED against {self._args.compare_log}")
+            logger.info(f'Determinism check PASSED against {self._args.compare_log}')
 
     def _preprocess(self):
         """Preprocess and apply PyTorch-specific defaults.
@@ -278,12 +275,12 @@ class PytorchBase(ModelBenchmark):
         if not preprocess_ok:
             return False
         try:
-            if getattr(self._args, "deterministic", False):
-                has_gen = getattr(self._args, "generate_log", False)
-                has_cmp = getattr(self._args, "compare_log", None)
+            if getattr(self._args, 'deterministic', False):
+                has_gen = getattr(self._args, 'generate_log', False)
+                has_cmp = getattr(self._args, 'compare_log', None)
                 if not has_gen and not has_cmp:
-                    setattr(self._args, "generate_log", True)
-                    logger.info("Deterministic run detected with no log options; defaulting to --generate-log.")
+                    setattr(self._args, 'generate_log', True)
+                    logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')
         except Exception:
             # Never fail preprocessing due to optional defaulting
             pass
@@ -458,7 +455,7 @@ class PytorchBase(ModelBenchmark):
         elif self._optimizer_type == Optimizer.ADAM:
             self._optimizer = torch.optim.Adam(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
         elif self._optimizer_type == Optimizer.ADAMW:
-            if hasattr(torch.optim, "AdamW"):
+            if hasattr(torch.optim, 'AdamW'):
                 self._optimizer = torch.optim.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
             else:
                 self._optimizer = transformers.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
@@ -601,22 +598,22 @@ class PytorchBase(ModelBenchmark):
             if not info:
                 return
             precision_metric = {
-                "float16": "fp16",
-                "float32": "fp32",
-                "float64": "fp64",
-                "bfloat16": "bf16",
+                'float16': 'fp16',
+                'float32': 'fp32',
+                'float64': 'fp64',
+                'bfloat16': 'bf16',
             }
-            prec_value = (precision.value if hasattr(precision, "value") else str(precision))
+            prec_value = (precision.value if hasattr(precision, 'value') else str(precision))
             prefix = precision_metric.get(prec_value, prec_value)
-            metric_loss = f"{prefix}_{model_action}_loss"
-            if ("loss" in info and isinstance(info["loss"], list) and len(info["loss"]) > 0):
-                self._result.add_raw_data(metric_loss, info["loss"], self._args.log_raw_data)
+            metric_loss = f'{prefix}_{model_action}_loss'
+            if ('loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0):
+                self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
         except Exception as e:
             logger.error(
-                f"Exception in _process_info: {e}\n"
-                f"  model_action: {model_action}\n"
-                f"  precision: {precision} (type: {type(precision)})\n"
-                f"  info: {info}\n"
-                "Possible causes: info dict missing expected keys, precision type mismatch, "
-                "or result object not initialized."
+                f'Exception in _process_info: {e}\n'
+                f'  model_action: {model_action}\n'
+                f'  precision: {precision} (type: {type(precision)})\n'
+                f'  info: {info}\n'
+                'Possible causes: info dict missing expected keys, precision type mismatch, '
+                'or result object not initialized.'
             )
