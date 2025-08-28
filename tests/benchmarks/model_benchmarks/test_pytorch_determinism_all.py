@@ -9,7 +9,6 @@ import json
 import pytest
 from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, ReturnCode
 
-
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
 
@@ -92,9 +91,7 @@ def test_pytorch_model_determinism(model_name, params):
 
     # Run with compare-log for success
     extra_args = f"--compare-log {log_path} --check_frequency 10"
-    benchmark_compare, _ = run_deterministic_benchmark(
-        model_name, params, log_path, extra_args
-    )
+    benchmark_compare, _ = run_deterministic_benchmark(model_name, params, log_path, extra_args)
     assert benchmark_compare and benchmark_compare.return_code == ReturnCode.SUCCESS
 
     os.remove(log_path)
@@ -138,33 +135,19 @@ def test_pytorch_model_nondeterministoc_default(model_name, params):
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
-    assert (
-        benchmark and benchmark.return_code == ReturnCode.SUCCESS
-    ), "Benchmark did not run successfully."
+    assert (benchmark and benchmark.return_code == ReturnCode.SUCCESS), "Benchmark did not run successfully."
     args = benchmark._args
     assert args.deterministic is False, "Expected deterministic to be False by default."
-    assert (
-        getattr(args, "generate_log", False) is False
-    ), "Expected generate_log to be False by default."
-    assert (
-        getattr(args, "log_path", None) is None
-    ), "Expected log_path to be None by default."
-    assert (
-        getattr(args, "compare_log", None) is None
-    ), "Expected compare_log to be None by default."
-    assert (
-        getattr(args, "check_frequency", None) == 100
-    ), "Expected check_frequency to be 100 by default."
+    assert (getattr(args, "generate_log", False) is False), "Expected generate_log to be False by default."
+    assert (getattr(args, "log_path", None) is None), "Expected log_path to be None by default."
+    assert (getattr(args, "compare_log", None) is None), "Expected compare_log to be None by default."
+    assert (getattr(args, "check_frequency", None) == 100), "Expected check_frequency to be 100 by default."
 
     # Periodic fingerprints exist but are empty when not deterministic
-    assert hasattr(
-        benchmark, "_model_run_periodic"
-    ), "Benchmark missing _model_run_periodic attribute."
+    assert hasattr(benchmark, "_model_run_periodic"), "Benchmark missing _model_run_periodic attribute."
     periodic = benchmark._model_run_periodic
     assert isinstance(periodic, dict), "_model_run_periodic should be a dict."
     for key in ("loss", "act_mean", "step"):
         assert key in periodic, f"Key '{key}' missing in _model_run_periodic."
-        assert (
-            len(periodic[key]) == 0
-        ), f"Expected empty list for periodic['{key}'], got {periodic[key]}."
+        assert (len(periodic[key]) == 0), f"Expected empty list for periodic['{key}'], got {periodic[key]}."
     pass

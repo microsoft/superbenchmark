@@ -37,35 +37,33 @@ MODEL_CHOICES = [
 ]
 
 DEFAULT_PARAMS = {
-    "bert-large": "--batch_size 1 --seq_len 128 --num_warmup 1 --num_steps 300 --precision float32 "
+    "bert-large":
+    "--batch_size 1 --seq_len 128 --num_warmup 1 --num_steps 300 --precision float32 "
     "--model_action train --deterministic --deterministic_seed 42 --check_frequency 20",
-    "gpt2-small": "--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 128 --precision float32 "
+    "gpt2-small":
+    "--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 128 --precision float32 "
     "--model_action train --deterministic --deterministic_seed 42 --check_frequency 20",
-    "llama2-7b": "--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 512 --precision float32 --model_action train "
+    "llama2-7b":
+    "--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 512 --precision float32 --model_action train "
     "--deterministic --deterministic_seed 42 --check_frequency 20",
-    "mixtral-8x7b": "--hidden_size=4096 --num_hidden_layers=32 --num_attention_heads=32 --intermediate_size=14336 "
+    "mixtral-8x7b":
+    "--hidden_size=4096 --num_hidden_layers=32 --num_attention_heads=32 --intermediate_size=14336 "
     "--num_key_value_heads=8 --max_position_embeddings=32768 --router_aux_loss_coef=0.02 "
     "--deterministic --deterministic_seed 42 --check_frequency 20",
-    "resnet101": "--batch_size 192 --precision float32 float32 --num_warmup 64 --num_steps 512 --sample_count 8192 "
+    "resnet101":
+    "--batch_size 192 --precision float32 float32 --num_warmup 64 --num_steps 512 --sample_count 8192 "
     "--pin_memory --model_action train --deterministic --deterministic_seed 42 --check_frequency 20",
-    "lstm": "--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 256 --precision float16 "
+    "lstm":
+    "--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 256 --precision float16 "
     "--model_action train --deterministic --deterministic_seed 42 --check_frequency 20",
 }
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Unified PyTorch deterministic training example."
-    )
-    parser.add_argument(
-        "--model", type=str, choices=MODEL_CHOICES, required=True, help="Model to run."
-    )
-    parser.add_argument(
-        "--generate-log", action="store_true", help="Enable fingerprint log generation."
-    )
-    parser.add_argument(
-        "--log-path", type=str, default=None, help="Path to save fingerprint log."
-    )
+    parser = argparse.ArgumentParser(description="Unified PyTorch deterministic training example.")
+    parser.add_argument("--model", type=str, choices=MODEL_CHOICES, required=True, help="Model to run.")
+    parser.add_argument("--generate-log", action="store_true", help="Enable fingerprint log generation.")
+    parser.add_argument("--log-path", type=str, default=None, help="Path to save fingerprint log.")
     parser.add_argument(
         "--compare-log",
         type=str,
@@ -92,9 +90,7 @@ def main():
         parameters += f" --compare-log {args.compare_log}"
 
     print(f"Running {args.model} with parameters: {parameters}")
-    context = BenchmarkRegistry.create_benchmark_context(
-        args.model, parameters=parameters, framework=Framework.PYTORCH
-    )
+    context = BenchmarkRegistry.create_benchmark_context(args.model, parameters=parameters, framework=Framework.PYTORCH)
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     print(f"Benchmark finished. Return code: {benchmark.return_code}")
     if hasattr(benchmark, "_model_run_metadata"):

@@ -99,9 +99,7 @@ class PytorchBase(ModelBenchmark):
         # Common metadata keys
         metadata = {
             "model_name": self._name,
-            "precision": (
-                precision.value if hasattr(precision, "value") else str(precision)
-            ),
+            "precision": (precision.value if hasattr(precision, "value") else str(precision)),
             "seed": getattr(self._args, "deterministic_seed", None),
             "batch_size": getattr(self._args, "batch_size", None),
             "seq_len": getattr(self._args, "seq_len", None),
@@ -126,9 +124,7 @@ class PytorchBase(ModelBenchmark):
         self._model_run_metadata = metadata
         return None
 
-    def record_determinism_fingerprint(
-        self, curr_step, loss, logits, periodic, check_frequency
-    ):
+    def record_determinism_fingerprint(self, curr_step, loss, logits, periodic, check_frequency):
         """Centralized logic for recording per-step loss and periodic fingerprints for deterministic runs.
 
         Args:
@@ -144,9 +140,7 @@ class PytorchBase(ModelBenchmark):
         except Exception:
             v = None
         # Periodic fingerprint logging
-        if getattr(self._args, "deterministic", False) and (
-            curr_step % check_frequency == 0
-        ):
+        if getattr(self._args, "deterministic", False) and (curr_step % check_frequency == 0):
             # 1) Loss fingerprint (only at fingerprinting frequency)
             try:
                 if "loss" in periodic and v is not None:
@@ -160,8 +154,7 @@ class PytorchBase(ModelBenchmark):
                 if logits is not None:
                     act_mean = (
                         float(logits[0].detach().float().mean().item())
-                        if hasattr(logits[0], "detach")
-                        else float(logits[0])
+                        if hasattr(logits[0], "detach") else float(logits[0])
                     )
                     logger.info(f"ActMean at step {curr_step}: {act_mean}")
                     periodic["act_mean"].append(act_mean)
@@ -286,9 +279,7 @@ class PytorchBase(ModelBenchmark):
                 has_cmp = getattr(self._args, "compare_log", None)
                 if not has_gen and not has_cmp:
                     setattr(self._args, "generate_log", True)
-                    logger.info(
-                        "Deterministic run detected with no log options; defaulting to --generate-log."
-                    )
+                    logger.info("Deterministic run detected with no log options; defaulting to --generate-log.")
         except Exception:
             # Never fail preprocessing due to optional defaulting
             pass
@@ -611,19 +602,11 @@ class PytorchBase(ModelBenchmark):
                 "float64": "fp64",
                 "bfloat16": "bf16",
             }
-            prec_value = (
-                precision.value if hasattr(precision, "value") else str(precision)
-            )
+            prec_value = (precision.value if hasattr(precision, "value") else str(precision))
             prefix = precision_metric.get(prec_value, prec_value)
             metric_loss = f"{prefix}_{model_action}_loss"
-            if (
-                "loss" in info
-                and isinstance(info["loss"], list)
-                and len(info["loss"]) > 0
-            ):
-                self._result.add_raw_data(
-                    metric_loss, info["loss"], self._args.log_raw_data
-                )
+            if ("loss" in info and isinstance(info["loss"], list) and len(info["loss"]) > 0):
+                self._result.add_raw_data(metric_loss, info["loss"], self._args.log_raw_data)
         except Exception as e:
             logger.error(
                 f"Exception in _process_info: {e}\n"
