@@ -32,7 +32,6 @@ from superbench.common import model_log_utils
 
 class PytorchBase(ModelBenchmark):
     """The base class of Pytorch model benchmarks."""
-
     def __init__(self, name, parameters=""):
         """Constructor.
 
@@ -85,8 +84,7 @@ class PytorchBase(ModelBenchmark):
             pass
 
     def _assign_model_run_metadata(self, precision, extra_keys=None):
-        """
-        Assign model_run_metadata for determinism fingerprinting/logging.
+        """Assign model_run_metadata for determinism fingerprinting/logging.
 
         Args:
             precision: Model precision (can be enum or string).
@@ -175,6 +173,12 @@ class PytorchBase(ModelBenchmark):
         return ok
 
     def add_parser_arguments(self):
+        """
+        Add PyTorch model benchmark-specific arguments to the argument parser.
+
+        This includes options for deterministic training, fingerprint logging, log file paths,
+        and periodic check frequency, in addition to any arguments added by the base class.
+        """
         super().add_parser_arguments()
         self._parser.add_argument(
             "--generate-log",
