@@ -13,9 +13,7 @@ os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 
 
 def run_deterministic_benchmark(model_name, params, log_path=None, extra_args=None):
-    """
-    Helper to launch a deterministic benchmark and return the result.
-    """
+    """Helper to launch a deterministic benchmark and return the result."""
     if log_path is None:
         with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as tmpfile:
             log_path = tmpfile.name
@@ -68,6 +66,12 @@ MODELS = [
 
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_determinism(model_name, params):
+    """ Parameterised Test for PyTorch model determinism.
+
+    Args:
+        model_name (str): Name of the model.
+        params (str): Command-line parameters for the model.
+    """
     benchmark, log_path = run_deterministic_benchmark(model_name, params)
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
@@ -100,6 +104,12 @@ def test_pytorch_model_determinism(model_name, params):
 @pytest.mark.parametrize('model_name, params', MODELS)
 @pytest.mark.xfail(reason='Intentional determinism mismatch to test failure handling.')
 def test_pytorch_model_determinism_failure_case(model_name, params):
+    """Parameterised Test for PyTorch model determinism failure case.
+
+    Args:
+        model_name (str): Name of the model.
+        params (str): Command-line parameters for the model.
+    """
     benchmark, log_path = run_deterministic_benchmark(model_name, params)
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
@@ -125,7 +135,13 @@ def test_pytorch_model_determinism_failure_case(model_name, params):
 
 
 @pytest.mark.parametrize('model_name, params', MODELS)
-def test_pytorch_model_nondeterministoc_default(model_name, params):
+def test_pytorch_model_nondeterministic_default(model_name, params):
+    """Parameterised Test for PyTorch model to verify non-determinism.
+
+    Args:
+        model_name (str): Name of the model.
+        params (str): Command-line parameters for the model.
+    """
 
     context = BenchmarkRegistry.create_benchmark_context(
         model_name,

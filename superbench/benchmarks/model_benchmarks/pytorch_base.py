@@ -55,7 +55,7 @@ class PytorchBase(ModelBenchmark):
         self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
 
     def _enable_deterministic_training(self):
-        """Enable deterministic training settings for reproducible results"""
+        """Enable deterministic training settings for reproducible results."""
         if hasattr(self._args, 'deterministic_seed'):
             torch.manual_seed(self._args.deterministic_seed)
             random.seed(self._args.deterministic_seed)
@@ -173,9 +173,7 @@ class PytorchBase(ModelBenchmark):
         return ok
 
     def add_parser_arguments(self):
-        """Add PyTorch model benchmark-specific arguments to the argument parser.
-
-        """
+        """Add PyTorch model benchmark-specific arguments to the argument parser."""
         super().add_parser_arguments()
         self._parser.add_argument(
             '--generate-log',

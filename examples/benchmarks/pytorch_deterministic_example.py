@@ -60,7 +60,7 @@ DEFAULT_PARAMS = {
 
 
 def main():
-    """main function for determinism example file"""
+    """Main function for determinism example file."""
     parser = argparse.ArgumentParser(description='Unified PyTorch deterministic training example.')
     parser.add_argument('--model', type=str, choices=MODEL_CHOICES, required=True, help='Model to run.')
     parser.add_argument('--generate-log', action='store_true', help='Enable fingerprint log generation.')

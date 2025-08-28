@@ -1,3 +1,8 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+"""Utility functions for saving, loading, and comparing model logs."""
+
 import json
 import torch
 
