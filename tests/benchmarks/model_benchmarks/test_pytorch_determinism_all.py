@@ -69,7 +69,7 @@ MODELS = [
 def test_pytorch_model_determinism(model_name, params):
     """Parameterised Test for PyTorch model determinism."""
     if os.environ.get('CI') == 'true' and model_name in ['llama2-7b', 'gpt2-small']:
-        pytest.skip("Skip llama2-7b and gpt2-small tests in CI due to resource constraints.")
+        pytest.skip('Skip llama2-7b and gpt2-small tests in CI due to resource constraints.')
     benchmark, log_path = run_deterministic_benchmark(model_name, params)
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
