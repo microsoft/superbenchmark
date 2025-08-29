@@ -66,12 +66,7 @@ MODELS = [
 
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_determinism(model_name, params):
-    """ Parameterised Test for PyTorch model determinism.
-
-    Args:
-        model_name (str): Name of the model.
-        params (str): Command-line parameters for the model.
-    """
+    """ Parameterised Test for PyTorch model determinism."""
     benchmark, log_path = run_deterministic_benchmark(model_name, params)
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
@@ -104,12 +99,7 @@ def test_pytorch_model_determinism(model_name, params):
 @pytest.mark.parametrize('model_name, params', MODELS)
 @pytest.mark.xfail(reason='Intentional determinism mismatch to test failure handling.')
 def test_pytorch_model_determinism_failure_case(model_name, params):
-    """Parameterised Test for PyTorch model determinism failure case.
-
-    Args:
-        model_name (str): Name of the model.
-        params (str): Command-line parameters for the model.
-    """
+    """Parameterised Test for PyTorch model determinism failure case."""
     benchmark, log_path = run_deterministic_benchmark(model_name, params)
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 
@@ -136,12 +126,7 @@ def test_pytorch_model_determinism_failure_case(model_name, params):
 
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_nondeterministic_default(model_name, params):
-    """Parameterised Test for PyTorch model to verify non-determinism.
-
-    Args:
-        model_name (str): Name of the model.
-        params (str): Command-line parameters for the model.
-    """
+    """Parameterised Test for PyTorch model to verify non-determinism."""
 
     context = BenchmarkRegistry.create_benchmark_context(
         model_name,
