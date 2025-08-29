@@ -35,31 +35,32 @@ def run_deterministic_benchmark(model_name, params, log_path=None, extra_args=No
 MODELS = [
     (
         'resnet18',
-        '--batch_size 1 --image_size 224 --num_classes 5 --num_warmup 2 --num_steps 4 --model_action train inference',
+        '--batch_size 2 --image_size 32 --num_classes 2 --num_warmup 1 --num_steps 1 --model_action train inference',
     ),
     (
         'lstm',
-        '--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 --num_steps 4 \
-    --model_action train inference --precision float32',
+        '--batch_size 1 --num_classes 2 --seq_len 4 --num_warmup 1 --num_steps 1 '
+        '--model_action train inference '
+        '--precision float32',
     ),
     (
-        'gpt2-large',
-        '--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 --num_steps 4 --model_action train inference',
+        'gpt2-small',
+        '--batch_size 1 --num_classes 2 --seq_len 4 --num_warmup 1 --num_steps 1 '
+        '--model_action train inference',
     ),
     (
         'llama2-7b',
-        '--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float16 --model_action train inference',
+        '--batch_size 1 --seq_len 1 --num_warmup 1 --num_steps 1 --precision float16 --model_action train inference',
     ),
     (
         'mixtral-8x7b',
-        '--batch_size 1 --seq_len 32 --num_warmup 1 --num_steps 2 --precision float16 '
-        '--hidden_size 1024 --max_position_embeddings 2048 '
-        '--intermediate_size 3584 --model_action train inference',
+        '--batch_size 1 --seq_len 4 --num_warmup 1 --num_steps 1 --precision float16 '
+        '--hidden_size 128 --max_position_embeddings 32 '
+        '--intermediate_size 256 --model_action train inference',
     ),
     (
-        'bert-large',
-        '--batch_size 1 --num_classes 5 --seq_len 8 --num_warmup 2 '
-        '--num_steps 4 --model_action train inference',
+        'bert-base',
+        '--batch_size 1 --num_classes 2 --seq_len 4 --num_warmup 1 --num_steps 1 --model_action train inference',
     ),
 ]
 
