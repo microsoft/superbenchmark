@@ -3,6 +3,7 @@
 
 """Unified test for deterministic fingerprinting across all major PyTorch model benchmarks."""
 
+from tests.helper import decorator
 import os
 import tempfile
 import json
@@ -65,6 +66,8 @@ MODELS = [
 ]
 
 
+@decorator.cuda_test
+@decorator.pytorch_test
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_determinism(model_name, params):
     """Parameterised Test for PyTorch model determinism."""
@@ -99,6 +102,8 @@ def test_pytorch_model_determinism(model_name, params):
     os.remove(log_path)
 
 
+@decorator.cuda_test
+@decorator.pytorch_test
 @pytest.mark.parametrize('model_name, params', MODELS)
 @pytest.mark.xfail(reason='Intentional determinism mismatch to test failure handling.')
 def test_pytorch_model_determinism_failure_case(model_name, params):
@@ -127,6 +132,8 @@ def test_pytorch_model_determinism_failure_case(model_name, params):
     os.remove(log_path)
 
 
+@decorator.cuda_test
+@decorator.pytorch_test
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_nondeterministic_default(model_name, params):
     """Parameterised Test for PyTorch model to verify non-determinism."""
