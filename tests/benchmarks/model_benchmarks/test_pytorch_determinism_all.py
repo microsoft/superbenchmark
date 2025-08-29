@@ -66,7 +66,7 @@ MODELS = [
 
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_determinism(model_name, params):
-    """ Parameterised Test for PyTorch model determinism."""
+    """Parameterised Test for PyTorch model determinism."""
     benchmark, log_path = run_deterministic_benchmark(model_name, params)
     assert benchmark and benchmark.return_code == ReturnCode.SUCCESS
 

@@ -140,7 +140,27 @@ class PytorchMixtral(PytorchBase):
         if getattr(self._args, 'deterministic', False):
             self._enable_deterministic_training()
 
-        self._config = MixtralConfig(
+        self._config = self._build_config()
+        if not self._check_fp8_support(precision):
+            return False
+
+        try:
+            self._model = self._instantiate_model()
+            self._postprocess_model(precision)
+        except Exception as e:
+            logger.error(
+                'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
+                    self._name, precision, str(e)
+                )
+            )
+            return False
+
+        self._setup_target()
+        self._assign_metadata_safe(precision)
+        return True
+
+    def _build_config(self):
+        return MixtralConfig(
             hidden_size=self._args.hidden_size,
             num_hidden_layers=self._args.num_hidden_layers,
             num_attention_heads=self._args.num_attention_heads,
@@ -150,56 +170,53 @@ class PytorchMixtral(PytorchBase):
             router_aux_loss_coef=self._args.router_aux_loss_coef,
         )
 
+    def _check_fp8_support(self, precision):
         enable_fp8 = precision.name.startswith('FP8_')
         if enable_fp8 and te is None:
             logger.error(
-                f'Create model with fp8 failed - model: {self._name}, precision: {precision},'
-                ' message: Cannot find transformer_engine.'
+                f'Create model with fp8 failed - model: {self._name}, precision: {precision}, '
+                'message: Cannot find transformer_engine.'
             )
             return False
         if enable_fp8 and not self._gpu_available:
             logger.error(
-                f'Create model with fp8 failed - model: {self._name}, precision: {precision},'
-                ' message: FP8 is only supported on GPU.'
+                f'Create model with fp8 failed - model: {self._name}, precision: {precision}, '
+                'message: FP8 is only supported on GPU.'
             )
             return False
+        return True
 
-        try:
-            self._model = MixtralBenchmarkModel(self._config, self._args.num_classes)
-            if enable_fp8:
-                self._fp8_recipe = DelayedScaling(
-                    fp8_format=Format[precision.name.strip('FP8_')],
-                    amax_history_len=16,
-                    amax_compute_algo='max',
-                )
-                self._to_te_model(self._model.to(dtype=torch.float16))
-            else:
-                self._model = self._model.to(dtype=getattr(torch, precision.value))
-            if self._gpu_available:
-                self._model = self._model.cuda()
-        except Exception as e:
-            logger.error(
-                'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
-                    self._name, precision, str(e)
-                )
+    def _instantiate_model(self):
+        return MixtralBenchmarkModel(self._config, self._args.num_classes)
+
+    def _postprocess_model(self, precision):
+        enable_fp8 = precision.name.startswith('FP8_')
+        if enable_fp8:
+            self._fp8_recipe = DelayedScaling(
+                fp8_format=Format[precision.name.strip('FP8_')],
+                amax_history_len=16,
+                amax_compute_algo='max',
             )
-            return False
+            self._to_te_model(self._model.to(dtype=torch.float16))
+        else:
+            self._model = self._model.to(dtype=getattr(torch, precision.value))
+        if self._gpu_available:
+            self._model = self._model.cuda()
 
+    def _setup_target(self):
         if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
             torch.manual_seed(self._args.deterministic_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
 
-        # Assign model_run_metadata for determinism log
+    def _assign_metadata_safe(self, precision):
         try:
             self._assign_model_run_metadata(
                 precision, extra_keys=['num_key_value_heads', 'max_position_embeddings', 'router_aux_loss_coef']
             )
         except Exception:
-            # Metadata should never break the run
             pass
-        return True
 
     def _train_step(self, precision):
         """Define the training process.
