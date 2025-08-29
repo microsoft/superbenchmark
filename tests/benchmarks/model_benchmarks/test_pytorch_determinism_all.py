@@ -127,7 +127,6 @@ def test_pytorch_model_determinism_failure_case(model_name, params):
 @pytest.mark.parametrize('model_name, params', MODELS)
 def test_pytorch_model_nondeterministic_default(model_name, params):
     """Parameterised Test for PyTorch model to verify non-determinism."""
-
     context = BenchmarkRegistry.create_benchmark_context(
         model_name,
         platform=Platform.CUDA,
