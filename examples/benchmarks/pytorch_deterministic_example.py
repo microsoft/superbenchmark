@@ -20,7 +20,6 @@ import argparse
 from superbench.benchmarks import BenchmarkRegistry, Framework
 from superbench.common.utils import logger
 
-
 MODEL_CHOICES = [
     'bert-large',
     'gpt2-small',

@@ -265,9 +265,7 @@ class PytorchBase(ModelBenchmark):
             logger.info(f'Determinism check PASSED against {self._args.compare_log}')
 
     def _preprocess(self):
-        """
-        Preprocess and apply PyTorch-specific defaults.
-        """
+        """Preprocess and apply PyTorch-specific defaults."""
         preprocess_ok = super()._preprocess()
         if not preprocess_ok:
             return False
