@@ -9,19 +9,11 @@ Generate log:
 CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py
 --model <model_from_MODEL_CHOICES> --generate-log --log-path ./outputs/determinism_ref.json
 
-CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py
---model bert-large --generate-log --log-path ./outputs/determinism_ref.json
-
-
-
 Compare log:
 
 CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py
 --model <model_from_MODEL_CHOICES> --compare-log ./outputs/determinism_ref.json
 
-
-CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py
---model bert-large --compare-log ./outputs/determinism_ref.json
 """
 
 import argparse
@@ -38,7 +30,7 @@ MODEL_CHOICES = [
 
 DEFAULT_PARAMS = {
     'bert-large':
-    '--batch_size 1 --seq_len 128 --num_warmup 1 --num_steps 300 --precision float32 '
+    '--batch_size 1 --seq_len 64 --num_warmup 1 --num_steps 200 --precision float32 '
     '--model_action train --deterministic --deterministic_seed 42 --check_frequency 20',
     'gpt2-small':
     '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 128 --precision float32 '
@@ -54,7 +46,7 @@ DEFAULT_PARAMS = {
     '--batch_size 192 --precision float32 float32 --num_warmup 64 --num_steps 512 --sample_count 8192 '
     '--pin_memory --model_action train --deterministic --deterministic_seed 42 --check_frequency 20',
     'lstm':
-    '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 256 --precision float16 '
+    '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 64 --precision float16 '
     '--model_action train --deterministic --deterministic_seed 42 --check_frequency 20',
 }
 
@@ -90,9 +82,10 @@ def main():
     if args.compare_log:
         parameters += f' --compare-log {args.compare_log}'
 
-    print(f'Running {args.model} with parameters: {parameters}')
+    # print(f'Running {args.model} with parameters: {parameters}')
     context = BenchmarkRegistry.create_benchmark_context(args.model, parameters=parameters, framework=Framework.PYTORCH)
     benchmark = BenchmarkRegistry.launch_benchmark(context)
+    print("))))))))))))))))))))))))))))", )
     print(f'Benchmark finished. Return code: {benchmark.return_code}')
     if hasattr(benchmark, '_model_run_metadata'):
         print('Run metadata:', benchmark._model_run_metadata)

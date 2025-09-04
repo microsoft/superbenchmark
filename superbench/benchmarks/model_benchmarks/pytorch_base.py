@@ -99,6 +99,7 @@ class PytorchBase(ModelBenchmark):
             'model_name': self._name,
             'precision': (precision.value if hasattr(precision, 'value') else str(precision)),
             'seed': getattr(self._args, 'deterministic_seed', None),
+            'deterministic_seed': getattr(self._args, 'deterministic_seed', None),
             'batch_size': getattr(self._args, 'batch_size', None),
             'seq_len': getattr(self._args, 'seq_len', None),
             'num_steps': getattr(self._args, 'num_steps', None),
@@ -264,25 +265,23 @@ class PytorchBase(ModelBenchmark):
             logger.info(f'Determinism check PASSED against {self._args.compare_log}')
 
     def _preprocess(self):
-        """Preprocess and apply PyTorch-specific defaults.
-
-        Additionally, if deterministic mode is requested and neither generate_log nor compare_log
-        is provided, default to enabling generate_log so a reference is produced automatically.
+        """
+        Preprocess and apply PyTorch-specific defaults.
         """
         preprocess_ok = super()._preprocess()
         if not preprocess_ok:
             return False
-        try:
-            if getattr(self._args, 'deterministic', False):
-                has_gen = getattr(self._args, 'generate_log', False)
-                has_cmp = getattr(self._args, 'compare_log', None)
-                if not has_gen and not has_cmp:
-                    setattr(self._args, 'generate_log', True)
-                    logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')
-        except Exception:
-            # Never fail preprocessing due to optional defaulting
-            pass
+        if getattr(self._args, 'deterministic', False):
+            self._handle_deterministic_log_options()
         return True
+
+    def _handle_deterministic_log_options(self):
+        """Set generate_log if deterministic and no log options are set."""
+        has_gen = getattr(self._args, 'generate_log', False)
+        has_cmp = getattr(self._args, 'compare_log', None)
+        if not has_gen and not has_cmp:
+            setattr(self._args, 'generate_log', True)
+            logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')
 
     def _set_force_fp32(self):
         """Set the config that controls whether full float32 precision will be used.

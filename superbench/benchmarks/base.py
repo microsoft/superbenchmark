@@ -93,31 +93,87 @@ class Benchmark(ABC):
         return message
 
     def parse_args(self, ignore_invalid=False):
-        """Parse the arguments.
+        """Parse the arguments and override with compare_log metadata if set.
 
         Return:
             ret (bool): whether parse succeed or not.
-            args (argparse.Namespace): parsed arguments.
+            args (argparse.Namespace): parsed arguments (possibly overridden).
             unknown (list): unknown arguments.
         """
+        args, unknown = self._parse_known_args_step(ignore_invalid)
+        if not self._parse_args_valid(args, unknown):
+            return False, None, []
+        args = self._parse_args_override_step(args)
+        ret = self._parse_args_check_unknown_step(unknown)
+        return ret, args, unknown
+
+    def _parse_known_args_step(self, ignore_invalid):
+        return self._try_parse_known_args(ignore_invalid)
+
+    def _parse_args_valid(self, args, unknown):
+        return not (args is None and unknown == [])
+
+    def _parse_args_override_step(self, args):
+        return self._override_args_with_compare_log(args)
+
+    def _parse_args_check_unknown_step(self, unknown):
+        return self._check_unknown_args(unknown)
+
+    def _try_parse_known_args(self, ignore_invalid):
         try:
             args, unknown = self._parser.parse_known_args(self._argv)
+            return args, unknown
         except BaseException as e:
             if ignore_invalid:
                 logger.info('Missing or invliad parameters, will ignore the error and skip the args checking.')
-                return True, None, []
+                return None, []
             else:
                 logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
-                return False, None, []
+                return None, []
 
-        ret = True
+    def _override_args_with_compare_log(self, args):
+        if args is not None and getattr(args, 'compare_log', None):
+            try:
+                from superbench.common import model_log_utils
+                log_data = model_log_utils.load_model_log(args.compare_log)
+                metadata = log_data.get('metadata', {})
+                try:
+                    from superbench.benchmarks import Precision
+                except ImportError:
+                    Precision = None
+                for key, value in metadata.items():
+                    if hasattr(args, key):
+                        if key == 'precision' and Precision is not None:
+                            setattr(args, key, self._convert_precision_value(value, Precision))
+                        else:
+                            setattr(args, key, value)
+                logger.info(f'Arguments overridden from compare_log metadata for determinism. New Arguments {args}')
+            except Exception as e:
+                logger.info(f'Failed to override args from compare_log metadata: {e}')
+        return args
+
+    def _convert_precision_value(self, value, Precision):
+        if isinstance(value, list):
+            converted = []
+            for v in value:
+                if isinstance(v, Precision):
+                    converted.append(v)
+                else:
+                    converted.append(Precision(v))
+            return converted
+        else:
+            if isinstance(value, Precision):
+                return [value]
+            else:
+                return [Precision(value)]
+
+    def _check_unknown_args(self, unknown):
         if len(unknown) > 0:
             logger.error(
                 'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
             )
-            ret = False
-
-        return ret, args, unknown
+            return False
+        return True
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
