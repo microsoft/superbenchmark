@@ -15,3 +15,4 @@ typing_extensions==4.9.0; python_version < '3.12'
 typing_extensions==4.12.2; python_version >= '3.12'
 apex
 mpi4py
+setuptools>=80.9.0; python_version >= '3.12'
