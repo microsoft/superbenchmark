@@ -18,6 +18,8 @@ CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministi
 
 import argparse
 from superbench.benchmarks import BenchmarkRegistry, Framework
+from superbench.common.utils import logger
+
 
 MODEL_CHOICES = [
     'bert-large',
@@ -82,17 +84,15 @@ def main():
     if args.compare_log:
         parameters += f' --compare-log {args.compare_log}'
 
-    # print(f'Running {args.model} with parameters: {parameters}')
     context = BenchmarkRegistry.create_benchmark_context(args.model, parameters=parameters, framework=Framework.PYTORCH)
     benchmark = BenchmarkRegistry.launch_benchmark(context)
-    print("))))))))))))))))))))))))))))", )
-    print(f'Benchmark finished. Return code: {benchmark.return_code}')
+    logger.info(f'Benchmark finished. Return code: {benchmark.return_code}')
     if hasattr(benchmark, '_model_run_metadata'):
-        print('Run metadata:', benchmark._model_run_metadata)
+        logger.info(f'Run metadata: {benchmark._model_run_metadata}')
     if hasattr(benchmark, '_model_run_losses'):
-        print('Losses:', benchmark._model_run_losses[:5], '...')
+        logger.info(f'Losses: {benchmark._model_run_losses[:5]} ...')
     if hasattr(benchmark, '_model_run_periodic'):
-        print('Periodic:', benchmark._model_run_periodic)
+        logger.info(f'Periodic: {benchmark._model_run_periodic}')
 
 
 if __name__ == '__main__':
