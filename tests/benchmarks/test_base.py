@@ -19,7 +19,6 @@ class FooBenchmark(Benchmark):
     Args:
         Benchmark (Benchmark): Base Benchmark class.
     """
-
     def _benchmark(self):
         """Implement _benchmark method.
 
@@ -43,7 +42,6 @@ class FooBenchmark(Benchmark):
 
 class BenchmarkBaseTestCase(unittest.TestCase):
     """A class for benchmark base test cases."""
-
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
         self.benchmark = FooBenchmark('foo')
@@ -80,9 +78,7 @@ class BenchmarkBaseTestCase(unittest.TestCase):
 
     def test_compare_log_override(self):
         """Test argument override from compare_log metadata."""
-
         class DummyBenchmark(Benchmark):
-
             def add_parser_arguments(self):
                 self._parser.add_argument('--compare_log', type=str, required=False)
                 self._parser.add_argument('--foo', type=int, default=1)
