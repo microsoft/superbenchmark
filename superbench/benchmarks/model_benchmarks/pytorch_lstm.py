@@ -180,6 +180,8 @@ class PytorchLSTM(PytorchBase):
                     start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
+                    if self._args.no_copy:
+                        start = self._timer()
                     self._model(sample)
                     end = self._timer()
                     curr_step += 1

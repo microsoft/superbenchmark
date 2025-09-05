@@ -213,6 +213,8 @@ class PytorchBERT(PytorchBase):
                     start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
+                    if self._args.no_copy:
+                        start = self._timer()
                     if self._fp8_recipe is not None:
                         with te.fp8_autocast(enabled=True, fp8_recipe=self._fp8_recipe):
                             self._model(sample)
