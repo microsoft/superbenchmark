@@ -4,6 +4,7 @@
 """Module of the GPU-Burn Test."""
 
 import os
+import re
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform
@@ -81,6 +82,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
             raw_output (str): raw output string of the micro-benchmark.
 
         Return:
+
             True if the raw output string is valid and result can be extracted.
         """
         content = raw_output.splitlines()
@@ -88,7 +90,9 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
         abort = False
         failure_msg = 'unknown failure'
         index = -1
+
         try:
+            # detect fatal failure lines
             for idx, line in enumerate(content):
                 if 'No clients are alive!' in line or "Couldn't init a GPU" \
                         in line or 'Failure during compute' in line or 'Low mem for result' in line:
@@ -124,6 +128,57 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                 self._result.add_raw_data('GPU Burn Failure: ', failure_msg, self._args.log_raw_data)
                 self._result.add_result('abort', 1)
                 return False
+
+            # Parse and emit metrics for every perf snapshot
+            # Find all performance snapshot lines containing Gflop/s
+            perf_lines = [line for line in raw_output.splitlines() if 'Gflop/s' in line]
+            per_gpu_flops, per_gpu_temps = {}, {}
+            for snap_idx, perf_line in enumerate(perf_lines):
+                # extract per-GPU Gflops values like '(581623 Gflop/s)'
+                gflops = re.findall(r'\(([0-9]+(?:\.[0-9]+)?)\s*Gflop/s\)', perf_line)
+                gflops = [float(x) for x in gflops]
+                # extract temps: 'temps: 48 C - 49 C - 49 C - 49 C'
+                temps = []
+                m = re.search(r'temps:\s*(.+)$', perf_line)
+                if m:
+                    temps = []
+                    for t in m.group(1).split(' - '):
+                        match = re.search(r'(\d+)', t)
+                        if match:
+                            temps.append(int(match.group(1)))
+
+                # Save snapshot raw line
+                self._result.add_raw_data(f'GPU-Burn_perf_snapshot_{snap_idx}', perf_line, self._args.log_raw_data)
+
+                # Emit per-GPU metrics for this snapshot
+                num_gpus = max(len(gflops), len(temps), len(gpu_res))
+                for i in range(num_gpus):
+                    if i not in per_gpu_flops:
+                        per_gpu_flops[i] = []
+                    if i not in per_gpu_temps:
+                        per_gpu_temps[i] = []
+                    if i < len(gflops) and gflops[i] > 0:
+                        self._result.add_result(f'gpu_{snap_idx}_gflops:{i}', gflops[i])
+                        per_gpu_flops[i].append(gflops[i])
+                    else:
+                        self._result.add_result(f'gpu_{snap_idx}_gflops:{i}', 0.0)
+                    if i < len(temps):
+                        self._result.add_result(f'gpu_{snap_idx}_temp:{i}', temps[i])
+                        per_gpu_temps[i].append(temps[i])
+                    else:
+                        self._result.add_result(f'gpu_{snap_idx}_temp:{i}', -1)
+            for i in per_gpu_flops:
+                if len(per_gpu_flops[i]) > 0:
+                    avg_flops = sum(per_gpu_flops[i]) / len(per_gpu_flops[i])
+                    self._result.add_result(f'gpu_avg_gflops:{i}', avg_flops)
+                    if avg_flops != 0:
+                        self._result.add_result(f'gpu_var_gflops:{i}', (max(per_gpu_flops[i]) - min(per_gpu_flops[i]))/avg_flops)
+                    else:
+                        self._result.add_result(f'gpu_var_gflops:{i}', 0.0)
+            for i in per_gpu_temps:
+                if len(per_gpu_temps[i]) > 0:
+                    self._result.add_result(f'gpu_max_temp:{i}', max(per_gpu_temps[i]))
+
         except BaseException as e:
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
