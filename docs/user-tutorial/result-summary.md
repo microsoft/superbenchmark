@@ -58,7 +58,7 @@ superbench:
 
 ```yaml title="Example"
 # SuperBench rules
-version: v0.11
+version: v0.12
 superbench:
   rules:
     kernel_launch:
