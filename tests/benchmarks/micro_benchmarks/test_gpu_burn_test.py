@@ -57,4 +57,7 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.result['time'][0] == time)
         for device in range(8):
             assert (benchmark.result['gpu_' + str(device) + '_pass'][0] == 1)
+            assert ('gpu_max_temp:' + str(device) in benchmark.result)
+            assert ('gpu_avg_gflops:' + str(device) in benchmark.result)
+            assert ('gpu_var_gflops:' + str(device) in benchmark.result)
         assert (benchmark.result['abort'][0] == 0)
