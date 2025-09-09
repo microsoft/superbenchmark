@@ -82,7 +82,6 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
             raw_output (str): raw output string of the micro-benchmark.
 
         Return:
-
             True if the raw output string is valid and result can be extracted.
         """
         content = raw_output.splitlines()
