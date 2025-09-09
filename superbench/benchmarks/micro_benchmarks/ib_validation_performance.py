@@ -48,7 +48,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             '--set_ib_devices',
             action='store_true',
             default=False,
-            help='Set irregular IB devices automatically according to the local rank when running with MPI. If IB devices are not able to scan, please use env IB_DEVICES to set them manually.',
+            help=
+            'Set irregular IB devices automatically according to the local rank when running with MPI. If IB devices are not able to scan, please use env IB_DEVICES to set them manually.',
         )
         self._parser.add_argument(
             '--gpu_dev',
