@@ -48,8 +48,8 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             '--set_ib_devices',
             action='store_true',
             default=False,
-            help=
-            'Set irregular IB devices automatically according to the local rank when running with MPI. If IB devices are not able to scan, please use env IB_DEVICES to set them manually.',
+            help='Set irregular IB devices automatically according to the local rank. \
+            If IB devices are not able to scan, use env IB_DEVICES to set them manually.',
         )
         self._parser.add_argument(
             '--gpu_dev',
@@ -296,10 +296,10 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             if local_rank >= len(ib_devices):
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                 logger.error(
-                    f"Local rank {local_rank} exceeds available IB devices ({len(ib_devices)}) - benchmark: {self._name}"
+                    f'Local rank {local_rank} exceeds IB devices ({len(ib_devices)}) - benchmark: {self._name}'
                 )
                 return False
-            command_params = f"-F -n {self._args.iters} -d {ib_devices[local_rank].split(':')[0]} {msg_size} {gpu_dev}"
+            command_params = f'-F -n {self._args.iters} -d {ib_devices[local_rank].split(":")[0]} {msg_size} {gpu_dev}'
         command_params = f'{command_params.strip()} --report_gbits'
         return command_params
 
