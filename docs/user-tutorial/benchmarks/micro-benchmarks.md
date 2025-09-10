@@ -552,3 +552,4 @@ Measure the disk performance through [FIO](https://github.com/axboe/fio/tree/031
 | disk-benchmark/${disk_name}_rand_read_write_write_iops        | IOPS         | Disk random read write write IOPS.                       |
 | disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_95.0 | time (ns)    | Disk random read write write latency in 95.0 percentile. |
 | disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_99.0 | time (ns)    | Disk random read write write latency in 99.0 percentile. |
+| disk-benchmark/${disk_name}_rand_read_write_write_lat_ns_99.9 | time (ns)    | Disk random read write write latency in 99.9 percentile. |
