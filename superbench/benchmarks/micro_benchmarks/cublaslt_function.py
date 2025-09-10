@@ -56,6 +56,12 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             required=False,
             help='Number of steps to measure for autotune.',
         )
+        self._parser.add_argument(
+            '--enable_ncu_profiling',
+            action='store_true',
+            required=False,
+            help='Enable ncu profiling for each run.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -75,12 +81,12 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 f' -a -W {self._args.num_warmup_autotune}'
                 f' -I {self._args.num_steps_autotune}'
             ) if self._args.enable_autotune else ''
-
-            self._commands.append(
-                f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} '
-                f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}'
+            command = f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} ' + \
+                f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}' + \
                 f'{(" " + autotune_args) if autotune_args else ""}'
-            )
+            if self._args.enable_ncu_profiling:
+                command = f'ncu --launch-skip {self._args.num_warmup} --launch-count 1 --csv ' + command
+            self._commands.append(command)
 
         return True
 
@@ -99,12 +105,46 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
 
         try:
-            fields = raw_output.strip().split()
-            if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
-                raise ValueError('Invalid result.')
-            self._result.add_result(
-                f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops', float(fields[-1])
-            )
+            if not self._args.enable_ncu_profiling:
+                fields = raw_output.strip().split()
+                if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
+                    raise ValueError('Invalid result.')
+                self._result.add_result(
+                    f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                    float(fields[-1])
+                )
+            else:
+                lines = raw_output.strip().split('\n')
+                # find line index of the line that starts with "ID","Process ID"
+                start_idx = next(i for i, line in enumerate(lines) if "Metric Name" in line)
+                if start_idx == 0 or start_idx == len(lines) - 1:
+                    raise ValueError('Invalid result.')
+                result_lines = lines[0:start_idx - 1]
+                result = False
+                for line in result_lines:
+                    fields = line.strip().split('')
+                    if len(fields) == 6 or not all(x.isdigit() for x in fields[:4]):
+                        result = True
+                        self._result.add_result(
+                            f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                            float(fields[-1])
+                        )
+                if not result:
+                    raise ValueError('Invalid result.')
+                metric_name_index = lines[start_idx].strip().split(',').index('"Metric Name"')
+                metric_value_index = lines[start_idx].strip().split(',').index('"Metric Value"')
+                fields_length = len(lines[start_idx].strip().split(','))
+                if metric_name_index < 0 or metric_value_index < 0:
+                    raise ValueError('Can not find Metric Name and Value.')
+                for line in lines[start_idx + 1:]:
+                    fields = line.strip().split(',')
+                    if len(fields) != fields_length:
+                        continue
+                    metric_name = fields[metric_name_index].strip('"')
+                    if 'Throughput' in metric_name or 'Warp' in metric_name:
+                        value = float(fields[metric_value_index].strip('"'))
+                        self._result.add_result(f'{self._commands[cmd_idx].split()[-1]}_{metric_name}', value)
+
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
