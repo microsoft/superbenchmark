@@ -147,7 +147,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                     raise ValueError('Can not find Metric Name and Value.')
                 for line in lines[start_idx + 1:]:
                     fields = line.strip().split('","')
-                    metric_name = fields[metric_name_index].strip('"')
+                    metric_name = fields[metric_name_index].strip('"').replace(' ', '_')
                     if len(fields) < 15:
                         continue
                     if not self._args.profiling_metrics or len(self._args.profiling_metrics) == 0 or \
