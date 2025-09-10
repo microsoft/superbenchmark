@@ -62,6 +62,14 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             required=False,
             help='Enable ncu profiling for each run.',
         )
+        self._parser.add_argument(
+            '--profiling_metrics',
+            type=str,
+            nargs='+',
+            default=None,
+            required=False,
+            help='List of ncu profiling metrics, support all ncu metrics.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -85,7 +93,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}' + \
                 f'{(" " + autotune_args) if autotune_args else ""}'
             if self._args.enable_ncu_profiling:
-                command = f'ncu --launch-skip {self._args.num_warmup} --launch-count 1 --csv ' + command
+                command = f'ncu --set full --launch-skip {self._args.num_warmup} --launch-count 1 --csv ' + command
             self._commands.append(command)
 
         return True
@@ -122,8 +130,8 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 result_lines = lines[0:start_idx - 1]
                 result = False
                 for line in result_lines:
-                    fields = line.strip().split('')
-                    if len(fields) == 6 or not all(x.isdigit() for x in fields[:4]):
+                    fields = line.strip().split()
+                    if len(fields) == 6 and all(x.isdigit() for x in fields[:4]):
                         result = True
                         self._result.add_result(
                             f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
@@ -133,16 +141,16 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                     raise ValueError('Invalid result.')
                 metric_name_index = lines[start_idx].strip().split(',').index('"Metric Name"')
                 metric_value_index = lines[start_idx].strip().split(',').index('"Metric Value"')
-                fields_length = len(lines[start_idx].strip().split(','))
                 if metric_name_index < 0 or metric_value_index < 0:
                     raise ValueError('Can not find Metric Name and Value.')
                 for line in lines[start_idx + 1:]:
-                    fields = line.strip().split(',')
-                    if len(fields) != fields_length:
-                        continue
+                    fields = line.strip().split('","')
                     metric_name = fields[metric_name_index].strip('"')
-                    if 'Throughput' in metric_name or 'Warp' in metric_name:
-                        value = float(fields[metric_value_index].strip('"'))
+                    if len(fields) < 15:
+                        continue
+                    if not self._args.profiling_metrics or len(self._args.profiling_metrics) == 0 or \
+                            metric_name in self._args.profiling_metrics:
+                        value = float(fields[metric_value_index].strip(',').strip('"'))
                         self._result.add_result(f'{self._commands[cmd_idx].split()[-1]}_{metric_name}', value)
 
         except BaseException as e:
