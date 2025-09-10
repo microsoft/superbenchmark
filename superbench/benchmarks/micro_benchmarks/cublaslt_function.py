@@ -129,10 +129,12 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                     raise ValueError('Invalid result.')
                 result_lines = lines[0:start_idx - 1]
                 result = False
+                size = ''
                 for line in result_lines:
                     fields = line.strip().split()
                     if len(fields) == 6 and all(x.isdigit() for x in fields[:4]):
                         result = True
+                        size = f'{fields[3]}_{"_".join(fields[:3])}'
                         self._result.add_result(
                             f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
                             float(fields[-1])
@@ -151,8 +153,8 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                     if not self._args.profiling_metrics or len(self._args.profiling_metrics) == 0 or \
                             metric_name in self._args.profiling_metrics:
                         value = fields[metric_value_index].strip(',').strip('"')
-                        if len(value) > 0:
-                            self._result.add_result(f'{self._commands[cmd_idx].split()[-1]}_{metric_name}', float(value))
+                        if len(value) > 0 and value.replace('.', '', 1).isdigit():
+                            self._result.add_result(f'{self._commands[cmd_idx].split()[-1]}_{size}_{metric_name}', float(value))
 
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
