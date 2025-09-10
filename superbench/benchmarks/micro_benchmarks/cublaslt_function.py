@@ -150,8 +150,9 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                         continue
                     if not self._args.profiling_metrics or len(self._args.profiling_metrics) == 0 or \
                             metric_name in self._args.profiling_metrics:
-                        value = float(fields[metric_value_index].strip(',').strip('"'))
-                        self._result.add_result(f'{self._commands[cmd_idx].split()[-1]}_{metric_name}', value)
+                        value = fields[metric_value_index].strip(',').strip('"')
+                        if len(value) > 0:
+                            self._result.add_result(f'{self._commands[cmd_idx].split()[-1]}_{metric_name}', float(value))
 
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
