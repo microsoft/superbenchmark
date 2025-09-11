@@ -174,7 +174,7 @@ Supports the use of double unit types and the use of tensor cores.
 | gpu_<snap_idx>_gflops:<gpu_index> | FLOPS (GFLOPS)  | Per-snapshot measured GFLOPS for `gpu_index` at snapshot `snap_idx` (snapshot index increments for each performance summary line). |
 | gpu_<snap_idx>_temp:<gpu_index>   | temperature (C) | Per-snapshot temperature for `gpu_index` at snapshot `snap_idx`.                                                                   |
 | gpu_avg_gflops:<gpu_index>        | FLOPS (GFLOPS)  | Average GFLOPS across all snapshots for `gpu_index`.                                                                               |
-| gpu_var_gflops:<gpu_index>        |                 | Flops variance metric for `gpu_index` across snapshots using (max-min)/avg - 1                                                     |
+| gpu_var_gflops:<gpu_index>        |                 | Flops variance metric for `gpu_index` across snapshots using (max-min)/avg                                                         |
 | gpu_max_temp:<gpu_index>          | temperature (C) | Maximum observed temperature for `gpu_index` across all snapshots.                                                                 |
 
 

@@ -179,7 +179,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                     self._result.add_result(f'gpu_avg_gflops:{i}', avg_flops)
                     if avg_flops != 0:
                         self._result.add_result(
-                            f'gpu_var_gflops:{i}', (max(per_gpu_flops[i]) - min(per_gpu_flops[i])) / avg_flops - 1
+                            f'gpu_var_gflops:{i}', (max(per_gpu_flops[i]) - min(per_gpu_flops[i])) / avg_flops
                         )
                     else:
                         self._result.add_result(f'gpu_var_gflops:{i}', 0.0)
