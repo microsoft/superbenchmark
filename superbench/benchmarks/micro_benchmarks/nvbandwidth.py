@@ -111,6 +111,10 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.disable_affinity:
             command += ' --disableAffinity'
+            rank = int(os.getenv('PROC_RANK', '0'))
+            if os.getenv('NUMA_NODES'):
+               numa = int(os.getenv('NUMA_NODES').split(',')[rank])
+                command = f'numactl --cpunodebind={numa} --membind={numa} ' + command
 
         if self._args.use_mean:
             command += ' --useMean'
