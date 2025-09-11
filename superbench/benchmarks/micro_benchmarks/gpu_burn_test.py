@@ -49,7 +49,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--warmup_iters',
             type=int,
-            default=512,
+            default=0,
             help='Number of warmup iterations before performance measurement',
         )
 
