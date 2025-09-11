@@ -33,5 +33,3 @@
 [submodule "third_party/nvbandwidth"]
 	path = third_party/nvbandwidth
 	url = https://github.com/NVIDIA/nvbandwidth.git
-[submodule "\"third_party/gpu-burn\""]
-	url = https://github.com/WenqingLan1/gpu-burn.git
