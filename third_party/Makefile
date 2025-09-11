@@ -308,7 +308,11 @@ endif
 
 # Build nvbandwidth.
 nvbandwidth: sb_micro_path
+ifeq ($(shell echo $(CUDA_VER) ">=12.9" | bc -l), 1)
+# For CUDA >= 12.9, clone a newer nvbandwidth commit
+	if [ -d nvbandwidth ]; then rm -rf nvbandwidth; fi
+	git clone --branch v0.8 https://github.com/NVIDIA/nvbandwidth.git nvbandwidth
+endif
 	cd ./nvbandwidth && mkdir -p build && cd build && \
-	cmake .. -DCMAKE_CUDA_ARCHITECTURES="75;80;86;90;100;103" && \
-	make -j && cd ../..
+	cmake .. && make -j && cd ../..
 	cp -v ./nvbandwidth/build/nvbandwidth $(SB_MICRO_PATH)/bin
