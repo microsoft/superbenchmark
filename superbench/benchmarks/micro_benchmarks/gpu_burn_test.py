@@ -46,6 +46,12 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
             default=10,
             help='Length of time to run GPU-Burn for(in seconds)',
         )
+        self._parser.add_argument(
+            '--warmup_iters',
+            type=int,
+            default=512,
+            help='Number of warmup iterations before performance measurement',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -158,7 +164,8 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                         per_gpu_temps[i] = []
                     if i < len(gflops) and gflops[i] > 0:
                         self._result.add_result(f'gpu_{snap_idx}_gflops:{i}', gflops[i])
-                        per_gpu_flops[i].append(gflops[i])
+                        if snap_idx > self._args.warmup_iters:
+                            per_gpu_flops[i].append(gflops[i])
                     else:
                         self._result.add_result(f'gpu_{snap_idx}_gflops:{i}', 0.0)
                     if i < len(temps):
@@ -172,7 +179,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                     self._result.add_result(f'gpu_avg_gflops:{i}', avg_flops)
                     if avg_flops != 0:
                         self._result.add_result(
-                            f'gpu_var_gflops:{i}', (max(per_gpu_flops[i]) - min(per_gpu_flops[i])) / avg_flops
+                            f'gpu_var_gflops:{i}', (max(per_gpu_flops[i]) - min(per_gpu_flops[i])) / avg_flops - 1
                         )
                     else:
                         self._result.add_result(f'gpu_var_gflops:{i}', 0.0)
