@@ -121,7 +121,7 @@ ifneq (,$(wildcard perftest/autogen.sh))
 	ifeq ($(shell echo $(CUDA_VER) ">=13.0" | bc -l), 1)
 # For CUDA >= 13.0, clone a newer perftest commit
 		if [ -d perftest ]; then rm -rf perftest; fi
-		git clone --branch v25.07.0-0.104 https://github.com/linux-rdma/perftest.git perftest
+		git clone --branch 25.07.0-0.104 https://github.com/linux-rdma/perftest.git perftest
 	endif
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
