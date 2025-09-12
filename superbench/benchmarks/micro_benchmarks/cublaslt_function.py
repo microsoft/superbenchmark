@@ -93,7 +93,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}' + \
                 f'{(" " + autotune_args) if autotune_args else ""}'
             if self._args.enable_ncu_profiling:
-                command = f'ncu --set full --launch-skip {self._args.num_warmup} --launch-count 1 --csv ' + command
+                command = f'ncu --set full --launch-skip {self._args.num_warmup - 1} --launch-count 1 --csv ' + command
             self._commands.append(command)
 
         return True
