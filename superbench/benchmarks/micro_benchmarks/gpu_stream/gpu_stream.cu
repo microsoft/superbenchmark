@@ -184,11 +184,12 @@ template <typename T> int GpuStream::PrepareValidationBuf(std::unique_ptr<BenchA
     }
 
     // Initialize validation buffer
+    T s = static_cast<T>(scalar);
     for (size_t j = 0; j < size; j++) {
         args->sub.validation_buf_ptrs[0][j] = static_cast<T>(j % kUInt8Mod);
-        args->sub.validation_buf_ptrs[1][j] = static_cast<T>(j % kUInt8Mod) * scalar;
+        args->sub.validation_buf_ptrs[1][j] = static_cast<T>(j % kUInt8Mod) * s;
         args->sub.validation_buf_ptrs[2][j] = static_cast<T>(j % kUInt8Mod) + static_cast<T>(j % kUInt8Mod);
-        args->sub.validation_buf_ptrs[3][j] = static_cast<T>(j % kUInt8Mod) + static_cast<T>(j % kUInt8Mod) * scalar;
+        args->sub.validation_buf_ptrs[3][j] = static_cast<T>(j % kUInt8Mod) + static_cast<T>(j % kUInt8Mod) * s;
     }
     return 0;
 }
@@ -430,7 +431,7 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
         case Kernel::kScale:
             ScaleKernel<<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
                 reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[0].get()), scalar);
+                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[0].get()), static_cast<T>(scalar));
             args->sub.kernel_name = "SCALE";
             break;
         case Kernel::kAdd:
@@ -445,7 +446,7 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
             TriadKernel<<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
                 reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[2].get()),
                 reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[0].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[1].get()), scalar);
+                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[1].get()), static_cast<T>(scalar));
             size_factor = 3;
             args->sub.kernel_name = "TRIAD";
             break;

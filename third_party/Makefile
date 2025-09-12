@@ -21,12 +21,10 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 all: cuda rocm
 # msccl: api change in cudaStreamUpdateCaptureDependencies
 cuda_with_msccl: cuda cuda_msccl
-# cuda: 
-# removed cuda_perftest & nvbandwidth due to API change in cuCtxCreate_v4 - CUresult CUDAAPI cuCtxCreate(CUcontext *pctx, CUctxCreateParams *ctxCreateParams, unsigned int flags, CUdevice dev);
-# removed cuda_gpuburn due to API change:
-# warning: ‘CUresult cuParamSetv(CUfunction, int, void*, unsigned int)’ is deprecated [-Wdeprecated-declarations]
-# __CUDA_DEPRECATED CUresult CUDAAPI cuFuncSetBlockShape(CUfunction hfunc, int x, int y, int z);
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests gpcnet megatron_lm megatron_deepspeed
+# cuda13 target: 
+# removed cuda_perftest due to API change in cuCtxCreate_v4 - CUresult CUDAAPI cuCtxCreate(CUcontext *pctx, CUctxCreateParams *ctxCreateParams, unsigned int flags, CUdevice dev);
+cuda13: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
 cpu: common cpu_perftest
 common: fio cpu_stream
@@ -120,6 +118,11 @@ endif
 # The version we use is the tag v4.5-0.2.
 cuda_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
+	ifeq ($(shell echo $(CUDA_VER) ">=13.0" | bc -l), 1)
+# For CUDA >= 13.0, clone a newer perftest commit
+		if [ -d perftest ]; then rm -rf perftest; fi
+		git clone --branch v25.07.0-0.104 https://github.com/linux-rdma/perftest.git perftest
+	endif
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 rocm_perftest:
