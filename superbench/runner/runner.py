@@ -131,9 +131,16 @@ class SuperBenchRunner():
         if timeout is not None:
             exec_command = 'timeout {timeout} {command}'.format(timeout=timeout, command=exec_command)
 
+        # Enable nsys profiling based on environment variable
+        enable_nsys = os.environ.get('SB_ENABLE_NSYS', '').lower() in ('true', '1')
+
         mode_command = exec_command
         if mode.name == 'local':
-            mode_command = '{prefix} {command}'.format(
+            trace_command = (f'nsys profile --output <TRACE_DIR_VENDOR>/{benchmark_name}_{mode.proc_rank}_traces '
+                           f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
+                           if enable_nsys and mode.proc_rank == 0 else ''
+            mode_command = '{prefix} {trace} {command}'.format(
+                trace=trace_command,
                 prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
                 command=exec_command,
             )
@@ -143,14 +150,24 @@ class SuperBenchRunner():
             # TODO: only supports node_num=1 and node_num=all currently
             torch_dist_params = '' if 'node_num' in mode and mode.node_num == 1 else \
                 '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+
+            nsys_prefix = (f'nsys profile --output <TRACE_DIR_VENDOR>/{benchmark_name}_traces '
+                          f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
+                          if enable_nsys else ''
+
             mode_command = (
+                f'{nsys_prefix}'
                 f'torchrun'
                 f' --no_python --nproc_per_node={mode.proc_num} {torch_dist_params}{exec_command}'
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_impl=ddp'
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_backend=nccl'
             )
         elif mode.name == 'mpi':
+            trace_command = (f'nsys profile --output <TRACE_DIR_VENDOR>/{benchmark_name}_{mode.proc_rank}_traces '
+                           f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
+                           if enable_nsys else ''
             mode_command = (
+                '{trace} '
                 'mpirun '    # use default OpenMPI in image
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
@@ -158,6 +175,7 @@ class SuperBenchRunner():
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
+                trace = trace_command,
                 host_list=f'-host localhost:{mode.proc_num}' if 'node_num' in mode and mode.node_num == 1 else
                 f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if 'host_list' not in mode else '-host ' +
                 ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
