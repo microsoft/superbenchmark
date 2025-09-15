@@ -127,8 +127,8 @@ class Benchmark(ABC):
 
     def _override_args_with_compare_log(self, args):
         # Only override if compare_log is set and is a valid argument for this benchmark
-        logger.info(f'Original Arguments before overriding from compare_log metadata for determinism: {args}')
         if args is not None and hasattr(args, 'compare_log') and getattr(args, 'compare_log', None):
+            logger.info(f'Original Arguments before overriding from compare_log metadata for determinism: {args}')
             try:
                 from superbench.common import model_log_utils
                 log_data = model_log_utils.load_model_log(args.compare_log)
