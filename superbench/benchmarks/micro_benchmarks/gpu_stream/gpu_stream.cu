@@ -118,7 +118,7 @@ float GpuStream::PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop) 
     std::cout << "  " << prop.multiProcessorCount << " SMs(" << prop.major << "." << prop.minor << ")";
 
     float theoretical_bw = 0.0f;
-    
+
     // Compute theoretical bw:
     // https://developer.nvidia.com/blog/how-implement-performance-metrics-cuda-cc/#theoretical_bandwidth
 #if CUDA_VERSION >= 12000
@@ -126,16 +126,16 @@ float GpuStream::PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop) 
     float memory_clock_mhz = GetActualMemoryClockRate(device_id);
     if (memory_clock_mhz <= 0.0f) {
         // NVML failed, warn and return failure
-        std::cout << "  Memory: " << prop.memoryBusWidth << "-bit bus, " 
-                  << prop.totalGlobalMem / (1024 * 1024 * 1024) << " GB total (NVML failed - peak BW unavailable)";
+        std::cout << "  Memory: " << prop.memoryBusWidth << "-bit bus, " << prop.totalGlobalMem / (1024 * 1024 * 1024)
+                  << " GB total (NVML failed - peak BW unavailable)";
         std::cout << "  ECC is " << (prop.ECCEnabled ? "ON" : "OFF") << std::endl;
         return -1.0f;
     }
-    
+
     // NVML succeeded, use the actual memory clock rate
     theoretical_bw = memory_clock_mhz * (prop.memoryBusWidth / 8) * 2 / 1000.0;
-    std::cout << "  Memory: " << memory_clock_mhz << "MHz x " << prop.memoryBusWidth
-              << "-bit = " << theoretical_bw << " GB/s PEAK ";
+    std::cout << "  Memory: " << memory_clock_mhz << "MHz x " << prop.memoryBusWidth << "-bit = " << theoretical_bw
+              << " GB/s PEAK ";
 #else
     // For CUDA < 12.0, use memoryClockRate from cudaDeviceProp
     // Note: memoryClockRate is in kHz, need to convert to MHz first
@@ -144,7 +144,7 @@ float GpuStream::PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop) 
     std::cout << "  Memory: " << memory_clock_mhz_converted << "MHz x " << prop.memoryBusWidth
               << "-bit = " << theoretical_bw << " GB/s PEAK ";
 #endif
-    
+
     std::cout << "  ECC is " << (prop.ECCEnabled ? "ON" : "OFF") << std::endl;
     return theoretical_bw;
 }
@@ -489,14 +489,14 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
     nvmlReturn_t result;
     nvmlDevice_t device;
     unsigned int clock_mhz;
-    
+
     // Initialize NVML
     result = nvmlInit();
     if (result != NVML_SUCCESS) {
         std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
         return 0.0f;
     }
-    
+
     // Get device handle
     result = nvmlDeviceGetHandleByIndex(gpu_id, &device);
     if (result != NVML_SUCCESS) {
@@ -504,7 +504,7 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
         nvmlShutdown();
         return 0.0f;
     }
-    
+
     // Get memory clock rate
     result = nvmlDeviceGetClockInfo(device, NVML_CLOCK_MEM, &clock_mhz);
     if (result != NVML_SUCCESS) {
@@ -512,7 +512,7 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
         nvmlShutdown();
         return 0.0f;
     }
-    
+
     nvmlShutdown();
     return static_cast<float>(clock_mhz);
 }
@@ -529,7 +529,8 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
  *
  * @return int The status code indicating success or failure of the benchmark execution.
  * */
-template <typename T> int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string &data_type, float peak_bw) {
+template <typename T>
+int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string &data_type, float peak_bw) {
     int ret = 0;
     ret = PrepareBufAndStream<T>(args);
 
@@ -565,7 +566,7 @@ template <typename T> int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &ar
             // Calculate and display bandwidth
             double bw = args->size * args->num_loops / args->sub.times_in_ms[i][j] / 1e6;
             std::cout << tag << "_block_" << kThreadsPerBlock[j] << "\t" << bw << "\t";
-            
+
             if (peak_bw < 0) { // cannot get peak_bw -> prints -1 for efficiency
                 std::cout << "-1" << std::endl;
             } else {
@@ -630,7 +631,7 @@ int GpuStream::Run() {
             [&](auto &curr_args) {
                 // Print device info and get the computed peak bandwidth
                 float peak_bw = PrintCudaDeviceInfo(curr_args->gpu_id, curr_args->gpu_device_prop);
-                
+
                 // Set the NUMA node
                 ret = numa_run_on_node(curr_args->numa_id);
                 if (ret != 0) {

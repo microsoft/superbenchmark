@@ -171,12 +171,12 @@ void ParseCommandLine(int argc, char *argv[], char *szInputFileName, int &iGpu, 
 OptimizedNvDecoder *InitOptimizedNvDecoder(int i, const CUdevice &cuDevice, CUcontext &cuContext, bool bSingle,
                                            bool bHost, cudaVideoCodec codec, CUVIDDECODECAPS decodecaps) {
     if (!bSingle) {
-        #if CUDA_VERSION >= 13000
+#if CUDA_VERSION >= 13000
         CUctxCreateParams ctxCreateParams = {};
         ck(cuCtxCreate(&cuContext, &ctxCreateParams, 0, cuDevice));
-        #else
+#else
         ck(cuCtxCreate(&cuContext, 0, cuDevice));
-        #endif
+#endif
     }
     OptimizedNvDecoder *sessionObject = new OptimizedNvDecoder(cuContext, !bHost, codec, decodecaps);
     sessionObject->setDecoderSessionID(i);
@@ -252,12 +252,12 @@ void InitializeContext(std::vector<OptimizedNvDecoder *> &vDec, int iGpu, int nT
     std::cout << "GPU in use: " << szDeviceName << std::endl;
 
     CUcontext cuContext = NULL;
-    #if CUDA_VERSION >= 13000
+#if CUDA_VERSION >= 13000
     CUctxCreateParams ctxCreateParams = {};
     ck(cuCtxCreate(&cuContext, &ctxCreateParams, 0, cuDevice));
-    #else
+#else
     ck(cuCtxCreate(&cuContext, 0, cuDevice));
-    #endif
+#endif
 
     CUVIDDECODECAPS decodecaps;
     GetDefaultDecoderCaps(decodecaps, codec);
