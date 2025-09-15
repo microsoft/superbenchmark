@@ -40,7 +40,7 @@ SuperBench now supports SDC to ensure reproducibility across runs. This includes
 - **Flags:**
   - `--deterministic`: Enables deterministic computation.
   - `--deterministic_seed <seed>`: Sets the seed for reproducibility.
-  - `--generate_log` : Genrates the log file that can be used as reference for comparison
+  - `--generate_log` : Generates the log file that can be used as reference for comparison
   - `--compare_log <path>`: Specifies the path to the reference log for comparison.
 
 - **Environment Variables:**
