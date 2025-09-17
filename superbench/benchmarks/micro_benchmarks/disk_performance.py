@@ -144,8 +144,9 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
 
         Get 'PROC_RANK'(rank of current process) 'BLOCK_DEVICES' 'NUMA_NODES' environment variables
         Get block_devices and numa_node_index according to 'BLOCK_DEVICES'['PROC_RANK'] and 'NUMA_NODES'['PROC_RANK']
-        BLOCK_DEVICES should be comma-separated strings, each being colon-separated block devices. E.g., "/dev/nvme0n1:/dev/nvme1n1,/dev/nvme2n1:/dev/nvme3n1".
-        NUMA_NODES should be comma-separated numbers. E.g., "0,1".
+        - BLOCK_DEVICES should be comma-separated strings, each being colon-separated block devices.
+          E.g., "/dev/nvme0n1:/dev/nvme1n1,/dev/nvme2n1:/dev/nvme3n1".
+        - NUMA_NODES should be comma-separated numbers. E.g., "0,1".
         Note: The config from env variables will overwrite the configs defined in the command line.
         """
         try:
@@ -160,7 +161,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
             logger.error('The proc_rank is out of index of devices - benchmark: {}.'.format(self._name))
             return False
 
-    def _preprocess(self):
+    def _preprocess(self):    # noqa: C901
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
