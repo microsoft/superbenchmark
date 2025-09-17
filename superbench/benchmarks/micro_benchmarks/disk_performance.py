@@ -126,16 +126,54 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                     help='Number of threads in %s test.' % io_str,
                 )
 
+        self._parser.add_argument(
+            '--numa_node',
+            type=int,
+            required=False,
+            help='The index of NUMA node.',
+        )
+        self._parser.add_argument(
+            '--verify',
+            type=str,
+            required=False,
+            help='Verification method specified for fio --verify flag.',
+        )
+
+    def __get_arguments_from_env(self):
+        """Read environment variables from runner used for parallel and fill in block_devices and numa_node_index.
+
+        Get 'PROC_RANK'(rank of current process) 'BLOCK_DEVICES' 'NUMA_NODES' environment variables
+        Get block_devices and numa_node_index according to 'BLOCK_DEVICES'['PROC_RANK'] and 'NUMA_NODES'['PROC_RANK']
+        BLOCK_DEVICES should be comma-separated strings, each being colon-separated block devices. E.g., "/dev/nvme0n1:/dev/nvme1n1,/dev/nvme2n1:/dev/nvme3n1".
+        NUMA_NODES should be comma-separated numbers. E.g., "0,1".
+        Note: The config from env variables will overwrite the configs defined in the command line.
+        """
+        try:
+            if os.getenv('PROC_RANK'):
+                rank = int(os.getenv('PROC_RANK'))
+                if os.getenv('BLOCK_DEVICES'):
+                    self._args.block_devices = os.getenv('BLOCK_DEVICES').split(',')[rank].split(':')
+                if os.getenv('NUMA_NODES'):
+                    self._args.numa_node = int(os.getenv('NUMA_NODES').split(',')[rank])
+            return True
+        except BaseException:
+            logger.error('The proc_rank is out of index of devices - benchmark: {}.'.format(self._name))
+            return False
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
             True if _preprocess() succeed.
         """
-        if not super()._preprocess():
+        if not super()._preprocess() or not self.__get_arguments_from_env():
             return False
 
-        fio_path = os.path.join(self._args.bin_dir, self._bin_name)
+        fio_basic_command = os.path.join(self._args.bin_dir, self._bin_name)
+        if self._args.numa_node:
+            fio_basic_command = f'numactl -N {self._args.numa_node} {fio_basic_command}'
+        if self._args.verify:
+            fio_basic_command = f'{fio_basic_command} --verify={self._args.verify}'
 
         for block_device in self._args.block_devices:
             if not Path(block_device).is_block_device():
@@ -144,13 +182,13 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                 return False
 
             if self._args.enable_seq_precond:
-                command = fio_path +\
+                command = fio_basic_command +\
                     ' --filename=%s' % block_device +\
                     self.__fio_args['seq_precond']
                 self._commands.append(command)
 
             if self._args.rand_precond_time > 0:
-                command = fio_path +\
+                command = fio_basic_command +\
                     ' --filename=%s' % block_device +\
                     ' --runtime=%ds' % self._args.rand_precond_time +\
                     self.__fio_args['rand_precond']
@@ -161,7 +199,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                     io_str = '%s_%s' % (io_pattern, io_type)
                     runtime = getattr(self._args, '%s_runtime' % io_str)
                     if runtime > 0:
-                        command = fio_path +\
+                        command = fio_basic_command +\
                             ' --filename=%s' % block_device +\
                             ' --ramp_time=%ds' % getattr(self._args, '%s_ramp_time' % io_str) +\
                             ' --runtime=%ds' % runtime +\
