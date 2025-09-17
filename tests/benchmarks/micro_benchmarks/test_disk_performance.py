@@ -197,7 +197,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         for proc_rank in proc_ranks:
             os.environ['PROC_RANK'] = proc_rank
-            benchmark = benchmark_class(benchmark_name, parameters=param_str)
+            benchmark = benchmark_class(benchmark_name, parameters='')
 
             # Check basic information
             assert (benchmark)
