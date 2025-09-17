@@ -195,7 +195,6 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         os.environ['BLOCK_DEVICES'] = ','.join([':'.join(x) for x in block_device_sets])
         os.environ['NUMA_NODES'] = ','.join(numa_nodes)
 
-        param_str = ' --enable_seq_precond'
         for proc_rank in proc_ranks:
             os.environ['PROC_RANK'] = proc_rank
             benchmark = benchmark_class(benchmark_name, parameters=param_str)
@@ -209,7 +208,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             assert (benchmark.type == BenchmarkType.MICRO)
 
             # Check command list
-            # 2 files * 1 precondition = 2 commands
+            # 2 files * (seq/rand read) = 4 commands
             assert (2 == len(benchmark._commands))
 
             for command_idx, block_device in enumerate(block_device_sets[int(proc_rank)]):
