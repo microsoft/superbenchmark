@@ -190,10 +190,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark_class)
 
         proc_ranks = ['0', '1']
-        block_device_sets = [
-            ['/dev/nvme0n1', '/dev/nvme1n1'],
-            ['/dev/nvme2n1', '/dev/nvme3n1']
-        ]
+        block_device_sets = [['/dev/nvme0n1', '/dev/nvme1n1'], ['/dev/nvme2n1', '/dev/nvme3n1']]
         numa_nodes = ['0', '1']
         os.environ['BLOCK_DEVICES'] = ','.join([':'.join(x) for x in block_device_sets])
         os.environ['NUMA_NODES'] = ','.join(numa_nodes)
