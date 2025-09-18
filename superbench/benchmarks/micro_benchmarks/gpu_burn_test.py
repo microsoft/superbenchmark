@@ -138,6 +138,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
             # Find all performance snapshot lines containing Gflop/s
             perf_lines = [line for line in raw_output.splitlines() if 'Gflop/s' in line]
             per_gpu_flops, per_gpu_temps = {}, {}
+            num_gpus = 0
             for snap_idx, perf_line in enumerate(perf_lines):
                 # extract per-GPU Gflops values like '(581623 Gflop/s)'
                 gflops = re.findall(r'\(([0-9]+(?:\.[0-9]+)?)\s*Gflop/s\)', perf_line)
@@ -156,7 +157,7 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                 self._result.add_raw_data(f'GPU-Burn_perf_snapshot_{snap_idx}', perf_line, self._args.log_raw_data)
 
                 # Emit per-GPU metrics for this snapshot
-                num_gpus = max(len(gflops), len(temps), len(gpu_res))
+                num_gpus = max(len(gflops), len(temps), num_gpus)
                 for i in range(num_gpus):
                     if i not in per_gpu_flops:
                         per_gpu_flops[i] = []
