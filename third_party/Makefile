@@ -6,6 +6,7 @@ SB_MICRO_PATH ?= /usr/local
 MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
+HPCX_HOME ?= /opt/hpcx
 ROCM_PATH ?= /opt/rocm
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
@@ -177,7 +178,7 @@ rocm_bandwidthTest: sb_micro_path
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
-	make CC=mpicc -C GPCNET all
+	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
 
