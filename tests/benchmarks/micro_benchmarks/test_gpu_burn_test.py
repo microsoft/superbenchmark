@@ -63,4 +63,6 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             assert (benchmark.result['gpu_avg_gflops:' + str(device)][0] >= 16000)
             assert ('gpu_var_gflops:' + str(device) in benchmark.result)
             assert (benchmark.result['gpu_var_gflops:' + str(device)][0] <= 0.01)
+            assert ('gpu_195_gflops:' + str(device) in benchmark.result)
+            assert ('gpu_195_temp:' + str(device) in benchmark.result)
         assert (benchmark.result['abort'][0] == 0)
