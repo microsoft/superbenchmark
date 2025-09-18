@@ -49,7 +49,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             action='store_true',
             default=False,
             help='Set irregular IB devices automatically according to the local rank. \
-            If IB devices are not able to scan, use env IB_DEVICES to set them manually.',
+            If IB devices are not able to be probed, use env IB_DEVICES to set them manually.',
         )
         self._parser.add_argument(
             '--gpu_dev',
