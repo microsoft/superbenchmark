@@ -160,9 +160,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
         except BaseException as e:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             logger.error(
-                'The proc_rank is out of index of devices - benchmark: {}, message: {}.'.format(
-                    self._name, str(e)
-                )
+                'The proc_rank is out of index of devices - benchmark: {}, message: {}.'.format(self._name, str(e))
             )
             return False
 
