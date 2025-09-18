@@ -189,6 +189,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
         assert (benchmark_class)
 
+        # Test valid envs
         proc_ranks = ['0', '1']
         block_device_sets = [['/dev/nvme0n1', '/dev/nvme1n1'], ['/dev/nvme2n1', '/dev/nvme3n1']]
         numa_nodes = ['0', '1']
@@ -219,6 +220,16 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 for _ in range(commands_per_device):
                     assert (f'--filename={block_device}' in benchmark._commands[command_idx])
                     command_idx += 1
+
+        # Test invalid envs
+        os.environ['PROC_RANK'] = 2
+        benchmark = benchmark_class(benchmark_name, parameters='')
+        assert (benchmark)
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+        assert (benchmark.name == 'disk-benchmark')
+        assert (benchmark.type == BenchmarkType.MICRO)
 
         del os.environ['BLOCK_DEVICES']
         del os.environ['NUMA_NODES']
