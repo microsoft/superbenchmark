@@ -83,6 +83,31 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             help='Iterations of the benchmark. Default is 3.',
         )
 
+        self._parser.add_argument(
+            '--numa',
+            type=int,
+            default=-1,
+            required=False,
+            help='The index of numa node.',
+        )
+
+    def __get_arguments_from_env(self):
+        """Read environment variables from runner used for parallel and fill in ib_index and numa_node_index.
+
+        Get 'PROC_RANK'(rank of current process) 'NUMA_NODES' environment variables
+        Get ib_index and numa_node_index according to 'NUMA_NODES'['PROC_RANK']
+        Note: The config from env variables will overwrite the configs defined in the command line
+        """
+        try:
+            if os.getenv('PROC_RANK'):
+                rank = int(os.getenv('PROC_RANK'))
+                if os.getenv('NUMA_NODES'):
+                    self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
+            return True
+        except BaseException:
+            logger.error('The proc_rank is out of index of devices - benchmark: {}.'.format(self._name))
+            return False
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -92,7 +117,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        if not self._set_binary_path():
+        if not self._set_binary_path() or not self.__get_arguments_from_env():
             return False
 
         # Construct the command for nvbandwidth
@@ -111,10 +136,8 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.disable_affinity:
             command += ' --disableAffinity'
-            rank = int(os.getenv('PROC_RANK', '0'))
-            if os.getenv('NUMA_NODES'):
-                numa = int(os.getenv('NUMA_NODES').split(',')[rank])
-                command = f'numactl --cpunodebind={numa} --membind={numa} ' + command
+            if self._args.numa != -1:
+                command = f'numactl --cpunodebind={self._args.numa} --membind={self._args.numa} ' + command
 
         if self._args.use_mean:
             command += ' --useMean'
