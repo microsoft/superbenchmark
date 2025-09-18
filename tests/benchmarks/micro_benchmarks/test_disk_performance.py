@@ -222,7 +222,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                     command_idx += 1
 
         # Test invalid envs
-        os.environ['PROC_RANK'] = 2
+        os.environ['PROC_RANK'] = '2'
         benchmark = benchmark_class(benchmark_name, parameters='')
         assert (benchmark)
         ret = benchmark._preprocess()
