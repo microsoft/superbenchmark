@@ -209,12 +209,17 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
             # Check command list
             # 2 files * (seq/rand read) = 4 commands
-            assert (2 == len(benchmark._commands))
+            assert (4 == len(benchmark._commands))
 
             for command_idx, block_device in enumerate(block_device_sets[int(proc_rank)]):
                 assert (benchmark._args.numa_node == numa_nodes[int(proc_rank)])
                 assert (benchmark._commands[command_idx].startswith(f'numactl -N {proc_rank}'))
                 assert (f'--filename=f{block_device}' in benchmark._commands[command_idx])
+
+        del os.environ['BLOCK_DEVICES']
+        del os.environ['NUMA_NODES']
+        del os.environ['PROC_RANK']
+
 
     @decorator.load_data('tests/data/disk_performance.log')
     def test_disk_performance_result_parsing(self, test_raw_output):
