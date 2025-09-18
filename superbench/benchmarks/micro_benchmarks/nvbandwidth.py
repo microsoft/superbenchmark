@@ -86,13 +86,12 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--numa',
             type=int,
-            default=-1,
             required=False,
             help='The index of numa node.',
         )
 
     def __get_arguments_from_env(self):
-        """Read environment variables from runner used for parallel and fill in ib_index and numa_node_index.
+        """Read environment variables from runner used for parallel and fill in numa_node_index.
 
         Get 'PROC_RANK'(rank of current process) 'NUMA_NODES' environment variables
         Get ib_index and numa_node_index according to 'NUMA_NODES'['PROC_RANK']
@@ -136,7 +135,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.disable_affinity:
             command += ' --disableAffinity'
-            if self._args.numa != -1:
+            if self._args.numa:
                 command = f'numactl --cpunodebind={self._args.numa} --membind={self._args.numa} ' + command
 
         if self._args.use_mean:
