@@ -94,7 +94,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         """Read environment variables from runner used for parallel and fill in numa_node_index.
 
         Get 'PROC_RANK'(rank of current process) 'NUMA_NODES' environment variables
-        Get ib_index and numa_node_index according to 'NUMA_NODES'['PROC_RANK']
+        Get numa_node_index according to 'NUMA_NODES'['PROC_RANK']
         Note: The config from env variables will overwrite the configs defined in the command line
         """
         try:
