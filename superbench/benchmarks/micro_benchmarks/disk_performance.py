@@ -171,9 +171,9 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         fio_basic_command = os.path.join(self._args.bin_dir, self._bin_name)
-        if self._args.numa_node:
+        if self._args.numa_node is not None:
             fio_basic_command = f'numactl -N {self._args.numa_node} {fio_basic_command}'
-        if self._args.verify:
+        if self._args.verify is not None:
             fio_basic_command = f'{fio_basic_command} --verify={self._args.verify}'
 
         for block_device in self._args.block_devices:
