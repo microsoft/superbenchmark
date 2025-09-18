@@ -157,8 +157,13 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                 if os.getenv('NUMA_NODES'):
                     self._args.numa_node = int(os.getenv('NUMA_NODES').split(',')[rank])
             return True
-        except BaseException:
-            logger.error('The proc_rank is out of index of devices - benchmark: {}.'.format(self._name))
+        except BaseException as e:
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            logger.error(
+                'The proc_rank is out of index of devices - benchmark: {}, message: {}.'.format(
+                    self._name, str(e)
+                )
+            )
             return False
 
     def _preprocess(self):    # noqa: C901
