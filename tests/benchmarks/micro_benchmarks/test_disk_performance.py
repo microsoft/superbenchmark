@@ -214,7 +214,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
             for command_idx, block_device in enumerate(block_device_sets[int(proc_rank)]):
                 assert (benchmark._args.numa_node == int(numa_nodes[int(proc_rank)]))
                 assert (benchmark._commands[command_idx].startswith(f'numactl -N {benchmark._args.numa_node}'))
-                assert (f'--filename=f{block_device}' in benchmark._commands[command_idx])
+                assert (f'--filename={block_device}' in benchmark._commands[command_idx])
 
         del os.environ['BLOCK_DEVICES']
         del os.environ['NUMA_NODES']
