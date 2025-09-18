@@ -213,7 +213,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
             command_idx = 0
             commands_per_device = 2
-            for block_device in enumerate(block_device_sets[int(proc_rank)]):
+            for block_device in block_device_sets[int(proc_rank)]:
                 assert (benchmark._args.numa_node == int(numa_nodes[int(proc_rank)]))
                 assert (benchmark._commands[command_idx].startswith(f'numactl -N {benchmark._args.numa_node}'))
                 for _ in range(commands_per_device):
