@@ -220,7 +220,6 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         del os.environ['NUMA_NODES']
         del os.environ['PROC_RANK']
 
-
     @decorator.load_data('tests/data/disk_performance.log')
     def test_disk_performance_result_parsing(self, test_raw_output):
         """Test disk-performance benchmark result parsing."""
