@@ -12,7 +12,7 @@ FROM nvcr.io/nvidia/pytorch:25.02-py3
 #   - TransformerEngine 2.0
 # Mellanox:
 #   - MOFED_VERSION; 5.4-rdmacore39.0
-#   - HPC-X: v2.21.0-CUDA12.x
+#   - HPC-X: v2.22.1
 # Intel:
 #   - mlc: v3.11
 
@@ -91,16 +91,6 @@ RUN TARGETARCH_HW=$(uname -m) && \
     MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
-# Install HPC-X
-ENV HPCX_VERSION=v2.21
-RUN TARGETARCH_HW=$(uname -m) && \
-    cd /opt && \
-    rm -rf hpcx && \
-    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda12-${TARGETARCH_HW}.tbz -O hpcx.tbz && \
-    tar xf hpcx.tbz && \
-    mv hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda12-${TARGETARCH_HW} hpcx && \
-    rm hpcx.tbz
-
 # Installs specific to amd64 platform
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
@@ -122,17 +112,6 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     echo "Skipping Intel MLC, AOCC and AMD Bliss installations for non-amd64 architecture: $TARGETARCH"; \
     fi
 
-# Install NCCL 2.25.1
-RUN cd /tmp && \
-    git clone -b v2.25.1-1 https://github.com/NVIDIA/nccl.git && \
-    cd nccl && \
-    make -j ${NUM_MAKE_JOBS} src.build \
-    NVCC_GENCODE="-gencode=arch=compute_100,code=sm_100 \
-    -gencode=arch=compute_90,code=sm_90 \
-    -gencode=arch=compute_80,code=sm_80" && \
-    make install && \
-    rm -rf /tmp/nccl
-
 # Install UCX with multi-threading support
 ENV UCX_VERSION=1.18.0
 RUN cd /tmp && \
@@ -152,8 +131,7 @@ ENV PATH="${PATH}" \
 
 RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
-    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment && \
-    echo "source /opt/hpcx/hpcx-init.sh && hpcx_load" | tee -a /etc/bash.bashrc >> /etc/profile.d/10-hpcx.sh
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 # Add config files
 ADD dockerfile/etc /opt/microsoft/
