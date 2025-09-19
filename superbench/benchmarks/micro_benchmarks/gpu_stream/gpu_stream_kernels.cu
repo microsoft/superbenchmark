@@ -85,7 +85,7 @@ __global__ void CopyKernel(double *tgt, const double *src) {
  * @param[in] src The source array containing the data to be scaled.
  * @param[in] scalar The scalar value used to scale the source data.
  */
-__global__ void ScaleKernel(double *tgt, const double *src, const long scalar) {
+__global__ void ScaleKernel(double *tgt, const double *src, const double scalar) {
     uint64_t index = blockIdx.x * blockDim.x * kNumLoopUnrollAlias + threadIdx.x;
     double val[kNumLoopUnrollAlias];
 #pragma unroll
@@ -137,7 +137,7 @@ __global__ void AddKernel(double *tgt, const double *src_a, const double *src_b)
  * @param[in] src_b The second source array containing the second set of operands to be multiplied by the scalar.
  * @param[in] scalar The scalar value used in the multiply/add operation.
  */
-__global__ void TriadKernel(double *tgt, const double *src_a, const double *src_b, const long scalar) {
+__global__ void TriadKernel(double *tgt, const double *src_a, const double *src_b, const double scalar) {
     uint64_t index = blockIdx.x * blockDim.x * kNumLoopUnrollAlias + threadIdx.x;
     double val_a[kNumLoopUnrollAlias];
     double val_b[kNumLoopUnrollAlias];

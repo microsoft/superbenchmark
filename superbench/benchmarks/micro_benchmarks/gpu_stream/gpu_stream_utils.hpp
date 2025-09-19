@@ -36,7 +36,7 @@ constexpr int kNumBuffers = 3;                                         // Number
 constexpr int kNumValidationBuffers = 4;                          // Number of validation buffers, one for each kernel
 constexpr int kUInt8Mod = 256;                                    // Modulo for unsigned long data type
 constexpr std::array<int, 4> kBufferBwMultipliers = {2, 2, 3, 3}; // Buffer multiplier for triad, add kernel
-constexpr long scalar = 11;                                       // Scalar for scale, triad kernel
+constexpr double scalar = 11.0;                                   // Scalar for scale, triad kernel
 
 // Enum for different kernels
 enum class Kernel {
