@@ -58,5 +58,6 @@ class GpuStream {
     // Helper functions
     int GetGpuCount(int *);
     int SetGpu(int gpu_id);
-    float PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop);
+    float GetMemoryClockRate(int device_id, const cudaDeviceProp &prop);
+    void PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop, float memory_clock_mhz, float peak_bw);
 };

@@ -105,48 +105,73 @@ template <typename T> int GpuStream::Destroy(std::unique_ptr<BenchArgs<T>> &args
 }
 
 /**
+ * @brief Gets the memory clock rate for a CUDA device.
+ *
+ * @details This function gets the memory clock rate using the appropriate method
+ * based on CUDA version: CUDA 12.0+ uses NVML and cudaDeviceGetAttribute as a fallback;
+ * older CUDA versions use cudaDeviceProp.
+ *
+ * @param[in] device_id The ID of the CUDA device.
+ * @param[in] prop The properties of the CUDA device.
+ * @return float The memory clock rate in MHz, or -1.0f if retrieval fails.
+ */
+float GpuStream::GetMemoryClockRate(int device_id, const cudaDeviceProp &prop) {
+    float memory_clock_mhz = 0.0f;
+
+    // Set the device before getting attributes
+    if (SetGpu(device_id)) {
+        return -1.0f;
+    }
+
+#if CUDA_VERSION >= 12000
+    // For CUDA 12.0+, first try NVML for actual clock rate
+    memory_clock_mhz = GetActualMemoryClockRate(device_id);
+
+    // If NVML fails, fall back to cudaDeviceGetAttribute
+    if (memory_clock_mhz < 0.0f) {
+        int memory_clock_khz = 0;
+        cudaError_t cuda_err = cudaDeviceGetAttribute(&memory_clock_khz, cudaDevAttrMemoryClockRate, device_id);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "GetMemoryClockRate::cudaDeviceGetAttribute error: " << cuda_err << std::endl;
+            return -1.0f;
+        }
+        // Convert kHz to MHz
+        memory_clock_mhz = memory_clock_khz / 1000.0f;
+    }
+#else
+    // For CUDA < 12.0, use memoryClockRate from cudaDeviceProp
+    // Note: memoryClockRate is in kHz, need to convert to MHz first
+    memory_clock_mhz = prop.memoryClockRate / 1000.0f; // Convert kHz to MHz
+#endif
+
+    return memory_clock_mhz;
+}
+
+/**
  * @brief Prints CUDA device information.
  *
  * @details This function prints the properties of a CUDA device specified by the device ID.
  *
  * @param[in] device_id The ID of the CUDA device.
- * @param[out] prop The properties of the CUDA device.
- * @return void
- * */
-float GpuStream::PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop) {
+ * @param[in] prop The properties of the CUDA device.
+ * @param[in] memory_clock_mhz The memory clock rate in MHz (or -1.0f if unavailable).
+ * @param[in] peak_bw The theoretical peak bandwidth in GB/s (or -1.0f if unavailable).
+ */
+void GpuStream::PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop, float memory_clock_mhz, float peak_bw) {
     std::cout << "\nDevice " << device_id << ": \"" << prop.name << "\"";
     std::cout << "  " << prop.multiProcessorCount << " SMs(" << prop.major << "." << prop.minor << ")";
 
-    float theoretical_bw = 0.0f;
-
-    // Compute theoretical bw:
-    // https://developer.nvidia.com/blog/how-implement-performance-metrics-cuda-cc/#theoretical_bandwidth
-#if CUDA_VERSION >= 12000
-    // For CUDA 12.0+, try to get memory clock from NVML
-    float memory_clock_mhz = GetActualMemoryClockRate(device_id);
-    if (memory_clock_mhz <= 0.0f) {
-        // NVML failed, warn and return failure
+    if (peak_bw < 0.0f) {
+        // Bandwidth computation failed (memory_clock_mhz will also be < 0)
         std::cout << "  Memory: " << prop.memoryBusWidth << "-bit bus, " << prop.totalGlobalMem / (1024 * 1024 * 1024)
-                  << " GB total (NVML failed - peak BW unavailable)";
-        std::cout << "  ECC is " << (prop.ECCEnabled ? "ON" : "OFF") << std::endl;
-        return -1.0f;
+                  << " GB total (peak BW unavailable)";
+    } else {
+        // Both memory_clock_mhz and peak_bw are valid
+        std::cout << "  Memory: " << memory_clock_mhz << "MHz x " << prop.memoryBusWidth << "-bit = " << peak_bw
+                  << " GB/s PEAK ";
     }
 
-    // NVML succeeded, use the actual memory clock rate
-    theoretical_bw = memory_clock_mhz * (prop.memoryBusWidth / 8) * 2 / 1000.0;
-    std::cout << "  Memory: " << memory_clock_mhz << "MHz x " << prop.memoryBusWidth << "-bit = " << theoretical_bw
-              << " GB/s PEAK ";
-#else
-    // For CUDA < 12.0, use memoryClockRate from cudaDeviceProp
-    // Note: memoryClockRate is in kHz, need to convert to MHz first
-    float memory_clock_mhz_converted = prop.memoryClockRate / 1000.0f; // Convert kHz to MHz
-    theoretical_bw = memory_clock_mhz_converted * (prop.memoryBusWidth / 8) * 2 / 1000.0;
-    std::cout << "  Memory: " << memory_clock_mhz_converted << "MHz x " << prop.memoryBusWidth
-              << "-bit = " << theoretical_bw << " GB/s PEAK ";
-#endif
-
     std::cout << "  ECC is " << (prop.ECCEnabled ? "ON" : "OFF") << std::endl;
-    return theoretical_bw;
 }
 
 /**
@@ -494,7 +519,7 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
     result = nvmlInit();
     if (result != NVML_SUCCESS) {
         std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
-        return 0.0f;
+        return -1.0f;
     }
 
     // Get device handle
@@ -502,7 +527,7 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
     if (result != NVML_SUCCESS) {
         std::cerr << "Failed to get device handle: " << nvmlErrorString(result) << std::endl;
         nvmlShutdown();
-        return 0.0f;
+        return -1.0f;
     }
 
     // Get memory clock rate
@@ -510,7 +535,7 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
     if (result != NVML_SUCCESS) {
         std::cerr << "Failed to get memory clock: " << nvmlErrorString(result) << std::endl;
         nvmlShutdown();
-        return 0.0f;
+        return -1.0f;
     }
 
     nvmlShutdown();
@@ -629,8 +654,19 @@ int GpuStream::Run() {
     for (auto &variant_args : bench_args_) {
         std::visit(
             [&](auto &curr_args) {
-                // Print device info and get the computed peak bandwidth
-                float peak_bw = PrintCudaDeviceInfo(curr_args->gpu_id, curr_args->gpu_device_prop);
+                // Get memory clock rate once for both bandwidth computation and display
+                float memory_clock_mhz = GetMemoryClockRate(curr_args->gpu_id, curr_args->gpu_device_prop);
+
+                // Compute theoretical bandwidth using the memory clock rate
+                float peak_bw = -1.0f;
+                if (memory_clock_mhz > 0.0f) {
+                    // Calculate theoretical bandwidth: memory_clock_mhz * bus_width_bytes * 2 (DDR) / 1000 (convert to
+                    // GB/s)
+                    peak_bw = memory_clock_mhz * (curr_args->gpu_device_prop.memoryBusWidth / 8) * 2 / 1000.0;
+                }
+
+                // Print device info with both the memory clock and peak bandwidth
+                PrintCudaDeviceInfo(curr_args->gpu_id, curr_args->gpu_device_prop, memory_clock_mhz, peak_bw);
 
                 // Set the NUMA node
                 ret = numa_run_on_node(curr_args->numa_id);
