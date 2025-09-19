@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 """Tests for nvbandwidth benchmark."""
+import os
 
 import unittest
 
@@ -51,6 +52,14 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert ('--disableAffinity' in benchmark._commands[0])
         assert ('--useMean' in benchmark._commands[0])
         assert ('--testSamples 100' in benchmark._commands[0])
+
+        # Test preprocess with numa
+        os.environ['NUMA_NODES'] = '0'
+        os.environ['PROC_RANK'] = '0'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        assert benchmark._preprocess()
+        assert benchmark.return_code == ReturnCode.SUCCESS
+        assert ('numactl --cpunodebind=0 --membind=0' in benchmark._commands[0])
 
     @decorator.load_data('tests/data/nvbandwidth_results.log')
     def test_nvbandwidth_result_parsing_real_output(self, results):

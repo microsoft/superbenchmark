@@ -115,7 +115,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.disable_affinity:
             command += ' --disableAffinity'
-            if self._args.numa:
+            if self._args.numa is not None:
                 command = f'numactl --cpunodebind={self._args.numa} --membind={self._args.numa} ' + command
 
         if self._args.use_mean:
