@@ -165,6 +165,7 @@ def test_arguments_related_interfaces():
                         result object.
   --model_action ModelAction [ModelAction ...]
                         Benchmark model process. E.g. train inference.
+  --no_copy             Enable option to exclude data copy time.
   --no_gpu              Disable GPU training.
   --num_steps int       The number of test step.
   --num_warmup int      The number of warmup step.
@@ -205,6 +206,7 @@ def test_preprocess():
                         result object.
   --model_action ModelAction [ModelAction ...]
                         Benchmark model process. E.g. train inference.
+  --no_copy             Enable option to exclude data copy time.
   --no_gpu              Disable GPU training.
   --num_steps int       The number of test step.
   --num_warmup int      The number of warmup step.
