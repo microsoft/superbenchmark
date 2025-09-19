@@ -34,6 +34,18 @@ For inference, supported percentiles include
 
 **New: Support fp8_hybrid and fp8_e4m3 precision for BERT models.**
 
+**New: SDC Support**
+SuperBench now supports SDC to ensure reproducibility across runs. This includes fixed seeds and deterministic algorithms. To enable SDC, the following flags and environment variables must be set:
+
+- **Flags:**
+  - `--deterministic`: Enables deterministic computation.
+  - `--deterministic_seed <seed>`: Sets the seed for reproducibility.
+  - `--generate_log` : Generates the log file that can be used as reference for comparison
+  - `--compare_log <path>`: Specifies the path to the reference log for comparison.
+
+- **Environment Variables:**
+  - `CUBLAS_WORKSPACE_CONFIG=:4096:8`: Ensures deterministic behavior in cuBLAS.
+
 #### Metrics
 
 | Name                                                                                    | Unit                   | Description                                                                  |
