@@ -66,7 +66,11 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--disable_affinity',
             action='store_true',
-            help='Disable automatic CPU affinity control. Default is False.',
+            help=(
+                'Disable automatic CPU affinity control. Default is False. '
+                'If user would like to bind the process to specific NUMA node, '
+                'please use --disable_affinity along with --numa argument.'
+            ),
         )
 
         self._parser.add_argument(
@@ -83,30 +87,6 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             help='Iterations of the benchmark. Default is 3.',
         )
 
-        self._parser.add_argument(
-            '--numa',
-            type=int,
-            required=False,
-            help='The index of numa node.',
-        )
-
-    def __get_arguments_from_env(self):
-        """Read environment variables from runner used for parallel and fill in numa_node_index.
-
-        Get 'PROC_RANK'(rank of current process) 'NUMA_NODES' environment variables
-        Get numa_node_index according to 'NUMA_NODES'['PROC_RANK']
-        Note: The config from env variables will overwrite the configs defined in the command line
-        """
-        try:
-            if os.getenv('PROC_RANK'):
-                rank = int(os.getenv('PROC_RANK'))
-                if os.getenv('NUMA_NODES'):
-                    self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
-            return True
-        except BaseException:
-            logger.error('The proc_rank is out of index of devices - benchmark: {}.'.format(self._name))
-            return False
-
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -116,7 +96,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        if not self._set_binary_path() or not self.__get_arguments_from_env():
+        if not self._set_binary_path() or not self._get_arguments_from_env():
             return False
 
         # Construct the command for nvbandwidth
