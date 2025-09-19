@@ -5,6 +5,7 @@
 
 import socket
 import re
+import os
 from pathlib import Path
 
 
@@ -31,6 +32,8 @@ def get_ib_devices():
     Return:
         ib_devices_port (list): IB devices with available ports in current system.
     """
+    if os.getenv('IB_DEVICES', None):
+        return os.getenv('IB_DEVICES').split(',')
     devices = list(p.name for p in Path('/sys/class/infiniband').glob('*'))
     ib_devices_port_dict = {}
     for device in devices:
