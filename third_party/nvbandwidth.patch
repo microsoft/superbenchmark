@@ -1,8 +1,16 @@
 diff --git a/nvbandwidth.cpp b/nvbandwidth.cpp
-index 61a228f..d752a14 100644
+index 61a228f..488372a 100644
 --- a/nvbandwidth.cpp
 +++ b/nvbandwidth.cpp
-@@ -73,8 +73,10 @@ std::vector<Testcase*> createTestcases() {
+@@ -29,6 +29,7 @@
+ #include "kernels.cuh"
+ #include "output.h"
+ #include "testcase.h"
++#include "testcases_new.h"
+ #include "version.h"
+ #include "inline_common.h"
+
+@@ -73,8 +74,10 @@ std::vector<Testcase*> createTestcases() {
          new DeviceToDeviceBidirWriteCE(),
          new AllToHostCE(),
          new AllToHostBidirCE(),
@@ -13,7 +21,7 @@ index 61a228f..d752a14 100644
          new AllToOneWriteCE(),
          new AllToOneReadCE(),
          new OneToAllWriteCE(),
-@@ -89,8 +91,10 @@ std::vector<Testcase*> createTestcases() {
+@@ -89,8 +92,10 @@ std::vector<Testcase*> createTestcases() {
          new DeviceToDeviceBidirWriteSM(),
          new AllToHostSM(),
          new AllToHostBidirSM(),
@@ -24,49 +32,8 @@ index 61a228f..d752a14 100644
          new AllToOneWriteSM(),
          new AllToOneReadSM(),
          new OneToAllWriteSM(),
-diff --git a/testcase.cpp b/testcase.cpp
-index 0d7182b..6c85a8e 100644
---- a/testcase.cpp
-+++ b/testcase.cpp
-@@ -270,3 +270,36 @@ void Testcase::allHostBidirHelper(unsigned long long size, MemcpyOperation &memc
-     }
- }
- 
-+void Testcase::allHostHelperBatch(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost) {
-+    std::vector<const MemcpyBuffer*> allSrcBuffers;
-+    std::vector<const MemcpyBuffer*> allDstBuffers;
-+    
-+    // Create buffers for all devices with the same size
-+    for (int deviceId = 0; deviceId < deviceCount; deviceId++) {
-+        if (sourceIsHost) {
-+            allSrcBuffers.push_back(new HostBuffer(size, deviceId));
-+            allDstBuffers.push_back(new DeviceBuffer(size, deviceId));
-+        } else {
-+            allSrcBuffers.push_back(new DeviceBuffer(size, deviceId));
-+            allDstBuffers.push_back(new HostBuffer(size, deviceId));
-+        }
-+    }
-+    
-+    // Perform memcpy for all devices in a single run and get individual bandwidths
-+    std::vector<double> deviceBandwidths = memcpyInstance.doMemcpyVector(allSrcBuffers, allDstBuffers);
-+    
-+    // Store individual bandwidth for each device
-+    for (int deviceId = 0; deviceId < deviceCount; deviceId++) {
-+        bandwidthValues.value(0, deviceId) = deviceBandwidths[deviceId];
-+    }
-+    
-+    // Clean up all buffers
-+    for (auto node : allSrcBuffers) {
-+        delete node;
-+    }
-+    
-+    for (auto node : allDstBuffers) {
-+        delete node;
-+    }
-+}
-+
 diff --git a/testcase.h b/testcase.h
-index c276850..3f76edc 100644
+index c276850..f26e7d8 100644
 --- a/testcase.h
 +++ b/testcase.h
 @@ -39,6 +39,7 @@ class Testcase {
@@ -75,115 +42,5 @@ index c276850..3f76edc 100644
      void allHostBidirHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
 +    void allHostHelperBatch(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
      void latencyHelper(const MemcpyBuffer &dataBuffer, bool measureDeviceToDeviceLatency);
- 
+
   public:
-@@ -213,6 +214,28 @@ class HostToAllBidirCE: public Testcase {
-     void run(unsigned long long size, unsigned long long loopCount);
- };
- 
-+// All to Host Batch CE memcpy using cuMemcpyAsync
-+class AllToHostBatchCE: public Testcase {
-+ public:
-+    AllToHostBatchCE() : Testcase("all_to_host_batch_memcpy_ce",
-+            "\tMeasures bandwidth of cuMemcpyAsync from all devices to host simultaneously.\n"
-+            "\tAll devices perform memcpy operations concurrently with the same buffer size.\n"
-+            "\tIndividual device bandwidths are measured and reported separately.") {}
-+    virtual ~AllToHostBatchCE() {}
-+    void run(unsigned long long size, unsigned long long loopCount);
-+};
-+
-+// Host to All Batch CE memcpy using cuMemcpyAsync
-+class HostToAllBatchCE: public Testcase {
-+ public:
-+    HostToAllBatchCE() : Testcase("host_to_all_batch_memcpy_ce",
-+            "\tMeasures bandwidth of cuMemcpyAsync from host to all devices simultaneously.\n"
-+            "\tAll devices perform memcpy operations concurrently with the same buffer size.\n"
-+            "\tIndividual device bandwidths are measured and reported separately.") {}
-+    virtual ~HostToAllBatchCE() {}
-+    void run(unsigned long long size, unsigned long long loopCount);
-+};
-+
- 
- // All to One CE Write memcpy using cuMemcpyAsync
- class AllToOneWriteCE: public Testcase {
-@@ -391,6 +414,28 @@ class HostToAllBidirSM: public Testcase {
-     void run(unsigned long long size, unsigned long long loopCount);
- };
- 
-+// All to Host Batch SM memcpy using a copy kernel
-+class AllToHostBatchSM: public Testcase {
-+ public:
-+    AllToHostBatchSM() : Testcase("all_to_host_batch_memcpy_sm",
-+            "\tMeasures bandwidth of copy kernels from all devices to host simultaneously.\n"
-+            "\tAll devices perform memcpy operations concurrently with the same buffer size.\n"
-+            "\tIndividual device bandwidths are measured and reported separately.") {}
-+    virtual ~AllToHostBatchSM() {}
-+    void run(unsigned long long size, unsigned long long loopCount);
-+};
-+
-+// Host to All Batch SM memcpy using a copy kernel
-+class HostToAllBatchSM: public Testcase {
-+ public:
-+    HostToAllBatchSM() : Testcase("host_to_all_batch_memcpy_sm",
-+            "\tMeasures bandwidth of copy kernels from host to all devices simultaneously.\n"
-+            "\tAll devices perform memcpy operations concurrently with the same buffer size.\n"
-+            "\tIndividual device bandwidths are measured and reported separately.") {}
-+    virtual ~HostToAllBatchSM() {}
-+    void run(unsigned long long size, unsigned long long loopCount);
-+};
-+
- // All to One SM Write memcpy using a copy kernel
- class AllToOneWriteSM: public Testcase {
-  public:
-diff --git a/testcases_ce.cpp b/testcases_ce.cpp
-index 2367452..8c2504c 100644
---- a/testcases_ce.cpp
-+++ b/testcases_ce.cpp
-@@ -296,3 +296,21 @@ void OneToAllReadCE::run(unsigned long long size, unsigned long long loopCount)
- 
-     output->addTestcaseResults(bandwidthValues, "memcpy CE GPU(row) <- GPU(column) bandwidth (GB/s)");
- }
-+
-+void AllToHostBatchCE::run(unsigned long long size, unsigned long long loopCount) {
-+    PeerValueMatrix<double> bandwidthValues(1, deviceCount, key);
-+    MemcpyOperation memcpyInstance(loopCount, new MemcpyInitiatorCE(), PREFER_SRC_CONTEXT, MemcpyOperation::VECTOR_BW);
-+
-+    allHostHelperBatch(size, memcpyInstance, bandwidthValues, false);
-+
-+    output->addTestcaseResults(bandwidthValues, "memcpy CE CPU(row) <- GPU(column) batch bandwidth (GB/s)");
-+}
-+
-+void HostToAllBatchCE::run(unsigned long long size, unsigned long long loopCount) {
-+    PeerValueMatrix<double> bandwidthValues(1, deviceCount, key);
-+    MemcpyOperation memcpyInstance(loopCount, new MemcpyInitiatorCE(), PREFER_SRC_CONTEXT, MemcpyOperation::VECTOR_BW);
-+
-+    allHostHelperBatch(size, memcpyInstance, bandwidthValues, true);
-+
-+    output->addTestcaseResults(bandwidthValues, "memcpy CE CPU(row) -> GPU(column) batch bandwidth (GB/s)");
-+}
-diff --git a/testcases_sm.cpp b/testcases_sm.cpp
-index 2a95d47..6ade9a5 100644
---- a/testcases_sm.cpp
-+++ b/testcases_sm.cpp
-@@ -362,3 +362,21 @@ void OneToAllReadSM::run(unsigned long long size, unsigned long long loopCount)
- 
-     output->addTestcaseResults(bandwidthValues, "memcpy SM GPU(row) <- GPU(column) bandwidth (GB/s)");
- }
-+
-+void AllToHostBatchSM::run(unsigned long long size, unsigned long long loopCount) {
-+    PeerValueMatrix<double> bandwidthValues(1, deviceCount, key);
-+    MemcpyOperation memcpyInstance(loopCount, new MemcpyInitiatorSM(), PREFER_SRC_CONTEXT, MemcpyOperation::VECTOR_BW);
-+
-+    allHostHelperBatch(size, memcpyInstance, bandwidthValues, false);
-+
-+    output->addTestcaseResults(bandwidthValues, "memcpy SM CPU(row) <- GPU(column) batch bandwidth (GB/s)");
-+}
-+
-+void HostToAllBatchSM::run(unsigned long long size, unsigned long long loopCount) {
-+    PeerValueMatrix<double> bandwidthValues(1, deviceCount, key);
-+    MemcpyOperation memcpyInstance(loopCount, new MemcpyInitiatorSM(), PREFER_SRC_CONTEXT, MemcpyOperation::VECTOR_BW);
-+
-+    allHostHelperBatch(size, memcpyInstance, bandwidthValues, true);
-+
-+    output->addTestcaseResults(bandwidthValues, "memcpy SM CPU(row) -> GPU(column) batch bandwidth (GB/s)");
-+}
