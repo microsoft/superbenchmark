@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 """Tests for nvbandwidth benchmark."""
+
 import os
 
 import unittest
