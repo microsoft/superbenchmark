@@ -116,6 +116,29 @@ class MicroBenchmarkWithInvoke(MicroBenchmark):
             default=False,
             help='Tolerant failure for sub microbenchmark.',
         )
+        self._parser.add_argument(
+            '--numa',
+            type=int,
+            required=False,
+            help='The index of numa node.',
+        )
+
+    def _get_arguments_from_env(self):
+        """Read environment variables from runner used for parallel and fill in numa_node_index.
+
+        Get 'PROC_RANK'(rank of current process) 'NUMA_NODES' environment variables
+        Get numa_node_index according to 'NUMA_NODES'['PROC_RANK']
+        Note: The config from env variables will overwrite the configs defined in the command line
+        """
+        try:
+            if os.getenv('PROC_RANK'):
+                rank = int(os.getenv('PROC_RANK'))
+                if os.getenv('NUMA_NODES'):
+                    self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
+            return True
+        except BaseException:
+            logger.error('The proc_rank is out of index of devices - benchmark: {}.'.format(self._name))
+            return False
 
     def _set_binary_path(self):
         """Search the binary from self._args.bin_dir or from system environment path and set the binary directory.
