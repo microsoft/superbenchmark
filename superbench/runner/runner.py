@@ -132,11 +132,12 @@ class SuperBenchRunner():
             exec_command = 'timeout {timeout} {command}'.format(timeout=timeout, command=exec_command)
 
         # Enable nsys profiling based on environment variable
-        enable_nsys = os.environ.get('SB_ENABLE_NSYS', '').lower() in ('true', '1')
+        enable_nsys = os.environ.get('SB_ENABLE_NSYS', '') == '1'
+        trace_dir = os.environ.get('SB_NSYS_TRACE_DIR', '.')
 
         mode_command = exec_command
         if mode.name == 'local':
-            trace_command = (f'nsys profile --output <TRACE_DIR_VENDOR>/{benchmark_name}_{mode.proc_rank}_traces '
+            trace_command = (f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
                            f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
                            if enable_nsys and mode.proc_rank == 0 else ''
             mode_command = '{prefix} {trace} {command}'.format(
@@ -151,7 +152,7 @@ class SuperBenchRunner():
             torch_dist_params = '' if 'node_num' in mode and mode.node_num == 1 else \
                 '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
 
-            nsys_prefix = (f'nsys profile --output <TRACE_DIR_VENDOR>/{benchmark_name}_traces '
+            nsys_prefix = (f'nsys profile --output {trace_dir}/{benchmark_name}_traces '
                           f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
                           if enable_nsys else ''
 
@@ -163,7 +164,7 @@ class SuperBenchRunner():
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_backend=nccl'
             )
         elif mode.name == 'mpi':
-            trace_command = (f'nsys profile --output <TRACE_DIR_VENDOR>/{benchmark_name}_{mode.proc_rank}_traces '
+            trace_command = (f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
                            f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
                            if enable_nsys else ''
             mode_command = (

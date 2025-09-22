@@ -348,14 +348,14 @@ class PytorchBase(ModelBenchmark):
     def _benchmark(self):
         """Wrap super._benchmark with profiler context if enabled by environment variable.
 
-        Set SB_PYTORCH_PROFILER='true' or 1 to enable profiling.
+        Set SB_PYTORCH_PROFILER='1' to enable profiling.
         """
-        # Check if this is not a CUDA GPU, if so call line 358
+        # Check if this is a Nvidia GPU
         if not (torch.cuda.is_available() and torch.version.cuda is not None):
             return super()._benchmark()
 
         # Check if profiling is enabled via environment variable
-        enable_profiler = os.environ.get('SB_PYTORCH_PROFILER', '0').lower() in ('1', 'true')
+        enable_profiler = os.environ.get('SB_ENABLE_PYTORCH_PROFILER', '0').lower() == '1'
 
         if not enable_profiler:
             # Run without profiling
@@ -375,7 +375,8 @@ class PytorchBase(ModelBenchmark):
             local_rank = self._local_rank
 
         diag_agent_prof = profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True)
-        diag_agent_dump_file_path = '<TRACE_DIR_PYTORCH>/torch-profiler-sb-%s-%d.json' % (self._name, local_rank)
+        dump_file_dir = os.environ.get('SB_TORCH_PROFILER_TRACE_DIR', '.')
+        diag_agent_dump_file_path = f'{dump_file_dir}/torch-profiler-sb-{self._name}-{local_rank}.json'
         diag_agent_prof.__enter__()
 
         ret = super()._benchmark()
