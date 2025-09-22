@@ -313,8 +313,9 @@ endif
 # Build nvbandwidth.
 nvbandwidth: sb_micro_path
 ifeq ($(shell echo $(CUDA_VER) ">=13.0" | bc -l), 1)
-# checkout v0.8 that supports CUDA 13.0
-	cd ./nvbandwidth && git checkout v0.8 && cd ..
+# For CUDA >= 13.0, clone a newer nvbandwidth commit
+	if [ -d nvbandwidth ]; then rm -rf nvbandwidth; fi
+	git clone --branch v0.8 https://github.com/NVIDIA/nvbandwidth.git nvbandwidth
 endif
 	cd ./nvbandwidth && mkdir -p build && cd build && \
 	cmake .. && make -j && cd ../..
