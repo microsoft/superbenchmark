@@ -151,7 +151,7 @@ class ModelBenchmark(Benchmark):
             '--no_copy',
             action='store_true',
             default=False,
-            help='Enable option to exclude data copy time.',
+            help='Exclude GPU data copy time from benchmark measurements.',
         )
 
     @abstractmethod
