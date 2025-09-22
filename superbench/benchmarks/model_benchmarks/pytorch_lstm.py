@@ -89,6 +89,9 @@ class PytorchLSTM(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed)
+
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len, self._args.input_size], self._world_size, dtype=torch.float32
         )
@@ -105,6 +108,8 @@ class PytorchLSTM(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         try:
+            if getattr(self._args, 'deterministic', False):
+                self._enable_deterministic_training()
             self._model = LSTMBenchmarkModel(
                 self._args.input_size, self._args.hidden_size, self._args.num_layers, self._args.bidirectional,
                 self._args.num_classes
@@ -120,9 +125,13 @@ class PytorchLSTM(PytorchBase):
             )
             return False
 
+        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
+
+        self._assign_model_run_metadata(precision)
 
         return True
 
@@ -136,8 +145,9 @@ class PytorchLSTM(PytorchBase):
             The step-time list of every training step.
         """
         duration = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         while True:
             for idx, sample in enumerate(self._dataloader):
                 sample = sample.to(dtype=getattr(torch, precision.value))
@@ -146,17 +156,17 @@ class PytorchLSTM(PytorchBase):
                     sample = sample.cuda()
                 self._optimizer.zero_grad()
                 output = self._model(sample)
-                loss = self._loss_fn(output, self._target)
+                loss = self._loss_fn(output.float(), self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
-                    # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
+                    self.record_determinism_fingerprint(curr_step, loss, output, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
                 if self._is_finished(curr_step, end, check_frequency):
-                    return duration
+                    return self._finalize_periodic_logging(duration, periodic)
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -170,6 +180,7 @@ class PytorchLSTM(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = self._args.check_frequency
         with torch.no_grad():
             self._model.eval()
             while True:
@@ -185,7 +196,7 @@ class PytorchLSTM(PytorchBase):
                         # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
                         self._log_step_time(curr_step, precision, duration)
-                    if self._is_finished(curr_step, end):
+                    if self._is_finished(curr_step, end, check_frequency):
                         return duration
 
 

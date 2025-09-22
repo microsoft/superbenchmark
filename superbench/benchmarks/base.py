@@ -110,6 +110,9 @@ class Benchmark(ABC):
                 logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
                 return False, None, []
 
+        if args is not None and 'compare_log' in [a.dest for a in self._parser._actions]:
+            args = self._parse_args_override_step(args)
+
         ret = True
         if len(unknown) > 0:
             logger.error(
@@ -118,6 +121,55 @@ class Benchmark(ABC):
             ret = False
 
         return ret, args, unknown
+
+    def _parse_args_override_step(self, args):
+        return self._override_args_with_compare_log(args)
+
+    def _override_args_with_compare_log(self, args):
+        # Only override if compare_log is set and is a valid argument for this benchmark
+        if args is not None and hasattr(args, 'compare_log') and getattr(args, 'compare_log', None):
+            logger.info(f'Original Arguments before overriding from compare_log metadata for determinism: {args}')
+            try:
+                from superbench.common import model_log_utils
+                log_data = model_log_utils.load_model_log(args.compare_log)
+                metadata = log_data.get('metadata', {})
+                try:
+                    from superbench.benchmarks import Precision
+                except ImportError:
+                    Precision = None
+                for key, value in metadata.items():
+                    if hasattr(args, key):
+                        if key == 'precision' and Precision is not None:
+                            setattr(args, key, self._convert_precision_value(value, Precision))
+                        else:
+                            setattr(args, key, value)
+                logger.info(f'Arguments overridden from compare_log metadata for determinism. New Arguments: {args}')
+            except Exception as e:
+                logger.info(f'Failed to override args from compare_log metadata: {e}')
+        return args
+
+    def _convert_precision_value(self, value, Precision):
+        if isinstance(value, list):
+            converted = []
+            for v in value:
+                if isinstance(v, Precision):
+                    converted.append(v)
+                else:
+                    converted.append(Precision(v))
+            return converted
+        else:
+            if isinstance(value, Precision):
+                return [value]
+            else:
+                return [Precision(value)]
+
+    def _check_unknown_args(self, unknown):
+        if len(unknown) > 0:
+            logger.error(
+                'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
+            )
+            return False
+        return True
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
