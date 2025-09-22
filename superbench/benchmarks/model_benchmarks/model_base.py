@@ -148,10 +148,10 @@ class ModelBenchmark(Benchmark):
         )
 
         self._parser.add_argument(
-            '--no_copy',
+            '--exclude_copy_time',
             action='store_true',
             default=False,
-            help='Exclude GPU data copy time from benchmark measurements.',
+            help='Exclude GPU data copy time from measured time.',
         )
 
     @abstractmethod

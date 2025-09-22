@@ -144,7 +144,7 @@ class PytorchLSTM(PytorchBase):
                 start = self._timer()
                 if self._gpu_available:
                     sample = sample.cuda()
-                if self._args.no_copy:
+                if self._args.exclude_copy_time:
                     start = self._timer()
                 self._optimizer.zero_grad()
                 output = self._model(sample)
@@ -180,7 +180,7 @@ class PytorchLSTM(PytorchBase):
                     start = self._timer()
                     if self._gpu_available:
                         sample = sample.cuda()
-                    if self._args.no_copy:
+                    if self._args.exclude_copy_time:
                         start = self._timer()
                     self._model(sample)
                     end = self._timer()
