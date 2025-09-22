@@ -133,7 +133,7 @@ class SuperBenchRunner():
 
         # Enable nsys profiling based on environment variable
         enable_nsys = os.environ.get('SB_ENABLE_NSYS', '') == '1'
-        trace_dir = os.environ.get('SB_NSYS_TRACE_DIR', '.')
+        trace_dir = os.environ.get('SB_NSYS_TRACE_DIR', self._sb_output_dir)
 
         mode_command = exec_command
         if mode.name == 'local':
