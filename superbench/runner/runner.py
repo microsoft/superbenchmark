@@ -137,9 +137,10 @@ class SuperBenchRunner():
 
         mode_command = exec_command
         if mode.name == 'local':
-            trace_command = (f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
-                           f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
-                           if enable_nsys and mode.proc_rank == 0 else ''
+            trace_command = (
+                f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
+            ) if enable_nsys and mode.proc_rank == 0 else ''
             mode_command = '{prefix} {trace} {command}'.format(
                 trace=trace_command,
                 prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
@@ -149,12 +150,15 @@ class SuperBenchRunner():
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
-            torch_dist_params = '' if 'node_num' in mode and mode.node_num == 1 else \
+            torch_dist_params = (
+                '' if 'node_num' in mode and mode.node_num == 1 else
                 '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+            )
 
-            nsys_prefix = (f'nsys profile --output {trace_dir}/{benchmark_name}_traces '
-                          f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
-                          if enable_nsys else ''
+            nsys_prefix = (
+                f'nsys profile --output {trace_dir}/{benchmark_name}_traces '
+                f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
+            ) if enable_nsys else ''
 
             mode_command = (
                 f'{nsys_prefix}'
@@ -164,9 +168,10 @@ class SuperBenchRunner():
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_backend=nccl'
             )
         elif mode.name == 'mpi':
-            trace_command = (f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
-                           f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx ') \
-                           if enable_nsys else ''
+            trace_command = (
+                f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
+            ) if enable_nsys else ''
             mode_command = (
                 '{trace} '
                 'mpirun '    # use default OpenMPI in image
