@@ -176,7 +176,7 @@ class SuperBenchRunner():
                 '-bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
-                trace = trace_command,
+                trace=trace_command,
                 host_list=f'-host localhost:{mode.proc_num}' if 'node_num' in mode and mode.node_num == 1 else
                 f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if 'host_list' not in mode else '-host ' +
                 ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),

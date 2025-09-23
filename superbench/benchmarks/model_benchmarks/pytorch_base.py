@@ -344,7 +344,6 @@ class PytorchBase(ModelBenchmark):
             torch.cuda.synchronize()
         return time.time()
 
-
     def _benchmark(self):
         """Wrap super._benchmark with profiler context if enabled by environment variable.
 
