@@ -99,7 +99,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
 
         return True
 
-    def _process_raw_result(self, cmd_idx, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to parse raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
@@ -125,7 +125,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             else:
                 lines = raw_output.strip().split('\n')
                 # find line index of the line that starts with "ID","Process ID"
-                start_idx = next(i for i, line in enumerate(lines) if "Metric Name" in line)
+                start_idx = next(i for i, line in enumerate(lines) if 'Metric Name' in line)
                 if start_idx == 0 or start_idx == len(lines) - 1:
                     raise ValueError('Invalid result.')
                 result_lines = lines[0:start_idx - 1]
