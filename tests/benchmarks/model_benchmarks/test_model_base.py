@@ -157,6 +157,7 @@ def test_arguments_related_interfaces():
                         Distributed implementations. E.g. ddp mirrored
                         multiworkermirrored parameterserver horovod.
   --duration int        The elapsed time of benchmark in seconds.
+  --exclude_copy_time   Exclude GPU data copy time from measured time.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
   --log_flushing        Real-time log flushing.
@@ -165,7 +166,6 @@ def test_arguments_related_interfaces():
                         result object.
   --model_action ModelAction [ModelAction ...]
                         Benchmark model process. E.g. train inference.
-  --exclude_copy_time   Exclude GPU data copy time from measured time.
   --no_gpu              Disable GPU training.
   --num_steps int       The number of test step.
   --num_warmup int      The number of warmup step.
@@ -198,6 +198,7 @@ def test_preprocess():
                         Distributed implementations. E.g. ddp mirrored
                         multiworkermirrored parameterserver horovod.
   --duration int        The elapsed time of benchmark in seconds.
+  --exclude_copy_time   Exclude GPU data copy time from measured time.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
   --log_flushing        Real-time log flushing.
@@ -206,7 +207,6 @@ def test_preprocess():
                         result object.
   --model_action ModelAction [ModelAction ...]
                         Benchmark model process. E.g. train inference.
-  --exclude_copy_time   Exclude GPU data copy time from measured time.
   --no_gpu              Disable GPU training.
   --num_steps int       The number of test step.
   --num_warmup int      The number of warmup step.
