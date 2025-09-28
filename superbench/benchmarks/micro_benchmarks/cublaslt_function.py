@@ -93,7 +93,8 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}' + \
                 f'{(" " + autotune_args) if autotune_args else ""}'
             if self._args.enable_ncu_profiling:
-                command = f'ncu --set full --launch-skip {self._args.num_warmup - 1} --launch-count 1 --csv ' + command
+                skip_num = self._args.num_warmup - 1 if self._args.num_warmup > 1 else 0
+                command = f'ncu --set full --launch-skip {skip_num} --launch-count 1 --csv ' + command
             self._commands.append(command)
 
         return True
@@ -150,12 +151,15 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                     metric_name = fields[metric_name_index].strip('"').replace(' ', '_')
                     if len(fields) < 15:
                         continue
-                    if not self._args.profiling_metrics or len(self._args.profiling_metrics) == 0 or \
-                            metric_name in self._args.profiling_metrics:
+                    if not self._args.profiling_metrics or metric_name in self._args.profiling_metrics:
                         value = fields[metric_value_index].strip(',').strip('"')
-                        if len(value) > 0 and value.replace('.', '', 1).isdigit():
-                            self._result.add_result(f'{self._commands[cmd_idx].split()[-1]}_{size}_{metric_name}', float(value))
-
+                        try:
+                            float_value = float(value)
+                            self._result.add_result(
+                                f'{self._commands[cmd_idx].split()[-1]}_{size}_{metric_name}', float_value
+                            )
+                        except ValueError:
+                            pass
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
