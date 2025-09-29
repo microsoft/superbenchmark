@@ -132,7 +132,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help=(
                 'Verification method specified for fio --verify flag. '
-                'See https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-verify.',
+                'See https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-verify.'
             ),
         )
 
