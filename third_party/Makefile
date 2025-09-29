@@ -113,7 +113,7 @@ ifneq (,$(wildcard nccl-tests/Makefile))
 endif
 
 # Build perftest.
-# The version we use is the tag v4.5-0.2.
+# The commit we use is 4bee61f80d9e268fc97eaf40be00409e91d3a19e.
 cuda_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
