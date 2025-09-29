@@ -6,7 +6,7 @@ index 61a228f..488372a 100644
  #include "kernels.cuh"
  #include "output.h"
  #include "testcase.h"
-+#include "testcases_new.h"
++#include "testcases_patched.h"
  #include "version.h"
  #include "inline_common.h"
 
