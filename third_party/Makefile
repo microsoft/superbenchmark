@@ -22,9 +22,6 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 all: cuda rocm
 # msccl: api change in cudaStreamUpdateCaptureDependencies
 cuda_with_msccl: cuda cuda_msccl
-# cuda13 target: 
-# removed cuda_perftest due to API change in cuCtxCreate_v4 - CUresult CUDAAPI cuCtxCreate(CUcontext *pctx, CUctxCreateParams *ctxCreateParams, unsigned int flags, CUdevice dev);
-cuda13: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
 cpu: common cpu_perftest
