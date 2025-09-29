@@ -130,7 +130,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
             '--verify',
             type=str,
             required=False,
-            help='Verification method specified for fio --verify flag.',
+            help='Verification method specified for fio --verify flag. See https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-verify.',
         )
 
     def _get_arguments_from_env(self):
