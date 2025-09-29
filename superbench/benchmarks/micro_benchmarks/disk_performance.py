@@ -127,23 +127,17 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                 )
 
         self._parser.add_argument(
-            '--numa_node',
-            type=int,
-            required=False,
-            help='The index of NUMA node.',
-        )
-        self._parser.add_argument(
             '--verify',
             type=str,
             required=False,
             help='Verification method specified for fio --verify flag.',
         )
 
-    def __get_arguments_from_env(self):
-        """Read environment variables from runner used for parallel and fill in block_devices and numa_node_index.
+    def _get_arguments_from_env(self):
+        """Read environment variables from runner used for parallel and fill in block_devices and numa.
 
         Get 'PROC_RANK'(rank of current process) 'BLOCK_DEVICES' 'NUMA_NODES' environment variables
-        Get block_devices and numa_node_index according to 'BLOCK_DEVICES'['PROC_RANK'] and 'NUMA_NODES'['PROC_RANK']
+        Get block_devices and numa according to 'BLOCK_DEVICES'['PROC_RANK'] and 'NUMA_NODES'['PROC_RANK']
         - BLOCK_DEVICES should be comma-separated strings, each being colon-separated block devices.
           E.g., "/dev/nvme0n1:/dev/nvme1n1,/dev/nvme2n1:/dev/nvme3n1".
         - NUMA_NODES should be comma-separated numbers. E.g., "0,1".
@@ -155,7 +149,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                 if os.getenv('BLOCK_DEVICES'):
                     self._args.block_devices = os.getenv('BLOCK_DEVICES').split(',')[rank].split(':')
                 if os.getenv('NUMA_NODES'):
-                    self._args.numa_node = int(os.getenv('NUMA_NODES').split(',')[rank])
+                    self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
             return True
         except BaseException as e:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
@@ -170,12 +164,12 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if _preprocess() succeed.
         """
-        if not super()._preprocess() or not self.__get_arguments_from_env():
+        if not super()._preprocess() or not self._get_arguments_from_env():
             return False
 
         fio_basic_command = os.path.join(self._args.bin_dir, self._bin_name)
-        if self._args.numa_node is not None:
-            fio_basic_command = f'numactl -N {self._args.numa_node} {fio_basic_command}'
+        if self._args.numa is not None:
+            fio_basic_command = f'numactl -N {self._args.numa} {fio_basic_command}'
         if self._args.verify is not None:
             fio_basic_command = f'{fio_basic_command} --verify={self._args.verify}'
 
