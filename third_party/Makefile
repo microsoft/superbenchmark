@@ -309,6 +309,5 @@ endif
 
 # Build nvbandwidth.
 nvbandwidth: sb_micro_path
-	cd ./nvbandwidth && mkdir -p build && cd build && \
-	cmake .. && make -j && cd ../..
-	cp -v ./nvbandwidth/build/nvbandwidth $(SB_MICRO_PATH)/bin
+	cd ./nvbandwidth && git apply ../nvbandwidth.patch && cp ../nvbandwidth_testcases_patched.h ./testcases_patched.h && cmake . && make && cd ..
+	cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin
