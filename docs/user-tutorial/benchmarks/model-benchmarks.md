@@ -65,3 +65,33 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 | megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
 | megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
 
+## Multi-node LLaMA Benchmarks
+
+SuperBench uses [torchrun](https://docs.pytorch.org/docs/stable/elastic/run.html) for multi-node LLaMA benchmarks based on PyTorch. Follow the steps below.
+
+1. Configure the Ansible inventory as described in [configuration](../getting-started/configuration.md), using the private IPs of all nodes.
+
+2. Set the number of nodes (`node_num`), number of GPUs per node (`proc_num`), and required environment variables, including a resolvable `MASTER_ADDR` and an open (TCP) `MASTER_PORT`.
+
+```yaml title="llama.yaml"
+# SuperBench Config
+default_pytorch_mode: &default_pytorch_mode
+  modes:
+    - name: torch.distributed
+      proc_num: 4          # GPUs per node
+      node_num: 10         # Total nodes
+      env:
+        NCCL_DEBUG: WARN
+        TORCH_NCCL_ASYNC_ERROR_HANDLING: '0'
+        NCCL_SOCKET_IFNAME: 'eth0'
+        NCCL_IB_DISABLE: '1'
+        NCCL_IGNORE_DISABLED_P2P: '0'
+        MASTER_ADDR: '0.0.0.0'             # Rank 0 node IP
+        MASTER_PORT: '29603'               # TCP port
+```
+
+#### Prerequisites
+
+- Passwordless SSH configured across all nodes.
+- NVIDIA IMEX service running (verify with `nvidia-imex-ctl --H`).
+- Chosen `MASTER_PORT` open and reachable between all nodes.

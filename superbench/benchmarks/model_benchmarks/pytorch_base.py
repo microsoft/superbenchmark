@@ -109,23 +109,44 @@ class PytorchBase(ModelBenchmark):
                     )
                     return False
                 # torch >= 1.9.0a0 torch.distributed.elastic is used by default
-                port = int(os.environ.get('MASTER_PORT', '29500')) + 1
-                os.environ['MASTER_PORT'] = str(port)
-                addr = os.environ['MASTER_ADDR']
                 self._global_rank = int(os.environ['RANK'])
                 self._local_rank = int(os.environ['LOCAL_RANK'])
                 self._world_size = int(os.environ['WORLD_SIZE'])
-                logger.debug('ip:{},port:{},rank:{},world:{}'.format(addr, port, self._global_rank, self._world_size))
-                store = PrefixStore(
-                    self._name, TCPStore(addr, port, self._world_size, self._global_rank == 0, timedelta(seconds=300))
-                )
-                torch.distributed.init_process_group(
-                    backend=self._args.distributed_backend.value,
-                    timeout=timedelta(seconds=300),
-                    rank=self._global_rank,
-                    world_size=self._world_size,
-                    store=store
-                )
+                self._local_world_size = int(os.environ['LOCAL_WORLD_SIZE'])
+                self._multi_node = True if self._world_size != self._local_world_size else False
+
+                if self._multi_node:
+                    logger.debug(
+                        'rank:{},world:{}, local_world:{}'.format(
+                            self._global_rank, self._world_size, self._local_world_size
+                        )
+                    )
+                    torch.distributed.init_process_group(
+                        backend=self._args.distributed_backend.value,
+                        timeout=timedelta(seconds=300),
+                        rank=self._global_rank,
+                        world_size=self._world_size,
+                    )
+                else:
+                    port = int(os.environ.get('MASTER_PORT', '29500')) + 1
+                    os.environ['MASTER_PORT'] = str(port)
+                    addr = os.environ['MASTER_ADDR']
+                    logger.debug(
+                        'ip:{},port:{},rank:{},world:{}, local_world:{}'.format(
+                            addr, port, self._global_rank, self._world_size, self._local_world_size
+                        )
+                    )
+                    store = PrefixStore(
+                        self._name,
+                        TCPStore(addr, port, self._world_size, self._global_rank == 0, timedelta(seconds=300))
+                    )
+                    torch.distributed.init_process_group(
+                        backend=self._args.distributed_backend.value,
+                        timeout=timedelta(seconds=300),
+                        rank=self._global_rank,
+                        world_size=self._world_size,
+                        store=store
+                    )
 
             else:
                 logger.error(

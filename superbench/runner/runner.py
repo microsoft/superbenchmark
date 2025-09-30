@@ -139,10 +139,11 @@ class SuperBenchRunner():
             )
             mode_command = f'PROC_RANK={mode.proc_rank} {mode_command.strip()}'
         elif mode.name == 'torch.distributed':
-            # TODO: replace with torch.distributed.run in v1.9
-            # TODO: only supports node_num=1 and node_num=all currently
-            torch_dist_params = '' if 'node_num' in mode and mode.node_num == 1 else \
-                '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
+            torch_dist_params = (
+                f'--nnodes={mode.node_num} --rdzv-endpoint=$MASTER_ADDR:$MASTER_PORT '
+                f'--rdzv-id={random.randint(100, 999)} --rdzv-backend=c10d '
+                if 'node_num' in mode and mode.node_num > 1 else ''
+            )
             mode_command = (
                 f'torchrun'
                 f' --no_python --nproc_per_node={mode.proc_num} {torch_dist_params}{exec_command}'
