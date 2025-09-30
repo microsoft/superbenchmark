@@ -191,9 +191,10 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Test valid envs
         proc_ranks = ['0', '1']
-        block_device_sets = [['/dev/nvme0n1', '/dev/nvme1n1'], ['/dev/nvme2n1', '/dev/nvme3n1']]
+        block_devices = ['/dev/nvme0n1', '/dev/nvme1n1', '/dev/nvme2n1', '/dev/nvme3n1']
+        block_device_indices = [[0, 2], [1, 3]]
         numa_nodes = ['0', '1']
-        os.environ['BLOCK_DEVICES'] = ','.join([':'.join(x) for x in block_device_sets])
+        os.environ['BLOCK_DEVICE_INDICES'] = ','.join([':'.join(str(x)) for x in block_device_indices])
         os.environ['NUMA_NODES'] = ','.join(numa_nodes)
 
         for proc_rank in proc_ranks:
@@ -214,7 +215,8 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
             command_idx = 0
             commands_per_device = 2
-            for block_device in block_device_sets[int(proc_rank)]:
+            for block_device_index in block_device_indices[int(proc_rank)]:
+                block_device = block_devices[block_device_index]
                 assert (benchmark._args.numa == int(numa_nodes[int(proc_rank)]))
                 assert (benchmark._commands[command_idx].startswith(f'numactl -N {benchmark._args.numa}'))
                 for _ in range(commands_per_device):
@@ -231,7 +233,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.name == 'disk-benchmark')
         assert (benchmark.type == BenchmarkType.MICRO)
 
-        del os.environ['BLOCK_DEVICES']
+        del os.environ['BLOCK_DEVICE_INDICES']
         del os.environ['NUMA_NODES']
         del os.environ['PROC_RANK']
 
