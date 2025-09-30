@@ -149,7 +149,7 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
                 rank = int(os.getenv('PROC_RANK'))
                 if os.getenv('BLOCK_DEVICE_INDICES'):
                     block_device_index = int(os.getenv('BLOCK_DEVICE_INDICES').split(',')[rank])
-                    self._args.block_devices = self._args.block_devices[block_device_index]
+                    self._args.block_devices = [self._args.block_devices[block_device_index]]
                 if os.getenv('NUMA_NODES'):
                     self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
             return True
