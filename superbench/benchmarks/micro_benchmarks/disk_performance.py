@@ -140,7 +140,8 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
         """Read environment variables from runner used for parallel and fill in block_device_index and numa_node_index.
 
         Get 'PROC_RANK'(rank of current process) 'BLOCK_DEVICE_INDICES' 'NUMA_NODES' environment variables
-        Get block_device_index and numa_node_index according to 'NUMA_NODES'['PROC_RANK'] and 'BLOCK_DEVICE_INDICES'['PROC_RANK']
+        Get block_device_index and numa_node_index according to
+        'NUMA_NODES'['PROC_RANK'] and 'BLOCK_DEVICE_INDICES'['PROC_RANK']
         Note: The config from env variables will overwrite the configs defined in the command line
         """
         try:
