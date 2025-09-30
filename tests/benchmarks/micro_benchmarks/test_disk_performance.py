@@ -196,10 +196,11 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         numa_nodes = ['0', '0', '1', '1']
         os.environ['BLOCK_DEVICE_INDICES'] = ','.join(block_device_indices)
         os.environ['NUMA_NODES'] = ','.join(numa_nodes)
+        param_str = '--block_devices ' + ' '.join(block_devices)
 
         for proc_rank in proc_ranks:
             os.environ['PROC_RANK'] = proc_rank
-            benchmark = benchmark_class(benchmark_name, parameters='')
+            benchmark = benchmark_class(benchmark_name, parameters=param_str)
 
             # Check basic information
             assert (benchmark)
@@ -224,7 +225,7 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Test invalid envs
         os.environ['PROC_RANK'] = '4'
-        benchmark = benchmark_class(benchmark_name, parameters='')
+        benchmark = benchmark_class(benchmark_name, parameters=param_str)
         assert (benchmark)
         ret = benchmark._preprocess()
         assert (ret is False)
