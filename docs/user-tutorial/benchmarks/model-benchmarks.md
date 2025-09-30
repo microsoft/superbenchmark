@@ -74,7 +74,6 @@ SuperBench uses [torchrun](https://docs.pytorch.org/docs/stable/elastic/run.html
 2. Set the number of nodes (`node_num`), number of GPUs per node (`proc_num`), and required environment variables, including a resolvable `MASTER_ADDR` and an open (TCP) `MASTER_PORT`.
 
 ```yaml title="llama.yaml"
-# SuperBench Config
 default_pytorch_mode: &default_pytorch_mode
   modes:
     - name: torch.distributed
@@ -86,8 +85,8 @@ default_pytorch_mode: &default_pytorch_mode
         NCCL_SOCKET_IFNAME: 'eth0'
         NCCL_IB_DISABLE: '1'
         NCCL_IGNORE_DISABLED_P2P: '0'
-        MASTER_ADDR: '0.0.0.0'             # Rank 0 node IP
-        MASTER_PORT: '29603'               # TCP port
+        MASTER_ADDR: '10.0.0.6'            # Example of rank 0 node IP
+        MASTER_PORT: '29603'               # Example of TCP port
 ```
 
 #### Prerequisites
