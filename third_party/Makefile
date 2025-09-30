@@ -6,7 +6,6 @@ SB_MICRO_PATH ?= /usr/local
 MPI_HOME ?= /usr/local/mpi
 HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
-HPCX_HOME ?= /opt/hpcx
 ROCM_PATH ?= /opt/rocm
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
@@ -40,7 +39,11 @@ sb_micro_path:
 # Build cutlass.
 # for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+	$(eval ARCHS := "100;103")
+	if [ -d cutlass ]; then rm -rf cutlass; fi
+	git clone --branch v4.1.0 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
+else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval ARCHS := "90;100")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v3.9.2 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
@@ -170,7 +173,7 @@ rocm_bandwidthTest: sb_micro_path
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
-	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
+	make CC=mpicc -C GPCNET all
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
 
@@ -264,12 +267,18 @@ apex_rocm:
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
-ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
     # Get commit 87048bd from msscl to support updated nccl and sm_100
+	$(eval ARCHS := 100 103)
+	if [ -d msccl ]; then rm -rf msccl; fi; \
+	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
+	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
+else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	# Get commit 87048bd from msscl to support updated nccl and sm_100
 	$(eval ARCHS := 75 80 86 89 90 100)
 	if [ -d msccl ]; then rm -rf msccl; fi; \
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
-    && git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
+	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval ARCHS := 70 75 80 86 89 90)
 else
