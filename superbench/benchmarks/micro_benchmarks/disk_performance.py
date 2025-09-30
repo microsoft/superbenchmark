@@ -137,29 +137,18 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
         )
 
     def _get_arguments_from_env(self):
-        """Read environment variables from runner used for parallel and fill in block_device_indices and numa.
+        """Read environment variables from runner used for parallel and fill in block_device_index and numa_node_index.
 
-        Get 'PROC_RANK'(rank of current process) 'NUMA_NODES' 'BLOCK_DEVICE_INDICES' environment variables
-        - BLOCK_DEVICES_INDICES should be comma-separated per-process block device list strings,
-          and each such string being colon-separated integer indices into --block_device argument.
-          --block_device will be overwritten as block devices indexed by 'BLOCK_DEVICE_INDICES'['PROC_RANK'].
-        - NUMA_NODES should be comma-separated numbers. E.g., "0,1".
-          --numa will be overwritten as 'NUMA_NODES'['PROC_RANK'].
-        Usage example:
-          Two parallel processes (PROC_RANK=0 and PROC_RANK=1)
-          BLOCK_DEVICES_INDICES="0:2,1:3"
-          NUMA_NODES="0,1"
-          --block_devices /dev/nvme0n1 /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1
-          For PROC_RANK=0, --numa will be 0, and --block_devices will be /dev/nvme0n1 and /dev/nvme2n1.
-          For PROC_RANK=1, --numa will be 1, and --block_devices will be /dev/nvme1n1 and /dev/nvme3n1.
-        Note: The config from env variables will overwrite the configs defined in the command line.
+        Get 'PROC_RANK'(rank of current process) 'BLOCK_DEVICE_INDICES' 'NUMA_NODES' environment variables
+        Get block_device_index and numa_node_index according to 'NUMA_NODES'['PROC_RANK'] and 'BLOCK_DEVICE_INDICES'['PROC_RANK']
+        Note: The config from env variables will overwrite the configs defined in the command line
         """
         try:
             if os.getenv('PROC_RANK'):
                 rank = int(os.getenv('PROC_RANK'))
-                if os.getenv('BLOCK_DEVICES_INDICES'):
-                    block_device_indices = os.getenv('BLOCK_DEVICES').split(',')[rank].split(':')
-                    self._args.block_devices = [self._args.block_devices[x] for x in block_device_indices]
+                if os.getenv('BLOCK_DEVICE_INDICES'):
+                    block_device_index = int(os.getenv('BLOCK_DEVICE_INDICES').split(',')[rank])
+                    self._args.block_devices = self._args.block_devices[block_device_index]
                 if os.getenv('NUMA_NODES'):
                     self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
             return True
