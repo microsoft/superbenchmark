@@ -16,6 +16,7 @@ def save_model_log(filepath, metadata, losses, fingerprints):
         losses (list): List of per-step loss values.
         fingerprints (dict): Dictionary of periodic fingerprints (loss, act_mean, step).
     """
+
     # Accept None in losses/fingerprints; JSON will encode None as null.
     # Convert numeric losses to floats but keep None -> null so missing values
     # are preserved in the log for later tolerant comparison.
