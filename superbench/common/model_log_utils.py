@@ -16,10 +16,16 @@ def save_model_log(filepath, metadata, losses, fingerprints):
         losses (list): List of per-step loss values.
         fingerprints (dict): Dictionary of periodic fingerprints (loss, act_mean, step).
     """
+    # Accept None in losses/fingerprints; JSON will encode None as null.
+    # Convert numeric losses to floats but keep None -> null so missing values
+    # are preserved in the log for later tolerant comparison.
+    def _maybe_float(x):
+        return None if x is None else float(x)
+
     data = {
         'schema_version': 1,
         'metadata': metadata,
-        'per_step_fp32_loss': [float(x) for x in losses],
+        'per_step_fp32_loss': [_maybe_float(x) for x in losses],
         'fingerprints': fingerprints,
     }
     with open(filepath, 'w') as f:
@@ -67,21 +73,30 @@ def compare_model_logs(current, reference):
     steps_match = curr_steps == ref_steps
 
     def _cmp_series(curr_list, ref_list):
-        """Compare two lists of values for exact equality using torch.
+        """Compare two lists of values for equality, treating None as NaN.
 
-        Args:
-            curr_list (list): Current values.
-            ref_list (list): Reference values.
-
-        Returns:
-            bool: True if lists are equal, False otherwise.
+        Returns True only if both lists have the same length and every pair of
+        elements is equal, where equality is (a == b) or (both are NaN).
         """
         if curr_list is None or ref_list is None:
             return False
-        curr_t = torch.tensor(curr_list)
-        ref_t = torch.tensor(ref_list)
+        if len(curr_list) != len(ref_list):
+            return False
 
-        return torch.equal(curr_t, ref_t)
+        # Replace None with NaN and convert to float tensors
+        def _to_tensor(lst):
+            arr = [float('nan') if x is None else float(x) for x in lst]
+            return torch.tensor(arr, dtype=torch.float32)
+
+        curr_t = _to_tensor(curr_list)
+        ref_t = _to_tensor(ref_list)
+
+        # Element-wise equality where NaN == NaN is considered True
+        eq = curr_t == ref_t
+        both_nan = torch.isnan(curr_t) & torch.isnan(ref_t)
+        eq_or_nan = eq | both_nan
+
+        return bool(torch.all(eq_or_nan).item())
 
     equal_fp_loss = _cmp_series(curr_fp.get('loss'), ref_fp.get('loss'))
     equal_fp_act = _cmp_series(curr_fp.get('act_mean'), ref_fp.get('act_mean'))

@@ -69,6 +69,7 @@ class PytorchBase(ModelBenchmark):
         try:
             torch.backends.cuda.matmul.allow_tf32 = False
         except Exception:
+            logger.info('Failed to disable TF32 in cuda matmul')
             pass
         try:
             torch.backends.cudnn.allow_tf32 = False
@@ -142,10 +143,15 @@ class PytorchBase(ModelBenchmark):
         if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
             # 1) Loss fingerprint (only at fingerprinting frequency)
             try:
-                if 'loss' in periodic and v is not None:
-                    periodic['loss'].append(v)
+                # Ensure the lists exist and remain index-aligned by appending
+                # a placeholder (None) when a measurement is unavailable.
+                if 'loss' in periodic and isinstance(periodic['loss'], list):
+                    periodic['loss'].append(v if v is not None else None)
+                else:
+                    periodic['loss'] = [v if v is not None else None]
+
                 logger.info(f'Loss at step {curr_step}: {v}')
-                periodic['step'].append(curr_step)
+                periodic.setdefault('step', []).append(curr_step)
             except Exception:
                 pass
             # 2) Tiny activation fingerprint: mean over logits for sample 0
@@ -156,8 +162,13 @@ class PytorchBase(ModelBenchmark):
                         if hasattr(logits[0], 'detach') else float(logits[0])
                     )
                     logger.info(f'ActMean at step {curr_step}: {act_mean}')
-                    periodic['act_mean'].append(act_mean)
+                    periodic.setdefault('act_mean', []).append(act_mean)
+                else:
+                    # Keep lists aligned by appending None when activation not available
+                    periodic.setdefault('act_mean', []).append(None)
             except Exception:
+                # On exception preserve alignment by ensuring keys exist
+                periodic.setdefault('act_mean', []).append(None)
                 pass
 
     def _finalize_periodic_logging(self, duration, periodic, info_key='loss'):
@@ -178,19 +189,10 @@ class PytorchBase(ModelBenchmark):
         super().add_parser_arguments()
         self._parser.add_argument(
             '--generate-log',
-            '--generate_log',
-            dest='generate_log',
-            action='store_true',
-            default=False,
-            help='Save fingerprint log to file.',
-        )
-        self._parser.add_argument(
-            '--log-path',
-            '--log_path',
-            dest='log_path',
-            type=str,
+            nargs='?',
+            const=True,
             default=None,
-            help='Path to save or load fingerprint log.',
+            help='Save fingerprint log to file. Optionally specify a path to save the log.'
         )
         self._parser.add_argument(
             '--compare-log',
@@ -223,8 +225,12 @@ class PytorchBase(ModelBenchmark):
 
     def _post_run_model_log(self):
         """Save or compare model run logs after run, if requested."""
-        if getattr(self._args, 'generate_log', False):
-            log_path = getattr(self._args, 'log_path', None)
+        gen_arg = getattr(self._args, 'generate_log', None)
+        if gen_arg:
+            # gen_arg can be True (const) or a string path if user provided it
+            log_path = None
+            if isinstance(gen_arg, str):
+                log_path = gen_arg
             if not log_path:
                 model = getattr(
                     self._args,
@@ -269,14 +275,21 @@ class PytorchBase(ModelBenchmark):
         preprocess_ok = super()._preprocess()
         if not preprocess_ok:
             return False
+        # Enable deterministic training centrally so individual model files don't need to call it.
+        if getattr(self._args, 'deterministic', False):
+            try:
+                self._enable_deterministic_training()
+            except Exception:
+                logger.info('Failed to enable deterministic training in centralized preprocess')
         if getattr(self._args, 'deterministic', False):
             self._handle_deterministic_log_options()
         return True
 
     def _handle_deterministic_log_options(self):
         """Set generate_log if deterministic and no log options are set."""
-        has_gen = getattr(self._args, 'generate_log', False)
+        has_gen = getattr(self._args, 'generate_log', None)
         has_cmp = getattr(self._args, 'compare_log', None)
+        print("**********", has_gen, has_cmp)
         if not has_gen and not has_cmp:
             setattr(self._args, 'generate_log', True)
             logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')

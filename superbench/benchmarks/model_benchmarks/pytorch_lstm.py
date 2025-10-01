@@ -108,8 +108,6 @@ class PytorchLSTM(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         try:
-            if getattr(self._args, 'deterministic', False):
-                self._enable_deterministic_training()
             self._model = LSTMBenchmarkModel(
                 self._args.input_size, self._args.hidden_size, self._args.num_layers, self._args.bidirectional,
                 self._args.num_classes

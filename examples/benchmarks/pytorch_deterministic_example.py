@@ -7,7 +7,7 @@ Commands to run:
 Generate log:
 
 CUBLAS_WORKSPACE_CONFIG=:4096:8 python3 examples/benchmarks/pytorch_deterministic_example.py
---model <model_from_MODEL_CHOICES> --generate-log --log-path ./outputs/determinism_ref.json
+--model <model_from_MODEL_CHOICES> --generate-log ./outputs/determinism_ref.json
 
 Compare log:
 
@@ -44,7 +44,7 @@ DEFAULT_PARAMS = {
     '--num_key_value_heads=8 --max_position_embeddings=32768 --router_aux_loss_coef=0.02 '
     '--deterministic --deterministic_seed 42 --check_frequency 20',
     'resnet101':
-    '--batch_size 192 --precision float32 float32 --num_warmup 64 --num_steps 512 --sample_count 8192 '
+    '--batch_size 1 --precision float32 --num_warmup 1 --num_steps 120 --sample_count 8192 '
     '--pin_memory --model_action train --deterministic --deterministic_seed 42 --check_frequency 20',
     'lstm':
     '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 64 --precision float16 '
@@ -56,8 +56,13 @@ def main():
     """Main function for determinism example file."""
     parser = argparse.ArgumentParser(description='Unified PyTorch deterministic training example.')
     parser.add_argument('--model', type=str, choices=MODEL_CHOICES, required=True, help='Model to run.')
-    parser.add_argument('--generate-log', action='store_true', help='Enable fingerprint log generation.')
-    parser.add_argument('--log-path', type=str, default=None, help='Path to save fingerprint log.')
+    parser.add_argument(
+        '--generate-log',
+        nargs='?',
+        const=True,
+        default=None,
+        help='Enable fingerprint log generation. Optionally specify a path to save the log.',
+    )
     parser.add_argument(
         '--compare-log',
         type=str,
@@ -73,13 +78,12 @@ def main():
     args = parser.parse_args()
 
     parameters = DEFAULT_PARAMS[args.model]
-    parameters = parameters.replace('--deterministic_seed', '--deterministic_seed')
     if args.deterministic_seed:
         parameters += f' --deterministic_seed {args.deterministic_seed}'
     if args.generate_log:
         parameters += ' --generate-log'
-        if args.log_path:
-            parameters += f' --log-path {args.log_path}'
+        if isinstance(args.generate_log, str):
+            parameters += f' {args.generate_log}'
     if args.compare_log:
         parameters += f' --compare-log {args.compare_log}'
 

@@ -124,9 +124,6 @@ class PytorchLlama(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-        # Enable deterministic training if requested
-        if getattr(self._args, 'deterministic', False):
-            self._enable_deterministic_training()
 
         self._config = LlamaConfig(
             hidden_size=self._args.hidden_size,

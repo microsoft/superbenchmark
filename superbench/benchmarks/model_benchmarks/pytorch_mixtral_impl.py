@@ -137,9 +137,6 @@ class PytorchMixtral(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-        if getattr(self._args, 'deterministic', False):
-            self._enable_deterministic_training()
-
         self._config = self._build_config()
         if not self._check_fp8_support(precision):
             return False
@@ -204,6 +201,8 @@ class PytorchMixtral(PytorchBase):
             self._model = self._model.cuda()
 
     def _setup_target(self):
+        # Use a separate deterministic RNG stream for target generation by offsetting the seed.
+        # This keeps dataset RNG and target/model RNG deterministic but independent.
         if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
             torch.manual_seed(self._args.deterministic_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)

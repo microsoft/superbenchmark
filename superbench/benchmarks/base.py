@@ -114,18 +114,32 @@ class Benchmark(ABC):
             args = self._parse_args_override_step(args)
 
         ret = True
-        if len(unknown) > 0:
-            logger.error(
-                'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
-            )
-            ret = False
+        ret = self._check_unknown_args(unknown)
 
         return ret, args, unknown
 
     def _parse_args_override_step(self, args):
+        """
+        Override arguments using metadata from a compare log file.
+
+        Args:
+            args: Parsed arguments.
+
+        Returns:
+            argparse.Namespace: Updated arguments with overridden values.
+        """
         return self._override_args_with_compare_log(args)
 
     def _override_args_with_compare_log(self, args):
+        """
+        Override arguments with metadata from a compare log file if available.
+
+        Args:
+            args: Parsed arguments.
+
+        Returns:
+            argparse: Arguments updated with metadata values.
+        """
         # Only override if compare_log is set and is a valid argument for this benchmark
         if args is not None and hasattr(args, 'compare_log') and getattr(args, 'compare_log', None):
             logger.info(f'Original Arguments before overriding from compare_log metadata for determinism: {args}')
@@ -149,6 +163,16 @@ class Benchmark(ABC):
         return args
 
     def _convert_precision_value(self, value, Precision):
+        """
+        Convert precision values to the appropriate format.
+
+        Args:
+            value: The precision value to convert.
+            Precision: The Precision class or type to convert to.
+
+        Returns:
+            list: A list of converted precision values.
+        """
         if isinstance(value, list):
             converted = []
             for v in value:
@@ -164,6 +188,15 @@ class Benchmark(ABC):
                 return [Precision(value)]
 
     def _check_unknown_args(self, unknown):
+        """
+        Check for unknown arguments and log an error if any are found.
+
+        Args:
+            unknown (list): List of unknown arguments.
+
+        Returns:
+            bool: False if unknown arguments are found, True otherwise.
+        """
         if len(unknown) > 0:
             logger.error(
                 'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))

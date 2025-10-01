@@ -70,10 +70,6 @@ class PytorchCNN(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         try:
-            # Enable deterministic training if requested
-            if getattr(self._args, 'deterministic', False):
-                self._enable_deterministic_training()
-
             self._model = getattr(models, self._args.model_type)()
             self._model = self._model.to(dtype=getattr(torch, precision.value))
             self._model = _keep_BatchNorm_as_float(self._model)

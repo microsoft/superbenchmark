@@ -109,8 +109,6 @@ class PytorchGPT2(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-        if getattr(self._args, 'deterministic', False):
-            self._enable_deterministic_training()
 
         self._config = GPT2Config(
             n_embd=self._args.hidden_size, n_layer=self._args.num_hidden_layers, n_head=self._args.num_attention_heads
