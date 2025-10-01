@@ -289,7 +289,6 @@ class PytorchBase(ModelBenchmark):
         """Set generate_log if deterministic and no log options are set."""
         has_gen = getattr(self._args, 'generate_log', None)
         has_cmp = getattr(self._args, 'compare_log', None)
-        print("**********", has_gen, has_cmp)
         if not has_gen and not has_cmp:
             setattr(self._args, 'generate_log', True)
             logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')
@@ -599,29 +598,3 @@ class PytorchBase(ModelBenchmark):
         if self._gpu_available:
             torch.cuda.synchronize()
         return time.time()
-
-    def _process_info(self, model_action, precision, info):
-        """Persist extra step-level signals (e.g., loss) into raw_data."""
-        try:
-            if not info:
-                return
-            precision_metric = {
-                'float16': 'fp16',
-                'float32': 'fp32',
-                'float64': 'fp64',
-                'bfloat16': 'bf16',
-            }
-            prec_value = (precision.value if hasattr(precision, 'value') else str(precision))
-            prefix = precision_metric.get(prec_value, prec_value)
-            metric_loss = f'{prefix}_{model_action}_loss'
-            if ('loss' in info and isinstance(info['loss'], list) and len(info['loss']) > 0):
-                self._result.add_raw_data(metric_loss, info['loss'], self._args.log_raw_data)
-        except Exception as e:
-            logger.error(
-                f'Exception in _process_info: {e}\n'
-                f'  model_action: {model_action}\n'
-                f'  precision: {precision} (type: {type(precision)})\n'
-                f'  info: {info}\n'
-                'Possible causes: info dict missing expected keys, precision type mismatch, '
-                'or result object not initialized.'
-            )
