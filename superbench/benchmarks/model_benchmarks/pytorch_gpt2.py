@@ -91,7 +91,6 @@ class PytorchGPT2(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
-
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
         )
