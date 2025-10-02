@@ -191,7 +191,7 @@ class PytorchBase(ModelBenchmark):
             '--generate-log',
             nargs='?',
             const=True,
-            default=None,
+            default=False,
             type=str,
             help='Save fingerprint log to file. Optionally specify a path to save the log.'
         )
