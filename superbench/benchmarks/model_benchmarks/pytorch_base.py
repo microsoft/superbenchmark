@@ -193,7 +193,6 @@ class PytorchBase(ModelBenchmark):
             const=True,
             default=None,
             type=str,
-            # metavar='PATH',
             help='Save fingerprint log to file. Optionally specify a path to save the log.'
         )
         self._parser.add_argument(
