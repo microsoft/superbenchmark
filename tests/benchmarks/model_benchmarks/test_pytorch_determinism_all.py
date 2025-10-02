@@ -22,7 +22,7 @@ def run_deterministic_benchmark(model_name, params, log_path=None, extra_args=No
     if extra_args:
         parameters += ' ' + extra_args
     if '--generate-log' not in parameters:
-        parameters += f' --generate-log --log-path {log_path} --check_frequency 10'
+        parameters += f' --generate-log {log_path} --check_frequency 10'
     context = BenchmarkRegistry.create_benchmark_context(
         model_name,
         platform=Platform.CUDA,
@@ -76,7 +76,7 @@ def test_pytorch_model_determinism(model_name, params):
 
     # Check args
     assert benchmark._args.deterministic is True
-    assert getattr(benchmark._args, 'generate_log', False) is True
+    assert getattr(benchmark._args, 'generate_log', False)
     assert benchmark._args.deterministic is True
     assert benchmark._args.deterministic_seed == 42
     assert benchmark._args.check_frequency == 10
@@ -147,7 +147,6 @@ def test_pytorch_model_nondeterministic_default(model_name, params):
     args = benchmark._args
     assert args.deterministic is False, 'Expected deterministic to be False by default.'
     assert (getattr(args, 'generate_log', False) is False), 'Expected generate_log to be False by default.'
-    assert (getattr(args, 'log_path', None) is None), 'Expected log_path to be None by default.'
     assert (getattr(args, 'compare_log', None) is None), 'Expected compare_log to be None by default.'
     assert (getattr(args, 'check_frequency', None) == 100), 'Expected check_frequency to be 100 by default.'
 
