@@ -119,8 +119,7 @@ class Benchmark(ABC):
         return ret, args, unknown
 
     def _parse_args_override_step(self, args):
-        """
-        Override arguments using metadata from a compare log file.
+        """Override arguments using metadata from a compare log file.
 
         Args:
             args: Parsed arguments.
@@ -131,8 +130,7 @@ class Benchmark(ABC):
         return self._override_args_with_compare_log(args)
 
     def _override_args_with_compare_log(self, args):
-        """
-        Override arguments with metadata from a compare log file if available.
+        """Override arguments with metadata from a compare log file if available.
 
         Args:
             args: Parsed arguments.
@@ -163,8 +161,7 @@ class Benchmark(ABC):
         return args
 
     def _convert_precision_value(self, value, Precision):
-        """
-        Convert precision values to the appropriate format.
+        """Convert precision values to the appropriate format.
 
         Args:
             value: The precision value to convert.
@@ -188,8 +185,7 @@ class Benchmark(ABC):
                 return [Precision(value)]
 
     def _check_unknown_args(self, unknown):
-        """
-        Check for unknown arguments and log an error if any are found.
+        """Check for unknown arguments and log an error if any are found.
 
         Args:
             unknown (list): List of unknown arguments.

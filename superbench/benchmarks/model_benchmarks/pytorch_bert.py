@@ -113,7 +113,6 @@ class PytorchBERT(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-
         self._config = BertConfig(
             hidden_size=self._args.hidden_size,
             num_hidden_layers=self._args.num_hidden_layers,
