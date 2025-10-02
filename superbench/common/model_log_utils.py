@@ -16,12 +16,6 @@ def save_model_log(filepath, metadata, losses, fingerprints):
         losses (list): List of per-step loss values.
         fingerprints (dict): Dictionary of periodic fingerprints (loss, act_mean, step).
     """
-    # Accept None in losses/fingerprints; JSON will encode None as null.
-    # Convert numeric losses to floats but keep None -> null so missing values
-    # are preserved in the log for later tolerant comparison.
-    def _maybe_float(x):
-        return None if x is None else float(x)
-
     data = {
         'schema_version': 1,
         'metadata': metadata,
@@ -30,6 +24,10 @@ def save_model_log(filepath, metadata, losses, fingerprints):
     }
     with open(filepath, 'w') as f:
         json.dump(data, f, indent=2)
+
+
+def _maybe_float(x):
+    return None if x is None else float(x)
 
 
 def load_model_log(filepath):
