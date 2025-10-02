@@ -89,9 +89,6 @@ class PytorchLSTM(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
-            torch.manual_seed(self._args.deterministic_seed)
-
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len, self._args.input_size], self._world_size, dtype=torch.float32
         )
@@ -123,8 +120,6 @@ class PytorchLSTM(PytorchBase):
             )
             return False
 
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
-            torch.manual_seed(self._args.deterministic_seed + 1)
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
@@ -165,8 +160,8 @@ class PytorchLSTM(PytorchBase):
                     duration.append((end - start) * 1000)
                     self.record_determinism_fingerprint(curr_step, loss, output, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
-                if self._is_finished(curr_step, end, check_frequency):
-                    return self._finalize_periodic_logging(duration, periodic)
+                    if self._is_finished(curr_step, end, check_frequency):
+                        return duration, self._finalize_periodic_logging(periodic)
 
     def _inference_step(self, precision):
         """Define the inference process.

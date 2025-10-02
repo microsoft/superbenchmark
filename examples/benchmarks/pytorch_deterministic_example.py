@@ -47,7 +47,7 @@ DEFAULT_PARAMS = {
     '--batch_size 1 --precision float32 --num_warmup 1 --num_steps 120 --sample_count 8192 '
     '--pin_memory --model_action train --deterministic --deterministic_seed 42 --check_frequency 20',
     'lstm':
-    '--batch_size 1 --num_steps 300 --num_warmup 1 --seq_len 64 --precision float16 '
+    '--batch_size 1 --num_steps 100 --num_warmup 1 --seq_len 64 --precision float16 '
     '--model_action train --deterministic --deterministic_seed 42 --check_frequency 20',
 }
 

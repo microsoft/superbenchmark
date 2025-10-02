@@ -105,10 +105,6 @@ class PytorchLlama(PytorchBase):
         Return:
             True if dataset is created successfully.
         """
-        # Set seed before dataset generation if deterministic training is enabled
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
-            torch.manual_seed(self._args.deterministic_seed)
-
         self._dataset = TorchRandomDataset(
             [self._args.sample_count, self._args.seq_len], self._world_size, dtype=torch.long
         )
@@ -169,10 +165,6 @@ class PytorchLlama(PytorchBase):
             )
             return False
 
-        # Seed before target generation when deterministic
-        if getattr(self._args, 'deterministic', False) and hasattr(self._args, 'deterministic_seed'):
-            torch.manual_seed(self._args.deterministic_seed + 1)
-
         self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
         if self._gpu_available:
             self._target = self._target.cuda()
@@ -217,8 +209,8 @@ class PytorchLlama(PytorchBase):
                     duration.append((end - start) * 1000)
                     self.record_determinism_fingerprint(curr_step, loss, logits, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
-                if self._is_finished(curr_step, end, check_frequency):
-                    return self._finalize_periodic_logging(duration, periodic)
+                    if self._is_finished(curr_step, end, check_frequency):
+                        return duration, self._finalize_periodic_logging(periodic)
 
     def _inference_step(self, precision):
         """Define the inference process.

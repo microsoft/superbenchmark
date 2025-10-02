@@ -170,12 +170,12 @@ class PytorchBase(ModelBenchmark):
                 periodic.setdefault('act_mean', []).append(None)
                 pass
 
-    def _finalize_periodic_logging(self, duration, periodic, info_key='loss'):
-        """Finalize periodic logging and return results tuple for training step."""
+    def _finalize_periodic_logging(self, periodic, info_key='loss'):
+        """Finalize periodic logging and return info dict for training step."""
         info = {info_key: periodic.get(info_key, [])}
         self._model_run_losses = list(periodic.get(info_key, []))
         self._model_run_periodic = dict(periodic)
-        return (duration, info)
+        return info
 
     def _benchmark(self):
         """Run the benchmark then handle post-run model log save/compare."""
@@ -275,15 +275,24 @@ class PytorchBase(ModelBenchmark):
         preprocess_ok = super()._preprocess()
         if not preprocess_ok:
             return False
-        # Enable deterministic training centrally so individual model files don't need to call it.
+        # Deterministic setup is handled centrally in set_deterministic_seed() which
+        # is invoked earlier in the model-base preprocess before dataset creation.
+        if getattr(self._args, 'deterministic', False):
+            self._handle_deterministic_log_options()
+        return True
+
+    def set_deterministic_seed(self):
+        """Set deterministic RNGs centrally for PyTorch benchmarks.
+
+        This will set the seeds and deterministic flags prior to dataset generation
+        so per-model dataset generation is reproducible without each model needing
+        to call torch.manual_seed().
+        """
         if getattr(self._args, 'deterministic', False):
             try:
                 self._enable_deterministic_training()
             except Exception:
                 logger.info('Failed to enable deterministic training in centralized preprocess')
-        if getattr(self._args, 'deterministic', False):
-            self._handle_deterministic_log_options()
-        return True
 
     def _handle_deterministic_log_options(self):
         """Set generate_log if deterministic and no log options are set."""
