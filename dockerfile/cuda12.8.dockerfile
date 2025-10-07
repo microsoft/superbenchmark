@@ -12,7 +12,7 @@ FROM nvcr.io/nvidia/pytorch:25.02-py3
 #   - TransformerEngine 2.0
 # Mellanox:
 #   - MOFED_VERSION; 5.4-rdmacore39.0
-#   - HPC-X: v2.22.1
+#   - HPC-X: v2.21
 # Intel:
 #   - mlc: v3.11
 
