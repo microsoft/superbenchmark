@@ -92,6 +92,16 @@ RUN TARGETARCH_HW=$(uname -m) && \
     MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
+# Install HPC-X
+ENV HPCX_VERSION=v2.23
+RUN TARGETARCH_HW=$(uname -m) && \
+    cd /opt && \
+    rm -rf hpcx && \
+    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda12-${TARGETARCH_HW}.tbz -O hpcx.tbz && \
+    tar xf hpcx.tbz && \
+    mv hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda12-${TARGETARCH_HW} hpcx && \
+    rm hpcx.tbz
+
 # Installs specific to amd64 platform
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
