@@ -89,13 +89,6 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             help='The ib command used to run, e.g., {}.'.format(' '.join(list(self.__support_ib_commands.keys()))),
         )
         self._parser.add_argument(
-            '--numa',
-            type=int,
-            default=0,
-            required=False,
-            help='The index of numa node.',
-        )
-        self._parser.add_argument(
             '--gid_index',
             type=int,
             default=0,
@@ -103,7 +96,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
             help='Test uses GID with GID index taken from command.',
         )
 
-    def __get_arguments_from_env(self):
+    def _get_arguments_from_env(self):
         """Read environment variables from runner used for parallel and fill in ib_index and numa_node_index.
 
         Get 'PROC_RANK'(rank of current process) 'IB_DEVICES' 'NUMA_NODES' environment variables
@@ -128,7 +121,7 @@ class IBLoopbackBenchmark(MicroBenchmarkWithInvoke):
         Return:
             True if _preprocess() succeed.
         """
-        if not super()._preprocess() or not self.__get_arguments_from_env():
+        if not super()._preprocess() or not self._get_arguments_from_env():
             return False
 
         # Format the arguments

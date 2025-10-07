@@ -19,6 +19,7 @@ NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
 # Build targets.
 all: cuda rocm
+# msccl: api change in cudaStreamUpdateCaptureDependencies
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
@@ -111,7 +112,7 @@ ifneq (,$(wildcard nccl-tests/Makefile))
 endif
 
 # Build perftest.
-# The version we use is the tag v4.5-0.2.
+# The commit we use is 4bee61f80d9e268fc97eaf40be00409e91d3a19e.
 cuda_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
@@ -308,5 +309,5 @@ endif
 
 # Build nvbandwidth.
 nvbandwidth: sb_micro_path
-	cd ./nvbandwidth && cmake . && make && cd ..
+	cd ./nvbandwidth && git apply ../nvbandwidth.patch && cp ../nvbandwidth_testcases_patched.h ./testcases_patched.h && cmake . && make && cd ..
 	cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin
