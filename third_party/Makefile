@@ -175,7 +175,7 @@ rocm_bandwidthTest: sb_micro_path
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path
-    bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
+	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
 
@@ -270,7 +270,7 @@ apex_rocm:
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
 ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
-    # Get commit 87048bd from msscl to support updated nccl and sm_100
+# Get commit 87048bd from msscl to support updated nccl and sm_100
 	$(eval ARCHS := 100 103)
 	if [ -d msccl ]; then rm -rf msccl; fi; \
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
