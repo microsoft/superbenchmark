@@ -347,7 +347,7 @@ class PytorchBase(ModelBenchmark):
     def _benchmark(self):
         """Wrap super._benchmark with profiler context if enabled by environment variable.
 
-        Set SB_PYTORCH_PROFILER='1' to enable profiling.
+        Set SB_ENABLE_PYTORCH_PROFILER='1' to enable profiling.
         """
         # Check if this is a Nvidia GPU
         if not (torch.cuda.is_available() and torch.version.cuda is not None):
