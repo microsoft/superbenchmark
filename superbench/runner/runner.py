@@ -141,12 +141,16 @@ class SuperBenchRunner():
                 f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
                 f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
             ) if enable_nsys and mode.proc_rank == 0 else ''
-            mode_command = '{prefix} {trace} {command}'.format(
-                trace=trace_command,
-                prefix=mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num),
-                command=exec_command,
-            )
-            mode_command = f'PROC_RANK={mode.proc_rank} {mode_command.strip()}'
+            # Build the command parts, only including trace if it's not empty
+            command_parts = []
+            prefix = mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)
+            if prefix:
+                command_parts.append(prefix)
+            if trace_command:
+                command_parts.append(trace_command)
+            command_parts.append(exec_command)
+            mode_command = ' '.join(command_parts)
+            mode_command = f'PROC_RANK={mode.proc_rank} {mode_command}'
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently

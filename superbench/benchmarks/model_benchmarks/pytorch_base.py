@@ -354,7 +354,7 @@ class PytorchBase(ModelBenchmark):
             return super()._benchmark()
 
         # Check if profiling is enabled via environment variable
-        enable_profiler = os.environ.get('SB_ENABLE_PYTORCH_PROFILER', '0').lower() == '1'
+        enable_profiler = os.environ.get('SB_ENABLE_PYTORCH_PROFILER', '0') == '1'
 
         if not enable_profiler:
             # Run without profiling
