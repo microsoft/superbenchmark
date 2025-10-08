@@ -39,7 +39,8 @@ class NvbenchSleepKernel(MicroBenchmarkWithInvoke):
             '--duration_us',
             type=str,
             default='[0,25,50,75,100]',
-            help='Duration axis values in microseconds, e.g., "[0,25,50,75,100]".',
+            help='Duration axis values in microseconds. Supports multiple formats: '
+                 '"50" (single value), "[25,50,75]" (list), "[0:10]" (range), "[0:50:10]" (range with step).',
         )
         self._parser.add_argument(
             '--skip_time',
@@ -118,6 +119,30 @@ class NvbenchSleepKernel(MicroBenchmarkWithInvoke):
             help='Minimum R-squared for entropy stopping criterion.',
         )
 
+    def _parse_duration_format(self, duration_str):
+        """Parse duration parameter to proper axis format.
+        
+        Args:
+            duration_str (str): Duration specification as string
+            
+        Returns:
+            str: Properly formatted duration string for --axis parameter
+        """
+        if not isinstance(duration_str, str):
+            return str(duration_str)
+            
+        # String format - could be various formats
+        duration_str = duration_str.strip()
+        
+        # Remove outer quotes if present
+        if duration_str.startswith('"') and duration_str.endswith('"'):
+            duration_str = duration_str[1:-1]
+        elif duration_str.startswith("'") and duration_str.endswith("'"):
+            duration_str = duration_str[1:-1]
+        
+        # Return as-is - should already be in correct format
+        return duration_str
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -137,8 +162,9 @@ class NvbenchSleepKernel(MicroBenchmarkWithInvoke):
             else:
                 parts.extend(['--devices', self._args.devices])
 
-        # Duration axis
-        parts.extend(['--axis', f'"Duration (us)={self._args.duration_us}"'])
+        # Duration axis - parse the format properly
+        duration_formatted = self._parse_duration_format(self._args.duration_us)
+        parts.extend(['--axis', f'"Duration (us)={duration_formatted}"'])
 
         # Performance configuration
         if self._args.skip_time >= 0:
