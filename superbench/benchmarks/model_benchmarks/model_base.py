@@ -189,7 +189,7 @@ class ModelBenchmark(Benchmark):
     def set_deterministic_seed(self):
         """Hook to set deterministic RNG state before dataset generation.
 
-        Default implementation is a no-op. Framework-specific subclasses may
+        Framework-specific subclasses may
         override this to apply deterministic RNG settings (for example,
         PyTorch benchmarks implement this to call their deterministic setup
         when requested). This is called from _preprocess() before

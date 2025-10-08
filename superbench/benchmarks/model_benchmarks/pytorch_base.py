@@ -137,6 +137,7 @@ class PytorchBase(ModelBenchmark):
         try:
             v = float(loss.detach().item()) if hasattr(loss, 'detach') else float(loss)
         except Exception:
+            logger.info(f'Unable to convert loss to float at step {curr_step}')
             v = None
         # Periodic fingerprint logging
         if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
@@ -152,6 +153,7 @@ class PytorchBase(ModelBenchmark):
                 logger.info(f'Loss at step {curr_step}: {v}')
                 periodic.setdefault('step', []).append(curr_step)
             except Exception:
+                logger.warning(f'Unable to log loss at curr_step {curr_step}')
                 pass
             # 2) Tiny activation fingerprint: mean over logits for sample 0
             try:
@@ -167,6 +169,7 @@ class PytorchBase(ModelBenchmark):
                     periodic.setdefault('act_mean', []).append(None)
             except Exception:
                 # On exception preserve alignment by ensuring keys exist
+                logger.warning(f'Unable to log act_mean at curr_step {curr_step}')
                 periodic.setdefault('act_mean', []).append(None)
                 pass
 

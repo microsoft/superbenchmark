@@ -111,23 +111,12 @@ class Benchmark(ABC):
                 return False, None, []
 
         if args is not None and 'compare_log' in [a.dest for a in self._parser._actions]:
-            args = self._parse_args_override_step(args)
+            args = self._override_args_with_compare_log(args)
 
         ret = True
         ret = self._check_unknown_args(unknown)
 
         return ret, args, unknown
-
-    def _parse_args_override_step(self, args):
-        """Override arguments using metadata from a compare log file.
-
-        Args:
-            args: Parsed arguments.
-
-        Returns:
-            argparse.Namespace: Updated arguments with overridden values.
-        """
-        return self._override_args_with_compare_log(args)
 
     def _override_args_with_compare_log(self, args):
         """Override arguments with metadata from a compare log file if available.
@@ -157,7 +146,7 @@ class Benchmark(ABC):
                             setattr(args, key, value)
                 logger.info(f'Arguments overridden from compare_log metadata for determinism. New Arguments: {args}')
             except Exception as e:
-                logger.info(f'Failed to override args from compare_log metadata: {e}')
+                logger.warning(f'Failed to override args from compare_log metadata: {e}')
         return args
 
     def _convert_precision_value(self, value, Precision):

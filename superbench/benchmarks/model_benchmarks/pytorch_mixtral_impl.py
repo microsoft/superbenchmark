@@ -212,6 +212,7 @@ class PytorchMixtral(PytorchBase):
                 precision, extra_keys=['num_key_value_heads', 'max_position_embeddings', 'router_aux_loss_coef']
             )
         except Exception:
+            logger.warning(f'Unable to assign model metadata for logging - model: {self._name}, precision: {precision}')
             pass
 
     def _train_step(self, precision):
