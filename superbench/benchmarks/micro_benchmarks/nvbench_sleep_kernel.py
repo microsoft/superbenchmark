@@ -4,6 +4,7 @@
 """Module of the NVBench Sleep Kernel benchmark."""
 
 import re
+import os
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -126,7 +127,7 @@ class NvbenchSleepKernel(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        command = str(self._args.bin_dir / self._bin_name)
+        command = os.path.join(self._args.bin_dir, self._bin_name)
         parts = [command]
 
         # Basic configuration

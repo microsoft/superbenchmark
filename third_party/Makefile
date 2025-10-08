@@ -192,7 +192,7 @@ endif
 cpu_hpl: sb_micro_path
 ifneq (,$(wildcard hpl-tests/Makefile))
 	cd ./hpl-tests && \
-    wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
+	wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
 	tar xzf hpl-2.3.tar.gz && \
 	cp Make.Linux_zen3 hpl-2.3 && \
 	cp Make.Linux_zen4 hpl-2.3 && \
@@ -208,7 +208,7 @@ endif
 cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
-    wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
+	wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
 	make all
 	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
@@ -243,10 +243,10 @@ rocm_megatron_lm:
 	fi
 	cp Megatron/rocm/Megatron-LM/examples/deepseek_v2/pretrain_deepseek.py Megatron/rocm/Megatron-LM/
 	git clone https://github.com/caaatch22/grouped_gemm.git &&\
-    	cd grouped_gemm &&\
-    	git checkout 8a9b438 &&\
-    	git submodule update --init --recursive &&\
-    	pip install .
+		cd grouped_gemm &&\
+		git checkout 8a9b438 &&\
+		git submodule update --init --recursive &&\
+		pip install .
 
 # Instal apex of ROCm due to dependency of Megatron
 apex_rocm:
@@ -264,7 +264,7 @@ apex_rocm:
 	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 0)" -eq 1 ]; then \
 		git checkout release/1.0.0 ; \
 	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 1)" -eq 1 ]; then \
-	    git checkout release/1.0.0 ; \
+		git checkout release/1.0.0 ; \
 	fi
 	pip install -v --disable-pip-version-check --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./apex
 
@@ -276,11 +276,11 @@ ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
 	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
-    # Get commit 87048bd from msscl to support updated nccl and sm_100
+	# Get commit 87048bd from msscl to support updated nccl and sm_100
 	$(eval ARCHS := 75 80 86 89 90 100)
 	if [ -d msccl ]; then rm -rf msccl; fi; \
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
-    && git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
+	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval ARCHS := 70 75 80 86 89 90)
 else
@@ -316,18 +316,18 @@ nvbandwidth: sb_micro_path
 # Build nvbench
 nvbench: sb_micro_path
 ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
-    $(eval ARCHS := "90;100")
+	$(eval ARCHS := "90;100")
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
-    $(eval ARCHS := "70;75;80;86;89;90")
+	$(eval ARCHS := "70;75;80;86;89;90")
 else
-    $(eval ARCHS := "70;75;80;86")
+	$(eval ARCHS := "70;75;80;86")
 endif
-    cd ./nvbench && mkdir -p build && cd build && \
-    cmake                                         \
-    -DCMAKE_INSTALL_PREFIX=$(SB_MICRO_PATH)       \
-    -DCMAKE_CUDA_ARCHITECTURES=$(ARCHS)           \
-    -DNVBench_ENABLE_CUPTI=ON                     \
-    -DCMAKE_BUILD_TYPE=Release                    \
-    .. &&                                         \
-    make -j $(NUM_MAKE_JOBS) &&                   \
-    make install
+	cd ./nvbench && mkdir -p build && cd build && \
+	cmake										 \
+	-DCMAKE_INSTALL_PREFIX=$(SB_MICRO_PATH)	   \
+	-DCMAKE_CUDA_ARCHITECTURES=$(ARCHS)		   \
+	-DNVBench_ENABLE_CUPTI=ON					 \
+	-DCMAKE_BUILD_TYPE=Release					\
+	.. &&										 \
+	make -j $(NUM_MAKE_JOBS) &&				   \
+	make install
