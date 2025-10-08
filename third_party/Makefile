@@ -315,7 +315,9 @@ nvbandwidth: sb_micro_path
 
 # Build nvbench
 nvbench: sb_micro_path
-ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+	$(eval ARCHS := "100;103")
+else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval ARCHS := "90;100")
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval ARCHS := "70;75;80;86;89;90")
