@@ -1,0 +1,46 @@
+diff --git a/nvbandwidth.cpp b/nvbandwidth.cpp
+index 61a228f..488372a 100644
+--- a/nvbandwidth.cpp
++++ b/nvbandwidth.cpp
+@@ -29,6 +29,7 @@
+ #include "kernels.cuh"
+ #include "output.h"
+ #include "testcase.h"
++#include "testcases_patched.h"
+ #include "version.h"
+ #include "inline_common.h"
+
+@@ -73,8 +74,10 @@ std::vector<Testcase*> createTestcases() {
+         new DeviceToDeviceBidirWriteCE(),
+         new AllToHostCE(),
+         new AllToHostBidirCE(),
++        new AllToHostBatchCE(),
+         new HostToAllCE(),
+         new HostToAllBidirCE(),
++        new HostToAllBatchCE(),
+         new AllToOneWriteCE(),
+         new AllToOneReadCE(),
+         new OneToAllWriteCE(),
+@@ -89,8 +92,10 @@ std::vector<Testcase*> createTestcases() {
+         new DeviceToDeviceBidirWriteSM(),
+         new AllToHostSM(),
+         new AllToHostBidirSM(),
++        new AllToHostBatchSM(),
+         new HostToAllSM(),
+         new HostToAllBidirSM(),
++        new HostToAllBatchSM(),
+         new AllToOneWriteSM(),
+         new AllToOneReadSM(),
+         new OneToAllWriteSM(),
+diff --git a/testcase.h b/testcase.h
+index c276850..f26e7d8 100644
+--- a/testcase.h
++++ b/testcase.h
+@@ -39,6 +39,7 @@ class Testcase {
+     void oneToAllHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool isRead);
+     void allHostHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
+     void allHostBidirHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
++    void allHostHelperBatch(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
+     void latencyHelper(const MemcpyBuffer &dataBuffer, bool measureDeviceToDeviceLatency);
+
+  public:

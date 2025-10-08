@@ -157,6 +157,7 @@ def test_arguments_related_interfaces():
                         Distributed implementations. E.g. ddp mirrored
                         multiworkermirrored parameterserver horovod.
   --duration int        The elapsed time of benchmark in seconds.
+  --exclude_copy_time   Exclude GPU data copy time from measured time.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
   --log_flushing        Real-time log flushing.
@@ -197,6 +198,7 @@ def test_preprocess():
                         Distributed implementations. E.g. ddp mirrored
                         multiworkermirrored parameterserver horovod.
   --duration int        The elapsed time of benchmark in seconds.
+  --exclude_copy_time   Exclude GPU data copy time from measured time.
   --force_fp32          Enable option to use full float32 precision.
   --hidden_size int     Hidden size.
   --log_flushing        Real-time log flushing.
