@@ -75,9 +75,16 @@ class NvbenchSleepKernel(NvbenchBase):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
         try:
             gpu_section = r"### \[(\d+)\] NVIDIA"
+            # Regex pattern to handle different time units and flexible spacing
             row_pat = (
-                r"\|\s*(\d+)\s*\|\s*(\d+)x\s*\|\s*([\d.]+ ?[mun]?s)\s*\|\s*([\d.]+%)\s*\|\s*"
-                r"([\d.]+ ?[mun]?s)\s*\|\s*([\d.]+%)\s*\|\s*(\d+)x\s*\|\s*([\d.]+ ?[mun]?s)\s*\|"
+                r"\|\s*([0-9]+)\s*\|\s*"                             # Duration (us)
+                r"([0-9]+)x\s*\|\s*"                                 # Samples
+                r"([\d.]+\s*[μmun]?s)\s*\|\s*"                       # CPU Time (μs, ns, ms, us, s)
+                r"([\d.]+%)\s*\|\s*"                                 # CPU Noise percentage
+                r"([\d.]+\s*[μmun]?s)\s*\|\s*"                       # GPU Time
+                r"([\d.]+%)\s*\|\s*"                                 # GPU Noise percentage
+                r"([0-9]+)x\s*\|\s*"                                 # Batch Samples
+                r"([\d.]+\s*[μmun]?s)\s*\|"                          # Batch GPU Time
             )
             current = None
             parsed_any = False
@@ -98,7 +105,7 @@ class NvbenchSleepKernel(NvbenchBase):
                     # self._result.add_result(f'duration_us_{duration_us}_cpu_noise', self._parse_percentage(cpu_noise))
                     self._result.add_result(f'duration_us_{duration_us}_gpu_time', self._parse_time_value(gpu_time))
                     # self._result.add_result(f'duration_us_{duration_us}_gpu_noise', self._parse_percentage(gpu_noise))
-                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples', int(batch_samples))
+                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples', int(batch_samples.replace('x', '')))
                     self._result.add_result(f'duration_us_{duration_us}_batch_gpu_time', self._parse_time_value(batch_gpu))
                     parsed_any = True
             if not parsed_any:

@@ -36,9 +36,15 @@ class NvbenchKernelLaunch(NvbenchBase):
         
         try:
             gpu_section = r"### \[(\d+)\] NVIDIA"
+            # Regex pattern to handle different time units and flexible spacing
             row_pat = (
-                r"\| (\d+)x \| ([\d.]+ ?[mun]?s) \| ([\d.]+%) \| "
-                r"([\d.]+ ?[mun]?s) \| ([\d.]+%) \| (\d+)x \| *([\d.]+ ?[mun]?s) \|"
+                r"\|\s*([0-9]+)x\s*\|\s*"                            # Samples
+                r"([\d.]+\s*[μmun]?s)\s*\|\s*"                       # CPU Time (μs, ns, ms, us, s)
+                r"([\d.]+%)\s*\|\s*"                                 # CPU Noise percentage
+                r"([\d.]+\s*[μmun]?s)\s*\|\s*"                       # GPU Time
+                r"([\d.]+%)\s*\|\s*"                                 # GPU Noise percentage
+                r"([0-9]+)x\s*\|\s*"                                 # Batch Samples
+                r"([\d.]+\s*[μmun]?s)\s*\|"                          # Batch GPU Time
             )
             current = None
             parsed_any = False  # Track if any valid rows are parsed
@@ -52,13 +58,14 @@ class NvbenchKernelLaunch(NvbenchBase):
                     
                 r = re.match(row_pat, line)
                 if r and current:
-                    # self._result.add_result("samples", int(r.group(1)))
-                    self._result.add_result("cpu_time", self._parse_time_value(r.group(2)))
-                    # self._result.add_result("cpu_noise", self._parse_percentage(r.group(3)))
-                    self._result.add_result("gpu_time", self._parse_time_value(r.group(4)))
-                    # self._result.add_result("gpu_noise", self._parse_percentage(r.group(5)))
-                    # self._result.add_result("batch_samples", int(r.group(6)))
-                    self._result.add_result("batch_gpu_time", self._parse_time_value(r.group(7)))
+                    samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups()
+                    # self._result.add_result("samples", int(samples.replace('x', '')))
+                    self._result.add_result("cpu_time", self._parse_time_value(cpu_time))
+                    # self._result.add_result("cpu_noise", self._parse_percentage(cpu_noise))
+                    self._result.add_result("gpu_time", self._parse_time_value(gpu_time))
+                    # self._result.add_result("gpu_noise", self._parse_percentage(gpu_noise))
+                    # self._result.add_result("batch_samples", int(batch_samples.replace('x', '')))
+                    self._result.add_result("batch_gpu_time", self._parse_time_value(batch_gpu))
                     parsed_any = True
                     
             if not parsed_any:
