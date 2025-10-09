@@ -177,6 +177,20 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._preprocess()
         assert (ret is True)
 
+        os.environ['IB_DEVICES'] = 'mlx5_ibx0,mlx5_ibx1,mlx5_ibx2'
+        parameters = '--set_ib_devices --iters 2000 --pattern one-to-one --hostfile hostfile'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        ret = benchmark._preprocess()
+        assert (ret is True)
+        expect_command = "ib_validation --send_cmd_prefix '" + benchmark._args.bin_dir + \
+            "/ib_write_bw -F -n 2000 -d mlx5_ibx0 -s 8388608 --report_gbits'" + \
+            f" --recv_cmd_prefix '{benchmark._args.bin_dir}/ib_write_bw -F -n 2000" + \
+            " -d mlx5_ibx0 -s 8388608 --report_gbits' " + \
+            f'--timeout 120 --hostfile hostfile --input_config {os.getcwd()}/config.txt'
+        command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
+        assert (command == expect_command)
+        os.environ.pop('IB_DEVICES')
+
         # Generate config
         parameters = '--ib_dev "$(echo mlx5_0)" --iters 2000 --msg_size 33554432 --hostfile hostfile'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
