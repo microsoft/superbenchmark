@@ -52,13 +52,13 @@ class NvbenchKernelLaunch(NvbenchBase):
                     
                 r = re.match(row_pat, line)
                 if r and current:
-                    # self._result.add_result(f"{current}_samples", int(r.group(1)))
-                    self._result.add_result(f"{current}_cpu_time", self._parse_time_value(r.group(2)))
-                    # self._result.add_result(f"{current}_cpu_noise", float(r.group(3)[:-1]))
-                    self._result.add_result(f"{current}_gpu_time", self._parse_time_value(r.group(4)))
-                    # self._result.add_result(f"{current}_gpu_noise", float(r.group(5)[:-1]))
-                    # self._result.add_result(f"{current}_batch_samples", int(r.group(6)))
-                    self._result.add_result(f"{current}_batch_gpu_time", self._parse_time_value(r.group(7)))
+                    # self._result.add_result("samples", int(r.group(1)))
+                    self._result.add_result("cpu_time", self._parse_time_value(r.group(2)))
+                    # self._result.add_result("cpu_noise", self._parse_percentage(r.group(3)))
+                    self._result.add_result("gpu_time", self._parse_time_value(r.group(4)))
+                    # self._result.add_result("gpu_noise", self._parse_percentage(r.group(5)))
+                    # self._result.add_result("batch_samples", int(r.group(6)))
+                    self._result.add_result("batch_gpu_time", self._parse_time_value(r.group(7)))
                     parsed_any = True
                     
             if not parsed_any:
@@ -70,6 +70,5 @@ class NvbenchKernelLaunch(NvbenchBase):
             return False
             
         return True
-
 
 BenchmarkRegistry.register_benchmark('nvbench-kernel-launch', NvbenchKernelLaunch, platform=Platform.CUDA)

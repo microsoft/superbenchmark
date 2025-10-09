@@ -36,12 +36,12 @@ class TestNvbenchSleepKernelBenchmark(BenchmarkTestCase, unittest.TestCase):
             '--devices 0 '
             '--duration_us "[10,25,50,75]" '
             '--timeout 20 '
-            '--min_samples 300 '
-            '--stopping_criterion stdrel '
-            '--min_time 2.0 '
-            '--max_noise 0.5 '
-            '--throttle_threshold 80.0 '
-            '--throttle_recovery_delay 1.0'
+            '--min-samples 300 '
+            '--stopping-criterion stdrel '
+            '--min-time 2.0 '
+            '--max-noise 0.5 '
+            '--throttle-threshold 80.0 '
+            '--throttle-recovery-delay 1.0'
         )
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         assert benchmark._preprocess()
@@ -76,57 +76,16 @@ class TestNvbenchSleepKernelBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark.return_code == ReturnCode.SUCCESS
 
         # Validate parsed results
-        # assert benchmark.result['gpu_0_duration_us_25_samples'][0] == 10175
-        assert benchmark.result['gpu_0_duration_us_25_cpu_time'][0] == 42.123
-        # assert benchmark.result['gpu_0_duration_us_25_cpu_noise'][0] == 69.78
-        assert benchmark.result['gpu_0_duration_us_25_gpu_time'][0] == 25.321
-        # assert benchmark.result['gpu_0_duration_us_25_gpu_noise'][0] == 0.93
-        # assert benchmark.result['gpu_0_duration_us_25_batch_samples'][0] == 17448
-        assert benchmark.result['gpu_0_duration_us_25_batch_gpu_time'][0] == 23.456
+        # assert benchmark.result['duration_us_25_samples'][0] == 10175
+        assert benchmark.result['duration_us_25_cpu_time'][0] == 42.123
+        # assert benchmark.result['duration_us_25_cpu_noise'][0] == 69.78
+        assert benchmark.result['duration_us_25_gpu_time'][0] == 25.321
+        # assert benchmark.result['duration_us_25_gpu_noise'][0] == 0.93
+        # assert benchmark.result['duration_us_25_batch_samples'][0] == 17448
+        assert benchmark.result['duration_us_25_batch_gpu_time'][0] == 23.456
 
-        # assert benchmark.result['gpu_0_duration_us_50_samples'][0] == 8187
-        # assert benchmark.result['gpu_0_duration_us_75_samples'][0] == 6279
-
-    def test_nvbench_sleep_kernel_parse_duration_formats(self):
-        """Test NVBench Sleep Kernel duration format parsing."""
-        benchmark_name = 'nvbench-sleep-kernel'
-        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
-        assert (benchmark_class)
-
-        benchmark = benchmark_class(benchmark_name, parameters='')
-
-        # Test single value formats
-        assert benchmark._parse_duration_format("50") == "50"
-        assert benchmark._parse_duration_format("100") == "100"
-        
-        # Test quoted single values
-        assert benchmark._parse_duration_format('"50"') == "50"
-        assert benchmark._parse_duration_format("'100'") == "100"
-        
-        # Test list formats
-        assert benchmark._parse_duration_format("[25,50,75]") == "[25,50,75]"
-        assert benchmark._parse_duration_format("[10,20,30,40]") == "[10,20,30,40]"
-        
-        # Test quoted list formats
-        assert benchmark._parse_duration_format('"[25,50,75]"') == "[25,50,75]"
-        assert benchmark._parse_duration_format("'[10,20,30]'") == "[10,20,30]"
-        
-        # Test range formats
-        assert benchmark._parse_duration_format("[25:75]") == "[25:75]"
-        assert benchmark._parse_duration_format("[0:100]") == "[0:100]"
-        
-        # Test range with step formats
-        assert benchmark._parse_duration_format("[0:50:10]") == "[0:50:10]"
-        assert benchmark._parse_duration_format("[10:100:20]") == "[10:100:20]"
-        
-        # Test quoted range formats
-        assert benchmark._parse_duration_format('"[25:75]"') == "[25:75]"
-        assert benchmark._parse_duration_format("'[0:50:10]'") == "[0:50:10]"
-        
-        # Test with whitespace
-        assert benchmark._parse_duration_format(" 50 ") == "50"
-        assert benchmark._parse_duration_format(" [25,50,75] ") == "[25,50,75]"
-        assert benchmark._parse_duration_format(" [25:75] ") == "[25:75]"
+        # assert benchmark.result['duration_us_50_samples'][0] == 8187
+        # assert benchmark.result['duration_us_75_samples'][0] == 6279
 
     def test_nvbench_sleep_kernel_preprocess_duration_formats(self):
         """Test NVBench Sleep Kernel preprocess with different duration formats."""

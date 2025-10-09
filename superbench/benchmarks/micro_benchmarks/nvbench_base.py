@@ -147,8 +147,9 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         command = os.path.join(self._args.bin_dir, self._bin_name)
         parts = [command]
 
-        # Device configuration
-        if self._args.devices is not None:
+        # Device configuration - in distributed mode, let SuperBench handle device assignment
+        # Only add --devices if explicitly specified
+        if hasattr(self._args, 'devices') and self._args.devices is not None:
             if self._args.devices == 'all':
                 parts.extend(['--devices', 'all'])
             else:

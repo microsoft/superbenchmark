@@ -33,7 +33,7 @@ class TestNvbenchKernelLaunchBenchmark(BenchmarkTestCase, unittest.TestCase):
 
         # Test preprocess with specified parameters
         parameters = (
-            '--device 0 '
+            '--devices 0 '
             '--timeout 20 '
             '--min-samples 300 '
             '--stopping-criterion stdrel '
@@ -74,13 +74,13 @@ class TestNvbenchKernelLaunchBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark.return_code == ReturnCode.SUCCESS
 
         # Validate parsed results
-        # assert benchmark.result['gpu_0_samples'][0] == 120000
-        assert benchmark.result['gpu_0_cpu_time'][0] == 24.222
-        # assert benchmark.result['gpu_0_cpu_noise'][0] == 30.44
-        assert benchmark.result['gpu_0_gpu_time'][0] == 7.808
-        # assert benchmark.result['gpu_0_gpu_noise'][0] == 14.42
-        # assert benchmark.result['gpu_0_batch_samples'][0] == 300000
-        assert benchmark.result['gpu_0_batch_gpu_time'][0] == 6.024
+        # assert benchmark.result['samples'][0] == 120000
+        assert benchmark.result['cpu_time'][0] == 24.222
+        # assert benchmark.result['cpu_noise'][0] == 30.44
+        assert benchmark.result['gpu_time'][0] == 7.808
+        # assert benchmark.result['gpu_noise'][0] == 14.42
+        # assert benchmark.result['batch_samples'][0] == 300000
+        assert benchmark.result['batch_gpu_time'][0] == 6.024
 
     def test_nvbench_kernel_launch_process_raw_result_invalid_output(self):
         """Test NVBench Kernel Launch benchmark result parsing with invalid output."""

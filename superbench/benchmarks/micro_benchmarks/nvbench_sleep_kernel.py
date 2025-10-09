@@ -38,30 +38,6 @@ class NvbenchSleepKernel(NvbenchBase):
                  '"50" (single value), "[25,50,75]" (list), "[25:75]" (range), "[0:50:10]" (range with step).',
         )
 
-    def _parse_duration_format(self, duration_str):
-        """Parse duration parameter to proper axis format.
-        
-        Args:
-            duration_str (str): Duration specification as string
-            
-        Returns:
-            str: Properly formatted duration string for --axis parameter
-        """
-        if not isinstance(duration_str, str):
-            return str(duration_str)
-            
-        # String format - could be various formats
-        duration_str = duration_str.strip()
-        
-        # Remove outer quotes if present
-        if duration_str.startswith('"') and duration_str.endswith('"'):
-            duration_str = duration_str[1:-1]
-        elif duration_str.startswith("'") and duration_str.endswith("'"):
-            duration_str = duration_str[1:-1]
-        
-        # Return as-is - should already be in correct format
-        return duration_str
-
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -75,8 +51,7 @@ class NvbenchSleepKernel(NvbenchBase):
         parts = self._build_base_command()
         
         # Add sleep-kernel specific arguments
-        duration_formatted = self._parse_duration_format(self._args.duration_us)
-        parts.extend(['--axis', f'"Duration (us)={duration_formatted}"'])
+        parts.extend(['--axis', f'"Duration (us)={self._args.duration_us.strip()}"'])
 
         # Finalize command
         self._commands = [' '.join(parts)]
@@ -118,13 +93,13 @@ class NvbenchSleepKernel(NvbenchBase):
                 if r and current:
                     logger.debug(f"Matched row: {r.groups()}")
                     duration_us, samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups()
-                    # self._result.add_result(f'{current}_duration_us_{duration_us}_samples', int(samples))
-                    self._result.add_result(f'{current}_duration_us_{duration_us}_cpu_time', self._parse_time_value(cpu_time))
-                    # self._result.add_result(f'{current}_duration_us_{duration_us}_cpu_noise', self._parse_percentage(cpu_noise))
-                    self._result.add_result(f'{current}_duration_us_{duration_us}_gpu_time', self._parse_time_value(gpu_time))
-                    # self._result.add_result(f'{current}_duration_us_{duration_us}_gpu_noise', self._parse_percentage(gpu_noise))
-                    # self._result.add_result(f'{current}_duration_us_{duration_us}_batch_samples', int(batch_samples))
-                    self._result.add_result(f'{current}_duration_us_{duration_us}_batch_gpu_time', self._parse_time_value(batch_gpu))
+                    # self._result.add_result(f'duration_us_{duration_us}_samples', int(samples))
+                    self._result.add_result(f'duration_us_{duration_us}_cpu_time', self._parse_time_value(cpu_time))
+                    # self._result.add_result(f'duration_us_{duration_us}_cpu_noise', self._parse_percentage(cpu_noise))
+                    self._result.add_result(f'duration_us_{duration_us}_gpu_time', self._parse_time_value(gpu_time))
+                    # self._result.add_result(f'duration_us_{duration_us}_gpu_noise', self._parse_percentage(gpu_noise))
+                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples', int(batch_samples))
+                    self._result.add_result(f'duration_us_{duration_us}_batch_gpu_time', self._parse_time_value(batch_gpu))
                     parsed_any = True
             if not parsed_any:
                 raise RuntimeError("No valid rows parsed")
@@ -133,8 +108,5 @@ class NvbenchSleepKernel(NvbenchBase):
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             return False
         return True
-
-
-
 
 BenchmarkRegistry.register_benchmark('nvbench-sleep-kernel', NvbenchSleepKernel, platform=Platform.CUDA)
