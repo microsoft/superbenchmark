@@ -205,7 +205,7 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
         
         # Extract headers by splitting on spaces and filtering empty strings
         stats_headers = []
-        for header in header_part.split(" "):
+        for header in header_part.split("  "):
             header = header.strip()
             if len(header) > 0:
                 stats_headers.append(header)
