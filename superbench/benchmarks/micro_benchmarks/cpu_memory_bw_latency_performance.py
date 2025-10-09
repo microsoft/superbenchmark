@@ -166,11 +166,23 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
     def _process_raw_result_general(self, cmd_idx, raw_output):
         """Function to parse raw results for the general CPU copy benchmark and save the summarized results."""
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
+        stats_headers = []
 
         try:
             for output_line in raw_output.strip().splitlines():
-                name, value = output_line.split(':')
-                self._result.add_result(name.strip(), float(value.strip()))
+                # skip benchmark identification lines
+                if self._should_skip_line(output_line):
+                    continue
+
+                # parse header line to extract column names
+                if output_line.startswith("Function"):
+                    stats_headers = self._parse_headers_from_line(output_line)
+                    continue
+
+                # process data lines (those containing results)
+                if ":" in output_line:
+                    self._process_data_line(output_line, stats_headers)
+
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
@@ -178,10 +190,63 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, self._name, raw_output, str(e)
                 )
             )
-
             return False
 
         return True
+
+    def _should_skip_line(self, output_line):
+        """Check if the output line should be skipped during parsing."""
+        return output_line.startswith("STREAM") or output_line.startswith("Solution")
+
+    def _parse_headers_from_line(self, output_line):
+        """Extract column headers from a Function line."""
+        # Remove "Function" prefix to get header part
+        header_part = output_line.removeprefix("Function")
+        
+        # Extract headers by splitting on spaces and filtering empty strings
+        stats_headers = []
+        for header in header_part.split(" "):
+            header = header.strip()
+            if len(header) > 0:
+                stats_headers.append(header)
+        
+        logger.info(f"stats_headers: {stats_headers}")
+        return stats_headers
+
+    def _process_data_line(self, output_line, stats_headers):
+        """Process a data line containing benchmark results."""
+        # split line into name and values
+        name, value = output_line.split(':')
+        name, value = name.strip(), value.strip()
+        
+        # parse and clean values
+        vals = self._parse_values_from_string(value)
+        if len(vals) == 0:
+            return
+
+        # add results based on whether headers are complete
+        if len(stats_headers) < len(vals):
+            self._add_results_without_headers(name, vals)
+        else:
+            self._add_results_with_headers(name, vals, stats_headers)
+
+    def _parse_values_from_string(self, value):
+        """Parse numeric values from a space-separated string."""
+        vals = [val.strip() for val in value.split(' ')]
+        vals = list(filter(lambda x: len(x) > 0, vals))
+        return vals
+
+    def _add_results_without_headers(self, name, vals):
+        """Add results directly when headers are incomplete."""
+        for val in vals:
+            self._result.add_result(name, val)
+
+    def _add_results_with_headers(self, name, vals, stats_headers):
+        """Add results with header-based metric names."""
+        for idx, val in enumerate(vals):
+            header = stats_headers[idx]
+            metric_name = name + '/' + header
+            self._result.add_result(metric_name, float(val))
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
