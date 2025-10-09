@@ -87,6 +87,78 @@ class TestNvbenchSleepKernelBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark.result['gpu_0_duration_us_50_samples'][0] == 8187
         assert benchmark.result['gpu_0_duration_us_75_samples'][0] == 6279
 
+    def test_nvbench_sleep_kernel_parse_duration_formats(self):
+        """Test NVBench Sleep Kernel duration format parsing."""
+        benchmark_name = 'nvbench-sleep-kernel'
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='')
+
+        # Test single value formats
+        assert benchmark._parse_duration_format("50") == "50"
+        assert benchmark._parse_duration_format("100") == "100"
+        
+        # Test quoted single values
+        assert benchmark._parse_duration_format('"50"') == "50"
+        assert benchmark._parse_duration_format("'100'") == "100"
+        
+        # Test list formats
+        assert benchmark._parse_duration_format("[25,50,75]") == "[25,50,75]"
+        assert benchmark._parse_duration_format("[10,20,30,40]") == "[10,20,30,40]"
+        
+        # Test quoted list formats
+        assert benchmark._parse_duration_format('"[25,50,75]"') == "[25,50,75]"
+        assert benchmark._parse_duration_format("'[10,20,30]'") == "[10,20,30]"
+        
+        # Test range formats
+        assert benchmark._parse_duration_format("[25:75]") == "[25:75]"
+        assert benchmark._parse_duration_format("[0:100]") == "[0:100]"
+        
+        # Test range with step formats
+        assert benchmark._parse_duration_format("[0:50:10]") == "[0:50:10]"
+        assert benchmark._parse_duration_format("[10:100:20]") == "[10:100:20]"
+        
+        # Test quoted range formats
+        assert benchmark._parse_duration_format('"[25:75]"') == "[25:75]"
+        assert benchmark._parse_duration_format("'[0:50:10]'") == "[0:50:10]"
+        
+        # Test with whitespace
+        assert benchmark._parse_duration_format(" 50 ") == "50"
+        assert benchmark._parse_duration_format(" [25,50,75] ") == "[25,50,75]"
+        assert benchmark._parse_duration_format(" [25:75] ") == "[25:75]"
+
+    def test_nvbench_sleep_kernel_preprocess_duration_formats(self):
+        """Test NVBench Sleep Kernel preprocess with different duration formats."""
+        benchmark_name = 'nvbench-sleep-kernel'
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        # Test single value
+        benchmark = benchmark_class(benchmark_name, parameters='--duration_us "50"')
+        assert benchmark._preprocess()
+        assert '--axis "Duration (us)=50"' in benchmark._commands[0]
+        
+        # Test list format
+        benchmark = benchmark_class(benchmark_name, parameters='--duration_us "[25,50,75]"')
+        assert benchmark._preprocess()
+        assert '--axis "Duration (us)=[25,50,75]"' in benchmark._commands[0]
+        
+        # Test range format
+        benchmark = benchmark_class(benchmark_name, parameters='--duration_us "[25:75]"')
+        assert benchmark._preprocess()
+        assert '--axis "Duration (us)=[25:75]"' in benchmark._commands[0]
+        
+        # Test range with step format
+        benchmark = benchmark_class(benchmark_name, parameters='--duration_us "[0:50:10]"')
+        assert benchmark._preprocess()
+        assert '--axis "Duration (us)=[0:50:10]"' in benchmark._commands[0]
+        
+        # Test default format
+        benchmark = benchmark_class(benchmark_name, parameters='')
+        assert benchmark._preprocess()
+        assert '--axis "Duration (us)=[0,25,50,75,100]"' in benchmark._commands[0]
+
     def test_nvbench_sleep_kernel_process_raw_result_invalid_output(self):
         """Test NVBench Sleep Kernel benchmark result parsing with invalid output."""
         benchmark_name = 'nvbench-sleep-kernel'
