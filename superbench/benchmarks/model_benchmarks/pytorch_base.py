@@ -180,12 +180,6 @@ class PytorchBase(ModelBenchmark):
         self._model_run_periodic = dict(periodic)
         return info
 
-    def _benchmark(self):
-        """Run the benchmark then handle post-run model log save/compare."""
-        ok = super()._benchmark()
-        self._post_run_model_log()
-        return ok
-
     def add_parser_arguments(self):
         """Add PyTorch model benchmark-specific arguments to the argument parser."""
         super().add_parser_arguments()
@@ -614,18 +608,23 @@ class PytorchBase(ModelBenchmark):
     def _benchmark(self):
         """Wrap super._benchmark with profiler context if enabled by environment variable.
 
+        Run the benchmark then handle post-run model log save/compare.
         Set SB_ENABLE_PYTORCH_PROFILER='1' to enable profiling.
         """
         # Check if this is a Nvidia GPU
         if not (torch.cuda.is_available() and torch.version.cuda is not None):
-            return super()._benchmark()
+            ok = super()._benchmark()
+            self._post_run_model_log()
+            return ok
 
         # Check if profiling is enabled via environment variable
         enable_profiler = os.environ.get('SB_ENABLE_PYTORCH_PROFILER', '0') == '1'
 
         if not enable_profiler:
             # Run without profiling
-            return super()._benchmark()
+            ok = super()._benchmark()
+            self._post_run_model_log()
+            return ok
 
         # Run with profiling enabled
         logger.info('PyTorch profiler enabled for model: {}'.format(self._name))
@@ -664,4 +663,6 @@ class PytorchBase(ModelBenchmark):
         with open(diag_agent_dump_file_path, 'w') as f:
             json.dump(diag_agent_events, f, sort_keys=True)
 
+        # Handle post-run model log save/compare regardless of profiling
+        self._post_run_model_log()
         return ret
