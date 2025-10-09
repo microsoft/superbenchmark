@@ -210,7 +210,6 @@ class CpuMemBwLatencyBenchmark(MicroBenchmarkWithInvoke):
             if len(header) > 0:
                 stats_headers.append(header)
         
-        logger.info(f"stats_headers: {stats_headers}")
         return stats_headers
 
     def _process_data_line(self, output_line, stats_headers):
