@@ -1,5 +1,10 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+"""Example of NVBench Kernel Launch benchmark."""
+
 from superbench.benchmarks import BenchmarkRegistry, Platform
-from superbench.common.utils import logger
+from superbench.common.utils importSlogger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(

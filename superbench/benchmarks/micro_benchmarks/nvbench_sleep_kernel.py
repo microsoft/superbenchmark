@@ -111,7 +111,7 @@ class NvbenchSleepKernel(NvbenchBase):
                     )
                     parsed_any = True
             if not parsed_any:
-                raise RuntimeError("No valid rows parsed")
+                raise RuntimeError('No valid rows parsed')
         except Exception as e:
             logger.error(f"Error processing raw result: {e}")
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

@@ -93,7 +93,7 @@ class TestNvbenchKernelLaunchBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark._preprocess()
 
         # Mock raw output with invalid format
-        raw_output = "Invalid output format"
+        raw_output = 'Invalid output format'
 
         # Parse the provided raw output
         assert not benchmark._process_raw_result(0, raw_output)

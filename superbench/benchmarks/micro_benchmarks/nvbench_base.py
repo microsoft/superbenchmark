@@ -136,12 +136,12 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
 
     def _build_base_command(self):
         """Build the base nvbench command with common arguments.
-        
+
         Returns:
             list: Command parts that can be extended by subclasses.
         """
         if not self._bin_name:
-            raise ValueError("Subclass must set _bin_name")
+            raise ValueError('Subclass must set _bin_name')
 
         command = os.path.join(self._args.bin_dir, self._bin_name)
         parts = [command]
@@ -190,7 +190,7 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
 
     def _preprocess(self):
         """Default preprocess implementation. Can be overridden by subclasses.
-        
+
         Returns:
             True if _preprocess() succeed.
         """
@@ -206,10 +206,10 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
 
     def _parse_time_value(self, time_str):
         """Parse time string to microseconds.
-        
+
         Args:
-            time_str (str): Time string like "123.45 us", "678.9 ns", etc.
-            
+            time_str (str): Time string like '123.45 us', '678.9 ns', etc.
+
         Returns:
             float: Time in microseconds.
         """
@@ -217,10 +217,10 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
 
     def _parse_percentage(self, percent_str):
         """Parse percentage string to float.
-        
+
         Args:
-            percent_str (str): Percentage string like "12.34%"
-            
+            percent_str (str): Percentage string like '12.34%'
+
         Returns:
             float: Percentage value as float.
         """
@@ -230,12 +230,12 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
 
     def _handle_parsing_error(self, error_msg, raw_output):
         """Handle parsing errors consistently.
-        
+
         Args:
             error_msg (str): Error message to log.
             raw_output (str): Raw output that failed to parse.
         """
         self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
         logger.error(
-            f"Invalid result format - round:{self._curr_run_index}, bench:{self._name}, msg:{error_msg}\n{raw_output}"
+            f'Invalid result format - round:{self._curr_run_index}, bench:{self._name}, msg:{error_msg}\n{raw_output}'
         )

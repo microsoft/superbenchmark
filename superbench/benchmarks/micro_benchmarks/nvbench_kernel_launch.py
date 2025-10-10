@@ -5,7 +5,7 @@
 
 import re
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform
+from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
 
 
@@ -34,16 +34,16 @@ class NvbenchKernelLaunch(NvbenchBase):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
 
         try:
-            gpu_section = r"### \[(\d+)\] NVIDIA"
+            gpu_section = r'### \[(\d+)\] NVIDIA'
             # Regex pattern to handle different time units and flexible spacing
             row_pat = (
-                r"\|\s*([0-9]+)x\s*\|\s*"    # Samples
-                r"([\d.]+\s*[μmun]?s)\s*\|\s*"    # CPU Time (μs, ns, ms, us, s)
-                r"([\d.]+%)\s*\|\s*"    # CPU Noise percentage
-                r"([\d.]+\s*[μmun]?s)\s*\|\s*"    # GPU Time
-                r"([\d.]+%)\s*\|\s*"    # GPU Noise percentage
-                r"([0-9]+)x\s*\|\s*"    # Batch Samples
-                r"([\d.]+\s*[μmun]?s)\s*\|"    # Batch GPU Time
+                r'\|\s*([0-9]+)x\s*\|\s*'    # Samples
+                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # CPU Time (μs, ns, ms, us, s)
+                r'([\d.]+%)\s*\|\s*'    # CPU Noise percentage
+                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # GPU Time
+                r'([\d.]+%)\s*\|\s*'    # GPU Noise percentage
+                r'([0-9]+)x\s*\|\s*'    # Batch Samples
+                r'([\d.]+\s*[μmun]?s)\s*\|'    # Batch GPU Time
             )
             current = None
             parsed_any = False    # Track if any valid rows are parsed
@@ -68,8 +68,8 @@ class NvbenchKernelLaunch(NvbenchBase):
                     parsed_any = True
 
             if not parsed_any:
-                logger.error("No valid rows parsed from the raw output.")
-                raise RuntimeError("No valid rows parsed")
+                logger.error('No valid rows parsed from the raw output.')
+                raise RuntimeError('No valid rows parsed')
 
         except Exception as e:
             self._handle_parsing_error(str(e), raw_output)
