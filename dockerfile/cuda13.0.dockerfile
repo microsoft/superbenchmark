@@ -69,7 +69,8 @@ RUN apt-get update && \
     cd /tmp && \
     wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-x86_64.tar.gz && \
     tar -xzf cmake-3.30.4-linux-x86_64.tar.gz && \
-    cp -r cmake-3.30.4-linux-x86_64/* /usr/local/ && \
+    mv cmake-3.30.4-linux-x86_64 /opt/cmake && \
+    ln -sf /opt/cmake/bin/* /usr/local/bin/ && \
     rm -rf cmake-3.30.4-linux-x86_64* && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

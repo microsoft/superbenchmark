@@ -29,14 +29,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install CMake >= 3.20 and pthreads
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential
-          # Install newer CMake
-          sudo apt-get remove --purge --auto-remove cmake
-          wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh
-          sudo sh cmake-3.21.0-linux-x86_64.sh --skip-license --prefix=/usr/local
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -61,6 +53,14 @@ jobs:
         run: |
           DEBIAN_FRONTEND=noninteractive apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev sudo
+      - name: Install CMake >= 3.20 and pthreads
+        run: |
+          apt-get update
+          apt-get install -y build-essential
+          apt-get remove --purge --auto-remove cmake
+          wget https://github.com/Kitware/CMake/releases/download/v3.21.0/cmake-3.21.0-linux-x86_64.sh
+          sh cmake-3.21.0-linux-x86_64.sh --skip-license --prefix=/usr/local
+          cmake --version
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
