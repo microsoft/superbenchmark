@@ -4,7 +4,7 @@
 """Example of NVBench Kernel Launch benchmark."""
 
 from superbench.benchmarks import BenchmarkRegistry, Platform
-from superbench.common.utils importSlogger
+from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
