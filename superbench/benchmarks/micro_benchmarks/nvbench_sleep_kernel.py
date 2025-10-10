@@ -87,15 +87,15 @@ class NvbenchSleepKernel(NvbenchBase):
             parsed_any = False
             for line in raw_output.splitlines():
                 line = line.strip()
-                logger.debug(f"Processing line: {line}")
+                logger.debug(f'Processing line: {line}')
                 g = re.match(gpu_section, line)
                 if g:
-                    current = f"gpu_{g.group(1)}"
-                    logger.debug(f"Found GPU section: {current}")
+                    current = f'gpu_{g.group(1)}'
+                    logger.debug(f'Found GPU section: {current}')
                     continue
                 r = re.match(row_pat, line)
                 if r and current:
-                    logger.debug(f"Matched row: {r.groups()}")
+                    logger.debug(f'Matched row: {r.groups()}')
                     duration_us, samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups(
                     )
                     # self._result.add_result(f'duration_us_{duration_us}_samples', int(samples))
@@ -103,7 +103,8 @@ class NvbenchSleepKernel(NvbenchBase):
                     # self._result.add_result(f'duration_us_{duration_us}_cpu_noise', self._parse_percentage(cpu_noise))
                     self._result.add_result(f'duration_us_{duration_us}_gpu_time', self._parse_time_value(gpu_time))
                     # self._result.add_result(f'duration_us_{duration_us}_gpu_noise', self._parse_percentage(gpu_noise))
-                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples', int(batch_samples.replace('x', '')))
+                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples', 
+                    # int(batch_samples.replace('x', '')))
                     self._result.add_result(
                         f'duration_us_{duration_us}_batch_gpu_time', self._parse_time_value(batch_gpu)
                     )
@@ -111,7 +112,7 @@ class NvbenchSleepKernel(NvbenchBase):
             if not parsed_any:
                 raise RuntimeError('No valid rows parsed')
         except Exception as e:
-            logger.error(f"Error processing raw result: {e}")
+            logger.error(f'Error processing raw result: {e}')
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             return False
         return True
