@@ -103,7 +103,7 @@ class NvbenchSleepKernel(NvbenchBase):
                     # self._result.add_result(f'duration_us_{duration_us}_cpu_noise', self._parse_percentage(cpu_noise))
                     self._result.add_result(f'duration_us_{duration_us}_gpu_time', self._parse_time_value(gpu_time))
                     # self._result.add_result(f'duration_us_{duration_us}_gpu_noise', self._parse_percentage(gpu_noise))
-                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples', 
+                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples',
                     # int(batch_samples.replace('x', '')))
                     self._result.add_result(
                         f'duration_us_{duration_us}_batch_gpu_time', self._parse_time_value(batch_gpu)
