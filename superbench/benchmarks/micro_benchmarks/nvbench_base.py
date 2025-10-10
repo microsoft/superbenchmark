@@ -134,27 +134,16 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
             help='Minimum R-squared for entropy stopping criterion.',
         )
 
-    def _build_base_command(self):
-        """Build the base nvbench command with common arguments.
-
-        Returns:
-            list: Command parts that can be extended by subclasses.
-        """
-        if not self._bin_name:
-            raise ValueError('Subclass must set _bin_name')
-
-        command = os.path.join(self._args.bin_dir, self._bin_name)
-        parts = [command]
-
-        # Device configuration - in distributed mode, let SuperBench handle device assignment
-        # Only add --devices if explicitly specified
+    def _add_device_args(self, parts):
+        """Add device configuration arguments to command parts."""
         if hasattr(self._args, 'devices') and self._args.devices is not None:
             if self._args.devices == 'all':
                 parts.extend(['--devices', 'all'])
             else:
                 parts.extend(['--devices', self._args.devices])
 
-        # Benchmark Properties
+    def _add_benchmark_property_args(self, parts):
+        """Add benchmark property arguments to command parts."""
         if hasattr(self._args, 'skip_time') and self._args.skip_time >= 0:
             parts.extend(['--skip-time', str(self._args.skip_time)])
         if hasattr(self._args, 'throttle_threshold') and self._args.throttle_threshold > 0:
@@ -168,7 +157,8 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         if hasattr(self._args, 'profile') and self._args.profile:
             parts.append('--profile')
 
-        # Stopping criteria
+    def _add_stopping_criteria_args(self, parts):
+        """Add stopping criteria arguments to command parts."""
         if hasattr(self._args, 'timeout') and self._args.timeout is not None:
             parts.extend(['--timeout', str(self._args.timeout)])
         if hasattr(self._args, 'min_samples') and self._args.min_samples is not None:
@@ -176,15 +166,39 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         if hasattr(self._args, 'stopping_criterion') and self._args.stopping_criterion:
             parts.extend(['--stopping-criterion', self._args.stopping_criterion])
             if self._args.stopping_criterion == 'stdrel':
-                if hasattr(self._args, 'min_time') and self._args.min_time is not None:
-                    parts.extend(['--min-time', str(self._args.min_time)])
-                if hasattr(self._args, 'max_noise') and self._args.max_noise is not None:
-                    parts.extend(['--max-noise', str(self._args.max_noise)])
+                self._add_stdrel_args(parts)
             elif self._args.stopping_criterion == 'entropy':
-                if hasattr(self._args, 'max_angle') and self._args.max_angle is not None:
-                    parts.extend(['--max-angle', str(self._args.max_angle)])
-                if hasattr(self._args, 'min_r2') and self._args.min_r2 is not None:
-                    parts.extend(['--min-r2', str(self._args.min_r2)])
+                self._add_entropy_args(parts)
+
+    def _add_stdrel_args(self, parts):
+        """Add stdrel-specific stopping criterion arguments."""
+        if hasattr(self._args, 'min_time') and self._args.min_time is not None:
+            parts.extend(['--min-time', str(self._args.min_time)])
+        if hasattr(self._args, 'max_noise') and self._args.max_noise is not None:
+            parts.extend(['--max-noise', str(self._args.max_noise)])
+
+    def _add_entropy_args(self, parts):
+        """Add entropy-specific stopping criterion arguments."""
+        if hasattr(self._args, 'max_angle') and self._args.max_angle is not None:
+            parts.extend(['--max-angle', str(self._args.max_angle)])
+        if hasattr(self._args, 'min_r2') and self._args.min_r2 is not None:
+            parts.extend(['--min-r2', str(self._args.min_r2)])
+
+    def _build_base_command(self):
+        """Build the base nvbench command with common arguments.
+
+        Returns:
+            list: Command parts that can be extended by subclasses.
+        """
+        if not self._bin_name:
+            raise ValueError('Subclass must set _bin_name')
+
+        command = os.path.join(self._args.bin_dir, self._bin_name)
+        parts = [command]
+
+        self._add_device_args(parts)
+        self._add_benchmark_property_args(parts)
+        self._add_stopping_criteria_args(parts)
 
         return parts
 

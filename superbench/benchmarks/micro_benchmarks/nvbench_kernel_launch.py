@@ -52,19 +52,19 @@ class NvbenchKernelLaunch(NvbenchBase):
                 line = line.strip()
                 g = re.match(gpu_section, line)
                 if g:
-                    current = f"gpu_{g.group(1)}"
+                    current = f'gpu_{g.group(1)}'
                     continue
 
                 r = re.match(row_pat, line)
                 if r and current:
                     samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups()
-                    # self._result.add_result("samples", int(samples.replace('x', '')))
-                    self._result.add_result("cpu_time", self._parse_time_value(cpu_time))
-                    # self._result.add_result("cpu_noise", self._parse_percentage(cpu_noise))
-                    self._result.add_result("gpu_time", self._parse_time_value(gpu_time))
-                    # self._result.add_result("gpu_noise", self._parse_percentage(gpu_noise))
-                    # self._result.add_result("batch_samples", int(batch_samples.replace('x', '')))
-                    self._result.add_result("batch_gpu_time", self._parse_time_value(batch_gpu))
+                    # self._result.add_result('samples', int(samples.replace('x', '')))
+                    self._result.add_result('cpu_time', self._parse_time_value(cpu_time))
+                    # self._result.add_result('cpu_noise', self._parse_percentage(cpu_noise))
+                    self._result.add_result('gpu_time', self._parse_time_value(gpu_time))
+                    # self._result.add_result('gpu_noise', self._parse_percentage(gpu_noise))
+                    # self._result.add_result('batch_samples', int(batch_samples.replace('x', '')))
+                    self._result.add_result('batch_gpu_time', self._parse_time_value(batch_gpu))
                     parsed_any = True
 
             if not parsed_any:

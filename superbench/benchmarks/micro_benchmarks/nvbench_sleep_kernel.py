@@ -66,22 +66,22 @@ class NvbenchSleepKernel(NvbenchBase):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        logger.debug(f"Processing raw result for command index {cmd_idx}.")
-        logger.debug(f"Raw output:\n{raw_output}")
+        logger.debug(f'Processing raw result for command index {cmd_idx}.')
+        logger.debug(f'Raw output:\n{raw_output}')
 
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
         try:
-            gpu_section = r"### \[(\d+)\] NVIDIA"
+            gpu_section = r'### \[(\d+)\] NVIDIA'
             # Regex pattern to handle different time units and flexible spacing
             row_pat = (
-                r"\|\s*([0-9]+)\s*\|\s*"    # Duration (us)
-                r"([0-9]+)x\s*\|\s*"    # Samples
-                r"([\d.]+\s*[μmun]?s)\s*\|\s*"    # CPU Time (μs, ns, ms, us, s)
-                r"([\d.]+%)\s*\|\s*"    # CPU Noise percentage
-                r"([\d.]+\s*[μmun]?s)\s*\|\s*"    # GPU Time
-                r"([\d.]+%)\s*\|\s*"    # GPU Noise percentage
-                r"([0-9]+)x\s*\|\s*"    # Batch Samples
-                r"([\d.]+\s*[μmun]?s)\s*\|"    # Batch GPU Time
+                r'\|\s*([0-9]+)\s*\|\s*'    # Duration (us)
+                r'([0-9]+)x\s*\|\s*'    # Samples
+                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # CPU Time (μs, ns, ms, us, s)
+                r'([\d.]+%)\s*\|\s*'    # CPU Noise percentage
+                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # GPU Time
+                r'([\d.]+%)\s*\|\s*'    # GPU Noise percentage
+                r'([0-9]+)x\s*\|\s*'    # Batch Samples
+                r'([\d.]+\s*[μmun]?s)\s*\|'    # Batch GPU Time
             )
             current = None
             parsed_any = False
