@@ -67,11 +67,16 @@ RUN apt-get update && \
     apt-get remove -y cmake cmake-data && \
     apt-get autoremove -y && \
     cd /tmp && \
-    wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-x86_64.tar.gz && \
-    tar -xzf cmake-3.30.4-linux-x86_64.tar.gz && \
-    mv cmake-3.30.4-linux-x86_64 /opt/cmake && \
+    case ${TARGETPLATFORM} in \
+        "linux/arm64") CMAKE_ARCH="aarch64" ;; \
+        "linux/amd64") CMAKE_ARCH="x86_64" ;; \
+        *) CMAKE_ARCH="x86_64" ;; \
+    esac && \
+    wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
+    tar -xzf cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
+    mv cmake-3.30.4-linux-${CMAKE_ARCH} /opt/cmake && \
     ln -sf /opt/cmake/bin/* /usr/local/bin/ && \
-    rm -rf cmake-3.30.4-linux-x86_64* && \
+    rm -rf cmake-3.30.4-linux-${CMAKE_ARCH}* && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
