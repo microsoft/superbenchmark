@@ -62,11 +62,16 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 # Install CMake 3.30.4 for nvbench compatibility
-RUN cd /tmp && \
+RUN apt-get update && \
+    apt-get remove -y cmake cmake-data && \
+    apt-get autoremove -y && \
+    cd /tmp && \
     wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-x86_64.tar.gz && \
     tar -xzf cmake-3.30.4-linux-x86_64.tar.gz && \
     cp -r cmake-3.30.4-linux-x86_64/* /usr/local/ && \
-    rm -rf cmake-3.30.4-linux-x86_64*
+    rm -rf cmake-3.30.4-linux-x86_64* && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG NUM_MAKE_JOBS=
 ARG TARGETPLATFORM
