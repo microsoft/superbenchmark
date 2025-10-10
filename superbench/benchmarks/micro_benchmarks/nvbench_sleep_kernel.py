@@ -4,8 +4,6 @@
 """Module of the NVBench Sleep Kernel benchmark."""
 
 import re
-import os
-
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
