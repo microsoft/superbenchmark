@@ -1,0 +1,34 @@
+# Devices
+
+## [0] `NVIDIA GPU`
+* SM Version: 900 (PTX Version: 900)
+* Number of SMs: 100
+* SM Default Clock Rate: 800 MHz
+* Global Memory: 100000 MiB Free / 100000 MiB Total
+* Global Memory Bus Peak: 3000 GB/sec (3000-bit DDR @4000MHz)
+* Max Shared Memory: 100 KiB/SM, 20 KiB/Block
+* L2 Cache Size: 1000 KiB
+* Maximum Active Blocks: 10/SM
+* Maximum Active Threads: 500/SM, 300/Block
+* Available Registers: 500/SM, 500/Block
+* ECC Enabled: Yes
+
+# Log
+
+```
+Run:  [1/1] launch_bench [Device=0]
+Warn: Current measurement timed out (20.00s) while over noise threshold (14.42% > 0.50%)
+Warn: Current measurement timed out (20.00s) before accumulating min_time (0.94s < 2.00s)
+Pass: Cold: 0.005878ms GPU, 0.022181ms CPU, 0.94s total GPU, 20.00s total wall, 120000x 
+Pass: Batch: 0.004024ms GPU, 2.00s total GPU, 2.00s total wall, 300000x
+```
+
+# Benchmark Results
+
+## launch_bench
+
+### [0] NVIDIA GPU
+
+| Samples | CPU Time  | Noise  | GPU Time | Noise  | Samples | Batch GPU |
+|---------|-----------|--------|----------|--------|---------|-----------|
+| 120000x | 24.222 us | 30.44% | 7.808 us | 14.42% | 300000x |  6.024 us |

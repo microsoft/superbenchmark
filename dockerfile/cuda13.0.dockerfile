@@ -62,6 +62,24 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
+# Install CMake 3.30.4 for nvbench compatibility
+RUN apt-get update && \
+    apt-get remove -y cmake cmake-data && \
+    apt-get autoremove -y && \
+    cd /tmp && \
+    case ${TARGETPLATFORM} in \
+        "linux/arm64") CMAKE_ARCH="aarch64" ;; \
+        "linux/amd64") CMAKE_ARCH="x86_64" ;; \
+        *) CMAKE_ARCH="x86_64" ;; \
+    esac && \
+    wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
+    tar -xzf cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
+    mv cmake-3.30.4-linux-${CMAKE_ARCH} /opt/cmake && \
+    ln -sf /opt/cmake/bin/* /usr/local/bin/ && \
+    rm -rf cmake-3.30.4-linux-${CMAKE_ARCH}* && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 ARG NUM_MAKE_JOBS=
 ARG TARGETPLATFORM
 ARG TARGETARCH
@@ -151,7 +169,7 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party cuda
+RUN make -C third_party cuda_with_msccl cuda_nvbench
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
