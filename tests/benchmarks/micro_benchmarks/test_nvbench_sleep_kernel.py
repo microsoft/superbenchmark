@@ -12,7 +12,6 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform
 
 class TestNvbenchSleepKernelBenchmark(BenchmarkTestCase, unittest.TestCase):
     """Test class for NVBench Sleep Kernel benchmark."""
-
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""
@@ -97,22 +96,22 @@ class TestNvbenchSleepKernelBenchmark(BenchmarkTestCase, unittest.TestCase):
         benchmark = benchmark_class(benchmark_name, parameters='--duration_us "50"')
         assert benchmark._preprocess()
         assert '--axis "Duration (us)=50"' in benchmark._commands[0]
-        
+
         # Test list format
         benchmark = benchmark_class(benchmark_name, parameters='--duration_us "[25,50,75]"')
         assert benchmark._preprocess()
         assert '--axis "Duration (us)=[25,50,75]"' in benchmark._commands[0]
-        
+
         # Test range format
         benchmark = benchmark_class(benchmark_name, parameters='--duration_us "[25:75]"')
         assert benchmark._preprocess()
         assert '--axis "Duration (us)=[25:75]"' in benchmark._commands[0]
-        
+
         # Test range with step format
         benchmark = benchmark_class(benchmark_name, parameters='--duration_us "[0:50:10]"')
         assert benchmark._preprocess()
         assert '--axis "Duration (us)=[0:50:10]"' in benchmark._commands[0]
-        
+
         # Test default format
         benchmark = benchmark_class(benchmark_name, parameters='')
         assert benchmark._preprocess()

@@ -29,7 +29,6 @@ def parse_time_to_us(raw: str) -> float:
 
 class NvbenchBase(MicroBenchmarkWithInvoke):
     """Base class for NVBench benchmarks with common functionality."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -143,7 +142,7 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         """
         if not self._bin_name:
             raise ValueError("Subclass must set _bin_name")
-            
+
         command = os.path.join(self._args.bin_dir, self._bin_name)
         parts = [command]
 
@@ -200,7 +199,7 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
 
         # Build base command - subclasses can override this method to add specific arguments
         parts = self._build_base_command()
-        
+
         # Finalize command
         self._commands = [' '.join(parts)]
         return True

@@ -12,7 +12,6 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform
 
 class TestNvbenchKernelLaunchBenchmark(BenchmarkTestCase, unittest.TestCase):
     """Test class for NVBench Kernel Launch benchmark."""
-
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""
