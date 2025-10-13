@@ -67,11 +67,14 @@ RUN apt-get update && \
     apt-get remove -y cmake cmake-data && \
     apt-get autoremove -y && \
     cd /tmp && \
-    case ${TARGETPLATFORM} in \
-        "linux/arm64") CMAKE_ARCH="aarch64" ;; \
-        "linux/amd64") CMAKE_ARCH="x86_64" ;; \
+    ARCH=$(uname -m) && \
+    case ${ARCH} in \
+        "aarch64") CMAKE_ARCH="aarch64" ;; \
+        "x86_64") CMAKE_ARCH="x86_64" ;; \
+        "arm64") CMAKE_ARCH="aarch64" ;; \
         *) CMAKE_ARCH="x86_64" ;; \
     esac && \
+    echo "Detected architecture: ${ARCH}, using CMAKE_ARCH: ${CMAKE_ARCH}" && \
     wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
     tar -xzf cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
     mv cmake-3.30.4-linux-${CMAKE_ARCH} /opt/cmake && \
@@ -79,6 +82,7 @@ RUN apt-get update && \
     rm -rf cmake-3.30.4-linux-${CMAKE_ARCH}* && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
 
 ARG NUM_MAKE_JOBS=
 ARG TARGETPLATFORM
