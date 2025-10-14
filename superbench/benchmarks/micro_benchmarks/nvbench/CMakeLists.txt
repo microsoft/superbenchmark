@@ -1,3 +1,9 @@
+# skip the build for < cuda12.8
+if(CMAKE_VERSION VERSION_LESS "3.20")
+  message(STATUS "CMake version ${CMAKE_VERSION} is less than 3.20, skipping nvbench benchmarks")
+  return()
+endif()
+
 cmake_minimum_required(VERSION 3.20)
 project(nvbench_benchmarks LANGUAGES CUDA)
 
