@@ -1,11 +1,11 @@
-# skip the build for < cuda12.8
-if(CMAKE_VERSION VERSION_LESS "3.20")
-  message(STATUS "CMake version ${CMAKE_VERSION} is less than 3.20, skipping nvbench benchmarks")
+cmake_minimum_required(VERSION 3.18)
+project(nvbench_benchmarks LANGUAGES CUDA)
+
+# Check if we have a recent enough CMake for nvbench (which requires 3.30.4)
+if(CMAKE_VERSION VERSION_LESS "3.30.4")
+  message(STATUS "CMake version ${CMAKE_VERSION} is less than 3.30.4 (required by nvbench), skipping nvbench benchmarks")
   return()
 endif()
-
-cmake_minimum_required(VERSION 3.20)
-project(nvbench_benchmarks LANGUAGES CUDA)
 
 find_package(CUDAToolkit QUIET)
 if (CUDAToolkit_FOUND)
