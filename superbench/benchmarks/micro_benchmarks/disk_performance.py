@@ -139,17 +139,14 @@ class DiskBenchmark(MicroBenchmarkWithInvoke):
     def _get_arguments_from_env(self):
         """Read environment variables from runner used for parallel and fill in block_device_index and numa_node_index.
 
-        Get 'PROC_RANK'(rank of current process) 'BLOCK_DEVICE_INDICES' 'NUMA_NODES' environment variables
-        Get block_device_index and numa_node_index according to
-        'NUMA_NODES'['PROC_RANK'] and 'BLOCK_DEVICE_INDICES'['PROC_RANK']
+        Get 'PROC_RANK'(rank of current process) 'NUMA_NODES' environment variables
+        Get block_device_index and numa_node_index according to PROC_RANK and 'NUMA_NODES'['PROC_RANK']
         Note: The config from env variables will overwrite the configs defined in the command line
         """
         try:
             if os.getenv('PROC_RANK'):
                 rank = int(os.getenv('PROC_RANK'))
-                if os.getenv('BLOCK_DEVICE_INDICES'):
-                    block_device_index = int(os.getenv('BLOCK_DEVICE_INDICES').split(',')[rank])
-                    self._args.block_devices = [self._args.block_devices[block_device_index]]
+                self._args.block_devices = [self._args.block_devices[rank]]
                 if os.getenv('NUMA_NODES'):
                     self._args.numa = int(os.getenv('NUMA_NODES').split(',')[rank])
             return True
