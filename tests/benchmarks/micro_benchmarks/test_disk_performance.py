@@ -231,7 +231,6 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.name == 'disk-benchmark')
         assert (benchmark.type == BenchmarkType.MICRO)
 
-        del os.environ['BLOCK_DEVICE_INDICES']
         del os.environ['NUMA_NODES']
         del os.environ['PROC_RANK']
 
