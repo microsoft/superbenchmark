@@ -20,6 +20,7 @@ pool:
 
 container:
   image: python:$(imageTag)
+  options: '--user 0'
 
 steps:
   - script: |
