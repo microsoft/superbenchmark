@@ -27,8 +27,7 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      apt-get update && apt-get install -y bc
-      if [[ "$(echo $(imageTag) '< 3.11' | bc -l)" == 1 ]]; then
+      if [[ "$(imageTag)" < "3.11" ]]; then
         python3 -m pip install --upgrade pip setuptools==65.7
       else
         python3 -m pip install --upgrade pip
