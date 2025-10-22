@@ -52,10 +52,12 @@ class GpuStream {
 
     // Benchmark functions
     template <typename T> int RunStreamKernel(std::unique_ptr<BenchArgs<T>> &, Kernel, int);
-    template <typename T> int RunStream(std::unique_ptr<BenchArgs<T>> &, const std::string &data_type);
+    float GetActualMemoryClockRate(int gpu_id);
+    template <typename T> int RunStream(std::unique_ptr<BenchArgs<T>> &, const std::string &data_type, float peak_bw);
 
     // Helper functions
     int GetGpuCount(int *);
     int SetGpu(int gpu_id);
-    void PrintCudaDeviceInfo(int, const cudaDeviceProp &);
+    float GetMemoryClockRate(int device_id, const cudaDeviceProp &prop);
+    void PrintCudaDeviceInfo(int device_id, const cudaDeviceProp &prop, float memory_clock_mhz, float peak_bw);
 };
