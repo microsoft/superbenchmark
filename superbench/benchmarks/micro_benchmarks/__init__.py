@@ -39,42 +39,16 @@ from superbench.benchmarks.micro_benchmarks.directx_gpu_copy_performance import 
 from superbench.benchmarks.micro_benchmarks.directx_mem_bw_performance import DirectXGPUMemBw
 from superbench.benchmarks.micro_benchmarks.directx_gemm_flops_performance import DirectXGPUCoreFlops
 from superbench.benchmarks.micro_benchmarks.nvbandwidth import NvBandwidthBenchmark
+from superbench.benchmarks.micro_benchmarks.nvbench_kernel_launch import NvbenchKernelLaunch
+from superbench.benchmarks.micro_benchmarks.nvbench_sleep_kernel import NvbenchSleepKernel
 
 __all__ = [
-    'BlasLtBaseBenchmark',
-    'ComputationCommunicationOverlap',
-    'CpuMemBwLatencyBenchmark',
-    'CpuHplBenchmark',
-    'CpuStreamBenchmark',
-    'CublasBenchmark',
-    'CublasLtBenchmark',
-    'CudaGemmFlopsBenchmark',
-    'CudaMemBwBenchmark',
-    'CudaNcclBwBenchmark',
-    'CudnnBenchmark',
-    'DiskBenchmark',
-    'DistInference',
-    'HipBlasLtBenchmark',
-    'GPCNetBenchmark',
-    'GemmFlopsBenchmark',
-    'GpuBurnBenchmark',
-    'GpuCopyBwBenchmark',
-    'GpuStreamBenchmark',
-    'IBBenchmark',
-    'IBLoopbackBenchmark',
-    'KernelLaunch',
-    'MemBwBenchmark',
-    'MicroBenchmark',
-    'MicroBenchmarkWithInvoke',
-    'ORTInferenceBenchmark',
-    'RocmGemmFlopsBenchmark',
-    'RocmMemBwBenchmark',
-    'ShardingMatmul',
-    'TCPConnectivityBenchmark',
-    'TensorRTInferenceBenchmark',
-    'DirectXGPUEncodingLatency',
-    'DirectXGPUCopyBw',
-    'DirectXGPUMemBw',
-    'DirectXGPUCoreFlops',
-    'NvBandwidthBenchmark',
+    'BlasLtBaseBenchmark', 'ComputationCommunicationOverlap', 'CpuMemBwLatencyBenchmark', 'CpuHplBenchmark',
+    'CpuStreamBenchmark', 'CublasBenchmark', 'CublasLtBenchmark', 'CudaGemmFlopsBenchmark', 'CudaMemBwBenchmark',
+    'CudaNcclBwBenchmark', 'CudnnBenchmark', 'DiskBenchmark', 'DistInference', 'HipBlasLtBenchmark', 'GPCNetBenchmark',
+    'GemmFlopsBenchmark', 'GpuBurnBenchmark', 'GpuCopyBwBenchmark', 'GpuStreamBenchmark', 'IBBenchmark',
+    'IBLoopbackBenchmark', 'KernelLaunch', 'MemBwBenchmark', 'MicroBenchmark', 'MicroBenchmarkWithInvoke',
+    'ORTInferenceBenchmark', 'RocmGemmFlopsBenchmark', 'RocmMemBwBenchmark', 'ShardingMatmul',
+    'TCPConnectivityBenchmark', 'TensorRTInferenceBenchmark', 'DirectXGPUEncodingLatency', 'DirectXGPUCopyBw',
+    'DirectXGPUMemBw', 'DirectXGPUCoreFlops', 'NvBandwidthBenchmark', 'NvbenchKernelLaunch', 'NvbenchSleepKernel'
 ]
