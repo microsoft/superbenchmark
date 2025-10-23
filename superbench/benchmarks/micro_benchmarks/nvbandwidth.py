@@ -66,7 +66,11 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--disable_affinity',
             action='store_true',
-            help='Disable automatic CPU affinity control. Default is False.',
+            help=(
+                'Disable automatic CPU affinity control. Default is False. '
+                'If user would like to bind the process to specific NUMA node, '
+                'please use --disable_affinity along with --numa argument.'
+            ),
         )
 
         self._parser.add_argument(
@@ -92,7 +96,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        if not self._set_binary_path():
+        if not self._set_binary_path() or not self._get_arguments_from_env():
             return False
 
         # Construct the command for nvbandwidth
@@ -111,6 +115,8 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         if self._args.disable_affinity:
             command += ' --disableAffinity'
+            if self._args.numa is not None:
+                command = f'numactl --cpunodebind={self._args.numa} --membind={self._args.numa} ' + command
 
         if self._args.use_mean:
             command += ' --useMean'

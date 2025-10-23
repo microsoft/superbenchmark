@@ -56,6 +56,20 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             required=False,
             help='Number of steps to measure for autotune.',
         )
+        self._parser.add_argument(
+            '--enable_ncu_profiling',
+            action='store_true',
+            required=False,
+            help='Enable ncu profiling for each run.',
+        )
+        self._parser.add_argument(
+            '--profiling_metrics',
+            type=str,
+            nargs='+',
+            default=None,
+            required=False,
+            help='List of ncu profiling metrics, support all ncu metrics.',
+        )
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -75,16 +89,17 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 f' -a -W {self._args.num_warmup_autotune}'
                 f' -I {self._args.num_steps_autotune}'
             ) if self._args.enable_autotune else ''
-
-            self._commands.append(
-                f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} '
-                f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}'
+            command = f'{self.__bin_path} -m {_m} -n {_n} -k {_k} -b {_b} ' + \
+                f'-w {self._args.num_warmup} -i {self._args.num_steps} -t {_in_type}' + \
                 f'{(" " + autotune_args) if autotune_args else ""}'
-            )
+            if self._args.enable_ncu_profiling:
+                skip_num = self._args.num_warmup - 1 if self._args.num_warmup > 1 else 0
+                command = f'ncu --set full --launch-skip {skip_num} --launch-count 1 --csv ' + command
+            self._commands.append(command)
 
         return True
 
-    def _process_raw_result(self, cmd_idx, raw_output):
+    def _process_raw_result(self, cmd_idx, raw_output):    # noqa: C901
         """Function to parse raw results and save the summarized results.
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
@@ -99,12 +114,52 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
 
         try:
-            fields = raw_output.strip().split()
-            if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
-                raise ValueError('Invalid result.')
-            self._result.add_result(
-                f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops', float(fields[-1])
-            )
+            if not self._args.enable_ncu_profiling:
+                fields = raw_output.strip().split()
+                if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
+                    raise ValueError('Invalid result.')
+                self._result.add_result(
+                    f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                    float(fields[-1])
+                )
+            else:
+                lines = raw_output.strip().split('\n')
+                # find line index of the line that starts with "ID","Process ID"
+                start_idx = next(i for i, line in enumerate(lines) if 'Metric Name' in line)
+                if start_idx == 0 or start_idx == len(lines) - 1:
+                    raise ValueError('Invalid result.')
+                result_lines = lines[0:start_idx - 1]
+                result = False
+                size = ''
+                for line in result_lines:
+                    fields = line.strip().split()
+                    if len(fields) == 6 and all(x.isdigit() for x in fields[:4]):
+                        result = True
+                        size = f'{fields[3]}_{"_".join(fields[:3])}'
+                        self._result.add_result(
+                            f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                            float(fields[-1])
+                        )
+                if not result:
+                    raise ValueError('Invalid result.')
+                metric_name_index = lines[start_idx].strip().split(',').index('"Metric Name"')
+                metric_value_index = lines[start_idx].strip().split(',').index('"Metric Value"')
+                if metric_name_index < 0 or metric_value_index < 0:
+                    raise ValueError('Can not find Metric Name and Value.')
+                for line in lines[start_idx + 1:]:
+                    fields = line.strip().split('","')
+                    metric_name = fields[metric_name_index].strip('"').replace(' ', '_')
+                    if len(fields) < 15:
+                        continue
+                    if not self._args.profiling_metrics or metric_name in self._args.profiling_metrics:
+                        value = fields[metric_value_index].strip(',').strip('"')
+                        try:
+                            float_value = float(value)
+                            self._result.add_result(
+                                f'{self._commands[cmd_idx].split()[-1]}_{size}_{metric_name}', float_value
+                            )
+                        except ValueError:
+                            pass
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
