@@ -106,7 +106,7 @@ RUN TARGETARCH_HW=$(uname -m) && \
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
     cd /tmp && \
-    wget -q https://downloadmirror.intel.com/793041/mlc_v3.11.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz && \
