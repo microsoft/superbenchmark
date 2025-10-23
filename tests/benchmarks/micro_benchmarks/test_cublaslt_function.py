@@ -6,6 +6,7 @@
 import unittest
 from types import GeneratorType, SimpleNamespace
 
+from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 from superbench.benchmarks.result import BenchmarkResult
@@ -83,11 +84,14 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 for _m in [32, 128]:
                     self.assertIn(cmd(_t, _b, _m, 128, 128), benchmark._commands)
 
-    def test_cublaslt_gemm_result_parsing(self):
+    @decorator.load_data('tests/data/cublaslt_ncu.log')
+    def test_cublaslt_gemm_result_parsing(self, raw_output):
         """Test cublaslt-gemm benchmark result parsing."""
         benchmark = self.get_benchmark()
         self.assertTrue(benchmark._preprocess())
-        benchmark._args = SimpleNamespace(shapes=['16,16,16', '32,64,128'], in_types=['fp8e4m3'], log_raw_data=False)
+        benchmark._args = SimpleNamespace(
+            shapes=['16,16,16', '32,64,128'], in_types=['fp8e4m3'], log_raw_data=False, enable_ncu_profiling=False
+        )
         benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
 
         # Positive case - valid raw output
@@ -101,3 +105,15 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'cuBLAS API failed'))
+
+        # Positive case - valid ncu raw output
+        benchmark._args = SimpleNamespace(
+            shapes=['2208,2048,5608'],
+            in_types=['fp8e4m3'],
+            log_raw_data=False,
+            enable_ncu_profiling=True,
+            profiling_metrics=['DRAM_Throughput'],
+        )
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+        self.assertTrue(benchmark._process_raw_result(1, raw_output))
+        self.assertEqual(0.74, benchmark.result['fp8e4m3_0_2208_2048_5608_DRAM_Throughput'][0])
