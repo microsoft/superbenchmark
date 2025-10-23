@@ -5,10 +5,12 @@
 
 import os
 from datetime import timedelta
+import random
 import time
 
 import torch
 import transformers
+
 try:
     import transformer_engine.pytorch as te
 except ImportError:
@@ -17,8 +19,15 @@ from torch.utils.data import DataLoader
 from torch.distributed import TCPStore, PrefixStore
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Framework, ReturnCode, DistributedBackend, DistributedImpl
+from superbench.benchmarks import (
+    Framework,
+    ReturnCode,
+    DistributedBackend,
+    DistributedImpl,
+)
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBenchmark
+from torch.backends.cuda import sdp_kernel
+from superbench.common import model_log_utils
 
 
 class PytorchBase(ModelBenchmark):
@@ -35,9 +44,260 @@ class PytorchBase(ModelBenchmark):
         self._framework = Framework.PYTORCH
         torch.backends.cudnn.benchmark = True
 
+        self._generate_log = False
+        self._compare_log = None
+        self._model_run_metadata = {}
+        self._model_run_losses = []
+        self._model_run_periodic = {}
+
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
         self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
+
+    def _enable_deterministic_training(self):
+        """Enable deterministic training settings for reproducible results."""
+        if hasattr(self._args, 'deterministic_seed'):
+            torch.manual_seed(self._args.deterministic_seed)
+            random.seed(self._args.deterministic_seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(self._args.deterministic_seed)
+        torch.use_deterministic_algorithms(True, warn_only=False)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        # Disable TF32 to remove potential numerical variability
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = False
+        except Exception:
+            logger.info('Failed to disable TF32 in cuda matmul')
+            pass
+        try:
+            torch.backends.cudnn.allow_tf32 = False
+        except Exception:
+            logger.info('Failed to disable TF32 in cuDNN')
+            pass
+        # Force Scaled Dot-Product Attention to use deterministic math kernel
+        try:
+            sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False)
+        except Exception:
+            logger.info('SDP kernel not available')
+            # Older PyTorch versions may not expose sdp_kernel; ignore in that case
+            pass
+
+    def _assign_model_run_metadata(self, precision, extra_keys=None):
+        """Assign model_run_metadata for determinism fingerprinting/logging.
+
+        Args:
+            precision: Model precision (can be enum or string).
+            extra_keys: List of additional argument keys to include in metadata.
+            self._args: Benchmark arguments containing model configuration.
+
+        Returns:
+            None
+        """
+        # Common metadata keys
+        metadata = {
+            'model_name': self._name,
+            'precision': (precision.value if hasattr(precision, 'value') else str(precision)),
+            'seed': getattr(self._args, 'deterministic_seed', None),
+            'deterministic_seed': getattr(self._args, 'deterministic_seed', None),
+            'batch_size': getattr(self._args, 'batch_size', None),
+            'seq_len': getattr(self._args, 'seq_len', None),
+            'num_steps': getattr(self._args, 'num_steps', None),
+            'check_frequency': getattr(self._args, 'check_frequency', None),
+            'num_classes': getattr(self._args, 'num_classes', None),
+        }
+        # Add any extra keys present in args (for model-specific fields)
+        keys = [
+            'hidden_size',
+            'num_hidden_layers',
+            'num_attention_heads',
+            'intermediate_size',
+            'input_size',
+            'num_layers',
+            'bidirectional',
+        ]
+        if extra_keys:
+            keys += extra_keys
+        for key in keys:
+            metadata[key] = getattr(self._args, key, None)
+        self._model_run_metadata = metadata
+        return None
+
+    def record_determinism_fingerprint(self, curr_step, loss, logits, periodic, check_frequency):
+        """Centralized logic for recording per-step loss and periodic fingerprints for deterministic runs.
+
+        Args:
+            curr_step (int): Current training step.
+            loss (torch.Tensor or float): Loss value for this step.
+            logits (torch.Tensor or float): Logits output for this step (sample 0).
+            periodic (dict): Dictionary to store periodic fingerprints ('loss', 'act_mean', 'step').
+            check_frequency (int): Frequency for fingerprint logging.
+        """
+        # Record per-step loss for determinism checks (for full history)
+        try:
+            v = float(loss.detach().item()) if hasattr(loss, 'detach') else float(loss)
+        except Exception:
+            logger.info(f'Unable to convert loss to float at step {curr_step}')
+            v = None
+        # Periodic fingerprint logging
+        if getattr(self._args, 'deterministic', False) and (curr_step % check_frequency == 0):
+            # 1) Loss fingerprint (only at fingerprinting frequency)
+            try:
+                # Ensure the lists exist and remain index-aligned by appending
+                # a placeholder (None) when a measurement is unavailable.
+                if 'loss' in periodic and isinstance(periodic['loss'], list):
+                    periodic['loss'].append(v if v is not None else None)
+                else:
+                    periodic['loss'] = [v if v is not None else None]
+
+                logger.info(f'Loss at step {curr_step}: {v}')
+                periodic.setdefault('step', []).append(curr_step)
+            except Exception:
+                logger.warning(f'Unable to log loss at curr_step {curr_step}')
+                pass
+            # 2) Tiny activation fingerprint: mean over logits for sample 0
+            try:
+                if logits is not None:
+                    act_mean = (
+                        float(logits[0].detach().float().mean().item())
+                        if hasattr(logits[0], 'detach') else float(logits[0])
+                    )
+                    logger.info(f'ActMean at step {curr_step}: {act_mean}')
+                    periodic.setdefault('act_mean', []).append(act_mean)
+                else:
+                    # Keep lists aligned by appending None when activation not available
+                    periodic.setdefault('act_mean', []).append(None)
+            except Exception:
+                # On exception preserve alignment by ensuring keys exist
+                logger.warning(f'Unable to log act_mean at curr_step {curr_step}')
+                periodic.setdefault('act_mean', []).append(None)
+                pass
+
+    def _finalize_periodic_logging(self, periodic, info_key='loss'):
+        """Finalize periodic logging and return info dict for training step."""
+        info = {info_key: periodic.get(info_key, [])}
+        self._model_run_losses = list(periodic.get(info_key, []))
+        self._model_run_periodic = dict(periodic)
+        return info
+
+    def add_parser_arguments(self):
+        """Add PyTorch model benchmark-specific arguments to the argument parser."""
+        super().add_parser_arguments()
+        self._parser.add_argument(
+            '--generate-log',
+            nargs='?',
+            const=True,
+            default=False,
+            type=str,
+            help='Save fingerprint log to file. Optionally specify a path to save the log.'
+        )
+        self._parser.add_argument(
+            '--compare-log',
+            '--compare_log',
+            dest='compare_log',
+            type=str,
+            default=None,
+            help='Compare this run to a reference fingerprint log.',
+        )
+        self._parser.add_argument(
+            '--deterministic_seed',
+            type=int,
+            default=42,
+            required=False,
+            help='Random seed for deterministic training.',
+        )
+        self._parser.add_argument(
+            '--deterministic',
+            action='store_true',
+            default=False,
+            help='Enable deterministic training for reproducible results.',
+        )
+        self._parser.add_argument(
+            '--check_frequency',
+            type=int,
+            default=100,
+            required=False,
+            help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
+        )
+
+    def _post_run_model_log(self):
+        """Save or compare model run logs after run, if requested."""
+        gen_arg = getattr(self._args, 'generate_log', None)
+        if gen_arg:
+            # gen_arg can be True (const) or a string path if user provided it
+            log_path = None
+            if isinstance(gen_arg, str):
+                log_path = gen_arg
+            if not log_path:
+                model = getattr(
+                    self._args,
+                    'model_name',
+                    self._name if hasattr(self, '_name') else 'model',
+                )
+                timestamp = time.strftime('%Y%m%d_%H%M%S')
+                os.makedirs('./outputs', exist_ok=True)
+                log_path = f'./outputs/model_run_{model}_{timestamp}.json'
+            else:
+                # Ensure destination directory exists when a custom path is provided
+                try:
+                    dirpath = os.path.dirname(log_path) or '.'
+                    os.makedirs(dirpath, exist_ok=True)
+                except Exception:
+                    logger.info(f'Failed to create directory for log path: {log_path}')
+                    pass
+            model_log_utils.save_model_log(
+                log_path,
+                self._model_run_metadata,
+                self._model_run_losses,
+                self._model_run_periodic,
+            )
+            logger.info(f'Saved model log to {log_path}')
+        if getattr(self._args, 'compare_log', None):
+            logger.info(f'Comparing model log to {self._args.compare_log}')
+            ref = model_log_utils.load_model_log(self._args.compare_log)
+            curr = {
+                'metadata': self._model_run_metadata,
+                'per_step_fp32_loss': self._model_run_losses,
+                'fingerprints': self._model_run_periodic,
+            }
+            compare_ok = model_log_utils.compare_model_logs(curr, ref)
+            if not compare_ok:
+                raise RuntimeError(
+                    f'Determinism check failed: this run does not match reference log {self._args.compare_log}'
+                )
+            logger.info(f'Determinism check PASSED against {self._args.compare_log}')
+
+    def _preprocess(self):
+        """Preprocess and apply PyTorch-specific defaults."""
+        preprocess_ok = super()._preprocess()
+        if not preprocess_ok:
+            return False
+        # Deterministic setup is handled centrally in set_deterministic_seed() which
+        # is invoked earlier in the model-base preprocess before dataset creation.
+        if getattr(self._args, 'deterministic', False):
+            self._handle_deterministic_log_options()
+        return True
+
+    def set_deterministic_seed(self):
+        """Set deterministic RNGs centrally for PyTorch benchmarks.
+
+        This will set the seeds and deterministic flags prior to dataset generation
+        so per-model dataset generation is reproducible without each model needing
+        to call torch.manual_seed().
+        """
+        if getattr(self._args, 'deterministic', False):
+            try:
+                self._enable_deterministic_training()
+            except Exception:
+                logger.info('Failed to enable deterministic training in centralized preprocess')
+
+    def _handle_deterministic_log_options(self):
+        """Set generate_log if deterministic and no log options are set."""
+        has_gen = getattr(self._args, 'generate_log', None)
+        has_cmp = getattr(self._args, 'compare_log', None)
+        if not has_gen and not has_cmp:
+            setattr(self._args, 'generate_log', True)
+            logger.info('Deterministic run detected with no log options; defaulting to --generate-log.')
 
     def _set_force_fp32(self):
         """Set the config that controls whether full float32 precision will be used.
@@ -150,6 +410,7 @@ class PytorchBase(ModelBenchmark):
         if self._args.distributed_impl:
             if self._args.distributed_impl == DistributedImpl.HOROVOD:
                 import horovod.torch as hvd
+
                 train_sampler = \
                     torch.utils.data.distributed.DistributedSampler(
                         self._dataset,
@@ -347,18 +608,23 @@ class PytorchBase(ModelBenchmark):
     def _benchmark(self):
         """Wrap super._benchmark with profiler context if enabled by environment variable.
 
+        Run the benchmark then handle post-run model log save/compare.
         Set SB_ENABLE_PYTORCH_PROFILER='1' to enable profiling.
         """
         # Check if this is a Nvidia GPU
         if not (torch.cuda.is_available() and torch.version.cuda is not None):
-            return super()._benchmark()
+            ok = super()._benchmark()
+            self._post_run_model_log()
+            return ok
 
         # Check if profiling is enabled via environment variable
         enable_profiler = os.environ.get('SB_ENABLE_PYTORCH_PROFILER', '0') == '1'
 
         if not enable_profiler:
             # Run without profiling
-            return super()._benchmark()
+            ok = super()._benchmark()
+            self._post_run_model_log()
+            return ok
 
         # Run with profiling enabled
         logger.info('PyTorch profiler enabled for model: {}'.format(self._name))
@@ -397,4 +663,6 @@ class PytorchBase(ModelBenchmark):
         with open(diag_agent_dump_file_path, 'w') as f:
             json.dump(diag_agent_events, f, sort_keys=True)
 
+        # Handle post-run model log save/compare regardless of profiling
+        self._post_run_model_log()
         return ret
