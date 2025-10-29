@@ -1,0 +1,60 @@
+{
+    "section":"spec_comparison",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "False",
+            "shrink_header": "True",
+            "source_a": "target_spec",
+            "source_b": "baseline_spec",
+            "analyze_method": "",
+            "title_prefix": "Theoretical Performance (Specification) Table *",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"GPU Computation/Peak FP16 TC/MC (TFLOPS)": "^gemm-flops(:fp16|)/fp16(_xdlops|_tc)_flops$"},
+                        {"GPU Computation/Peak FP8 TC/MC (TFLOPS)": "^gemm-flops(:fp8|)/fp8(_xdlops|_tc)_flops$"},
+                        {"GPU Computation/Peak FP6 TC/MC (TFLOPS)": "^gemm-flops(:fp6|)/fp6(_xdlops|_tc)_flops$"},
+                        {"GPU Computation/Peak FP4 TC/MC (TFLOPS)": "^gemm-flops(:fp4|)/fp4(_xdlops|_tc)_flops$"},
+                        {"GPU Memory/Capacity (GB)": "^gpu-mem:perf/capacity_gb$"},
+                        {"GPU Memory/Peak BW (TB/s)": "^gpu-mem:perf/peak_bw_gbps$"},
+                        {"GPU Communication/GPU-to-GPU BW (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_dma_bw$"},
+                        {"GPU Communication/All-Reduce BW (GB/s) **": "^gpu-copy-bw:perf/all_reduce_bus_bw$"},
+                        {"GPU Communication/All-to-All BW (GB/s)": "^gpu-copy-bw:perf/gpu_all_to_gpu_all_write_by_sm_bw$"},
+                        {"Scale-out Network/Total IB BW (GB/s)": "^ib:perf/bw_Gb/s$"},
+                        {"Energy/TBP (W)": "^energy/tbp_power_watt$"},
+                        {"Energy/Cooling": "^energy/cooling$"}                                
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. GPU Computation Peak": [
+                                "GPU Computation.*Peak.*"
+                            ]
+                        },
+                        {
+                            "Avg. GPU Memory Capacity": [
+                                "GPU Memory.*Capacity.*"
+                            ]
+                        },
+                        {
+                            "Avg. GPU Memory Bandwidth": [
+                                "GPU Memory.*BW.*"
+                            ]
+                        },
+                        {
+                            "Avg. GPU Communication": [
+                                "GPU Communication.*"
+                            ]
+                        },
+                        {
+                            "Avg. Overall Spec": [
+                                ".*(Computation/|Memory/|Communication/|Network/|Energy/).*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

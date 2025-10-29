@@ -1,0 +1,813 @@
+{
+    "section":"multinode_inf_scale",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=2208 k=5608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-5608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-5608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-5608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-5608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-5608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-5608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-5608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-5608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-5608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-5608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-5608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-5608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-5608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=11216 k=320",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:11216-320-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:11216-320-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:11216-320-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:11216-320-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:11216-320-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:11216-320-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:11216-320-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:11216-320-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:11216-320-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:11216-320-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:11216-320-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:11216-320-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:11216-320-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=1536 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:1536-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:1536-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:1536-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:1536-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:1536-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:1536-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:1536-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:1536-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:1536-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:1536-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:1536-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:1536-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:1536-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=2208 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=9216 k=320",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-320-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-320-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-320-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-320-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-320-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-320-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-320-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-320-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-320-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-320-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-320-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-320-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-320-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=9216 k=768",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-768-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-768-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-768-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-768-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-768-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-768-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-768-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-768-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-768-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-768-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-768-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-768-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-768-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "7",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=9216 k=430",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-430-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-430-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-430-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-430-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-430-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-430-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-430-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-430-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-430-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-430-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-430-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-430-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-430-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "8",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, CoPilot Mimic, m=32 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:32-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:32-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:32-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:32-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:32-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:32-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:32-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:32-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:32-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:32-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:32-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:32-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:32-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "9",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability Comparison, GPT-175B Mimic, m=6144 k=12288",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:6144-12288-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:6144-12288-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:6144-12288-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:6144-12288-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:6144-12288-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:6144-12288-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:6144-12288-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:6144-12288-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:6144-12288-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:6144-12288-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:6144-12288-1024(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:6144-12288-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "12",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=2208 k=5608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-5608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-5608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-5608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-5608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-5608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-5608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-5608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-5608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-5608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-5608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-5608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-5608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-5608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "13",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=11216 k=320",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:11216-320-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:11216-320-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:11216-320-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:11216-320-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:11216-320-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:11216-320-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:11216-320-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:11216-320-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:11216-320-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:11216-320-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:11216-320-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:11216-320-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:11216-320-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "14",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=1536 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:1536-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:1536-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:1536-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:1536-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:1536-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:1536-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:1536-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:1536-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:1536-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:1536-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:1536-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:1536-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:1536-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "15",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=2208 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "16",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=9216 k=320",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-320-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-320-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-320-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-320-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-320-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-320-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-320-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-320-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-320-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-320-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-320-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-320-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-320-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "17",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=9216 k=768",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-768-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-768-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-768-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-768-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-768-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-768-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-768-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-768-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-768-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-768-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-768-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-768-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-768-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "18",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=9216 k=430",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-430-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-430-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-430-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-430-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-430-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-430-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-430-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-430-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-430-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-430-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-430-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-430-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-430-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "19",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, CoPilot Mimic, m=32 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:32-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:32-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:32-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:32-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:32-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:32-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:32-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:32-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:32-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:32-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:32-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:32-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:32-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "20",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability Comparison, GPT-175B Mimic, m=6144 k=12288",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:6144-12288-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:6144-12288-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:6144-12288-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:6144-12288-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:6144-12288-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:6144-12288-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:6144-12288-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:6144-12288-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:6144-12288-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:6144-12288-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:6144-12288-1024(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:6144-12288-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "23",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=2208 k=5608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-5608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-5608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-5608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-5608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-5608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-5608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-5608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-5608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-5608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-5608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-5608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-5608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-5608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "24",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=11216 k=320",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:11216-320-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:11216-320-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:11216-320-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:11216-320-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:11216-320-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:11216-320-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:11216-320-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:11216-320-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:11216-320-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:11216-320-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:11216-320-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:11216-320-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:11216-320-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "25",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=1536 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:1536-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:1536-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:1536-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:1536-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:1536-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:1536-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:1536-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:1536-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:1536-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:1536-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:1536-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:1536-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:1536-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "26",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=2208 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "27",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=9216 k=320",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-320-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-320-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-320-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-320-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-320-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-320-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-320-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-320-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-320-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-320-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-320-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-320-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-320-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "28",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=9216 k=768",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-768-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-768-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-768-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-768-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-768-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-768-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-768-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-768-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-768-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-768-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-768-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-768-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-768-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "29",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=9216 k=430",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-430-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-430-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-430-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-430-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-430-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-430-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-430-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-430-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-430-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-430-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-430-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-430-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-430-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "30",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, CoPilot Mimic, m=32 k=4608",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:32-4608-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:32-4608-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:32-4608-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:32-4608-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:32-4608-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:32-4608-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:32-4608-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:32-4608-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:32-4608-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:32-4608-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:32-4608-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:32-4608-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:32-4608-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "31",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability Comparison, GPT-175B Mimic, m=6144 k=12288",
+            "header_1": "Batch Size",
+            "ratio_reverse": "True",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:6144-12288-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:6144-12288-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:6144-12288-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:6144-12288-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:6144-12288-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:6144-12288-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:6144-12288-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:6144-12288-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:6144-12288-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:6144-12288-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:6144-12288-1024(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:6144-12288-2048(:msccl)?/step_times$"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

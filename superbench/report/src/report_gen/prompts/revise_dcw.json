@@ -1,0 +1,26 @@
+{
+    "list":[
+        "kernel launch", "gemm", "cudnn", "cublasLt", "matmul", "cpu memory", "gpu to gpu", "gpu memory", "ib", "infiniband", "nccl", "rccl", "overlap", "sharding matmul", "storage", "ort inference", "tensorrt inference", "distributed inference", "lstm", "gpt2", "bert", "resnet", "densenet", "vgg", "gpt-175b"
+    ],
+    "description":[
+        {"kernel launch": "Measure GPU kernel launch latency, which is the time range from the beginning of the launch API call to the beginning of the kernel execution."},
+        {"gemm": "Measure the GPU GEMM FLOPS for different float and int data types, with or without Tensor Core (Matrix Core)"}, 
+        {"cublasLt": "Measure the GEMM flops performance of cublasLtMatmul, supported fp8 precision."}, 
+        {"cpu memory": "Measure the memory copy bandwidth and latency across different CPU NUMA nodes. Performed by Intel MLC Tool."}, 
+        {"gpu to gpu": "Measure the gpu to gpu memory copy bandwidth performed by GPU SM/DMA engine, including device-to-host, host-to-device, and device-to-device."}, 
+        {"gpu memory": "Measure the gpu memory read and write bandwidth"}, 
+        {"pcie bandwidth, gpu to cpu bandwidth, cpu to gpu bandwidth": "Measure the memory copy bandwidth across PCI-e between GPU and CPU, including dtoh (GPU to CPU), htod (CPU to GPU)."}, 
+        {"ib": "Measure the InfiniBand loopback verbs bandwidth inside the single node."}, 
+        {"infiniband": "Measure the InfiniBand loopback verbs bandwidth inside the single node."}, 
+        {"nccl": "Measure the inter-GPU communication performance of NCCL operations under single or multi-nodes' common traffic pattern"}, 
+        {"rccl": "Measure the inter-GPU communication performance of RCCL operations under single or multi-nodes' common traffic pattern"},
+        {"lstm": "Measure the training throughput of LSTM model."}, 
+        {"gpt2": "Measure the training throughput of transformer based model, gpt2-small, gpt2-large."}, 
+        {"bert": "Measure the training throughput of transformer based model, bert-base, bert-large."}, 
+        {"resnet": "Measure the training throughput cnn model, resnet."}, 
+        {"densenet": "Measure the training throughput cnn model, densenet."}, 
+        {"vgg": "Measure the training throughput of cnn model, vgg."},
+        {"gpt-175b": "Measure the inference latency of gpt-175b mimic model."}
+    ],
+    "prompt": "Your task is to understand the user input workload, and use the {benchmark: workload} mapping table to find which benchmark should be executed to test that workload. you should directly output the benchmark name after the mapping."
+}

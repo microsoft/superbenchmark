@@ -1,0 +1,39 @@
+# Logger configuration
+logging:
+  type: base         # Use file-based logging
+  level: log_debug   # Set log level to debug
+  log-level: debug
+  file-path: ./blobfuse2.log  # Path where log files will be stored
+
+# Pipeline configuration
+components:
+  - libfuse
+  - block_cache
+  - file_cache
+  - attr_cache
+  - azstorage
+ 
+# Block cache related configuration
+block_cache:
+  block-size-mb: 16                   # Size of each block to be cached in memory (in MB)
+  mem-size-mb: 200                    # Total amount of memory to be preallocated for block cache (in MB)
+  path: /tmp/blobfusetmp              # Path to local disk cache where downloaded blocks will be stored
+  disk-size-mb: 4096                  # Maximum disk cache size allowed (adjust as needed)
+  disk-timeout-sec: 600               # Default disk cache eviction timeout (in sec)
+  prefetch: 12                        # Number of blocks to be prefetched in serial read case
+  parallelism: 3                      # Number of parallel threads downloading data and writing to disk cache
+
+# Disk cache related configuration
+file_cache:
+  path: /tmp/blobfusetmp              # Path to local disk cache
+  timeout-sec: 600                    # Default cache eviction timeout (in sec)
+  max-size-mb: 4096                   # Maximum cache size allowed (adjust as needed)
+
+# Azure storage configuration
+azstorage:
+  type: block                                            # Type of storage account to be connected (block or adls)
+  account-name: luciastore                              # Name of the storage account
+  container: mount                                      # Name of the storage container to be mounted
+  endpoint: https://luciastore.blob.core.windows.net    # Storage account endpoint
+  mode: azcli                                           # Kind of authentication to be used
+  subdirectory: agents/infrawise/reportgen

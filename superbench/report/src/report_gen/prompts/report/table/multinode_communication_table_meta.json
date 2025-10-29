@@ -1,0 +1,1368 @@
+{
+    "section":"multinode_communication",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-Reduce, BusBW (GB/s), (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-Reduce, BusBW (GB/s), (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-to-All, BusBW (GB/s)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-Gather, BusBW (GB/s)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-Reduce, Latency (us), (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-Reduce, Latency (us), (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "7",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-to-All, Latency (us)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "8",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): All-Gather, Latency (us)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1024_time.*$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2048_time.*$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4096_time.*$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8192_time.*$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16384_time.*$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_32768_time.*$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_65536_time.*$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_131072_time.*$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_262144_time.*$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_524288_time.*$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1048576_time.*$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2097152_time.*$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4194304_time.*$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8388608_time.*$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16777216_time.*$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_33554432_time.*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "9",
+            "save to appendix": "False",
+            "analyze_method": "comm_busbw_average",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Average Performance Ratio on BusBW, with MSCCL,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_\\d+_busbw$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_\\d+_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "10",
+            "save to appendix": "False",
+            "analyze_method": "comm_lat_average",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Average Performance Ratio on Latency, with MSCCL,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_\\d+_time$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_\\d+_time$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_\\d+_time$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_\\d+_time.*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "11",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-Reduce, BusBW (GB/s), (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "12",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-Reduce, BusBW (GB/s), (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "13",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-to-All, BusBW (GB/s)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "14",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-Gather, BusBW (GB/s)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "15",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-Reduce, Latency (us), (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "16",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-Reduce, Latency (us), (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "17",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-to-All, Latency (us)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "18",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): All-Gather, Latency (us)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1024_time.*$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2048_time.*$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4096_time.*$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8192_time.*$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16384_time.*$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_32768_time.*$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_65536_time.*$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_131072_time.*$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_262144_time.*$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_524288_time.*$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1048576_time.*$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2097152_time.*$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4194304_time.*$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8388608_time.*$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16777216_time.*$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_33554432_time.*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "19",
+            "save to appendix": "False",
+            "analyze_method": "comm_busbw_average",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Average Performance Ratio on BusBW, with MSCCL,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_\\d+_busbw$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_\\d+_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "20",
+            "save to appendix": "False",
+            "analyze_method": "comm_lat_average",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Average Performance Ratio on Latency, with MSCCL,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_\\d+_time$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_\\d+_time$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_\\d+_time$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_\\d+_time.*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "21",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-Reduce, BusBW (GB/s), (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "22",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-Reduce, BusBW (GB/s), (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "23",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-to-All, BusBW (GB/s)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "24",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-Gather, BusBW (GB/s)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "25",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-Reduce, Latency (us), (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "26",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-Reduce, Latency (us), (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "27",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-to-All, Latency (us)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "28",
+            "save to appendix": "True",
+            "save to prompt": "False",
+            "analyze_method": "msccl",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): All-Gather, Latency (us)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1024_time.*$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2048_time.*$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4096_time.*$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8192_time.*$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16384_time.*$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_32768_time.*$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_65536_time.*$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_131072_time.*$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_262144_time.*$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_524288_time.*$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_1048576_time.*$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_2097152_time.*$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_4194304_time.*$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_8388608_time.*$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_16777216_time.*$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_33554432_time.*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "29",
+            "save to appendix": "False",
+            "analyze_method": "comm_busbw_average",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Average Performance Ratio on BusBW, with MSCCL,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_\\d+_busbw$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_\\d+_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "30",
+            "save to appendix": "False",
+            "analyze_method": "comm_lat_average",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Average Performance Ratio on Latency, with MSCCL,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi:msccl|xgmi)/allreduce_\\d+_time$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi:msccl|xgmi)/allreduce_\\d+_time$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi:msccl|xgmi)/alltoall_\\d+_time$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi:msccl|xgmi)/allgather_\\d+_time.*$"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

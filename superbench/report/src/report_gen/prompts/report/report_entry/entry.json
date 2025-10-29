@@ -1,0 +1,270 @@
+[
+    {
+        "idx": 1,
+        "SKU_SET": "MI300xH100",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300xbkc49bm",
+                "Baseline": "h100"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300x",
+            "Baseline": "H100"
+        }
+    },
+    {
+        "idx": 2,
+        "SKU_SET": "VMBM",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300xvm",
+                "Baseline": "mi300xbm"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300x VM",
+            "Baseline": "MI300x BM"
+        }
+    },
+    {
+        "idx": 3,
+        "SKU_SET": "MI300xCanaryH100March",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300xcanarymarchbkc",
+                "Baseline": "h100"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300x",
+            "Baseline": "H100"
+        }
+    },
+    {
+        "idx": 4,
+        "SKU_SET": "MI300xCanaryH100",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300xcanary",
+                "Baseline": "h100"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300x",
+            "Baseline": "H100"
+        }
+    },
+    {
+        "idx": 5,
+        "SKU_SET": "MI300xCanaryH100Feb",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300xcanaryfebbkc",
+                "Baseline": "h100"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300x",
+            "Baseline": "H100"
+        }
+    },
+    {
+        "idx": 6,
+        "SKU_SET": "H200H100",
+        "dcw_str": {
+            "Design": {
+                "Target": "h200",
+                "Baseline": "h100"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "H200",
+            "Baseline": "H100"
+        }
+    },
+    {
+        "idx": 7,
+        "SKU_SET": "H200MI300xbkc2405",
+        "dcw_str": {
+            "Design": {
+                "Target": "h200",
+                "Baseline": "mi300xbkc2405"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "H200",
+            "Baseline": "MI300x"
+        }
+    },
+    {
+        "idx": 8,
+        "SKU_SET": "H200PerfMode",
+        "dcw_str": {
+            "Design": {
+                "Target": "h200perfmode",
+                "Baseline": "h200"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "H200PerfMode",
+            "Baseline": "H200"
+        }
+    },
+    {
+        "idx": 9,
+        "SKU_SET": "H200MI300xtop",
+        "dcw_str": {
+            "Design": {
+                "Target": "h200",
+                "Baseline": "mi300xtop"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "H200",
+            "Baseline": "MI300x"
+        }
+    },
+    {
+        "idx": 10,
+        "SKU_SET": "H200MI300xbkc2406opt",
+        "dcw_str": {
+            "Design": {
+                "Target": "h200",
+                "Baseline": "mi300xbkc2406opt"
+            },
+            "Criterion": "default",
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "H200",
+            "Baseline": "MI300x"
+        }
+    },
+    {
+        "idx": 11,
+        "SKU_SET": "FAKE50XDUMMY8C",
+        "dcw_str": {
+            "Design": {
+                "Target": "fake50x",
+                "Baseline": "dummy8c"
+            },
+            "Criterion": [
+                "default"
+            ],
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "FAKE50",
+            "Baseline": "DUMMY8"
+        }
+    },
+    {
+        "idx": 12,
+        "SKU_SET": "ROCMSIMCUDASIM",
+        "dcw_str": {
+            "Design": {
+                "Target": "rocmsim",
+                "Baseline": "cudasim"
+            },
+            "Criterion": [
+                "default"
+            ],
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "ROCM",
+            "Baseline": "CUDA"
+        }
+    },
+    {
+        "idx": 13,
+        "SKU_SET": "MACHFPGAA100H100",
+        "dcw_str": {
+            "Design": {
+                "Target": "machfpga",
+                "Baseline": "a100h100"
+            },
+            "Criterion": [
+                "default"
+            ],
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MACHFPGA",
+            "Baseline": "A100PCIeH100NVLH100SXM"
+        }
+    },
+    {
+        "idx": 14,
+        "SKU_SET": "MI300XBKC2406H100",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300xbkc2406",
+                "Baseline": "h100"
+            },
+            "Criterion": [
+                "default"
+            ],
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300X",
+            "Baseline": "H100"
+        }
+    },
+    {
+        "idx": 15,
+        "SKU_SET": "MI300X2410ROCM62MI300X2406ROCM60",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300x2410rocm62",
+                "Baseline": "mi300x2406rocm60"
+            },
+            "Criterion": [
+                "default"
+            ],
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300X10",
+            "Baseline": "MI300X6"
+        }
+    },
+    {
+        "idx": 16,
+        "SKU_SET": "MI300X2410ROCM62H100",
+        "dcw_str": {
+            "Design": {
+                "Target": "mi300x2410rocm62",
+                "Baseline": "h100"
+            },
+            "Criterion": [
+                "default"
+            ],
+            "Workload": "basic, gemm, communication, superbench, training, inference"
+        },
+        "SKUNickName": {
+            "Target": "MI300X",
+            "Baseline": "H100"
+        }
+    }
+]

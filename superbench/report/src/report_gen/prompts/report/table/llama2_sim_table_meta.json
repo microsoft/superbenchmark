@@ -1,0 +1,131 @@
+{
+    "section":"llama2_sim",
+    "tables":[    
+        {
+            "index": "1",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, Llama-2-70B, Input=128 Output=128",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama-2-70b:128-128-1/step_times$"},
+                        {"2": "^dist-inference:llama-2-70b:128-128-2/step_times$"},
+                        {"4": "^dist-inference:llama-2-70b:128-128-4/step_times$"},
+                        {"8": "^dist-inference:llama-2-70b:128-128-8/step_times$"},
+                        {"16": "^dist-inference:llama-2-70b:128-128-16/step_times$"},
+                        {"32": "^dist-inference:llama-2-70b:128-128-32/step_times$"},
+                        {"64": "^dist-inference:llama-2-70b:128-128-64/step_times$"},
+                        {"128": "^dist-inference:llama-2-70b:128-128-128/step_times$"},
+                        {"256": "^dist-inference:llama-2-70b:128-128-256/step_times$"},
+                        {"512": "^dist-inference:llama-2-70b:128-128-512/step_times$"},
+                        {"1024": "^dist-inference:llama-2-70b:128-128-1024/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, Llama-2-70B,  Input=128 Output=2048",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama-2-70b:128-2048-1/step_times$"},
+                        {"2": "^dist-inference:llama-2-70b:128-2048-2/step_times$"},
+                        {"4": "^dist-inference:llama-2-70b:128-2048-4/step_times$"},
+                        {"8": "^dist-inference:llama-2-70b:128-2048-8/step_times$"},
+                        {"16": "^dist-inference:llama-2-70b:128-2048-16/step_times$"},
+                        {"32": "^dist-inference:llama-2-70b:128-2048-32/step_times$"},
+                        {"64": "^dist-inference:llama-2-70b:128-2048-64/step_times$"},
+                        {"128": "^dist-inference:llama-2-70b:128-2048-128/step_times$"},
+                        {"256": "^dist-inference:llama-2-70b:128-2048-256/step_times$"},
+                        {"512": "^dist-inference:llama-2-70b:128-2048-512/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, Llama-2-70B,  Input=2048 Output=128",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama-2-70b:2048-128-1/step_times$"},
+                        {"2": "^dist-inference:llama-2-70b:2048-128-2/step_times$"},
+                        {"4": "^dist-inference:llama-2-70b:2048-128-4/step_times$"},
+                        {"8": "^dist-inference:llama-2-70b:2048-128-8/step_times$"},
+                        {"16": "^dist-inference:llama-2-70b:2048-128-16/step_times$"},
+                        {"32": "^dist-inference:llama-2-70b:2048-128-32/step_times$"},
+                        {"64": "^dist-inference:llama-2-70b:2048-128-64/step_times$"},
+                        {"96": "^dist-inference:llama-2-70b:2048-128-96/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, Llama-2-70B,  Input=2048 Output=2048",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama-2-70b:2048-2048-1/step_times$"},
+                        {"2": "^dist-inference:llama-2-70b:2048-2048-2/step_times$"},
+                        {"4": "^dist-inference:llama-2-70b:2048-2048-4/step_times$"},
+                        {"8": "^dist-inference:llama-2-70b:2048-2048-8/step_times$"},
+                        {"16": "^dist-inference:llama-2-70b:2048-2048-16/step_times$"},
+                        {"32": "^dist-inference:llama-2-70b:2048-2048-32/step_times$"},
+                        {"64": "^dist-inference:llama-2-70b:2048-2048-64/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, Llama-2-70B, ",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:llama-2-70b:\\d+-\\d+-1/step_times$"},
+                        {"2": "^dist-inference:llama-2-70b:\\d+-\\d+-2/step_times$"},
+                        {"4": "^dist-inference:llama-2-70b:\\d+-\\d+-4/step_times$"},
+                        {"8": "^dist-inference:llama-2-70b:\\d+-\\d+-8/step_times$"},
+                        {"16": "^dist-inference:llama-2-70b:\\d+-\\d+-16/step_times$"},
+                        {"32": "^dist-inference:llama-2-70b:\\d+-\\d+-32/step_times$"},
+                        {"64": "^dist-inference:llama-2-70b:\\d+-\\d+-64/step_times$"},
+                        {"96": "^dist-inference:llama-2-70b:\\d+-\\d+-96/step_times$"},
+                        {"128": "^dist-inference:llama-2-70b:\\d+-\\d+-128/step_times$"},
+                        {"256": "^dist-inference:llama-2-70b:\\d+-\\d+-256/step_times$"},
+                        {"512": "^dist-inference:llama-2-70b:\\d+-\\d+-512/step_times$"},
+                        {"1024": "^dist-inference:llama-2-70b:\\d+-\\d+-1024/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Llama-2-70B": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

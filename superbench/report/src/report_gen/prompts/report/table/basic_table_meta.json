@@ -1,0 +1,81 @@
+{
+    "section":"basic",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "False",
+            "analyze_method": "findmax",
+            "title_prefix": "Raw Hardware Performance Comparison",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"GPU Computation/Kernel Launch Event Time (ms)": "^kernel-launch/event_time$"},
+                        {"GPU Computation/Kernel Launch Wall Time (ms)": "^kernel-launch/wall_time$"},
+                        {"GPU Computation/TF32/FP32 TC/MC (TFLOPS)": "^gemm-flops.*(tf32_tc|fp32_xdlops)_flops$"},
+                        {"GPU Computation/FP16 TC/MC (TFLOPS)": "^gemm-flops.*fp16_(xdlops|tc)_flops$"},
+                        {"GPU Computation/BF16 TC/MC (TFLOPS)": "^gemm-flops.*bf16_(xdlops|tc)_flops$"},
+                        {"GPU Computation/FP8 TC/MC (TFLOPS)": "^(cublaslt|hipblaslt)-gemm/fp8.*_flops$"},
+                        {"GPU Computation/FP4 TC/MC (TFLOPS)": "^(cublaslt|hipblaslt)-gemm/fp4.*_flops$"},
+                        {"GPU Computation/INT8 TC/MC (TIOPS)": "^gemm-flops.*int8_(xdlops|tc)_iops$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Device and Host/Device to Host, Local Host (GB/s)": "^(nvbandwidth/device_to_host_memcpy_sm_cpu\\*_gpu\\*_bw|mem-bw/d2h_bw)$"},
+                        {"GPU Device and Host/Host to Device, Local Host (GB/s)": "^(nvbandwidth/host_to_device_memcpy_sm_cpu\\*_gpu\\*_bw|mem-bw/h2d_bw)$"},
+                        {"GPU Device and Host/Device to Host, Remote Host (GB/s)": "^nvbandwidth/all_to_host_memcpy_sm_cpu\\*_gpu\\*_bw$"},
+                        {"GPU Device and Host/Host to Device, Remote Host (GB/s)": "^nvbandwidth/host_to_all_memcpy_sm_cpu\\*_gpu\\*_bw$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Comm./GPU-to-GPU by DMA Engine (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_dma_bw$"},
+                        {"GPU Comm./GPU-to-GPU by SM (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_sm_bw$"},
+                        {"GPU Comm./All-to-All BW by SM (GB/s)": "^gpu-copy-bw:perf/gpu_all_to_gpu_all.*_by_sm_bw$"},
+                        {"GPU Comm./All-Reduce with IB (GB/s)": "^(nccl|rccl)-bw.*allreduce:ib/allreduce_17179869184_busbw$"},
+                        {"GPU Comm./All-Reduce (NVSwitch SHARP off) (GB/s)": "^(nccl|rccl)-bw:.*(xgmi:msccl|nvlink)/allreduce_17179869184_busbw$"},
+                        {"GPU Comm./All-Reduce (NVSwitch SHARP on) (GB/s)": "^(nccl|rccl)-bw:.*(xgmi:msccl|nvlink-sharp(:msccl)?)/allreduce_17179869184_busbw$"},
+                        {"GPU Comm./IB (GB/s)": "^ib-loopback.*/ib_write_bw_8388608(\\*)?$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Memory/READ WRITE BW by DMA Engine (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_dma_bw$"},
+                        {"GPU Memory/READ WRITE BW by SM (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_sm_bw$"},
+                        {"breaker": "^breaker$"},
+                        {"CPU Memory/Bandwidth NUMA 0 0 (MB/s)": "^(cpu-stream:numa0/copy_throughput|cpu-memory-bw-latency/mem_bandwidth_matrix_numa_0_0_bw)$"},
+                        {"CPU Memory/Bandwidth NUMA 0 1 (MB/s)": "^(cpu-stream:cross-socket0/copy_throughput|cpu-memory-bw-latency/mem_bandwidth_matrix_numa_0_1_bw)$"},
+                        {"CPU Memory/Bandwidth NUMA 1 0 (MB/s)": "^(cpu-stream:cross-socket1/copy_throughput|cpu-memory-bw-latency/mem_bandwidth_matrix_numa_1_0_bw)$"},
+                        {"CPU Memory/Bandwidth NUMA 1 1 (MB/s)": "^(cpu-stream:numa1/copy_throughput|cpu-memory-bw-latency/mem_bandwidth_matrix_numa_1_1_bw)$"},
+                        {"CPU Memory/Latency NUMA 0 0 (ns)": "^cpu-memory-bw-latency/mem_latency_matrix_numa_0_0_lat$"},
+                        {"CPU Memory/Latency NUMA 0 1 (ns)": "^cpu-memory-bw-latency/mem_latency_matrix_numa_0_1_lat$"},
+                        {"CPU Memory/Latency NUMA 1 0 (ns)": "^cpu-memory-bw-latency/mem_latency_matrix_numa_1_0_lat$"},
+                        {"CPU Memory/Latency NUMA 1 1 (ns)": "^cpu-memory-bw-latency/mem_latency_matrix_numa_1_1_lat$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. GPU Computation": [
+                                ".*FP16.*",
+                                ".*BF16.*",
+                                ".*FP8.*",
+                                ".*INT8.*"
+                            ]
+                        },
+                        {
+                            "Avg. GPU Device and Host": [
+                                ".*Device and Host.*"
+                            ]
+                        },
+                        {
+                            "Avg. GPU Comm.": [
+                                ".*Comm..*"
+                            ]
+                        },
+                        {
+                            "Avg. GPU Memory": [
+                                ".*GPU Memory.*"
+                            ]
+                        },
+                        {
+                            "Avg. All Components": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

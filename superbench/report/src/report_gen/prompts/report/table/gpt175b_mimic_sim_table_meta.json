@@ -1,0 +1,237 @@
+{
+    "section":"gpt175b_mimic_sim",
+    "tables":[
+        {
+            "index": "1",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, GPT-175B Mimic, FP16, m=6144 k=12288",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp16:6144-12288-1/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp16:6144-12288-2/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp16:6144-12288-4/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp16:6144-12288-8/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp16:6144-12288-16/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp16:6144-12288-32/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp16:6144-12288-64/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp16:6144-12288-128/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp16:6144-12288-256/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp16:6144-12288-512/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp16:6144-12288-1024/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp16:6144-12288-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp16:6144-12288-1:msccl/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp16:6144-12288-2:msccl/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp16:6144-12288-4:msccl/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp16:6144-12288-8:msccl/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp16:6144-12288-16:msccl/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp16:6144-12288-32:msccl/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp16:6144-12288-64:msccl/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp16:6144-12288-128:msccl/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp16:6144-12288-256:msccl/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp16:6144-12288-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp16:6144-12288-1024:msccl/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp16:6144-12288-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, GPT-175B Mimic, FP16, with MSCCL,",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp16:6144-12288-1:msccl/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp16:6144-12288-2:msccl/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp16:6144-12288-4:msccl/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp16:6144-12288-8:msccl/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp16:6144-12288-16:msccl/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp16:6144-12288-32:msccl/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp16:6144-12288-64:msccl/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp16:6144-12288-128:msccl/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp16:6144-12288-256:msccl/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp16:6144-12288-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp16:6144-12288-1024:msccl/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp16:6144-12288-2048:msccl/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. GPT-175B Mimic, FP16": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, GPT-175B Mimic, FP8, m=6144 k=12288",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp8:6144-12288-1/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp8:6144-12288-2/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp8:6144-12288-4/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp8:6144-12288-8/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp8:6144-12288-16/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp8:6144-12288-32/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp8:6144-12288-64/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp8:6144-12288-128/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp8:6144-12288-256/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp8:6144-12288-512/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp8:6144-12288-1024/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp8:6144-12288-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp8:6144-12288-1:msccl/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp8:6144-12288-2:msccl/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp8:6144-12288-4:msccl/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp8:6144-12288-8:msccl/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp8:6144-12288-16:msccl/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp8:6144-12288-32:msccl/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp8:6144-12288-64:msccl/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp8:6144-12288-128:msccl/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp8:6144-12288-256:msccl/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp8:6144-12288-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp8:6144-12288-1024:msccl/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp8:6144-12288-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, GPT-175B Mimic, FP8, with MSCCL,",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp8:6144-12288-1:msccl/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp8:6144-12288-2:msccl/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp8:6144-12288-4:msccl/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp8:6144-12288-8:msccl/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp8:6144-12288-16:msccl/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp8:6144-12288-32:msccl/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp8:6144-12288-64:msccl/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp8:6144-12288-128:msccl/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp8:6144-12288-256:msccl/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp8:6144-12288-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp8:6144-12288-1024:msccl/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp8:6144-12288-2048:msccl/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. GPT-175B Mimic, FP8": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, GPT-175B Mimic, FP4, m=6144 k=12288",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp4:6144-12288-1/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp4:6144-12288-2/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp4:6144-12288-4/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp4:6144-12288-8/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp4:6144-12288-16/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp4:6144-12288-32/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp4:6144-12288-64/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp4:6144-12288-128/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp4:6144-12288-256/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp4:6144-12288-512/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp4:6144-12288-1024/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp4:6144-12288-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp4:6144-12288-1:msccl/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp4:6144-12288-2:msccl/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp4:6144-12288-4:msccl/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp4:6144-12288-8:msccl/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp4:6144-12288-16:msccl/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp4:6144-12288-32:msccl/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp4:6144-12288-64:msccl/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp4:6144-12288-128:msccl/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp4:6144-12288-256:msccl/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp4:6144-12288-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp4:6144-12288-1024:msccl/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp4:6144-12288-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, GPT-175B Mimic, FP4, with MSCCL,",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:fp4:6144-12288-1:msccl/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:fp4:6144-12288-2:msccl/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:fp4:6144-12288-4:msccl/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:fp4:6144-12288-8:msccl/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:fp4:6144-12288-16:msccl/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:fp4:6144-12288-32:msccl/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:fp4:6144-12288-64:msccl/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:fp4:6144-12288-128:msccl/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:fp4:6144-12288-256:msccl/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:fp4:6144-12288-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:fp4:6144-12288-1024:msccl/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:fp4:6144-12288-2048:msccl/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. GPT-175B Mimic, FP4": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

@@ -1,0 +1,45 @@
+JOB1 = mi300x_report
+JOB2 = mi300x_business
+LATEX = pdflatex
+BIBTEX = biber -l zh__pinyin --output-safechars
+DVIPDF = dvipdfmx
+
+ifeq ($(LATEX), latex)
+	DODVIPDF1 = $(DVIPDF) $(JOB1)
+	DODVIPDF2 = $(DVIPDF) $(JOB2)
+endif
+
+ifdef PATH
+	MAKE = make
+	RM = rm -f
+else
+	MAKE = mingw32-make
+	RM = del
+endif
+
+doc1:
+	$(LATEX) $(JOB1)
+	$(LATEX) $(JOB1)
+	$(LATEX) $(JOB1)
+	$(DODVIPDF1)
+doc2:
+	$(LATEX) $(JOB2)
+	$(LATEX) $(JOB2)
+	$(LATEX) $(JOB2)
+	$(DODVIPDF2)
+
+clean:
+	$(RM) $(JOB1).aux $(JOB1).bbl $(JOB1).bcf $(JOB1).blg $(JOB1).dvi \
+		$(JOB1).lof $(JOB1).log $(JOB1).lot $(JOB1).run.xml $(JOB1).toc \
+		$(JOB1).maf $(JOB1).mtc $(JOB1).mtc0 \
+		$(JOB1).out $(JOB1).out.bak missfont.log texput.log sec/*.aux \
+		$(RM) $(JOB2).aux $(JOB2).bbl $(JOB2).bcf $(JOB2).blg $(JOB2).dvi \
+		$(JOB2).lof $(JOB2).log $(JOB2).lot $(JOB2).run.xml $(JOB2).toc \
+		$(JOB2).maf $(JOB2).mtc $(JOB2).mtc0 \
+		$(JOB2).out $(JOB2).out.bak missfont.log texput.log sec/*.aux 
+
+distclean: clean
+	$(RM) $(JOB1).pdf
+	$(RM) $(JOB2).pdf
+
+# vim:ts=4:sw=4

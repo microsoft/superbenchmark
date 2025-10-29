@@ -1,0 +1,775 @@
+{
+    "section":"communication",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Reduce, BusBW (GB/s), Single node (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Reduce, BusBW (GB/s), Single node (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-to-All, BusBW (GB/s), Single node",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Gather, BusBW (GB/s), Single node",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Reduce, Latency (us), Single node (NVSwitch SHARP disabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Reduce, Latency (us), Single node (NVSwitch SHARP enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp:msccl|xgmi:msccl|nvlink-sharp|xgmi)/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "7",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-to-All, Latency (us), Single node",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/alltoall_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "8",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Gather, Latency (us), Single node",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:(nvlink:msccl|xgmi:msccl|nvlink|xgmi)/allgather_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+                {
+            "index": "9",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Reduce, BusBW (GB/s), Single node (NVSwitch SHARP GRAPH enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "10",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-to-All, BusBW (GB/s), Single node (NVSwitch SHARP GRAPH enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "11",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Gather, BusBW (GB/s), Single node (NVSwitch SHARP GRAPH enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_17179869184_busbw$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1048576_busbw$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2097152_busbw$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4194304_busbw$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8388608_busbw$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_16777216_busbw$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_33554432_busbw$"},
+                        {"64MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_67108864_busbw$"},
+                        {"128MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_134217728_busbw$"},
+                        {"256MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_268435456_busbw$"},
+                        {"512MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_536870912_busbw$"},
+                        {"1GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1073741824_busbw$"},
+                        {"2GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2147483648_busbw$"},
+                        {"4GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4294967296_busbw$"},
+                        {"8GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8589934592_busbw$"},
+                        {"16GB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_17179869184_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "12",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Reduce, Latency (us), Single node (NVSwitch SHARP GRAPH enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "13",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-to-All, Latency (us), Single node (NVSwitch SHARP GRAPH enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "14",
+            "save to appendix": "True",
+            "analyze_method": "msccl",
+            "title_prefix": "All-Gather, Latency (us), Single node (NVSwitch SHARP GRAPH enabled)",
+            "header_1": "Msg Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_33554432_time$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1024_time$"},
+                        {"2KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2048_time$"},
+                        {"4KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4096_time$"},
+                        {"8KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8192_time$"},
+                        {"16KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_16384_time$"},
+                        {"32KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_32768_time$"},
+                        {"64KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_65536_time$"},
+                        {"128KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_131072_time$"},
+                        {"256KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_262144_time$"},
+                        {"512KB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_524288_time$"},
+                        {"1MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_1048576_time$"},
+                        {"2MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_2097152_time$"},
+                        {"4MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_4194304_time$"},
+                        {"8MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_8388608_time$"},
+                        {"16MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_16777216_time$"},
+                        {"32MB": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_33554432_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "15",
+            "save to appendix": "False",
+            "analyze_method": "comm_busbw_average",
+            "title_prefix": "Average Performance Ratio on BusBW,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_\\d+_busbw$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_\\d+_busbw$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_\\d+_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "16",
+            "save to appendix": "False",
+            "analyze_method": "comm_lat_average",
+            "title_prefix": "Average Performance Ratio on Latency,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP disabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink|xgmi)/allreduce_\\d+_time$"},
+                        {"All-Reduce (NVSwitch SHARP enabled)": "^(nccl|rccl)-bw.*allreduce:(nvlink-sharp|xgmi)/allreduce_\\d+_time$"},
+                        {"All-to-All": "^(nccl|rccl)-bw.*alltoall:(nvlink|xgmi)/alltoall_\\d+_time$"},
+                        {"All-Gather": "^(nccl|rccl)-bw.*allgather:(nvlink|xgmi)/allgather_\\d+_time$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "17",
+            "save to appendix": "False",
+            "analyze_method": "comm_busbw_average",
+            "title_prefix": "Average Performance Ratio on BusBW, with SHARP GRAPH,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP GRAPH enabled)": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_\\d+_busbw$"},
+                        {"All-to-All (NVSwitch SHARP GRAPH enabled)": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_\\d+_busbw$"},
+                        {"All-Gather (NVSwitch SHARP GRAPH enabled)": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_\\d+_busbw$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "18",
+            "save to appendix": "False",
+            "analyze_method": "comm_lat_average",
+            "title_prefix": "Average Performance Ratio on Latency, with SHARP GRAPH,",
+            "header_1": "Algorithm",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"All-Reduce (NVSwitch SHARP GRAPH enabled)": "^(nccl|rccl)-bw.*allreduce:nvlink-sharp:graph/allreduce_\\d+_time$"},
+                        {"All-to-All (NVSwitch SHARP GRAPH enabled)": "^(nccl|rccl)-bw.*alltoall:nvlink-sharp:graph/alltoall_\\d+_time$"},
+                        {"All-Gather (NVSwitch SHARP GRAPH enabled)": "^(nccl|rccl)-bw.*allgather:nvlink-sharp:graph/allgather_\\d+_time$"}
+                    ]
+                }
+            ]
+        }
+    ]
+}

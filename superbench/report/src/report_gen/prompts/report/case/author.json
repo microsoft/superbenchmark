@@ -1,0 +1,16 @@
+[
+  {  
+    "affiliation": "Vancouver",
+    "authors":[ 
+      {"name": "John Doe", "footnote": "*"},
+      {"name": "John Doe Jr.", "footnote": ""}
+    ]
+  },
+  {  
+    "affiliation": "Seattle",
+    "authors":[
+      {"name": "Wei Wang", "footnote": ""},
+      {"name": "Li Li", "footnote": ""}
+    ]
+  }
+]

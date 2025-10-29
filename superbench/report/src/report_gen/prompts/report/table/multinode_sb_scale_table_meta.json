@@ -1,0 +1,737 @@
+{
+    "section":"multinode_sb_scale",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability (FP16) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm(:tunable)?/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability (FP32) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm(:tunable)?/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability (FP8) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp8_.*_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp8_.*_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp8_.*_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp8_.*_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability (FP16) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm:peak.*/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability (FP32) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm:peak.*/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 2,
+            "title_prefix": "Multi-Node (2): Scalability (FP8) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp8_.*_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp8_.*_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp8_.*_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp8_.*_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "7",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability (FP16) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm(:tunable)?/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "8",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability (FP32) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm(:tunable)?/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "9",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability (FP8) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp8_.*_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp8_.*_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp8_.*_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp8_.*_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "10",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability (FP16) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm:peak.*/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "11",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability (FP32) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm:peak.*/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "12",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Scalability (FP8) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp8_.*_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp8_.*_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp8_.*_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp8_.*_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "13",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability (FP16) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm(:tunable)?/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "14",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability (FP32) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet(:tunable)?/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet(:tunable)?/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg(:tunable)?/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm(:tunable)?/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "15",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability (FP8) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-base/fp8_.*_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert(:tunable)?/pytorch-bert-large/fp8_.*_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-small/fp8_.*_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt(:tunable)?/pytorch-gpt2-large/fp8_.*_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "16",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability (FP16) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm:peak.*/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "17",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability (FP32) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Scalability)": "^model-benchmarks:resnet:peak.*/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Scalability)": "^model-benchmarks:densenet:peak.*/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Scalability)": "^model-benchmarks:vgg:peak.*/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Scalability)": "^model-benchmarks:lstm:peak.*/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "18",
+            "save to appendix": "False",
+            "analyze_method": "calc_scalability",
+            "scale": 8,
+            "title_prefix": "Multi-Node (8): Scalability (FP8) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BERT-base (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-base/fp8_.*_train_throughput.*$"},
+                        {"BERT-large (Scalability)": "^model-benchmarks:bert:peak.*/pytorch-bert-large/fp8_.*_train_throughput.*$"},
+                        {"GPT2-small (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-small/fp8_.*_train_throughput.*$"},
+                        {"GPT2-large (Scalability)": "^model-benchmarks:gpt:peak.*/pytorch-gpt2-large/fp8_.*_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

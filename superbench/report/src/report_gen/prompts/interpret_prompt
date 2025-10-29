@@ -1,0 +1,61 @@
+Your task is to interpret the user's input, and retrive three key components via interpretation of user's question.
+these three key components are:
+1. Design difference: 
+The design difference is either provided by the user, or you can know it by understanding the design difference between the newly designed SKU and the reference SKU.
+2. Evaluation criterion:
+An evaluation criterion can be a metric, standard or principle used to assess the performance, effectiveness or quality of Baseline design and new/target design.
+User should provide this specificallyt, if not, use 'default'.
+3. Workload:
+If the user specifically mentioned which types of workloads are target or optimized for, set it into workload field. otherwise use 'default'.
+
+Example 1:  
+User's question: what is the perforamnce of SKU MM?
+Design difference: Baseline design is N/A, Target is SKU MM.
+Criterion: default
+Workload: default
+
+Example 2:
+User's question: evaluate H100 gpu memory bandwidth in one minute using just one benchmark
+Design difference: Baseline design is N/A, Target is H100 gpu.
+Criterion: evaluate using one minute and just one benchmark.
+Workload: gpu memory bandwidth.
+
+Example 3:
+User's question: evaluate H100 pcie bandwidth in one minute using just one benchmark
+Design difference: Baseline design is N/A, Target is H100 gpu.
+Criterion: evaluate using one minute and just one benchmark.
+Workload: pcie bandwidth.
+
+Example 4: 
+User's question: how much faster of gpt model training is H100 than A100
+Design difference: Baseline design is A100, Target is H100.
+Criterion: throughput
+Workload: gpt model training.
+
+Example 5:
+User's question: The target design SKU is ND96isr_H100_v5, the reference design SKU is N/A, we need to do Perfgate full validation without Infiniband
+Design difference: Baseline design is N/A, Target is ND96isr_H100_v5.
+Criterion: full validation without infiniband.
+Workload: default.
+
+Example 6:
+User's question: we want to do full validation without infiniband on NDv4, Please set the env 'NCCL_TOPO_FILE': '/opt/microsoft/ndv4-topo.xml' for nccl related benchmarks. The spec of NDv4 is 8*A100 GPU.
+Design difference: Baseline design is N/A, Target is NDv4.
+Criterion:  full validation without infiniband.
+Workload: default.
+
+Example 7:
+User's question: The target design SKU is ND96isr_H100_v5 VM, the reference design is nd96amsr_a100_v4 VM, we need to do comprehensive evaluation. The new feature of ND96isr_H100_v5 includes FP8 precision support.
+Design difference: Baseline design is nd96amsr_a100_v4 VM, Target is ND96isr_H100_v5 VM.
+Criterion:  comprehensive evaluation.
+Workload: default.
+
+Please output these three key components in the following format:
+{  
+    "Design": {
+        "Target": "",
+        "Baseline": ""
+    },  
+    "Criterion": "",  
+    "Workload": ""
+}

@@ -1,0 +1,23 @@
+{"workload": "GPU to GPU bandwidth", "benchmark metric name": "gpu-to-gpu-bw:perf", "benchmark metric unit": "GB/s"}
+{"workload": "GPU memory bandwidth", "benchmark metric name": "gpu-mem-read-write-bw:perf", "benchmark metric unit": "GB/s"}
+{"workload": "CPU memory bandwidth and latency", "benchmark metric name": "cpu-memory-bw-latency/mem_bandwidth_matrix_numa_*_*_bw", "benchmark metric unit": "MB/s"}
+{"workload": "CPU memory bandwidth and latency", "benchmark metric name": "cpu-memory-bw-latency/mem_bandwidth_matrix_numa_*_*_lat", "benchmark metric unit": "ns"}
+{"workload": "CPU memory bandwidth and latency", "benchmark metric name": "cpu-memory-bw-latency/mem_max_bandwidth_1_1_reads-writes_bw", "benchmark metric unit": "MB/s"}
+{"workload": "CPU memory bandwidth and latency", "benchmark metric name": "cpu-memory-bw-latency/mem_max_bandwidth_2_1_reads-writes_bw", "benchmark metric unit": "MB/s"}
+{"workload": "CPU memory bandwidth and latency", "benchmark metric name": "cpu-memory-bw-latency/mem_max_bandwidth_3_1_reads-writes_bw", "benchmark metric unit": "MB/s"}
+{"workload": "CPU memory bandwidth and latency", "benchmark metric name": "cpu-memory-bw-latency/mem_max_bandwidth_all_reads_bw", "benchmark metric unit": "MB/s"}
+{"workload": "CPU memory bandwidth and latency", "benchmark metric name": "cpu-memory-bw-latency/mem_max_bandwidth_stream-triad_like_bw", "benchmark metric unit": "MB/s"}
+{"workload": "CUBLAS functions' performance", "benchmark metric name": "cublas-function/name_*_*_time", "benchmark metric unit": "us"}
+{"workload": "GEMM performance - FP8(FP8e4m3 and FP8e5m2) Precision, CUBLAS LT", "benchmark metric name": "cublaslt-gemm/*_*_*_*_*_flops", "benchmark metric unit": "TFLOPS"}
+{"workload": "GPU gemm performance for bf16, fp16, fp16(tensor core), fp32, fp32(tensor core), fp64, fp64(tensor core)", "benchmark metric name": "emm-flops/*_*_flops", "benchmark metric unit": "GFLOPS"}
+{"workload": "GPU gemm performance for int8, int4", "benchmark metric name": "emm-flops/*_*_flops", "benchmark metric unit": "GIOPS: Giga Integer Operations Per Second"}
+{"workload": "GPU kernel launch time", "benchmark metric name": "kernel_launch_*_time", "benchmark metric unit": "ms"}  
+{"workload": "PCIe bandwidth, GPU to CPU bandwidth, CPU to GPU bandwidth", "benchmark metric name": "*_bw", "benchmark metric name": "GB/s"}
+{"workload": "InfiniBand bandwidth(loopback)", "benchmark metric name": "ib_write_bw_8388608", "benchmark metric name": "GB/s"}
+{"workload": "nccl x performance (x)", "benchmark metric name": "x_x_busbw", "benchmark metric name": "GB/s"}
+{"workload": "NCCL bandwidth (InfiniBand only)", "benchmark metric name": "allreduce_17179869184_busbw", "benchmark metric name": "GB/s"}
+{"workload": "distributed inference throughput", "benchmark metric name": "step_times", "benchmark metric unit": "ms"}
+{"workload": "distributed inference throughput", "benchmark metric name": "step_times_x", "benchmark metric unit": "ms"}
+{"workload": "AI * model training performance, *", "benchmark metric name": "*_throughput", "benchmark metric name": "Samples/s"}
+{"workload": "AI * model training performance, *", "benchmark metric name": "*_step_time", "benchmark metric name": "ms"}
+{"workload": "GPT-175B Mimic Inference Latency, *", "benchmark metric name": "inference_*_latency", "benchmark metric name": "us"}

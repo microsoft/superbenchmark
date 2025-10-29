@@ -1,0 +1,255 @@
+{
+    "section":"superbench",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "Typical Small Model Training Performance (FP16) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"LLAMA2-7b (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-llama2-7b/fp16_train_throughput.*$"},
+                        {"BERT-base (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "LLAMA2-7.*",
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "Typical Small Model Training Performance (FP32) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"LLAMA2-7b (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-llama2-7b/fp32_train_throughput.*$"},
+                        {"BERT-base (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "LLAMA2-7.*",
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "Typical Small Model Training Performance (FP8) Comparison, apple-to-apple,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"LLAMA2-7b (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-llama2-7b/fp8_.*train_throughput.*$"},
+                        {"BERT-base (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-bert-base/fp8_.*train_throughput.*$"},
+                        {"BERT-large (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-bert-large/fp8_.*train_throughput.*$"},
+                        {"GPT2-small (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-gpt2-small/fp8_.*train_throughput.*$"},
+                        {"GPT2-large (Samples/s)": "^model-benchmarks:(?![^/]*peak)[^/]+/pytorch-gpt2-large/fp8_.*train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "LLAMA2-7.*",
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "Typical Small Model Training Performance (FP16) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"LLAMA2-7b (Samples/s)": "^model-benchmarks:.*:peak.*/pytorch-llama2-7b/fp16_train_throughput.*$"},
+                        {"BERT-base (Samples/s)": "^model-benchmarks:.*:peak.*/pytorch-bert-base/fp16_train_throughput.*$"},
+                        {"BERT-large (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-bert-large/fp16_train_throughput.*$"},
+                        {"GPT2-small (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-gpt2-small/fp16_train_throughput.*$"},
+                        {"GPT2-large (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-gpt2-large/fp16_train_throughput.*$"},
+                        {"Resnet50 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-resnet50/fp16_train_throughput.*$"},
+                        {"Resnet101 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-resnet101/fp16_train_throughput.*$"},
+                        {"Resnet152 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-resnet152/fp16_train_throughput.*$"},
+                        {"Densenet169 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-densenet169/fp16_train_throughput.*$"},
+                        {"Densenet201 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-densenet201/fp16_train_throughput.*$"},
+                        {"VGG11 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg11/fp16_train_throughput.*$"},
+                        {"VGG13 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg13/fp16_train_throughput.*$"},
+                        {"VGG16 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg16/fp16_train_throughput.*$"},
+                        {"VGG19 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg19/fp16_train_throughput.*$"},
+                        {"LSTM (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-lstm/fp16_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "LLAMA2-7.*",
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "Typical Small Model Training Performance (FP32) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"LLAMA2-7b (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-llama2-7b/fp32_train_throughput.*$"},
+                        {"BERT-base (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-bert-base/fp32_train_throughput.*$"},
+                        {"BERT-large (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-bert-large/fp32_train_throughput.*$"},
+                        {"GPT2-small (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-gpt2-small/fp32_train_throughput.*$"},
+                        {"GPT2-large (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-gpt2-large/fp32_train_throughput.*$"},
+                        {"Resnet50 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-resnet50/fp32_train_throughput.*$"},
+                        {"Resnet101 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-resnet101/fp32_train_throughput.*$"},
+                        {"Resnet152 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-resnet152/fp32_train_throughput.*$"},
+                        {"Densenet169 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-densenet169/fp32_train_throughput.*$"},
+                        {"Densenet201 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-densenet201/fp32_train_throughput.*$"},
+                        {"VGG11 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg11/fp32_train_throughput.*$"},
+                        {"VGG13 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg13/fp32_train_throughput.*$"},
+                        {"VGG16 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg16/fp32_train_throughput.*$"},
+                        {"VGG19 (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-vgg19/fp32_train_throughput.*$"},
+                        {"LSTM (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-lstm/fp32_train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "LLAMA2-7.*",
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        },
+                        {
+                            "Avg. CNN Models": [
+                                "Resnet.*",
+                                "Densenet.*",
+                                "VGG.*"
+                            ]
+                        },
+                        {
+                            "Avg. LSTM Models": [
+                                "LSTM.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "Typical Small Model Training Performance (FP8) Comparison, peak,",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"LLAMA2-7b (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-llama2-7b/fp8_.*train_throughput.*$"},
+                        {"BERT-base (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-bert-base/fp8_.*train_throughput.*$"},
+                        {"BERT-large (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-bert-large/fp8_.*train_throughput.*$"},
+                        {"GPT2-small (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-gpt2-small/fp8_.*train_throughput.*$"},
+                        {"GPT2-large (Samples/s)": "^model-benchmarks.*:peak.*/pytorch-gpt2-large/fp8_.*train_throughput.*$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. Transformer Models": [
+                                "LLAMA2-7.*",
+                                "BERT.*",
+                                "GPT2.*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

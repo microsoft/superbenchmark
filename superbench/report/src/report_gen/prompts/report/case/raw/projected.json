@@ -1,0 +1,15 @@
+{
+    "target":{            
+    },
+    "baseline":{    
+    },
+    "metric": {
+        "GPU Computation/FP64 XDLOPs (TFLOPS)": "^gemm-flops:fp64/fp64_flops$",
+        "GPU Computation/FP32 XDLOPs (TFLOPS)": "^gemm-flops:fp32/fp32_xdlops_flops$",
+        "GPU Computation/TF32 XDLOPs (TFLOPS)": "^gemm-flops:tf32/tf32_xdlops_flops$",
+        "GPU Computation/FP16 XDLOPs (TFLOPS)": "^gemm-flops:fp16/fp16_xdlops_flops$",
+        "GPU Computation/BF16 XDLOPs (TFLOPS)": "^gemm-flops:bf16/bf16_xdlops_flops$",
+        "GPU Computation/FP8 XDLOPs (TFLOPS)": "^gemm-flops:fp8/fp8_xdlops_flops$",
+        "GPU Computation/INT8 XDLOPs (TIOPS)": "^gemm-flops:int8/int8_xdlops_iops$"
+    }
+}

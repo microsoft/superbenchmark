@@ -1,0 +1,27 @@
+[
+    {
+        "metric": "GPU GEMM performance, FP32",
+        "workload": "GPU gemm performance for .*",
+        "result": "(gemm-flops/tf32_tc_flops)|(gemm-flops/tf32_xdlops_flops)"
+    },
+    {
+        "metric": "GPU GEMM performance, FP16",
+        "workload": "GPU gemm performance for .*",
+        "result": "(gemm-flops/fp16_tc_flops)|(gemm-flops/fp16_xdlops_flops)"
+    },
+    {
+        "metric": "GPU to GPU bandwidth",
+        "workload": "GPU to GPU bandwidth",
+        "result": "(gpu-to-gpu-bw:perf/write_by_dma_bw)|(gpu-to-gpu-bw:perf/write_by_dma_bw)"
+    },
+    {
+        "metric": "GPU Memory bandwidth",
+        "workload": "GPU Memory bandwidth",
+        "result": "(gpu-mem-read-write-bw:perf)|(gpu-mem-read-write-bw:perf)"
+    },
+    {
+        "metric": "NCCL/RCCL AllReduce bandwidth",
+        "workload": "(nccl allreduce performance.*)|(rccl allreduce performance.*)",
+        "result": "(allreduce_17179869184_busbw)|(allreduce_8589934592_busbw)"
+    }
+]

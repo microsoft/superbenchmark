@@ -1,0 +1,75 @@
+{
+    "section":"projected",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "False",
+            "shrink_header": "True",
+            "source_a": "target_benchmark",
+            "source_b": "target_projected",
+            "source_c": "target_spec",
+            "analyze_method": "findmax_target_spec",
+            "title_prefix": "Benchmark, Projected and Peak Performance Table",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"GPU Computation/TF32/FP32 TC/MC (TFLOPS)": "^gemm-flops.*(tf32_tc|fp32_xdlops)_flops$"},
+                        {"GPU Computation/FP16 TC/MC (TFLOPS)": "^gemm-flops.*fp16_(xdlops|tc)_flops$"},
+                        {"GPU Computation/BF16 TC/MC (TFLOPS)": "^gemm-flops.*bf16_(xdlops|tc)_flops$"},
+                        {"GPU Computation/FP8 TC/MC (TFLOPS)": "^(cublaslt|hipblaslt)-gemm/fp8.*_flops$"},
+                        {"GPU Computation/INT8 TC/MC (TIOPS)": "^gemm-flops.*int8_(xdlops|tc)_iops$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ GPU-to-GPU by DMA Engine (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_dma_bw$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ GPU-to-GPU by SM (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_sm_bw$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ All-to-All BW by SM (GB/s)}": "^gpu-copy-bw:perf/gpu_all_to_gpu_all_write_by_sm_bw$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ All-Reduce (GB/s)}": "^rccl-bw:bw:allreduce:xgmi.*/allreduce_17179869184_busbw$"},
+                        {"\\makecell[l]{GPU Memory/ \\\\ READ WRITE BW by DMA Engine (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_dma_bw$"},
+                        {"\\makecell[l]{GPU Memory/ \\\\ READ WRITE BW by SM (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_sm_bw$"}                        
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg.": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "False",
+            "shrink_header": "True",
+            "source_a": "baseline_benchmark",
+            "source_b": "baseline_spec",
+            "analyze_method": "findmax_baseline_spec",
+            "title_prefix": "Benchmark and Peak Performance Table",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"GPU Computation/TF32/FP32 TC/MC (TFLOPS)": "^gemm-flops.*(tf32_tc|fp32_xdlops)_flops$"},
+                        {"GPU Computation/FP16 TC/MC (TFLOPS)": "^gemm-flops.*fp16_(xdlops|tc)_flops$"},
+                        {"GPU Computation/BF16 TC/MC (TFLOPS)": "^gemm-flops.*bf16_(xdlops|tc)_flops$"},
+                        {"GPU Computation/FP8 TC/MC (TFLOPS)": "^(cublaslt|hipblaslt)-gemm/fp8.*_flops$"},
+                        {"GPU Computation/INT8 TC/MC (TIOPS)": "^gemm-flops.*int8_(xdlops|tc)_iops$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ GPU-to-GPU by DMA Engine (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_dma_bw$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ GPU-to-GPU by SM (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_sm_bw$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ All-to-All BW by SM (GB/s)}": "^gpu-copy-bw:perf/gpu_all_to_gpu_all_write_by_sm_bw$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ All-Reduce (GB/s)}": "^nccl-bw:bw:allreduce:nvlink/allreduce_17179869184_busbw$"},
+                        {"\\makecell[l]{GPU Communication/ \\\\ All-Reduce with SHARP (GB/s)}": "^nccl-bw:bw:allreduce:nvlink-sharp:msccl/allreduce_17179869184_busbw$"},
+                        {"\\makecell[l]{GPU Memory/ \\\\ READ WRITE BW by DMA Engine (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_dma_bw$"},
+                        {"\\makecell[l]{GPU Memory/ \\\\ READ WRITE BW by SM (GB/s)}": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_sm_bw$"}                        
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg.": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

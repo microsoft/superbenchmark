@@ -1,0 +1,339 @@
+{
+    "section":"multinode_ibwrite",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Bandwidth (GB/s), CPU to CPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1KB": "^ib-traffic:allpairs/ib_write_bw_1024_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_bw_2048_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_bw_4096_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_bw_8192_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_bw_16384_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_bw_32768_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_bw_65536_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_bw_131072_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_bw_262144_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_bw_524288_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_bw_1048576_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_bw_2097152_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_bw_4194304_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_bw_8388608_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16MB": "^ib-traffic:allpairs/ib_write_bw_16777216_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32MB": "^ib-traffic:allpairs/ib_write_bw_33554432_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64MB": "^ib-traffic:allpairs/ib_write_bw_67108864_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128MB": "^ib-traffic:allpairs/ib_write_bw_134217728_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256MB": "^ib-traffic:allpairs/ib_write_bw_268435456_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512MB": "^ib-traffic:allpairs/ib_write_bw_536870912_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1GB": "^ib-traffic:allpairs/ib_write_bw_1073741824_cpu-to-cpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Bandwidth (GB/s), CPU to GPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1KB": "^ib-traffic:allpairs/ib_write_bw_1024_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_bw_2048_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_bw_4096_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_bw_8192_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_bw_16384_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_bw_32768_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_bw_65536_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_bw_131072_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_bw_262144_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_bw_524288_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_bw_1048576_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_bw_2097152_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_bw_4194304_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_bw_8388608_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16MB": "^ib-traffic:allpairs/ib_write_bw_16777216_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32MB": "^ib-traffic:allpairs/ib_write_bw_33554432_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64MB": "^ib-traffic:allpairs/ib_write_bw_67108864_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128MB": "^ib-traffic:allpairs/ib_write_bw_134217728_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256MB": "^ib-traffic:allpairs/ib_write_bw_268435456_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512MB": "^ib-traffic:allpairs/ib_write_bw_536870912_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1GB": "^ib-traffic:allpairs/ib_write_bw_1073741824_cpu-to-gpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Bandwidth (GB/s), GPU to CPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1KB": "^ib-traffic:allpairs/ib_write_bw_1024_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_bw_2048_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_bw_4096_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_bw_8192_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_bw_16384_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_bw_32768_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_bw_65536_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_bw_131072_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_bw_262144_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_bw_524288_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_bw_1048576_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_bw_2097152_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_bw_4194304_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_bw_8388608_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16MB": "^ib-traffic:allpairs/ib_write_bw_16777216_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32MB": "^ib-traffic:allpairs/ib_write_bw_33554432_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64MB": "^ib-traffic:allpairs/ib_write_bw_67108864_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128MB": "^ib-traffic:allpairs/ib_write_bw_134217728_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256MB": "^ib-traffic:allpairs/ib_write_bw_268435456_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512MB": "^ib-traffic:allpairs/ib_write_bw_536870912_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1GB": "^ib-traffic:allpairs/ib_write_bw_1073741824_gpu-to-cpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Bandwidth (GB/s), GPU to GPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1KB": "^ib-traffic:allpairs/ib_write_bw_1024_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_bw_2048_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_bw_4096_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_bw_8192_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_bw_16384_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_bw_32768_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_bw_65536_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_bw_131072_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_bw_262144_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_bw_524288_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_bw_1048576_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_bw_2097152_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_bw_4194304_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_bw_8388608_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16MB": "^ib-traffic:allpairs/ib_write_bw_16777216_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32MB": "^ib-traffic:allpairs/ib_write_bw_33554432_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64MB": "^ib-traffic:allpairs/ib_write_bw_67108864_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128MB": "^ib-traffic:allpairs/ib_write_bw_134217728_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256MB": "^ib-traffic:allpairs/ib_write_bw_268435456_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512MB": "^ib-traffic:allpairs/ib_write_bw_536870912_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1GB": "^ib-traffic:allpairs/ib_write_bw_1073741824_gpu-to-gpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Latency (us), CPU to CPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"2B": "^ib-traffic:allpairs/ib_write_lat_2_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4B": "^ib-traffic:allpairs/ib_write_lat_4_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8B": "^ib-traffic:allpairs/ib_write_lat_8_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16B": "^ib-traffic:allpairs/ib_write_lat_16_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32B": "^ib-traffic:allpairs/ib_write_lat_32_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64B": "^ib-traffic:allpairs/ib_write_lat_64_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128B": "^ib-traffic:allpairs/ib_write_lat_128_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256B": "^ib-traffic:allpairs/ib_write_lat_256_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512B": "^ib-traffic:allpairs/ib_write_lat_512_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1KB": "^ib-traffic:allpairs/ib_write_lat_1024_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_lat_2048_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_lat_4096_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_lat_8192_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_lat_16384_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_lat_32768_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_lat_65536_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_lat_131072_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_lat_262144_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_lat_524288_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_lat_1048576_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_lat_2097152_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_lat_4194304_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_lat_8388608_cpu-to-cpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Latency (us), CPU to GPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"2B": "^ib-traffic:allpairs/ib_write_lat_2_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4B": "^ib-traffic:allpairs/ib_write_lat_4_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8B": "^ib-traffic:allpairs/ib_write_lat_8_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16B": "^ib-traffic:allpairs/ib_write_lat_16_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32B": "^ib-traffic:allpairs/ib_write_lat_32_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64B": "^ib-traffic:allpairs/ib_write_lat_64_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128B": "^ib-traffic:allpairs/ib_write_lat_128_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256B": "^ib-traffic:allpairs/ib_write_lat_256_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512B": "^ib-traffic:allpairs/ib_write_lat_512_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1KB": "^ib-traffic:allpairs/ib_write_lat_1024_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_lat_2048_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_lat_4096_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_lat_8192_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_lat_16384_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_lat_32768_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_lat_65536_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_lat_131072_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_lat_262144_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_lat_524288_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_lat_1048576_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_lat_2097152_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_lat_4194304_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_lat_8388608_cpu-to-gpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "7",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Latency (us), GPU to CPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"2B": "^ib-traffic:allpairs/ib_write_lat_2_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4B": "^ib-traffic:allpairs/ib_write_lat_4_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8B": "^ib-traffic:allpairs/ib_write_lat_8_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16B": "^ib-traffic:allpairs/ib_write_lat_16_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32B": "^ib-traffic:allpairs/ib_write_lat_32_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64B": "^ib-traffic:allpairs/ib_write_lat_64_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128B": "^ib-traffic:allpairs/ib_write_lat_128_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256B": "^ib-traffic:allpairs/ib_write_lat_256_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512B": "^ib-traffic:allpairs/ib_write_lat_512_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1KB": "^ib-traffic:allpairs/ib_write_lat_1024_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_lat_2048_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_lat_4096_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_lat_8192_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_lat_16384_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_lat_32768_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_lat_65536_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_lat_131072_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_lat_262144_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_lat_524288_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_lat_1048576_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_lat_2097152_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_lat_4194304_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_lat_8388608_gpu-to-cpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "8",
+            "save to appendix": "True",
+            "analyze_method": "",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): IB Write Latency (us), GPU to GPU",
+            "header_1": "Message Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"2B": "^ib-traffic:allpairs/ib_write_lat_2_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4B": "^ib-traffic:allpairs/ib_write_lat_4_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8B": "^ib-traffic:allpairs/ib_write_lat_8_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16B": "^ib-traffic:allpairs/ib_write_lat_16_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32B": "^ib-traffic:allpairs/ib_write_lat_32_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64B": "^ib-traffic:allpairs/ib_write_lat_64_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128B": "^ib-traffic:allpairs/ib_write_lat_128_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256B": "^ib-traffic:allpairs/ib_write_lat_256_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512B": "^ib-traffic:allpairs/ib_write_lat_512_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1KB": "^ib-traffic:allpairs/ib_write_lat_1024_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2KB": "^ib-traffic:allpairs/ib_write_lat_2048_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4KB": "^ib-traffic:allpairs/ib_write_lat_4096_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8KB": "^ib-traffic:allpairs/ib_write_lat_8192_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"16KB": "^ib-traffic:allpairs/ib_write_lat_16384_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"32KB": "^ib-traffic:allpairs/ib_write_lat_32768_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"64KB": "^ib-traffic:allpairs/ib_write_lat_65536_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"128KB": "^ib-traffic:allpairs/ib_write_lat_131072_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"256KB": "^ib-traffic:allpairs/ib_write_lat_262144_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"512KB": "^ib-traffic:allpairs/ib_write_lat_524288_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"1MB": "^ib-traffic:allpairs/ib_write_lat_1048576_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"2MB": "^ib-traffic:allpairs/ib_write_lat_2097152_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"4MB": "^ib-traffic:allpairs/ib_write_lat_4194304_gpu-to-gpu_0_0:\\*:\\*$"},
+                        {"8MB": "^ib-traffic:allpairs/ib_write_lat_8388608_gpu-to-gpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },        
+        {
+            "index": "9",
+            "save to appendix": "False",
+            "analyze_method": "multinode_ibwrite_busbw_average",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Average Performance Ratio on IBWrite Bandwidth",
+            "header_1": "Traffic",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"CPU to CPU": "^ib-traffic:allpairs/ib_write_bw_\\d+_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"CPU to GPU": "^ib-traffic:allpairs/ib_write_bw_\\d+_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"GPU to CPU": "^ib-traffic:allpairs/ib_write_bw_\\d+_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"GPU to GPU": "^ib-traffic:allpairs/ib_write_bw_\\d+_gpu-to-gpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "10",
+            "save to appendix": "False",
+            "analyze_method": "multinode_ibwrite_lat_average",
+            "scale": 4,
+            "title_prefix": "Multi-Node (4): Average Performance Ratio on IBWrite Latency",
+            "header_1": "Traffic",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"CPU to CPU": "^ib-traffic:allpairs/ib_write_lat_\\d+_cpu-to-cpu_0_0:\\*:\\*$"},
+                        {"CPU to GPU": "^ib-traffic:allpairs/ib_write_lat_\\d+_cpu-to-gpu_0_0:\\*:\\*$"},
+                        {"GPU to CPU": "^ib-traffic:allpairs/ib_write_lat_\\d+_gpu-to-cpu_0_0:\\*:\\*$"},
+                        {"GPU to GPU": "^ib-traffic:allpairs/ib_write_lat_\\d+_gpu-to-gpu_0_0:\\*:\\*$"}
+                    ]
+                }
+            ]
+        }
+    ]
+}

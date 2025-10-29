@@ -1,0 +1,478 @@
+{
+    "section":"inference",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=2208 k=5608",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-5608-1/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-5608-2/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-5608-4/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-5608-8/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-5608-16/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-5608-32/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-5608-64/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-5608-128/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-5608-256/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-5608-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-5608-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-5608-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-5608-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-5608-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-5608-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-5608-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-5608-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-5608-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-5608-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-5608-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-5608-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-5608-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-5608-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-5608-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-5608-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-5608-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=11216 k=320",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:11216-320-1/step_times$"},
+                        {"2": "^dist-inference:copilot:11216-320-2/step_times$"},
+                        {"4": "^dist-inference:copilot:11216-320-4/step_times$"},
+                        {"8": "^dist-inference:copilot:11216-320-8/step_times$"},
+                        {"16": "^dist-inference:copilot:11216-320-16/step_times$"},
+                        {"32": "^dist-inference:copilot:11216-320-32/step_times$"},
+                        {"64": "^dist-inference:copilot:11216-320-64/step_times$"},
+                        {"128": "^dist-inference:copilot:11216-320-128/step_times$"},
+                        {"256": "^dist-inference:copilot:11216-320-256/step_times$"},
+                        {"512": "^dist-inference:copilot:11216-320-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:11216-320-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:11216-320-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:11216-320-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:11216-320-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:11216-320-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:11216-320-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:11216-320-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:11216-320-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:11216-320-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:11216-320-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:11216-320-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:11216-320-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:11216-320-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:11216-320-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:11216-320-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:11216-320-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=1536 k=4608",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:1536-4608-1/step_times$"},
+                        {"2": "^dist-inference:copilot:1536-4608-2/step_times$"},
+                        {"4": "^dist-inference:copilot:1536-4608-4/step_times$"},
+                        {"8": "^dist-inference:copilot:1536-4608-8/step_times$"},
+                        {"16": "^dist-inference:copilot:1536-4608-16/step_times$"},
+                        {"32": "^dist-inference:copilot:1536-4608-32/step_times$"},
+                        {"64": "^dist-inference:copilot:1536-4608-64/step_times$"},
+                        {"128": "^dist-inference:copilot:1536-4608-128/step_times$"},
+                        {"256": "^dist-inference:copilot:1536-4608-256/step_times$"},
+                        {"512": "^dist-inference:copilot:1536-4608-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:1536-4608-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:1536-4608-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:1536-4608-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:1536-4608-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:1536-4608-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:1536-4608-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:1536-4608-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:1536-4608-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:1536-4608-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:1536-4608-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:1536-4608-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:1536-4608-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:1536-4608-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:1536-4608-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:1536-4608-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:1536-4608-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=2208 k=4608",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-4608-1/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-4608-2/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-4608-4/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-4608-8/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-4608-16/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-4608-32/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-4608-64/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-4608-128/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-4608-256/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-4608-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-4608-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-4608-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-4608-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:2208-4608-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:2208-4608-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:2208-4608-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:2208-4608-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:2208-4608-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:2208-4608-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:2208-4608-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:2208-4608-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:2208-4608-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:2208-4608-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:2208-4608-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:2208-4608-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:2208-4608-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=9216 k=320",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-320-1/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-320-2/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-320-4/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-320-8/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-320-16/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-320-32/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-320-64/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-320-128/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-320-256/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-320-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-320-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-320-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-320-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-320-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-320-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-320-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-320-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-320-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-320-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-320-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-320-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-320-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-320-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-320-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-320-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-320-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=9216 k=768",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-768-1/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-768-2/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-768-4/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-768-8/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-768-16/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-768-32/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-768-64/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-768-128/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-768-256/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-768-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-768-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-768-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-768-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-768-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-768-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-768-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-768-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-768-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-768-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-768-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-768-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-768-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-768-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-768-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-768-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-768-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "7",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=9216 k=430",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-430-1/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-430-2/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-430-4/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-430-8/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-430-16/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-430-32/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-430-64/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-430-128/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-430-256/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-430-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-430-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-430-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-430-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:9216-430-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:9216-430-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:9216-430-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:9216-430-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:9216-430-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:9216-430-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:9216-430-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:9216-430-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:9216-430-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:9216-430-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:9216-430-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:9216-430-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:9216-430-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "8",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, CoPilot Mimic, m=32 k=4608",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:32-4608-1/step_times$"},
+                        {"2": "^dist-inference:copilot:32-4608-2/step_times$"},
+                        {"4": "^dist-inference:copilot:32-4608-4/step_times$"},
+                        {"8": "^dist-inference:copilot:32-4608-8/step_times$"},
+                        {"16": "^dist-inference:copilot:32-4608-16/step_times$"},
+                        {"32": "^dist-inference:copilot:32-4608-32/step_times$"},
+                        {"64": "^dist-inference:copilot:32-4608-64/step_times$"},
+                        {"128": "^dist-inference:copilot:32-4608-128/step_times$"},
+                        {"256": "^dist-inference:copilot:32-4608-256/step_times$"},
+                        {"512": "^dist-inference:copilot:32-4608-512/step_times$"},
+                        {"1024": "^dist-inference:copilot:32-4608-1024/step_times$"},
+                        {"1335": "^dist-inference:copilot:32-4608-1335/step_times$"},
+                        {"2048": "^dist-inference:copilot:32-4608-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:32-4608-1:msccl/step_times$"},
+                        {"2": "^dist-inference:copilot:32-4608-2:msccl/step_times$"},
+                        {"4": "^dist-inference:copilot:32-4608-4:msccl/step_times$"},
+                        {"8": "^dist-inference:copilot:32-4608-8:msccl/step_times$"},
+                        {"16": "^dist-inference:copilot:32-4608-16:msccl/step_times$"},
+                        {"32": "^dist-inference:copilot:32-4608-32:msccl/step_times$"},
+                        {"64": "^dist-inference:copilot:32-4608-64:msccl/step_times$"},
+                        {"128": "^dist-inference:copilot:32-4608-128:msccl/step_times$"},
+                        {"256": "^dist-inference:copilot:32-4608-256:msccl/step_times$"},
+                        {"512": "^dist-inference:copilot:32-4608-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:copilot:32-4608-1024:msccl/step_times$"},
+                        {"1335": "^dist-inference:copilot:32-4608-1335:msccl/step_times$"},
+                        {"2048": "^dist-inference:copilot:32-4608-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "9",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, GPT-175B Mimic, m=6144 k=12288",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:6144-12288-1/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:6144-12288-2/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:6144-12288-4/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:6144-12288-8/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:6144-12288-16/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:6144-12288-32/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:6144-12288-64/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:6144-12288-128/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:6144-12288-256/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:6144-12288-512/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:6144-12288-1024/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:6144-12288-2048/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "MSCCL",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:6144-12288-1:msccl/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:6144-12288-2:msccl/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:6144-12288-4:msccl/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:6144-12288-8:msccl/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:6144-12288-16:msccl/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:6144-12288-32:msccl/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:6144-12288-64:msccl/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:6144-12288-128:msccl/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:6144-12288-256:msccl/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:6144-12288-512:msccl/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:6144-12288-1024:msccl/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:6144-12288-2048:msccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "10",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, CoPilot Mimic, with MSCCL if applicable,",
+            "header_1": "Batch Size",
+            "minipage": "1/2",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:copilot:\\d+-\\d+-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:copilot:\\d+-\\d+-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:copilot:\\d+-\\d+-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:copilot:\\d+-\\d+-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:copilot:\\d+-\\d+-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:copilot:\\d+-\\d+-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:copilot:\\d+-\\d+-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:copilot:\\d+-\\d+-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:copilot:\\d+-\\d+-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:copilot:\\d+-\\d+-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:copilot:\\d+-\\d+-1024(:msccl)?/step_times$"},
+                        {"1335": "^dist-inference:copilot:\\d+-\\d+-1335(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:copilot:\\d+-\\d+-2048(:msccl)?/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. CoPilot Mimic": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "11",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, GPT-175B Mimic, with MSCCL if applicable,",
+            "header_1": "Batch Size",
+            "minipage": "2/2",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:gpt-3-175b:6144-12288-1(:msccl)?/step_times$"},
+                        {"2": "^dist-inference:gpt-3-175b:6144-12288-2(:msccl)?/step_times$"},
+                        {"4": "^dist-inference:gpt-3-175b:6144-12288-4(:msccl)?/step_times$"},
+                        {"8": "^dist-inference:gpt-3-175b:6144-12288-8(:msccl)?/step_times$"},
+                        {"16": "^dist-inference:gpt-3-175b:6144-12288-16(:msccl)?/step_times$"},
+                        {"32": "^dist-inference:gpt-3-175b:6144-12288-32(:msccl)?/step_times$"},
+                        {"64": "^dist-inference:gpt-3-175b:6144-12288-64(:msccl)?/step_times$"},
+                        {"128": "^dist-inference:gpt-3-175b:6144-12288-128(:msccl)?/step_times$"},
+                        {"256": "^dist-inference:gpt-3-175b:6144-12288-256(:msccl)?/step_times$"},
+                        {"512": "^dist-inference:gpt-3-175b:6144-12288-512(:msccl)?/step_times$"},
+                        {"1024": "^dist-inference:gpt-3-175b:6144-12288-1024(:msccl)?/step_times$"},
+                        {"2048": "^dist-inference:gpt-3-175b:6144-12288-2048(:msccl)?/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. GPT-175B Mimic": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

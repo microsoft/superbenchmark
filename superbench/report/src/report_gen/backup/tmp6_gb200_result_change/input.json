@@ -1,0 +1,24 @@
+{
+    "FAKE": {
+        "nccl-bw:nvlink-reducescatter/reducescatter_2048_busbw": 0.13,
+        "nccl-bw:nvlink-reducescatter/reducescatter_2097152_busbw": 58.55,
+        "nccl-bw:nvlink-reducescatter/reducescatter_2147483648_busbw": 562.55,
+        "nccl-bw:nvlink-reducescatter/reducescatter_262144_busbw": 14.31,
+        "nccl-bw:nvlink-reducescatter/reducescatter_268435456_busbw": 470.47,
+        "nccl-bw:nvlink-reducescatter/reducescatter_32768_busbw": 1.85,
+        "nccl-bw:nvlink-reducescatter/reducescatter_33554432_busbw": 328.07,
+        "nccl-bw:nvlink-reducescatter/reducescatter_4096_busbw": 0.25,
+        "nccl-bw:nvlink-reducescatter/reducescatter_4194304_busbw": 65.43,
+        "nccl-bw:nvlink-reducescatter/reducescatter_2048_time": 0.13,
+        "model-benchmarks:bert/pytorch-bert-large/fp32_train_throughput": 631.6,
+        "model-benchmarks:bert/pytorch-bert-large/fp8_hybrid_train_throughput": 867.98,
+        "model-benchmarks:densenet/pytorch-densenet169/fp16_train_throughput": 1393.29,
+        "model-benchmarks:densenet/pytorch-densenet169/fp32_train_throughput": 1354.72,
+        "model-benchmarks:densenet/pytorch-densenet201/fp16_train_throughput": 1157.3,
+        "model-benchmarks:densenet/pytorch-densenet201/fp32_train_throughput": 1119.83,
+        "gemm-flops/fp16_flops": 70939.58,
+        "mem-bw/d2d_bw": 5075.48,
+        "mem-bw/d2h_bw": 157.32,
+        "mem-bw/h2d_bw": 160.68
+    }
+}

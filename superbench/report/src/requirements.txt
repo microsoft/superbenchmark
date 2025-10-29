@@ -1,0 +1,22 @@
+colorama>=0.4.6
+faiss-cpu>=1.9.0
+transformers>=4.46.1
+langchain_community==0.3.31
+langchain_core
+pydantic>=2.6.0
+matplotlib>=3.9.2
+scipy>=1.11.1
+scikit-learn>=1.5.2
+termcolor>=2.5.0
+requests>=2.32.3
+eval_type_backport>=0.2.2
+azure-storage-blob
+pdf2docx
+ruamel.yaml
+nltk
+openai
+flask
+numpy
+# Dev dependencies
+pandas>=2.2.2
+azure-kusto-data>=4.5.1

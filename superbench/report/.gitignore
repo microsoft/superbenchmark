@@ -1,0 +1,11 @@
+src/.venv
+
+# Version and dependency files
+src/_version.py
+src/requirements.lock
+src/requirements-dev.lock
+src/agents/lucia-report-gen-agent/src/report_gen/_version.py
+
+local_deploy/
+test/
+data/

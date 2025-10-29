@@ -1,0 +1,91 @@
+{
+    "section":"peak",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "False",
+            "shrink_header": "True",
+            "source_a": "target_benchmark",
+            "source_b": "target_spec",
+            "analyze_method": "findmax_target_spec",
+            "title_prefix": "Benchmark and Peak Performance Table",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"GPU Computation/TF32/FP32 TC/MC (TFLOPS)": "^gemm-flops(:tf32|:fp32)?/(tf32_tc|fp32_xdlops)_flops$"},
+                        {"GPU Computation/FP16 TC/MC (TFLOPS)": "^gemm-flops(:fp16)?/fp16(_xdlops|_tc)?_flops$"},
+                        {"GPU Computation/BF16 TC/MC (TFLOPS)": "^gemm-flops(:bf16)?/bf16_(tc|xdlops)_flops$"},
+                        {"GPU Computation/FP8 TC/MC (TFLOPS)": "^(cublaslt-gemm/fp8e4m3_0_544_544_544_flops|gemm-flops:fp8/fp8_xdlops_flops)$"},
+                        {"GPU Computation/FP4 TC/MC (TFLOPS)": "^cublaslt-gemm/fp4_flops$"},
+                        {"GPU Computation/INT8 TC/MC (TIOPS)": "^gemm-flops(:int8)?/int8_(tc|xdlops)_iops$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Device and Host/Device to Host, Local Host (GB/s)": "^(nvbandwidth/device_to_host_memcpy_sm_cpu\\*_gpu\\*_bw|mem-bw/d2h_bw)$"},
+                        {"GPU Device and Host/Host to Device, Local Host (GB/s)": "^(nvbandwidth/host_to_device_memcpy_sm_cpu\\*_gpu\\*_bw|mem-bw/h2d_bw)$"},
+                        {"GPU Device and Host/Device to Host, Remote Host (GB/s)": "^nvbandwidth/all_to_host_memcpy_sm_cpu\\*_gpu\\*_bw$"},
+                        {"GPU Device and Host/Host to Device, Remote Host (GB/s)": "^nvbandwidth/host_to_all_memcpy_sm_cpu\\*_gpu\\*_bw$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Comm./GPU-to-GPU by DMA Engine (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_dma_bw$"},
+                        {"GPU Comm./GPU-to-GPU by SM (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_sm_bw$"},
+                        {"GPU Comm./All-to-All BW by SM (GB/s)": "^gpu-copy-bw:perf/gpu_all_to_gpu_all_write_by_sm_bw$"},
+                        {"GPU Comm./All-Reduce (GB/s)": "^(nccl-bw:bw:allreduce:nvlink/allreduce_17179869184_busbw|rccl-bw:bw:allreduce:xgmi:msccl/allreduce_17179869184_busbw)$"},
+                        {"GPU Comm./All-Reduce with SHARP (GB/s)": "^nccl-bw:bw:allreduce:nvlink-sharp(:msccl)?/allreduce_17179869184_busbw$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Memory/READ WRITE BW by DMA Engine (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_dma_bw$"},
+                        {"GPU Memory/READ WRITE BW by SM (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_sm_bw$"}                        
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg.": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "False",
+            "shrink_header": "True",
+            "source_a": "baseline_benchmark",
+            "source_b": "baseline_spec",
+            "analyze_method": "findmax_baseline_spec",
+            "title_prefix": "Benchmark and Peak Performance Table",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"GPU Computation/TF32/FP32 TC/MC (TFLOPS)": "^gemm-flops(:tf32|:fp32)?/(tf32_tc|fp32_xdlops)_flops$"},
+                        {"GPU Computation/FP16 TC/MC (TFLOPS)": "^gemm-flops(:fp16)?/fp16(_xdlops|_tc)?_flops$"},
+                        {"GPU Computation/BF16 TC/MC (TFLOPS)": "^gemm-flops(:bf16)?/bf16_(tc|xdlops)_flops$"},
+                        {"GPU Computation/FP8 TC/MC (TFLOPS)": "^(cublaslt-gemm/fp8e4m3_0_544_544_544_flops|gemm-flops:fp8/fp8_xdlops_flops)$"},
+                        {"GPU Computation/FP4 TC/MC (TFLOPS)": "^cublaslt-gemm/fp4_flops$"},
+                        {"GPU Computation/INT8 TC/MC (TIOPS)": "^gemm-flops(:int8)?/int8_(tc|xdlops)_iops$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Device and Host/Device to Host, Local Host (GB/s)": "^(nvbandwidth/device_to_host_memcpy_sm_cpu\\*_gpu\\*_bw|mem-bw/d2h_bw)$"},
+                        {"GPU Device and Host/Host to Device, Local Host (GB/s)": "^(nvbandwidth/host_to_device_memcpy_sm_cpu\\*_gpu\\*_bw|mem-bw/h2d_bw)$"},
+                        {"GPU Device and Host/Device to Host, Remote Host (GB/s)": "^nvbandwidth/all_to_host_memcpy_sm_cpu\\*_gpu\\*_bw$"},
+                        {"GPU Device and Host/Host to Device, Remote Host (GB/s)": "^nvbandwidth/host_to_all_memcpy_sm_cpu\\*_gpu\\*_bw$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Comm./GPU-to-GPU by DMA Engine (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_dma_bw$"},
+                        {"GPU Comm./GPU-to-GPU by SM (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_write_by_sm_bw$"},
+                        {"GPU Comm./All-to-All BW by SM (GB/s)": "^gpu-copy-bw:perf/gpu_all_to_gpu_all_write_by_sm_bw$"},
+                        {"GPU Comm./All-Reduce (GB/s)": "^(nccl-bw:bw:allreduce:nvlink/allreduce_17179869184_busbw|rccl-bw:bw:allreduce:xgmi:msccl/allreduce_17179869184_busbw)$"},
+                        {"GPU Comm./All-Reduce with SHARP (GB/s)": "^nccl-bw:bw:allreduce:nvlink-sharp(:msccl)?/allreduce_17179869184_busbw$"},
+                        {"breaker": "^breaker$"},
+                        {"GPU Memory/READ WRITE BW by DMA Engine (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_dma_bw$"},
+                        {"GPU Memory/READ WRITE BW by SM (GB/s)": "^gpu-copy-bw:perf/gpu\\*_to_gpu\\*_by_sm_bw$"}                        
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg.": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

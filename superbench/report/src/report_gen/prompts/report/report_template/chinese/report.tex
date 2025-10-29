@@ -1,0 +1,170 @@
+
+\documentclass{<<<latexclass>>>}
+
+\usepackage{techreport}
+
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{multirow}
+\usepackage{verbatim}
+\usepackage{caption}
+\usepackage{longtable}
+\usepackage{supertabular}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{tablefootnote}
+\usepackage[round,semicolon]{natbib}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{xspace}
+\usepackage{textcomp}
+\usepackage{makecell}
+\usepackage{todonotes}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  breaklines=true,
+  postbreak=\mbox{$\hookrightarrow$}\space,
+}
+\usepackage{multirow}
+\usepackage{tipa}
+
+\usepackage{lscape}
+\usepackage{siunitx}
+
+\setlength{\columnsep}{2em}
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0.7em}
+
+\usepackage{pifont}%
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\usepackage{scrextend}
+
+\usepackage{array}
+\usepackage{tgpagella}
+\usepackage{latexsym}
+% \usepackage[T1]{fontenc} % Commented out for xelatex with Chinese font
+% \usepackage[utf8]{inputenc} % Commented out for xelatex with Chinese font
+\usepackage{microtype}
+
+% Add these two lines for Chinese support with xelatex
+\usepackage{xeCJK}
+\setCJKmainfont{WenQuanYi Zen Hei}
+
+% end of support for Chinese
+
+\definecolor{mydarkblue}{rgb}{0,0.08,0.45}
+\definecolor{mylightblue}{RGB}{39,114,191}
+\usepackage[colorlinks,citecolor=mylightblue,urlcolor=mylightblue,linkcolor=mylightblue]{hyperref}
+\usepackage{url}            %
+\usepackage{nicefrac}       %
+\usepackage{changepage}
+\usepackage{xargs}          %
+\usepackage{wrapfig,lipsum,booktabs}
+\usepackage{longtable}
+\usepackage{subcaption}
+\usepackage{endnotes}
+\usepackage{footnote}
+
+\usepackage{pgfplots}
+\usetikzlibrary{pgfplots.groupplots}
+\pgfplotsset{compat=1.3}
+
+
+\usepackage[most]{tcolorbox}
+
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\usepackage{multicol}
+\usepackage{multirow}
+
+\usepackage{tcolorbox}
+\usepackage{titlesec}
+\titleformat*{\section}{\large\bfseries}
+
+
+\definecolor{myyellowgreen}{RGB}{154, 205, 50}
+
+\usepackage{minitoc}
+\newcommand{\ATTN}[1]{\textcolor{blue}{#1}}
+\newcommand{\TODO}[1]{\textcolor{red}{#1}}
+\newcommand{\CUT}[1]{\textcolor{gray}{#1}}
+\newcommand{\IGNORE}[1]{}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand \thepart{}
+\renewcommand \partname{}
+
+\usepackage[title]{appendix}
+\usepackage{xurl}
+
+\newcommand\simplefootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\newcommand{\msrvshort}[1]{MSRAV}
+\newcommand{\msrvlong}[1]{Microsoft Research Asia Vancouver}
+
+\pagestyle{fancy}
+\thispagestyle{empty}
+\rhead{ \textit{ }}
+
+\fancyhead[LO]{}
+
+\title{\vspace{-2em}%
+  \hrule height 4pt%
+  \vskip 0.25in%
+  \vskip -\parskip%
+  \textbf{
+<<<title>>>
+}\\
+{\large <<<subtitle>>>}
+% Performance of SKU ABC
+
+  \vskip 0.2in%
+  \vskip -\parskip%
+  \hrule height 1pt%
+  \vskip 0.09in}
+
+\author{
+<<<author>>>
+\today
+}
+
+%   A $^*$ \hspace{0.12cm}
+%   B \hspace{0.12cm}
+%   C \vspace{0.2cm} \\
+%   \textbf{\normalsize AffiliationA} \vspace{0.2cm} \\     \vspace{0.8cm} \\
+
+
+\begin{document}
+\maketitle
+
+\simplefootnote{* All authors contributed equally to this report.}
+
+<<<section>>>
+%   \input{sec/summary_m}
+
+\clearpage
+\appendix
+
+<<<appendix>>>
+%   \input{sec/appendixa}
+%   \clearpage
+%   \input{sec/appendixb}
+
+
+\end{document}

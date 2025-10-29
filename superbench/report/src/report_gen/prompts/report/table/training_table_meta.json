@@ -1,0 +1,55 @@
+{
+    "section":"training",
+    "tables":[
+        {
+            "index": "1",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "GPT-6.7B Training Performance and Resource Utilization, BF16",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"BF16, Batch Size 2, Throughput (Samples/s)": "^megatron-gpt:.*:bs2/bf16_train_throughput$"},
+                        {"BF16, Batch Size 4, Throughput (Samples/s)": "^megatron-gpt:.*:bs4/bf16_train_throughput$"},
+                        {"BF16, Batch Size 8, Throughput (Samples/s)": "^megatron-gpt:.*:bs8/bf16_train_throughput$"},
+                        {"BF16, Batch Size 512, Throughput (Samples/s)": "^megatron-gpt:.*:bs512.*/bf16_train_throughput$"},
+                        {"BF16, Batch Size 2, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs2/bf16_train_tflops$"},
+                        {"BF16, Batch Size 4, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs4/bf16_train_tflops$"},
+                        {"BF16, Batch Size 8, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs8/bf16_train_tflops$"},
+                        {"BF16, Batch Size 512, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs512.*/bf16_train_tflops$"},
+                        {"BF16, Batch Size 2, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs2/bf16_train_max_mem_allocated$"},
+                        {"BF16, Batch Size 4, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs4/bf16_train_max_mem_allocated$"},
+                        {"BF16, Batch Size 8, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs8/bf16_train_max_mem_allocated$"},
+                        {"BF16, Batch Size 512, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs512.*/bf16_train_max_mem_allocated$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to appendix": "False",
+            "analyze_method": "",
+            "title_prefix": "GPT-6.7B Training Performance and Resource Utilization, FP16",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"FP16, Batch Size 2, Throughput (Samples/s)": "^megatron-gpt:.*:bs2/fp16_train_throughput$"},
+                        {"FP16, Batch Size 4, Throughput (Samples/s)": "^megatron-gpt:.*:bs4/fp16_train_throughput$"},
+                        {"FP16, Batch Size 8, Throughput (Samples/s)": "^megatron-gpt:.*:bs8/fp16_train_throughput$"},
+                        {"FP16, Batch Size 512, Throughput (Samples/s)": "^megatron-gpt:.*:bs512.*/fp16_train_throughput$"},
+                        {"FP16, Batch Size 2, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs2/fp16_train_tflops$"},
+                        {"FP16, Batch Size 4, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs4/fp16_train_tflops$"},
+                        {"FP16, Batch Size 8, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs8/fp16_train_tflops$"},
+                        {"FP16, Batch Size 512, Hardware TFLOPs per Second": "^megatron-gpt:.*:bs512.*/fp16_train_tflops$"},
+                        {"FP16, Batch Size 2, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs2/fp16_train_max_mem_allocated$"},
+                        {"FP16, Batch Size 4, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs4/fp16_train_max_mem_allocated$"},
+                        {"FP16, Batch Size 8, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs8/fp16_train_max_mem_allocated$"},
+                        {"FP16, Batch Size 512, GPU Mem Usage (GB)": "^megatron-gpt:.*:bs512.*/fp16_train_max_mem_allocated$"}
+                    ]
+                }
+            ]
+        }
+    ]
+}

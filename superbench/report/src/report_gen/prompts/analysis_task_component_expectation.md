@@ -1,0 +1,4 @@
+[gap to peak value analysis]
+Step 1, get the value of the {workload} on {target} from the [specification, peak values] section, make a judgement on how well the {target} performs agains the specification.
+Step 2, get the value of the {workload} on {baseline} from the [specification, peak values] section, make a judgement on how well the {baseline} performs agains the specification.
+Step 3, propose suggestions on whether there is a requirement for improvement for this component on {target}, if the benchmark value to specification value ratio is larger than 90%, it means there is no immediate requirement for optimization, if the benchmark value to specification value ratio is smaller than 90%, it means there is strong requirement for optimization.

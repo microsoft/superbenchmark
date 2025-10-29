@@ -1,0 +1,1473 @@
+{
+    "section":"llama3_sim",
+    "tables":[
+        {
+            "index": "1",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 1",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:1-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:1-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:1-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:1-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:1-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:1-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:1-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:1-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:1-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:1-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:1-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:1-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:1-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:1-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:1-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:1-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:1-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:1-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "2",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 2",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:2-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:2-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:2-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:2-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:2-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:2-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:2-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:2-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:2-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:2-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:2-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:2-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:2-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:2-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:2-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:2-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:2-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:2-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "3",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 4",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:4-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:4-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:4-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:4-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:4-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:4-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:4-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:4-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:4-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:4-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:4-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:4-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:4-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:4-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:4-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:4-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:4-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:4-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "4",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 8",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:8-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:8-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:8-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:8-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:8-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:8-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:8-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:8-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:8-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:8-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:8-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:8-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:8-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:8-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:8-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:8-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:8-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:8-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "5",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 16",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:16-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:16-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:16-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:16-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:16-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:16-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:16-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:16-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:16-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:16-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:16-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:16-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:16-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:16-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:16-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:16-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:16-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:16-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "6",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 32",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:32-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:32-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:32-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:32-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:32-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:32-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:32-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:32-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:32-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:32-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:32-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:32-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:32-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:32-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:32-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:32-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:32-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:32-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "7",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 64",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:64-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:64-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:64-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:64-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:64-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:64-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:64-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:64-128/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:64-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:64-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:64-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:64-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:64-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:64-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:64-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:64-128:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "8",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 128",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:128-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:128-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:128-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:128-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:128-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:128-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:128-64/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:128-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:128-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:128-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:128-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:128-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:128-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:128-64:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "9",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 256",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:256-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:256-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:256-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:256-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:256-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:256-32/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:256-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:256-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:256-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:256-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:256-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:256-32:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "10",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 512",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:512-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:512-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:512-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:512-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:512-16/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:512-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:512-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:512-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:512-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:512-16:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "11",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 1024",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:1024-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:1024-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:1024-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:1024-8/step_times$"}                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:1024-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:1024-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:1024-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:1024-8:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "12",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 2048",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:2048-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:2048-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:2048-4/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:2048-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:2048-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:2048-4:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "13",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 4096",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:4096-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:4096-2/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:4096-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:4096-2:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "14",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP16, Input Length = 8192",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:8192-1/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:8192-1:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "15",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, LLaMA3-70B, FP16,",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp16:\\d+-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp16:\\d+-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp16:\\d+-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp16:\\d+-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp16:\\d+-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp16:\\d+-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp16:\\d+-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp16:\\d+-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp16:\\d+-256:vllmccl/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. LLaMA3-70B, FP16": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "16",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 1",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:1-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:1-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:1-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:1-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:1-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:1-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:1-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:1-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:1-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:1-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:1-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:1-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:1-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:1-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:1-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:1-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:1-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:1-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "17",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 2",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:2-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:2-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:2-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:2-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:2-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:2-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:2-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:2-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:2-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:2-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:2-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:2-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:2-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:2-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:2-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:2-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:2-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:2-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "18",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 4",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:4-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:4-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:4-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:4-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:4-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:4-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:4-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:4-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:4-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:4-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:4-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:4-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:4-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:4-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:4-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:4-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:4-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:4-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "19",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 8",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:8-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:8-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:8-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:8-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:8-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:8-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:8-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:8-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:8-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:8-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:8-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:8-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:8-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:8-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:8-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:8-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:8-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:8-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "20",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 16",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:16-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:16-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:16-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:16-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:16-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:16-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:16-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:16-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:16-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:16-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:16-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:16-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:16-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:16-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:16-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:16-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:16-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:16-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "21",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 32",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:32-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:32-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:32-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:32-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:32-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:32-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:32-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:32-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:32-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:32-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:32-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:32-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:32-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:32-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:32-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:32-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:32-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:32-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "22",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 64",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:64-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:64-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:64-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:64-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:64-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:64-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:64-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:64-128/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:64-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:64-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:64-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:64-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:64-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:64-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:64-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:64-128:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "23",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 128",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:128-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:128-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:128-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:128-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:128-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:128-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:128-64/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:128-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:128-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:128-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:128-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:128-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:128-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:128-64:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "24",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 256",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:256-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:256-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:256-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:256-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:256-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:256-32/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:256-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:256-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:256-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:256-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:256-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:256-32:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "25",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 512",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:512-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:512-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:512-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:512-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:512-16/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:512-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:512-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:512-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:512-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:512-16:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "26",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 1024",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:1024-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:1024-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:1024-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:1024-8/step_times$"}                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:1024-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:1024-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:1024-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:1024-8:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "27",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 2048",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:2048-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:2048-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:2048-4/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:2048-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:2048-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:2048-4:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "28",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 4096",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:4096-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:4096-2/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:4096-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:4096-2:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "29",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP8, Input Length = 8192",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:8192-1/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:8192-1:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "30",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, LLaMA3-70B, FP8,",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp8:\\d+-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp8:\\d+-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp8:\\d+-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp8:\\d+-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp8:\\d+-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp8:\\d+-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp8:\\d+-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp8:\\d+-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp8:\\d+-256:vllmccl/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. LLaMA3-70B, FP8": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "31",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 1",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:1-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:1-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:1-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:1-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:1-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:1-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:1-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:1-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:1-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:1-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:1-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:1-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:1-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:1-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:1-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:1-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:1-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:1-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "32",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 2",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:2-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:2-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:2-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:2-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:2-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:2-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:2-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:2-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:2-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:2-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:2-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:2-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:2-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:2-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:2-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:2-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:2-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:2-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "33",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 4",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:4-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:4-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:4-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:4-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:4-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:4-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:4-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:4-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:4-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:4-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:4-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:4-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:4-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:4-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:4-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:4-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:4-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:4-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "34",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 8",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:8-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:8-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:8-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:8-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:8-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:8-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:8-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:8-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:8-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:8-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:8-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:8-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:8-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:8-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:8-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:8-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:8-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:8-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "35",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 16",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:16-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:16-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:16-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:16-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:16-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:16-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:16-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:16-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:16-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:16-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:16-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:16-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:16-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:16-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:16-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:16-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:16-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:16-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "36",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 32",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:32-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:32-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:32-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:32-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:32-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:32-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:32-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:32-128/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:32-256/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:32-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:32-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:32-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:32-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:32-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:32-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:32-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:32-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:32-256:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "37",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 64",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:64-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:64-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:64-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:64-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:64-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:64-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:64-64/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:64-128/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:64-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:64-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:64-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:64-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:64-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:64-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:64-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:64-128:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "38",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 128",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:128-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:128-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:128-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:128-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:128-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:128-32/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:128-64/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:128-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:128-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:128-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:128-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:128-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:128-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:128-64:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "39",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 256",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:256-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:256-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:256-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:256-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:256-16/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:256-32/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:256-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:256-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:256-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:256-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:256-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:256-32:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "40",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 512",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:512-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:512-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:512-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:512-8/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:512-16/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:512-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:512-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:512-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:512-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:512-16:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "41",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 1024",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:1024-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:1024-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:1024-4/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:1024-8/step_times$"}                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:1024-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:1024-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:1024-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:1024-8:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "42",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 2048",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:2048-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:2048-2/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:2048-4/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:2048-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:2048-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:2048-4:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "43",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 4096",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:4096-1/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:4096-2/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:4096-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:4096-2:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "44",
+            "save to prompt": "False",
+            "save to appendix": "True",
+            "analyze_method": "inference",
+            "title_prefix": "Per-Step Latency (ms) and Speedup, LLaMA3-70B, FP4, Input Length = 8192",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "RCCL/NCCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:8192-1/step_times$"}
+                    ]
+                },
+                {
+                    "column_name": "vLLM.CCL",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:8192-1:vllmccl/step_times$"}
+                    ]
+                }
+            ]
+        },
+        {
+            "index": "45",
+            "save to appendix": "False",
+            "analyze_method": "inf_lat_average",
+            "title_prefix": "Average Latency Speedup, LLaMA3-70B, FP4,",
+            "header_1": "Batch Size",
+            "column_group":[
+                {
+                    "column_name": "",
+                    "metric":[
+                        {"1": "^dist-inference:llama3-70b:fp4:\\d+-1:vllmccl/step_times$"},
+                        {"2": "^dist-inference:llama3-70b:fp4:\\d+-2:vllmccl/step_times$"},
+                        {"4": "^dist-inference:llama3-70b:fp4:\\d+-4:vllmccl/step_times$"},
+                        {"8": "^dist-inference:llama3-70b:fp4:\\d+-8:vllmccl/step_times$"},
+                        {"16": "^dist-inference:llama3-70b:fp4:\\d+-16:vllmccl/step_times$"},
+                        {"32": "^dist-inference:llama3-70b:fp4:\\d+-32:vllmccl/step_times$"},
+                        {"64": "^dist-inference:llama3-70b:fp4:\\d+-64:vllmccl/step_times$"},
+                        {"128": "^dist-inference:llama3-70b:fp4:\\d+-128:vllmccl/step_times$"},
+                        {"256": "^dist-inference:llama3-70b:fp4:\\d+-256:vllmccl/step_times$"}
+                    ],
+                    "aggregated_metric": [
+                        {
+                            "Avg. LLaMA3-70B, FP4": [
+                                ".*"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+
