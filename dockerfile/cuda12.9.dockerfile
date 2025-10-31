@@ -15,7 +15,7 @@ FROM nvcr.io/nvidia/pytorch:25.05-py3
 #   - MOFED_VERSION; 5.4-rdmacore39.0
 #   - HPC-X: v2.23
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 

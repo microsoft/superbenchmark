@@ -14,7 +14,7 @@ FROM ${BASE_IMAGE}
 #   - openmpi: 4.1.x
 #   - apex: 1.0.0
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 

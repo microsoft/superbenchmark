@@ -13,7 +13,7 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 #   - HPC-X: v2.8.3
 #   - NCCL RDMA SHARP plugins: 7cccbc1
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 

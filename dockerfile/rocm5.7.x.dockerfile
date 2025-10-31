@@ -8,7 +8,7 @@ FROM ${BASE_IMAGE}
 # ROCm:
 #   - ROCm: 5.7
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 

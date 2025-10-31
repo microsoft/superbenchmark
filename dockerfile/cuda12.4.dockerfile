@@ -14,7 +14,7 @@ FROM nvcr.io/nvidia/pytorch:24.03-py3
 #   - OFED: 23.07-0.5.1.2
 #   - HPC-X: v2.18.0-CUDA12.x
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 
