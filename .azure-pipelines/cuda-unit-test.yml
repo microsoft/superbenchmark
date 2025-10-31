@@ -11,7 +11,7 @@ pool:
   vmImage: ubuntu-latest
 
 container:
-  image: nvcr.io/nvidia/pytorch:24.03-py3 #python3.10
+  image: nvcr.io/nvidia/pytorch:24.03-py3
   options: '--name cuda-ci -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker:ro'
 
 steps:
