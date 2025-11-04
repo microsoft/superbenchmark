@@ -15,7 +15,7 @@ FROM nvcr.io/nvidia/pytorch:25.08-py3
 #   - MOFED_VERSION: (installed in this dockerfile)
 #   - HPC-X: 2.24
 # Intel:
-#   - mlc: ??? (amd64 only)
+#   - mlc: 3.12 (amd64 only)
 
 LABEL maintainer="SuperBench"
 
