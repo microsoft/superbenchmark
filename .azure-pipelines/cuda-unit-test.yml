@@ -24,7 +24,7 @@ steps:
         yes '' | apt-get install -y -q sudo && \
         apt-get install -y -q \
         ffmpeg libavcodec-dev libavformat-dev libavutil-dev libboost-program-options-dev libswresample-dev"
-      python3 -m pip install --upgrade pip setuptools==65.7
+      python3 -m pip install --upgrade setuptools==65.7
       python3 -m pip install .[test,nvworker]
       make postinstall
     displayName: Install dependencies
