@@ -27,11 +27,9 @@ steps:
     displayName: Export path
   - script: |
       if python3 -c "import sys; exit(0 if sys.version_info < (3, 11) else 1)"; then
-        python3 -m pip install --upgrade pip setuptools==65.7
-      else
-        python3 -m pip install --upgrade pip setuptools
+        python3 -m pip install --upgrade setuptools==65.7
       fi
-      python3 -m pip install --no-build-isolation .[test,cpuworker]
+      python3 -m pip install .[test,cpuworker]
       make postinstall
     displayName: Install dependencies
   - script: |
