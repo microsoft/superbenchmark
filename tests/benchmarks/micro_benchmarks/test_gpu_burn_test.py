@@ -29,7 +29,7 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         time = 10
 
-        parameters = '--doubles --tensor_core --time ' + str(time)
+        parameters = '--doubles --tensor_core --warmup_iters 128 --time ' + str(time)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -57,4 +57,12 @@ class GpuBurnBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark.result['time'][0] == time)
         for device in range(8):
             assert (benchmark.result['gpu_' + str(device) + '_pass'][0] == 1)
+            assert ('gpu_max_temp:' + str(device) in benchmark.result)
+            assert (benchmark.result['gpu_max_temp:' + str(device)][0] >= 50)
+            assert ('gpu_avg_gflops:' + str(device) in benchmark.result)
+            assert (benchmark.result['gpu_avg_gflops:' + str(device)][0] >= 16000)
+            assert ('gpu_var_gflops:' + str(device) in benchmark.result)
+            assert (benchmark.result['gpu_var_gflops:' + str(device)][0] <= 0.01)
+            assert ('gpu_195_gflops:' + str(device) in benchmark.result)
+            assert ('gpu_195_temp:' + str(device) in benchmark.result)
         assert (benchmark.result['abort'][0] == 0)
