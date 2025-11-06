@@ -1,19 +1,19 @@
-FROM nvcr.io/nvidia/pytorch:25.08-py3
+FROM nvcr.io/nvidia/pytorch:25.10-py3
 
 # OS:
 #   - Ubuntu: 24.04
-#   - OpenMPI: 4.1.9a1
+#   - OpenMPI: 4.1.7
 #   - Docker Client: 20.10.8 (installed in this dockerfile)
 # NVIDIA:
-#   - CUDA: 13.0.0.044
-#   - cuDNN: 9.12.0.46
-#   - cuBLAS: 13.0.0.19
+#   - CUDA: 13.0.2.006
+#   - cuDNN: 9.14.0.64
+#   - cuBLAS: 13.1.0.3
 #   - NCCL: 2.27.7
-#   - TransformerEngine: v2.5
-#   - torch: 2.8.0a0+34c6371d24
+#   - TransformerEngine: v2.8
+#   - torch: 2.9.0a0+145a3a7bda
 # Mellanox:
 #   - MOFED_VERSION: (installed in this dockerfile)
-#   - HPC-X: 2.24
+#   - HPC-X: 2.24.1
 # Intel:
 #   - mlc: ??? (amd64 only)
 
