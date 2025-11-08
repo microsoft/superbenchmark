@@ -1,0 +1,43 @@
+# Devices
+
+## [0] `NVIDIA GPU`
+* SM Version: 900 (PTX Version: 900)
+* Number of SMs: 100
+* SM Default Clock Rate: 800 MHz
+* Global Memory: 100000 MiB Free / 100000 MiB Total
+* Global Memory Bus Peak: 3000 GB/sec (3000-bit DDR @4000MHz)
+* Max Shared Memory: 100 KiB/SM, 20 KiB/Block
+* L2 Cache Size: 1000 KiB
+* Maximum Active Blocks: 10/SM
+* Maximum Active Threads: 500/SM, 300/Block
+* Available Registers: 500/SM, 500/Block
+* ECC Enabled: Yes
+
+# Log
+
+```
+Run:  [1/3] sleep_benchmark [Device=0 Duration (us)=25]
+Warn: Current measurement timed out (1.00s) while over noise threshold (0.93% > 0.50%)
+Warn: Current measurement timed out (1.00s) before accumulating min_time (0.31s < 0.50s)
+Pass: Cold: 0.030374ms GPU, 0.047379ms CPU, 0.31s total GPU, 1.00s total wall, 10175x 
+Pass: Batch: 0.028658ms GPU, 0.50s total GPU, 0.50s total wall, 17448x
+Run:  [2/3] sleep_benchmark [Device=0 Duration (us)=50]
+Warn: Current measurement timed out (1.00s) before accumulating min_time (0.45s < 0.50s)
+Pass: Cold: 0.055036ms GPU, 0.072054ms CPU, 0.45s total GPU, 1.00s total wall, 8187x 
+Pass: Batch: 0.053246ms GPU, 0.50s total GPU, 0.50s total wall, 9403x
+Run:  [3/3] sleep_benchmark [Device=0 Duration (us)=75]
+Pass: Cold: 0.079643ms GPU, 0.096788ms CPU, 0.50s total GPU, 0.92s total wall, 6279x 
+Pass: Batch: 0.077862ms GPU, 0.51s total GPU, 0.51s total wall, 6547x
+```
+
+# Benchmark Results
+
+## sleep_benchmark
+
+### [0] NVIDIA GPU
+
+| Duration (us) | Samples | CPU Time  | Noise  | GPU Time  | Noise | Samples | Batch GPU |
+|---------------|---------|-----------|--------|-----------|-------|---------|-----------|
+|            25 |  10175x | 42.123 us | 69.78% | 25.321 us | 0.93% |  17448x | 23.456 us |
+|            50 |   8187x | 68.456 us |  2.34% | 50.654 us | 0.45% |   9403x | 49.321 us |
+|            75 |   6279x | 90.789 us |  1.85% | 75.987 us | 0.33% |   6547x | 77.862 us |
