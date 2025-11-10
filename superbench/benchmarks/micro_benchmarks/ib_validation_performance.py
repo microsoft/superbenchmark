@@ -10,6 +10,7 @@ from superbench.common.utils import gen_pair_wise_config, gen_topo_aware_config
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode
 from superbench.common.devices import GPU
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
+from superbench.common.utils import network
 
 
 class IBBenchmark(MicroBenchmarkWithInvoke):
@@ -42,6 +43,13 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             default='mlx5_0',
             required=False,
             help='The IB device, e.g., mlx5_0, mlx5_$LOCAL_RANK, mlx5_$((LOCAL_RANK/2)), etc.',
+        )
+        self._parser.add_argument(
+            '--set_ib_devices',
+            action='store_true',
+            default=False,
+            help='Set irregular IB devices automatically according to the local rank. \
+            If IB devices are not able to be probed, use env IB_DEVICES to set them manually.',
         )
         self._parser.add_argument(
             '--gpu_dev',
@@ -282,6 +290,16 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
                 return False
         # Generate ib command params
         command_params = f'-F -n {self._args.iters} -d {self._args.ib_dev} {msg_size} {gpu_dev}'
+        if self._args.set_ib_devices:
+            ib_devices = network.get_ib_devices()
+            local_rank = int(os.getenv('OMPI_COMM_WORLD_LOCAL_RANK', 0))
+            if local_rank >= len(ib_devices):
+                self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                logger.error(
+                    f'Local rank {local_rank} exceeds IB devices ({len(ib_devices)}) - benchmark: {self._name}'
+                )
+                return False
+            command_params = f'-F -n {self._args.iters} -d {ib_devices[local_rank].split(":")[0]} {msg_size} {gpu_dev}'
         command_params = f'{command_params.strip()} --report_gbits'
         return command_params
 
