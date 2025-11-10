@@ -186,6 +186,17 @@ class ModelBenchmark(Benchmark):
         """
         pass
 
+    def set_deterministic_seed(self):
+        """Hook to set deterministic RNG state before dataset generation.
+
+        Framework-specific subclasses may
+        override this to apply deterministic RNG settings (for example,
+        PyTorch benchmarks implement this to call their deterministic setup
+        when requested). This is called from _preprocess() before
+        _generate_dataset().
+        """
+        return None
+
     @abstractmethod
     def _init_dataloader(self):
         """Initialize the dataloader.
@@ -220,6 +231,12 @@ class ModelBenchmark(Benchmark):
         if not self._init_distributed_setting():
             self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
             return False
+
+        # Invoke model-specific deterministic seeding hook before dataset generation
+        try:
+            self.set_deterministic_seed()
+        except Exception:
+            logger.info('set_deterministic_seed() hook failed or not implemented for model: %s', self._name)
 
         # Set sample_count aligned with batch_size.
         self._args.sample_count = math.ceil(self._args.sample_count / self._args.batch_size) * self._args.batch_size

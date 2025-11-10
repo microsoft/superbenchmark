@@ -149,6 +149,8 @@ class PytorchGPT2(PytorchBase):
         if self._gpu_available:
             self._target = self._target.cuda()
 
+        self._assign_model_run_metadata(precision)
+
         return True
 
     def _train_step(self, precision):
@@ -158,11 +160,12 @@ class PytorchGPT2(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
-            The step-time list of every training step.
+           A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
-        check_frequency = 100
+        check_frequency = self._args.check_frequency
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = self._timer()
@@ -176,17 +179,18 @@ class PytorchGPT2(PytorchBase):
                         output = self._model(sample)
                 else:
                     output = self._model(sample)
-                loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
+                logits = output[range(self._args.batch_size), -1]
+                loss = self._loss_fn(logits.float(), self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
-                    # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
+                    self.record_determinism_fingerprint(curr_step, loss, logits, periodic, check_frequency)
                     self._log_step_time(curr_step, precision, duration)
-                if self._is_finished(curr_step, end, check_frequency):
-                    return duration
+                    if self._is_finished(curr_step, end, check_frequency):
+                        return duration, self._finalize_periodic_logging(periodic)
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -200,6 +204,7 @@ class PytorchGPT2(PytorchBase):
         """
         duration = []
         curr_step = 0
+        check_frequency = self._args.check_frequency
         with torch.no_grad():
             self._model.eval()
             while True:
@@ -220,7 +225,7 @@ class PytorchGPT2(PytorchBase):
                         # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
                         self._log_step_time(curr_step, precision, duration)
-                    if self._is_finished(curr_step, end):
+                    if self._is_finished(curr_step, end, check_frequency):
                         return duration
 
 
