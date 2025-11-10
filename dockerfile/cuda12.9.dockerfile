@@ -15,7 +15,7 @@ FROM nvcr.io/nvidia/pytorch:25.05-py3
 #   - MOFED_VERSION; 5.4-rdmacore39.0
 #   - HPC-X: v2.23
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 
@@ -106,7 +106,7 @@ RUN TARGETARCH_HW=$(uname -m) && \
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
     cd /tmp && \
-    wget -q https://downloadmirror.intel.com/793041/mlc_v3.11.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz && \
