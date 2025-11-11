@@ -3,7 +3,7 @@
 
 # Dynamically find AMD software paths
 BLIS_PATH := $(shell find /opt -path "*/amd-blis" 2>/dev/null | head -1)
-BLIS_LIB := $(shell find /opt -name "libblis-mt.so" -path "*/lib_LP64/*" 2>/dev/null | head -1)
+BLIS_LIB := $(shell find /opt -name "libblis-mt.so" 2>/dev/null | head -1)
 AOCC_PATH := $(shell find /opt -path "*/aocc-compiler*/bin/clang" 2>/dev/null | head -1)
 
 all: ZEN3 ZEN4 CONFIGURE

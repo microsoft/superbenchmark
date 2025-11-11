@@ -9,9 +9,16 @@ RCCL_HOME ?= /opt/rocm/rccl
 HPCX_HOME ?= /opt/hpcx
 ROCM_PATH ?= /opt/rocm
 
+OS_SKU ?= $(shell sort -r /etc/*-release | gawk 'match($$0, /^ID=(.*)$$/, a) { print toupper(a[1]); exit }')
+
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
+ifeq ($(OS_SKU), AZURELINUX)
+ROCBLAS_BRANCH ?= rocm-$(shell rpm -qa | grep 'rocm-dev-' | head -1 | awk -F'-' '{print $$3}' | cut -d '.' -f1-3)
+HIPBLASLT_BRANCH ?= rocm-$(shell rpm -qa | grep 'rocm-dev-' | head -1 | awk -F'-' '{print $$3}' | cut -d '.' -f1-3)
+else
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
 HIPBLASLT_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
+endif
 ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
@@ -225,13 +232,13 @@ directx_amf_encoding_latency:
 # Install requirements for Megatron-LM
 megatron_lm:
 	cd Megatron && \
-	apt install -y python3-mpi4py && \
+	{ [ "$(OS_SKU)" = "AZURELINUX" ] || apt install -y python3-mpi4py; } && \
 	python -m pip install --no-cache-dir -r requirements.txt
 
 # Install requirements for Megatron-DeepSpeed
 megatron_deepspeed:
 	cd Megatron && \
-	apt install -y python3-mpi4py && \
+	{ [ "$(OS_SKU)" = "AZURELINUX" ] || apt install -y python3-mpi4py; } && \
 	python -m pip install --no-cache-dir -r requirements.txt && \
 	python -m pip install DeepSpeed
 
