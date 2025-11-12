@@ -114,8 +114,6 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     }
 
     cublasLtMatmulDesc_t op_desc = nullptr;
-    compute_type_ = gemm_compute_type;
-    scale_type_ = scale_type;
     CUBLAS_CHECK(cublasLtMatmulDescCreate(&op_desc, gemm_compute_type, scale_type));
     op_desc_.reset(op_desc);
 
