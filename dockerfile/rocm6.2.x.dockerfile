@@ -14,7 +14,7 @@ FROM ${BASE_IMAGE}
 #   - rocblas: release-staging/rocm-rel-6.2
 #   - openmpi: 4.1.x
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 
