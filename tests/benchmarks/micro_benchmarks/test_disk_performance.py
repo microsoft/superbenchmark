@@ -3,6 +3,8 @@
 
 """Tests for disk-performance benchmark."""
 
+import os
+
 import unittest
 from unittest import mock
 
@@ -126,6 +128,8 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 curr_test_magic += 1
                 param_str += ' --%s_numjobs=%d' % (io_str, curr_test_magic)
                 curr_test_magic += 1
+        # Verify
+        param_str += ' --verify=md5'
         benchmark = benchmark_class(benchmark_name, parameters=param_str)
 
         # Check basic information
@@ -148,10 +152,12 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
             # Sequential precondition
             assert ('--filename=%s' % block_device in benchmark._commands[command_idx])
+            assert ('--verify=md5' in benchmark._commands[command_idx])
             command_idx += 1
             # Random precondition
             assert ('--filename=%s' % block_device in benchmark._commands[command_idx])
             assert ('--runtime=%d' % curr_test_magic in benchmark._commands[command_idx])
+            assert ('--verify=md5' in benchmark._commands[command_idx])
             curr_test_magic += 1
             command_idx += 1
             # Seq/rand read/write
@@ -170,7 +176,63 @@ class DiskBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                     curr_test_magic += 1
                     if io_type == 'rw':
                         assert ('--rwmixread=%d' % default_rwmixread in benchmark._commands[command_idx])
+                    assert ('--verify=md5' in benchmark._commands[command_idx])
                     command_idx += 1
+
+    @mock.patch('pathlib.Path.is_block_device')
+    def test_disk_performance_env_parsing(self, mock_is_block_device):
+        """Test disk-performance benchmark env parsing."""
+        mock_is_block_device.return_value = True
+
+        benchmark_name = 'disk-benchmark'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        # Test valid envs
+        proc_ranks = ['0', '1', '2', '3']
+        block_devices = ['/dev/nvme0n1', '/dev/nvme2n1', '/dev/nvme1n1', '/dev/nvme3n1']
+        numa_nodes = ['0', '0', '1', '1']
+        os.environ['NUMA_NODES'] = ','.join(numa_nodes)
+        param_str = '--block_devices ' + ' '.join(block_devices)
+
+        for proc_rank in proc_ranks:
+            os.environ['PROC_RANK'] = proc_rank
+            benchmark = benchmark_class(benchmark_name, parameters=param_str)
+
+            # Check basic information
+            assert (benchmark)
+            ret = benchmark._preprocess()
+            assert (ret is True)
+            assert (benchmark.return_code == ReturnCode.SUCCESS)
+            assert (benchmark.name == 'disk-benchmark')
+            assert (benchmark.type == BenchmarkType.MICRO)
+
+            # Check command list
+            # seq/rand read = 2 commands
+            assert (2 == len(benchmark._commands))
+
+            command_idx = 0
+            commands_per_device = 2
+            block_device = block_devices[int(proc_rank)]
+            assert (benchmark._args.numa == int(numa_nodes[int(proc_rank)]))
+            assert (benchmark._commands[command_idx].startswith(f'numactl -N {benchmark._args.numa}'))
+            for _ in range(commands_per_device):
+                assert (f'--filename={block_device}' in benchmark._commands[command_idx])
+                command_idx += 1
+
+        # Test invalid envs
+        os.environ['PROC_RANK'] = '4'
+        benchmark = benchmark_class(benchmark_name, parameters=param_str)
+        assert (benchmark)
+        ret = benchmark._preprocess()
+        assert (ret is False)
+        assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+        assert (benchmark.name == 'disk-benchmark')
+        assert (benchmark.type == BenchmarkType.MICRO)
+
+        del os.environ['NUMA_NODES']
+        del os.environ['PROC_RANK']
 
     @decorator.load_data('tests/data/disk_performance.log')
     def test_disk_performance_result_parsing(self, test_raw_output):

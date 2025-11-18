@@ -17,7 +17,7 @@ FROM ${BASE_IMAGE}
 # Mellanox:
 #   - OFED: 5.2-2.2.3.0
 # Intel:
-#   - mlc: v3.11
+#   - mlc: v3.12
 
 LABEL maintainer="SuperBench"
 

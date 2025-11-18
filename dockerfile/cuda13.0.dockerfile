@@ -1,20 +1,21 @@
-FROM nvcr.io/nvidia/pytorch:24.03-py3
+FROM nvcr.io/nvidia/pytorch:25.08-py3
 
 # OS:
-#   - Ubuntu: 22.04
-#   - OpenMPI: 4.1.4+
-#   - Docker Client: 20.10.8
+#   - Ubuntu: 24.04
+#   - OpenMPI: 4.1.9a1
+#   - Docker Client: 20.10.8 (installed in this dockerfile)
 # NVIDIA:
-#   - CUDA: 12.4.0
-#   - cuDNN: 9.0.0.306
-#   - cuBLAS: 12.4.2.65
-#   - NCCL: v2.23.4-1
-#   - TransformerEngine 1.4
+#   - CUDA: 13.0.0.044
+#   - cuDNN: 9.12.0.46
+#   - cuBLAS: 13.0.0.19
+#   - NCCL: 2.27.7
+#   - TransformerEngine: v2.5
+#   - torch: 2.8.0a0+34c6371d24
 # Mellanox:
-#   - OFED: 23.07-0.5.1.2
-#   - HPC-X: v2.18.0-CUDA12.x
+#   - MOFED_VERSION: (installed in this dockerfile)
+#   - HPC-X: 2.24
 # Intel:
-#   - mlc: v3.12
+#   - mlc: 3.12 (amd64 only)
 
 LABEL maintainer="SuperBench"
 
@@ -42,7 +43,7 @@ RUN apt-get update && \
     libnuma-dev \
     libpci-dev \
     libswresample-dev \
-    libtinfo5 \
+    libncurses-dev \
     libtool \
     lshw \
     python3-mpi4py \
@@ -55,6 +56,7 @@ RUN apt-get update && \
     util-linux \
     vim \
     wget \
+    rsync \
     && \
     apt-get autoremove && \
     apt-get clean && \
@@ -82,22 +84,22 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 # Install OFED
-ENV OFED_VERSION=23.07-0.5.1.2
+ENV OFED_VERSION=24.10-1.1.4.0
 RUN TARGETARCH_HW=$(uname -m) && \
     cd /tmp && \
-    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-${TARGETARCH_HW}.tgz && \
-    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-${TARGETARCH_HW}.tgz && \
-    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu22.04-${TARGETARCH_HW}/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}.tgz && \
+    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
-ENV HPCX_VERSION=v2.18
+ENV HPCX_VERSION=v2.24.1
 RUN TARGETARCH_HW=$(uname -m) && \
     cd /opt && \
     rm -rf hpcx && \
-    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}/hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-${TARGETARCH_HW}.tbz -O hpcx.tbz && \
+    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}_cuda13/hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda13-${TARGETARCH_HW}.tbz -O hpcx.tbz && \
     tar xf hpcx.tbz && \
-    mv hpcx-${HPCX_VERSION}-gcc-mlnx_ofed-ubuntu22.04-cuda12-${TARGETARCH_HW} hpcx && \
+    mv hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda13-${TARGETARCH_HW} hpcx && \
     rm hpcx.tbz
 
 # Installs specific to amd64 platform
@@ -121,19 +123,12 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     echo "Skipping Intel MLC, AOCC and AMD Bliss installations for non-amd64 architecture: $TARGETARCH"; \
     fi
 
-# Install NCCL 2.23.4
+# Install UCX with multi-threading support
+ENV UCX_VERSION=1.18.0
 RUN cd /tmp && \
-    git clone -b v2.23.4-1 https://github.com/NVIDIA/nccl.git && \
-    cd nccl && \
-    make -j ${NUM_MAKE_JOBS} src.build && \
-    make install && \
-    rm -rf /tmp/nccl
-
-# Install UCX v1.16.0 with multi-threading support
-RUN cd /tmp && \
-    wget https://github.com/openucx/ucx/releases/download/v1.16.0/ucx-1.16.0.tar.gz && \
-    tar xzf ucx-1.16.0.tar.gz && \
-    cd ucx-1.16.0 && \
+    wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}-rc1/ucx-${UCX_VERSION}.tar.gz && \
+    tar xzf ucx-${UCX_VERSION}.tar.gz && \
+    cd ucx-${UCX_VERSION} && \
     ./contrib/configure-release-mt --prefix=/usr/local && \
     make -j ${NUM_MAKE_JOBS} && \
     make install
@@ -156,10 +151,10 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party cuda_with_msccl
+RUN make -C third_party cuda
 
 ADD . .
-RUN python3 -m pip install --upgrade setuptools==65.7 && \
+RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
