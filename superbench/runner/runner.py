@@ -27,7 +27,6 @@ AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
 
 class SuperBenchRunner():
     """SuperBench runner class."""
-
     def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir):
         """Initilize.
 
@@ -158,10 +157,12 @@ class SuperBenchRunner():
                 f'--rdzv-id={random.randint(100, 999)} --rdzv-backend=c10d '
                 if 'node_num' in mode and mode.node_num > 1 else ''
             )
+
             nsys_prefix = (
                 f'nsys profile --output {trace_dir}/{benchmark_name}_traces '
                 f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
             ) if enable_nsys else ''
+
             mode_command = (
                 f'{nsys_prefix}'
                 f'torchrun'
