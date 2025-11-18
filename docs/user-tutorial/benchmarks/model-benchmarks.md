@@ -69,7 +69,7 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 
 SuperBench uses [torchrun](https://docs.pytorch.org/docs/stable/elastic/run.html) for multi-node LLaMA benchmarks based on PyTorch. Follow the steps below.
 
-1. Configure the Ansible inventory as described in [configuration](../getting-started/configuration.md), using the private IPs of all nodes.
+1. Configure the Ansible inventory as described in [configuration](../../getting-started/configuration.md), using the private IPs of all nodes.
 
 2. Set the number of nodes (`node_num`), number of GPUs per node (`proc_num`), and required environment variables, including a resolvable `MASTER_ADDR` and an open (TCP) `MASTER_PORT`.
 
