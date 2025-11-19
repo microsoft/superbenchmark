@@ -155,7 +155,7 @@ class SuperBenchRunner():
             torch_dist_params = (
                 f'--nnodes={mode.node_num} --rdzv-endpoint=$MASTER_ADDR:$MASTER_PORT '
                 f'--rdzv-id={random.randint(100, 999)} --rdzv-backend=c10d '
-                if 'node_num' in mode and int(mode.node_num) > 1 else ''
+                if ('node_num' in mode and str(mode.node_num).isdigit() and int(mode.node_num) > 1) else ''
             )
 
             nsys_prefix = (
