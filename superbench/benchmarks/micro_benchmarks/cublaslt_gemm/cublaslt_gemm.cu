@@ -1,10 +1,10 @@
 // Copyright(c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#include <algorithm>
 #include <getopt.h>
 #include <memory>
 #include <stdio.h>
-#include <algorithm>
 #include <type_traits>
 
 #include <cuda.h>
@@ -143,8 +143,8 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     std::unique_ptr<cublasLtGemm> gemm = std::make_unique<cublasLtGemm>();
     gemm->Init();
     const int setup_batch = batch > 0 ? static_cast<int>(batch) : 0;
-    gemm->Setup(m, n, k, setup_batch, lda, ldb, ldc, ldd, get_datatype<Ta>(), get_datatype<Tb>(),
-                get_datatype<Tc>(), get_datatype<Tout>(), CUBLAS_OP_T, CUBLAS_OP_N, CUBLASLT_EPILOGUE_DEFAULT);
+    gemm->Setup(m, n, k, setup_batch, lda, ldb, ldc, ldd, get_datatype<Ta>(), get_datatype<Tb>(), get_datatype<Tc>(),
+                get_datatype<Tout>(), CUBLAS_OP_T, CUBLAS_OP_N, CUBLASLT_EPILOGUE_DEFAULT);
 
     void *workspace = nullptr;
     size_t workspace_size;
