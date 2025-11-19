@@ -27,7 +27,6 @@ AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
 
 class SuperBenchRunner():
     """SuperBench runner class."""
-
     def __init__(self, sb_config, docker_config, ansible_config, sb_output_dir):
         """Initilize.
 
