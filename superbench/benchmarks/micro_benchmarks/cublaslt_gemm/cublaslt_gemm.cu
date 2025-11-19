@@ -4,8 +4,11 @@
 #include <getopt.h>
 #include <memory>
 #include <stdio.h>
+#include <algorithm>
+#include <type_traits>
 
 #include <cuda.h>
+#include <cuda_bf16.h>
 #include <cuda_fp16.h>
 #include <cuda_fp8.h>
 
@@ -25,9 +28,9 @@ using fp8e5m2 = __nv_fp8_e5m2;
 using int8 = int8_t;
 
 struct Args {
-    int m = 16;
-    int n = 16;
-    int k = 16;
+    int m = 64;
+    int n = 128;
+    int k = 256;
     int batch = 0;
     int warmup = 20;
     int iter = 50;
@@ -125,32 +128,40 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     Tb *matrix_b = nullptr;
     Tc *matrix_c = nullptr;
     Tout *matrix_out = nullptr;
-    batch = std::max<size_t>(batch, 1);
-    cudaMalloc(&matrix_a, m * k * batch * sizeof(Ta));
-    cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
-    cudaMalloc(&matrix_c, m * n * batch * sizeof(Tc));
-    cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
+    const size_t effective_batch = batch == 0 ? 1 : batch;
+    cudaMalloc(&matrix_a, m * k * effective_batch * sizeof(Ta));
+    cudaMalloc(&matrix_b, k * n * effective_batch * sizeof(Tb));
+    cudaMalloc(&matrix_c, m * n * effective_batch * sizeof(Tc));
+    cudaMalloc(&matrix_out, m * n * effective_batch * sizeof(Tout));
 
-    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * batch);
-    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * batch);
-    init_matrix<Tc><<<216, 1024>>>(matrix_c, 3.f, m * n * batch);
+    init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * effective_batch);
+    init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * effective_batch);
+    init_matrix<Tc><<<216, 1024>>>(matrix_c, 3.f, m * n * effective_batch);
 
     // init gemm
     size_t lda = k, ldb = k, ldc = m, ldd = m;
     std::unique_ptr<cublasLtGemm> gemm = std::make_unique<cublasLtGemm>();
     gemm->Init();
-    gemm->Setup(m, n, k, batch, lda, ldb, ldc, ldd, get_datatype<Ta>(), get_datatype<Tb>(), get_datatype<Tc>(),
-                get_datatype<Tout>(), CUBLAS_OP_T, CUBLAS_OP_N, CUBLASLT_EPILOGUE_DEFAULT);
+    const int setup_batch = batch > 0 ? static_cast<int>(batch) : 0;
+    gemm->Setup(m, n, k, setup_batch, lda, ldb, ldc, ldd, get_datatype<Ta>(), get_datatype<Tb>(),
+                get_datatype<Tc>(), get_datatype<Tout>(), CUBLAS_OP_T, CUBLAS_OP_N, CUBLASLT_EPILOGUE_DEFAULT);
 
     void *workspace = nullptr;
     size_t workspace_size;
 
+    size_t workspace_cap = 2ull * m * n;
+#if CUDA_VERSION >= 12080
+    if (std::is_same<Ta, fp4e2m1>::value || std::is_same<Tb, fp4e2m1>::value) {
+        workspace_cap = std::max<size_t>(workspace_cap, 32ull * 1024 * 1024);
+    }
+#endif
+
     if (autotune) {
         workspace_size = gemm->GetAlgorithmExhaustive(
-            8, 2 * m * n, 1.0f, 0.0f, reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
+            8, workspace_cap, 1.0f, 0.0f, reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
             reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), iter_autotune, warmup_autotune);
     } else {
-        workspace_size = gemm->GetAlgorithm(1, 2 * m * n);
+        workspace_size = gemm->GetAlgorithm(1, workspace_cap);
     }
 
     cudaMalloc(&workspace, workspace_size);
@@ -163,12 +174,12 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
 
     for (int i = 0; i < warmup; i++)
         gemm->Execute(reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-                      reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
+                      reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
                       workspace_size, 0);
     cudaEventRecord(startTime, 0);
     for (int i = 0; i < iter; i++)
         gemm->Execute(reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-                      reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
+                      reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
                       workspace_size, 0);
     cudaEventRecord(endTime, 0);
     cudaEventSynchronize(endTime);
@@ -208,7 +219,7 @@ int main(int argc, char **argv) {
         run<fp8e5m2, fp8e4m3, fp16>(&args);
 #if CUDA_VERSION >= 12080
     else if (args.in_type == "fp4e2m1")
-        run<fp4e2m1, fp4e2m1, fp4e2m1, fp16>(&args);
+        run<fp4e2m1, fp4e2m1, fp4e2m1, bf16>(&args);
 #endif
     else if (args.in_type == "int8")
         run<int8>(&args);
