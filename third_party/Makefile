@@ -202,7 +202,7 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 	tar xzf hpl-2.3.tar.gz && \
 	cp Make.Linux_zen3 hpl-2.3 && \
 	cp Make.Linux_zen4 hpl-2.3 && \
-	make all
+	make OS_SKU=$(OS_SKU) all
 	cp -v ./hpl-tests/hpl-2.3/bin/Linux_zen3/xhpl $(SB_MICRO_PATH)/bin/xhpl_z3
 	cp -v ./hpl-tests/hpl-2.3/bin/Linux_zen4/xhpl $(SB_MICRO_PATH)/bin/xhpl_z4
 	cp -v ./hpl-tests/hpl_run.sh $(SB_MICRO_PATH)/bin/
@@ -215,7 +215,7 @@ cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
     wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
-	make all
+	make OS_SKU=$(OS_SKU) all
 	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
 

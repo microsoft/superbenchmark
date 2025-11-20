@@ -1,6 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
+# OS_SKU is inherited from parent Makefile, but provide fallback if run independently
+OS_SKU ?= $(shell sort -r /etc/*-release | gawk 'match($$0, /^ID=(.*)$$/, a) { print toupper(a[1]); exit }')
+
 GENFLAGS := -DSTREAM_ARRAY_SIZE=120000000
 ZEN3FLAGS := -DSTREAM_ARRAY_SIZE=400000000 -march=znver3
 ZEN4FLAGS := -DSTREAM_ARRAY_SIZE=800000000 -march=znver4
@@ -23,8 +26,14 @@ ifeq ($(ARCH), aarch64)
 endif
 
 # AMD AOCC clang present? add ZEN3 and ZEN4
-# Dynamically find AOCC compiler installation
+# Find AOCC compiler installation
+ifeq ($(OS_SKU), AZURELINUX)
 AOCC_CLANG := $(shell find /opt -path "*/aocc-compiler*/bin/clang" 2>/dev/null | head -1)
+else
+AOCC_CLANG := $(wildcard /opt/AMD/aocc-compiler-4.0.0/bin/clang)
+endif
+
+# Configure compiler if AOCC is found
 ifneq ($(AOCC_CLANG),)
   CC      := $(AOCC_CLANG)
   CFLAGS  := -Ofast -mcmodel=large -mavx2 -ffp-contract=fast -lomp -fopenmp \
