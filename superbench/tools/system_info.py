@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+import glob
 
 import xmltodict
 
@@ -188,6 +189,8 @@ class SystemInfo():    # pragma: no cover
             system_dict['kernel_parameters'] = sysctl
             system_dict['kernel_modules'] = lsmod
             system_dict['dmidecode'] = self._run_cmd('dmidecode').strip()
+            system_dict['bios'] = self._run_cmd('dmidecode -t bios').strip()
+            system_dict['ipmi'] = self._run_cmd('dmidecode -t 38').strip()
             if system_dict['system_product'] == 'Virtual Machine':
                 lsvmbus = self._run_cmd('lsvmbus').splitlines()
                 lsvmbus = self._parse_key_value_lines(lsvmbus)
@@ -263,6 +266,13 @@ class SystemInfo():    # pragma: no cover
         gpu_dict['nv_peer_mem_version'] = self._run_cmd(
             'dpkg -l | grep \'nvidia-peer-memory \' | awk \'$2=="nvidia-peer-memory" {print $3}\''
         ).strip()
+        gpu_dict['nvswitch_info'] = {}
+        for path in glob.glob('/proc/driver/nvidia-nvswitch/devices/*/information'):
+            pci_addr = path.split('/')[-2]  # get '0004:00:00.0' from the path
+            with open(path) as f:
+                info_lines = [line.strip() for line in f if line.strip()]
+            gpu_dict['nvswitch_info'][pci_addr] = info_lines
+        
 
         return gpu_dict
 
@@ -351,10 +361,22 @@ class SystemInfo():    # pragma: no cover
                 disk['Rotational'] = disk.pop('ROTA')
                 disk['Block_size'] = self._run_cmd('fdisk -l -u /dev/{} | grep "Sector size"'.format(block_device)
                                                    ).strip()
-                if 'nvme' in block_device:
-                    nvme_info = self._run_cmd('nvme list | grep {}'.format(block_device)).strip().split()
-                    if len(nvme_info) >= 15:
-                        disk['Nvme_usage'] = nvme_info[-11] + nvme_info[-10]
+                if block_device.startswith('nvme'):
+                        cmd = (
+                            f"sudo nvme list -o json "
+                            f"| jq '.Devices[] | select(.DevicePath == \"/dev/{block_device}\")'"
+                        )
+
+                        nvme_json = self._run_cmd(cmd).strip()
+
+                        # If jq returns nothing, skip
+                        if nvme_json:
+                            try:
+                                nvme_info = json.loads(nvme_json)
+                                disk.update(nvme_info)
+                            except json.JSONDecodeError:
+                                disk['nvme_parse_error'] = nvme_json
+                        
             storage_dict['block_device'] = disk_list
             storage_dict['mapping_bwtween_filesystem_and_blockdevice'] = self._run_cmd('mount')
         except Exception:
@@ -383,44 +405,83 @@ class SystemInfo():    # pragma: no cover
         return ib_dict
 
     def get_nic(self):
-        """Get nic info.
-
-        Returns:
-            list: list of available nic info dict.
-        """
+        """Get NIC info with IP, MTU, state, MAC, and speed."""
         nic_list = []
         try:
+            # Get lshw info
             lsnic_xml = self._run_cmd('lshw -c network -xml')
             lsnic_list = xmltodict.parse(lsnic_xml).get('list', {}).get('node', [])
             if not isinstance(lsnic_list, list):
                 lsnic_list = [lsnic_list]
             lsnic_list = list(filter(lambda x: 'logicalname' in x, lsnic_list))
 
+            # Get ip addr info
+            ip_json = self._run_cmd('ip -j addr')
+            ip_list = json.loads(ip_json)
+            ip_map = {nic['ifname']: nic for nic in ip_list}
+
             for nic in lsnic_list:
                 nic_info = {}
                 try:
-                    nic_info['logical_name'] = nic['logicalname']
+                    logical_name = nic['logicalname']
+                    nic_info['logical_name'] = logical_name
                     nic_info['disabled'] = nic.get('@disabled', False)
-                    nic_info['model'] = nic.get('vendor', '') + ' ' + nic.get('product', '')
+                    nic_info['model'] = (nic.get('vendor', '') + ' ' + nic.get('product', '')).strip()
                     nic_info['description'] = nic.get('description', '')
-                    configuration = nic.get('configuration', {}).get('setting')
-                    configuration_dict = {}
-                    for config in configuration:
-                        configuration_dict[config['@id']] = config.get('@value', '')
-                    if configuration_dict:
-                        nic_info['driver'] = configuration_dict.get('driver', '') + ' ' + configuration_dict.get(
-                            'driverversion', ''
-                        )
-                        nic_info['firmware'] = configuration_dict.get('firmware', '')
-                    speed = self._run_cmd('cat /sys/class/net/{}/speed'.format(nic_info['logical_name'])).strip()
-                    if speed.isdigit():
-                        nic_info['speed'] = str(int(speed) / 1000) + ' Gbit/s'
-                except Exception:
-                    logger.exception('Error: get nic device {} info failed')
+
+                    # configuration info
+                    configuration = nic.get('configuration', {}).get('setting', [])
+                    if isinstance(configuration, dict):
+                        configuration = [configuration]
+                    configuration_dict = {c['@id']: c.get('@value', '') for c in configuration}
+                    nic_info['driver'] = configuration_dict.get('driver', '')
+                    nic_info['driver_version'] = configuration_dict.get('driverversion', '')
+                    nic_info['firmware'] = configuration_dict.get('firmware', '')
+
+                    # speed
+                    try:
+                        speed = self._run_cmd(f'cat /sys/class/net/{logical_name}/speed').strip()
+                        nic_info['speed'] = f"{int(speed)/1000} Gbit/s" if speed.isdigit() else None
+                    except Exception:
+                        nic_info['speed'] = None
+
+                    # MTU
+                    try:
+                        with open(f'/sys/class/net/{logical_name}/mtu') as f:
+                            nic_info['mtu'] = int(f.read().strip())
+                    except Exception:
+                        nic_info['mtu'] = None
+
+                    # state
+                    try:
+                        with open(f'/sys/class/net/{logical_name}/operstate') as f:
+                            nic_info['state'] = f.read().strip()
+                    except Exception:
+                        nic_info['state'] = None
+
+                    # IP addresses
+                    if logical_name in ip_map:
+                        addr_info = ip_map[logical_name].get('addr_info', [])
+                        nic_info['ipv4'] = [a['local'] for a in addr_info if a['family'] == 'inet']
+                        nic_info['ipv6'] = [a['local'] for a in addr_info if a['family'] == 'inet6']
+                        nic_info['mac'] = ip_map[logical_name].get('address', '')
+                        nic_info['flags'] = ip_map[logical_name].get('flags', [])
+                    else:
+                        nic_info['ipv4'] = []
+                        nic_info['ipv6'] = []
+                        nic_info['mac'] = ''
+                        nic_info['flags'] = []
+
+                except Exception as e:
+                    print(f'Error: get nic device {nic.get("logicalname", "UNKNOWN")} info failed: {e}')
 
                 nic_list.append(nic_info)
-        except Exception:
-            logger.exception('Error: get nic info failed')
+
+        except Exception as e:
+            print(f'Error: get nic info failed: {e}')
+
+        return nic_list
+
 
     def get_network(self):
         """Get network info, including nic info, ib info and ofed version.
