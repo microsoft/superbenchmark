@@ -11,10 +11,18 @@ from superbench.benchmarks.model_benchmarks.pytorch_lstm import PytorchLSTM
 from superbench.benchmarks.model_benchmarks.megatron_gpt3 import MegatronGPT
 from superbench.benchmarks.model_benchmarks.pytorch_llama import PytorchLlama
 from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtral
+from superbench.benchmarks.model_benchmarks.pytorch_stable_diffusion import PytorchStableDiffusion
 
 __all__ = [
-    'ModelBenchmark', 'PytorchBERT', 'PytorchGPT2', 'PytorchCNN', 'PytorchLSTM', 'MegatronGPT', 'PytorchLlama',
-    'PytorchMixtral'
+    'ModelBenchmark',
+    'PytorchBERT',
+    'PytorchGPT2',
+    'PytorchCNN',
+    'PytorchLSTM',
+    'MegatronGPT',
+    'PytorchLlama',
+    'PytorchMixtral',
+    'PytorchStableDiffusion',
 ]
 
 if PytorchMixtral is not None:
