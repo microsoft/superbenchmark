@@ -119,7 +119,6 @@ class Benchmark(ABC):
                 return False, None, []
             else:
                 unknown = self._normalize_unknown_args(unknown)
-                logger.info('Forwarding unknown arguments - benchmark: %s, unknown: %s', self._name, ' '.join(unknown))
         return True, args, unknown
 
     def _normalize_unknown_args(self, unknown):
