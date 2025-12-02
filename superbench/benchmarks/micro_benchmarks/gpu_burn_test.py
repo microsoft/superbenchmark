@@ -145,10 +145,10 @@ class GpuBurnBenchmark(MicroBenchmarkWithInvoke):
                 gflops = [float(x) for x in gflops]
                 # extract temps: 'temps: 48 C - 49 C - 49 C - 49 C'
                 temps = []
-                m = re.search(r'temps:\s*(.+)$', perf_line)
-                if m:
+                temp_match = re.search(r'temps:\s*(.+)$', perf_line)
+                if temp_match:
                     temps = []
-                    for t in m.group(1).split(' - '):
+                    for t in temp_match.group(1).split(' - '):
                         match = re.search(r'(\d+)', t)
                         if match:
                             temps.append(int(match.group(1)))

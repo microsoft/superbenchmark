@@ -171,11 +171,11 @@ Supports the use of double unit types and the use of tensor cores.
 | gpu-burn/time                     | time (s)        | The runtime for gpu-burn test.                                                                                                     |
 | gpu-burn/gpu_[0-9]_pass           | yes/no          | The result of the gpu-burn test for each GPU (1: yes, 0: no).                                                                      |
 | gpu-burn/abort                    | yes/no          | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no).                                                 |
-| gpu_<snap_idx>_gflops:<gpu_index> | FLOPS (GFLOPS)  | Per-snapshot measured GFLOPS for `gpu_index` at snapshot `snap_idx` (snapshot index increments for each performance summary line). |
-| gpu_<snap_idx>_temp:<gpu_index>   | temperature (C) | Per-snapshot temperature for `gpu_index` at snapshot `snap_idx`.                                                                   |
-| gpu_avg_gflops:<gpu_index>        | FLOPS (GFLOPS)  | Average GFLOPS across all snapshots for `gpu_index`.                                                                               |
-| gpu_var_gflops:<gpu_index>        |                 | Flops variance metric for `gpu_index` across snapshots using (max-min)/avg                                                         |
-| gpu_max_temp:<gpu_index>          | temperature (C) | Maximum observed temperature for `gpu_index` across all snapshots.                                                                 |
+| gpu_<snap_idx>_gflops | FLOPS (GFLOPS)  | Per-snapshot measured GFLOPS for each gpu at snapshot `snap_idx` (snapshot index increments for each performance summary line). |
+| gpu_<snap_idx>_temp   | temperature (C) | Per-snapshot temperature for each gpu at snapshot `snap_idx`.                                                                   |
+| gpu_avg_gflops        | FLOPS (GFLOPS)  | Average GFLOPS across all snapshots for each gpu.                                                                               |
+| gpu_var_gflops        |                 | Flops variance metric for each gpu across snapshots using (max-min)/avg                                                         |
+| gpu_max_temp          | temperature (C) | Maximum observed temperature for each gpu across all snapshots.                                                                 |
 
 
 ### `cpu-hpl`
