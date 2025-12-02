@@ -4,6 +4,7 @@
 """Module of the megatron deepspeed GPT pretrain class."""
 
 import json
+import math
 import os
 import statistics
 import numpy as np
@@ -12,9 +13,10 @@ import torch
 from pathlib import Path
 import re
 
-from superbench.benchmarks import BenchmarkRegistry
+from superbench.benchmarks import BenchmarkRegistry, BenchmarkType
 from superbench.benchmarks.context import Platform, Precision
 from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
+from superbench.benchmarks.result import BenchmarkResult
 from superbench.benchmarks.return_code import ReturnCode
 from superbench.common.utils import logger, run_command
 
@@ -231,9 +233,108 @@ class MegatronGPT(ModelBenchmark):
             help='Train mode to run. Current supported: "pretrain" and "finetune".',
         )
 
+    def _normalize_unknown_args(self, unknown):
+        """Normalize unknown args by converting underscores to hyphens in flag names.
+
+        Args:
+            unknown (list): List of unknown arguments.
+
+        Return:
+            list: Normalized list of arguments.
+        """
+        normalized = []
+        i = 0
+        while i < len(unknown):
+            arg = unknown[i]
+            # Check if it's a flag (starts with --)
+            if arg.startswith('--'):
+                # Convert underscores to hyphens in the flag name
+                normalized_flag = arg.replace('_', '-')
+                normalized.append(normalized_flag)
+            else:
+                # It's a value, keep as-is
+                normalized.append(arg)
+            i += 1
+        return normalized
+
+    def parse_args(self, ignore_invalid=False):
+        """Parse the arguments, accepting unknown args for forwarding.
+
+        Return:
+            ret (bool): whether parse succeed or not.
+            args (argparse.Namespace): parsed arguments.
+            unknown (list): unknown arguments.
+        """
+        try:
+            args, unknown = self._parser.parse_known_args(self._argv)
+        except BaseException as e:
+            if ignore_invalid:
+                logger.info('Missing or invalid parameters, will ignore the error and skip the args checking.')
+                return True, None, []
+            else:
+                logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
+                return False, None, []
+
+        # Normalize unknown arguments (convert underscores to hyphens)
+        if len(unknown) > 0:
+            unknown = self._normalize_unknown_args(unknown)
+            logger.info(
+                'Forwarding unknown arguments - benchmark: %s, unknown: %s',
+                self._name,
+                ' '.join(unknown)
+            )
+        return True, args, unknown
+
     def _preprocess(self):
-        if not super()._preprocess():
+        """Preprocess with support for unknown args."""
+        self.add_parser_arguments()
+        ret, self._args, unknown = self.parse_args()
+        self._unknown_args = unknown  # Store for later forwarding
+
+        if not ret:
+            self._result = BenchmarkResult(self._name, self._benchmark_type, ReturnCode.INVALID_ARGUMENT)
             return False
+
+        self._result = BenchmarkResult(
+            self._name, self._benchmark_type, ReturnCode.SUCCESS, run_count=self._args.run_count
+        )
+
+        if not isinstance(self._benchmark_type, BenchmarkType):
+            logger.error(
+                'Invalid benchmark type - benchmark: {}, type: {}'.format(self._name, type(self._benchmark_type))
+            )
+            self._result.set_return_code(ReturnCode.INVALID_BENCHMARK_TYPE)
+            return False
+
+        self._judge_gpu_availability()
+        self._set_force_fp32()
+        logger.info(
+            'Model placement - model: {}, GPU availablility: {}, pin memory: {}, force fp32: {}.'.format(
+                self._name, self._gpu_available, self._args.pin_memory, self._args.force_fp32
+            )
+        )
+
+        if self._args.num_warmup < 0:
+            logger.error('num_warmup should be positive integer, while {} is set.'.format(self._args.num_warmup))
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
+
+        if not self._init_distributed_setting():
+            self._result.set_return_code(ReturnCode.DISTRIBUTED_SETTING_INIT_FAILURE)
+            return False
+
+        # Set sample_count aligned with batch_size.
+        self._args.sample_count = math.ceil(self._args.sample_count / self._args.batch_size) * self._args.batch_size
+
+        if not self._generate_dataset():
+            self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
+            return False
+
+        if not self._init_dataloader():
+            self._result.set_return_code(ReturnCode.DATALOADER_INIT_FAILURE)
+            return False
+
+        # Original MegatronGPT preprocessing logic
         if not self._args.code_base:
             if self._args.deepspeed:
                 self._args.code_base = os.path.join(
@@ -531,7 +632,11 @@ class MegatronGPT(ModelBenchmark):
                 command = f'deepspeed {script_path} {megatron_options} {self._data_options} {deepspeed_option}'
         else:
             command = f'torchrun {self._distributed_args} {script_path} {megatron_options} {self._data_options}'
+        # Transparently append any unknown args captured during parsing for forward compatibility.
+        if getattr(self, '_unknown_args', None):
 
+
+            command = f"{command} {' '.join(self._unknown_args)}"
         return command
 
     def _train_step(self, precision):    # noqa: E501
@@ -795,4 +900,71 @@ BenchmarkRegistry.register_benchmark(
         '--dataloader_type=cyclic'
     ),
     platform=Platform.ROCM
+)
+BenchmarkRegistry.register_benchmark(
+    'megatron-deepseek-v2-lite',
+    MegatronGPT,
+    parameters=(
+        '--model=gpt '
+        '--transformer_impl=transformer_engine '
+        '--tokenizer_type=HuggingFaceTokenizer '
+        '--tokenizer-model=/opt/superbench/third_party/Megatron/data/DeepSeek-V2-Lite '
+        '--num_layers=27 '
+        '--hidden_size=1024 '
+        '--seq_len=4096 '
+        '--num_attn_heads=16 '
+        '--moe_ffn_hidden_size=1408 '
+        '--ffn_hidden_size=10944 '
+        '--dataloader_type=cyclic'
+        '--num_experts=64 '
+        '--no-async-tensor-model-parallel-allreduce '
+        '--use-rotary-position-embeddings '
+        '--no-gradient-accumulation-fusion '
+        '--mock-data '
+        '--use-flash-attn '
+        '--no-load-optim '
+        '--no-load-rng '
+        '--swiglu '
+        '--normalization=RMSNorm '
+        '--norm-epsilon=1e-06 '
+        '--no-bias-swiglu-fusion '
+        '--no-rope-fusion '
+        '--position-embedding-type=rope '
+        '--untie-embeddings-and-output-weights=yes '
+        '--disable-bias-linear '
+        '--ckpt-format=torch '
+        '--rotary-percent=1.0 '
+        '--rotary-base=10000 '
+        '--rotary-scaling-factor=40 '
+        '--eod-mask-loss '
+        '--data-cache-path=/root/cache '
+        '--moe-layer-freq="([0]+[1]*26)" '
+        '--moe-router-topk=6 '
+        '--moe-router-topk-scaling-factor=1.0 '
+        '--moe-aux-loss-coeff=1e-3 '
+        '--kv-lora-rank=512 '
+        '--v-head-dim=128 '
+        '--qk-head-dim=128  '
+        '--qk-layernorm '
+        '--qk-pos-emb-head-dim=64 '
+        '--attention-dropout=0.0 '
+        '--hidden-dropout=0.0 '
+        '--no-masked-softmax-fusion '
+        '--kv-channels=16 '
+        '--multi-latent-attention '
+        '--moe-grouped-gemm '
+        '--moe-router-score-function=softmax '
+        '--moe-router-topk=6 '
+        '--moe-router-pre-softmax '
+        '--moe-shared-expert-intermediate-size=2816 '
+        '--moe-token-dispatcher-type=alltoall '
+        '--moe-token-drop-policy=probs '
+        '--make-vocab-size-divisible-by=3200 '
+        '--attention-softmax-in-fp32 '
+        '--use-mcore-models '
+        '--mscale=0.707 '
+        '--mscale-all-dim=0.707 '
+        '--sequence-parallel '
+    ),
+    platform=Platform.CUDA
 )
