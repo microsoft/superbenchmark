@@ -4,7 +4,6 @@
 """Module of the megatron deepspeed GPT pretrain class."""
 
 import json
-import math
 import os
 import statistics
 import numpy as np
@@ -13,10 +12,9 @@ import torch
 from pathlib import Path
 import re
 
-from superbench.benchmarks import BenchmarkRegistry, BenchmarkType
+from superbench.benchmarks import BenchmarkRegistry
 from superbench.benchmarks.context import Platform, Precision
 from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
-from superbench.benchmarks.result import BenchmarkResult
 from superbench.benchmarks.return_code import ReturnCode
 from superbench.common.utils import logger, run_command
 

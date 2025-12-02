@@ -112,8 +112,14 @@ class Benchmark(ABC):
 
         # Normalize unknown arguments (convert underscores to hyphens)
         if len(unknown) > 0:
-            unknown = self._normalize_unknown_args(unknown)
-            logger.info('Forwarding unknown arguments - benchmark: %s, unknown: %s', self._name, ' '.join(unknown))
+            if not getattr(self, '_ignore_unknown_args', False):
+                logger.error(
+                    'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
+                )
+                return False, None, []
+            else:
+                unknown = self._normalize_unknown_args(unknown)
+                logger.info('Forwarding unknown arguments - benchmark: %s, unknown: %s', self._name, ' '.join(unknown))
         return True, args, unknown
 
     def _normalize_unknown_args(self, unknown):
