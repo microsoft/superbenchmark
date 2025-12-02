@@ -549,7 +549,6 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         assert ('--another_option' not in command)
         assert ('--third_param' not in command)
 
-
     @decorator.load_data('tests/data/megatron_deepspeed.log')
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_parse_log(self, raw_output, mock_generate_dataset):

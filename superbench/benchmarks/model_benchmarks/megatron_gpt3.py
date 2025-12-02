@@ -279,18 +279,14 @@ class MegatronGPT(ModelBenchmark):
         # Normalize unknown arguments (convert underscores to hyphens)
         if len(unknown) > 0:
             unknown = self._normalize_unknown_args(unknown)
-            logger.info(
-                'Forwarding unknown arguments - benchmark: %s, unknown: %s',
-                self._name,
-                ' '.join(unknown)
-            )
+            logger.info('Forwarding unknown arguments - benchmark: %s, unknown: %s', self._name, ' '.join(unknown))
         return True, args, unknown
 
     def _preprocess(self):
         """Preprocess with support for unknown args."""
         self.add_parser_arguments()
         ret, self._args, unknown = self.parse_args()
-        self._unknown_args = unknown  # Store for later forwarding
+        self._unknown_args = unknown    # Store for later forwarding
 
         if not ret:
             self._result = BenchmarkResult(self._name, self._benchmark_type, ReturnCode.INVALID_ARGUMENT)
@@ -635,8 +631,6 @@ class MegatronGPT(ModelBenchmark):
             command = f'torchrun {self._distributed_args} {script_path} {megatron_options} {self._data_options}'
         # Transparently append any unknown args captured during parsing for forward compatibility.
         if getattr(self, '_unknown_args', None):
-
-
             command = f"{command} {' '.join(self._unknown_args)}"
         return command
 
