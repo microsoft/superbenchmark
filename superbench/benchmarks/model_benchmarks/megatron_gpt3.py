@@ -39,6 +39,7 @@ class MegatronGPT(ModelBenchmark):
         """
         super().__init__(name, parameters)
         self._supported_precision = [Precision.FLOAT32, Precision.FLOAT16, Precision.BFLOAT16]
+        self._ignore_unknown_args = True
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -930,7 +931,7 @@ BenchmarkRegistry.register_benchmark(
         '--no-bias-swiglu-fusion '
         '--no-rope-fusion '
         '--position-embedding-type=rope '
-        '--untie-embeddings-and-output-weights=yes '
+        '--untie-embeddings-and-output-weights '
         '--disable-bias-linear '
         '--ckpt-format=torch '
         '--rotary-percent=1.0 '
