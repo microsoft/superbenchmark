@@ -137,8 +137,10 @@ class Benchmark(ABC):
             # Check if it's a flag (starts with --)
             if arg.startswith('--'):
                 # Convert underscores to hyphens in the flag name
-                normalized_flag = arg.replace('_', '-')
-                normalized.append(normalized_flag)
+                flag = arg.split('=')[0]
+                value = arg.split('=')[1] if '=' in arg else None
+                normalized_flag = flag.replace('_', '-')
+                normalized.append(f'{normalized_flag} {value}' if value is not None else normalized_flag)
             else:
                 # It's a value, keep as-is
                 normalized.append(arg)
