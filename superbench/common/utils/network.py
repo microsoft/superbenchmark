@@ -7,6 +7,7 @@ import socket
 import re
 import os
 from pathlib import Path
+from superbench.common.utils import logger
 
 
 def get_free_port():
@@ -33,7 +34,26 @@ def get_ib_devices():
         ib_devices_port (list): IB devices with available ports in current system.
     """
     if os.getenv('IB_DEVICES', None):
-        return os.getenv('IB_DEVICES').split(',')
+        ib_devices_env = os.getenv('IB_DEVICES').split(',')
+        # Validate that IB_DEVICES contains either all
+        # numeric indices or all device names, not mixed
+        numeric_flags = [device.strip().isdigit() for device in ib_devices_env]
+        all_numeric = all(numeric_flags)
+        any_numeric = any(numeric_flags)
+
+        # Check for mixed case (some numeric, some not)
+        if any_numeric and not all_numeric:
+            logger.log_and_raise(
+                exception=ValueError,
+                msg='IB_DEVICES contains mixed numeric indices and device names: {}. '
+                'All values must be either numeric indices (e.g., "0,2,4,6") '
+                'or device names (e.g., "mlx5_ib0,mlx5_ib2").'.format(os.getenv('IB_DEVICES'))
+            )
+
+        # If all numeric, fall through to discover actual devices; otherwise use provided names
+        if not all_numeric:
+            # All are device names, use them directly
+            return ib_devices_env
     devices = list(p.name for p in Path('/sys/class/infiniband').glob('*'))
     ib_devices_port_dict = {}
     for device in devices:
