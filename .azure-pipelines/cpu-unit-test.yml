@@ -29,7 +29,7 @@ steps:
       if python3 -c "import sys; exit(0 if sys.version_info < (3, 11) else 1)"; then
         python3 -m pip install --upgrade setuptools==65.7
       fi
-      python3 -m pip install .[test,cpuworker]
+      python3 -m pip install --no-cache-dir .[test,cpuworker]
       make postinstall
     displayName: Install dependencies
   - script: |
