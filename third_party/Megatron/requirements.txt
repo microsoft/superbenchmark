@@ -9,7 +9,8 @@ black==25.1.0; python_version >= '3.12'
 isort>=5.5.4
 tqdm
 sentencepiece
-wandb
+wandb==0.22.3; python_version == '3.8'
+wandb; python_version > '3.8'
 einops
 typing_extensions==4.9.0; python_version < '3.12'
 typing_extensions==4.12.2; python_version >= '3.12'
