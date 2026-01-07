@@ -21,7 +21,6 @@ from superbench.benchmarks.result import BenchmarkResult
 
 class SortedMetavarTypeHelpFormatter(argparse.MetavarTypeHelpFormatter):
     """Custom HelpFormatter class for argparse which sorts option strings."""
-
     def add_arguments(self, actions):
         """Sort option strings before original add_arguments.
 
@@ -33,7 +32,6 @@ class SortedMetavarTypeHelpFormatter(argparse.MetavarTypeHelpFormatter):
 
 class Benchmark(ABC):
     """The base class of all benchmarks."""
-
     def __init__(self, name, parameters=''):
         """Constructor.
 
