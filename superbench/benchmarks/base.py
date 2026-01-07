@@ -21,6 +21,7 @@ from superbench.benchmarks.result import BenchmarkResult
 
 class SortedMetavarTypeHelpFormatter(argparse.MetavarTypeHelpFormatter):
     """Custom HelpFormatter class for argparse which sorts option strings."""
+
     def add_arguments(self, actions):
         """Sort option strings before original add_arguments.
 
@@ -32,6 +33,7 @@ class SortedMetavarTypeHelpFormatter(argparse.MetavarTypeHelpFormatter):
 
 class Benchmark(ABC):
     """The base class of all benchmarks."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -297,10 +299,7 @@ class Benchmark(ABC):
                     val = np.percentile(result, float(percentile), method='nearest')
                 except TypeError:
                     val = np.percentile(result, float(percentile), interpolation='nearest')
-                self._result.add_result(
-                    '{}_{}'.format(metric, percentile),
-                    val, reduce_type
-                )
+                self._result.add_result('{}_{}'.format(metric, percentile), val, reduce_type)
 
     def print_env_info(self):
         """Print environments or dependencies information."""
