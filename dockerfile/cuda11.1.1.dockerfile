@@ -24,6 +24,7 @@ RUN apt-get update && \
     automake \
     bc \
     build-essential \
+    ca-certificates \
     curl \
     dmidecode \
     ffmpeg \
@@ -46,6 +47,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    software-properties-common \
     sudo \
     util-linux \
     vim \
@@ -54,6 +56,24 @@ RUN apt-get update && \
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
+
+# Install Go (used for wandb build)
+RUN add-apt-repository -y ppa:longsleep/golang-backports && \
+    apt-get update && \
+    apt-get install -y golang-1.24-go
+
+# Install Rust (used for wandb build)
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    . /root/.cargo/env && \
+    rustup update stable && \
+    rustup default stable
+
+ENV PATH="/usr/lib/go-1.24/bin:/root/.cargo/bin:${PATH}"
+
+# sanity checks
+RUN go version && \
+    cargo --version && \
+    which cargo
 
 ARG NUM_MAKE_JOBS=
 
