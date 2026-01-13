@@ -28,6 +28,7 @@ RUN apt-get update && \
     dmidecode \
     ffmpeg \
     git \
+    golang \
     iproute2 \
     jq \
     libaio-dev \
