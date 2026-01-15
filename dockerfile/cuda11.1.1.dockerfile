@@ -70,11 +70,6 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
 
 ENV PATH="/usr/lib/go-1.24/bin:/root/.cargo/bin:${PATH}"
 
-# sanity checks
-RUN go version && \
-    cargo --version && \
-    which cargo
-
 ARG NUM_MAKE_JOBS=
 
 # Install Docker
