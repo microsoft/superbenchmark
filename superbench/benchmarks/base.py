@@ -294,9 +294,16 @@ class Benchmark(ABC):
             percentile_list = ['50', '90', '95', '99', '99.9']
             for percentile in percentile_list:
                 try:
+                    # Prefer the newer NumPy 'method' argument; fall back to 'interpolation'
+                    # only if 'method' is not accepted (older NumPy versions).
                     val = np.percentile(result, float(percentile), method='nearest')
-                except TypeError:
-                    val = np.percentile(result, float(percentile), interpolation='nearest')
+                except TypeError as exc:
+                    msg = str(exc)
+                    if 'method' in msg and ('unexpected keyword argument' in msg or 'got an unexpected keyword argument' in msg):
+                        val = np.percentile(result, float(percentile), interpolation='nearest')
+                    else:
+                        # Re-raise TypeErrors unrelated to the 'method' parameter to avoid masking bugs.
+                        raise
                 self._result.add_result('{}_{}'.format(metric, percentile), val, reduce_type)
 
     def print_env_info(self):
