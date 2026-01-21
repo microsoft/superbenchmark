@@ -293,11 +293,10 @@ class Benchmark(ABC):
         if len(result) > 0:
             percentile_list = ['50', '90', '95', '99', '99.9']
             for percentile in percentile_list:
-                try:
-                    val = np.percentile(result, float(percentile), method='nearest')
-                except TypeError:
-                    val = np.percentile(result, float(percentile), interpolation='nearest')
-                self._result.add_result('{}_{}'.format(metric, percentile), val, reduce_type)
+                self._result.add_result(
+                    '{}_{}'.format(metric, percentile),
+                    np.percentile(result, float(percentile), interpolation='nearest'), reduce_type
+                )
 
     def print_env_info(self):
         """Print environments or dependencies information."""
