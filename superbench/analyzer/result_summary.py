@@ -185,7 +185,7 @@ class ResultSummary(RuleBase):
         for category in summary:
             lines.append('## {}\n'.format(category))
             summary_df = pd.DataFrame(summary[category])
-            summary_df = summary_df.drop(columns=0, axis=1)
+            summary_df = summary_df.drop(columns=[0])
             header = ['metric', 'statistics', 'values']
             table_lines = file_handler.generate_md_table(summary_df, header)
             lines.extend(table_lines)
