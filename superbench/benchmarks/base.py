@@ -299,7 +299,9 @@ class Benchmark(ABC):
                     val = np.percentile(result, float(percentile), method='nearest')
                 except TypeError as exc:
                     msg = str(exc)
-                    if 'method' in msg and ('unexpected keyword argument' in msg or 'got an unexpected keyword argument' in msg):
+                    if 'method' in msg and (
+                        'unexpected keyword argument' in msg or 'got an unexpected keyword argument' in msg
+                    ):
                         val = np.percentile(result, float(percentile), interpolation='nearest')
                     else:
                         # Re-raise TypeErrors unrelated to the 'method' parameter to avoid masking bugs.
