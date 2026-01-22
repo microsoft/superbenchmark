@@ -210,7 +210,7 @@ class ResultSummary(RuleBase):
             file_handler.output_excel_raw_data(writer, raw_data_df, 'Raw Data')
             # output the result summary in 'Summary' sheet
             if isinstance(summary, pd.DataFrame) and not summary.empty:
-                summary.to_excel(writer, 'Summary', index=False, header=False)
+                summary.to_excel(writer, sheet_name='Summary', index=False, header=False)
                 worksheet = writer.sheets['Summary']
                 row = worksheet.max_row
                 # merge cells in 'category' column with the same category
