@@ -126,8 +126,7 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
-ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -155,14 +154,15 @@ ADD dockerfile/etc /opt/microsoft/
 
 WORKDIR ${SB_HOME}
 
+# Install Rust for wandb build (required by megatron_lm target)
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 ADD third_party third_party
 RUN make -C third_party cuda -o nvbandwidth
 
 ADD . .
-# Install Rust temporarily for wandb build, then remove to reduce image size
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-    . /root/.cargo/env && \
-    python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
+RUN python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
