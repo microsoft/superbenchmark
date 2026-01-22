@@ -154,18 +154,17 @@ ADD dockerfile/etc /opt/microsoft/
 
 WORKDIR ${SB_HOME}
 
-# Install Rust for wandb build (required by megatron_lm target)
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
 ADD third_party third_party
-RUN make -C third_party cuda -o nvbandwidth
+# Install Rust temporarily for wandb build (required by megatron_lm target), then remove
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    . /root/.cargo/env && \
+    make -C third_party cuda -o nvbandwidth && \
+    rustup self uninstall -y && \
+    rm -rf /root/.cargo /root/.rustup
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
-    rm -rf .git && \
-    rustup self uninstall -y && \
-    rm -rf /root/.cargo /root/.rustup
+    rm -rf .git
