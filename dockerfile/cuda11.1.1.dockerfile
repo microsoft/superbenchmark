@@ -47,24 +47,20 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
-    software-properties-common \
     sudo \
     util-linux \
     vim \
     wget \
+    software-properties-common \
     && \
     add-apt-repository -y ppa:longsleep/golang-backports && \
     apt-get update && \
-    apt-get install -y golang-1.24-go && \
+    apt-get install -y golang-1.24-go=1.24* && \
+    update-alternatives --install /usr/bin/go go /usr/lib/go-1.24/bin/go 100 && \
+    update-alternatives --install /usr/bin/gofmt gofmt /usr/lib/go-1.24/bin/gofmt 100 && \
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
-
-# Install Rust (used for wandb build)
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-    . /root/.cargo/env && \
-    rustup update stable && \
-    rustup default stable
 
 ARG NUM_MAKE_JOBS=
 
@@ -130,7 +126,7 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
-ENV PATH="/usr/lib/go-1.24/bin:/root/.cargo/bin:${PATH}" \
+ENV PATH="${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
@@ -163,8 +159,13 @@ ADD third_party third_party
 RUN make -C third_party cuda -o nvbandwidth
 
 ADD . .
-RUN python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
+# Install Rust temporarily for wandb build, then remove to reduce image size
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    . /root/.cargo/env && \
+    python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
-    rm -rf .git
+    rm -rf .git && \
+    rustup self uninstall -y && \
+    rm -rf /root/.cargo /root/.rustup
