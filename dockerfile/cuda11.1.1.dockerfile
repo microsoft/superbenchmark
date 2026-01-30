@@ -24,6 +24,7 @@ RUN apt-get update && \
     automake \
     bc \
     build-essential \
+    ca-certificates \
     curl \
     dmidecode \
     ffmpeg \
@@ -50,7 +51,13 @@ RUN apt-get update && \
     util-linux \
     vim \
     wget \
+    software-properties-common \
     && \
+    add-apt-repository -y ppa:longsleep/golang-backports && \
+    apt-get update && \
+    apt-get install -y golang-1.24-go=1.24* && \
+    update-alternatives --install /usr/bin/go go /usr/lib/go-1.24/bin/go 100 && \
+    update-alternatives --install /usr/bin/gofmt gofmt /usr/lib/go-1.24/bin/gofmt 100 && \
     apt-get autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
@@ -149,7 +156,12 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party cuda -o nvbandwidth
+# Install Rust temporarily for wandb build (required by megatron_lm target), then remove
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    . /root/.cargo/env && \
+    make -C third_party cuda -o nvbandwidth && \
+    rustup self uninstall -y && \
+    rm -rf /root/.cargo /root/.rustup
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
