@@ -185,7 +185,7 @@ class ResultSummary(RuleBase):
         for category in summary:
             lines.append('## {}\n'.format(category))
             summary_df = pd.DataFrame(summary[category])
-            summary_df = summary_df.drop(columns=0, axis=1)
+            summary_df = summary_df.drop(columns=[0])
             header = ['metric', 'statistics', 'values']
             table_lines = file_handler.generate_md_table(summary_df, header)
             lines.extend(table_lines)
@@ -210,7 +210,7 @@ class ResultSummary(RuleBase):
             file_handler.output_excel_raw_data(writer, raw_data_df, 'Raw Data')
             # output the result summary in 'Summary' sheet
             if isinstance(summary, pd.DataFrame) and not summary.empty:
-                summary.to_excel(writer, 'Summary', index=False, header=False)
+                summary.to_excel(writer, sheet_name='Summary', index=False, header=False)
                 worksheet = writer.sheets['Summary']
                 row = worksheet.max_row
                 # merge cells in 'category' column with the same category

@@ -94,7 +94,7 @@ def output_excel_raw_data(writer, raw_data_df, sheet_name):
     """
     # Output the raw data
     if isinstance(raw_data_df, pd.DataFrame) and not raw_data_df.empty:
-        raw_data_df.to_excel(writer, sheet_name, index=True)
+        raw_data_df.to_excel(writer, sheet_name=sheet_name, index=True)
     else:
         logger.warning('FileHandler: excel_data_output - {} data_df is empty.'.format(sheet_name))
 
@@ -114,7 +114,7 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
 
     # Output the not accept
     if isinstance(data_not_accept_df, pd.DataFrame):
-        data_not_accept_df.to_excel(writer, 'Not Accept', index=True)
+        data_not_accept_df.to_excel(writer, sheet_name='Not Accept', index=True)
         if not data_not_accept_df.empty:
             row_start = 1
             row_end = max(row_start, len(data_not_accept_df))
