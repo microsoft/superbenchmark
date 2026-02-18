@@ -6,7 +6,7 @@
 import re
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
-from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
+from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_time_to_us
 
 
 class NvbenchSleepKernel(NvbenchBase):
@@ -99,14 +99,14 @@ class NvbenchSleepKernel(NvbenchBase):
                     duration_us, samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups(
                     )
                     # self._result.add_result(f'duration_us_{duration_us}_samples', int(samples))
-                    self._result.add_result(f'duration_us_{duration_us}_cpu_time', self._parse_time_value(cpu_time))
+                    self._result.add_result(f'duration_us_{duration_us}_cpu_time', parse_time_to_us(cpu_time))
                     # self._result.add_result(f'duration_us_{duration_us}_cpu_noise', self._parse_percentage(cpu_noise))
-                    self._result.add_result(f'duration_us_{duration_us}_gpu_time', self._parse_time_value(gpu_time))
+                    self._result.add_result(f'duration_us_{duration_us}_gpu_time', parse_time_to_us(gpu_time))
                     # self._result.add_result(f'duration_us_{duration_us}_gpu_noise', self._parse_percentage(gpu_noise))
                     # self._result.add_result(f'duration_us_{duration_us}_batch_samples',
                     # int(batch_samples.replace('x', '')))
                     self._result.add_result(
-                        f'duration_us_{duration_us}_batch_gpu_time', self._parse_time_value(batch_gpu)
+                        f'duration_us_{duration_us}_batch_gpu_time', parse_time_to_us(batch_gpu)
                     )
                     parsed_any = True
             if not parsed_any:

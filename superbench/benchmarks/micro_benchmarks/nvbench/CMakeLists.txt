@@ -21,6 +21,7 @@ if (CUDAToolkit_FOUND)
     set(NVBENCH_SOURCES
       kernel_launch.cu
       sleep_kernel.cu
+      auto_throughput.cu
       # add more *.cu as needed
     )
 

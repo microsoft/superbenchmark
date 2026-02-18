@@ -41,6 +41,7 @@ from superbench.benchmarks.micro_benchmarks.directx_gemm_flops_performance impor
 from superbench.benchmarks.micro_benchmarks.nvbandwidth import NvBandwidthBenchmark
 from superbench.benchmarks.micro_benchmarks.nvbench_kernel_launch import NvbenchKernelLaunch
 from superbench.benchmarks.micro_benchmarks.nvbench_sleep_kernel import NvbenchSleepKernel
+from superbench.benchmarks.micro_benchmarks.nvbench_auto_throughput import NvbenchAutoThroughput
 
 __all__ = [
     'BlasLtBaseBenchmark', 'ComputationCommunicationOverlap', 'CpuMemBwLatencyBenchmark', 'CpuHplBenchmark',
@@ -50,5 +51,6 @@ __all__ = [
     'IBLoopbackBenchmark', 'KernelLaunch', 'MemBwBenchmark', 'MicroBenchmark', 'MicroBenchmarkWithInvoke',
     'ORTInferenceBenchmark', 'RocmGemmFlopsBenchmark', 'RocmMemBwBenchmark', 'ShardingMatmul',
     'TCPConnectivityBenchmark', 'TensorRTInferenceBenchmark', 'DirectXGPUEncodingLatency', 'DirectXGPUCopyBw',
-    'DirectXGPUMemBw', 'DirectXGPUCoreFlops', 'NvBandwidthBenchmark', 'NvbenchKernelLaunch', 'NvbenchSleepKernel'
+    'DirectXGPUMemBw', 'DirectXGPUCoreFlops', 'NvBandwidthBenchmark', 'NvbenchKernelLaunch', 'NvbenchSleepKernel',
+    'NvbenchAutoThroughput'
 ]

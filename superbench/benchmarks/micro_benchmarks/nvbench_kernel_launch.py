@@ -6,7 +6,7 @@
 import re
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform
-from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
+from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_time_to_us
 
 
 class NvbenchKernelLaunch(NvbenchBase):
@@ -59,12 +59,12 @@ class NvbenchKernelLaunch(NvbenchBase):
                 if r and current:
                     samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups()
                     # self._result.add_result('samples', int(samples.replace('x', '')))
-                    self._result.add_result('cpu_time', self._parse_time_value(cpu_time))
+                    self._result.add_result('cpu_time', parse_time_to_us(cpu_time))
                     # self._result.add_result('cpu_noise', self._parse_percentage(cpu_noise))
-                    self._result.add_result('gpu_time', self._parse_time_value(gpu_time))
+                    self._result.add_result('gpu_time', parse_time_to_us(gpu_time))
                     # self._result.add_result('gpu_noise', self._parse_percentage(gpu_noise))
                     # self._result.add_result('batch_samples', int(batch_samples.replace('x', '')))
-                    self._result.add_result('batch_gpu_time', self._parse_time_value(batch_gpu))
+                    self._result.add_result('batch_gpu_time', parse_time_to_us(batch_gpu))
                     parsed_any = True
 
             if not parsed_any:

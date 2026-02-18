@@ -220,17 +220,6 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         self._commands = [' '.join(parts)]
         return True
 
-    def _parse_time_value(self, time_str):
-        """Parse time string to microseconds.
-
-        Args:
-            time_str (str): Time string like '123.45 us', '678.9 ns', etc.
-
-        Returns:
-            float: Time in microseconds.
-        """
-        return parse_time_to_us(time_str)
-
     def _parse_percentage(self, percent_str):
         """Parse percentage string to float.
 
