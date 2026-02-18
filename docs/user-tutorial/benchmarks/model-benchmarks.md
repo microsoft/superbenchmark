@@ -34,6 +34,33 @@ For inference, supported percentiles include
 
 **New: Support fp8_hybrid and fp8_e4m3 precision for BERT models.**
 
+**New: Deterministic Training Support**
+SuperBench now supports deterministic training to ensure reproducibility across runs. This includes fixed seeds and deterministic algorithms. To enable deterministic training, use the following flags:
+
+- **Flags:**
+  - `--enable_determinism`: Enables deterministic computation for reproducible results.
+  - `--deterministic_seed <seed>`: Sets the seed for reproducibility (default: 42).
+  - `--check_frequency <steps>`: How often to record deterministic metrics (default: 100).
+
+- **Environment Variables (set automatically by SuperBench when `--enable_determinism` is used):**
+  - `CUBLAS_WORKSPACE_CONFIG=:4096:8`: Ensures deterministic behavior in cuBLAS. This can be overridden by setting it manually before running SuperBench.
+
+**Comparing Deterministic Results**
+
+To compare deterministic results between runs, use the standard result analysis workflow:
+
+1. Run benchmark with `--enable_determinism` flag
+2. Generate baseline: `sb result generate-baseline --data-file results.jsonl --summary-rule-file rules.yaml`
+3. Compare future runs: `sb result diagnosis --data-file new-results.jsonl --rule-file rules.yaml --baseline-file baseline.json`
+
+This allows configurable tolerance for floating-point differences via YAML rules.
+
+**Configuration Parameter Validation**
+
+When determinism is enabled, benchmark configuration parameters (batch_size, num_steps, deterministic_seed, etc.) are automatically recorded in the results file as `deterministic_config_*` metrics. The diagnosis rules enforce exact matching of these parameters between runs to ensure valid comparisons:
+
+If any configuration parameter differs between runs, the diagnosis will flag it as a failure, ensuring you only compare runs with identical configurations.
+
 #### Metrics
 
 | Name                                                                                    | Unit                   | Description                                                                  |
