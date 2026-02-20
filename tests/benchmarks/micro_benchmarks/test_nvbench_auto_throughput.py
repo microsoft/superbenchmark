@@ -128,8 +128,8 @@ class TestNvbenchAutoThroughputBenchmark(BenchmarkTestCase, unittest.TestCase):
         self.assertAlmostEqual(benchmark.result['ipt_1_stride_1_blk_128_l1_hit_rate'][0], 0.0)
         self.assertAlmostEqual(benchmark.result['ipt_1_stride_1_blk_128_l2_hit_rate'][0], 0.05)
 
-        # Validate throughput for ItemsPerThread=1, Stride=1, BlockSize=128 (100G elem/s)
-        self.assertAlmostEqual(benchmark.result['ipt_1_stride_1_blk_128_throughput'][0], 100.0)
+        # Validate throughput for ItemsPerThread=1, Stride=1, BlockSize=128 (100G elem/s * 4 bytes = 400 GB/s)
+        self.assertAlmostEqual(benchmark.result['ipt_1_stride_1_blk_128_throughput'][0], 400.0)
 
         # Validate timing metrics for ItemsPerThread=2, Stride=4, BlockSize=256
         self.assertAlmostEqual(benchmark.result['ipt_2_stride_4_blk_256_cpu_time'][0], 220.0)
@@ -143,8 +143,8 @@ class TestNvbenchAutoThroughputBenchmark(BenchmarkTestCase, unittest.TestCase):
         self.assertAlmostEqual(benchmark.result['ipt_2_stride_4_blk_256_l1_hit_rate'][0], 30.0)
         self.assertAlmostEqual(benchmark.result['ipt_2_stride_4_blk_256_l2_hit_rate'][0], 10.0)
 
-        # Validate throughput for ItemsPerThread=2, Stride=4, BlockSize=256 (200G elem/s)
-        self.assertAlmostEqual(benchmark.result['ipt_2_stride_4_blk_256_throughput'][0], 200.0)
+        # Validate throughput for ItemsPerThread=2, Stride=4, BlockSize=256 (200G elem/s * 4 bytes = 800 GB/s)
+        self.assertAlmostEqual(benchmark.result['ipt_2_stride_4_blk_256_throughput'][0], 800.0)
 
     def test_nvbench_auto_throughput_invalid_output(self):
         """Test NVBench Auto Throughput benchmark result parsing with invalid output."""

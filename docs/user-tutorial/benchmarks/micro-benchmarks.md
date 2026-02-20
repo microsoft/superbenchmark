@@ -217,6 +217,44 @@ Performed by [NVBench](https://github.com/NVIDIA/nvbench) kernel launch benchmar
 | nvbench-kernel-launch/gpu_time      | time (μs) | GPU-measured kernel execution time.            |
 | nvbench-kernel-launch/batch_gpu_time | time (μs) | GPU batch execution time.                     |
 
+### `nvbench-auto-throughput`
+
+#### Introduction
+
+Measure GPU memory throughput and efficiency metrics using NVBench's auto throughput benchmark. This benchmark copies a 128 MiB buffer of int32 values with configurable stride and block size parameters, measuring memory bandwidth efficiency and CUPTI-based performance counters.
+
+#### Parameters
+
+- **Stride**: Controls the memory access pattern by specifying the gap between consecutive memory accesses. A stride of 1 means contiguous (coalesced) memory access. Larger stride values (2, 4, 8, etc.) create non-contiguous access patterns, useful for stress-testing memory subsystem behavior under different access patterns.
+- **BlockSize**: The number of threads per CUDA block (e.g., 128, 256, 512, 1024). Different block sizes affect occupancy and scheduling efficiency.
+- **ItemsPerThread**: The number of elements each thread processes (1 or 2). Higher values increase work per thread.
+
+The benchmark supports multiple parameter specification formats:
+- Single value: `"2"` - Test single value
+- List format: `"[1,2,4,8]"` - Test multiple specific values
+- Range format: `"[1:4]"` - Test all values from 1 to 4
+- Range with step: `"[1:8:2]"` - Test from 1 to 8 in steps of 2
+
+Performed by [NVBench](https://github.com/NVIDIA/nvbench) auto throughput benchmark with CUPTI metrics collection.
+
+#### Metrics
+
+| Name                                                                    | Unit         | Description                                                                           |
+|-------------------------------------------------------------------------|--------------|--------------------------------------------------------------------------------------|
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_cpu\_time       | time (μs)    | CPU-measured execution time.             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_gpu\_time       | time (μs)    | GPU-measured execution time.             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_batch\_gpu\_time | time (μs)    | GPU batch execution time.                |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_hbw\_peak       | percent (%)  | HBM peak bandwidth utilization percentage.                                            |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_load\_eff       | percent (%)  | Global memory load efficiency percentage.                                             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_store\_eff      | percent (%)  | Global memory store efficiency percentage.                                            |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_l1\_hit\_rate   | percent (%)  | L1 cache hit rate percentage (informational only, excluded from pass/fail criteria). |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_l2\_hit\_rate   | percent (%)  | L2 cache hit rate percentage (informational only, excluded from pass/fail criteria). |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_throughput       | GB/s         | Memory throughput calculated from element rate (elements/s × 4 bytes for int32).     |
+
+Where `{T}` is ItemsPerThread (1 or 2), `{S}` is Stride value, and `{B}` is BlockSize (e.g., 128, 256, 512, 1024).
+
+> **Note:** L1 and L2 cache hit rates are collected for informational purposes only and should not be used for performance validation pass/fail criteria, as cache behavior can vary significantly based on system state and workload characteristics.
+
 ### `cpu-hpl`
 
 #### Introduction

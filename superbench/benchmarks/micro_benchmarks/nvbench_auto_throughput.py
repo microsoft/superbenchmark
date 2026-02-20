@@ -4,8 +4,7 @@
 """Module of the NVBench Auto Throughput benchmark."""
 
 import re
-from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_time_to_us
 
 
@@ -79,8 +78,6 @@ class NvbenchAutoThroughput(NvbenchBase):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
 
         try:
-            gpu_section = r'### \[(\d+)\] NVIDIA'
-
             # Pattern for throughput benchmark table output with CUPTI metrics
             # Table format:
             # | T | Stride | BlockSize | Elements | HBWPeak | LoadEff | StoreEff | L1HitRate | L2HitRate |
@@ -106,20 +103,10 @@ class NvbenchAutoThroughput(NvbenchBase):
                 r'\s*([\d.]+\s*[μmun]?s)\s*\|'   # Batch GPU Time
             )
 
-            current_gpu = None
             parsed_any = False
 
             for line in raw_output.splitlines():
                 line = line.strip()
-
-                g = re.match(gpu_section, line)
-                if g:
-                    current_gpu = f'gpu_{g.group(1)}'
-                    continue
-
-                if not current_gpu:
-                    continue
-
                 r = re.match(row_pat, line)
                 if r:
                     (items_per_thread, stride, block_size,
@@ -140,18 +127,21 @@ class NvbenchAutoThroughput(NvbenchBase):
                     self._result.add_result(f'{prefix}_l1_hit_rate', float(l1_hit))
                     self._result.add_result(f'{prefix}_l2_hit_rate', float(l2_hit))
 
-                    # Throughput (elements/s in GB/s)
+                    # Memory throughput in GB/s
+                    # Convert element rate to bandwidth: GB/s = (elements/s) * sizeof(int32) / 1e9
+                    # The benchmark uses int32 (4 bytes per element)
                     elem_val = float(elem_rate)
-                    unit_multipliers = {'T': 1e3, 'G': 1.0, 'M': 1e-3, 'K': 1e-6, '': 1e-9}
-                    elem_giga = elem_val * unit_multipliers.get(elem_unit, 1e-9)
-                    self._result.add_result(f'{prefix}_throughput', elem_giga)
+                    unit_multipliers = {'T': 1e12, 'G': 1e9, 'M': 1e6, 'K': 1e3, '': 1.0}
+                    elements_per_sec = elem_val * unit_multipliers.get(elem_unit, 1.0)
+                    throughput_gbs = (elements_per_sec * 4) / 1e9  # 4 bytes per int32
+                    self._result.add_result(f'{prefix}_throughput', throughput_gbs)
 
                     parsed_any = True
 
             if not parsed_any:
-                raise RuntimeError('No valid rows parsed')
+                raise ValueError('No valid result rows parsed')
 
-        except Exception as e:
+        except BaseException as e:
             self._handle_parsing_error(str(e), raw_output)
             return False
 

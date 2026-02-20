@@ -11,10 +11,9 @@ from superbench.benchmarks.micro_benchmarks.micro_base import MicroBenchmarkWith
 
 
 def parse_time_to_us(raw: str) -> float:
-    """Helper: parse '123.45 us', '678.9 ns', '0.12 ms', '1.5 s' → float µs."""
+    """Helper: parse '123.45 us', '678.9 ns', '0.12 ms', '1.5 s' → float µs.
+    """
     raw = raw.strip()
-    if raw.endswith('%'):
-        return float(raw[:-1])
     # split "value unit" or "valueunit"
     m = re.match(r'([\d.]+)\s*([mun]?s)?', raw)
     if not m:
@@ -220,19 +219,6 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         self._commands = [' '.join(parts)]
         return True
 
-    def _parse_percentage(self, percent_str):
-        """Parse percentage string to float.
-
-        Args:
-            percent_str (str): Percentage string like '12.34%'
-
-        Returns:
-            float: Percentage value as float.
-        """
-        if isinstance(percent_str, str) and percent_str.endswith('%'):
-            return float(percent_str[:-1])
-        return float(percent_str)
-
     def _handle_parsing_error(self, error_msg, raw_output):
         """Handle parsing errors consistently.
 
@@ -242,5 +228,7 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         """
         self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
         logger.error(
-            f'Invalid result format - round:{self._curr_run_index}, bench:{self._name}, msg:{error_msg}\n{raw_output}'
+            'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
+                self._curr_run_index, self._name, raw_output, error_msg
+            )
         )

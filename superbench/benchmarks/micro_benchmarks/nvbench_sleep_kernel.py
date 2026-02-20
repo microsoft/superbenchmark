@@ -4,8 +4,7 @@
 """Module of the NVBench Sleep Kernel benchmark."""
 
 import re
-from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_time_to_us
 
 
@@ -66,9 +65,6 @@ class NvbenchSleepKernel(NvbenchBase):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        logger.debug(f'Processing raw result for command index {cmd_idx}.')
-        logger.debug(f'Raw output:\n{raw_output}')
-
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
         try:
             gpu_section = r'### \[(\d+)\] NVIDIA'
@@ -83,38 +79,30 @@ class NvbenchSleepKernel(NvbenchBase):
                 r'([0-9]+)x\s*\|\s*'    # Batch Samples
                 r'([\d.]+\s*[μmun]?s)\s*\|'    # Batch GPU Time
             )
-            current = None
             parsed_any = False
             for line in raw_output.splitlines():
                 line = line.strip()
-                logger.debug(f'Processing line: {line}')
                 g = re.match(gpu_section, line)
                 if g:
-                    current = f'gpu_{g.group(1)}'
-                    logger.debug(f'Found GPU section: {current}')
                     continue
                 r = re.match(row_pat, line)
-                if r and current:
-                    logger.debug(f'Matched row: {r.groups()}')
+                if r:
                     duration_us, samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups(
                     )
-                    # self._result.add_result(f'duration_us_{duration_us}_samples', int(samples))
                     self._result.add_result(f'duration_us_{duration_us}_cpu_time', parse_time_to_us(cpu_time))
-                    # self._result.add_result(f'duration_us_{duration_us}_cpu_noise', self._parse_percentage(cpu_noise))
                     self._result.add_result(f'duration_us_{duration_us}_gpu_time', parse_time_to_us(gpu_time))
-                    # self._result.add_result(f'duration_us_{duration_us}_gpu_noise', self._parse_percentage(gpu_noise))
-                    # self._result.add_result(f'duration_us_{duration_us}_batch_samples',
-                    # int(batch_samples.replace('x', '')))
                     self._result.add_result(
                         f'duration_us_{duration_us}_batch_gpu_time', parse_time_to_us(batch_gpu)
                     )
                     parsed_any = True
+
             if not parsed_any:
-                raise RuntimeError('No valid rows parsed')
-        except Exception as e:
-            logger.error(f'Error processing raw result: {e}')
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+                raise ValueError('No valid result rows parsed')
+
+        except BaseException as e:
+            self._handle_parsing_error(str(e), raw_output)
             return False
+
         return True
 
 

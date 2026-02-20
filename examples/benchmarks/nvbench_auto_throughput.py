@@ -1,5 +1,5 @@
 # Copyright (c) Microsoft Corporation.
-# Licensed under the MIT license.
+# Licensed under the MIT License.
 
 """Micro benchmark example for NVBench Auto Throughput.
 
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
         'nvbench-auto-throughput',
         platform=Platform.CUDA,
-        parameters='--stride "[1,2,4,8]" --block_size "[256,512]" --timeout 30'
+        parameters='--devices 0 --stride "[1,2,4,8]" --block_size "[256,512]" --timeout 30'
     )
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)

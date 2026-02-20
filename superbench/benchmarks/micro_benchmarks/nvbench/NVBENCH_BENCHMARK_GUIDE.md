@@ -41,9 +41,8 @@ When creating a new benchmark, examine these existing implementations:
 ### Base Class: `nvbench_base.py`
 - `NvbenchBase` - Inherit from this class
 - `_build_base_command()` - Builds command with common NVBench CLI args
-- `_parse_time_value(str)` - Parses "123.45 us", "678.9 ns", "0.12 ms", "1.5 s" → float µs
-- `_parse_percentage(str)` - Parses "12.34%" → float
-- `_handle_parsing_error()` - Consistent error handling
+- `parse_time_to_us(str)` - Parses "123.45 us", "678.9 ns", "0.12 ms", "1.5 s" → float µs
+- `_handle_parsing_error()` - Consistent error handling (see Error Handling section below)
 
 ### CMakeLists.txt
 Add new `.cu` file to `NVBENCH_SOURCES` list.
@@ -57,6 +56,40 @@ Add new `.cu` file to `NVBENCH_SOURCES` list.
 ### Registration
 - Python: `BenchmarkRegistry.register_benchmark('nvbench-<name>', Nvbench<Name>, platform=Platform.CUDA)`
 - Import in `__init__.py`
+
+## Important Implementation Notes
+
+### Error Handling Pattern
+Always use this consistent error handling pattern in `_process_raw_result()`:
+```python
+def _process_raw_result(self, cmd_idx, raw_output):
+    self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
+    try:
+        # ... parsing logic ...
+        if not parsed_any:
+            raise ValueError('No valid result rows parsed')
+    except BaseException as e:
+        self._handle_parsing_error(str(e), raw_output)
+        return False
+    return True
+```
+Key points:
+- Use `BaseException` (not `Exception`) to match codebase convention
+- Use `ValueError` for parsing failures (not `RuntimeError`)
+- Always call `_handle_parsing_error()` from base class - don't implement custom error handling
+
+### GPU ID Handling
+**Do NOT track GPU IDs in result metric names.** SuperBench executes benchmarks with `CUDA_VISIBLE_DEVICES` set per GPU, so results are automatically stored in `metric_name:gpu_id` format by the framework. Simply parse results without GPU prefixes.
+
+### Parsing Percentages
+For percentage values like "12.34%", use simple string stripping:
+```python
+float(percent_str.rstrip('%'))
+```
+Do NOT use `parse_time_to_us()` for percentages - it only handles time values.
+
+### Avoid Debug Logging
+Do not add `logger.debug()` calls in `_process_raw_result()`. The raw output is already stored via `add_raw_data()` for debugging purposes.
 
 ### Documentation (`docs/user-tutorial/benchmarks/micro-benchmarks.md`)
 Add a section under "## Computation Benchmarks" with:
