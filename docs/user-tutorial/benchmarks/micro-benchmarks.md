@@ -209,6 +209,22 @@ The benchmark provides insights into:
 
 Performed by [NVBench](https://github.com/NVIDIA/nvbench) kernel launch benchmark.
 
+#### Comparison with `kernel-launch`
+
+Both `nvbench-kernel-launch` and `kernel-launch` measure kernel launch latency, but they differ in methodology:
+
+| Aspect | `kernel-launch` | `nvbench-kernel-launch` |
+|--------|-----------------|-------------------------|
+| L2 Cache | Warm (cached) | Cold (flushed before each sample) |
+| Measurement | Warm-cache / steady-state | Cold-cache / first-access |
+| Iterations | Fixed 2M iterations | Adaptive (statistical stopping) |
+
+**Important: Do not cross-compare results between these two benchmarks.** For performance regression detection, either benchmark works well. Always compare against historical data from the same benchmark.
+
+Choose based on what scenario matters for your workload:
+- **`kernel-launch`**: Measures warm-cache performance, reflecting steady-state behavior in long-running applications where caches are typically hot
+- **`nvbench-kernel-launch`**: Measures cold-cache performance, reflecting first-access scenarios or workloads with poor cache locality
+
 #### Metrics
 
 | Name                                | Unit      | Description                                    |
