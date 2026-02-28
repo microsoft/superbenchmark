@@ -60,8 +60,7 @@ double test_cuda_kernel_launch_wall_time(int num_warmups, int num_steps) {
         EmptyKernel<<<1, 1>>>();
         cudaDeviceSynchronize();
         gettimeofday(&end_tv, NULL);
-        total_time += (end_tv.tv_sec - begin_tv.tv_sec) * 1000.0 +
-                      (end_tv.tv_usec - begin_tv.tv_usec) / 1000.0;
+        total_time += (end_tv.tv_sec - begin_tv.tv_sec) * 1000.0 + (end_tv.tv_usec - begin_tv.tv_usec) / 1000.0;
     }
 
     return total_time;
