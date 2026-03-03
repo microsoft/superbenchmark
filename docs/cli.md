@@ -375,7 +375,7 @@ sb run [--config-file]
 | `--host-list` `-l`       | `None`                  | Comma separated host list.                                                  |
 | `--host-password`        | `None`                  | Host password or key passphrase if needed.                                  |
 | `--host-username`        | `None`                  | Host username if needed.                                                    |
-| `--no-docker`            | `False`                 | Run on host directly without Docker.                                        |
+| `--no-docker`            | `False`                 | Run on host directly without Docker. When using remote nodes, SuperBench (`sb` binary and dependencies) must be pre-installed on each target host; otherwise `command not found` will occur. See [Run SuperBench - Using --no-docker on Remote Nodes](getting-started/run-superbench.md#using---no-docker-on-remote-nodes) for details. |
 | `--output-dir`           | `None`                  | Path to output directory, outputs/{datetime} will be used if not specified. |
 | `--private-key`          | `None`                  | Path to private key if needed.                                              |
 
