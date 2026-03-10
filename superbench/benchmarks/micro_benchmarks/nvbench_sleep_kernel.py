@@ -91,9 +91,7 @@ class NvbenchSleepKernel(NvbenchBase):
                     )
                     self._result.add_result(f'duration_us_{duration_us}_cpu_time', parse_time_to_us(cpu_time))
                     self._result.add_result(f'duration_us_{duration_us}_gpu_time', parse_time_to_us(gpu_time))
-                    self._result.add_result(
-                        f'duration_us_{duration_us}_batch_gpu_time', parse_time_to_us(batch_gpu)
-                    )
+                    self._result.add_result(f'duration_us_{duration_us}_batch_gpu_time', parse_time_to_us(batch_gpu))
                     parsed_any = True
 
             if not parsed_any:

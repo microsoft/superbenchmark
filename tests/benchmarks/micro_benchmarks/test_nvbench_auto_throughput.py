@@ -12,7 +12,6 @@ from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform
 
 class TestNvbenchAutoThroughputBenchmark(BenchmarkTestCase, unittest.TestCase):
     """Test class for NVBench Auto Throughput benchmark."""
-
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""
@@ -32,12 +31,7 @@ class TestNvbenchAutoThroughputBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark.return_code == ReturnCode.SUCCESS
 
         # Test preprocess with specified parameters
-        parameters = (
-            '--devices 0 '
-            '--stride "[1,2,4,8]" '
-            '--timeout 20 '
-            '--min-samples 100'
-        )
+        parameters = ('--devices 0 ' '--stride "[1,2,4,8]" ' '--timeout 20 ' '--min-samples 100')
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
         assert benchmark._preprocess()
         assert benchmark.return_code == ReturnCode.SUCCESS

@@ -13,7 +13,6 @@ from superbench.benchmarks.micro_benchmarks.nvbench_base import parse_time_to_us
 
 class TestParseTimeToUs(unittest.TestCase):
     """Test class for parse_time_to_us function."""
-
     def test_parse_microseconds(self):
         """Test parsing microseconds values."""
         self.assertAlmostEqual(parse_time_to_us('123.45 us'), 123.45)
@@ -60,7 +59,6 @@ class TestParseTimeToUs(unittest.TestCase):
 
 class ConcreteNvbenchBase(NvbenchBase):
     """Concrete implementation of NvbenchBase for testing."""
-
     def __init__(self, name, parameters=''):
         """Constructor."""
         super().__init__(name, parameters)
@@ -69,7 +67,6 @@ class ConcreteNvbenchBase(NvbenchBase):
 
 class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
     """Test class for NvbenchBase class."""
-
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""

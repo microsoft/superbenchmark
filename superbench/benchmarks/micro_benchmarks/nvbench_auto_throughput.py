@@ -14,7 +14,6 @@ class NvbenchAutoThroughput(NvbenchBase):
     This benchmark measures memory throughput and cache hit rates using CUPTI.
     It copies a 128 MiB buffer with configurable stride and items per thread.
     """
-
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -83,24 +82,24 @@ class NvbenchAutoThroughput(NvbenchBase):
             # | T | Stride | BlockSize | Elements | HBWPeak | LoadEff | StoreEff | L1HitRate | L2HitRate |
             # | Samples | Samples | CPU Time | Noise | GPU Time | Noise | Elem/s | Samples | Batch GPU |
             row_pat = (
-                r'\|\s*(\d+)\s*\|'               # T (ItemsPerThread)
-                r'\s*(\d+)\s*\|'                 # Stride
-                r'\s*(\d+)\s*\|'                 # BlockSize
-                r'\s*\d+\s*\|'                   # Elements (skip)
-                r'\s*([\d.]+)%\s*\|'             # HBWPeak
-                r'\s*([\d.]+)%\s*\|'             # LoadEff
-                r'\s*([\d.]+)%\s*\|'             # StoreEff
-                r'\s*([\d.]+)%\s*\|'             # L1HitRate
-                r'\s*([\d.]+)%\s*\|'             # L2HitRate
-                r'\s*\d+x\s*\|'                  # Samples CUPTI (skip)
-                r'\s*\d+x\s*\|'                  # Samples Cold (skip)
-                r'\s*([\d.]+\s*[μmun]?s)\s*\|'   # CPU Time
-                r'\s*[\d.]+%\s*\|'               # CPU Noise (skip)
-                r'\s*([\d.]+\s*[μmun]?s)\s*\|'   # GPU Time
-                r'\s*[\d.]+%\s*\|'               # GPU Noise (skip)
-                r'\s*([\d.]+)([TGMK]?)\s*\|'     # Elem/s (value and unit prefix)
-                r'\s*\d+x\s*\|'                  # Samples Batch (skip)
-                r'\s*([\d.]+\s*[μmun]?s)\s*\|'   # Batch GPU Time
+                r'\|\s*(\d+)\s*\|'    # T (ItemsPerThread)
+                r'\s*(\d+)\s*\|'    # Stride
+                r'\s*(\d+)\s*\|'    # BlockSize
+                r'\s*\d+\s*\|'    # Elements (skip)
+                r'\s*([\d.]+)%\s*\|'    # HBWPeak
+                r'\s*([\d.]+)%\s*\|'    # LoadEff
+                r'\s*([\d.]+)%\s*\|'    # StoreEff
+                r'\s*([\d.]+)%\s*\|'    # L1HitRate
+                r'\s*([\d.]+)%\s*\|'    # L2HitRate
+                r'\s*\d+x\s*\|'    # Samples CUPTI (skip)
+                r'\s*\d+x\s*\|'    # Samples Cold (skip)
+                r'\s*([\d.]+\s*[μmun]?s)\s*\|'    # CPU Time
+                r'\s*[\d.]+%\s*\|'    # CPU Noise (skip)
+                r'\s*([\d.]+\s*[μmun]?s)\s*\|'    # GPU Time
+                r'\s*[\d.]+%\s*\|'    # GPU Noise (skip)
+                r'\s*([\d.]+)([TGMK]?)\s*\|'    # Elem/s (value and unit prefix)
+                r'\s*\d+x\s*\|'    # Samples Batch (skip)
+                r'\s*([\d.]+\s*[μmun]?s)\s*\|'    # Batch GPU Time
             )
 
             parsed_any = False
@@ -109,9 +108,10 @@ class NvbenchAutoThroughput(NvbenchBase):
                 line = line.strip()
                 r = re.match(row_pat, line)
                 if r:
-                    (items_per_thread, stride, block_size,
-                     hbw_peak, load_eff, store_eff, l1_hit, l2_hit,
-                     cpu_time, gpu_time, elem_rate, elem_unit, batch_gpu) = r.groups()
+                    (
+                        items_per_thread, stride, block_size, hbw_peak, load_eff, store_eff, l1_hit, l2_hit, cpu_time,
+                        gpu_time, elem_rate, elem_unit, batch_gpu
+                    ) = r.groups()
 
                     prefix = f'ipt_{items_per_thread}_stride_{stride}_blk_{block_size}'
 
@@ -133,7 +133,7 @@ class NvbenchAutoThroughput(NvbenchBase):
                     elem_val = float(elem_rate)
                     unit_multipliers = {'T': 1e12, 'G': 1e9, 'M': 1e6, 'K': 1e3, '': 1.0}
                     elements_per_sec = elem_val * unit_multipliers.get(elem_unit, 1.0)
-                    throughput_gbs = (elements_per_sec * 4) / 1e9  # 4 bytes per int32
+                    throughput_gbs = (elements_per_sec * 4) / 1e9    # 4 bytes per int32
                     self._result.add_result(f'{prefix}_throughput', throughput_gbs)
 
                     parsed_any = True
