@@ -31,7 +31,6 @@ class TestParseTimeToUs(unittest.TestCase):
         self.assertAlmostEqual(parse_time_to_us('0.5 ms'), 500.0)
         self.assertAlmostEqual(parse_time_to_us('0.001 ms'), 1.0)
 
-
     def test_parse_plain_number(self):
         """Test parsing plain numbers without unit (defaults to us)."""
         self.assertAlmostEqual(parse_time_to_us('123.45'), 123.45)
