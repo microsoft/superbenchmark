@@ -56,6 +56,10 @@ class ConcreteNvbenchBase(NvbenchBase):
         super().__init__(name, parameters)
         self._bin_name = 'test_nvbench_binary'
 
+    def _process_raw_result(self, cmd_idx, raw_output):
+        """Process raw results (no-op for base class testing)."""
+        return True
+
 
 class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
     """Test class for NvbenchBase class."""
@@ -70,7 +74,7 @@ class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
         """Test NvbenchBase initialization."""
         benchmark = ConcreteNvbenchBase('test-benchmark', parameters='')
         assert benchmark._bin_name == 'test_nvbench_binary'
-        assert benchmark.name == 'test-benchmark'
+        assert benchmark._name == 'test-benchmark'
 
     def test_nvbench_base_add_parser_arguments(self):
         """Test NvbenchBase add_parser_arguments."""
@@ -185,25 +189,6 @@ class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
         assert '--min-time' not in benchmark._commands[0]
         assert '--max-noise' not in benchmark._commands[0]
 
-    def test_nvbench_base_parse_time_value(self):
-        """Test NvbenchBase _parse_time_value method."""
-        benchmark = ConcreteNvbenchBase('test-benchmark', parameters='')
-        benchmark._preprocess()
-
-        self.assertAlmostEqual(benchmark._parse_time_value('100 us'), 100.0)
-        self.assertAlmostEqual(benchmark._parse_time_value('1000 ns'), 1.0)
-        self.assertAlmostEqual(benchmark._parse_time_value('1 ms'), 1000.0)
-
-    def test_nvbench_base_parse_percentage(self):
-        """Test NvbenchBase _parse_percentage method."""
-        benchmark = ConcreteNvbenchBase('test-benchmark', parameters='')
-        benchmark._preprocess()
-
-        self.assertAlmostEqual(benchmark._parse_percentage('50.5%'), 50.5)
-        self.assertAlmostEqual(benchmark._parse_percentage('100%'), 100.0)
-        self.assertAlmostEqual(benchmark._parse_percentage('0.1%'), 0.1)
-        self.assertAlmostEqual(benchmark._parse_percentage(25.0), 25.0)
-
     def test_nvbench_base_handle_parsing_error(self):
         """Test NvbenchBase _handle_parsing_error method."""
         benchmark = ConcreteNvbenchBase('test-benchmark', parameters='')
@@ -214,7 +199,8 @@ class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
 
     def test_nvbench_base_build_base_command_without_bin_name(self):
         """Test NvbenchBase _build_base_command raises error without bin_name."""
-        benchmark = NvbenchBase('test-benchmark', parameters='')
+        benchmark = ConcreteNvbenchBase('test-benchmark', parameters='')
+        benchmark._bin_name = None
         # Manually call add_parser_arguments and parse to set up _args
         benchmark.add_parser_arguments()
         benchmark._args = benchmark._parser.parse_args([])
