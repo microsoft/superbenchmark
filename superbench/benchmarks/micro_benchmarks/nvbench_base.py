@@ -11,13 +11,11 @@ from superbench.benchmarks.micro_benchmarks.micro_base import MicroBenchmarkWith
 
 
 def parse_time_to_us(raw: str) -> float:
-    """Helper: parse '123.45 us', '678.9 ns', '0.12 ms', '1.5 s' → float µs.
-    """
+    """Parse a time string like '123.45 us' or '1.5 s' to float microseconds."""
     raw = raw.strip()
-    # split "value unit" or "valueunit"
-    m = re.match(r'([\d.]+)\s*([mun]?s)?', raw)
+    m = re.match(r'^([\d.]+)\s*([mun]?s)?$', raw)
     if not m:
-        return float(raw)
+        raise ValueError(f'Invalid time string: {raw!r}')
     val, unit = float(m.group(1)), (m.group(2) or 'us')
     if unit == 's':
         return val * 1e6

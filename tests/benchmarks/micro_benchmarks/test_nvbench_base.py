@@ -4,8 +4,6 @@
 """Tests for nvbench_base module."""
 
 import unittest
-from argparse import Namespace
-
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import ReturnCode
 from superbench.benchmarks.micro_benchmarks.nvbench_base import parse_time_to_us, NvbenchBase
@@ -33,11 +31,6 @@ class TestParseTimeToUs(unittest.TestCase):
         self.assertAlmostEqual(parse_time_to_us('0.5 ms'), 500.0)
         self.assertAlmostEqual(parse_time_to_us('0.001 ms'), 1.0)
 
-    def test_parse_percentage(self):
-        """Test parsing percentage values."""
-        self.assertAlmostEqual(parse_time_to_us('50.5%'), 50.5)
-        self.assertAlmostEqual(parse_time_to_us('0.1%'), 0.1)
-        self.assertAlmostEqual(parse_time_to_us('100%'), 100.0)
 
     def test_parse_plain_number(self):
         """Test parsing plain numbers without unit (defaults to us)."""
