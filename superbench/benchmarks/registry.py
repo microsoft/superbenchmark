@@ -84,7 +84,7 @@ class BenchmarkRegistry:
         benchmark = class_def(name, parameters)
         benchmark.add_parser_arguments()
         ret, args, unknown = benchmark.parse_args(ignore_invalid=True)
-        if not ret or len(unknown) >= 1:
+        if not ret or (len(unknown) >= 1 and not getattr(benchmark, '_ignore_unknown_args', False)):
             logger.log_and_raise(
                 TypeError,
                 'Registered benchmark has invalid arguments - benchmark: {}, parameters: {}'.format(name, parameters)

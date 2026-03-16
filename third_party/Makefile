@@ -226,7 +226,14 @@ directx_amf_encoding_latency:
 megatron_lm:
 	cd Megatron && \
 	apt install -y python3-mpi4py && \
-	python -m pip install --no-cache-dir -r requirements.txt
+	python -m pip install --no-cache-dir -r requirements.txt && \
+	mkdir -p data/gpt && \
+	wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-vocab.json -O data/gpt2-vocab.json && \
+	wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-merges.txt -O data/gpt2-merges.txt && \
+	mkdir -p data/DeepSeek-V2-Lite && \
+	wget https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite/resolve/main/config.json -O data/DeepSeek-V2-Lite/config.json && \
+	wget https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite/resolve/main/tokenizer.json -O data/DeepSeek-V2-Lite/tokenizer.json && \
+	wget https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite/resolve/main/tokenizer_config.json -O data/DeepSeek-V2-Lite/tokenizer_config.json
 
 # Install requirements for Megatron-DeepSpeed
 megatron_deepspeed:

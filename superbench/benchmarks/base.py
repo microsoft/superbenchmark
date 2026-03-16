@@ -93,7 +93,7 @@ class Benchmark(ABC):
         return message
 
     def parse_args(self, ignore_invalid=False):
-        """Parse the arguments.
+        """Parse the arguments, accepting unknown args for forwarding.
 
         Return:
             ret (bool): whether parse succeed or not.
@@ -104,20 +104,48 @@ class Benchmark(ABC):
             args, unknown = self._parser.parse_known_args(self._argv)
         except BaseException as e:
             if ignore_invalid:
-                logger.info('Missing or invliad parameters, will ignore the error and skip the args checking.')
+                logger.info('Missing or invalid parameters, will ignore the error and skip the args checking.')
                 return True, None, []
             else:
                 logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
                 return False, None, []
 
-        ret = True
+        # Normalize unknown arguments (convert underscores to hyphens)
         if len(unknown) > 0:
-            logger.error(
-                'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
-            )
-            ret = False
+            if not getattr(self, '_ignore_unknown_args', False):
+                logger.error(
+                    'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
+                )
+                return False, None, []
+            else:
+                unknown = self._normalize_unknown_args(unknown)
+        return True, args, unknown
 
-        return ret, args, unknown
+    def _normalize_unknown_args(self, unknown):
+        """Normalize unknown args by converting underscores to hyphens in flag names.
+
+        Args:
+            unknown (list): List of unknown arguments.
+
+        Return:
+            list: Normalized list of arguments.
+        """
+        normalized = []
+        i = 0
+        while i < len(unknown):
+            arg = unknown[i]
+            # Check if it's a flag (starts with --)
+            if arg.startswith('--'):
+                # Convert underscores to hyphens in the flag name
+                flag = arg.split('=')[0]
+                value = arg.split('=')[1] if '=' in arg else None
+                normalized_flag = flag.replace('_', '-')
+                normalized.append(f'{normalized_flag} {value}' if value is not None else normalized_flag)
+            else:
+                # It's a value, keep as-is
+                normalized.append(arg)
+            i += 1
+        return normalized
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -126,7 +154,7 @@ class Benchmark(ABC):
             True if _preprocess() succeed.
         """
         self.add_parser_arguments()
-        ret, self._args, unknown = self.parse_args()
+        ret, self._args, self._unknown_args = self.parse_args()
 
         if not ret:
             self._result = BenchmarkResult(self._name, self._benchmark_type, ReturnCode.INVALID_ARGUMENT)

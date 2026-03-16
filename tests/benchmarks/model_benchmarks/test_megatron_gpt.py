@@ -500,6 +500,55 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
         self.assertEqual(actual_units, expected_units)
 
+    @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
+    def test_megatron_gpt_unknown_args(self, mock_generate_dataset):
+        """Test unknown args forwarding and normalization."""
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        assert (benchmark_cls)
+        os.environ['OMPI_COMM_WORLD_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_RANK'] = '0'
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12345'
+        with open(self.hostfile_path, 'w') as f:
+            f.write('host1\n')
+
+        # Test with unknown args that have underscores (should be converted to hyphens)
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=f'--code_base {self._tmp_dir} --hostfile {self.hostfile_path} '
+            '--num_warmup 0 --num_steps 10 --batch_size 2048 '
+            '--my_custom_flag 128 --another_option --third_param value',
+        )
+        mock_generate_dataset.return_value = True
+        ret = benchmark._preprocess()
+        assert (ret is True)
+
+        # Verify unknown args are stored and normalized
+        assert (hasattr(benchmark, '_unknown_args'))
+        assert (len(benchmark._unknown_args) > 0)
+
+        # Check that underscores are converted to hyphens
+        assert ('--my-custom-flag' in benchmark._unknown_args)
+        assert ('128' in benchmark._unknown_args)
+        assert ('--another-option' in benchmark._unknown_args)
+        assert ('--third-param' in benchmark._unknown_args)
+        assert ('value' in benchmark._unknown_args)
+
+        # Verify unknown args appear in the generated command
+        benchmark._data_options = '--mock-data'
+        command = benchmark._megatron_command(Precision.FLOAT32)
+
+        # Check that normalized unknown args are in the command
+        assert ('--my-custom-flag 128' in command)
+        assert ('--another-option' in command)
+        assert ('--third-param value' in command)
+
+        # Ensure original underscore versions are NOT in the command
+        assert ('--my_custom_flag' not in command)
+        assert ('--another_option' not in command)
+        assert ('--third_param' not in command)
+
     @decorator.load_data('tests/data/megatron_deepspeed.log')
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_parse_log(self, raw_output, mock_generate_dataset):

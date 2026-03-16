@@ -37,6 +37,7 @@ class MegatronGPT(ModelBenchmark):
         """
         super().__init__(name, parameters)
         self._supported_precision = [Precision.FLOAT32, Precision.FLOAT16, Precision.BFLOAT16]
+        self._ignore_unknown_args = True
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -90,7 +91,7 @@ class MegatronGPT(ModelBenchmark):
         # Parallelism configs
         self._parser.add_argument('--zero_stage', type=int, default=1, help='Zero stage.')
         # Misc configs
-        self._parser.add_argument('--log-interval', type=int, required=False, default=1, help='Log interval.')
+        self._parser.add_argument('--log_interval', type=int, required=False, default=1, help='Log interval.')
         self._parser.add_argument('--eval_iters', type=int, default=0, help='Eval iters.')
         self._parser.add_argument('--eval_interval', type=int, default=10, help='Eval interval.')
         self._parser.add_argument('--num_save', type=int, default=10000, help='Num save.')
@@ -187,7 +188,7 @@ class MegatronGPT(ModelBenchmark):
         )
         self._parser.add_argument('--moe_ffn_hidden_size', type=int, help='MoE FFN hidden size.')
         self._parser.add_argument('--enable_shared_expert', action='store_true', help='Enable shared expert in MoE.')
-        self._parser.add_argument('--moe_layer_freq', type=int, help='MoE layer frequency.')
+        self._parser.add_argument('--moe_layer_freq', type=str, help='MoE layer frequency.')
         self._parser.add_argument('--num_shared_experts', type=int, help='Number of shared experts.')
         self._parser.add_argument('--moe_router_topk', type=int, help='Top-k routing for MoE.')
         self._parser.add_argument('--moe_aux_loss_coeff', type=float, help='Auxiliary loss coefficient.')
@@ -232,8 +233,11 @@ class MegatronGPT(ModelBenchmark):
         )
 
     def _preprocess(self):
+        """Preprocess with support for unknown args."""
         if not super()._preprocess():
             return False
+
+        # Original MegatronGPT preprocessing logic
         if not self._args.code_base:
             if self._args.deepspeed:
                 self._args.code_base = os.path.join(
@@ -531,7 +535,9 @@ class MegatronGPT(ModelBenchmark):
                 command = f'deepspeed {script_path} {megatron_options} {self._data_options} {deepspeed_option}'
         else:
             command = f'torchrun {self._distributed_args} {script_path} {megatron_options} {self._data_options}'
-
+        # Transparently append any unknown args captured during parsing for forward compatibility.
+        if getattr(self, '_unknown_args', None):
+            command = f"{command} {' '.join(self._unknown_args)}"
         return command
 
     def _train_step(self, precision):    # noqa: E501
@@ -786,13 +792,74 @@ BenchmarkRegistry.register_benchmark(
         '--load=deepseek-ai/DeepSeek-V2-Lite '
         '--no_load_optim '
         '--no_load_rng '
-        '--ckpt_format=torch '
         '--eod_mask_loss '
         '--train_mode=pretrain '
-        '--data_cache_path=/root/cache '
         '--max_padding_length=4096 '
         '--kv_lora_rank=512 '
-        '--dataloader_type=cyclic'
+        '--dataloader_type=cyclic '
     ),
     platform=Platform.ROCM
+)
+BenchmarkRegistry.register_benchmark(
+    'megatron-deepseek-v2-lite',
+    MegatronGPT,
+    parameters=(
+        '--model=gpt '
+        '--transformer_impl=transformer_engine '
+        '--tokenizer_type=HuggingFaceTokenizer '
+        '--tokenizer_model=/opt/superbench/third_party/Megatron/data/DeepSeek-V2-Lite '
+        '--num_layers=27 '
+        '--hidden_size=1024 '
+        '--seq_len=4096 '
+        '--num_attn_heads=16 '
+        '--moe_ffn_hidden_size=1408 '
+        '--ffn_hidden_size=10944 '
+        '--dataloader_type=cyclic '
+        '--num_experts=64 '
+        '--no_async_tensor_model_parallel_allreduce '
+        '--use_rotary_position_embeddings '
+        '--no_gradient_accumulation_fusion '
+        '--mock_data '
+        '--use_flash_attn '
+        '--no_load_optim '
+        '--no_load_rng '
+        '--swiglu '
+        '--normalization=RMSNorm '
+        '--norm_epsilon=1e-06 '
+        '--no_bias_swiglu_fusion '
+        '--no_rope_fusion '
+        '--position_embedding_type=rope '
+        '--untie_embeddings_and_output_weights '
+        '--disable_bias_linear '
+        '--ckpt_format=torch '
+        '--rotary_percent=1.0 '
+        '--rotary_base=10000 '
+        '--rotary_scaling_factor=40 '
+        '--eod_mask_loss '
+        '--data_cache_path=/tmp/cache '
+        '--moe_layer_freq="([0]+[1]*26)" '
+        '--moe_router_topk=6 '
+        '--moe_router_topk_scaling_factor=1.0 '
+        '--moe_aux_loss_coeff=1e-3 '
+        '--kv_lora_rank=512 '
+        '--v_head_dim=128 '
+        '--qk_head_dim=128  '
+        '--qk_layernorm '
+        '--qk_pos_emb_head_dim=64 '
+        '--no_masked_softmax_fusion '
+        '--kv_channels=16 '
+        '--multi_latent_attention '
+        '--moe_router_score_function=softmax '
+        '--moe_router_topk=6 '
+        '--moe_router_pre_softmax '
+        '--moe_shared_expert_intermediate_size=2816 '
+        '--moe_token_dispatcher_type=alltoall '
+        '--moe_token_drop_policy=probs '
+        '--make_vocab_size_divisible_by=3200 '
+        '--attention_softmax_in_fp32 '
+        '--use_mcore_models '
+        '--mscale=0.707 '
+        '--mscale_all_dim=0.707 '
+    ),
+    platform=Platform.CUDA
 )
