@@ -8,11 +8,13 @@ FROM ${BASE_IMAGE}
 #   - Python: 3.10
 #   - ROCm: 6.3.4
 #   - torch: 2.8.0a0+git7d205b2
-#   - rccl: pre-installed
-#   - hipblaslt: pre-installed
-#   - transformer_engine: pre-installed
-#   - flash_attention: pre-installed
-#   - cmake, rocm-cmake, amd-smi: included
+#   - rccl: 2.21.5.60304-76
+#   - hipblaslt: 0.15.0-8c69191d
+#   - transformer_engine: 1.14.0+2f85f5f2
+#   - flash_attention: 3.0.0.post1
+#   - cmake: 3.18.5
+#   - rocm-cmake: 0.14.0.60304-76
+#   - amd-smi: 25.1.0+8dc45db
 # Added by this Dockerfile:
 #   - Docker Client: 27.5.1
 #   - openmpi: pre-installed at /opt/ompi
