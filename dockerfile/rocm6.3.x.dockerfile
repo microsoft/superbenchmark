@@ -7,6 +7,7 @@ FROM ${BASE_IMAGE}
 #   - Ubuntu: 22.04
 #   - Python: 3.10
 #   - ROCm: 6.3.4
+#   - openmpi: 4.0.7rc2
 #   - torch: 2.8.0a0+git7d205b2
 #   - rccl: 2.21.5.60304-76
 #   - hipblaslt: 0.15.0-8c69191d
@@ -17,9 +18,8 @@ FROM ${BASE_IMAGE}
 #   - amd-smi: 25.1.0+8dc45db
 # Added by this Dockerfile:
 #   - Docker Client: 27.5.1
-#   - openmpi: pre-installed at /opt/ompi
 #   - mlc: v3.12
-#   - OFED: 24.10-1.1.4.0 LTS (if not present)
+#   - OFED: 24.10-1.1.4.0 LTS
 
 # Fix base image botocore/urllib3 incompatibility:
 # Base image ships botocore 1.22.12 (expects urllib3 1.x) with urllib3 2.6.3,
@@ -103,6 +103,9 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     fi
 
 ENV ROCM_PATH=/opt/rocm
+
+# Target GPU architectures for ROCm builds (space-separated)
+ENV AMDGPU_TARGETS="gfx908 gfx90a gfx942"
 
 # Use pre-installed OpenMPI from base image at /opt/ompi
 ENV MPI_HOME=/opt/ompi
