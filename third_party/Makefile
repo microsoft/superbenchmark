@@ -39,7 +39,7 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
+# For CUDA 12.9 and later, build from CUTLASS v4.1.0 (required for Blackwell support).
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := "80;90;100;103")
