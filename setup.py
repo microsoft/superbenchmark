@@ -202,6 +202,7 @@ setup(
             'cpuworker': x['torch'],
             'amdworker': x['torch'] + x['amd'],
             'nvworker': x['torch'] + x['ort'] + x['nvidia'],
+            'hgworker': x['amd'],
         }
     )(
         {

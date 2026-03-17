@@ -16,7 +16,7 @@ ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm
+.PHONY: all cuda_with_msccl cuda rocm dtk common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm
 
 # Build targets.
 all: cuda rocm
@@ -24,6 +24,7 @@ all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
+dtk: common rocm_perftest rocm_rccl_tests megatron_deepspeed apex_rocm rocm_megatron_lm
 cpu: common cpu_perftest
 common: fio cpu_stream
 
@@ -113,30 +114,36 @@ ifneq (,$(wildcard nccl-tests/Makefile))
 endif
 
 # Build perftest.
-# The commit we use is 4bee61f80d9e268fc97eaf40be00409e91d3a19e.
+# The commit we use is ea1c778782df3ec09b5f8101017fc0140b51a63d.
 cuda_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure CUDA_H_PATH=/usr/local/cuda/include/cuda.h --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 rocm_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
-	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=/opt/rocm --prefix=$(SB_MICRO_PATH) && make -j && make install
+	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=$(ROCM_PATH) --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 cpu_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
 	cd perftest && ./autogen.sh && ./configure --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 
-# Build FIO from commit d83ac9 (fio-3.28 tag).
+# Build FIO from commit ed675d347 (fio-3.41 tag).
 fio:
 ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) --disable-native && make -j && make install
 endif
 
-# Build rccl-tests from commit 46375b1 of default branch.
+# Build rccl-tests from commit 66e513c of default branch.
 rocm_rccl_tests: sb_micro_path
-ifneq (, $(wildcard rccl-tests/Makefile))
-	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
+ifneq (, $(wildcard rccl-tests/install.sh))
+	cd ./rccl-tests && \
+	ln -sf $$(which hipify-perl) $(ROCM_PATH)/bin/hipify-perl || true && \
+	./install.sh --mpi --mpi_home $(MPI_HOME) \
+	--rocm_home $(ROCM_PATH) \
+	--rccl_home $(RCCL_HOME) \
+	--hip_compiler hipcc \
+	--gpu_targets $$(paste -sd ',' $(ROCM_PATH)/bin/target.lst)
 	cp -v -r ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
@@ -225,13 +232,11 @@ directx_amf_encoding_latency:
 # Install requirements for Megatron-LM
 megatron_lm:
 	cd Megatron && \
-	apt install -y python3-mpi4py && \
 	python -m pip install --no-cache-dir -r requirements.txt
 
 # Install requirements for Megatron-DeepSpeed
 megatron_deepspeed:
 	cd Megatron && \
-	apt install -y python3-mpi4py && \
 	python -m pip install --no-cache-dir -r requirements.txt && \
 	python -m pip install DeepSpeed
 
