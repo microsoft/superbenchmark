@@ -270,7 +270,7 @@ apex_rocm:
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
 ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
-	$(eval ARCHS := 100 103)
+	$(eval ARCHS := 80 90 100 103)
 	if [ -d msccl ]; then rm -rf msccl; fi; \
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
 	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
