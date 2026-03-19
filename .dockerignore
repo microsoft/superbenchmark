@@ -15,3 +15,8 @@ outputs/
 **/.dockerignore
 .github/
 .azure-pipelines/
+
+# Build directories
+**/build/
+**/Build/
+**/build-*/

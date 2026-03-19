@@ -16,7 +16,7 @@ ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
-.PHONY: all cuda_with_msccl cuda rocm dtk common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm
+.PHONY: all cuda_with_msccl cuda rocm dtk common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt rocm_babelstream_hip megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm
 
 # Build targets.
 all: cuda rocm
@@ -24,7 +24,7 @@ all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
-dtk: common rocm_perftest rocm_rccl_tests megatron_deepspeed apex_rocm rocm_megatron_lm
+dtk: common rocm_perftest rocm_rccl_tests rocm_babelstream_hip megatron_deepspeed apex_rocm rocm_megatron_lm
 cpu: common cpu_perftest
 common: fio cpu_stream
 
@@ -179,6 +179,18 @@ rocm_bandwidthTest: sb_micro_path
 	git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/HIP.git
 	cd ./HIP/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./HIP/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
+
+# Build BabelStream hip-stream from submodule tag v5.0.
+rocm_babelstream_hip: sb_micro_path
+ifneq (,$(wildcard BabelStream/CMakeLists.txt))
+	cd ./BabelStream && \
+	cmake -S . -B build \
+		-DMODEL=hip \
+		-DCMAKE_CXX_COMPILER=hipcc \
+		-DCXX_EXTRA_FLAGS="--gpu-max-threads-per-block=1024" && \
+	cmake --build build -j $(NUM_MAKE_JOBS)
+	cp -v ./BabelStream/build/hip-stream $(SB_MICRO_PATH)/bin/
+endif
 
 # Build GPCNET from commit c56fd9.
 gpcnet: sb_micro_path

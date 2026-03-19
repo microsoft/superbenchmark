@@ -77,13 +77,14 @@ RUN cd /tmp && \
     tar xzf ucx-${UCX_VERSION}.tar.gz && \
     cd ucx-${UCX_VERSION} && \
     ./contrib/configure-release --prefix=${UCX_HOME} \
-        --enable-optimizations --enable-tuning \
-        --enable-cma --enable-mt \
-        --with-mlx5 --with-rc --with-ud --with-dc --with-dm --with-ib_hw_tm \
-        --with-verbs=/usr/include --with-rdmacm=/usr \
-        --with-rocm=${ROCM_PATH} \
-        --without-knem --without-cuda --without-java && \
+    --enable-optimizations --enable-tuning \
+    --enable-cma --enable-mt \
+    --with-mlx5 --with-rc --with-ud --with-dc --with-dm --with-ib_hw_tm \
+    --with-verbs=/usr/include --with-rdmacm=/usr \
+    --with-rocm=${ROCM_PATH} \
+    --without-knem --without-cuda --without-java && \
     make -j $(nproc) && \
+    rm -rf ${UCX_HOME} && \
     make install && \
     rm -rf /tmp/ucx-${UCX_VERSION}*
 
@@ -95,27 +96,40 @@ RUN cd /tmp && \
     tar xzf openmpi-${OMPI_VERSION}.tar.gz && \
     cd openmpi-${OMPI_VERSION} && \
     ./configure --prefix=${MPI_HOME} \
-        --with-ucx=${UCX_HOME} \
-        --with-rocm=${ROCM_PATH} \
-        --enable-builtin-atomics \
-        --enable-wrapper-rpath \
-        --enable-mca-no-build=btl-uct \
-        --enable-prte-prefix-by-default && \
+    --with-ucx=${UCX_HOME} \
+    --with-rocm=${ROCM_PATH} \
+    --enable-builtin-atomics \
+    --enable-wrapper-rpath \
+    --enable-mca-no-build=btl-uct \
+    --enable-prte-prefix-by-default && \
     make -j $(nproc) && \
+    rm -rf ${MPI_HOME} && \
     make install && \
     ldconfig && \
     cd / && \
     rm -rf /tmp/openmpi-${OMPI_VERSION}*
 
 # Install Intel MLC
-# RUN cd /tmp && \
-#     wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
-#     tar xzf mlc.tgz Linux/mlc && \
-#     cp ./Linux/mlc /usr/local/bin/ && \
-#     rm -rf ./Linux mlc.tgz
+RUN cd /tmp && \
+    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    tar xzf mlc.tgz Linux/mlc && \
+    cp ./Linux/mlc /usr/local/bin/ && \
+    rm -rf ./Linux mlc.tgz
 
 # Install AMD SMI Python Library
-RUN python3 -m pip install amdsmi==5.7.0
+RUN cd /tmp && \
+    wget -q https://github.com/ROCm/amdsmi/archive/refs/tags/rocm-5.7.0.tar.gz -O amdsmi.tar.gz && \
+    tar xzf amdsmi.tar.gz --transform 's/amdsmi-rocm-5.7.0/amdsmi/' && \
+    cd amdsmi && \
+    cmake -S . -B build && \
+    cmake --build build -j $(nproc) && \
+    cmake --install build --prefix ${ROCM_PATH}/ && \
+    rm -rf amdsmi.tar.gz amdsmi && \
+    python3 -m pip install amdsmi==5.7.0
+
+# Add rocblas-bench to path
+RUN ln -s ${ROCM_PATH}/lib/rocblas/benchmark_tool/rocblas-bench ${ROCM_PATH}/bin/ && \
+    chmod +x ${ROCM_PATH}/bin/rocblas-bench
 
 ENV PATH="${MPI_HOME}/bin:${UCX_HOME}/bin:/opt/superbench/bin:/usr/local/bin/${PATH:+:${PATH}}" \
     LD_LIBRARY_PATH="${MPI_HOME}/lib:${UCX_HOME}/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/lib/${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" \
@@ -128,17 +142,30 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
-RUN python3 -m pip install --upgrade pip wheel setuptools==65.7 mpi4py
-
 WORKDIR ${SB_HOME}
 
-ADD third_party third_party
+COPY third_party third_party
 
-RUN make RCCL_HOME=${ROCM_PATH}/rccl ROCM_PATH=${ROCM_PATH} HIP_HOME=${ROCM_PATH}/hip MPI_HOME=${MPI_HOME} -C third_party dtk -o cpu_hpl -o cpu_stream -o megatron_lm -o apex_rocm -o megatron_deepspeed -o rocm_megatron_lm
+RUN --mount=type=bind,from=hyhal,source=/,target=/opt/hyhal \
+    make \
+    RCCL_HOME=${ROCM_PATH}/rccl \
+    ROCM_PATH=${ROCM_PATH} \
+    HIP_HOME=${ROCM_PATH}/hip \
+    MPI_HOME=${MPI_HOME} \
+    -C third_party \
+    dtk \
+    -o cpu_hpl \
+    -o cpu_stream \
+    -o megatron_lm \
+    -o apex_rocm \
+    -o megatron_deepspeed \
+    -o rocm_megatron_lm
 
-ADD . .
-# ENV USE_HIP_DATATYPE=1
-# ENV USE_HIPBLAS_COMPUTETYPE=1
-RUN python3 -m pip install .[hgworker]  && \
-    CXX=${ROCM_PATH}/bin/hipcc make cppbuild  && \
+COPY . .
+ENV USE_HIP_DATATYPE=1
+ENV USE_HIPBLAS_COMPUTETYPE=1
+RUN --mount=type=bind,from=hyhal,source=/,target=/opt/hyhal \
+    python3 -m pip install --upgrade pip wheel setuptools==65.7 mpi4py && \
+    python3 -m pip install --no-build-isolation .[hgworker]  && \
+    make cppbuild  && \
     make postinstall

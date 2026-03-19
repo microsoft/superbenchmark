@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+enable_language(HIP)
+
 # Set ROCM_PATH
 if(NOT DEFINED ENV{ROCM_PATH})
     # Run hipconfig -p to get ROCm path
@@ -37,16 +39,53 @@ else()
     set(HIP_PATH $ENV{HIP_PATH})
 endif()
 
-# Turn off CMAKE_HIP_ARCHITECTURES Feature if cmake version is 3.21+
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
-    set(CMAKE_HIP_ARCHITECTURES OFF)
-endif()
-message(STATUS "CMAKE HIP ARCHITECTURES: ${CMAKE_HIP_ARCHITECTURES}")
-
 if(EXISTS ${HIP_PATH})
     # Search for hip in common locations
     list(APPEND CMAKE_PREFIX_PATH ${HIP_PATH} ${ROCM_PATH} ${ROCM_PATH}/hsa ${ROCM_PATH}/hip ${ROCM_PATH}/share/rocm/cmake/)
-    set(CMAKE_CXX_COMPILER "${HIP_PATH}/bin/hipcc")
-    set(CMAKE_MODULE_PATH "${HIP_PATH}/cmake" ${CMAKE_MODULE_PATH})
-    set(CMAKE_MODULE_PATH "${HIP_PATH}/lib/cmake/hip" ${CMAKE_MODULE_PATH})
+    list(APPEND CMAKE_MODULE_PATH
+        "${HIP_PATH}/cmake"
+        "${HIP_PATH}/lib/cmake/hip"
+    )
 endif()
+
+function(hipify_sources OUTPUT_VAR_NAME)
+    if(NOT HIPIFY_TOOL)
+        find_program(HIPIFY_TOOL hipify-perl PATHS $ENV{ROCM_PATH}/bin)
+        if(NOT HIPIFY_TOOL)
+            message(FATAL_ERROR "hipify-perl not found! Cannot translate CUDA to HIP.")
+        endif()
+    endif()
+
+    set(HIP_SOURCE_EXTS ".hip" ".cpp" ".cc" ".cxx")
+    set(GENERATED_HIP_FILES "")
+
+    foreach(SRC_FILE ${ARGN})
+        get_filename_component(FILE_ABS ${SRC_FILE} ABSOLUTE)
+        get_filename_component(FILE_NAME_WE ${SRC_FILE} NAME_WE)
+        get_filename_component(FILE_EXT ${SRC_FILE} EXT)
+
+        if(FILE_EXT STREQUAL ".cu")
+            set(OUT_EXT ".hip")
+        else()
+            set(OUT_EXT ${FILE_EXT})
+        endif()
+
+        set(OUT_FILE "${CMAKE_CURRENT_BINARY_DIR}/${FILE_NAME_WE}${OUT_EXT}")
+
+        add_custom_command(
+            OUTPUT ${OUT_FILE}
+            COMMAND ${HIPIFY_TOOL} -print-stats -o ${OUT_FILE} ${FILE_ABS}
+            DEPENDS ${FILE_ABS}
+            COMMENT "Auto-hipifying ${SRC_FILE}..."
+        )
+        if(OUT_EXT IN_LIST HIP_SOURCE_EXTS)
+            set_source_files_properties(${OUT_FILE} PROPERTIES
+                COMPILE_OPTIONS "-Wno-unused-result;-Wno-return-type"
+                LANGUAGE HIP
+            )
+        endif()
+        list(APPEND GENERATED_HIP_FILES ${OUT_FILE})
+    endforeach()
+
+    set(${OUTPUT_VAR_NAME} ${GENERATED_HIP_FILES} PARENT_SCOPE)
+endfunction()
