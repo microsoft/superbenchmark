@@ -1,10 +1,10 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for gpu_stream benchmark."""
+"""Tests for gpu-stream benchmark."""
 
-import numbers
 import unittest
+from pathlib import Path
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
@@ -12,51 +12,50 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, 
 
 
 class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
-    """Test class for gpu_stream benchmark."""
+    """Test class for gpu-stream benchmark."""
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""
         super().setUpClass()
         cls.createMockEnvs(cls)
-        cls.createMockFiles(cls, ['bin/gpu_stream'])
+        cls.createMockFiles(cls, ['bin/hip-stream'])
+
+    @staticmethod
+    def _load_fixture(filename):
+        return (Path('tests/data') / filename).read_text()
 
     def _test_gpu_stream_command_generation(self, platform):
         """Test gpu-stream benchmark command generation."""
         benchmark_name = 'gpu-stream'
-        (benchmark_class,
-         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
         assert (benchmark_class)
 
-        num_warm_up = 5
-        num_loops = 10
-        size = 25769803776
-
-        parameters = '--num_warm_up %d --num_loops %d --size %d ' \
-            '--check_data' % \
-            (num_warm_up, num_loops, size)
+        parameters = '--array_size 268435456 --num_loops 20 --precision float'
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
-        # Check basic information
-        assert (benchmark)
         ret = benchmark._preprocess()
+
+        assert (benchmark)
         assert (ret is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
         assert (benchmark.name == benchmark_name)
         assert (benchmark.type == BenchmarkType.MICRO)
+        assert (benchmark._args.array_size == 268435456)
+        assert (benchmark._args.num_loops == 20)
+        assert (benchmark._args.precision == 'float')
 
-        # Check parameters specified in BenchmarkContext.
-        assert (benchmark._args.size == size)
-        assert (benchmark._args.num_warm_up == num_warm_up)
-        assert (benchmark._args.num_loops == num_loops)
-        assert (benchmark._args.check_data)
-
-        # Check command
         assert (1 == len(benchmark._commands))
         assert (benchmark._commands[0].startswith(benchmark._GpuStreamBenchmark__bin_path))
-        assert ('--size %d' % size in benchmark._commands[0])
-        assert ('--num_warm_up %d' % num_warm_up in benchmark._commands[0])
-        assert ('--num_loops %d' % num_loops in benchmark._commands[0])
-        assert ('--check_data' in benchmark._commands[0])
+        assert ('--arraysize 268435456' in benchmark._commands[0])
+        assert ('--numtimes 20' in benchmark._commands[0])
+        assert ('--csv' in benchmark._commands[0])
+        assert ('--float' in benchmark._commands[0])
+        assert ('--device' not in benchmark._commands[0])
+
+        benchmark = benchmark_class(benchmark_name, parameters='--array_size 1024 --num_loops 2')
+        assert (benchmark._preprocess() is True)
+        assert (benchmark._args.precision == 'double')
+        assert ('--float' not in benchmark._commands[0])
 
     @decorator.cuda_test
     def test_gpu_stream_command_generation_cuda(self):
@@ -68,47 +67,61 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test gpu-stream benchmark command generation, ROCm case."""
         self._test_gpu_stream_command_generation(Platform.ROCM)
 
-    @decorator.load_data('tests/data/gpu_stream.log')
-    def _test_gpu_stream_result_parsing(self, platform, test_raw_output):
+    def _test_gpu_stream_result_parsing(self, platform):
         """Test gpu-stream benchmark result parsing."""
         benchmark_name = 'gpu-stream'
-        (benchmark_class,
-         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
         assert (benchmark_class)
-        benchmark = benchmark_class(benchmark_name, parameters='')
+
+        benchmark = benchmark_class(benchmark_name, parameters='--precision double')
         assert (benchmark)
-        ret = benchmark._preprocess()
-        assert (ret is True)
+        assert (benchmark._preprocess() is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.name == 'gpu-stream')
+        assert (benchmark.name == benchmark_name)
         assert (benchmark.type == BenchmarkType.MICRO)
 
-        # Positive case - valid raw output.
-        assert (benchmark._process_raw_result(0, test_raw_output))
+        valid_output = self._load_fixture('gpu_stream.log')
+
+        assert (benchmark._process_raw_result(0, valid_output))
         assert (benchmark.return_code == ReturnCode.SUCCESS)
+        assert ('raw_output_0' in benchmark.raw_data)
+        assert ('Device: BW150' in benchmark.raw_data['raw_output_0'][0])
 
-        assert (1 == len(benchmark.raw_data))
-        # print(test_raw_output.splitlines())
-        test_raw_output_dict = {
-            x.split()[0]: [float(x.split()[1]), float(x.split()[2])]
-            for x in test_raw_output.strip().splitlines() if x.startswith('STREAM_')
+        expected_metric_values = {
+            'STREAM_INIT_double_array_268435456_bw': 6.77961,
+            'STREAM_INIT_double_array_268435456_time': 0.950269,
+            'STREAM_READ_double_array_268435456_bw': 1255.98,
+            'STREAM_READ_double_array_268435456_time': 0.00512943,
+            'STREAM_COPY_double_array_268435456_bw': 1345.22,
+            'STREAM_COPY_double_array_268435456_time_min': 0.00319277,
+            'STREAM_COPY_double_array_268435456_time_max': 0.00320985,
+            'STREAM_COPY_double_array_268435456_time_avg': 0.00319879,
+            'STREAM_MUL_double_array_268435456_bw': 1370.7,
+            'STREAM_MUL_double_array_268435456_time_min': 0.00313342,
+            'STREAM_MUL_double_array_268435456_time_max': 0.00314978,
+            'STREAM_MUL_double_array_268435456_time_avg': 0.00313862,
+            'STREAM_ADD_double_array_268435456_bw': 1292.74,
+            'STREAM_ADD_double_array_268435456_time_min': 0.00498358,
+            'STREAM_ADD_double_array_268435456_time_max': 0.00499938,
+            'STREAM_ADD_double_array_268435456_time_avg': 0.00498747,
+            'STREAM_TRIAD_double_array_268435456_bw': 1292.52,
+            'STREAM_TRIAD_double_array_268435456_time_min': 0.00498439,
+            'STREAM_TRIAD_double_array_268435456_time_max': 0.00499791,
+            'STREAM_TRIAD_double_array_268435456_time_avg': 0.00498815,
+            'STREAM_DOT_double_array_268435456_bw': 1271.19,
+            'STREAM_DOT_double_array_268435456_time_min': 0.00337869,
+            'STREAM_DOT_double_array_268435456_time_max': 0.00359398,
+            'STREAM_DOT_double_array_268435456_time_avg': 0.0033883,
         }
-        assert (len(test_raw_output_dict) * 2 + benchmark.default_metric_count == len(benchmark.result))
-        for output_key in benchmark.result:
-            if output_key == 'return_code':
-                assert (benchmark.result[output_key] == [0])
-            else:
-                assert (len(benchmark.result[output_key]) == 1)
-                assert (isinstance(benchmark.result[output_key][0], numbers.Number))
-                if output_key.endswith('_bw'):
-                    assert (output_key.strip('_bw') in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key.strip('_bw')][0] == benchmark.result[output_key][0])
-                else:
-                    assert (output_key.strip('_ratio') in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key.strip('_ratio')][1] == benchmark.result[output_key][0])
+        for metric_name, expected_value in expected_metric_values.items():
+            assert (metric_name in benchmark.result)
+            assert (abs(benchmark.result[metric_name][0] - expected_value) < 1e-6)
 
-        # Negative case - invalid raw output.
-        assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
+        assert (all(not metric.endswith('_ratio') for metric in benchmark.result))
+
+        benchmark = benchmark_class(benchmark_name, parameters='--precision double')
+        assert (benchmark._preprocess() is True)
+        assert (benchmark._process_raw_result(0, 'Invalid raw output') is False)
         assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 
     @decorator.cuda_test

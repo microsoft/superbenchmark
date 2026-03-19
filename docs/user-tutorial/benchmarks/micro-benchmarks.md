@@ -267,20 +267,42 @@ For measurements of peer-to-peer communication performance between AMD GPUs, GPU
 
 #### Introduction
 
-Measure the memory bandwidth of GPU using the STREAM benchmark. The benchmark tests various memory operations including copy, scale, add, and triad for double datatype.
+Measure the memory bandwidth of GPU using BabelStream (`hip-stream`) backend.
+The benchmark executes copy, scale, add, triad, and dot operations.
+The `array_size` parameter represents the number of elements.
+Each benchmark run measures the GPU visible to the current process.
 
 #### Metrics
 
-| Metric Name                                                | Unit             | Description                                                                                                                             |
-|------------------------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw  | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the copy operation with specified buffer size and block size.                         |
-| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the scale operation with specified buffer size and block size.                         |
-| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw   | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the add operation with specified buffer size and block size.                         |
-| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the triad operation with specified buffer size and block size.                         |
-| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio  | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the copy operation with specified buffer size and block size.                         |
-| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the scale operation with specified buffer size and block size.                         |
-| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio   | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the add operation with specified buffer size and block size.                         |
-| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the triad operation with specified buffer size and block size.                         |
+| Metric Name                                                       | Unit             | Description                                                                                    |
+|-------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------|
+| STREAM\_INIT\_[float\|double]\_array\_[0-9]+\_bw                 | bandwidth (GB/s) | Initialization phase bandwidth for the current benchmark run and one array size.              |
+| STREAM\_INIT\_[float\|double]\_array\_[0-9]+\_time               | time (s)         | Initialization phase runtime for the current benchmark run and one array size.                |
+| STREAM\_READ\_[float\|double]\_array\_[0-9]+\_bw                 | bandwidth (GB/s) | Read phase bandwidth for the current benchmark run and one array size.                        |
+| STREAM\_READ\_[float\|double]\_array\_[0-9]+\_time               | time (s)         | Read phase runtime for the current benchmark run and one array size.                          |
+| STREAM\_COPY\_[float\|double]\_array\_[0-9]+\_bw                 | bandwidth (GB/s) | Maximum copy bandwidth for the current benchmark run and one array size.                       |
+| STREAM\_COPY\_[float\|double]\_array\_[0-9]+\_time\_min          | time (s)         | Minimum copy runtime for the current benchmark run and one array size.                        |
+| STREAM\_COPY\_[float\|double]\_array\_[0-9]+\_time\_max          | time (s)         | Maximum copy runtime for the current benchmark run and one array size.                        |
+| STREAM\_COPY\_[float\|double]\_array\_[0-9]+\_time\_avg          | time (s)         | Average copy runtime for the current benchmark run and one array size.                        |
+| STREAM\_MUL\_[float\|double]\_array\_[0-9]+\_bw                  | bandwidth (GB/s) | Maximum mul bandwidth for the current benchmark run and one array size.                       |
+| STREAM\_MUL\_[float\|double]\_array\_[0-9]+\_time\_min           | time (s)         | Minimum mul runtime for the current benchmark run and one array size.                         |
+| STREAM\_MUL\_[float\|double]\_array\_[0-9]+\_time\_max           | time (s)         | Maximum mul runtime for the current benchmark run and one array size.                         |
+| STREAM\_MUL\_[float\|double]\_array\_[0-9]+\_time\_avg           | time (s)         | Average mul runtime for the current benchmark run and one array size.                         |
+| STREAM\_ADD\_[float\|double]\_array\_[0-9]+\_bw                  | bandwidth (GB/s) | Maximum add bandwidth for the current benchmark run and one array size.                        |
+| STREAM\_ADD\_[float\|double]\_array\_[0-9]+\_time\_min           | time (s)         | Minimum add runtime for the current benchmark run and one array size.                         |
+| STREAM\_ADD\_[float\|double]\_array\_[0-9]+\_time\_max           | time (s)         | Maximum add runtime for the current benchmark run and one array size.                         |
+| STREAM\_ADD\_[float\|double]\_array\_[0-9]+\_time\_avg           | time (s)         | Average add runtime for the current benchmark run and one array size.                         |
+| STREAM\_TRIAD\_[float\|double]\_array\_[0-9]+\_bw                | bandwidth (GB/s) | Maximum triad bandwidth for the current benchmark run and one array size.                      |
+| STREAM\_TRIAD\_[float\|double]\_array\_[0-9]+\_time\_min         | time (s)         | Minimum triad runtime for the current benchmark run and one array size.                       |
+| STREAM\_TRIAD\_[float\|double]\_array\_[0-9]+\_time\_max         | time (s)         | Maximum triad runtime for the current benchmark run and one array size.                       |
+| STREAM\_TRIAD\_[float\|double]\_array\_[0-9]+\_time\_avg         | time (s)         | Average triad runtime for the current benchmark run and one array size.                       |
+| STREAM\_DOT\_[float\|double]\_array\_[0-9]+\_bw                  | bandwidth (GB/s) | Maximum dot bandwidth for the current benchmark run and one array size.                        |
+| STREAM\_DOT\_[float\|double]\_array\_[0-9]+\_time\_min           | time (s)         | Minimum dot runtime for the current benchmark run and one array size.                         |
+| STREAM\_DOT\_[float\|double]\_array\_[0-9]+\_time\_max           | time (s)         | Maximum dot runtime for the current benchmark run and one array size.                         |
+| STREAM\_DOT\_[float\|double]\_array\_[0-9]+\_time\_avg           | time (s)         | Average dot runtime for the current benchmark run and one array size.                         |
+
+`gpu-stream` reports `phase` and `function` metrics. `_ratio` and `block_*` metrics are removed.
+Bandwidth metrics are converted from BabelStream `max_mbytes_per_sec` by using `GB/s = MB/s / 1000`.
 
 ### `ib-loopback`
 

@@ -12,13 +12,12 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'gpu-stream', platform=Platform.CUDA, parameters='--num_warm_up 1 --num_loops 10'
+        'gpu-stream', platform=Platform.CUDA, parameters='--array_size 268435456 --num_loops 10 --precision double'
     )
     # For ROCm environment, please specify the benchmark name and the platform as the following.
     # context = BenchmarkRegistry.create_benchmark_context(
-    #     'gpu-stream', platform=Platform.ROCM, parameters='--num_warm_up 1 --num_loops 10'
+    #     'gpu-stream', platform=Platform.ROCM, parameters='--array_size 268435456 --num_loops 10 --precision float'
     # )
-    # To enable data checking, please add '--check_data'.
 
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:
