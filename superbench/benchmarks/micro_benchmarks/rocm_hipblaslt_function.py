@@ -10,7 +10,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import BlasLtBaseBenchmark
 
 
-class HipBlasLtBenchmark(BlasLtBaseBenchmark):
+class RocmHipBlasLtBenchmark(BlasLtBaseBenchmark):
     """The hipBlasLt GEMM benchmark class."""
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -142,4 +142,4 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         return True
 
 
-BenchmarkRegistry.register_benchmark('hipblaslt-gemm', HipBlasLtBenchmark, platform=Platform.ROCM)
+BenchmarkRegistry.register_benchmark('hipblaslt-gemm', RocmHipBlasLtBenchmark, platform=Platform.ROCM)

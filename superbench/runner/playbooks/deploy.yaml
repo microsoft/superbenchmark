@@ -37,6 +37,14 @@
         - /dev/kfd
         - /dev/dri
       register: amd_dev
+    - name: Checking HYGON GPU Environment
+      stat:
+        path: '{{ item }}'
+      with_items:
+        - /dev/kfd
+        - /dev/dri
+        - /usr/local/hyhal
+      register: hygon_dev
     - name: Set GPU Facts
       set_fact:
         nvidia_gpu_exist: >-
@@ -45,11 +53,16 @@
         amd_gpu_exist: >-
           {{ amd_dev.results[0].stat.ischr is defined and amd_dev.results[0].stat.ischr and
           amd_dev.results[1].stat.isdir is defined and amd_dev.results[1].stat.isdir }}
+        hygon_gpu_exist: >-
+          {{ (hygon_dev.results[0].stat.ischr is defined and hygon_dev.results[0].stat.ischr and
+          hygon_dev.results[1].stat.isdir is defined and hygon_dev.results[1].stat.isdir) and
+          hygon_dev.results[2].stat.exists is defined and hygon_dev.results[2].stat.exists }}
     - name: Print GPU Checking Result
       debug:
         msg:
           - "NVIDIA GPU {{ 'detected' if nvidia_gpu_exist else 'not operational, pls confirm nvidia_uvm kernel module is loaded and /dev/nvidia-uvm exists' }}"
-          - "AMD GPU {{ 'detected' if amd_gpu_exist else 'not operational, pls confirm amdgpu kernel module is loaded' }}"
+          - "AMD GPU {{ 'detected' if amd_gpu_exist and not hygon_gpu_exist else 'not operational, pls confirm amdgpu kernel module is loaded' }}"
+          - "HYGON GPU {{ 'detected' if hygon_gpu_exist else 'not operational, pls confirm hygon gpu kernel module and driver are loaded' }}"
 
 - name: Remote Deployment
   hosts: all

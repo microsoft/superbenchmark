@@ -62,12 +62,12 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
         def cmd(t, b, m, n, k):
             if b == 0:
-                return f'{benchmark._HipBlasLtBenchmark__bin_path} ' + \
+                return f'{benchmark._RocmHipBlasLtBenchmark__bin_path} ' + \
                     f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]}' + \
                     f' --transA {benchmark._args.transA} --transB {benchmark._args.transB}' + \
                     f' --initialization {benchmark._args.initialization}'
             else:
-                return f'{benchmark._HipBlasLtBenchmark__bin_path} ' + \
+                return f'{benchmark._RocmHipBlasLtBenchmark__bin_path} ' + \
                     f'-m {m} -n {n} -k {k} -j 20 -i 50 {benchmark._in_type_map[t]} -b {b}' + \
                     f' --transA {benchmark._args.transA} --transB {benchmark._args.transB}' + \
                     f' --initialization {benchmark._args.initialization}'

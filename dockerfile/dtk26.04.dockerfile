@@ -129,7 +129,9 @@ RUN cd /tmp && \
 
 # Add rocblas-bench to path
 RUN ln -s ${ROCM_PATH}/lib/rocblas/benchmark_tool/rocblas-bench ${ROCM_PATH}/bin/ && \
-    chmod +x ${ROCM_PATH}/bin/rocblas-bench
+    chmod +x ${ROCM_PATH}/bin/rocblas-bench && \
+    ln -s ${ROCM_PATH}/lib/hipblaslt/benchmark_tool/hipblaslt-bench ${ROCM_PATH}/bin/ && \
+    chmod +x ${ROCM_PATH}/bin/hipblaslt-bench
 
 ENV PATH="${MPI_HOME}/bin:${UCX_HOME}/bin:/opt/superbench/bin:/usr/local/bin/${PATH:+:${PATH}}" \
     LD_LIBRARY_PATH="${MPI_HOME}/lib:${UCX_HOME}/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/lib/${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" \

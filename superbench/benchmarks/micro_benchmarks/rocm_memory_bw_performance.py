@@ -91,3 +91,4 @@ class RocmMemBwBenchmark(MemBwBenchmark):
 
 
 BenchmarkRegistry.register_benchmark('mem-bw', RocmMemBwBenchmark, platform=Platform.ROCM)
+BenchmarkRegistry.register_benchmark('mem-bw', RocmMemBwBenchmark, platform=Platform.DTK)

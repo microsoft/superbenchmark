@@ -24,6 +24,7 @@ class Platform(Enum):
     CPU = 'CPU'
     CUDA = 'CUDA'
     ROCM = 'ROCm'
+    DTK = 'DTK'
     DIRECTX = 'DirectX'
 
 
@@ -91,7 +92,7 @@ class BenchmarkContext():
 
         Args:
             name (str): name of benchmark in config file.
-            platform (Platform): Platform types like CUDA, ROCM.
+            platform (Platform): Platform types like CUDA, ROCM, DTK.
             parameters (str): predefined parameters of benchmark.
             framework (Framework): Framework types like ONNXRUNTIME, PYTORCH.
         """

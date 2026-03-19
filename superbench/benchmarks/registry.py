@@ -30,7 +30,7 @@ class BenchmarkRegistry:
             name (str): internal name of benchmark.
             class_def (Benchmark): class object of benchmark.
             parameters (str): predefined parameters of benchmark.
-            platform (Platform): Platform types like CUDA, ROCM.
+            platform (Platform): Platform types like CUDA, ROCM, DTK.
         """
         if not name or not isinstance(name, str):
             logger.log_and_raise(
@@ -142,7 +142,7 @@ class BenchmarkRegistry:
 
         Args:
             name (str): name of benchmark in config file.
-            platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM.
+            platform (Platform): Platform types like Platform.CPU, Platform.CUDA, Platform.ROCM, Platform.DTK.
             parameters (str): predefined parameters of benchmark.
             framework (Framework): Framework types like Framework.PYTORCH, Framework.ONNXRUNTIME.
 

@@ -242,3 +242,4 @@ class CudaNcclBwBenchmark(MicroBenchmarkWithInvoke):
 
 BenchmarkRegistry.register_benchmark('nccl-bw', CudaNcclBwBenchmark, platform=Platform.CUDA)
 BenchmarkRegistry.register_benchmark('rccl-bw', CudaNcclBwBenchmark, platform=Platform.ROCM)
+BenchmarkRegistry.register_benchmark('rccl-bw', CudaNcclBwBenchmark, platform=Platform.DTK)

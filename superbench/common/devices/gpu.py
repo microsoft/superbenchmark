@@ -28,6 +28,8 @@ class GPU():
         if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
             if not list(Path('/dev/dri').glob('renderD*')):
                 logger.warning('Cannot find AMD GPU device.')
+            if Path('/usr/local/hyhal').exists():
+                return 'hygon'
             return 'amd'
         if list(Path(r'C:\Windows\System32').glob('*DriverStore/FileRepository/nv*.inf_amd64_*/nvapi64.dll')):
             return 'nvidia-graphics'
