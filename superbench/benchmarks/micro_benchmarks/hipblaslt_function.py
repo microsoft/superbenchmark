@@ -110,7 +110,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             lines = raw_output.splitlines()
             index = None
 
-            # Find the line containing 'hipblaslt-Gflops'
+            # Find the header line containing 'hipblaslt-Gflops'
             for i, line in enumerate(lines):
                 if 'hipblaslt-Gflops' in line:
                     index = i
@@ -119,16 +119,38 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             if index is None:
                 raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
 
-            # Split the line into fields using a comma as the delimiter
+            # Parse the header to find the column index of 'hipblaslt-Gflops'.
+            # This is needed because hipBLASLt output format varies across versions:
+            #   - v600  (old): 23 columns, Gflops at index -2
+            #   - v1500 (new): 34 columns, added a_type/b_type/c_type/scaleA-D/amaxD/
+            #                  bias_type/aux_type/GB_s columns, Gflops at index -3
+            # Using header-based lookup ensures compatibility with both formats
+            # and any future column additions.
+            header_fields = lines[index].strip().split(',')
+            # Strip leading markers like '[0]' or '[0]:' from the first header field
+            header_fields[0] = header_fields[0].split(']')[-1].lstrip(':')
+            gflops_col = None
+            for col_idx, col_name in enumerate(header_fields):
+                if 'hipblaslt-Gflops' in col_name:
+                    gflops_col = col_idx
+                    break
+            if gflops_col is None:
+                raise ValueError('Column "hipblaslt-Gflops" not found in header.')
+
+            # Split the data line into fields using a comma as the delimiter
             fields = lines[index + 1].strip().split(',')
 
-            # Check the number of fields and the format of the first two fields
-            if len(fields) != 23:
-                raise ValueError('Invalid result')
+            # Validate that the data line has the same number of columns as the header
+            if len(fields) != len(header_fields):
+                raise ValueError(
+                    f'Field count mismatch: header has {len(header_fields)} columns '
+                    f'but data has {len(fields)} columns'
+                )
 
+            # batch_count (index 3) and m,n,k (indices 4-6) are stable across all known formats
             self._result.add_result(
                 f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops',
-                float(fields[-2]) / 1000
+                float(fields[gflops_col]) / 1000
             )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
