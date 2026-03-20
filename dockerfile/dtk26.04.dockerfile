@@ -72,7 +72,8 @@ ENV ROCM_PATH=/opt/dtk
 # Install UCX
 ARG UCX_VERSION=1.20.0
 ARG UCX_HOME=/opt/ucx
-RUN cd /tmp && \
+RUN --mount=type=bind,from=hyhal,source=/,target=/opt/hyhal \
+    cd /tmp && \
     wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx-${UCX_VERSION}.tar.gz && \
     tar xzf ucx-${UCX_VERSION}.tar.gz && \
     cd ucx-${UCX_VERSION} && \
@@ -91,7 +92,8 @@ RUN cd /tmp && \
 # Install OpenMPI
 ENV MPI_HOME=/opt/mpi
 ARG OMPI_VERSION=5.0.9
-RUN cd /tmp && \
+RUN --mount=type=bind,from=hyhal,source=/,target=/opt/hyhal \
+    cd /tmp && \
     wget https://download.open-mpi.org/release/open-mpi/v${OMPI_VERSION%.*}/openmpi-${OMPI_VERSION}.tar.gz && \
     tar xzf openmpi-${OMPI_VERSION}.tar.gz && \
     cd openmpi-${OMPI_VERSION} && \
@@ -116,17 +118,6 @@ RUN cd /tmp && \
     cp ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
-# Install AMD SMI Python Library
-RUN cd /tmp && \
-    wget -q https://github.com/ROCm/amdsmi/archive/refs/tags/rocm-5.7.0.tar.gz -O amdsmi.tar.gz && \
-    tar xzf amdsmi.tar.gz --transform 's/amdsmi-rocm-5.7.0/amdsmi/' && \
-    cd amdsmi && \
-    cmake -S . -B build && \
-    cmake --build build -j $(nproc) && \
-    cmake --install build --prefix ${ROCM_PATH}/ && \
-    rm -rf amdsmi.tar.gz amdsmi && \
-    python3 -m pip install amdsmi==5.7.0
-
 # Add rocblas-bench to path
 RUN ln -s ${ROCM_PATH}/lib/rocblas/benchmark_tool/rocblas-bench ${ROCM_PATH}/bin/ && \
     chmod +x ${ROCM_PATH}/bin/rocblas-bench && \
@@ -140,7 +131,8 @@ ENV PATH="${MPI_HOME}/bin:${UCX_HOME}/bin:/opt/superbench/bin:/usr/local/bin/${P
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
 
-RUN echo PATH="$PATH" > /etc/environment && \
+RUN sed -i '/NCCL_/d' /etc/bash.bashrc && \
+    echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
