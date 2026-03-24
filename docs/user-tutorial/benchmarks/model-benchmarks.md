@@ -51,7 +51,7 @@ To compare deterministic results between runs, use the standard result analysis 
 
 1. Run benchmark with `--enable_determinism` flag
 2. Generate baseline: `sb result generate-baseline --data-file results.jsonl --summary-rule-file rules.yaml`
-3. Compare future runs: `sb result diagnosis --data-file new-results.jsonl --rule-file rules.yaml --baseline-file baseline.json`
+3. Compare future runs: `sb result diagnosis --data-file new-results.jsonl --rule-file diagnosis-rule.yaml --baseline-file baseline.json`
 
 This allows configurable tolerance for floating-point differences via YAML rules.
 
@@ -60,6 +60,77 @@ This allows configurable tolerance for floating-point differences via YAML rules
 When determinism is enabled, benchmark configuration parameters (batch_size, num_steps, deterministic_seed, etc.) are automatically recorded in the results file as `deterministic_config_*` metrics. The diagnosis rules enforce exact matching of these parameters between runs to ensure valid comparisons:
 
 If any configuration parameter differs between runs, the diagnosis will flag it as a failure, ensuring you only compare runs with identical configurations.
+
+**Summary Rule Snippet for Determinism**
+
+Include the following rule in your summary rule file (used with `sb result summary` or `sb result generate-baseline --summary-rule-file`) to surface deterministic metrics in the results summary:
+
+```yaml
+superbench:
+  rules:
+    model-benchmarks-deterministic:
+      statistics:
+        - mean
+      categories: Deterministic
+      metrics:
+        - model-benchmarks:.*/deterministic_loss.*
+        - model-benchmarks:.*/deterministic_act_mean.*
+        - model-benchmarks:.*/deterministic_check_count.*
+        - model-benchmarks:.*/deterministic_step.*
+        - model-benchmarks:.*/deterministic_config_.*
+        - model-benchmarks:.*/return_code.*
+```
+
+This groups all deterministic outputs — loss fingerprints, activation means, check counts, step numbers, configuration parameters, and return codes — under the **Deterministic** category.
+
+**Diagnosis Rule Snippet for Determinism**
+
+Include the following rules in your diagnosis rule file (used with `sb result diagnosis` or `sb result generate-baseline --diagnosis-rule-file`) to detect Silent Data Corruption (SDC) and validate configuration consistency:
+
+```yaml
+superbench:
+  rules:
+    deterministic_rule:
+      function: variance
+      criteria: "lambda x: x != 0"
+      categories: SDC-Fingerprint
+      metrics:
+        - model-benchmarks:.*/deterministic_loss.*
+        - model-benchmarks:.*/deterministic_act_mean.*
+        - model-benchmarks:.*/deterministic_check_count.*
+
+    deterministic_config_rule:
+      function: variance
+      criteria: "lambda x: x != 0"
+      categories: SDC-Config
+      metrics:
+        - model-benchmarks:.*/deterministic_config_batch_size.*
+        - model-benchmarks:.*/deterministic_config_num_steps.*
+        - model-benchmarks:.*/deterministic_config_num_warmup.*
+        - model-benchmarks:.*/deterministic_config_deterministic_seed.*
+        - model-benchmarks:.*/deterministic_config_check_frequency.*
+        - model-benchmarks:.*/deterministic_config_seq_len.*
+        - model-benchmarks:.*/deterministic_config_hidden_size.*
+        - model-benchmarks:.*/deterministic_config_num_classes.*
+        - model-benchmarks:.*/deterministic_config_input_size.*
+        - model-benchmarks:.*/deterministic_config_num_layers.*
+        - model-benchmarks:.*/deterministic_config_num_hidden_layers.*
+        - model-benchmarks:.*/deterministic_config_num_attention_heads.*
+        - model-benchmarks:.*/deterministic_config_intermediate_size.*
+
+    deterministic_failure_rule:
+      function: failure_check
+      criteria: "lambda x: x != 0"
+      categories: SDC-Failed
+      metrics:
+        - model-benchmarks:.*/return_code
+```
+
+- **SDC-Fingerprint** (`deterministic_rule`): Flags any node where loss, activation mean, or check count has *any* variance from baseline (`x != 0`), indicating a potential SDC issue.
+- **SDC-Config** (`deterministic_config_rule`): Ensures all determinism configuration parameters (seed, batch size, sequence length, hidden size, etc.) are identical across nodes — any mismatch means the comparison is invalid.
+- **SDC-Failed** (`deterministic_failure_rule`): Uses `failure_check` to catch nodes where the determinism benchmark failed to run or returned a non-zero exit code.
+
+For complete rule files covering all benchmark categories (micro-benchmarks, NCCL, GPU copy bandwidth, NVBandwidth, etc.), refer to the rule file documentation in [Result Summary](../result-summary.md) and [Data Diagnosis](../data-diagnosis.md).
 
 #### Metrics
 

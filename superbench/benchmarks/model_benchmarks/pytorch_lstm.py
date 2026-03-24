@@ -146,7 +146,9 @@ class PytorchLSTM(PytorchBase):
                     start = self._timer()
                 self._optimizer.zero_grad()
                 output = self._model(sample)
-                loss = self._loss_fn(output.float(), self._target)
+                enable_determinism = getattr(self._args, 'enable_determinism', False)
+                logits_for_loss = output.float() if enable_determinism else output
+                loss = self._loss_fn(logits_for_loss, self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
