@@ -134,10 +134,8 @@ RUN python3 -m pip install --upgrade pip wheel setuptools==65.7 && \
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-# perftest_rocm6.patch skipped — upstream perftest already includes the equivalent changes
+
 RUN make RCCL_HOME=/opt/rocm ROCBLAS_BRANCH=release-staging/rocm-rel-6.3 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.3 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_megatron_lm
-RUN cd third_party/Megatron/Megatron-DeepSpeed && \
-    git apply ../megatron_deepspeed_rocm6.patch
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
