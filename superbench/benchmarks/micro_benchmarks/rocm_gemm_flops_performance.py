@@ -169,4 +169,3 @@ class RocmGemmFlopsBenchmark(GemmFlopsBenchmark):
 
 
 BenchmarkRegistry.register_benchmark('gemm-flops', RocmGemmFlopsBenchmark, platform=Platform.ROCM)
-BenchmarkRegistry.register_benchmark('gemm-flops', RocmGemmFlopsBenchmark, platform=Platform.DTK)
