@@ -37,11 +37,25 @@ else()
     set(HIP_PATH $ENV{HIP_PATH})
 endif()
 
-# Turn off CMAKE_HIP_ARCHITECTURES Feature if cmake version is 3.21+
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
-    set(CMAKE_HIP_ARCHITECTURES OFF)
+# Set HIP architectures from AMDGPU_TARGETS environment variable if available.
+# AMDGPU_TARGETS should be a space-separated list of GPU architectures,
+# e.g. "gfx908 gfx90a gfx942".
+# Both the CMake variable AMDGPU_TARGETS and CMAKE_HIP_ARCHITECTURES must be set:
+# - AMDGPU_TARGETS is read by ROCm's hip-config-amd.cmake to set --offload-arch flags
+# - CMAKE_HIP_ARCHITECTURES is the native CMake variable for HIP (requires >= 3.21)
+if(DEFINED ENV{AMDGPU_TARGETS})
+    string(REPLACE " " ";" HIP_ARCH_LIST "$ENV{AMDGPU_TARGETS}")
+    set(AMDGPU_TARGETS ${HIP_ARCH_LIST} CACHE STRING "AMD GPU targets to compile for")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
+        set(CMAKE_HIP_ARCHITECTURES ${HIP_ARCH_LIST})
+    endif()
+    message(STATUS "Using AMDGPU_TARGETS from environment: ${HIP_ARCH_LIST}")
+else()
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
+        set(CMAKE_HIP_ARCHITECTURES OFF)
+    endif()
+    message(STATUS "AMDGPU_TARGETS not set, relying on hipcc auto-detection")
 endif()
-message(STATUS "CMAKE HIP ARCHITECTURES: ${CMAKE_HIP_ARCHITECTURES}")
 
 if(EXISTS ${HIP_PATH})
     # Search for hip in common locations
