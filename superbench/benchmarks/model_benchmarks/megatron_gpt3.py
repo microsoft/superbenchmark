@@ -307,15 +307,23 @@ class MegatronGPT(ModelBenchmark):
         """Prepare deepspeed configs."""
         self._config_json_path = os.path.join(self._args.data_home, 'ds_config_gpt.json')
         # Load deepspeed config template json file
-        precision_template = {
-            'enabled': True,
-            'loss_scale': 0,
-            'loss_scale_window': 500,
-            'min_loss_scale': 1,
-            'initial_scale_power': 11
-        }
-        if self._args.hysteresis is not None:
-            precision_template['hysteresis'] = self._args.hysteresis
+        # FP16 supports loss scaling parameters; BF16 does not (sufficient dynamic range).
+        if precision_megatron == 'fp16':
+            precision_template = {
+                'enabled': True,
+                'loss_scale': 0,
+                'loss_scale_window': 500,
+                'min_loss_scale': 1,
+                'initial_scale_power': 11
+            }
+            if self._args.hysteresis is not None:
+                precision_template['hysteresis'] = self._args.hysteresis
+        elif precision_megatron == 'bf16':
+            precision_template = {
+                'enabled': True,
+            }
+        else:
+            precision_template = None
 
         ds_config_template = {
             'train_batch_size': self._args.batch_size,
@@ -328,7 +336,7 @@ class MegatronGPT(ModelBenchmark):
             'prescale_gradients': self._args.prescale_grad,
         }
 
-        if len(precision_megatron) > 0:
+        if precision_template is not None:
             ds_config_template[precision_megatron] = precision_template
 
         # Write to config json file
