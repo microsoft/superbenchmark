@@ -59,6 +59,6 @@ When running `sb run` with `--no-docker` on **remote nodes** (via `--host-file` 
    - **Option B:** Install SuperBench from source or pip on each node, and build/install the required micro-benchmark binaries (see `third_party/` and build instructions).
    - **Option C (requires Docker on remote nodes):** If Docker is available on the remote nodes for deployment but you still want to execute benchmarks without containers, you can first use `sb deploy` to pull the image and prepare the container, then manually extract the container filesystem to the host and run subsequent `sb run --no-docker` commands against that host installation.
 
-3. **Environment variables:** Set `superbench.env.SB_MICRO_PATH` (and other required env vars) to match the installation path on each node when using `--no-docker`.
+3. **Environment configuration:** Ensure the `SB_MICRO_PATH` environment variable is set on each remote node so that it matches the on-host installation path of SuperBench micro-benchmark binaries when using `--no-docker`. Alternatively, you can set the config key `superbench.env.SB_MICRO_PATH` via `--config-override` so that SuperBench exports this environment variable for remote executions.
 
 4. **Use case:** `--no-docker` is intended for environments where Docker-in-Docker or nested containers are not supported (e.g., certain Kubernetes setups, HPC clusters with restricted container runtimes). For standard deployments, prefer `sb deploy` + `sb run` without `--no-docker`.
