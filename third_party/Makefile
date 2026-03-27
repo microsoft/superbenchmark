@@ -16,7 +16,7 @@ ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
-.PHONY: all cuda_with_msccl cuda rocm dtk common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt rocm_babelstream_hip megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm
+.PHONY: all cuda_with_msccl cuda rocm dtk common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt rocm_babelstream_hip megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm rocm_hpcg
 
 # Build targets.
 all: cuda rocm
@@ -24,7 +24,7 @@ all: cuda rocm
 cuda_with_msccl: cuda cuda_msccl
 cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
-dtk: common rocm_perftest rocm_rccl_tests rocm_babelstream_hip megatron_deepspeed apex_rocm rocm_megatron_lm
+dtk: common rocm_perftest rocm_rccl_tests rocm_babelstream_hip megatron_deepspeed apex_rocm rocm_megatron_lm rocm_hpcg
 cpu: common cpu_perftest
 common: fio cpu_stream
 
@@ -190,6 +190,19 @@ ifneq (,$(wildcard BabelStream/CMakeLists.txt))
 		-DCXX_EXTRA_FLAGS="--gpu-max-threads-per-block=1024" && \
 	cmake --build build -j $(NUM_MAKE_JOBS)
 	cp -v ./BabelStream/build/hip-stream $(SB_MICRO_PATH)/bin/
+endif
+
+# Build rocHPCG and stage helper scripts for SuperBench DTK image.
+rocm_hpcg: sb_micro_path
+ifneq (,$(wildcard rocHPCG/install.sh))
+	cd ./rocHPCG && \
+	if [ ! -f ./run_rochpcg ]; then \
+		git apply ../rochpcg-scripts-bw.patch; \
+	fi && \
+	./install.sh --with-rocm=$(ROCM_PATH) --with-mpi=$(MPI_HOME) --gpu-aware-mpi=on
+	cp -v ./rocHPCG/build/release/rochpcg-install/bin/rochpcg $(SB_MICRO_PATH)/bin/
+	cp -v ./rocHPCG/run_rochpcg $(SB_MICRO_PATH)/bin/
+	chmod +x $(SB_MICRO_PATH)/bin/rochpcg $(SB_MICRO_PATH)/bin/run_rochpcg
 endif
 
 # Build GPCNET from commit c56fd9.

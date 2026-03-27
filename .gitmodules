@@ -36,3 +36,6 @@
 [submodule "third_party/BabelStream"]
 	path = third_party/BabelStream
 	url = https://github.com/UoB-HPC/BabelStream.git
+[submodule "third_party/rocHPCG"]
+	path = third_party/rocHPCG
+	url = https://github.com/ROCm/rocHPCG.git
