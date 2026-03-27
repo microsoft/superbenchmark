@@ -4,8 +4,9 @@
 """Module of the Pytorch model-benchmark base class."""
 
 import os
-from datetime import timedelta
+import statistics
 import time
+from datetime import timedelta
 
 import torch
 import transformers
@@ -13,11 +14,17 @@ try:
     import transformer_engine.pytorch as te
 except ImportError:
     te = None
-from torch.utils.data import DataLoader
 from torch.distributed import TCPStore, PrefixStore
+from torch.utils.data import DataLoader
 
 from superbench.common.utils import logger
-from superbench.benchmarks import Framework, ReturnCode, DistributedBackend, DistributedImpl
+from superbench.common import model_log_utils
+from superbench.benchmarks import (
+    Framework,
+    ReturnCode,
+    DistributedBackend,
+    DistributedImpl,
+)
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBenchmark
 
 
@@ -30,14 +37,247 @@ class PytorchBase(ModelBenchmark):
             name (str): benchmark name.
             parameters (str): benchmark parameters.
         """
+        # Set CUBLAS_WORKSPACE_CONFIG early, before parent init which might parse args
+        # This ensures it's set before any CUDA operations if determinism is enabled
+        if 'enable_determinism' in parameters:
+            os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
+
         super().__init__(name, parameters)
 
         self._framework = Framework.PYTORCH
         torch.backends.cudnn.benchmark = True
 
+        self._model_run_losses = []
+        self._model_run_periodic = {}
+
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
         self._gpu_available = not self._args.no_gpu and torch.cuda.is_available()
+
+    def _enable_deterministic_training(self):
+        """Enable deterministic training settings for reproducible results."""
+        # Set CUBLAS_WORKSPACE_CONFIG (should already be set in __init__, but ensure it's set as backup)
+        os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
+
+        if hasattr(self._args, 'deterministic_seed'):
+            import random
+            torch.manual_seed(self._args.deterministic_seed)
+            random.seed(self._args.deterministic_seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(self._args.deterministic_seed)
+        torch.use_deterministic_algorithms(True, warn_only=False)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        # Disable TF32 to remove potential numerical variability
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = False
+        except Exception:
+            logger.warning('Failed to disable TF32 in cuda matmul')
+
+        try:
+            torch.backends.cudnn.allow_tf32 = False
+        except Exception:
+            logger.warning('Failed to disable TF32 in cuDNN')
+
+        # Force Scaled Dot-Product Attention to use deterministic math kernel
+        try:
+            torch.backends.cuda.enable_flash_sdp(False)
+            torch.backends.cuda.enable_mem_efficient_sdp(False)
+        except Exception:
+            logger.warning('SDP kernel backend configuration not available')
+            # Older PyTorch versions may not expose these APIs; ignore in that case
+
+    def record_determinism_fingerprint(self, curr_step, loss, logits, periodic, check_frequency):
+        """Centralized logic for recording per-step loss and periodic fingerprints for deterministic runs.
+
+        Args:
+            curr_step (int): Current training step.
+            loss (torch.Tensor or float): Loss value for this step.
+            logits (torch.Tensor or float): Logits output for this step (sample 0).
+            periodic (dict): Dictionary to store periodic fingerprints ('loss', 'act_mean', 'step').
+            check_frequency (int): Frequency for fingerprint logging.
+        """
+        enable_determinism = getattr(self._args, 'enable_determinism', False)
+        # If determinism is not enabled, skip determinism-specific logging to avoid unnecessary GPU syncs.
+        if not enable_determinism:
+            return
+
+        # Record per-step loss for determinism checks
+        loss_value = model_log_utils.record_step_loss(loss, curr_step, self._model_run_losses, logger)
+
+        # Record periodic fingerprint (loss and activation mean)
+        model_log_utils.record_periodic_fingerprint(
+            curr_step,
+            loss_value,
+            logits,
+            periodic,
+            check_frequency,
+            enable_determinism,
+            logger,
+        )
+
+    def _finalize_periodic_logging(self, periodic, info_key='loss'):
+        """Finalize periodic logging and return info dict for training step."""
+        info = {info_key: periodic.get(info_key, [])}
+        if self._model_run_periodic and getattr(self._args, 'enable_determinism', False):
+            logger.warning(
+                'Deterministic periodic data is being overwritten by a subsequent precision/action run. '
+                "Only the last run's deterministic metrics will be reported. "
+                'Consider using a single precision when enable_determinism is set.'
+            )
+        self._model_run_periodic = dict(periodic)
+        return info
+
+    def add_parser_arguments(self):
+        """Add PyTorch model benchmark-specific arguments to the argument parser."""
+        super().add_parser_arguments()
+        self._parser.add_argument(
+            '--deterministic_seed',
+            type=int,
+            default=42,
+            required=False,
+            help='Random seed for deterministic training.',
+        )
+        self._parser.add_argument(
+            '--enable_determinism',
+            action='store_true',
+            default=False,
+            help='Enable deterministic training for reproducible results.',
+        )
+        self._parser.add_argument(
+            '--check_frequency',
+            type=int,
+            default=100,
+            required=False,
+            help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
+        )
+
+    def _post_run_model_log(self):
+        """Add deterministic metrics to results.
+
+        Deterministic metrics (loss, activation mean) are stored in the results file alongside
+        other benchmark metrics. These can later be compared using `sb result diagnosis`.
+        """
+        # Add deterministic metrics to result system (all ranks add their own metrics)
+        if getattr(self._args, 'enable_determinism', False):
+            self._add_deterministic_metrics_to_result()
+
+    def _add_deterministic_metrics_to_result(self):
+        """Add deterministic fingerprints and losses to the benchmark result system.
+
+        This makes deterministic metrics visible in results-summary.json alongside
+        other benchmark metrics. In distributed training, metrics include rank information.
+        """
+        # Add periodic fingerprints (loss, activation mean) to results
+        if self._model_run_periodic:
+            for key, values in self._model_run_periodic.items():
+                if isinstance(values, list) and values:
+                    # Include rank in metric name for distributed training
+                    if self._global_rank is not None:
+                        metric_name = f'deterministic_{key}_rank{self._global_rank}'
+                    else:
+                        metric_name = f'deterministic_{key}'
+
+                    # Add summarized result (mean of checkpointed values)
+                    filtered_values = [v for v in values if v is not None]
+                    if filtered_values:
+                        self._result.add_result(metric_name, statistics.mean(filtered_values))
+                    else:
+                        # No valid (non-None) values recorded; record NaN to avoid StatisticsError
+                        self._result.add_result(metric_name, float('nan'))
+
+        # Add count of deterministic checks performed
+        if self._model_run_periodic.get('step'):
+            if self._global_rank is not None:
+                metric_name = f'deterministic_check_count_rank{self._global_rank}'
+            else:
+                metric_name = 'deterministic_check_count'
+            self._result.add_result(metric_name, len(self._model_run_periodic['step']))
+
+        # Add configuration parameters for validation
+        self._add_determinism_config_to_result()
+
+    def _add_determinism_config_to_result(self):
+        """Add benchmark configuration parameters as metrics for determinism validation.
+
+        These parameters are included in the results file so they can be compared
+        between runs using diagnosis rules. This ensures runs being compared used
+        identical configurations.
+        """
+        # Configuration parameters to include in results for validation
+        config_params = {
+            'batch_size': getattr(self._args, 'batch_size', None),
+            'num_steps': getattr(self._args, 'num_steps', None),
+            'num_warmup': getattr(self._args, 'num_warmup', None),
+            'deterministic_seed': getattr(self._args, 'deterministic_seed', None),
+            'check_frequency': getattr(self._args, 'check_frequency', None),
+            'seq_len': getattr(self._args, 'seq_len', None),
+            'hidden_size': getattr(self._args, 'hidden_size', None),
+            'num_classes': getattr(self._args, 'num_classes', None),
+            'input_size': getattr(self._args, 'input_size', None),
+            'num_layers': getattr(self._args, 'num_layers', None),
+            'num_hidden_layers': getattr(self._args, 'num_hidden_layers', None),
+            'num_attention_heads': getattr(self._args, 'num_attention_heads', None),
+            'intermediate_size': getattr(self._args, 'intermediate_size', None),
+        }
+
+        for param_name, value in config_params.items():
+            if value is not None:
+                metric_name = f'deterministic_config_{param_name}'
+                self._result.add_result(metric_name, value)
+
+    def _create_target(self, num_classes):
+        """Create target tensor for training, using a deterministic generator when determinism is enabled.
+
+        Args:
+            num_classes (int): Number of classes for random target generation.
+
+        Return:
+            torch.LongTensor: Target tensor of shape (batch_size,).
+        """
+        generator = None
+        if getattr(self._args, 'enable_determinism', False) and hasattr(self._args, 'deterministic_seed'):
+            generator = torch.Generator()
+            generator.manual_seed(self._args.deterministic_seed + 1)
+        if generator is not None:
+            target = torch.LongTensor(self._args.batch_size).random_(num_classes, generator=generator)
+        else:
+            target = torch.LongTensor(self._args.batch_size).random_(num_classes)
+        if self._gpu_available:
+            target = target.cuda()
+        return target
+
+    def _preprocess(self):
+        """Preprocess and apply PyTorch-specific defaults."""
+        preprocess_ok = super()._preprocess()
+        if not preprocess_ok:
+            return False
+        return True
+
+    def set_deterministic_seed(self):
+        """Set deterministic RNGs centrally for PyTorch benchmarks.
+
+        This will set the seeds and deterministic flags prior to dataset generation
+        so per-model dataset generation is reproducible without each model needing
+        to call torch.manual_seed().
+        """
+        if getattr(self._args, 'enable_determinism', False):
+            # Validate check_frequency before any deterministic operations
+            check_freq = getattr(self._args, 'check_frequency', 100)
+            if not isinstance(check_freq, int) or check_freq <= 0:
+                logger.error(
+                    f'Invalid check_frequency={check_freq}. Must be a positive integer >= 1. '
+                    'Defaulting to 100.'
+                )
+                self._args.check_frequency = 100
+            try:
+                self._enable_deterministic_training()
+            except Exception:
+                logger.error(
+                    'Failed to enable deterministic training. '
+                    'Disabling enable_determinism to avoid silently non-deterministic results.'
+                )
+                self._args.enable_determinism = False
 
     def _set_force_fp32(self):
         """Set the config that controls whether full float32 precision will be used.
@@ -150,6 +390,7 @@ class PytorchBase(ModelBenchmark):
         if self._args.distributed_impl:
             if self._args.distributed_impl == DistributedImpl.HOROVOD:
                 import horovod.torch as hvd
+
                 train_sampler = \
                     torch.utils.data.distributed.DistributedSampler(
                         self._dataset,
@@ -347,18 +588,23 @@ class PytorchBase(ModelBenchmark):
     def _benchmark(self):
         """Wrap super._benchmark with profiler context if enabled by environment variable.
 
+        Run the benchmark then handle post-run model log save/compare.
         Set SB_ENABLE_PYTORCH_PROFILER='1' to enable profiling.
         """
         # Check if this is a Nvidia GPU
         if not (torch.cuda.is_available() and torch.version.cuda is not None):
-            return super()._benchmark()
+            ok = super()._benchmark()
+            self._post_run_model_log()
+            return ok
 
         # Check if profiling is enabled via environment variable
         enable_profiler = os.environ.get('SB_ENABLE_PYTORCH_PROFILER', '0') == '1'
 
         if not enable_profiler:
             # Run without profiling
-            return super()._benchmark()
+            ok = super()._benchmark()
+            self._post_run_model_log()
+            return ok
 
         # Run with profiling enabled
         logger.info('PyTorch profiler enabled for model: {}'.format(self._name))
@@ -397,4 +643,6 @@ class PytorchBase(ModelBenchmark):
         with open(diag_agent_dump_file_path, 'w') as f:
             json.dump(diag_agent_events, f, sort_keys=True)
 
+        # Handle post-run model log save/compare regardless of profiling
+        self._post_run_model_log()
         return ret
