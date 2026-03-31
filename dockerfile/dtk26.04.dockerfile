@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=harbor.sourcefind.cn:5443/dcu/admin/base/vllm:0.11.0-ubuntu22.04-dtk26.04-0130-py3.10-20260204
+ARG BASE_IMAGE=harbor.sourcefind.cn:5443/dcu/admin/base/vllm:0.11.0-ubuntu22.04-dtk26.04-py3.10
 
 FROM ${BASE_IMAGE}
 
