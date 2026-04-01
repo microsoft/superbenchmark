@@ -110,9 +110,9 @@ class TestHuggingFaceModelLoader:
         """Test model size calculation."""
         mock_model = MagicMock()
         mock_model.parameters.return_value = [
-            torch.randn(1000, 1000),  # 1M params
-            torch.randn(500, 500),     # 0.25M params
+            torch.randn(1000, 1000),    # 1M params
+            torch.randn(500, 500),    # 0.25M params
         ]
 
         size = loader._get_model_size(mock_model)
-        assert abs(size - 1.25) < 0.01  # Should be ~1.25M
+        assert abs(size - 1.25) < 0.01    # Should be ~1.25M

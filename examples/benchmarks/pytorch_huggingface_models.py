@@ -86,21 +86,12 @@ def run_huggingface_benchmark(model_key, distributed=False, precision='float32',
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Benchmark HuggingFace models with SuperBench'
+    parser = argparse.ArgumentParser(description='Benchmark HuggingFace models with SuperBench')
+    parser.add_argument(
+        '--model', type=str, default='bert', choices=list(HF_MODELS.keys()), help='Model to benchmark (default: bert)'
     )
     parser.add_argument(
-        '--model',
-        type=str,
-        default='bert',
-        choices=list(HF_MODELS.keys()),
-        help='Model to benchmark (default: bert)'
-    )
-    parser.add_argument(
-        '--distributed',
-        action='store_true',
-        default=False,
-        help='Whether to enable distributed training.'
+        '--distributed', action='store_true', default=False, help='Whether to enable distributed training.'
     )
     parser.add_argument(
         '--precision',
@@ -109,34 +100,18 @@ if __name__ == '__main__':
         choices=['float32', 'float16'],
         help='Model precision (default: float32)'
     )
-    parser.add_argument(
-        '--duration',
-        type=int,
-        default=60,
-        help='Benchmark duration in seconds (default: 60)'
-    )
-    parser.add_argument(
-        '--all',
-        action='store_true',
-        default=False,
-        help='Run benchmarks for all available models'
-    )
+    parser.add_argument('--duration', type=int, default=60, help='Benchmark duration in seconds (default: 60)')
+    parser.add_argument('--all', action='store_true', default=False, help='Run benchmarks for all available models')
     args = parser.parse_args()
 
     if args.all:
         # Run all models
         for model_key in HF_MODELS:
             run_huggingface_benchmark(
-                model_key,
-                distributed=args.distributed,
-                precision=args.precision,
-                duration=args.duration
+                model_key, distributed=args.distributed, precision=args.precision, duration=args.duration
             )
     else:
         # Run single model
         run_huggingface_benchmark(
-            args.model,
-            distributed=args.distributed,
-            precision=args.precision,
-            duration=args.duration
+            args.model, distributed=args.distributed, precision=args.precision, duration=args.duration
         )

@@ -100,11 +100,7 @@ class HuggingFaceModelLoader:
             dtype = self._get_torch_dtype(torch_dtype) if torch_dtype else None
 
             # Prepare loading kwargs
-            load_kwargs = {
-                'cache_dir': self.cache_dir,
-                'revision': revision,
-                **kwargs
-            }
+            load_kwargs = {'cache_dir': self.cache_dir, 'revision': revision, **kwargs}
 
             # Add token if available
             if self.token:
@@ -117,9 +113,7 @@ class HuggingFaceModelLoader:
             # Load config (use pre-downloaded config if provided)
             if config is None:
                 logger.info('Loading model configuration...')
-                config = AutoConfig.from_pretrained(
-                    model_identifier, trust_remote_code=True, **load_kwargs
-                )
+                config = AutoConfig.from_pretrained(model_identifier, trust_remote_code=True, **load_kwargs)
             else:
                 logger.info('Using pre-downloaded model configuration.')
 
@@ -127,9 +121,7 @@ class HuggingFaceModelLoader:
             tokenizer = None
             try:
                 logger.info('Loading tokenizer...')
-                tokenizer = AutoTokenizer.from_pretrained(
-                    model_identifier, trust_remote_code=True, **load_kwargs
-                )
+                tokenizer = AutoTokenizer.from_pretrained(model_identifier, trust_remote_code=True, **load_kwargs)
             except Exception as e:
                 logger.warning(f'Could not load tokenizer: {e}. Continuing without tokenizer.')
 
@@ -179,7 +171,9 @@ class HuggingFaceModelLoader:
             raise ModelLoadError(f"Unexpected error loading model '{model_identifier}': {e}") from e
 
     def load_model_from_config(
-        self, config: ModelSourceConfig, device: Optional[str] = None,
+        self,
+        config: ModelSourceConfig,
+        device: Optional[str] = None,
         config_pretrained: Optional[PretrainedConfig] = None,
     ) -> Tuple[PreTrainedModel, PretrainedConfig, AutoTokenizer]:
         """Load a model using ModelSourceConfig.
@@ -197,10 +191,8 @@ class HuggingFaceModelLoader:
             ModelLoadError: If model loading fails.
         """
         if not config.is_huggingface():
-            raise ValueError(
-                f"Cannot load model with source '{config.source}'. "
-                "Use 'huggingface' source."
-            )
+            raise ValueError(f"Cannot load model with source '{config.source}'. "
+                             "Use 'huggingface' source.")
 
         # Validate config
         is_valid, error = config.validate()
@@ -244,10 +236,8 @@ class HuggingFaceModelLoader:
         }
 
         if dtype_str.lower() not in dtype_map:
-            raise ValueError(
-                f"Invalid dtype '{dtype_str}'. "
-                f'Must be one of {list(dtype_map.keys())}'
-            )
+            raise ValueError(f"Invalid dtype '{dtype_str}'. "
+                             f'Must be one of {list(dtype_map.keys())}')
 
         return dtype_map[dtype_str.lower()]
 
@@ -289,9 +279,7 @@ class HuggingFaceModelLoader:
 
             # Embeddings: token + (optional) position
             max_pos = getattr(hf_config, 'max_position_embeddings', 0)
-            has_pos_embed = getattr(hf_config, 'position_embedding_type', None) not in (
-                'rotary', None
-            )
+            has_pos_embed = getattr(hf_config, 'position_embedding_type', None) not in ('rotary', None)
             embed_params = vocab * hidden
             if has_pos_embed and max_pos > 0:
                 embed_params += max_pos * hidden
@@ -346,7 +334,7 @@ class HuggingFaceModelLoader:
         precision_lower = precision_str.lower()
         if precision_lower in ('float16', 'fp16', 'bfloat16', 'bf16'):
             bytes_per_param = 2
-        elif precision_lower in ('int8',):
+        elif precision_lower in ('int8', ):
             bytes_per_param = 1
         else:
             bytes_per_param = 4
@@ -368,7 +356,7 @@ class HuggingFaceModelLoader:
             except ImportError:
                 logger.warning('psutil not installed — cannot check system memory. Skipping memory check.')
                 return 0, 0, True
-            max_gpu_mem = 80 * (1024 ** 3)  # 80GB — largest common single-GPU memory
+            max_gpu_mem = 80 * (1024**3)    # 80GB — largest common single-GPU memory
             effective_mem = min(sys_mem, max_gpu_mem)
             fits = (estimated_bytes / effective_mem) < 0.85
             return estimated_bytes, effective_mem, fits

@@ -58,9 +58,7 @@ def run_huggingface_benchmark(model_identifier, precision='float16', batch_size=
 
     logger.info(f'Running ORT inference benchmark with HuggingFace model: {model_identifier}')
 
-    context = BenchmarkRegistry.create_benchmark_context(
-        'ort-inference', platform=Platform.CUDA, parameters=parameters
-    )
+    context = BenchmarkRegistry.create_benchmark_context('ort-inference', platform=Platform.CUDA, parameters=parameters)
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:
         logger.info(
@@ -74,12 +72,14 @@ def run_huggingface_benchmark(model_identifier, precision='float16', batch_size=
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ORT inference benchmark')
     parser.add_argument(
-        '--model_source', type=str, default='in-house', choices=['in-house', 'huggingface'],
+        '--model_source',
+        type=str,
+        default='in-house',
+        choices=['in-house', 'huggingface'],
         help='Source of the model: in-house (default) or huggingface'
     )
     parser.add_argument(
-        '--model_identifier', type=str, default='bert-base-uncased',
-        help='HuggingFace model identifier'
+        '--model_identifier', type=str, default='bert-base-uncased', help='HuggingFace model identifier'
     )
     parser.add_argument('--precision', type=str, default='float16', choices=['float32', 'float16', 'int8'])
     parser.add_argument('--batch_size', type=int, default=32)

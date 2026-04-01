@@ -4,10 +4,7 @@
 """End-to-end integration tests for HuggingFace model loading.
 
 These tests actually download and load models from HuggingFace Hub.
-They are marked with @pytest.mark.integration and skipped by default
-in CI due to network/disk requirements.
-
-Run with: pytest -m integration tests/benchmarks/micro_benchmarks/test_huggingface_e2e.py
+Skipped when SB_TEST_CUDA=0.
 """
 
 import pytest
@@ -15,14 +12,12 @@ import torch
 
 transformers = pytest.importorskip('transformers')
 
+from tests.helper import decorator
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import HuggingFaceModelLoader
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
 
 
-# Skip all tests if no GPU available (most HF models need significant resources)
-pytestmark = pytest.mark.integration
-
-
+@decorator.cuda_test
 class TestHuggingFaceE2E:
     """End-to-end tests for HuggingFace model loading."""
 
@@ -36,10 +31,7 @@ class TestHuggingFaceE2E:
 
         Uses prajjwal1/bert-tiny which is a small public BERT model (~17MB).
         """
-        model, config, tokenizer = loader.load_model(
-            'prajjwal1/bert-tiny',
-            device='cpu'
-        )
+        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         assert model is not None
         assert config is not None
@@ -56,10 +48,7 @@ class TestHuggingFaceE2E:
 
         Uses distilbert/distilgpt2 which is a small public GPT-2 model (~82MB).
         """
-        model, config, tokenizer = loader.load_model(
-            'distilbert/distilgpt2',
-            device='cpu'
-        )
+        model, config, tokenizer = loader.load_model('distilbert/distilgpt2', device='cpu')
 
         assert model is not None
         assert config is not None
@@ -73,11 +62,7 @@ class TestHuggingFaceE2E:
 
     def test_load_model_from_config(self, loader):
         """Test loading model using ModelSourceConfig via load_model_from_config."""
-        config = ModelSourceConfig(
-            source='huggingface',
-            identifier='prajjwal1/bert-tiny',
-            torch_dtype='float32'
-        )
+        config = ModelSourceConfig(source='huggingface', identifier='prajjwal1/bert-tiny', torch_dtype='float32')
 
         model, hf_config, tokenizer = loader.load_model_from_config(config, device='cpu')
 
@@ -86,10 +71,7 @@ class TestHuggingFaceE2E:
 
     def test_load_model_with_dtype(self, loader):
         """Test loading model and converting dtype after load."""
-        model, config, tokenizer = loader.load_model(
-            'prajjwal1/bert-tiny',
-            device='cpu'
-        )
+        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         # Convert to float32 after loading
         model = model.float()
@@ -101,10 +83,7 @@ class TestHuggingFaceE2E:
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='Requires GPU')
     def test_load_model_to_gpu(self, loader):
         """Test loading model and moving to GPU."""
-        model, config, tokenizer = loader.load_model(
-            'prajjwal1/bert-tiny',
-            device='cpu'
-        )
+        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         # Move to GPU manually
         model = model.cuda()
@@ -115,10 +94,7 @@ class TestHuggingFaceE2E:
 
     def test_architecture_detection(self, loader):
         """Test that architecture is correctly detected from loaded model."""
-        model, config, tokenizer = loader.load_model(
-            'prajjwal1/bert-tiny',
-            device='cpu'
-        )
+        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         # Architecture should be detected from config
         assert config.model_type is not None

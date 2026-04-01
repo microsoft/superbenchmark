@@ -32,6 +32,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import Hugg
 
 class PytorchBase(ModelBenchmark):
     """The base class of Pytorch model benchmarks."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -224,9 +225,7 @@ class PytorchBase(ModelBenchmark):
             if hf_token:
                 load_kwargs['token'] = hf_token
             from transformers import AutoConfig
-            hf_config = AutoConfig.from_pretrained(
-                model_config.identifier, trust_remote_code=True, **load_kwargs
-            )
+            hf_config = AutoConfig.from_pretrained(model_config.identifier, trust_remote_code=True, **load_kwargs)
 
             # Allow subclasses to customize config (e.g., override num_hidden_layers)
             hf_config = self._customize_hf_config(hf_config)
@@ -266,10 +265,7 @@ class PytorchBase(ModelBenchmark):
                 f'{f", fits in available memory ({gpu_mem / 1e9:.1f}GB)" if gpu_mem > 0 else ""}. '
                 f'Downloading pretrained weights...'
             )
-            loader = HuggingFaceModelLoader(
-                cache_dir=None,
-                token=hf_token
-            )
+            loader = HuggingFaceModelLoader(cache_dir=None, token=hf_token)
             hf_model, _, tokenizer = loader.load_model_from_config(
                 model_config, device='cpu', config_pretrained=hf_config
             )
@@ -310,9 +306,7 @@ class PytorchBase(ModelBenchmark):
             return True
 
         except Exception as e:
-            logger.error(
-                f'Failed to load HuggingFace model: {str(e)}'
-            )
+            logger.error(f'Failed to load HuggingFace model: {str(e)}')
             import traceback
             logger.error(traceback.format_exc())
             return False

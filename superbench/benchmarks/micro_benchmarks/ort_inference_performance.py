@@ -20,6 +20,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import Hugg
 
 class ORTInferenceBenchmark(MicroBenchmark):
     """ONNXRuntime inference micro-benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -190,9 +191,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             load_kwargs = {}
             if hf_token:
                 load_kwargs['token'] = hf_token
-            hf_config = AutoConfig.from_pretrained(
-                self._args.model_identifier, trust_remote_code=True, **load_kwargs
-            )
+            hf_config = AutoConfig.from_pretrained(self._args.model_identifier, trust_remote_code=True, **load_kwargs)
 
             precision_str = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
             fits, param_m, est_gb, avail_gb = HuggingFaceModelLoader.check_memory_fits(
@@ -280,9 +279,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
         # Require CUDAExecutionProvider — this benchmark targets GPU inference
         available = ort.get_available_providers()
         if 'CUDAExecutionProvider' not in available:
-            logger.error(
-                f'CUDAExecutionProvider is not available (available: {available}).'
-            )
+            logger.error(f'CUDAExecutionProvider is not available (available: {available}).')
             return False
 
         for model in self._args.pytorch_models:
@@ -335,10 +332,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             seq_len = getattr(self._args, 'seq_length', 512)
             input_ids = np.random.randint(0, 30000, (self._args.batch_size, seq_len)).astype(np.int64)
             attention_mask = np.ones((self._args.batch_size, seq_len), dtype=np.int64)
-            inputs = {
-                'input_ids': input_ids,
-                'attention_mask': attention_mask
-            }
+            inputs = {'input_ids': input_ids, 'attention_mask': attention_mask}
         else:
             # Default for in-house torchvision models: use 'input' (batch_size, 3, 224, 224)
             input_tensor = np.random.randn(self._args.batch_size, 3, 224, 224).astype(dtype=precision)

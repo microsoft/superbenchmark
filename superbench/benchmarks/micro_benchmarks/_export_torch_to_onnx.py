@@ -17,6 +17,7 @@ from superbench.common.utils import logger
 
 class torch2onnxExporter():
     """PyTorch model to ONNX exporter."""
+
     def __init__(self):
         """Constructor."""
         from transformers import BertConfig, GPT2Config, LlamaConfig
@@ -322,6 +323,7 @@ class torch2onnxExporter():
 
                 # Wrapper for vision models
                 class VisionModelWrapper(torch.nn.Module):
+
                     def __init__(self, model):
                         super().__init__()
                         self.model = model
@@ -336,20 +338,29 @@ class torch2onnxExporter():
                             return outputs[0] if isinstance(outputs, (tuple, list)) else outputs
 
                 wrapped_model = VisionModelWrapper(model)
-                export_args = (dummy_input,)
+                export_args = (dummy_input, )
             else:
                 # NLP models: use input_ids and attention_mask
                 dummy_input = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
                 attention_mask = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
                 input_names = ['input_ids', 'attention_mask']
                 dynamic_axes = {
-                    'input_ids': {0: 'batch_size', 1: 'seq_length'},
-                    'attention_mask': {0: 'batch_size', 1: 'seq_length'},
-                    'output': {0: 'batch_size'},
+                    'input_ids': {
+                        0: 'batch_size',
+                        1: 'seq_length'
+                    },
+                    'attention_mask': {
+                        0: 'batch_size',
+                        1: 'seq_length'
+                    },
+                    'output': {
+                        0: 'batch_size'
+                    },
                 }
 
                 # Wrapper for NLP models
                 class NLPModelWrapper(torch.nn.Module):
+
                     def __init__(self, model):
                         super().__init__()
                         self.model = model

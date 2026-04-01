@@ -20,11 +20,7 @@ class TestModelSourceConfig:
 
     def test_huggingface_config(self):
         """Test HuggingFace configuration."""
-        config = ModelSourceConfig(
-            source='huggingface',
-            identifier='meta-llama/Llama-2-7b-hf',
-            torch_dtype='float16'
-        )
+        config = ModelSourceConfig(source='huggingface', identifier='meta-llama/Llama-2-7b-hf', torch_dtype='float16')
         assert config.source == 'huggingface'
         assert config.identifier == 'meta-llama/Llama-2-7b-hf'
         assert config.torch_dtype == 'float16'
@@ -46,30 +42,21 @@ class TestModelSourceConfig:
 
     def test_validate_huggingface_empty(self):
         """Test validation of empty HuggingFace model identifier."""
-        config = ModelSourceConfig(
-            source='huggingface',
-            identifier='   '
-        )
+        config = ModelSourceConfig(source='huggingface', identifier='   ')
         is_valid, message = config.validate()
         assert not is_valid
         assert 'cannot be empty' in message
 
     def test_validate_valid_huggingface(self):
         """Test validation of valid HuggingFace model."""
-        config = ModelSourceConfig(
-            source='huggingface',
-            identifier='meta-llama/Llama-2-7b-hf'
-        )
+        config = ModelSourceConfig(source='huggingface', identifier='meta-llama/Llama-2-7b-hf')
         is_valid, message = config.validate()
         assert is_valid
         assert message == ''
 
     def test_validate_valid_huggingface_short_name(self):
         """Test validation of valid HuggingFace model with short name (no org)."""
-        config = ModelSourceConfig(
-            source='huggingface',
-            identifier='bert-base-uncased'
-        )
+        config = ModelSourceConfig(source='huggingface', identifier='bert-base-uncased')
         is_valid, message = config.validate()
         assert is_valid
         assert message == ''
@@ -83,8 +70,5 @@ class TestModelSourceConfig:
 
     def test_deprecated_use_auth_token(self):
         """Test deprecated use_auth_token parameter."""
-        config = ModelSourceConfig(
-            identifier='test',
-            use_auth_token='old_token'
-        )
+        config = ModelSourceConfig(identifier='test', use_auth_token='old_token')
         assert config.hf_token == 'old_token'

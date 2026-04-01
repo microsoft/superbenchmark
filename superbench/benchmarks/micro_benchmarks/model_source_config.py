@@ -33,7 +33,7 @@ class ModelSourceConfig:
     revision: Optional[str] = None
     cache_dir: Optional[str] = None
     device_map: Optional[str] = None
-    use_auth_token: Optional[str] = None  # Deprecated
+    use_auth_token: Optional[str] = None    # Deprecated
     additional_kwargs: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -45,18 +45,14 @@ class ModelSourceConfig:
         # Normalize and validate source
         self.source = self.source.lower()
         if self.source not in ['in-house', 'huggingface']:
-            raise ValueError(
-                f"Invalid model source '{self.source}'. "
-                f"Must be 'in-house' or 'huggingface'."
-            )
+            raise ValueError(f"Invalid model source '{self.source}'. "
+                             f"Must be 'in-house' or 'huggingface'.")
 
         # Validate torch_dtype
         valid_dtypes = ['float32', 'float16', 'bfloat16', 'int8']
         if self.torch_dtype not in valid_dtypes:
-            raise ValueError(
-                f"Invalid torch_dtype '{self.torch_dtype}'. "
-                f'Must be one of {valid_dtypes}.'
-            )
+            raise ValueError(f"Invalid torch_dtype '{self.torch_dtype}'. "
+                             f'Must be one of {valid_dtypes}.')
 
         # Validate identifier is provided
         if not self.identifier:
@@ -72,10 +68,7 @@ class ModelSourceConfig:
         # Check identifier is not empty for HuggingFace models
         if self.source == 'huggingface':
             if not self.identifier or not self.identifier.strip():
-                return (
-                    False,
-                    'HuggingFace model identifier cannot be empty'
-                )
+                return (False, 'HuggingFace model identifier cannot be empty')
 
         return (True, '')
 

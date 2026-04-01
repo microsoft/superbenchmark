@@ -16,6 +16,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import Hugg
 
 class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
     """TensorRT inference micro-benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -160,9 +161,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             if hf_token:
                 load_kwargs['token'] = hf_token
 
-            hf_config = AutoConfig.from_pretrained(
-                self._args.model_identifier, trust_remote_code=True, **load_kwargs
-            )
+            hf_config = AutoConfig.from_pretrained(self._args.model_identifier, trust_remote_code=True, **load_kwargs)
             precision_str = self._args.precision    # already a string: 'fp16', 'fp32', 'int8'
             fits, param_m, est_gb, avail_gb = HuggingFaceModelLoader.check_memory_fits(
                 self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token

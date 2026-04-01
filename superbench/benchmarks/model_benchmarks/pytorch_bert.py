@@ -20,6 +20,7 @@ from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDat
 
 class BertBenchmarkModel(torch.nn.Module):
     """The BERT model for benchmarking."""
+
     def __init__(self, config, num_classes):
         """Constructor.
 
@@ -49,6 +50,7 @@ class BertBenchmarkModel(torch.nn.Module):
 
 class PytorchBERT(PytorchBase):
     """The BERT benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -127,7 +129,9 @@ class PytorchBERT(PytorchBase):
         Returns:
             torch.nn.Module: Wrapped BERT model with classification head.
         """
+
         class HFBERTWrapper(torch.nn.Module):
+
             def __init__(self, bert_model, hidden_size, num_classes):
                 super().__init__()
                 self._bert = bert_model
@@ -135,7 +139,7 @@ class PytorchBERT(PytorchBase):
 
             def forward(self, input):
                 outputs = self._bert(input)
-                result = self._linear(outputs[1])  # Use pooler output
+                result = self._linear(outputs[1])    # Use pooler output
                 return result
 
         return HFBERTWrapper(hf_model, hf_config.hidden_size, self._args.num_classes)
