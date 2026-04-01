@@ -17,7 +17,6 @@ Environment variables:
 """
 
 import argparse
-import os
 
 from superbench.benchmarks import Platform, Framework, BenchmarkRegistry
 from superbench.common.utils import logger
@@ -57,11 +56,11 @@ def run_huggingface_benchmark(model_key, distributed=False, precision='float32',
     # Build parameters with HuggingFace model source
     parameters = (
         f"{model_config['parameters']} "
-        f"--duration {duration} "
-        f"--precision {precision} "
-        f"--run_count 2 "
-        f"--model_source huggingface "
-        f"--model_identifier {hf_identifier}"
+        f'--duration {duration} '
+        f'--precision {precision} '
+        f'--run_count 2 '
+        f'--model_source huggingface '
+        f'--model_identifier {hf_identifier}'
     )
 
     if distributed:

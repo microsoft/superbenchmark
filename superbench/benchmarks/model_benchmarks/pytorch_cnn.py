@@ -78,11 +78,11 @@ class PytorchCNN(PytorchBase):
 
     def _create_model_wrapper(self, hf_model, hf_config):
         """Create CNN-specific model wrapper (ResNet/DenseNet).
-        
+
         Args:
             hf_model: The loaded HuggingFace CNN model.
             hf_config: The HuggingFace model configuration.
-            
+
         Returns:
             torch.nn.Module: Wrapped CNN model with classification head.
         """
@@ -99,19 +99,19 @@ class PytorchCNN(PytorchBase):
                 dummy_output = hf_model(dummy_input)
                 feature_dim = dummy_output.pooler_output.shape[1]
                 logger.info(f'Detected feature dimension from model output: {feature_dim}')
-        
+
         class HFResNetWrapper(torch.nn.Module):
             """Wrapper for HuggingFace ResNet/DenseNet model."""
             def __init__(self, hf_model, num_classes, feature_dim):
                 super().__init__()
                 self.model = hf_model
                 self.classifier = torch.nn.Linear(feature_dim, num_classes)
-                
+
             def forward(self, pixel_values):
                 outputs = self.model(pixel_values)
                 pooled = outputs.pooler_output.flatten(1)
                 return self.classifier(pooled)
-        
+
         return HFResNetWrapper(hf_model, self._args.num_classes, feature_dim)
 
     def _create_inhouse_model(self, precision):

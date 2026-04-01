@@ -4,7 +4,7 @@
 """Configuration classes for model source and loading."""
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 
 
 @dataclass
@@ -55,14 +55,14 @@ class ModelSourceConfig:
         if self.torch_dtype not in valid_dtypes:
             raise ValueError(
                 f"Invalid torch_dtype '{self.torch_dtype}'. "
-                f"Must be one of {valid_dtypes}."
+                f'Must be one of {valid_dtypes}.'
             )
 
         # Validate identifier is provided
         if not self.identifier:
-            raise ValueError("Model identifier must be provided.")
+            raise ValueError('Model identifier must be provided.')
 
-    def validate(self) -> tuple[bool, str]:
+    def validate(self) -> Tuple[bool, str]:
         """Validate configuration parameters.
 
         Returns:
@@ -74,7 +74,7 @@ class ModelSourceConfig:
             if not self.identifier or not self.identifier.strip():
                 return (
                     False,
-                    "HuggingFace model identifier cannot be empty"
+                    'HuggingFace model identifier cannot be empty'
                 )
 
         return (True, '')
@@ -94,5 +94,5 @@ class ModelSourceConfig:
             f"ModelSourceConfig(source='{self.source}', "
             f"identifier='{self.identifier}', "
             f"torch_dtype='{self.torch_dtype}', "
-            f"hf_token={token_status})"
+            f'hf_token={token_status})'
         )

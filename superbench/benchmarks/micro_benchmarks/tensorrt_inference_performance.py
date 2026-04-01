@@ -128,7 +128,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 f'--onnx={onnx_model}',
                 # build options
                 f'--optShapes=input:{input_shape}',
-                f'--memPoolSize=workspace:8192M',
+                '--memPoolSize=workspace:8192M',
                 None if self._args.precision == 'fp32' else f'--{self._args.precision}',
                 # inference options
                 f'--iterations={self._args.iterations}',
@@ -145,9 +145,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         Returns:
             bool: True if preprocessing succeeds.
         """
-        import torch
         import os
-        import time
         from transformers import AutoConfig
 
         if not self._args.model_identifier:
@@ -163,7 +161,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 load_kwargs['token'] = hf_token
 
             hf_config = AutoConfig.from_pretrained(
-                self._args.model_identifier, **load_kwargs
+                self._args.model_identifier, trust_remote_code=True, **load_kwargs
             )
             precision_str = self._args.precision    # already a string: 'fp16', 'fp32', 'int8'
             fits, param_m, est_gb, avail_gb = HuggingFaceModelLoader.check_memory_fits(
@@ -173,27 +171,43 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 return False
 
             # Step 2: Download and load the full model
-            logger.info(f'Loading HuggingFace model: {self._args.model_identifier}')
 
-            loader = HuggingFaceModelLoader()
-            hf_model, hf_config, tokenizer = loader.load_model(
-                model_identifier=self._args.model_identifier,
+            # Get GPU rank to create unique file paths and avoid race conditions
+            # when multiple processes export the same model simultaneously
+            gpu_rank = os.getenv('CUDA_VISIBLE_DEVICES', '0')
+            proc_rank = os.getenv('PROC_RANK', gpu_rank)
+
+            # Create model source config - load on CPU to avoid accelerate dispatching
+            # model across multiple GPUs which causes device mismatch during ONNX export.
+            # TensorRT handles precision internally via --fp16/--int8 flags,
+            # so the ONNX model is always exported in float32.
+            model_config = ModelSourceConfig(
+                source='huggingface',
+                identifier=self._args.model_identifier,
+                hf_token=hf_token,
                 torch_dtype='float32',
-                device='cpu',
                 device_map=None,
             )
+
+            logger.info(f'Loading HuggingFace model: {self._args.model_identifier}')
+
+            # Load model from HuggingFace on CPU
+            loader = HuggingFaceModelLoader()
+            hf_model, _, _ = loader.load_model_from_config(model_config, device='cpu')
             exporter = torch2onnxExporter()
 
-            # Get process rank for unique directory
-            proc_rank = os.environ.get('PROC_RANK', os.environ.get('CUDA_VISIBLE_DEVICES', '0'))
+            model_name = self._args.model_identifier.replace('/', '_')
+
+            # Prepare output path - use proc_rank subdirectory to avoid race conditions
+            # when multiple processes export the same model simultaneously
             output_dir = f'/tmp/tensorrt_onnx_rank_{proc_rank}'
             os.makedirs(output_dir, exist_ok=True)
 
             onnx_path = exporter.export_huggingface_model(
                 model=hf_model,
-                model_name=self._args.model_identifier.replace('/', '_'),
+                model_name=model_name,
                 batch_size=self._args.batch_size,
-                seq_length=getattr(self._args, 'seq_length', 512),
+                seq_length=self._args.seq_length,
                 output_dir=output_dir,
             )
 
@@ -236,7 +250,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 self.__bin_path,
                 f'--onnx={onnx_path}',
                 f'--optShapes={input_shapes}',
-                f'--memPoolSize=workspace:8192M',
+                '--memPoolSize=workspace:8192M',
                 None if self._args.precision == 'fp32' else f'--{self._args.precision}',
                 f'--iterations={self._args.iterations}',
                 '--percentile=99',
@@ -246,7 +260,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             # Store model name for result processing
             self._args.pytorch_models = [self._args.model_identifier.replace('/', '_')]
 
-            logger.info(f'Successfully prepared HuggingFace model for TensorRT inference')
+            logger.info('Successfully prepared HuggingFace model for TensorRT inference')
             return True
 
         except Exception as e:

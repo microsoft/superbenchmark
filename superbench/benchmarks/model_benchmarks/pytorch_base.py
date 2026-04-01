@@ -132,16 +132,16 @@ class PytorchBase(ModelBenchmark):
 
     def _create_model_source_config(self, precision=None):
         """Create ModelSourceConfig from benchmark arguments.
-        
+
         Args:
             precision: Optional precision override for torch_dtype.
-            
+
         Returns:
             ModelSourceConfig if model_source is specified, None otherwise.
         """
         if not hasattr(self._args, 'model_source'):
             return None
-            
+
         # Determine torch_dtype from precision if not explicitly set
         torch_dtype = 'float32'
         if precision is not None:
@@ -149,14 +149,14 @@ class PytorchBase(ModelBenchmark):
                 torch_dtype = 'float16'
             elif precision.value == 'bfloat16':
                 torch_dtype = 'bfloat16'
-                
+
         config = ModelSourceConfig(
             source=self._args.model_source,
             identifier=self._args.model_identifier or self._name,
             torch_dtype=torch_dtype,
             device_map='auto' if not self._gpu_available else None,
         )
-        
+
         return config
 
     def _estimate_param_count_from_config(self, hf_config):
@@ -207,11 +207,11 @@ class PytorchBase(ModelBenchmark):
         First estimates memory from the HF config (small download). If the model
         fits on the GPU, downloads pretrained weights. Otherwise, uses random
         weight initialization and logs a warning.
-        
+
         Args:
             model_config (ModelSourceConfig): Configuration for model loading.
             precision (Precision): Model precision (float32, float16, etc.).
-            
+
         Returns:
             bool: True if model is created successfully, False otherwise.
         """
@@ -270,7 +270,9 @@ class PytorchBase(ModelBenchmark):
                 cache_dir=None,
                 token=hf_token
             )
-            hf_model, _, tokenizer = loader.load_model_from_config(model_config, device='cpu', config_pretrained=hf_config)
+            hf_model, _, tokenizer = loader.load_model_from_config(
+                model_config, device='cpu', config_pretrained=hf_config
+            )
             self._tokenizer = tokenizer
 
             # Step 4: Wrap model for benchmark
@@ -288,25 +290,25 @@ class PytorchBase(ModelBenchmark):
                 f'Created HuggingFace model - identifier: {model_config.identifier}, '
                 f'precision: {precision.value}, parameters: {param_count:.2f}M'
             )
-            
+
             # Set precision
             self._model = self._model.to(dtype=getattr(torch, precision.value))
-            
+
             # Ensure model is in training mode (from_pretrained loads in eval mode)
             self._model.train()
-            
+
             # Move to GPU if available
             if self._gpu_available:
                 self._model = self._model.cuda()
-            
+
             # Create target tensor for training
             if hasattr(self._args, 'num_classes'):
                 self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
                 if self._gpu_available:
                     self._target = self._target.cuda()
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(
                 f'Failed to load HuggingFace model: {str(e)}'
@@ -466,8 +468,6 @@ class PytorchBase(ModelBenchmark):
                 )
                 self._args.enable_determinism = False
 
-
-        
         # HuggingFace model loading parameters
         self._parser.add_argument(
             '--model_source',

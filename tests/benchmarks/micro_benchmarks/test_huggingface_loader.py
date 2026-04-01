@@ -9,9 +9,7 @@ from unittest.mock import MagicMock, patch
 
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
-    ModelLoadError,
     ModelNotFoundError,
-    ModelIncompatibleError
 )
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
 
@@ -29,9 +27,10 @@ class TestHuggingFaceModelLoader:
         assert loader.cache_dir == '/tmp/test_cache'
         assert loader.token is None
 
-    def test_initialization_with_env_token(self, monkeypatch):
+    def test_initialization_with_env_token(self, monkeypatch, tmp_path):
         """Test loader picks up token from environment."""
         monkeypatch.setenv('HF_TOKEN', 'env_token')
+        monkeypatch.setenv('HF_HOME', str(tmp_path / 'hf_cache'))
         loader = HuggingFaceModelLoader()
         assert loader.token == 'env_token'
 
@@ -60,7 +59,6 @@ class TestHuggingFaceModelLoader:
         # Mock model
         mock_mdl = MagicMock()
         mock_mdl.parameters.return_value = [torch.randn(100, 100)]
-        mock_mdl.eval.return_value = mock_mdl
         mock_mdl.to.return_value = mock_mdl
         mock_model.from_pretrained.return_value = mock_mdl
 
@@ -74,9 +72,27 @@ class TestHuggingFaceModelLoader:
         assert config == mock_cfg
         assert tokenizer == mock_tok
 
+        # Verify mocks were called with correct arguments
+        mock_config.from_pretrained.assert_called_once()
+        call_kwargs = mock_config.from_pretrained.call_args
+        assert call_kwargs[0][0] == 'test/model'
+        assert call_kwargs[1]['trust_remote_code'] is True
+        assert call_kwargs[1]['cache_dir'] == '/tmp/test_cache'
+
+        mock_model.from_pretrained.assert_called_once()
+        model_call_kwargs = mock_model.from_pretrained.call_args
+        assert model_call_kwargs[1]['trust_remote_code'] is True
+        assert model_call_kwargs[1]['cache_dir'] == '/tmp/test_cache'
+
+        mock_tokenizer.from_pretrained.assert_called_once()
+
+        # Verify model was moved to the requested device
+        mock_mdl.to.assert_called_once_with('cpu')
+
+    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoTokenizer')
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModel')
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoConfig')
-    def test_load_model_not_found(self, mock_config, mock_model, loader):
+    def test_load_model_not_found(self, mock_config, mock_model, mock_tokenizer, loader):
         """Test loading non-existent model."""
         mock_config.from_pretrained.side_effect = OSError('404 Client Error')
 
@@ -100,4 +116,3 @@ class TestHuggingFaceModelLoader:
 
         size = loader._get_model_size(mock_model)
         assert abs(size - 1.25) < 0.01  # Should be ~1.25M
-
