@@ -33,18 +33,18 @@ class TestHuggingFaceE2E:
 
     def test_load_tiny_bert_model(self, loader):
         """Test loading a tiny BERT model from HuggingFace Hub.
-        
+
         Uses prajjwal1/bert-tiny which is a small public BERT model (~17MB).
         """
         model, config, tokenizer = loader.load_model(
             'prajjwal1/bert-tiny',
-            device=None  # Don't specify device to avoid accelerate requirement
+            device='cpu'
         )
-        
+
         assert model is not None
         assert config is not None
         assert config.model_type == 'bert'
-        
+
         # Verify model can do a forward pass
         dummy_input = torch.randint(0, 1000, (1, 10))
         with torch.no_grad():
@@ -53,18 +53,18 @@ class TestHuggingFaceE2E:
 
     def test_load_distilgpt2_model(self, loader):
         """Test loading DistilGPT2 model from HuggingFace Hub.
-        
+
         Uses distilbert/distilgpt2 which is a small public GPT-2 model (~82MB).
         """
         model, config, tokenizer = loader.load_model(
             'distilbert/distilgpt2',
-            device=None  # Don't specify device to avoid accelerate requirement
+            device='cpu'
         )
-        
+
         assert model is not None
         assert config is not None
         assert config.model_type == 'gpt2'
-        
+
         # Verify model can do a forward pass
         dummy_input = torch.randint(0, 1000, (1, 10))
         with torch.no_grad():
@@ -72,22 +72,15 @@ class TestHuggingFaceE2E:
         assert output is not None
 
     def test_load_model_from_config(self, loader):
-        """Test loading model using ModelSourceConfig.
-        
-        Note: Uses device=None to avoid accelerate requirement.
-        """
+        """Test loading model using ModelSourceConfig via load_model_from_config."""
         config = ModelSourceConfig(
             source='huggingface',
             identifier='prajjwal1/bert-tiny',
             torch_dtype='float32'
         )
-        
-        # Load directly with device=None to avoid accelerate requirement
-        model, hf_config, tokenizer = loader.load_model(
-            model_identifier=config.identifier,
-            device=None
-        )
-        
+
+        model, hf_config, tokenizer = loader.load_model_from_config(config, device='cpu')
+
         assert model is not None
         assert hf_config.model_type == 'bert'
 
@@ -95,27 +88,27 @@ class TestHuggingFaceE2E:
         """Test loading model and converting dtype after load."""
         model, config, tokenizer = loader.load_model(
             'prajjwal1/bert-tiny',
-            device=None  # Don't specify device to avoid accelerate requirement
+            device='cpu'
         )
-        
+
         # Convert to float32 after loading
         model = model.float()
-        
+
         # Check model parameters are float32
         param = next(model.parameters())
         assert param.dtype == torch.float32
 
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason="Requires GPU")
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='Requires GPU')
     def test_load_model_to_gpu(self, loader):
         """Test loading model and moving to GPU."""
         model, config, tokenizer = loader.load_model(
             'prajjwal1/bert-tiny',
-            device=None  # Load to CPU first
+            device='cpu'
         )
-        
+
         # Move to GPU manually
         model = model.cuda()
-        
+
         # Check model is on GPU
         param = next(model.parameters())
         assert param.device.type == 'cuda'
@@ -124,9 +117,9 @@ class TestHuggingFaceE2E:
         """Test that architecture is correctly detected from loaded model."""
         model, config, tokenizer = loader.load_model(
             'prajjwal1/bert-tiny',
-            device=None
+            device='cpu'
         )
-        
+
         # Architecture should be detected from config
         assert config.model_type is not None
         assert 'bert' in config.model_type.lower()

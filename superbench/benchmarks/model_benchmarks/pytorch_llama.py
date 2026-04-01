@@ -124,17 +124,17 @@ class PytorchLlama(PytorchBase):
         model_config = self._create_model_source_config(precision)
         if model_config and model_config.is_huggingface():
             return self._create_huggingface_model(model_config, precision)
-        
+
         # Default in-house model creation
         return self._create_inhouse_model(precision)
-    
+
     def _create_model_wrapper(self, hf_model, hf_config):
         """Create Llama-specific model wrapper.
-        
+
         Args:
             hf_model: The loaded HuggingFace Llama model.
             hf_config: The HuggingFace model configuration.
-            
+
         Returns:
             torch.nn.Module: Wrapped Llama model with classification head.
         """
@@ -144,20 +144,20 @@ class PytorchLlama(PytorchBase):
                 super().__init__()
                 self._llama = hf_llama_model
                 self._linear = torch.nn.Linear(hf_llama_model.config.hidden_size, num_classes)
-            
+
             def forward(self, input):
                 outputs = self._llama(input)
                 result = self._linear(outputs[0])
                 return result
-        
+
         return HFLlamaWrapper(hf_model, self._args.num_classes)
-    
+
     def _create_inhouse_model(self, precision):
         """Create in-house model (original implementation).
-        
+
         Args:
             precision (Precision): precision of model and input data.
-            
+
         Returns:
             bool: True if model created successfully, False otherwise.
         """

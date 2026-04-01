@@ -175,7 +175,6 @@ class ORTInferenceBenchmark(MicroBenchmark):
         Returns:
             bool: True if preprocessing succeeds.
         """
-        import torch
         import os
 
         if not self._args.model_identifier:
@@ -192,7 +191,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             if hf_token:
                 load_kwargs['token'] = hf_token
             hf_config = AutoConfig.from_pretrained(
-                self._args.model_identifier, **load_kwargs
+                self._args.model_identifier, trust_remote_code=True, **load_kwargs
             )
 
             precision_str = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
@@ -232,8 +231,13 @@ class ORTInferenceBenchmark(MicroBenchmark):
             proc_output_path = self.__model_cache_path / f'rank_{proc_rank}'
             proc_output_path.mkdir(parents=True, exist_ok=True)
 
-            # Include precision in model name to match expected filename format
-            model_name_with_precision = f'{model_name}.{self._args.precision.value}'
+            # For INT8, export as float32 first then quantize (matching in-house model behavior).
+            # For other precisions, include precision in the model name directly.
+            if self._args.precision == Precision.INT8:
+                export_precision = Precision.FLOAT32.value
+            else:
+                export_precision = self._args.precision.value
+            model_name_with_precision = f'{model_name}.{export_precision}'
 
             # Export directly to final destination to avoid path issues with external data
             onnx_path = exporter.export_huggingface_model(
@@ -251,15 +255,15 @@ class ORTInferenceBenchmark(MicroBenchmark):
             # Apply INT8 quantization if requested (matching in-house model behavior)
             if self._args.precision == Precision.INT8:
                 from onnxruntime.quantization import quantize_dynamic
-                quantized_path = str(proc_output_path / f'{model_name}.{self._args.precision.value}.onnx')
+                quantized_path = str(proc_output_path / f'{model_name}.{Precision.INT8.value}.onnx')
                 quantize_dynamic(onnx_path, quantized_path)
-                logger.info(f'Applied INT8 quantization to HuggingFace model')
+                logger.info('Applied INT8 quantization to HuggingFace model')
 
             # Update model list and cache path for benchmarking
             self._args.pytorch_models = [model_name]
             self.__model_cache_path = proc_output_path
 
-            logger.info(f'Successfully prepared HuggingFace model for ORT inference')
+            logger.info('Successfully prepared HuggingFace model for ORT inference')
             return True
 
         except Exception as e:
@@ -280,15 +284,13 @@ class ORTInferenceBenchmark(MicroBenchmark):
                 f'CUDAExecutionProvider is not available (available: {available}).'
             )
             return False
-        providers = ['CUDAExecutionProvider']
-        logger.info(f'ORT Inference - using providers: {providers}')
 
         for model in self._args.pytorch_models:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = self.__graph_opt_level[self._args.graph_opt_level]
             file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision)
             ort_sess = ort.InferenceSession(
-                f'{self.__model_cache_path / file_name}', sess_options, providers=providers
+                f'{self.__model_cache_path / file_name}', sess_options, providers=['CUDAExecutionProvider']
             )
 
             elapse_times = self.__inference(ort_sess)

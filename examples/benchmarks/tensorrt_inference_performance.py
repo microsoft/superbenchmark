@@ -9,15 +9,16 @@ Commands to run:
     python3 examples/benchmarks/tensorrt_inference_performance.py --model_source in-house
 
   HuggingFace models:
-    python3 examples/benchmarks/tensorrt_inference_performance.py --model_source huggingface --model_identifier bert-base-uncased
-    python3 examples/benchmarks/tensorrt_inference_performance.py --model_source huggingface --model_identifier microsoft/resnet-50
+    python3 examples/benchmarks/tensorrt_inference_performance.py \
+      --model_source huggingface --model_identifier bert-base-uncased
+    python3 examples/benchmarks/tensorrt_inference_performance.py \
+      --model_source huggingface --model_identifier microsoft/resnet-50
 
 Environment variables:
   HF_TOKEN: HuggingFace token for gated models (optional)
 """
 
 import argparse
-import os
 
 from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.common.utils import logger
@@ -76,7 +77,10 @@ if __name__ == '__main__':
         '--model_source', type=str, default='in-house', choices=['in-house', 'huggingface'],
         help='Source of the model: in-house (default) or huggingface'
     )
-    parser.add_argument('--model_identifier', type=str, default='bert-base-uncased', help='HuggingFace model identifier')
+    parser.add_argument(
+        '--model_identifier', type=str, default='bert-base-uncased',
+        help='HuggingFace model identifier'
+    )
     parser.add_argument('--precision', type=str, default='fp16', choices=['fp32', 'fp16', 'int8'])
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--seq_length', type=int, default=512)
@@ -84,6 +88,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.model_source == 'huggingface':
-        run_huggingface_benchmark(args.model_identifier, args.precision, args.batch_size, args.seq_length, args.iterations)
+        run_huggingface_benchmark(
+            args.model_identifier, args.precision, args.batch_size,
+            args.seq_length, args.iterations
+        )
     else:
         run_inhouse_benchmark()

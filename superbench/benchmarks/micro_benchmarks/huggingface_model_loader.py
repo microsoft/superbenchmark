@@ -4,9 +4,8 @@
 """Hugging Face model loader for benchmarking."""
 
 import os
-import warnings
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any, List
+from typing import Optional, Tuple
 
 import torch
 from transformers import (
@@ -173,7 +172,7 @@ class HuggingFaceModelLoader:
             if 'not found' in str(e).lower() or '404' in str(e):
                 raise ModelNotFoundError(
                     f"Model '{model_identifier}' not found on Hugging Face Hub. "
-                    f"Please check the model ID at https://huggingface.co/models"
+                    f'Please check the model ID at https://huggingface.co/models'
                 ) from e
             raise ModelLoadError(f"Failed to load model '{model_identifier}': {e}") from e
         except Exception as e:
@@ -206,7 +205,7 @@ class HuggingFaceModelLoader:
         # Validate config
         is_valid, error = config.validate()
         if not is_valid:
-            raise ValueError(f"Invalid configuration: {error}")
+            raise ValueError(f'Invalid configuration: {error}')
 
         if device is None:
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -247,7 +246,7 @@ class HuggingFaceModelLoader:
         if dtype_str.lower() not in dtype_map:
             raise ValueError(
                 f"Invalid dtype '{dtype_str}'. "
-                f"Must be one of {list(dtype_map.keys())}"
+                f'Must be one of {list(dtype_map.keys())}'
             )
 
         return dtype_map[dtype_str.lower()]
