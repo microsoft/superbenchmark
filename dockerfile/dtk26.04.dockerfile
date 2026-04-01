@@ -42,6 +42,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    python3.10-venv \
     rsync \
     sudo \
     util-linux \
@@ -131,11 +132,6 @@ ENV PATH="${MPI_HOME}/bin:${UCX_HOME}/bin:/opt/superbench/bin:/usr/local/bin/${P
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
 
-RUN sed -i '/NCCL_/d' /etc/bash.bashrc && \
-    echo PATH="$PATH" > /etc/environment && \
-    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
-    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
-
 WORKDIR ${SB_HOME}
 
 COPY third_party third_party
@@ -156,10 +152,22 @@ RUN --mount=type=bind,from=hyhal,source=/,target=/opt/hyhal \
     -o rocm_megatron_lm
 
 COPY . .
-ENV USE_HIP_DATATYPE=1
-ENV USE_HIPBLAS_COMPUTETYPE=1
+
+ARG SB_PIP_INDEX_URL=https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+ENV USE_HIP_DATATYPE=1 \
+    USE_HIPBLAS_COMPUTETYPE=1 \
+    VIRTUAL_ENV=/opt/superbench-venv
+ENV PATH="${VIRTUAL_ENV}/bin:${MPI_HOME}/bin:${UCX_HOME}/bin:/opt/superbench/bin:/usr/local/bin/${PATH:+:${PATH}}"
+
+RUN sed -i '/NCCL_/d' /etc/bash.bashrc && \
+    echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment && \
+    echo VIRTUAL_ENV="$VIRTUAL_ENV" >> /etc/environment
+
 RUN --mount=type=bind,from=hyhal,source=/,target=/opt/hyhal \
-    python3 -m pip install --upgrade pip wheel setuptools==65.7 mpi4py && \
-    python3 -m pip install --no-build-isolation .[hgworker]  && \
+    python3 -m venv --system-site-packages ${VIRTUAL_ENV} && \
+    python3 -m pip install -i ${SB_PIP_INDEX_URL} --upgrade pip wheel setuptools==65.7 mpi4py && \
+    python3 -m pip install -i ${SB_PIP_INDEX_URL} --no-build-isolation .[hgworker] && \
     make cppbuild  && \
     make postinstall
