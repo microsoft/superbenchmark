@@ -164,7 +164,9 @@ class GpuHpcgBenchmark(MicroBenchmarkWithInvoke):
         parsed_results = {}
         required_metrics = {
             'final_gflops',
+            'final_bandwidth',
             'final_gflops_per_process',
+            'final_bandwidth_per_process',
             'ddot_gflops',
             'ddot_bandwidth',
             'ddot_gflops_per_process',
@@ -253,9 +255,8 @@ class GpuHpcgBenchmark(MicroBenchmarkWithInvoke):
 
         parsed_results[f'{prefix}_gflops'] = gflops_values[0]
         parsed_results[f'{prefix}_gflops_per_process'] = gflops_values[1]
-        if prefix != 'final':
-            parsed_results[f'{prefix}_bandwidth'] = bandwidth_values[0]
-            parsed_results[f'{prefix}_bandwidth_per_process'] = bandwidth_values[1]
+        parsed_results[f'{prefix}_bandwidth'] = bandwidth_values[0]
+        parsed_results[f'{prefix}_bandwidth_per_process'] = bandwidth_values[1]
         return True
 
     def _parse_time_line(self, line, parsed_results):

@@ -201,7 +201,9 @@ When collecting multiple MPI scales or problem sizes, use separate benchmark sec
 | Name                                  | Unit               | Description                                          |
 |---------------------------------------|--------------------|------------------------------------------------------|
 | gpu-hpcg/final_gflops                 | FLOPS (GFLOPS)     | Final rocHPCG score.                                 |
+| gpu-hpcg/final_bandwidth              | bandwidth (GB/s)   | Final rocHPCG bandwidth.                             |
 | gpu-hpcg/final_gflops_per_process     | FLOPS (GFLOPS)     | Final rocHPCG score per process.                     |
+| gpu-hpcg/final_bandwidth_per_process  | bandwidth (GB/s)   | Final rocHPCG bandwidth per process.                 |
 | gpu-hpcg/ddot_gflops                  | FLOPS (GFLOPS)     | DDOT throughput.                                     |
 | gpu-hpcg/ddot_bandwidth               | bandwidth (GB/s)   | DDOT bandwidth.                                      |
 | gpu-hpcg/ddot_gflops_per_process      | FLOPS (GFLOPS)     | DDOT throughput per process.                         |
