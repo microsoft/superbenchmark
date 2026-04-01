@@ -11,7 +11,6 @@ Commands to run:
   python3 examples/benchmarks/pytorch_huggingface_models.py --model bert (BERT model)
   python3 examples/benchmarks/pytorch_huggingface_models.py --model gpt2 (GPT-2 model)
   torchrun --nproc_per_node=2 examples/benchmarks/pytorch_huggingface_models.py --distributed (Distributed, 2 GPUs)
-  torchrun --nproc_per_node=$NUM_GPUS examples/benchmarks/pytorch_huggingface_models.py --distributed (Distributed, N GPUs)
 
 Environment variables:
   HF_TOKEN: HuggingFace token for gated models (optional)
@@ -40,7 +39,7 @@ HF_MODELS = {
 
 def run_huggingface_benchmark(model_key, distributed=False, precision='float32', duration=60):
     """Run a benchmark using a HuggingFace model.
-    
+
     Args:
         model_key: Key to look up model config in HF_MODELS.
         distributed: Whether to enable distributed training.
@@ -50,11 +49,11 @@ def run_huggingface_benchmark(model_key, distributed=False, precision='float32',
     if model_key not in HF_MODELS:
         logger.error(f'Unknown model: {model_key}. Available: {list(HF_MODELS.keys())}')
         return None
-    
+
     model_config = HF_MODELS[model_key]
     model_name = model_config['name']
     hf_identifier = model_config['identifier']
-    
+
     # Build parameters with HuggingFace model source
     parameters = (
         f"{model_config['parameters']} "
@@ -64,18 +63,18 @@ def run_huggingface_benchmark(model_key, distributed=False, precision='float32',
         f"--model_source huggingface "
         f"--model_identifier {hf_identifier}"
     )
-    
+
     if distributed:
         parameters += ' --distributed_impl ddp --distributed_backend nccl'
-    
+
     logger.info(f'Running HuggingFace benchmark: {model_name} ({hf_identifier})')
     logger.info(f'Parameters: {parameters}')
-    
+
     # Create context and run benchmark
     context = BenchmarkRegistry.create_benchmark_context(
         model_name, platform=Platform.CUDA, parameters=parameters, framework=Framework.PYTORCH
     )
-    
+
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:
         logger.info(
@@ -83,7 +82,7 @@ def run_huggingface_benchmark(model_key, distributed=False, precision='float32',
                 benchmark.name, benchmark.return_code, benchmark.result
             )
         )
-    
+
     return benchmark
 
 
@@ -124,7 +123,7 @@ if __name__ == '__main__':
         help='Run benchmarks for all available models'
     )
     args = parser.parse_args()
-    
+
     if args.all:
         # Run all models
         for model_key in HF_MODELS:
