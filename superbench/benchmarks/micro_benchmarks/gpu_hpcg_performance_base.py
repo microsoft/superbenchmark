@@ -13,21 +13,15 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 class GpuHpcgBenchmark(MicroBenchmarkWithInvoke):
     """The GPU HPCG benchmark base class."""
-    _operation_metric_map = {
-        'DDOT': 'ddot',
-        'WAXPBY': 'waxpby',
-        'SpMV': 'spmv',
-        'MG': 'mg',
-        'Total': 'total',
-        'Final': 'final',
-    }
-    _operation_pattern = re.compile(
-        r'^(DDOT|WAXPBY|SpMV|MG|Total|Final)\s*=\s*'
-        r'([0-9]+(?:\.[0-9]+)?)\s+GFlop/s\s+\(([0-9]+(?:\.[0-9]+)?)\s+GB/s\)\s+'
-        r'([0-9]+(?:\.[0-9]+)?)\s+GFlop/s per process\s+\(\s*([0-9]+(?:\.[0-9]+)?)\s+GB/s per process\)$'
-    )
-    _time_pattern = re.compile(r'^(Total Time|Setup Time|Optimization Time):\s*([0-9]+(?:\.[0-9]+)?)\s+sec$')
-    _domain_pattern = re.compile(r'^(Local|Global|Process) domain:\s*([0-9]+)\s+x\s+([0-9]+)\s+x\s+([0-9]+)$')
+    _mpi_output_prefix_pattern = re.compile(r'^\[\d+,\d+\]<(?:stdout|stderr)>:\s*')
+    _operation_metric_map = {'DDOT': 'ddot', 'WAXPBY': 'waxpby', 'SpMV': 'spmv', 'MG': 'mg', 'Total': 'total',
+                             'Final': 'final'}
+    _time_metric_map = {'Total Time': 'total_time', 'Setup Time': 'setup_time', 'Optimization Time': 'optimization_time'}
+    _domain_metric_map = {'Local domain': 'local_domain', 'Global domain': 'global_domain',
+                          'Process domain': 'process_domain'}
+    _float_pattern = re.compile(r'([0-9]+(?:\.[0-9]+)?)\s+(GFlop/s|GB/s)')
+    _dimension_pattern = re.compile(r'([0-9]+)\s*x\s*([0-9]+)\s*x\s*([0-9]+)')
+    _time_value_pattern = re.compile(r'([0-9]+(?:\.[0-9]+)?)\s+sec')
     _invalid_markers = ['*** WARNING *** INVALID RUN', '*** WARNING *** THIS IS NOT A VALID RUN ***']
 
     def __init__(self, name, parameters=''):
@@ -162,6 +156,11 @@ class GpuHpcgBenchmark(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
 
+        # Under MPI only rank 0 emits the complete rocHPCG summary.
+        rank = int(os.getenv('OMPI_COMM_WORLD_RANK', '0'))
+        if rank > 0:
+            return True
+
         parsed_results = {}
         required_metrics = {
             'final_gflops',
@@ -202,36 +201,17 @@ class GpuHpcgBenchmark(MicroBenchmarkWithInvoke):
 
         for raw_line in raw_output.splitlines():
             line = raw_line.strip()
+            line = self._mpi_output_prefix_pattern.sub('', line)
             if not line:
                 continue
 
-            operation_match = self._operation_pattern.match(line)
-            if operation_match:
-                prefix = self._operation_metric_map[operation_match.group(1)]
-                total_gflops = float(operation_match.group(2))
-                total_bandwidth = float(operation_match.group(3))
-                per_process_gflops = float(operation_match.group(4))
-                per_process_bandwidth = float(operation_match.group(5))
-
-                parsed_results[f'{prefix}_gflops'] = total_gflops
-                parsed_results[f'{prefix}_gflops_per_process'] = per_process_gflops
-                if prefix != 'final':
-                    parsed_results[f'{prefix}_bandwidth'] = total_bandwidth
-                    parsed_results[f'{prefix}_bandwidth_per_process'] = per_process_bandwidth
+            if self._parse_operation_line(line, parsed_results):
                 continue
 
-            time_match = self._time_pattern.match(line)
-            if time_match:
-                metric_prefix = time_match.group(1).lower().replace(' ', '_')
-                parsed_results[metric_prefix] = float(time_match.group(2))
+            if self._parse_time_line(line, parsed_results):
                 continue
 
-            domain_match = self._domain_pattern.match(line)
-            if domain_match:
-                domain_prefix = domain_match.group(1).lower()
-                parsed_results[f'{domain_prefix}_domain_x'] = int(domain_match.group(2))
-                parsed_results[f'{domain_prefix}_domain_y'] = int(domain_match.group(3))
-                parsed_results[f'{domain_prefix}_domain_z'] = int(domain_match.group(4))
+            self._parse_domain_line(line, parsed_results)
 
         parsed_results['is_valid'] = 0 if any(marker in raw_output for marker in self._invalid_markers) else 1
 
@@ -249,3 +229,61 @@ class GpuHpcgBenchmark(MicroBenchmarkWithInvoke):
             self._result.add_result(metric, value)
 
         return True
+
+    def _parse_operation_line(self, line, parsed_results):
+        """Parse one rocHPCG operation summary line."""
+        operation_key = None
+        for candidate in self._operation_metric_map:
+            if line.startswith(candidate) and '=' in line:
+                operation_key = candidate
+                break
+
+        if operation_key is None:
+            return False
+
+        matches = self._float_pattern.findall(line)
+        if len(matches) < 4:
+            return False
+
+        prefix = self._operation_metric_map[operation_key]
+        gflops_values = [float(value) for value, unit in matches if unit == 'GFlop/s']
+        bandwidth_values = [float(value) for value, unit in matches if unit == 'GB/s']
+        if len(gflops_values) < 2 or len(bandwidth_values) < 2:
+            return False
+
+        parsed_results[f'{prefix}_gflops'] = gflops_values[0]
+        parsed_results[f'{prefix}_gflops_per_process'] = gflops_values[1]
+        if prefix != 'final':
+            parsed_results[f'{prefix}_bandwidth'] = bandwidth_values[0]
+            parsed_results[f'{prefix}_bandwidth_per_process'] = bandwidth_values[1]
+        return True
+
+    def _parse_time_line(self, line, parsed_results):
+        """Parse one rocHPCG time summary line."""
+        for label, metric in self._time_metric_map.items():
+            if not line.startswith(label + ':'):
+                continue
+
+            match = self._time_value_pattern.search(line)
+            if match:
+                parsed_results[metric] = float(match.group(1))
+                return True
+
+        return False
+
+    def _parse_domain_line(self, line, parsed_results):
+        """Parse one rocHPCG domain summary line."""
+        for label, metric_prefix in self._domain_metric_map.items():
+            if not line.startswith(label + ':'):
+                continue
+
+            match = self._dimension_pattern.search(line)
+            if not match:
+                return False
+
+            parsed_results[f'{metric_prefix}_x'] = int(match.group(1))
+            parsed_results[f'{metric_prefix}_y'] = int(match.group(2))
+            parsed_results[f'{metric_prefix}_z'] = int(match.group(3))
+            return True
+
+        return False

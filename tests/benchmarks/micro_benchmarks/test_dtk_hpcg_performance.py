@@ -3,8 +3,10 @@
 
 """Tests for DTK gpu-hpcg benchmark."""
 
+import os
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, Platform, ReturnCode
@@ -15,47 +17,47 @@ class DtkHpcgBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     """Tests for DTK gpu-hpcg benchmark."""
 
     example_raw_output = """
-rocHPCG version: 0.8.8-62f1830-dirty (based on hpcg-3.1)
+[1,0]<stdout>: rocHPCG version: 0.8.8-62f1830-dirty (based on hpcg-3.1)
 
-Setup Phase took 0.12 sec
+[1,0]<stdout>: Setup Phase took 0.12 sec
 
-Starting Reference CG Phase ...
+[1,0]<stdout>: Starting Reference CG Phase ...
 
 
-Optimization Phase took 0.25 sec
+[1,0]<stdout>: Optimization Phase took 0.25 sec
 
-Validation Testing Phase ...
+[1,0]<stdout>: Validation Testing Phase ...
 
-Optimized CG Setup ...
+[1,0]<stdout>: Optimized CG Setup ...
 
-HIP Initial Residual = 2.668768e+04
+[1,0]<stdout>: HIP Initial Residual = 2.668768e+04
 
-Total device memory usage: 19550 MByte (29152 MByte)
+[1,0]<stdout>: Total device memory usage: 19550 MByte (29152 MByte)
 
-Starting Benchmarking Phase ...
+[1,0]<stdout>: Starting Benchmarking Phase ...
 
-Performing (at least) 2 CG sets in 1.0 seconds ...
-CG set 1 / 2    6881.2186 GFlop/s     (215.0381 GFlop/s per process)    50%    0.0 sec left
-CG set 2 / 2    6904.9453 GFlop/s     (215.7795 GFlop/s per process)    100%    0.0 sec left
+[1,0]<stdout>: Performing (at least) 2 CG sets in 1.0 seconds ...
+[1,0]<stdout>: CG set 1 / 2    6881.2186 GFlop/s     (215.0381 GFlop/s per process)    50%    0.0 sec left
+[1,0]<stdout>: CG set 2 / 2    6904.9453 GFlop/s     (215.7795 GFlop/s per process)    100%    0.0 sec left
 
-Local domain: 560 x 280 x 280
-Global domain: 2240 x 1120 x 560
-Process domain: 4 x 4 x 2
+[1,0]<stdout>: Local domain: 560 x 280 x 280
+[1,0]<stdout>: Global domain: 2240 x 1120 x 560
+[1,0]<stdout>: Process domain: 4 x 4 x 2
 
-Total Time: 7.55 sec
-Setup Time: 0.12 sec
-Optimization Time: 0.25 sec
+[1,0]<stdout>: Total Time: 7.55 sec
+[1,0]<stdout>: Setup Time: 0.12 sec
+[1,0]<stdout>: Optimization Time: 0.25 sec
 
-*** WARNING *** INVALID RUN
+[1,0]<stdout>: *** WARNING *** INVALID RUN
 
-DDOT   =  5849.4 GFlop/s (46794.9 GB/s)     182.8 GFlop/s per process ( 1462.3 GB/s per process)
-WAXPBY =  3052.0 GFlop/s (36623.8 GB/s)      95.4 GFlop/s per process ( 1144.5 GB/s per process)
-SpMV   =  5473.9 GFlop/s (34468.8 GB/s)     171.1 GFlop/s per process ( 1077.1 GB/s per process)
-MG     =  7716.9 GFlop/s (59557.1 GB/s)     241.2 GFlop/s per process ( 1861.2 GB/s per process)
-Total  =  6971.0 GFlop/s (52859.9 GB/s)     217.8 GFlop/s per process ( 1651.9 GB/s per process)
-Final  =  6904.9 GFlop/s (52359.0 GB/s)     215.8 GFlop/s per process ( 1636.2 GB/s per process)
+[1,0]<stdout>: DDOT   =  5849.4 GFlop/s ( 46794.9 GB/s)     182.8 GFlop/s per process ( 1462.3 GB/s per process)
+[1,0]<stdout>: WAXPBY =  3052.0 GFlop/s ( 36623.8 GB/s)      95.4 GFlop/s per process ( 1144.5 GB/s per process)
+[1,0]<stdout>: SpMV   =  5473.9 GFlop/s ( 34468.8 GB/s)     171.1 GFlop/s per process ( 1077.1 GB/s per process)
+[1,0]<stdout>: MG     =  7716.9 GFlop/s ( 59557.1 GB/s)     241.2 GFlop/s per process ( 1861.2 GB/s per process)
+[1,0]<stdout>: Total  =  6971.0 GFlop/s ( 52859.9 GB/s)     217.8 GFlop/s per process ( 1651.9 GB/s per process)
+[1,0]<stdout>: Final  =  6904.9 GFlop/s ( 52359.0 GB/s)     215.8 GFlop/s per process ( 1636.2 GB/s per process)
 
-*** WARNING *** THIS IS NOT A VALID RUN ***
+[1,0]<stdout>: *** WARNING *** THIS IS NOT A VALID RUN ***
 """
 
     @classmethod
@@ -135,8 +137,16 @@ Final  =  6904.9 GFlop/s (52359.0 GB/s)     215.8 GFlop/s per process ( 1636.2 G
         """Test DTK gpu-hpcg parsing failure when required summary is missing."""
         benchmark = self.get_benchmark()
         invalid_output = self.example_raw_output.replace(
-            'Process domain: 4 x 4 x 2\n\n',
+            '[1,0]<stdout>: Process domain: 4 x 4 x 2\n\n',
             '',
         )
 
         self.assertFalse(benchmark._process_raw_result(0, invalid_output))
+
+    def test_dtk_hpcg_result_parsing_ignores_non_root_mpi_rank(self):
+        """Test DTK gpu-hpcg parser skips non-root MPI ranks without summary output."""
+        benchmark = self.get_benchmark()
+        rank_only_output = '[1,2]<stdout>: [2]: Node Binding: Process 2 GPU: 2, NUMA: 0'
+
+        with patch.dict(os.environ, {'OMPI_COMM_WORLD_RANK': '2'}):
+            self.assertTrue(benchmark._process_raw_result(0, rank_only_output))
