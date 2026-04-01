@@ -193,15 +193,66 @@ class SuperBenchRunner():
                 ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
                 bind_to=mode.bind_to,
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
-                env_list=' '.join(
-                    f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
-                    if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()
-                ),
+                env_list=' '.join(self.__format_mpi_env_args(mode.env, mode.proc_rank, mode.proc_num)),
                 command=exec_command,
             )
         else:
             logger.warning('Unknown mode %s.', mode.name)
         return mode_command.strip()
+
+    def __format_mode_env_value(self, value, proc_rank, proc_num):
+        """Format mode env value.
+
+        Args:
+            value: Env value from config.
+            proc_rank (int): Process rank.
+            proc_num (int): Process count.
+
+        Returns:
+            str | None: Formatted value, or None to export existing env only.
+        """
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value.format(proc_rank=proc_rank, proc_num=proc_num)
+        if isinstance(value, (int, float, bool)):
+            return str(value)
+        raise ValueError(f'Unsupported env value type: {type(value)}')
+
+    def __format_mpi_env_args(self, env_dict, proc_rank, proc_num):
+        """Format env args for mpirun.
+
+        Args:
+            env_dict (DictConfig): Mode env config.
+            proc_rank (int): Process rank.
+            proc_num (int): Process count.
+
+        Returns:
+            list[str]: Formatted mpirun env args.
+        """
+        env_args = []
+        for key, value in env_dict.items():
+            formatted_value = self.__format_mode_env_value(value, proc_rank, proc_num)
+            env_args.append(
+                f'-x {key}' if formatted_value is None else f'-x {self.__quote_env_assignment(key, formatted_value)}'
+            )
+        return env_args
+
+    def __quote_env_assignment(self, key, value):
+        """Quote env assignment for shell command composition.
+
+        Use double quotes so the result can be embedded inside the existing
+        bash -lc '...' wrapper without breaking the outer single quotes.
+
+        Args:
+            key (str): Env key.
+            value (str): Env value.
+
+        Returns:
+            str: Double-quoted KEY=value assignment.
+        """
+        escaped = str(value).replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+        return f'"{key}={escaped}"'
 
     def get_failure_count(self):
         """Get failure count during Ansible run.
@@ -489,9 +540,13 @@ class SuperBenchRunner():
         if self._docker_config.skip:
             env_list = 'set -o allexport && source /tmp/sb.env && set +o allexport'
         for k, v in mode.env.items():
-            if isinstance(v, str):
-                envvar = f'{k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
-                env_list += f' -e {envvar}' if not self._docker_config.skip else f' && export {envvar}'
+            formatted_value = self.__format_mode_env_value(v, mode.proc_rank, mode.proc_num)
+            if formatted_value is not None:
+                envvar = self.__quote_env_assignment(k, formatted_value)
+                env_list += (
+                    f' -e {envvar}'
+                    if not self._docker_config.skip else f' && export {envvar}'
+                )
 
         fcmd = "docker exec {env_list} sb-workspace bash -lc '{command}'"
         if self._docker_config.skip:

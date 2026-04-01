@@ -217,6 +217,27 @@ class RunnerTestCase(unittest.TestCase):
                 'foo',
                 'mode': {
                     'name': 'mpi',
+                    'node_num': 1,
+                    'proc_num': 4,
+                    'proc_rank': 1,
+                    'mca': {},
+                    'env': {
+                        'NCCL_BUFFSIZE': 4194304,
+                        'NCCL_RINGS': '0 1 2 3|0 3 2 1',
+                        'PATH': None,
+                    },
+                },
+                'expected_command': (
+                    "mpirun -tag-output -allow-run-as-root -host localhost:4 -bind-to numa "
+                    '-x "NCCL_BUFFSIZE=4194304" -x "NCCL_RINGS=0 1 2 3|0 3 2 1" -x PATH '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
                     'proc_num': 8,
                     'proc_rank': 1,
                     'mca': {},
@@ -453,3 +474,34 @@ class RunnerTestCase(unittest.TestCase):
                 if isinstance(timeout, int):
                     timeout = max(timeout, 60)
                 self.assertEqual(timeout, expected_timeout)
+
+    @mock.patch('superbench.runner.ansible.AnsibleClient.run')
+    def test_run_proc_quotes_env_values(self, mock_ansible_client_run):
+        """Test _run_proc quotes env values for docker exec and mpirun."""
+        mock_ansible_client_run.return_value = 0
+        self.runner._sb_benchmarks = {'foo': {}}
+        captured = {}
+
+        def fake_get_shell_config(cmd):
+            captured['cmd'] = cmd
+            return {'module_args': cmd, 'cmdline': '', 'host_pattern': 'localhost', 'module': 'shell'}
+
+        self.runner._ansible_client.get_shell_config = fake_get_shell_config
+        mode = OmegaConf.create({
+            'name': 'mpi',
+            'proc_num': 4,
+            'node_num': 1,
+            'mca': {},
+            'env': {
+                'NCCL_BUFFSIZE': 4194304,
+                'NCCL_RINGS': '0 1 2 3|0 3 2 1',
+                'PATH': None,
+            },
+        })
+
+        self.runner._run_proc('foo', mode, {'proc_rank': 0})
+
+        self.assertIn('-e "NCCL_BUFFSIZE=4194304"', captured['cmd'])
+        self.assertIn('-e "NCCL_RINGS=0 1 2 3|0 3 2 1"', captured['cmd'])
+        self.assertIn('-x "NCCL_BUFFSIZE=4194304"', captured['cmd'])
+        self.assertIn('-x "NCCL_RINGS=0 1 2 3|0 3 2 1"', captured['cmd'])
