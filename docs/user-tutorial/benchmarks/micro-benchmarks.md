@@ -187,6 +187,55 @@ Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computer
 | cpu-hpl/throughput | bandwidth (GFlops) | Compute bandwidth.                                                        |
 | cpu-hpl/time       | time (s)           | Time elapsed during HPL run.                                              |
 
+### `gpu-hpcg`
+
+#### Introduction
+
+Measure GPU HPCG performance using `run_rochpcg`, which wraps `rocHPCG` execution and emits rocHPCG-native summary output.
+
+When collecting multiple MPI scales or problem sizes, use separate benchmark section names such as
+`gpu-hpcg:ranks8` and `gpu-hpcg:ranks4` instead of placing multiple `modes` under one `gpu-hpcg` section.
+
+#### Metrics
+
+| Name                                  | Unit               | Description                                          |
+|---------------------------------------|--------------------|------------------------------------------------------|
+| gpu-hpcg/final_gflops                 | FLOPS (GFLOPS)     | Final rocHPCG score.                                 |
+| gpu-hpcg/final_gflops_per_process     | FLOPS (GFLOPS)     | Final rocHPCG score per process.                     |
+| gpu-hpcg/ddot_gflops                  | FLOPS (GFLOPS)     | DDOT throughput.                                     |
+| gpu-hpcg/ddot_bandwidth               | bandwidth (GB/s)   | DDOT bandwidth.                                      |
+| gpu-hpcg/ddot_gflops_per_process      | FLOPS (GFLOPS)     | DDOT throughput per process.                         |
+| gpu-hpcg/ddot_bandwidth_per_process   | bandwidth (GB/s)   | DDOT bandwidth per process.                          |
+| gpu-hpcg/waxpby_gflops                | FLOPS (GFLOPS)     | WAXPBY throughput.                                   |
+| gpu-hpcg/waxpby_bandwidth             | bandwidth (GB/s)   | WAXPBY bandwidth.                                    |
+| gpu-hpcg/waxpby_gflops_per_process    | FLOPS (GFLOPS)     | WAXPBY throughput per process.                       |
+| gpu-hpcg/waxpby_bandwidth_per_process | bandwidth (GB/s)   | WAXPBY bandwidth per process.                        |
+| gpu-hpcg/spmv_gflops                  | FLOPS (GFLOPS)     | SpMV throughput.                                     |
+| gpu-hpcg/spmv_bandwidth               | bandwidth (GB/s)   | SpMV bandwidth.                                      |
+| gpu-hpcg/spmv_gflops_per_process      | FLOPS (GFLOPS)     | SpMV throughput per process.                         |
+| gpu-hpcg/spmv_bandwidth_per_process   | bandwidth (GB/s)   | SpMV bandwidth per process.                          |
+| gpu-hpcg/mg_gflops                    | FLOPS (GFLOPS)     | MG throughput.                                       |
+| gpu-hpcg/mg_bandwidth                 | bandwidth (GB/s)   | MG bandwidth.                                        |
+| gpu-hpcg/mg_gflops_per_process        | FLOPS (GFLOPS)     | MG throughput per process.                           |
+| gpu-hpcg/mg_bandwidth_per_process     | bandwidth (GB/s)   | MG bandwidth per process.                            |
+| gpu-hpcg/total_gflops                 | FLOPS (GFLOPS)     | Aggregate rocHPCG throughput.                        |
+| gpu-hpcg/total_bandwidth              | bandwidth (GB/s)   | Aggregate rocHPCG bandwidth.                         |
+| gpu-hpcg/total_gflops_per_process     | FLOPS (GFLOPS)     | Aggregate rocHPCG throughput per process.            |
+| gpu-hpcg/total_bandwidth_per_process  | bandwidth (GB/s)   | Aggregate rocHPCG bandwidth per process.             |
+| gpu-hpcg/setup_time                   | time (s)           | Setup phase duration.                                |
+| gpu-hpcg/optimization_time            | time (s)           | Optimization phase duration.                         |
+| gpu-hpcg/total_time                   | time (s)           | Total runtime.                                       |
+| gpu-hpcg/is_valid                     |                    | Run validity inferred from rocHPCG invalid markers.  |
+| gpu-hpcg/local_domain_x               |                    | Local domain size in x dimension.                    |
+| gpu-hpcg/local_domain_y               |                    | Local domain size in y dimension.                    |
+| gpu-hpcg/local_domain_z               |                    | Local domain size in z dimension.                    |
+| gpu-hpcg/global_domain_x              |                    | Global domain size in x dimension.                   |
+| gpu-hpcg/global_domain_y              |                    | Global domain size in y dimension.                   |
+| gpu-hpcg/global_domain_z              |                    | Global domain size in z dimension.                   |
+| gpu-hpcg/process_domain_x             |                    | Process topology in x dimension.                     |
+| gpu-hpcg/process_domain_y             |                    | Process topology in y dimension.                     |
+| gpu-hpcg/process_domain_z             |                    | Process topology in z dimension.                     |
+
 ### `cpu-stream`
 
 #### Introduction
