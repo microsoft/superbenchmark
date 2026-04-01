@@ -109,6 +109,46 @@ class PytorchBERT(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
+        # Check if we should use HuggingFace model loading
+        model_config = self._create_model_source_config(precision)
+        if model_config and model_config.is_huggingface():
+            return self._create_huggingface_model(model_config, precision)
+        
+        # Default in-house model creation
+        return self._create_inhouse_model(precision)
+    
+    def _create_model_wrapper(self, hf_model, hf_config):
+        """Create BERT-specific model wrapper.
+        
+        Args:
+            hf_model: The loaded HuggingFace BERT model.
+            hf_config: The HuggingFace model configuration.
+            
+        Returns:
+            torch.nn.Module: Wrapped BERT model with classification head.
+        """
+        class HFBERTWrapper(torch.nn.Module):
+            def __init__(self, bert_model, hidden_size, num_classes):
+                super().__init__()
+                self._bert = bert_model
+                self._linear = torch.nn.Linear(hidden_size, num_classes)
+            
+            def forward(self, input):
+                outputs = self._bert(input)
+                result = self._linear(outputs[1])  # Use pooler output
+                return result
+        
+        return HFBERTWrapper(hf_model, hf_config.hidden_size, self._args.num_classes)
+    
+    def _create_inhouse_model(self, precision):
+        """Create in-house model (original implementation).
+        
+        Args:
+            precision (Precision): precision of model and input data.
+            
+        Returns:
+            bool: True if model created successfully, False otherwise.
+        """
         self._config = BertConfig(
             hidden_size=self._args.hidden_size,
             num_hidden_layers=self._args.num_hidden_layers,

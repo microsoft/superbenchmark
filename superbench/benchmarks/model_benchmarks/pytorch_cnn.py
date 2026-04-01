@@ -65,6 +65,63 @@ class PytorchCNN(PytorchBase):
 
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
+
+        Returns:
+            bool: True if model is created successfully.
+        """
+        # Check if using HuggingFace model source
+        model_config = self._create_model_source_config(precision)
+        if model_config and model_config.source == 'huggingface':
+            return self._create_huggingface_model(model_config, precision)
+        else:
+            return self._create_inhouse_model(precision)
+
+    def _create_model_wrapper(self, hf_model, hf_config):
+        """Create CNN-specific model wrapper (ResNet/DenseNet).
+        
+        Args:
+            hf_model: The loaded HuggingFace CNN model.
+            hf_config: The HuggingFace model configuration.
+            
+        Returns:
+            torch.nn.Module: Wrapped CNN model with classification head.
+        """
+        # Get the feature dimension from the model config
+        if hasattr(hf_config, 'num_features'):
+            feature_dim = hf_config.num_features
+        elif hasattr(hf_config, 'hidden_sizes') and hf_config.hidden_sizes:
+            feature_dim = hf_config.hidden_sizes[-1]
+        else:
+            # Fallback: inspect the actual model to get pooler output dimension
+            model_dtype = next(hf_model.parameters()).dtype
+            dummy_input = torch.randn(1, 3, 224, 224, dtype=model_dtype, device=next(hf_model.parameters()).device)
+            with torch.no_grad():
+                dummy_output = hf_model(dummy_input)
+                feature_dim = dummy_output.pooler_output.shape[1]
+                logger.info(f'Detected feature dimension from model output: {feature_dim}')
+        
+        class HFResNetWrapper(torch.nn.Module):
+            """Wrapper for HuggingFace ResNet/DenseNet model."""
+            def __init__(self, hf_model, num_classes, feature_dim):
+                super().__init__()
+                self.model = hf_model
+                self.classifier = torch.nn.Linear(feature_dim, num_classes)
+                
+            def forward(self, pixel_values):
+                outputs = self.model(pixel_values)
+                pooled = outputs.pooler_output.flatten(1)
+                return self.classifier(pooled)
+        
+        return HFResNetWrapper(hf_model, self._args.num_classes, feature_dim)
+
+    def _create_inhouse_model(self, precision):
+        """Create in-house torchvision ResNet model.
+
+        Args:
+            precision (Precision): precision of model and input data.
+
+        Returns:
+            bool: True if model is created successfully.
         """
         try:
             self._model = getattr(models, self._args.model_type)()

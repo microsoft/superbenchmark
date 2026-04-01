@@ -26,6 +26,8 @@ from superbench.benchmarks import (
     DistributedImpl,
 )
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBenchmark
+from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
+from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import HuggingFaceModelLoader
 
 
 class PytorchBase(ModelBenchmark):
@@ -127,6 +129,191 @@ class PytorchBase(ModelBenchmark):
             )
         self._model_run_periodic = dict(periodic)
         return info
+
+    def _create_model_source_config(self, precision=None):
+        """Create ModelSourceConfig from benchmark arguments.
+        
+        Args:
+            precision: Optional precision override for torch_dtype.
+            
+        Returns:
+            ModelSourceConfig if model_source is specified, None otherwise.
+        """
+        if not hasattr(self._args, 'model_source'):
+            return None
+            
+        # Determine torch_dtype from precision if not explicitly set
+        torch_dtype = 'float32'
+        if precision is not None:
+            if precision.value == 'float16':
+                torch_dtype = 'float16'
+            elif precision.value == 'bfloat16':
+                torch_dtype = 'bfloat16'
+                
+        config = ModelSourceConfig(
+            source=self._args.model_source,
+            identifier=self._args.model_identifier or self._name,
+            torch_dtype=torch_dtype,
+            device_map='auto' if not self._gpu_available else None,
+        )
+        
+        return config
+
+    def _estimate_param_count_from_config(self, hf_config):
+        """Estimate parameter count from a HuggingFace config without instantiating the model.
+
+        Delegates to HuggingFaceModelLoader.estimate_param_count_from_config().
+
+        Args:
+            hf_config: A HuggingFace PretrainedConfig object.
+
+        Returns:
+            Optional[int]: Estimated number of parameters, or None if estimation is not possible.
+        """
+        return HuggingFaceModelLoader.estimate_param_count_from_config(hf_config)
+
+    def _estimate_training_memory(self, param_count, precision):
+        """Estimate GPU memory required for training a model.
+
+        Delegates to HuggingFaceModelLoader.estimate_memory() with mode='training'.
+
+        Args:
+            param_count (int): Number of model parameters.
+            precision (Precision): Model precision (float32, float16, etc.).
+
+        Returns:
+            tuple: (estimated_bytes, gpu_total_bytes, fits) where fits is True if
+                   the model is estimated to fit in available memory.
+        """
+        return HuggingFaceModelLoader.estimate_memory(param_count, precision.value, mode='training')
+
+    def _customize_hf_config(self, hf_config):
+        """Hook for subclasses to customize the HF config after download.
+
+        Override this in subclasses to modify config before memory estimation
+        and model loading (e.g., to override num_hidden_layers).
+
+        Args:
+            hf_config: The downloaded HuggingFace model configuration.
+
+        Returns:
+            The (possibly modified) config.
+        """
+        return hf_config
+
+    def _create_huggingface_model(self, model_config, precision):
+        """Load model from HuggingFace Hub and prepare for benchmarking.
+
+        First estimates memory from the HF config (small download). If the model
+        fits on the GPU, downloads pretrained weights. Otherwise, uses random
+        weight initialization and logs a warning.
+        
+        Args:
+            model_config (ModelSourceConfig): Configuration for model loading.
+            precision (Precision): Model precision (float32, float16, etc.).
+            
+        Returns:
+            bool: True if model is created successfully, False otherwise.
+        """
+        try:
+            logger.info(f'Loading HuggingFace model: {model_config.identifier}')
+
+            # Step 1: Download config only (few KB) to estimate memory
+            hf_token = os.environ.get('HF_TOKEN') or os.environ.get('HUGGING_FACE_HUB_TOKEN')
+            load_kwargs = {}
+            if hf_token:
+                load_kwargs['token'] = hf_token
+            from transformers import AutoConfig
+            hf_config = AutoConfig.from_pretrained(
+                model_config.identifier, trust_remote_code=True, **load_kwargs
+            )
+
+            # Allow subclasses to customize config (e.g., override num_hidden_layers)
+            hf_config = self._customize_hf_config(hf_config)
+
+            # Step 2: Estimate param count from config (no model instantiation — avoids
+            # allocating hundreds of GB of CPU RAM for large models like 70B)
+            param_count_raw = self._estimate_param_count_from_config(hf_config)
+            if param_count_raw is None:
+                logger.warning(
+                    f'Could not estimate param count from config for {model_config.identifier}. '
+                    f'Proceeding with download — memory check skipped.'
+                )
+                fits = True
+                estimated_bytes, gpu_mem = 0, 0
+                param_count = 0
+            else:
+                estimated_bytes, gpu_mem, fits = self._estimate_training_memory(param_count_raw, precision)
+                param_count = param_count_raw / 1e6
+
+            # Step 3: If model doesn't fit, fail gracefully without downloading weights
+            if not fits:
+                mem_type = 'GPU memory' if self._gpu_available else 'system RAM'
+                logger.error(
+                    f'Model {model_config.identifier} ({param_count:.1f}M params) estimated to need '
+                    f'~{estimated_bytes / 1e9:.1f}GB for training (weights + gradients + optimizer states), '
+                    f'which exceeds available {mem_type} ({gpu_mem / 1e9:.1f}GB). '
+                    f'Skipping benchmark. To fix this, either: '
+                    f'(1) reduce num_hidden_layers to use a smaller model, '
+                    f'(2) use a smaller model variant, or '
+                    f'(3) use a {"GPU" if self._gpu_available else "machine"} with more memory.'
+                )
+                return False
+
+            logger.info(
+                f'Model {model_config.identifier} ({param_count:.1f}M params) estimated to need '
+                f'~{estimated_bytes / 1e9:.1f}GB for training'
+                f'{f", fits in available memory ({gpu_mem / 1e9:.1f}GB)" if gpu_mem > 0 else ""}. '
+                f'Downloading pretrained weights...'
+            )
+            loader = HuggingFaceModelLoader(
+                cache_dir=None,
+                token=hf_token
+            )
+            hf_model, _, tokenizer = loader.load_model_from_config(model_config, device='cpu', config_pretrained=hf_config)
+            self._tokenizer = tokenizer
+
+            # Step 4: Wrap model for benchmark
+            if hasattr(self, '_create_model_wrapper'):
+                self._model = self._create_model_wrapper(hf_model, hf_config)
+            else:
+                self._model = hf_model
+                logger.warning(
+                    f'No model wrapper defined for {self._name}. Using raw HuggingFace model. '
+                    'Consider implementing _create_model_wrapper() for custom head.'
+                )
+
+            param_count = sum(p.numel() for p in self._model.parameters()) / 1e6
+            logger.info(
+                f'Created HuggingFace model - identifier: {model_config.identifier}, '
+                f'precision: {precision.value}, parameters: {param_count:.2f}M'
+            )
+            
+            # Set precision
+            self._model = self._model.to(dtype=getattr(torch, precision.value))
+            
+            # Ensure model is in training mode (from_pretrained loads in eval mode)
+            self._model.train()
+            
+            # Move to GPU if available
+            if self._gpu_available:
+                self._model = self._model.cuda()
+            
+            # Create target tensor for training
+            if hasattr(self._args, 'num_classes'):
+                self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
+                if self._gpu_available:
+                    self._target = self._target.cuda()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(
+                f'Failed to load HuggingFace model: {str(e)}'
+            )
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
 
     def add_parser_arguments(self):
         """Add PyTorch model benchmark-specific arguments to the argument parser."""
@@ -278,6 +465,23 @@ class PytorchBase(ModelBenchmark):
                     'Disabling enable_determinism to avoid silently non-deterministic results.'
                 )
                 self._args.enable_determinism = False
+
+
+        
+        # HuggingFace model loading parameters
+        self._parser.add_argument(
+            '--model_source',
+            type=str,
+            default='in-house',
+            choices=['in-house', 'huggingface'],
+            help='Source of the model: in-house (default) or huggingface.',
+        )
+        self._parser.add_argument(
+            '--model_identifier',
+            type=str,
+            default=None,
+            help='Model identifier: for HuggingFace, use format "org/model-name" (e.g., "bert-base-uncased").',
+        )
 
     def _set_force_fp32(self):
         """Set the config that controls whether full float32 precision will be used.
@@ -559,6 +763,8 @@ class PytorchBase(ModelBenchmark):
         del self._target
         del self._optimizer
         del self._model
+        if hasattr(self, '_tokenizer'):
+            del self._tokenizer
         if self._gpu_available:
             torch.cuda.empty_cache()
 

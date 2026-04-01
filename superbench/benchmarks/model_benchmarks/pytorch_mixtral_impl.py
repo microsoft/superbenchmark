@@ -128,6 +128,36 @@ class PytorchMixtral(PytorchBase):
 
         return True
 
+    def _customize_hf_config(self, hf_config):
+        """Override num_hidden_layers if a non-default value was specified."""
+        if self._args.num_hidden_layers != 32:
+            hf_config.num_hidden_layers = self._args.num_hidden_layers
+        return hf_config
+
+    def _create_model_wrapper(self, hf_model, hf_config):
+        """Create Mixtral-specific model wrapper for HuggingFace models.
+
+        Args:
+            hf_model: The loaded HuggingFace Mixtral model.
+            hf_config: The HuggingFace model configuration.
+
+        Returns:
+            torch.nn.Module: Wrapped model with classification head.
+        """
+        hidden_size = hf_config.hidden_size
+
+        class HFMixtralWrapper(torch.nn.Module):
+            def __init__(self, hf_model, num_classes, hidden_size):
+                super().__init__()
+                self.model = hf_model
+                self.classifier = torch.nn.Linear(hidden_size, num_classes)
+
+            def forward(self, input):
+                outputs = self.model(input)
+                return self.classifier(outputs[0])
+
+        return HFMixtralWrapper(hf_model, self._args.num_classes, hidden_size)
+
     def _create_model(self, precision):
         """Construct the model for benchmarking.
 
@@ -135,6 +165,12 @@ class PytorchMixtral(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
         """
         self._config = self._build_config()
+
+        # Check if using HuggingFace model source
+        model_config = self._create_model_source_config(precision)
+        if model_config and model_config.source == 'huggingface':
+            return self._create_huggingface_model(model_config, precision)
+
         if not self._check_fp8_support(precision):
             return False
 

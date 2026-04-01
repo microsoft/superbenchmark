@@ -104,6 +104,56 @@ class PytorchLSTM(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
+        # Check if we should use HuggingFace model loading
+        model_config = self._create_model_source_config(precision)
+        if model_config and model_config.is_huggingface():
+            return self._create_huggingface_model(model_config, precision)
+        
+        # Default in-house model creation
+        return self._create_inhouse_model(precision)
+    
+    def _create_model_wrapper(self, hf_model, hf_config):
+        """Create LSTM-specific model wrapper.
+        
+        Args:
+            hf_model: The loaded HuggingFace LSTM model.
+            hf_config: The HuggingFace model configuration.
+            
+        Returns:
+            torch.nn.Module: Wrapped LSTM model with classification head.
+        """
+        class HFLSTMWrapper(torch.nn.Module):
+            def __init__(self, lstm_model, vocab_size):
+                super().__init__()
+                self._lstm = lstm_model
+                self._vocab_size = vocab_size
+            
+            def forward(self, input):
+                # HF language models expect integer token IDs, not floats.
+                # Convert float input to integer indices within vocab range.
+                input_ids = input[:, :, 0].abs().mul(self._vocab_size - 1).long().clamp(0, self._vocab_size - 1)
+                outputs = self._lstm(input_ids)
+                # CausalLM models already include the output projection (logits).
+                if hasattr(outputs, 'logits'):
+                    return outputs.logits[:, -1, :]
+                elif isinstance(outputs, tuple):
+                    return outputs[0][:, -1, :]
+                return outputs[:, -1, :]
+        
+        vocab_size = getattr(hf_config, 'vocab_size', 30522)
+        # Use vocab_size as num_classes since CausalLM outputs logits over vocab
+        self._args.num_classes = vocab_size
+        return HFLSTMWrapper(hf_model, vocab_size)
+    
+    def _create_inhouse_model(self, precision):
+        """Create in-house model (original implementation).
+        
+        Args:
+            precision (Precision): precision of model and input data.
+            
+        Returns:
+            bool: True if model created successfully, False otherwise.
+        """
         try:
             self._model = LSTMBenchmarkModel(
                 self._args.input_size, self._args.hidden_size, self._args.num_layers, self._args.bidirectional,
