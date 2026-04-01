@@ -196,12 +196,9 @@ endif
 rocm_hpcg: sb_micro_path
 ifneq (,$(wildcard rocHPCG/install.sh))
 	cd ./rocHPCG && \
-	if [ ! -f ./run_rochpcg ]; then \
-		git apply ../rochpcg-scripts-bw.patch; \
-	fi && \
 	./install.sh --with-rocm=$(ROCM_PATH) --with-mpi=$(MPI_HOME) --gpu-aware-mpi=on
 	cp -v ./rocHPCG/build/release/rochpcg-install/bin/rochpcg $(SB_MICRO_PATH)/bin/
-	cp -v ./rocHPCG/run_rochpcg $(SB_MICRO_PATH)/bin/
+	cp -v ./run_rochpcg.sh $(SB_MICRO_PATH)/bin/run_rochpcg
 	chmod +x $(SB_MICRO_PATH)/bin/rochpcg $(SB_MICRO_PATH)/bin/run_rochpcg
 endif
 
