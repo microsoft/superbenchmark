@@ -11,6 +11,7 @@ import pandas as pd
 from superbench.common.utils import logger
 from superbench.analyzer import file_handler
 from superbench.analyzer.summary_op import SummaryOp, SummaryType
+from superbench.analyzer.metric_sorter import sort_metrics
 from superbench.analyzer import RuleBase
 from superbench.analyzer import data_analysis
 
@@ -148,7 +149,7 @@ class ResultSummary(RuleBase):
                     # if aggregate is not empty and is a pattern in regex, aggregate according to pattern
                     else:
                         data_df_of_rule = data_analysis.aggregate(data_df_of_rule, self._sb_rules[rule]['aggregate'])
-                summary_df_of_rule = pd.DataFrame(columns=sorted(data_df_of_rule.columns))
+                summary_df_of_rule = pd.DataFrame(columns=sort_metrics(list(data_df_of_rule.columns)))
                 for statistic_name in statistics:
                     # get SummaryOp and calculate statistics
                     # if statistic_name is 'p\d\d?', SummaryOp should be pencentile
