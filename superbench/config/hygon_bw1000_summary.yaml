@@ -1,0 +1,45 @@
+# SuperBench summary rules for hygon_bw1000.yaml
+#
+# Usage:
+#   sb result summary \
+#     --data-file <output-dir>/results-summary.jsonl \
+#     --rule-file superbench/config/hygon_bw1000_summary.yaml \
+#     --output-file-format md \
+#     --output-dir <summary-output-dir>
+#
+# Notes:
+# - This file focuses on RCCL benchmarks defined in
+#   superbench/config/hygon_bw1000.yaml.
+# - Unmatched benchmark sections are allowed. If a benchmark was not run,
+#   the corresponding category in the summary will be empty.
+
+version: v0.12
+superbench:
+  rules:
+    rccl_bw_allreduce_r16_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r16
+      metrics:
+        - rccl-bw:allreduce-r16/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r16/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r8_pcie_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r8-pcie
+      metrics:
+        - rccl-bw:allreduce-r8-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r8-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r8_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r8
+      metrics:
+        - rccl-bw:allreduce-r8/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r8/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_alltoall_r16_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:alltoall-r16
+      metrics:
+        - rccl-bw:alltoall-r16/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:alltoall-r16/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
