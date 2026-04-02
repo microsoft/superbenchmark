@@ -491,6 +491,7 @@ class RunnerTestCase(unittest.TestCase):
             'name': 'mpi',
             'proc_num': 4,
             'node_num': 1,
+            'bind_to': 'numa',
             'mca': {},
             'env': {
                 'NCCL_BUFFSIZE': 4194304,
