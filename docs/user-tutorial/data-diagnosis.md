@@ -83,8 +83,9 @@ superbench:
       criteria: lambda x:x>0.05
       categories: KernelLaunch
       metrics:
-        - kernel-launch/event_time:\d+
-        - kernel-launch/wall_time:\d+
+        - kernel-launch/e2e_latency_us:\d+
+        - kernel-launch/host_dispatch_us:\d+
+        - kernel-launch/device_launch_us:\d+
     rule1:
     # Rule 1: If H2D_Mem_BW or D2H_Mem_BW test suffers > 5% downgrade, label it as defective
       function: variance

@@ -10,15 +10,17 @@ id: micro-benchmarks
 
 #### Introduction
 
-Measure GPU kernel launch latency,
-which is defined as the time range from the beginning of the launch API call to the beginning of the kernel execution.
+Measure GPU kernel launch performance from multiple perspectives, including end-to-end latency,
+host-side dispatch overhead, steady-state launch throughput, and device-side launch time.
 
 #### Metrics
 
-| Name                     | Unit      | Description                          |
-|--------------------------|-----------|--------------------------------------|
-| kernel-launch/event_time | time (ms) | Launch latency measured in GPU time. |
-| kernel-launch/wall_time  | time (ms) | Launch latency measured in CPU time. |
+| Name                                | Unit               | Description                                                      |
+|-------------------------------------|--------------------|------------------------------------------------------------------|
+| kernel-launch/e2e_latency_us        | time (us)          | Single-shot end-to-end latency measured in CPU time.             |
+| kernel-launch/host_dispatch_us      | time (us)          | Host-side dispatch overhead per kernel measured in CPU time.     |
+| kernel-launch/launch_throughput_mkps| throughput (MKPS)  | Steady-state kernel launch throughput.                           |
+| kernel-launch/device_launch_us      | time (us)          | Device-side average launch time per kernel measured by events.   |
 
 ### `gemm-flops`
 

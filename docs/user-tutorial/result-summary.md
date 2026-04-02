@@ -70,8 +70,10 @@ superbench:
       aggregate: True
       categories: KernelLaunch
       metrics:
-        - kernel-launch/event_time
-        - kernel-launch/wall_time
+        - kernel-launch/e2e_latency_us
+        - kernel-launch/host_dispatch_us
+        - kernel-launch/launch_throughput_mkps
+        - kernel-launch/device_launch_us
     nccl:
       statistics: mean
       categories: NCCL
