@@ -44,6 +44,7 @@
         - /dev/kfd
         - /dev/dri
         - /usr/local/hyhal
+        - /opt/hyhal
       register: hygon_dev
     - name: Set GPU Facts
       set_fact:
@@ -56,7 +57,8 @@
         hygon_gpu_exist: >-
           {{ (hygon_dev.results[0].stat.ischr is defined and hygon_dev.results[0].stat.ischr and
           hygon_dev.results[1].stat.isdir is defined and hygon_dev.results[1].stat.isdir) and
-          hygon_dev.results[2].stat.exists is defined and hygon_dev.results[2].stat.exists }}
+          ((hygon_dev.results[2].stat.exists is defined and hygon_dev.results[2].stat.exists) or
+          (hygon_dev.results[3].stat.exists is defined and hygon_dev.results[3].stat.exists)) }}
     - name: Print GPU Checking Result
       debug:
         msg:
