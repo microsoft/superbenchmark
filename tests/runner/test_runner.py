@@ -501,7 +501,39 @@ class RunnerTestCase(unittest.TestCase):
 
         self.runner._run_proc('foo', mode, {'proc_rank': 0})
 
-        self.assertIn('-e "NCCL_BUFFSIZE=4194304"', captured['cmd'])
-        self.assertIn('-e "NCCL_RINGS=0 1 2 3|0 3 2 1"', captured['cmd'])
+        self.assertIn('docker exec sb-workspace bash -lc', captured['cmd'])
+        self.assertIn('source /root/sb.env', captured['cmd'])
+        self.assertIn('export "NCCL_BUFFSIZE=4194304"', captured['cmd'])
+        self.assertIn('export "NCCL_RINGS=0 1 2 3|0 3 2 1"', captured['cmd'])
         self.assertIn('-x "NCCL_BUFFSIZE=4194304"', captured['cmd'])
         self.assertIn('-x "NCCL_RINGS=0 1 2 3|0 3 2 1"', captured['cmd'])
+        self.assertIn('-x PATH', captured['cmd'])
+        self.assertNotIn('export "PATH=', captured['cmd'])
+
+    @mock.patch('superbench.runner.ansible.AnsibleClient.run')
+    def test_run_proc_no_docker_keeps_tmp_env_source(self, mock_ansible_client_run):
+        """Test _run_proc still sources /tmp/sb.env in no_docker mode."""
+        mock_ansible_client_run.return_value = 0
+        self.runner._sb_benchmarks = {'foo': {}}
+        self.runner._docker_config.skip = True
+        captured = {}
+
+        def fake_get_shell_config(cmd):
+            captured['cmd'] = cmd
+            return {'module_args': cmd, 'cmdline': '', 'host_pattern': 'localhost', 'module': 'shell'}
+
+        self.runner._ansible_client.get_shell_config = fake_get_shell_config
+        mode = OmegaConf.create({
+            'name': 'local',
+            'proc_num': 1,
+            'env': {
+                'FOO': 'a b',
+            },
+            'prefix': '',
+        })
+
+        self.runner._run_proc('foo', mode, {'proc_rank': 0})
+
+        self.assertIn("bash -c 'set -o allexport && source /tmp/sb.env && set +o allexport", captured['cmd'])
+        self.assertIn('export "FOO=a b"', captured['cmd'])
+        self.assertIn('cd $SB_WORKSPACE && PROC_RANK=0 sb exec', captured['cmd'])

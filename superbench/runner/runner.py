@@ -534,21 +534,23 @@ class SuperBenchRunner():
         if isinstance(timeout, int):
             timeout = max(timeout, 60)
 
-        env_list = '--env-file /tmp/sb.env'
         if 'skip' not in self._docker_config:
             self._docker_config.skip = False
+        base_env_cmd = 'set -o allexport && source /root/sb.env && set +o allexport'
+        mode_env_cmds = []
         if self._docker_config.skip:
-            env_list = 'set -o allexport && source /tmp/sb.env && set +o allexport'
+            base_env_cmd = 'set -o allexport && source /tmp/sb.env && set +o allexport'
         for k, v in mode.env.items():
             formatted_value = self.__format_mode_env_value(v, mode.proc_rank, mode.proc_num)
             if formatted_value is not None:
                 envvar = self.__quote_env_assignment(k, formatted_value)
-                env_list += (
-                    f' -e {envvar}'
-                    if not self._docker_config.skip else f' && export {envvar}'
-                )
+                mode_env_cmds.append(f'export {envvar}')
 
-        fcmd = "docker exec {env_list} sb-workspace bash -lc '{command}'"
+        env_list = base_env_cmd
+        if mode_env_cmds:
+            env_list = f"{env_list} && {' && '.join(mode_env_cmds)}"
+
+        fcmd = "docker exec sb-workspace bash -lc '{env_list} && {command}'"
         if self._docker_config.skip:
             fcmd = "bash -c '{env_list} && cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(
