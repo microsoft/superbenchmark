@@ -36,7 +36,7 @@ def test_kernel_launch_overhead():
     assert ('raw_output_0' in benchmark.raw_data)
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
-    for metric in ['event_time', 'wall_time']:
+    for metric in ['e2e_latency_us', 'host_dispatch_us', 'launch_throughput_mkps', 'device_launch_us']:
         assert (metric in benchmark.result)
         assert (len(benchmark.result[metric]) == 1)
         assert (isinstance(benchmark.result[metric][0], numbers.Number))

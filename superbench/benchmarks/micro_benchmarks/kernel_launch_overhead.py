@@ -13,6 +13,8 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 class KernelLaunch(MicroBenchmarkWithInvoke):
     """The KernelLaunch overhead benchmark class."""
+    _metric_names = ['e2e_latency_us', 'host_dispatch_us', 'launch_throughput_mkps', 'device_launch_us']
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -81,27 +83,22 @@ class KernelLaunch(MicroBenchmarkWithInvoke):
         """
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
 
-        pattern = r'\d+\.\d+'
-        result = re.findall(pattern, raw_output)
-        if len(result) != 2:
+        result = {}
+        pattern = re.compile(r'^(e2e_latency_us|host_dispatch_us|launch_throughput_mkps|device_launch_us):\s*(-?\d+(?:\.\d+)?)$')
+        for line in raw_output.splitlines():
+            match = pattern.match(line.strip())
+            if match:
+                result[match.group(1)] = float(match.group(2))
+
+        if set(result.keys()) != set(self._metric_names):
             logger.error(
-                'Cannot extract kernel launch overhead in event and wall mode - round: {}, benchmark: {}, raw data: {}.'
+                'Cannot extract kernel launch benchmark metrics - round: {}, benchmark: {}, raw data: {}.'
                 .format(self._curr_run_index, self._name, raw_output)
             )
             return False
 
-        try:
-            result = [float(item) for item in result]
-        except BaseException as e:
-            logger.error(
-                'The result format is invalid - round: {}, benchmark: {}, result: {}, message: {}.'.format(
-                    self._curr_run_index, self._name, result, str(e)
-                )
-            )
-            return False
-
-        self._result.add_result('event_time', result[0])
-        self._result.add_result('wall_time', result[1])
+        for metric in self._metric_names:
+            self._result.add_result(metric, result[metric])
 
         return True
 
