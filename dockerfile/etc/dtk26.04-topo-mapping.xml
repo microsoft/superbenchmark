@@ -1,0 +1,241 @@
+<system version="2">
+  <!-- 8 GPUs, 11 NICs, Case 1-->
+  <group name="gfx936_8_x86_64_HygonGenuine_mlx5_11_Ethernet_40-200-200-200-200-200-40-2-200-200-200_1_8_1">
+    <cpu numaid="3">
+      <pci>
+        <gpu dev="0"/>
+        <gpu dev="1"/>
+        <nic id="mlx5_1"/>
+        <nic id="mlx5_2"/>
+      </pci>
+    </cpu>
+    <cpu numaid="0">
+      <pci>
+        <gpu dev="2"/>
+        <gpu dev="3"/>
+        <nic id="mlx5_3"/>
+        <nic id="mlx5_4"/>
+      </pci>
+    </cpu>
+    <cpu numaid="7">
+      <pci>
+        <gpu dev="4"/>
+        <gpu dev="5"/>
+        <nic id="mlx5_7"/>
+        <nic id="mlx5_8"/>
+      </pci>
+    </cpu>
+    <cpu numaid="4">
+      <pci>
+        <gpu dev="6"/>
+        <gpu dev="7"/>
+        <nic id="mlx5_9"/>
+        <nic id="mlx5_10"/>
+      </pci>
+    </cpu>
+  </group>
+  <!-- 8 GPUs, 10 NICs, Case 1-->
+  <group name="gfx936_8_x86_64_HygonGenuine_mlx5_10_Ethernet_40-40-200-200-200-200-200-200-200-200_1_8_1">
+    <cpu numaid="3">
+      <pci>
+        <gpu dev="0"/>
+        <gpu dev="1"/>
+        <nic id="mlx5_2"/>
+        <nic id="mlx5_3"/>
+      </pci>
+    </cpu>
+    <cpu numaid="0">
+      <pci>
+        <gpu dev="2"/>
+        <gpu dev="3"/>
+        <nic id="mlx5_4"/>
+        <nic id="mlx5_5"/>
+      </pci>
+    </cpu>
+    <cpu numaid="7">
+      <pci>
+        <gpu dev="4"/>
+        <gpu dev="5"/>
+        <nic id="mlx5_6"/>
+        <nic id="mlx5_7"/>
+      </pci>
+    </cpu>
+    <cpu numaid="4">
+      <pci>
+        <gpu dev="6"/>
+        <gpu dev="7"/>
+        <nic id="mlx5_8"/>
+        <nic id="mlx5_9"/>
+      </pci>
+    </cpu>
+  </group>
+  <!--
+    group：代表一个映射关系组；
+      name：映射关系组标识，用于区分不同环境下的拓扑结构，命名规范：
+        x86_64架构下：GPU架构（如gfx936）_GPU数量（环境中实际的GPU数量）_CPU架构（如x86_64、arm64）_CPU厂商（如HygonGenuine）_网卡前缀（如mlx5、shca）_网卡数_网卡类型_网卡速率列表_hylink类型_hylink分组关系
+        非x86_64架构下：GPU架构（如gfx936）_GPU数量（环境中实际的GPU数量）_CPU架构（如x86_64、arm64）_网卡前缀（如mlx5、shca）_网卡数_网卡类型_网卡速率列表_hylink类型_hylink分组关系
+  -->
+  <group name="gfx936_8_x86_64_HygonGenuine_mlx5_10_InfiniBand_200-10-200-200-200-200-200-200-200-200_1_8_1|gfx936_8_x86_64_HygonGenuine_mlx5_10_Ethernet_40-40-200-200-200-200-200-200-200-200_1_8_1">
+      <!--
+        cpu：映射关系中的一个numa节点；
+          numaid：cpu节点编号，用于指定numa
+      -->
+    <cpu numaid="0">
+      <!--
+        pci：cpu下的一个pci节点；
+          id：pci节点编号，用于指定pci
+      -->
+      <pci>
+        <!--
+          slot：slot标签，用于指定pci节点下的设备；
+            id：slot号，真实的物理slot编号
+            注：slot标签在处理时将会被转换为gpu和nic标签，相关属性配置同下文的gpu和nic标签逻辑一致，在对应类型的slot标签后进行设置即可
+        -->
+        <!-- gpu -->
+        <slot id="67"/>
+        <!-- gpu -->
+        <slot id="70"/>
+        <!-- nic -->
+        <slot id="66"/>
+        <!-- nic -->
+        <slot id="69"/>
+      </pci>
+      <pci>
+        <!-- gpu -->
+        <slot id="60"/>
+        <!-- gpu -->
+        <slot id="63"/>
+        <!-- nic -->
+        <slot id="61"/>
+        <!-- nic -->
+        <slot id="64"/>
+      </pci>
+    </cpu>
+    <cpu numaid="1">
+      <pci>
+        <!-- gpu -->
+        <slot id="81"/>
+        <!-- gpu -->
+        <slot id="78"/>
+        <!-- nic -->
+        <slot id="82"/>
+        <!-- nic -->
+        <slot id="80"/>
+      </pci>
+      <pci>
+        <!-- gpu -->
+        <slot id="73"/>
+        <!-- gpu -->
+        <slot id="76"/>
+        <!-- nic -->
+        <slot id="72"/>
+        <!-- nic -->
+        <slot id="75"/>
+      </pci>
+    </cpu>
+  </group>
+  <group name="gfx936_8_x86_64_GenuineIntel_mlx5_10_Ethernet_200-200-200-200-200-200-200-40-200-200_1_8_1">
+    <cpu numaid="0">
+      <pci>
+        <!--
+          gpu：gpu标签，用于指定pci节点下的gpu设备号；
+            dev：gpu号；
+            注：可为gpu添加"link_speed","link_width"属性，如link_speed="32.0 GT/s PCIe" link_width="16"，
+            最终两个属性将会被拷贝到gpu标签前的两层pci标签中，用于处理系统参数读取有误的场景；
+        -->
+        <gpu dev="0"/>
+        <gpu dev="1"/>
+        <!--
+          nic：nic标签，用于指定pci节点下的网卡名；
+            id：网卡名称；
+            注：可为nic添加"link_speed","link_width"属性，将影响到nic前的一层pci标签。另外nic标签可以设置speed属性，如speed="200000"，
+            最终speed属性将会被拷贝到nic标签下的net标签中，用于辅助特定环境中的channel搜索；
+        -->
+        <nic id="mlx5_0"/>
+        <nic id="mlx5_1"/>
+      </pci>
+      <pci>
+        <gpu dev="2"/>
+        <gpu dev="3"/>
+        <nic id="mlx5_2"/>
+        <nic id="mlx5_3"/>
+      </pci>
+    </cpu>
+    <cpu numaid="1">
+      <pci>
+        <gpu dev="4"/>
+        <gpu dev="5"/>
+        <nic id="mlx5_4"/>
+        <nic id="mlx5_5"/>
+      </pci>
+      <pci>
+        <gpu dev="6"/>
+        <gpu dev="7"/>
+        <nic id="mlx5_8"/>
+        <nic id="mlx5_9"/>
+      </pci>
+    </cpu>
+  </group>
+  <!--508 shca网卡-->
+  <group name="gfx936_8_x86_64_HygonGenuine_shca_4_InfiniBand_400-400-400-400_1_8_1">
+    <cpu numaid="0">
+      <pci>
+        <gpu dev="0"/>
+        <nic id="shca_0" speed="200000"/>
+        <gpu dev="2"/>
+      </pci>
+    </cpu>
+    <cpu numaid="1">
+      <pci>
+        <nic id="shca_1" speed="200000"/>
+        <gpu dev="1"/>
+        <gpu dev="3"/>
+      </pci>
+    </cpu>
+    <cpu numaid="4">
+      <pci>
+        <nic id="shca_2" speed="200000"/>
+        <gpu dev="4"/>
+        <gpu dev="6"/>
+      </pci>
+    </cpu>
+    <cpu numaid="5">
+      <pci>
+        <nic id="shca_3" speed="200000"/>
+        <gpu dev="5"/>
+        <gpu dev="7"/>
+      </pci>
+    </cpu>
+  </group>
+  <!--508 mlx5网卡-->
+  <group name="gfx936_8_x86_64_HygonGenuine_mlx5_4_InfiniBand_400-400-400-400_1_8_1">
+    <cpu numaid="0">
+      <pci>
+        <gpu dev="0"/>
+        <nic id="mlx5_0"/>
+        <gpu dev="2"/>
+      </pci>
+    </cpu>
+    <cpu numaid="1">
+      <pci>
+        <nic id="mlx5_1"/>
+        <gpu dev="1"/>
+        <gpu dev="3"/>
+      </pci>
+    </cpu>
+    <cpu numaid="4">
+      <pci>
+        <nic id="mlx5_2"/>
+        <gpu dev="4"/>
+        <gpu dev="6"/>
+      </pci>
+    </cpu>
+    <cpu numaid="5">
+      <pci>
+        <nic id="mlx5_3"/>
+        <gpu dev="5"/>
+        <gpu dev="7"/>
+      </pci>
+    </cpu>
+  </group>
+</system>

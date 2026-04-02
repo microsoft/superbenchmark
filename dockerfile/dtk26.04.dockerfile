@@ -135,6 +135,7 @@ ENV PATH="${MPI_HOME}/bin:${UCX_HOME}/bin:/opt/superbench/bin:/usr/local/bin/${P
 WORKDIR ${SB_HOME}
 
 COPY third_party third_party
+COPY dockerfile/etc/dtk26.04-topo-mapping.xml ${ROCM_PATH}/rccl/lib/topo_mapping_default.xml
 
 RUN --mount=type=bind,from=hyhal,source=/,target=/opt/hyhal \
     make \
