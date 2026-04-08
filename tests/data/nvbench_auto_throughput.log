@@ -1,0 +1,48 @@
+# Devices
+
+## [0] `NVIDIA Test GPU`
+* SM Version: 100 (PTX Version: 100)
+* Number of SMs: 100
+* SM Default Clock Rate: 1000 MHz
+* Global Memory: 10000 MiB Free / 10000 MiB Total
+* Global Memory Bus Peak: 1000 GB/sec (1024-bit DDR @1000MHz)
+* Max Shared Memory: 64 KiB/SM, 48 KiB/Block
+* L2 Cache Size: 10000 KiB
+* Maximum Active Blocks: 32/SM
+* Maximum Active Threads: 2048/SM, 1024/Block
+* Available Registers: 65536/SM, 65536/Block
+* ECC Enabled: Yes
+
+# Log
+
+```
+Run:  [1/4] throughput_bench [Device=0 T=1 Stride=1 BlockSize=128]
+Pass: CUPTI: 0.10s total wall, 3x
+Pass: Cold: 0.100000ms GPU, 0.120000ms CPU, 0.50s total GPU, 0.70s total wall, 1000x
+Pass: Batch: 0.095000ms GPU, 0.50s total GPU, 0.50s total wall, 1000x
+Run:  [2/4] throughput_bench [Device=0 T=1 Stride=4 BlockSize=256]
+Pass: CUPTI: 0.10s total wall, 3x
+Pass: Cold: 0.110000ms GPU, 0.130000ms CPU, 0.50s total GPU, 0.70s total wall, 1000x
+Pass: Batch: 0.105000ms GPU, 0.50s total GPU, 0.50s total wall, 1000x
+Run:  [3/4] throughput_bench [Device=0 T=2 Stride=1 BlockSize=128]
+Pass: CUPTI: 0.10s total wall, 3x
+Pass: Cold: 0.150000ms GPU, 0.170000ms CPU, 0.50s total GPU, 0.70s total wall, 1000x
+Pass: Batch: 0.145000ms GPU, 0.50s total GPU, 0.50s total wall, 1000x
+Run:  [4/4] throughput_bench [Device=0 T=2 Stride=4 BlockSize=256]
+Pass: CUPTI: 0.10s total wall, 3x
+Pass: Cold: 0.200000ms GPU, 0.220000ms CPU, 0.50s total GPU, 0.70s total wall, 1000x
+Pass: Batch: 0.195000ms GPU, 0.50s total GPU, 0.50s total wall, 1000x
+```
+
+# Benchmark Results
+
+## throughput_bench
+
+### [0] NVIDIA Test GPU
+
+| T | Stride | BlockSize | Elements | HBWPeak | LoadEff | StoreEff | L1HitRate | L2HitRate | Samples | Samples |  CPU Time  | Noise |  GPU Time  | Noise |  Elem/s  | Samples | Batch GPU  |
+|---|--------|-----------|----------|---------|---------|----------|-----------|-----------|---------|---------|------------|-------|------------|-------|----------|---------|------------|
+| 1 |      1 |       128 | 33554432 |  20.00% | 100.00% |  100.00% |     0.00% |     0.05% |      3x |   1000x | 120.000 us | 1.00% | 100.000 us | 0.50% | 100.000G |   1000x |  95.000 us |
+| 1 |      4 |       256 | 33554432 |  25.00% |  25.00% |  100.00% |     0.00% |     0.30% |      3x |   1000x | 130.000 us | 1.00% | 110.000 us | 0.50% | 110.000G |   1000x | 105.000 us |
+| 2 |      1 |       128 | 33554432 |  40.00% |  50.00% |  100.00% |    30.00% |     1.50% |      3x |   1000x | 170.000 us | 1.00% | 150.000 us | 0.50% | 150.000G |   1000x | 145.000 us |
+| 2 |      4 |       256 | 33554432 |  80.00% |  12.50% |  100.00% |    30.00% |    10.00% |      3x |   1000x | 220.000 us | 1.00% | 200.000 us | 0.50% | 200.000G |   1000x | 195.000 us |

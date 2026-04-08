@@ -151,7 +151,7 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-RUN make -C third_party cuda
+RUN make -C third_party cuda cuda_nvbench
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
