@@ -659,8 +659,20 @@ int GpuStream::Run() {
 
     // Pin the thread to its local NUMA node to prevent migration,
     // ensuring numa_alloc_local buffers remain node-local.
-    int local_node = numa_node_of_cpu(sched_getcpu());
-    numa_run_on_node(local_node);
+    int cpu = sched_getcpu();
+    if (cpu < 0) {
+        std::cerr << "Run::sched_getcpu failed" << std::endl;
+        return -1;
+    }
+    int local_node = numa_node_of_cpu(cpu);
+    if (local_node < 0) {
+        std::cerr << "Run::numa_node_of_cpu failed for cpu " << cpu << std::endl;
+        return -1;
+    }
+    if (numa_run_on_node(local_node) != 0) {
+        std::cerr << "Run::numa_run_on_node failed for node " << local_node << std::endl;
+        return -1;
+    }
 
     // Run the benchmark for the configured data
     std::visit(

@@ -20,7 +20,7 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/gpu_stream'])
 
-    def _test_gpu_stream_command_generation(self, platform):
+    def _test_gpu_stream_command_generation(self, platform, data_type='double'):
         """Test gpu-stream benchmark command generation."""
         benchmark_name = 'gpu-stream'
         (benchmark_class,
@@ -31,9 +31,9 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         num_loops = 10
         size = 25769803776
 
-        parameters = '--num_warm_up %d --num_loops %d --size %d --data_type double ' \
+        parameters = '--num_warm_up %d --num_loops %d --size %d --data_type %s ' \
             '--check_data' % \
-            (num_warm_up, num_loops, size)
+            (num_warm_up, num_loops, size, data_type)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -49,7 +49,7 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.num_warm_up == num_warm_up)
         assert (benchmark._args.num_loops == num_loops)
         assert (benchmark._args.check_data)
-        assert (benchmark._args.data_type == 'double')
+        assert (benchmark._args.data_type == data_type)
 
         # Check command
         assert (1 == len(benchmark._commands))
@@ -57,7 +57,7 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert ('--size %d' % size in benchmark._commands[0])
         assert ('--num_warm_up %d' % num_warm_up in benchmark._commands[0])
         assert ('--num_loops %d' % num_loops in benchmark._commands[0])
-        assert ('--data_type double' in benchmark._commands[0])
+        assert ('--data_type %s' % data_type in benchmark._commands[0])
         assert ('--check_data' in benchmark._commands[0])
 
     @decorator.cuda_test
@@ -65,10 +65,20 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test gpu-stream benchmark command generation, CUDA case."""
         self._test_gpu_stream_command_generation(Platform.CUDA)
 
+    @decorator.cuda_test
+    def test_gpu_stream_command_generation_cuda_float(self):
+        """Test gpu-stream benchmark command generation with float, CUDA case."""
+        self._test_gpu_stream_command_generation(Platform.CUDA, data_type='float')
+
     @decorator.rocm_test
     def test_gpu_stream_command_generation_rocm(self):
         """Test gpu-stream benchmark command generation, ROCm case."""
         self._test_gpu_stream_command_generation(Platform.ROCM)
+
+    @decorator.rocm_test
+    def test_gpu_stream_command_generation_rocm_float(self):
+        """Test gpu-stream benchmark command generation with float, ROCm case."""
+        self._test_gpu_stream_command_generation(Platform.ROCM, data_type='float')
 
     @decorator.load_data('tests/data/gpu_stream.log')
     def _test_gpu_stream_result_parsing(self, platform, test_raw_output):
