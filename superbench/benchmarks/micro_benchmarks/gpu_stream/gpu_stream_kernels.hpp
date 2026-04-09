@@ -16,12 +16,8 @@
  * - float  -> float4  (4 x 32-bit = 128-bit)
  */
 template <typename T> struct VectorType;
-template <> struct VectorType<double> {
-    using type = double2;
-};
-template <> struct VectorType<float> {
-    using type = float4;
-};
+template <> struct VectorType<double> { using type = double2; };
+template <> struct VectorType<float> { using type = float4; };
 
 template <typename T> using VecT = typename VectorType<T>::type;
 
