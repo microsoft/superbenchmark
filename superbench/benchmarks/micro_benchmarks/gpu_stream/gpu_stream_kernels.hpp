@@ -16,8 +16,12 @@
  * - float  -> float4  (4 x 32-bit = 128-bit)
  */
 template <typename T> struct VectorType;
-template <> struct VectorType<double> { using type = double2; };
-template <> struct VectorType<float> { using type = float4; };
+template <> struct VectorType<double> {
+    using type = double2;
+};
+template <> struct VectorType<float> {
+    using type = float4;
+};
 
 template <typename T> using VecT = typename VectorType<T>::type;
 
@@ -49,11 +53,7 @@ template <typename T> inline __device__ void Fetch(T &v, const T *p) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
     v = *p;
 #else
-    if constexpr (std::is_same<T, float>::value) {
-        asm volatile("ld.volatile.global.f32 %0, [%1];" : "=f"(v) : "l"(p) : "memory");
-    } else if constexpr (std::is_same<T, double>::value) {
-        asm volatile("ld.volatile.global.f64 %0, [%1];" : "=d"(v) : "l"(p) : "memory");
-    } else if constexpr (std::is_same<T, double2>::value) {
+    if constexpr (std::is_same<T, double2>::value) {
         asm volatile("ld.volatile.global.v2.f64 {%0,%1}, [%2];" : "=d"(v.x), "=d"(v.y) : "l"(p) : "memory");
     } else if constexpr (std::is_same<T, float4>::value) {
         asm volatile("ld.volatile.global.v4.f32 {%0,%1,%2,%3}, [%4];"
@@ -82,11 +82,7 @@ template <typename T> inline __device__ void Store(T *p, const T &v) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
     *p = v;
 #else
-    if constexpr (std::is_same<T, float>::value) {
-        asm volatile("st.volatile.global.f32 [%0], %1;" ::"l"(p), "f"(v) : "memory");
-    } else if constexpr (std::is_same<T, double>::value) {
-        asm volatile("st.volatile.global.f64 [%0], %1;" ::"l"(p), "d"(v) : "memory");
-    } else if constexpr (std::is_same<T, double2>::value) {
+    if constexpr (std::is_same<T, double2>::value) {
         asm volatile("st.volatile.global.v2.f64 [%0], {%1,%2};" ::"l"(p), "d"(v.x), "d"(v.y) : "memory");
     } else if constexpr (std::is_same<T, float4>::value) {
         asm volatile("st.volatile.global.v4.f32 [%0], {%1,%2,%3,%4};" ::"l"(p), "f"(v.x), "f"(v.y), "f"(v.z), "f"(v.w)
@@ -166,17 +162,17 @@ template <typename T> __global__ void AddKernel(VecT<T> *tgt, const VecT<T> *src
 }
 
 /**
- * @brief Performs TRIAD, fused multiply/add operations on source arrays. a = b + x * c
+ * @brief Performs TRIAD, fused multiply/add operations on source arrays. c = b + x * a
  *
  * @details This CUDA kernel performs a fused multiply/add operation by multiplying elements from
- * the second source array with a scalar value, adding the result to corresponding elements from
- * the first source array, and storing the result in the target array.
+ * the first source array with a scalar value, adding the result to corresponding elements from
+ * the second source array, and storing the result in the target array.
  *
  * @param[out] tgt The target array where the result of the fused multiply/add operation will be stored (128-bit
  * aligned).
- * @param[in] src_a The first source array containing the first set of operands (128-bit aligned).
- * @param[in] src_b The second source array containing the second set of operands to be multiplied by the scalar
+ * @param[in] src_a The first source array containing the first set of operands to be multiplied by the scalar
  * (128-bit aligned).
+ * @param[in] src_b The second source array containing the second set of operands (128-bit aligned).
  * @param[in] scalar The scalar value used in the multiply/add operation.
  */
 template <typename T>
