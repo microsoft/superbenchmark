@@ -1,17 +1,17 @@
-ARG BASE_IMAGE=rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0
+ARG BASE_IMAGE=rocm/pytorch:rocm6.4.4_ubuntu24.04_py3.12_pytorch_release_2.7.1
 
 FROM ${BASE_IMAGE}
 
 # OS:
-#   - Ubuntu: 22.04
+#   - Ubuntu: 24.04
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 6.2
+#   - ROCm: 6.4
 # Lib:
-#   - torch: 2.3.0
-#   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
-#   - hipblaslt: release-staging/rocm-rel-6.2
-#   - rocblas: release-staging/rocm-rel-6.2
+#   - torch: 2.7.1
+#   - rccl: release/rocm-rel-6.4
+#   - hipblaslt: release-staging/rocm-rel-6.4
+#   - rocblas: release-staging/rocm-rel-6.4
 #   - openmpi: 4.1.x
 # Intel:
 #   - mlc: v3.12
@@ -38,7 +38,7 @@ RUN apt-get update && \
     libnuma-dev \
     libpci-dev \
     libssl-dev \
-    libtinfo5 \
+    libtinfo6 \
     libtool \
     lshw \
     net-tools \
@@ -92,13 +92,11 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 
-# Get Ubuntu version and set as an environment variable
-RUN export UBUNTU_VERSION=$(lsb_release -r -s)
-RUN echo "Ubuntu version: $UBUNTU_VERSION"
-ENV UBUNTU_VERSION=${UBUNTU_VERSION}
+# Set Ubuntu version
+ENV UBUNTU_VERSION=24.04
 
 # Install OFED
-ENV OFED_VERSION=5.9-0.5.6.0
+ENV OFED_VERSION=24.10-1.1.4.0
 # Check if ofed_info is present and has a version
 RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     echo "OFED not found. Installing OFED..."; \
@@ -137,7 +135,7 @@ RUN cd /tmp && \
 
 # Install RCCL
 RUN cd /opt/ &&  \
-    git clone -b release/rocm-rel-6.2 https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    git clone -b release/rocm-rel-6.4 https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
     mkdir build && \
     cd build && \
@@ -164,25 +162,49 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 RUN apt install rocm-cmake -y && \
-    python3 -m pip install --upgrade pip wheel setuptools==65.7
+    python3 -m pip install --upgrade pip wheel "setuptools>=69.0"
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-# Apply patch
-RUN cd third_party/perftest && \
-    git apply ../perftest_rocm6.patch
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+# perftest_rocm6.patch changes are already upstream in the submodule version
+# Build everything except hipblaslt and apex first (apex needs special handling for Python 3.12)
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o apex_rocm -o rocm_megatron_lm
+# Build hipblaslt separately with Tensile target-triple fix for ROCm 6.4 clang
+RUN cd third_party && \
+    git clone -b release-staging/rocm-rel-6.4 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
+    sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' \
+        hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py && \
+    cd hipBLASLt && ./install.sh -dc && \
+    cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
-# Install transformer_engine
+# Skip apex for ROCm - it has a fatal double-free bug on Python 3.12
+# (crashes both during install and import). PyTorch 2.7.1 natively
+# provides all apex functionality (AMP, fused optimizers, etc.).
+
+# Install TransformerEngine - pin to 386bd316 (before NVFP4/hip_fp4.h which needs ROCm 7.0+).
+# Disable CK fused attention (aiter submodule has gfx950-only code); aotriton stays enabled.
+# setup.py crashes with double-free during process exit (static destruction order fiasco
+# between torch BuildExtension's HIP runtime and setuptools). Install is fully complete
+# before the crash (all .so/.pyc/egg-info installed). || true handles the exit code.
 RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
-    export NVTE_FRAMEWORK=pytorch && \
-    pip install .
+    git checkout 386bd316 && \
+    git submodule update --init --recursive && \
+    NVTE_FRAMEWORK=pytorch \
+    NVTE_FUSED_ATTN_CK=0 \
+    NVTE_ROCM_ARCH=gfx942 \
+    python3 setup.py install || true
+# Work around HIP static destruction order double-free at process exit.
+# jemalloc gracefully handles double-free instead of aborting.
+RUN apt-get install -y --no-install-recommends libjemalloc2
+ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2:$LD_PRELOAD
+# Verify TE import works cleanly with jemalloc
+RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfully')"
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
@@ -190,4 +212,3 @@ ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
-
