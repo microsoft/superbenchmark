@@ -52,6 +52,15 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         )
 
         self._parser.add_argument(
+            '--data_type',
+            type=str,
+            default='double',
+            choices=['float', 'double'],
+            required=False,
+            help='Data type of the buffer elements.',
+        )
+
+        self._parser.add_argument(
             '--check_data',
             action='store_true',
             help='Enable data checking',
@@ -68,8 +77,8 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
 
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
-        args = '--size %d --num_warm_up %d --num_loops %d ' % (
-            self._args.size, self._args.num_warm_up, self._args.num_loops
+        args = '--size %d --num_warm_up %d --num_loops %d --data_type %s' % (
+            self._args.size, self._args.num_warm_up, self._args.num_loops, self._args.data_type
         )
 
         if self._args.check_data:

@@ -15,7 +15,7 @@ find_package(CUDAToolkit QUIET)
 
 # Source files
 set(SOURCES
-    gpu_stream_test.cpp
+    gpu_stream_main.cpp
     gpu_stream_utils.cpp
     gpu_stream.cu
     gpu_stream_kernels.cu

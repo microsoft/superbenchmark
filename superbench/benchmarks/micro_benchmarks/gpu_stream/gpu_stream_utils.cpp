@@ -43,6 +43,7 @@ void PrintUsage() {
               << "--size <size in bytes> "
               << "--num_warm_up <num_warm_up> "
               << "--num_loops <num_loops> "
+              << "[--data_type <float|double>] "
               << "[--check_data]" << std::endl;
 }
 
@@ -60,6 +61,7 @@ void PrintInputInfo(Opts &opts) {
     std::cout << "Buffer size(bytes): " << opts.size << std::endl;
     std::cout << "Number of warm up runs: " << opts.num_warm_up << std::endl;
     std::cout << "Number of loops: " << opts.num_loops << std::endl;
+    std::cout << "Data type: " << opts.data_type << std::endl;
     std::cout << "Check data: " << (opts.check_data ? "Yes" : "No") << std::endl;
 }
 
@@ -75,11 +77,12 @@ void PrintInputInfo(Opts &opts) {
  * @return int The status code.
  * */
 int ParseOpts(int argc, char **argv, Opts *opts) {
-    enum class OptIdx { kSize, kNumWarmUp, kNumLoops, kEnableCheckData };
+    enum class OptIdx { kSize, kNumWarmUp, kNumLoops, kEnableCheckData, kDataType };
     const struct option options[] = {{"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
                                      {"num_warm_up", required_argument, nullptr, static_cast<int>(OptIdx::kNumWarmUp)},
                                      {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumLoops)},
-                                     {"check_data", no_argument, nullptr, static_cast<int>(OptIdx::kEnableCheckData)}};
+                                     {"check_data", no_argument, nullptr, static_cast<int>(OptIdx::kEnableCheckData)},
+                                     {"data_type", required_argument, nullptr, static_cast<int>(OptIdx::kDataType)}};
     int getopt_ret = 0;
     int opt_idx = 0;
     bool size_specified = true;
@@ -125,6 +128,13 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
             break;
         case static_cast<int>(OptIdx::kEnableCheckData):
             opts->check_data = true;
+            break;
+        case static_cast<int>(OptIdx::kDataType):
+            opts->data_type = optarg;
+            if (opts->data_type != "float" && opts->data_type != "double") {
+                std::cerr << "Invalid data_type: " << optarg << ". Must be 'float' or 'double'." << std::endl;
+                parse_err = true;
+            }
             break;
         default:
             parse_err = true;

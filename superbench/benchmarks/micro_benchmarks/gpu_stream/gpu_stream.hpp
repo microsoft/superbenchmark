@@ -34,8 +34,8 @@ class GpuStream {
     int Run();
 
   private:
-    using BenchArgsVariant = std::variant<std::unique_ptr<BenchArgs<double>>>;
-    std::vector<BenchArgsVariant> bench_args_;
+    using BenchArgsVariant = std::variant<std::unique_ptr<BenchArgs<float>>, std::unique_ptr<BenchArgs<double>>>;
+    BenchArgsVariant bench_args_;
     Opts opts_;
 
     // Memory management functions
@@ -56,6 +56,7 @@ class GpuStream {
     template <typename T> int RunStream(std::unique_ptr<BenchArgs<T>> &, const std::string &data_type, float peak_bw);
 
     // Helper functions
+    template <typename T> void CreateBenchArgs();
     int GetGpuCount(int *);
     int SetGpu(int gpu_id);
     float GetMemoryClockRate(int device_id, const cudaDeviceProp &prop);
