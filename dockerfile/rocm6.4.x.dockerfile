@@ -150,8 +150,7 @@ RUN apt install amd-smi-lib -y && \
     python3 -m pip install .
 
 ENV PATH="/usr/local/mpi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
-    LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
-    LD_LIBRARY_PATH="/usr/local/mpi/lib:/opt/rocm/lib:/usr/local/lib/:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/opt/rccl/build:/usr/local/mpi/lib:/opt/rocm/lib:/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -164,24 +163,28 @@ RUN echo PATH="$PATH" > /etc/environment && \
 RUN apt install rocm-cmake -y && \
     python3 -m pip install --upgrade pip wheel "setuptools>=69.0"
 
-# Install jemalloc early - prevents glibc double-free aborts during HIP
-# static object teardown at process exit (affects setup.py builds that
-# import torch's BuildExtension, which initializes the HIP runtime).
-RUN apt-get install -y --no-install-recommends libjemalloc2
-ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2:$LD_PRELOAD
-
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
 # perftest_rocm6.patch changes are already upstream in the submodule version
-# rocm_megatron_lm is broken upstream (pretrain_deepseek.py doesn't exist in rocm_dev branch)
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm
+# rocm_megatron_lm: broken upstream (pretrain_deepseek.py missing in rocm_dev branch)
+# apex_rocm: skipped — all apex imports in Megatron-DeepSpeed are guarded with try/except,
+#   superbench has zero direct apex usage, and PyTorch 2.7 has native fused optimizers/AMP.
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
 # Build hipblaslt separately with Tensile target-triple fix for ROCm 6.4 clang
+# Also fix joblib race condition (github.com/joblib/joblib/issues/1788) in Python 3.12:
+# joblib's _retrieve() iterates _jobs_set while callbacks modify it.
+# Fix: copy the set before iterating. Patch all joblib instances system-wide.
+RUN pip install "joblib>=1.4.2" && \
+    find / -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
+        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} +
 RUN cd third_party && \
     git clone -b release-staging/rocm-rel-6.4 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' \
         hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py && \
     cd hipBLASLt && ./install.sh -dc && \
+    find /opt -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
+        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} + && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
@@ -190,7 +193,6 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
 
 # Install TransformerEngine - pin to 386bd316 (before NVFP4/hip_fp4.h which needs ROCm 7.0+).
 # Disable CK fused attention (aiter submodule has gfx950-only code); aotriton stays enabled.
-# --no-build-isolation so torch (with IS_HIP_EXTENSION=True) is visible during build.
 RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
     git checkout 386bd316 && \
@@ -198,7 +200,7 @@ RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     NVTE_FRAMEWORK=pytorch \
     NVTE_FUSED_ATTN_CK=0 \
     NVTE_ROCM_ARCH=gfx942 \
-    pip install --no-build-isolation .
+    python3 setup.py install
 RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfully')"
 
 ADD . .
