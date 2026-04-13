@@ -209,3 +209,7 @@ ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
+
+# Fix stale hypothesis plugin from base image (imports removed pkg_resources)
+# and add test dependencies missing from the base image.
+RUN python3 -m pip install --upgrade hypothesis setuptools pytest-timeout vcrpy
