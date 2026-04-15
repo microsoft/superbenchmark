@@ -163,20 +163,29 @@ ADD third_party third_party
 # rocm_megatron_lm: broken upstream (pretrain_deepseek.py missing in rocm_dev branch)
 # apex_rocm: skipped — all imports guarded, PyTorch 2.9 has native fused optimizers/AMP.
 RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-7.0 HIPBLASLT_BRANCH=release-staging/rocm-rel-7.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
-# Build hipblaslt separately with Tensile target-triple fix for clang
-# Fix joblib race condition (github.com/joblib/joblib/issues/1788) for Python 3.12
-RUN pip install "joblib>=1.4.2" && \
-    find / -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
-        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} +
+# Build hipblaslt-bench only (not the library) against system-installed hipBLASLt.
+# Cannot build full hipBLASLt from source (requires AMD-internal 'origami' library).
+# Strategy: clone repo, sed out origami references, disable host lib & device/Tensile,
+# build only the client (hipblaslt-bench) linking against system roc::hipblaslt.
 RUN cd third_party && \
-    git clone -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
-    (sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py 2>/dev/null || true) && \
-    cd hipBLASLt && apt-get update -qq && ./install.sh -dc && \
-    find /opt -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
-        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} + && \
-    cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
-RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
-    cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
+    git clone --depth 1 -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
+    cd hipBLASLt && \
+    sed -i '/origami/d' CMakeLists.txt tensilelite/CMakeLists.txt && \
+    sed -i '/mxdatagenerator\|mxDataGenerator/d' clients/CMakeLists.txt && \
+    mkdir -p build/release && cd build/release && \
+    CMAKE_POLICY_VERSION_MINIMUM= cmake \
+        -DHIPBLASLT_ENABLE_HOST=OFF \
+        -DHIPBLASLT_ENABLE_DEVICE=OFF \
+        -DHIPBLASLT_ENABLE_CLIENT=ON \
+        -DHIPBLASLT_ENABLE_ROCROLLER=OFF \
+        -DHIPBLASLT_BUILD_TESTING=OFF \
+        -DHIPBLASLT_ENABLE_SAMPLES=OFF \
+        -DHIPBLASLT_ENABLE_LLVM=OFF \
+        -DCMAKE_PREFIX_PATH=/opt/rocm \
+        -DCMAKE_BUILD_TYPE=Release \
+        ../.. && \
+    make -j$(nproc) hipblaslt-bench && \
+    cp -v clients/hipblaslt-bench /opt/superbench/bin/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
