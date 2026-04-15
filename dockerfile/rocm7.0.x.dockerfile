@@ -57,22 +57,11 @@ RUN apt-get update && \
 
 ARG NUM_MAKE_JOBS=64
 
-# Check if CMake is installed and its version
-RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
-    required_version="3.24.1" && \
-    if [ "$(printf "%s\n" "$required_version" "$cmake_version" | sort -V | head -n 1)" != "$required_version" ]; then \
-    echo "existing cmake version is ${cmake_version}" && \
-    cd /tmp && \
-    wget -q https://github.com/Kitware/CMake/releases/download/v${required_version}/cmake-${required_version}.tar.gz && \
-    tar xzf cmake-${required_version}.tar.gz && \
-    cd cmake-${required_version} && \
-    ./bootstrap --prefix=/usr --no-system-curl --parallel=16 && \
-    make -j ${NUM_MAKE_JOBS} && \
-    make install && \
-    rm -rf /tmp/cmake-${required_version}* \
-    else \
-    echo "CMake version is greater than or equal to 3.24.1"; \
-    fi
+# Install CMake via apt if not already present (Ubuntu 24.04 provides >= 3.28)
+RUN if ! command -v cmake >/dev/null 2>&1; then \
+    apt-get update && apt-get install -y --no-install-recommends cmake; \
+    fi && \
+    echo "CMake version: $(cmake --version | head -1)"
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -181,9 +170,8 @@ RUN pip install "joblib>=1.4.2" && \
         's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} +
 RUN cd third_party && \
     git clone -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
-    sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' \
-        hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py && \
-    cd hipBLASLt && ./install.sh -dc && \
+    (sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py 2>/dev/null || true) && \
+    cd hipBLASLt && apt-get update -qq && ./install.sh -dc && \\
     find /opt -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
         's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} + && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
