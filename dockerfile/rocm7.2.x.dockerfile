@@ -166,9 +166,7 @@ ADD third_party third_party
 # apex_rocm: skipped — all imports guarded, PyTorch 2.9 has native fused optimizers/AMP.
 RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-7.2 HIPBLASLT_BRANCH=release/rocm-rel-7.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
 # Build hipblaslt-bench only (not the library) against system-installed hipBLASLt.
-# Cannot build full hipBLASLt from source (requires AMD-internal 'origami' library).
-# Strategy: clone repo, sed out origami references, disable host lib & device/Tensile,
-# build only the client (hipblaslt-bench) linking against system roc::hipblaslt.
+# Origami is AMD-internal; sed it out. ROCROLLER disabled via flag, mxDataGenerator removed.
 RUN cd third_party && \
     git clone --depth 1 -b release/rocm-rel-7.2 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     cd hipBLASLt && \

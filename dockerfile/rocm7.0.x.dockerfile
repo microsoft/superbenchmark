@@ -164,28 +164,24 @@ ADD third_party third_party
 # apex_rocm: skipped — all imports guarded, PyTorch 2.9 has native fused optimizers/AMP.
 RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-7.0 HIPBLASLT_BRANCH=release-staging/rocm-rel-7.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
 # Build hipblaslt-bench only (not the library) against system-installed hipBLASLt.
-# Cannot build full hipBLASLt from source (requires AMD-internal 'origami' library).
-# Strategy: clone repo, sed out origami references, disable host lib & device/Tensile,
-# build only the client (hipblaslt-bench) linking against system roc::hipblaslt.
+# Build hipblaslt-bench only against system hipBLASLt.
+# 7.0 uses HIPBLASLT_USE_ROCROLLER (not ENABLE), BUILD_CLIENTS_BENCHMARKS, Tensile_SKIP_BUILD.
 RUN cd third_party && \
     git clone --depth 1 -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     cd hipBLASLt && \
-    sed -i '/origami/d' CMakeLists.txt tensilelite/CMakeLists.txt && \
     sed -i '/mxdatagenerator\|mxDataGenerator/d' clients/CMakeLists.txt && \
     mkdir -p build/release && cd build/release && \
     CMAKE_POLICY_VERSION_MINIMUM= cmake \
-        -DHIPBLASLT_ENABLE_HOST=OFF \
-        -DHIPBLASLT_ENABLE_DEVICE=OFF \
-        -DHIPBLASLT_ENABLE_CLIENT=ON \
-        -DHIPBLASLT_ENABLE_ROCROLLER=OFF \
-        -DHIPBLASLT_BUILD_TESTING=OFF \
-        -DHIPBLASLT_ENABLE_SAMPLES=OFF \
-        -DHIPBLASLT_ENABLE_LLVM=OFF \
+        -DHIPBLASLT_USE_ROCROLLER=OFF \
+        -DBUILD_CLIENTS_BENCHMARKS=ON \
+        -DBUILD_CLIENTS_TESTS=OFF \
+        -DBUILD_CLIENTS_SAMPLES=OFF \
+        -DTensile_SKIP_BUILD=ON \
         -DCMAKE_PREFIX_PATH=/opt/rocm \
         -DCMAKE_BUILD_TYPE=Release \
         ../.. && \
     make -j$(nproc) hipblaslt-bench && \
-    cp -v clients/hipblaslt-bench /opt/superbench/bin/
+    cp -v clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
