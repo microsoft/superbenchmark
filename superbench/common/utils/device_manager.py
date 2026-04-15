@@ -12,7 +12,7 @@ from superbench.common.devices import GPU
 gpu = GPU()
 if gpu.vendor == 'nvidia' or gpu.vendor == 'nvidia-graphics':
     import py3nvml.py3nvml as nvml
-elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics':
+elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics' or gpu.vendor == 'hygon':
     import amdsmi as rocml
 
 
@@ -456,5 +456,5 @@ class AmdDeviceManager(DeviceManager):
 device_manager: Optional[DeviceManager] = DeviceManager()
 if gpu.vendor == 'nvidia' or gpu.vendor == 'nvidia-graphics':
     device_manager = NvidiaDeviceManager()
-elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics':
+elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics' or gpu.vendor == 'hygon':
     device_manager = AmdDeviceManager()

@@ -286,6 +286,13 @@ class SystemInfo():    # pragma: no cover
 
         return gpu_dict
 
+    def get_gpu_hygon(self):
+        """Get hygon gpu info."""
+        gpu_dict = self.get_gpu_amd()
+        if gpu_dict:
+            gpu_dict['accelerator_vendor'] = 'hygon'
+        return gpu_dict
+
     def get_gpu(self):
         """Get gpu info and identify gpu type(nvidia/amd).
 
@@ -296,6 +303,8 @@ class SystemInfo():    # pragma: no cover
             if Path('/dev/nvidiactl').is_char_device() and Path('/dev/nvidia-uvm').is_char_device():
                 return self.get_gpu_nvidia()
             if Path('/dev/kfd').is_char_device() and Path('/dev/dri').is_dir():
+                if Path('/usr/local/hyhal').exists() or Path('/opt/hyhal').exists():
+                    return self.get_gpu_hygon()
                 return self.get_gpu_amd()
         except Exception:
             logger.exception('Error: get gpu info failed')

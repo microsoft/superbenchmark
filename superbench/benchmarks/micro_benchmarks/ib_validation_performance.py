@@ -282,7 +282,7 @@ class IBBenchmark(MicroBenchmarkWithInvoke):
             gpu = GPU()
             if gpu.vendor == 'nvidia':
                 gpu_dev = f'--use_cuda={self._args.gpu_dev}'
-            elif gpu.vendor == 'amd':
+            elif gpu.vendor == 'amd' or gpu.vendor == 'hygon':
                 gpu_dev = f'--use_rocm={self._args.gpu_dev}'
             else:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)

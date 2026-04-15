@@ -224,6 +224,11 @@ class IBBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         expect_command = expect_command.replace('cuda', 'rocm')
         command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
         assert (command == expect_command)
+        mock_gpu.return_value = 'hygon'
+        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+        ret = benchmark._preprocess()
+        command = benchmark._bin_name + benchmark._commands[0].split(benchmark._bin_name)[1]
+        assert (command == expect_command)
 
         parameters = '--command ib_read_lat --ib_dev mlx5_0 --iters 2000 --msg_size 33554432 ' + \
             '--pattern one-to-one --hostfile hostfile --gpu_dev 0 --direction gpu-to-gpu'
