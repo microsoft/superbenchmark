@@ -171,7 +171,7 @@ RUN pip install "joblib>=1.4.2" && \
 RUN cd third_party && \
     git clone -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     (sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py 2>/dev/null || true) && \
-    cd hipBLASLt && apt-get update -qq && ./install.sh -dc && \\
+    cd hipBLASLt && apt-get update -qq && ./install.sh -dc && \
     find /opt -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
         's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} + && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
