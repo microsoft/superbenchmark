@@ -39,7 +39,7 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
+# for cuda 12.9 and later Build from v4.1.0 for blackwell (SM100/SM103) support
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := "100;103")
@@ -73,7 +73,11 @@ cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*,\
 cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*,\
 cutlass_tensorop_h16816gemm_256x128_32x3_*,\
 cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*,\
-cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*"
+cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*,\
+cutlass3x_sm100_tensorop_gemm_tf32_*,\
+cutlass3x_sm100_tensorop_gemm_f16_*,\
+cutlass3x_sm100_tensorop_gemm_bf16_*,\
+cutlass3x_sm100_tensorop_gemm_s8_*"
 	cmake --build ./cutlass/build -j $(shell nproc --ignore=2) --target install
 	rm -rf ./cutlass/build
 endif
