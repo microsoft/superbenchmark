@@ -93,3 +93,54 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
 
         # Negative case - Add invalid raw output.
         assert (benchmark._process_raw_result(3, 'Invalid raw output') is False)
+
+    @decorator.cuda_test
+    def test_flops_performance_cuda_sm100(self):
+        """Test gemm-flops benchmark SM100 (Blackwell) UMMA kernel output parsing."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='')
+        benchmark._CudaGemmFlopsBenchmark__precision_need_to_run = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc']
+
+        # SM100 UMMA 3x kernel naming: cutlass3x_sm100_tensorop_gemm_{dtype_a}_{dtype_b}_{acc}_{c}_{d}_{tile}_{cluster}_{stages}_{layout}_align{al}_{schedule}
+        raw_output_tf32_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_tf32_tf32_f32_f32_f32_128x256x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.21,1072500
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_tf32_tf32_f32_f32_f32_256x128x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.45,1043800
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_tf32_tf32_f32_void_f32_128x256x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.10,1086300
+"""
+        raw_output_bf16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_f32_f32_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.35,2024100
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_void_f32_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.20,2096300
+"""
+        raw_output_fp16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_f16_f16_f16_f16_f16_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.31,2042000
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f32_f32_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.28,2056200
+"""
+        raw_output_int8_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s32_s32_128x256x128_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.20,3998400
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_s8_s8_s32_void_s32_128x256x128_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.15,4091600
+"""
+        assert (benchmark._process_raw_result(0, raw_output_tf32_tc))
+        assert (benchmark._process_raw_result(1, raw_output_bf16_tc))
+        assert (benchmark._process_raw_result(2, raw_output_fp16_tc))
+        assert (benchmark._process_raw_result(3, raw_output_int8_tc))
+
+        assert (benchmark.result['tf32_tc_flops'][0] == 1086300)
+        assert (benchmark.result['bf16_tc_flops'][0] == 2096300)
+        assert (benchmark.result['fp16_tc_flops'][0] == 2056200)
+        assert (benchmark.result['int8_tc_iops'][0] == 4091600)
