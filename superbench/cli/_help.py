@@ -34,6 +34,8 @@ helps['deploy'] = """
     examples:
         - name: deploy default image on local GPU node
           text: {cli_name} deploy --host-list localhost
+        - name: deploy using custom container name
+          text: {cli_name} deploy --host-list localhost --container-name my-benchmark
         - name: deploy image "superbench/cuda:11.1" to all nodes in ./host.ini
           text: {cli_name} deploy --docker-image superbench/cuda:11.1 --host-file ./host.ini
         - name: deploy image "superbench/rocm:4.0" to node-0 and node-2, using key file id_rsa for ssh
@@ -56,6 +58,8 @@ helps['run'] = """
     examples:
         - name: run all benchmarks on local GPU node
           text: {cli_name} run --host-list localhost
+        - name: run all benchmarks using custom container name
+          text: {cli_name} run --host-list localhost --container-name my-benchmark
         - name: run all benchmarks on all nodes in ./host.ini using image "superbench/cuda:11.1"
             and default benchmarking configuration
           text: {cli_name} run --docker-image superbench/cuda:11.1 --host-file ./host.ini

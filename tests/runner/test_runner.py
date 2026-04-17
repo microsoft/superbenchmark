@@ -512,6 +512,30 @@ class RunnerTestCase(unittest.TestCase):
         self.assertNotIn('export "PATH=', captured['cmd'])
 
     @mock.patch('superbench.runner.ansible.AnsibleClient.run')
+    def test_run_proc_uses_custom_container_name(self, mock_ansible_client_run):
+        """Test _run_proc uses configured docker container name."""
+        mock_ansible_client_run.return_value = 0
+        self.runner._sb_benchmarks = {'foo': {}}
+        self.runner._docker_config.container_name = 'sb-custom'
+        captured = {}
+
+        def fake_get_shell_config(cmd):
+            captured['cmd'] = cmd
+            return {'module_args': cmd, 'cmdline': '', 'host_pattern': 'localhost', 'module': 'shell'}
+
+        self.runner._ansible_client.get_shell_config = fake_get_shell_config
+        mode = OmegaConf.create({
+            'name': 'local',
+            'proc_num': 1,
+            'env': {},
+            'prefix': '',
+        })
+
+        self.runner._run_proc('foo', mode, {'proc_rank': 0})
+
+        self.assertIn('docker exec sb-custom bash -lc', captured['cmd'])
+
+    @mock.patch('superbench.runner.ansible.AnsibleClient.run')
     def test_run_proc_no_docker_keeps_tmp_env_source(self, mock_ansible_client_run):
         """Test _run_proc still sources /tmp/sb.env in no_docker mode."""
         mock_ansible_client_run.return_value = 0

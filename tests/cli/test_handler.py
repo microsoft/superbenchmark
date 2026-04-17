@@ -5,6 +5,8 @@
 
 import unittest
 
+from knack.util import CLIError
+
 import superbench.cli._handler as cli_handler
 
 
@@ -78,3 +80,19 @@ class CLIHandlerTestCase(unittest.TestCase):
                 domain, name = cli_handler.split_docker_domain(test_case['input'])
                 self.assertEqual(domain, test_case['domain'])
                 self.assertEqual(name, test_case['name'])
+
+    def test_process_runner_arguments_container_name(self):
+        """Test process_runner_arguments saves custom container name."""
+        docker_config, _, _, _ = cli_handler.process_runner_arguments(
+            host_list='localhost',
+            container_name='sb-custom',
+        )
+        self.assertEqual(docker_config.container_name, 'sb-custom')
+
+    def test_process_runner_arguments_empty_container_name(self):
+        """Test process_runner_arguments rejects empty container name."""
+        with self.assertRaises(CLIError):
+            cli_handler.process_runner_arguments(
+                host_list='localhost',
+                container_name='   ',
+            )

@@ -42,6 +42,12 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
         """
         with ArgumentsContext(self, '') as ac:
             ac.argument('docker_image', options_list=('--docker-image', '-i'), type=str, help='Docker image URI.')
+            ac.argument(
+                'container_name',
+                options_list=('--container-name',),
+                type=str,
+                help='Docker container name. Defaults to sb-workspace.'
+            )
             ac.argument('docker_username', type=str, help='Docker registry username if authentication is needed.')
             ac.argument('docker_password', type=str, help='Docker registry password if authentication is needed.')
             ac.argument('no_docker', action='store_true', help='Run on host directly without Docker.')

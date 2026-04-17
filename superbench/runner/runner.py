@@ -52,6 +52,11 @@ class SuperBenchRunner():
         self._sb_enabled_benchmarks = self.__get_enabled_benchmarks()
         logger.info('Runner will run: %s', self._sb_enabled_benchmarks)
 
+    @property
+    def _container_name(self):
+        """Get docker container name with backward-compatible default."""
+        return getattr(self._docker_config, 'container_name', 'sb-workspace')
+
     def __set_logger(self, filename):
         """Set logger and add file handler.
 
@@ -268,6 +273,7 @@ class SuperBenchRunner():
         extravars = {
             'ssh_port': random.randint(1 << 14, (1 << 15) - 1),
             'output_dir': str(self._output_path),
+            'container': self._container_name,
             'docker_image': self._docker_config.image,
             'docker_pull': bool(self._docker_config.pull),
         }
@@ -287,7 +293,7 @@ class SuperBenchRunner():
 
         logger.info('Runner is going to get node system info.')
 
-        fcmd = "docker exec sb-workspace bash -lc '{command}'"
+        fcmd = "docker exec {container} bash -lc '{{command}}'".format(container=self._container_name)
 
         if 'skip' not in self._docker_config:
             self._docker_config.skip = False
@@ -310,6 +316,7 @@ class SuperBenchRunner():
             self._ansible_client.get_playbook_config(
                 'check_env.yaml',
                 extravars={
+                    'container': self._container_name,
                     'no_docker': False if 'skip' not in self._docker_config else self._docker_config.skip,
                     'output_dir': str(self._output_path),
                     'env': '\n'.join(f'{k}={v}' for k, v in self._sb_config.superbench.env.items()),
@@ -550,7 +557,7 @@ class SuperBenchRunner():
         if mode_env_cmds:
             env_list = f"{env_list} && {' && '.join(mode_env_cmds)}"
 
-        fcmd = "docker exec sb-workspace bash -lc '{env_list} && {command}'"
+        fcmd = "docker exec {container} bash -lc '{{env_list}} && {{command}}'".format(container=self._container_name)
         if self._docker_config.skip:
             fcmd = "bash -c '{env_list} && cd $SB_WORKSPACE && {command}'"
         ansible_runner_config = self._ansible_client.get_shell_config(

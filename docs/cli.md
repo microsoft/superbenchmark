@@ -90,7 +90,8 @@ sb benchmark list-parameters --name pytorch-[a-z]+
 
 Deploy the SuperBench environments to all managed nodes.
 ```bash title="SB CLI"
-sb deploy [--docker-image]
+sb deploy [--container-name]
+          [--docker-image]
           [--docker-password]
           [--docker-username]
           [--host-file]
@@ -106,6 +107,7 @@ sb deploy [--docker-image]
 
 | Name                  | Default                 | Description                                                                       |
 |-----------------------|-------------------------|-----------------------------------------------------------------------------------|
+| `--container-name`    | `sb-workspace`          | Docker container name.                                                            |
 | `--docker-image` `-i` | `superbench/superbench` | Docker image URI, [here](./user-tutorial/container-images.mdx) listed all images. |
 | `--docker-password`   | `None`                  | Docker registry password if authentication is needed.                             |
 | `--docker-username`   | `None`                  | Docker registry username if authentication is needed.                             |
@@ -128,6 +130,11 @@ sb deploy [--docker-image]
 Deploy default image on local GPU node:
 ```bash title="SB CLI"
 sb deploy --host-list localhost
+```
+
+Deploy using custom container name:
+```bash title="SB CLI"
+sb deploy --host-list localhost --container-name my-benchmark
 ```
 
 Deploy image `superbench/cuda:11.1` to all nodes in `./host.ini`:
@@ -348,6 +355,7 @@ Run the SuperBench benchmarks distributedly.
 ```bash title="SB CLI"
 sb run [--config-file]
        [--config-override]
+       [--container-name]
        [--docker-image]
        [--docker-password]
        [--docker-username]
@@ -367,6 +375,7 @@ sb run [--config-file]
 |--------------------------|-------------------------|-----------------------------------------------------------------------------|
 | `--config-file` `-c`     | `None`                  | Path to SuperBench config file.                                             |
 | `--config-override` `-C` | `None`                  | Extra arguments to override config_file.                                    |
+| `--container-name`       | `sb-workspace`          | Docker container name.                                                      |
 | `--docker-image` `-i`    | `superbench/superbench` | Docker image URI.                                                           |
 | `--docker-password`      | `None`                  | Docker registry password if authentication is needed.                       |
 | `--docker-username`      | `None`                  | Docker registry username if authentication is needed.                       |
@@ -390,6 +399,11 @@ sb run [--config-file]
 Run all benchmarks on local GPU node:
 ```bash title="SB CLI"
 sb run --host-list localhost
+```
+
+Run all benchmarks using custom container name:
+```bash title="SB CLI"
+sb run --host-list localhost --container-name my-benchmark
 ```
 
 Run all benchmarks on all managed nodes in `./host.ini` using image `superbench/cuda:11.1`

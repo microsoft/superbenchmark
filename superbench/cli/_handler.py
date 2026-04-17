@@ -96,6 +96,7 @@ def process_config_arguments(config_file=None, config_override=None, output_dir=
 
 def process_runner_arguments(
     docker_image='superbench/superbench',
+    container_name='sb-workspace',
     docker_username=None,
     docker_password=None,
     no_docker=False,
@@ -113,6 +114,7 @@ def process_runner_arguments(
 
     Args:
         docker_image (str, optional): Docker image URI. Defaults to superbench/superbench:latest.
+        container_name (str, optional): Docker container name. Defaults to sb-workspace.
         docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
         docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
         no_docker (bool, optional): Run on host directly without Docker. Defaults to False.
@@ -138,6 +140,8 @@ def process_runner_arguments(
     """
     if bool(docker_username) != bool(docker_password):
         raise CLIError('Must specify both docker_username and docker_password if authentication is needed.')
+    if not container_name or not container_name.strip():
+        raise CLIError('container_name cannot be empty.')
     if not (host_file or host_list):
         raise CLIError('Must specify one of host_file or host_list.')
     host_file = check_argument_file('host_file', host_file)
@@ -147,6 +151,7 @@ def process_runner_arguments(
     docker_config = OmegaConf.create(
         {
             'image': docker_image,
+            'container_name': container_name.strip(),
             'username': docker_username,
             'password': docker_password,
             'registry': split_docker_domain(docker_image)[0],
@@ -210,6 +215,7 @@ def exec_command_handler(config_file=None, config_override=None, output_dir=None
 
 def deploy_command_handler(
     docker_image='superbench/superbench',
+    container_name='sb-workspace',
     docker_username=None,
     docker_password=None,
     no_image_pull=False,
@@ -230,6 +236,7 @@ def deploy_command_handler(
 
     Args:
         docker_image (str, optional): Docker image URI. Defaults to superbench/superbench:latest.
+        container_name (str, optional): Docker container name. Defaults to sb-workspace.
         docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
         docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
         no_image_pull (bool, optional): Skip pull and use local Docker image. Defaults to False.
@@ -245,6 +252,7 @@ def deploy_command_handler(
     """
     docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
         docker_image=docker_image,
+        container_name=container_name,
         docker_username=docker_username,
         docker_password=docker_password,
         no_docker=False,
@@ -265,6 +273,7 @@ def deploy_command_handler(
 
 def run_command_handler(
     docker_image='superbench/superbench',
+    container_name='sb-workspace',
     docker_username=None,
     docker_password=None,
     no_docker=False,
@@ -284,6 +293,7 @@ def run_command_handler(
 
     Args:
         docker_image (str, optional): Docker image URI. Defaults to superbench/superbench:latest.
+        container_name (str, optional): Docker container name. Defaults to sb-workspace.
         docker_username (str, optional): Docker registry username if authentication is needed. Defaults to None.
         docker_password (str, optional): Docker registry password if authentication is needed. Defaults to None.
         no_docker (bool, optional): Run on host directly without Docker. Defaults to False.
@@ -303,6 +313,7 @@ def run_command_handler(
     """
     docker_config, ansible_config, sb_config, sb_output_dir = process_runner_arguments(
         docker_image=docker_image,
+        container_name=container_name,
         docker_username=docker_username,
         docker_password=docker_password,
         no_docker=no_docker,
