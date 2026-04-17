@@ -39,12 +39,13 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.9 and later Build from v4.1.0 for blackwell (SM100/SM103) support
+# for cuda 12.9 and later Build from v4.3.5 for blackwell (SM100/SM103) support
+# v4.3.5 adds SM103 (B300) blockscaled kernels, profiler hang/timeout fixes, and MoE GEMM support
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := "100;103")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
-	git clone --branch v4.1.0 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
+	git clone --branch v4.3.5 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval ARCHS := "90;100")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
