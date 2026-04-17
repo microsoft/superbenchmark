@@ -70,7 +70,7 @@
   hosts: all
   gather_facts: false
   vars:
-    workspace: '{{ ansible_user_dir }}/sb-workspace'
+    workspace: '{{ ansible_facts["user_dir"] }}/sb-workspace'
     container: sb-workspace
   tasks:
     - name: Creating Workspace
