@@ -875,11 +875,42 @@ __global__ void SMOneToAllCopyKernel(ulong2 **dst_buffers, ulong2 *src_buffer, u
     }
 }
 
+int GetSafeAllToAllThreadBlockSize(const Opts &opts, int *thread_block_size) {
+    if (thread_block_size == nullptr) {
+        return -1;
+    }
+
+    cudaFuncAttributes func_attr;
+#if defined(__HIP_PLATFORM_AMD__)
+    cudaError_t cuda_err = cudaFuncGetAttributes(&func_attr, reinterpret_cast<const void *>(SMOneToAllCopyKernel));
+#else
+    cudaError_t cuda_err = cudaFuncGetAttributes(&func_attr, SMOneToAllCopyKernel);
+#endif
+    if (cuda_err != cudaSuccess) {
+        fprintf(stderr, "GetSafeAllToAllThreadBlockSize::cudaFuncGetAttributes error: %d\n", cuda_err);
+        return -1;
+    }
+
+    if (func_attr.maxThreadsPerBlock <= 0) {
+        fprintf(stderr, "GetSafeAllToAllThreadBlockSize::invalid maxThreadsPerBlock: %d\n",
+                func_attr.maxThreadsPerBlock);
+        return -1;
+    }
+
+    *thread_block_size = static_cast<int>(opts.all_to_all_thread_block_size);
+    if (*thread_block_size > func_attr.maxThreadsPerBlock) {
+        *thread_block_size = func_attr.maxThreadsPerBlock;
+    }
+
+    return 0;
+}
+
 // src_rank/dst_rank: < 0 for all ranks, else for specified rank
 int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank) {
     int ret = 0;
     cudaError_t cuda_err = cudaSuccess;
     int can_access = 0;
+    int thread_block_size = 0;
 
     std::vector<uint8_t *> src_buffers_gpu(gpu_count, nullptr);
     std::vector<uint8_t *> dst_buffers_gpu(gpu_count, nullptr);
@@ -889,6 +920,11 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
     std::vector<cudaEvent_t> stop_events(gpu_count);
 
     uint64_t *data_buffer_cpu = nullptr;
+
+    ret = GetSafeAllToAllThreadBlockSize(opts, &thread_block_size);
+    if (ret != 0) {
+        return -1;
+    }
 
     // Scan all GPUs
     for (int i = 0; i < gpu_count; i++) {
@@ -1011,7 +1047,7 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
                 }
             }
             SMOneToAllCopyKernel<<<gpu_count * opts.all_to_all_num_thread_blocks_per_rank,
-                                   opts.all_to_all_thread_block_size, 0, streams[rank]>>>(
+                                   thread_block_size, 0, streams[rank]>>>(
                 (ulong2 **)dst_buffer_gpu_args[rank], (ulong2 *)src_buffers_gpu[rank], opts.size, rank, dst_rank,
                 gpu_count);
             if (i == opts.num_warm_up + opts.num_loops - 1) {
