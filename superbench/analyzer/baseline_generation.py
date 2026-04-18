@@ -150,6 +150,33 @@ class BaselineGeneration(DataDiagnosis):
                         aggregated_df[metrics[index]] = out[1]
         return baseline
 
+    def _format_metric_value(self, metric, val, digit):
+        """Format a single baseline metric value based on its type.
+
+        Args:
+            metric (str): the metric name.
+            val: the metric value.
+            digit (int): the number of digits after the decimal point.
+
+        Returns:
+            The formatted metric value.
+        """
+        if metric not in self._raw_data_df:
+            return val
+        sample = self._raw_data_df[metric].iloc[0]
+        if isinstance(sample, float):
+            # Keep full precision for deterministic metrics to avoid false positives in diagnosis
+            if 'deterministic' in metric:
+                return float(val)
+            return f'%.{digit}g' % val if abs(val) < 1 else f'%.{digit}f' % val
+        if isinstance(sample, int):
+            return int(val)
+        try:
+            return float(val)
+        except Exception as e:
+            logger.error('Analyzer: {} baseline is not numeric, msg: {}'.format(metric, str(e)))
+            return val
+
     def run(
         self, raw_data_file, summary_rule_file, diagnosis_rule_file, pre_baseline_file, algorithm, output_dir, digit=2
     ):
@@ -174,19 +201,9 @@ class BaselineGeneration(DataDiagnosis):
             # generate baseline accordint to rules in diagnosis and fix threshold outlier detection method
             baseline = self.generate_baseline(algorithm, self._raw_data_df, diagnosis_rule_file, baseline)
             for metric in baseline:
-                val = baseline[metric]
-                if metric in self._raw_data_df:
-                    if isinstance(self._raw_data_df[metric].iloc[0], float):
-                        baseline[metric] = f'%.{digit}g' % val if abs(val) < 1 else f'%.{digit}f' % val
-                    elif isinstance(self._raw_data_df[metric].iloc[0], int):
-                        baseline[metric] = int(val)
-                    else:
-                        try:
-                            baseline[metric] = float(val)
-                        except Exception as e:
-                            logger.error('Analyzer: {} baseline is not numeric, msg: {}'.format(metric, str(e)))
+                baseline[metric] = self._format_metric_value(metric, baseline[metric], digit)
             baseline = json.dumps(baseline, indent=2, sort_keys=True)
-            baseline = re.sub(r': \"(\d+.?\d*)\"', r': \1', baseline)
+            baseline = re.sub(r': \"(-?\d+\.?\d*)\"', r': \1', baseline)
             with (Path(output_dir) / 'baseline.json').open('w') as f:
                 f.write(baseline)
 
