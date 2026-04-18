@@ -100,9 +100,13 @@ module.exports = {
     },
     announcementBar: {
       id: 'supportus',
-      content:
-        'This site is published from the <code>dtk</code> branch of ' +
-        '<a target="_blank" rel="noopener noreferrer" href="https://github.com/alephpiece/superbenchmark">alephpiece/superbenchmark</a>.',
+      content: 'This site is published from a fork of the official SuperBench project.',
+    },
+    algolia: {
+      appId: 'WKHUVH720Q',
+      apiKey: '0b3312f228b10e7a9ba0d4e022277790',
+      indexName: 'superbench',
+      contextualSearch: true,
     },
     prism: {
       theme: lightCodeTheme,
