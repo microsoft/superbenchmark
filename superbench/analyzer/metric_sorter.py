@@ -10,7 +10,6 @@ plain string ordering.
 
 import re
 
-
 _RCCL_PATTERN = re.compile(r'^(?P<bench>rccl-bw(?::[^/]+)?)/(?P<op>[^_]+)_(?P<size>\d+)_(?P<suffix>.+?)(?::\d+)?$')
 _HPCG_PATTERN = re.compile(r'^(?P<bench>gpu-hpcg(?::[^/]+)?)/(?P<metric>.+?)(?::\d+)?$')
 
@@ -95,7 +94,6 @@ _SORTERS = (
 
 def sort_metrics(metrics):
     """Sort metrics with benchmark-specific sorters and a stable default fallback."""
-
     def sort_key(metric_name):
         for sorter in _SORTERS:
             key = sorter(metric_name)

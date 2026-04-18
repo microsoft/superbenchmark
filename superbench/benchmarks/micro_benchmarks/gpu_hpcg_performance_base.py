@@ -14,11 +14,24 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 class GpuHpcgBenchmark(MicroBenchmarkWithInvoke):
     """The GPU HPCG benchmark base class."""
     _mpi_output_prefix_pattern = re.compile(r'^\[\d+,\d+\]<(?:stdout|stderr)>:\s*')
-    _operation_metric_map = {'DDOT': 'ddot', 'WAXPBY': 'waxpby', 'SpMV': 'spmv', 'MG': 'mg', 'Total': 'total',
-                             'Final': 'final'}
-    _time_metric_map = {'Total Time': 'total_time', 'Setup Time': 'setup_time', 'Optimization Time': 'optimization_time'}
-    _domain_metric_map = {'Local domain': 'local_domain', 'Global domain': 'global_domain',
-                          'Process domain': 'process_domain'}
+    _operation_metric_map = {
+        'DDOT': 'ddot',
+        'WAXPBY': 'waxpby',
+        'SpMV': 'spmv',
+        'MG': 'mg',
+        'Total': 'total',
+        'Final': 'final'
+    }
+    _time_metric_map = {
+        'Total Time': 'total_time',
+        'Setup Time': 'setup_time',
+        'Optimization Time': 'optimization_time'
+    }
+    _domain_metric_map = {
+        'Local domain': 'local_domain',
+        'Global domain': 'global_domain',
+        'Process domain': 'process_domain'
+    }
     _float_pattern = re.compile(r'([0-9]+(?:\.[0-9]+)?)\s+(GFlop/s|GB/s)')
     _dimension_pattern = re.compile(r'([0-9]+)\s*x\s*([0-9]+)\s*x\s*([0-9]+)')
     _time_value_pattern = re.compile(r'([0-9]+(?:\.[0-9]+)?)\s+sec')

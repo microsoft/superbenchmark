@@ -84,7 +84,9 @@ class KernelLaunch(MicroBenchmarkWithInvoke):
         self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
 
         result = {}
-        pattern = re.compile(r'^(e2e_latency_us|host_dispatch_us|launch_throughput_mkps|device_launch_us):\s*(-?\d+(?:\.\d+)?)$')
+        pattern = re.compile(
+            r'^(e2e_latency_us|host_dispatch_us|launch_throughput_mkps|device_launch_us):\s*(-?\d+(?:\.\d+)?)$'
+        )
         for line in raw_output.splitlines():
             match = pattern.match(line.strip())
             if match:
@@ -92,8 +94,9 @@ class KernelLaunch(MicroBenchmarkWithInvoke):
 
         if set(result.keys()) != set(self._metric_names):
             logger.error(
-                'Cannot extract kernel launch benchmark metrics - round: {}, benchmark: {}, raw data: {}.'
-                .format(self._curr_run_index, self._name, raw_output)
+                'Cannot extract kernel launch benchmark metrics - round: {}, benchmark: {}, raw data: {}.'.format(
+                    self._curr_run_index, self._name, raw_output
+                )
             )
             return False
 

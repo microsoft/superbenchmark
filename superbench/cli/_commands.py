@@ -44,7 +44,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             ac.argument('docker_image', options_list=('--docker-image', '-i'), type=str, help='Docker image URI.')
             ac.argument(
                 'container_name',
-                options_list=('--container-name',),
+                options_list=('--container-name', ),
                 type=str,
                 help='Docker container name. Defaults to sb-workspace.'
             )

@@ -546,18 +546,20 @@ class RunnerTestCase(unittest.TestCase):
             return {'module_args': cmd, 'cmdline': '', 'host_pattern': 'localhost', 'module': 'shell'}
 
         self.runner._ansible_client.get_shell_config = fake_get_shell_config
-        mode = OmegaConf.create({
-            'name': 'mpi',
-            'proc_num': 4,
-            'node_num': 1,
-            'bind_to': 'numa',
-            'mca': {},
-            'env': {
-                'NCCL_BUFFSIZE': 4194304,
-                'NCCL_RINGS': '0 1 2 3|0 3 2 1',
-                'PATH': None,
-            },
-        })
+        mode = OmegaConf.create(
+            {
+                'name': 'mpi',
+                'proc_num': 4,
+                'node_num': 1,
+                'bind_to': 'numa',
+                'mca': {},
+                'env': {
+                    'NCCL_BUFFSIZE': 4194304,
+                    'NCCL_RINGS': '0 1 2 3|0 3 2 1',
+                    'PATH': None,
+                },
+            }
+        )
 
         self.runner._run_proc('foo', mode, {'proc_rank': 0})
 

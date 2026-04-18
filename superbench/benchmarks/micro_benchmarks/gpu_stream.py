@@ -114,14 +114,18 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
             if phase_name in self._phase_metric_map:
                 metric_tag = self._phase_metric_map[phase_name]
                 array_size = int(row['n_elements'])
-                phase_rows.append({
-                    'metric_name': self._get_phase_bw_metric_name(metric_tag, array_size),
-                    'value': self._mbps_to_gbps(row['max_mbytes_per_sec']),
-                })
-                phase_rows.append({
-                    'metric_name': self._get_phase_time_metric_name(metric_tag, array_size),
-                    'value': float(row['runtime']),
-                })
+                phase_rows.append(
+                    {
+                        'metric_name': self._get_phase_bw_metric_name(metric_tag, array_size),
+                        'value': self._mbps_to_gbps(row['max_mbytes_per_sec']),
+                    }
+                )
+                phase_rows.append(
+                    {
+                        'metric_name': self._get_phase_time_metric_name(metric_tag, array_size),
+                        'value': float(row['runtime']),
+                    }
+                )
 
         if not phase_rows:
             raise ValueError('No valid phase rows found in CSV output.')
@@ -145,22 +149,30 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
             if function_name in self._function_metric_map:
                 metric_tag = self._function_metric_map[function_name]
                 array_size = int(row['n_elements'])
-                function_rows.append({
-                    'metric_name': self._get_function_bw_metric_name(metric_tag, array_size),
-                    'value': self._mbps_to_gbps(row['max_mbytes_per_sec']),
-                })
-                function_rows.append({
-                    'metric_name': self._get_function_time_metric_name(metric_tag, array_size, 'min'),
-                    'value': float(row['min_runtime']),
-                })
-                function_rows.append({
-                    'metric_name': self._get_function_time_metric_name(metric_tag, array_size, 'max'),
-                    'value': float(row['max_runtime']),
-                })
-                function_rows.append({
-                    'metric_name': self._get_function_time_metric_name(metric_tag, array_size, 'avg'),
-                    'value': float(row['avg_runtime']),
-                })
+                function_rows.append(
+                    {
+                        'metric_name': self._get_function_bw_metric_name(metric_tag, array_size),
+                        'value': self._mbps_to_gbps(row['max_mbytes_per_sec']),
+                    }
+                )
+                function_rows.append(
+                    {
+                        'metric_name': self._get_function_time_metric_name(metric_tag, array_size, 'min'),
+                        'value': float(row['min_runtime']),
+                    }
+                )
+                function_rows.append(
+                    {
+                        'metric_name': self._get_function_time_metric_name(metric_tag, array_size, 'max'),
+                        'value': float(row['max_runtime']),
+                    }
+                )
+                function_rows.append(
+                    {
+                        'metric_name': self._get_function_time_metric_name(metric_tag, array_size, 'avg'),
+                        'value': float(row['avg_runtime']),
+                    }
+                )
 
         if not function_rows:
             raise ValueError('No valid function rows found in CSV output.')
@@ -188,7 +200,9 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         metric_width = max(len(metric['metric_name']) for metric in metrics)
         output_lines = ['Device: {}'.format(device_name)]
         for metric in metrics:
-            output_lines.append('{:<{width}}  {:.6f}'.format(metric['metric_name'], metric['value'], width=metric_width))
+            output_lines.append(
+                '{:<{width}}  {:.6f}'.format(metric['metric_name'], metric['value'], width=metric_width)
+            )
         return output_lines
 
     def _get_text_output_header(self):
