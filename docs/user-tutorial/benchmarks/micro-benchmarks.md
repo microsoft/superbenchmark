@@ -193,10 +193,8 @@ Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computer
 
 #### Introduction
 
-Measure GPU HPCG performance using `run_rochpcg`, which wraps `rocHPCG` execution and emits rocHPCG-native summary output.
-
-When collecting multiple MPI scales or problem sizes, use separate benchmark section names such as
-`gpu-hpcg:ranks8` and `gpu-hpcg:ranks4` instead of placing multiple `modes` under one `gpu-hpcg` section.
+Measure GPU HPCG performance for sparse linear algebra and multigrid-style workloads.
+Performed by [rocHPCG](https://github.com/ROCm/rocHPCG).
 
 #### Metrics
 
