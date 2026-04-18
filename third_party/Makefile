@@ -58,13 +58,13 @@ ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	# Blackwell SM100/SM103 — CUTLASS v4.3.5, 3x UMMA kernels only.
 	# SM103 standard GEMM kernels inherit SM100 UMMA naming (cutlass3x_sm100_*).
 	$(eval ARCHS := "100;103")
-	$(eval CUTLASS_KERNELS := cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*)
+	$(eval CUTLASS_KERNELS := cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*,cutlass3x_sm100_tensorop_gemm_e4m3_*)
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v4.3.5 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	# Hopper SM90 + Blackwell SM100 — CUTLASS v3.9.2, 3x WGMMA/UMMA kernels.
 	$(eval ARCHS := "90;100")
-	$(eval CUTLASS_KERNELS := cutlass3x_sm90_tensorop_gemm_tf32_*,cutlass3x_sm90_tensorop_gemm_f16_*,cutlass3x_sm90_tensorop_gemm_bf16_*,cutlass3x_sm90_tensorop_gemm_s8_*,cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*)
+	$(eval CUTLASS_KERNELS := cutlass3x_sm90_tensorop_gemm_tf32_*,cutlass3x_sm90_tensorop_gemm_f16_*,cutlass3x_sm90_tensorop_gemm_bf16_*,cutlass3x_sm90_tensorop_gemm_s8_*,cutlass3x_sm90_tensorop_gemm_e4m3_*,cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*,cutlass3x_sm100_tensorop_gemm_e4m3_*)
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v3.9.2 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
