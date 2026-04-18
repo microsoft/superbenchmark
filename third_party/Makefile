@@ -39,21 +39,42 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.9 and later Build from v4.3.5 for blackwell (SM100/SM103) support
-# v4.3.5 adds SM103 (B300) blockscaled kernels, profiler hang/timeout fixes, and MoE GEMM support
+# CUTLASS_LIBRARY_KERNELS is set per-architecture so each docker image only
+# compiles the kernel families needed for its target GPU.  Patterns that do not
+# match any kernel generated for the target architecture are silently ignored by
+# CUTLASS's cmake, so there is no correctness risk — but shipping a flat list
+# that mixes SM80 legacy names with SM100 3x UMMA names makes the intent opaque
+# and forces every image to carry irrelevant cmake work.
+#
+# Naming conventions used below:
+#   SM70/80 legacy  : cutlass_simt_* / cutlass_tensorop_* (no arch prefix)
+#   SM90/100+ (3x)  : cutlass3x_sm{arch}_tensorop_gemm_{dtype}_*
+#
+# Note: $(eval VAR := ...) inside a recipe must be a single line — backslash
+# continuation inside $(eval ...) inserts spaces which corrupt comma-separated
+# kernel lists passed to cmake.
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+	# Blackwell SM100/SM103 — CUTLASS v4.3.5, 3x UMMA kernels only.
+	# SM103 standard GEMM kernels inherit SM100 UMMA naming (cutlass3x_sm100_*).
 	$(eval ARCHS := "100;103")
+	$(eval CUTLASS_KERNELS := cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*)
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v4.3.5 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	# Hopper SM90 + Blackwell SM100 — CUTLASS v3.9.2, 3x WGMMA/UMMA kernels.
 	$(eval ARCHS := "90;100")
+	$(eval CUTLASS_KERNELS := cutlass3x_sm90_tensorop_gemm_tf32_*,cutlass3x_sm90_tensorop_gemm_f16_*,cutlass3x_sm90_tensorop_gemm_bf16_*,cutlass3x_sm90_tensorop_gemm_s8_*,cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*)
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v3.9.2 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+	# Volta through Ada (SM70–SM90) — legacy SIMT and SM80 TensorOp kernels.
 	$(eval ARCHS := "70;75;80;86;89;90")
+	$(eval CUTLASS_KERNELS := cutlass_simt_dgemm_128x128_8x2_*,cutlass_simt_sgemm_128x128_8x2_*,cutlass_simt_hgemm_256x128_8x2_*,cutlass_tensorop_h884gemm_256x128_32x2_*,cutlass_tensorop_d884gemm_128x128_16x3_*,cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*,cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*,cutlass_tensorop_h16816gemm_256x128_32x3_*,cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*)
 else
+	# Volta/Turing subset (SM70–SM86) — SIMT + Volta TensorOp only.
 	$(eval ARCHS := "70;75;80;86")
+	$(eval CUTLASS_KERNELS := cutlass_simt_dgemm_128x128_8x2_*,cutlass_simt_sgemm_128x128_8x2_*,cutlass_simt_hgemm_256x128_8x2_*,cutlass_tensorop_h884gemm_256x128_32x2_*)
 endif
 
 ifneq (,$(wildcard cutlass/CMakeLists.txt))
@@ -65,20 +86,7 @@ ifneq (,$(wildcard cutlass/CMakeLists.txt))
 		-DCUTLASS_ENABLE_TESTS=OFF \
 		-S ./cutlass \
 		-B ./cutlass/build \
-		-DCUTLASS_LIBRARY_KERNELS="cutlass_simt_dgemm_128x128_8x2_*,\
-cutlass_simt_sgemm_128x128_8x2_*,\
-cutlass_simt_hgemm_256x128_8x2_*,\
-cutlass_tensorop_h884gemm_256x128_32x2_*,\
-cutlass_tensorop_d884gemm_128x128_16x3_*,\
-cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*,\
-cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*,\
-cutlass_tensorop_h16816gemm_256x128_32x3_*,\
-cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*,\
-cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*,\
-cutlass3x_sm100_tensorop_gemm_tf32_*,\
-cutlass3x_sm100_tensorop_gemm_f16_*,\
-cutlass3x_sm100_tensorop_gemm_bf16_*,\
-cutlass3x_sm100_tensorop_gemm_s8_*"
+		"-DCUTLASS_LIBRARY_KERNELS=$(CUTLASS_KERNELS)"
 	cmake --build ./cutlass/build -j $(shell nproc --ignore=2) --target install
 	rm -rf ./cutlass/build
 endif
