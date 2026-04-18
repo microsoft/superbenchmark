@@ -102,8 +102,15 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        benchmark = benchmark_class(benchmark_name, parameters='')
-        benchmark._CudaGemmFlopsBenchmark__precision_need_to_run = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc']
+        benchmark = benchmark_class(benchmark_name, parameters='--precision tf32_tc bf16_tc fp16_tc int8_tc')
+        # Parse args so _args and _result are initialized for _process_raw_result().
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        from superbench.benchmarks import BenchmarkType, ReturnCode
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc']
 
         # SM100 UMMA 3x kernel naming: cutlass3x_sm100_tensorop_gemm_{dtype_a}_{dtype_b}_{acc}_{c}_{d}_{tile}_{cluster}_{stages}_{layout}_align{al}_{schedule}
         raw_output_tf32_tc = """
@@ -153,8 +160,15 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        benchmark = benchmark_class(benchmark_name, parameters='')
-        benchmark._CudaGemmFlopsBenchmark__precision_need_to_run = ['fp8_tc', 'fp8_tc']
+        benchmark = benchmark_class(benchmark_name, parameters='--precision fp8_tc')
+        # Parse args so _args and _result are initialized for _process_raw_result().
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        from superbench.benchmarks import BenchmarkType, ReturnCode
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = ['fp8_tc', 'fp8_tc']
 
         # SM90 Hopper WGMMA 3x kernel: cutlass3x_sm90_tensorop_gemm_e4m3_{a}_{b}_{acc}_{c}_{d}_{tile}_...
         raw_output_sm90_fp8 = """
