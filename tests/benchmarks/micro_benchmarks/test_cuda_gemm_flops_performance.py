@@ -144,3 +144,36 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
         assert (benchmark.result['bf16_tc_flops'][0] == 2096300)
         assert (benchmark.result['fp16_tc_flops'][0] == 2056200)
         assert (benchmark.result['int8_tc_iops'][0] == 4091600)
+
+    @decorator.cuda_test
+    def test_flops_performance_cuda_fp8(self):
+        """Test gemm-flops benchmark FP8 (e4m3) kernel output parsing for SM90 and SM100."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='')
+        benchmark._CudaGemmFlopsBenchmark__precision_need_to_run = ['fp8_tc', 'fp8_tc']
+
+        # SM90 Hopper WGMMA 3x kernel: cutlass3x_sm90_tensorop_gemm_e4m3_{a}_{b}_{acc}_{c}_{d}_{tile}_...
+        raw_output_sm90_fp8 = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm90_tensorop_gemm_e4m3_e4m3_f32_bf16_bf16_128x128x64_2x1x1_0_tnn_align16_warpspecialized_cooperative_epi_tma,passed,success,universal,16384,16384,16384,3.85,2281500
+1,CUTLASS,gemm,cutlass3x_sm90_tensorop_gemm_e4m3_e4m3_f32_f16_f16_128x128x64_2x1x1_0_tnn_align16_warpspecialized_cooperative_epi_tma,passed,success,universal,16384,16384,16384,3.79,2317200
+"""
+        # SM100 Blackwell UMMA 3x kernel: cutlass3x_sm100_tensorop_gemm_e4m3_{a}_{b}_{acc}_{c}_{d}_{tile}_...
+        raw_output_sm100_fp8 = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_bf16_bf16_128x256x64_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.10,5296000
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32_128x256x64_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.05,5425400
+"""
+        assert (benchmark._process_raw_result(0, raw_output_sm90_fp8))
+        assert (benchmark._process_raw_result(1, raw_output_sm100_fp8))
+
+        assert (benchmark.result['fp8_tc_flops'][0] == 2317200)
+        assert (benchmark.result['fp8_tc_flops'][1] == 5425400)
