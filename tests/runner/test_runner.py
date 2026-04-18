@@ -188,7 +188,7 @@ class RunnerTestCase(unittest.TestCase):
                 },
                 'expected_command': (
                     'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to numa '
-                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
+                    '-mca coll_hcoll_enable 0 -x "SB_MICRO_PATH=/sb" -x "FOO=BAR" -x "RANK=2" -x "NUM=8" '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
@@ -213,7 +213,7 @@ class RunnerTestCase(unittest.TestCase):
                 },
                 'expected_command': (
                     'mpirun -tag-output -allow-run-as-root -host localhost:8 -bind-to numa '
-                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
+                    '-mca coll_hcoll_enable 0 -x "SB_MICRO_PATH=/sb" -x "FOO=BAR" -x "RANK=2" -x "NUM=8" '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
@@ -225,6 +225,7 @@ class RunnerTestCase(unittest.TestCase):
                     'node_num': 1,
                     'proc_num': 4,
                     'proc_rank': 1,
+                    'bind_to': 'numa',
                     'mca': {},
                     'env': {
                         'NCCL_BUFFSIZE': 4194304,
@@ -233,7 +234,7 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    "mpirun -tag-output -allow-run-as-root -host localhost:4 -bind-to numa "
+                    'mpirun -tag-output -allow-run-as-root -host localhost:4 -bind-to numa  '
                     '-x "NCCL_BUFFSIZE=4194304" -x "NCCL_RINGS=0 1 2 3|0 3 2 1" -x PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),

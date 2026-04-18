@@ -1046,10 +1046,10 @@ int RunAllToAllBench(const Opts &opts, int gpu_count, int src_rank, int dst_rank
                     return -1;
                 }
             }
-            SMOneToAllCopyKernel<<<gpu_count * opts.all_to_all_num_thread_blocks_per_rank,
-                                   thread_block_size, 0, streams[rank]>>>(
-                (ulong2 **)dst_buffer_gpu_args[rank], (ulong2 *)src_buffers_gpu[rank], opts.size, rank, dst_rank,
-                gpu_count);
+            SMOneToAllCopyKernel<<<gpu_count * opts.all_to_all_num_thread_blocks_per_rank, thread_block_size, 0,
+                                   streams[rank]>>>((ulong2 **)dst_buffer_gpu_args[rank],
+                                                    (ulong2 *)src_buffers_gpu[rank], opts.size, rank, dst_rank,
+                                                    gpu_count);
             if (i == opts.num_warm_up + opts.num_loops - 1) {
                 cuda_err = cudaEventRecord(stop_events[rank], streams[rank]);
                 if (cuda_err != cudaSuccess) {

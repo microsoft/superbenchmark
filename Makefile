@@ -1,15 +1,21 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-CPPSOURCES := $(shell find $(CURDIR) -regextype posix-extended -regex '.*\.(c|cpp|h|hpp|cc|cxx|cu)')
+CPPSOURCES := $(shell find $(CURDIR) \
+	-path $(CURDIR)/.git -prune -o \
+	-path $(CURDIR)/.venv -prune -o \
+	-path $(CURDIR)/build -prune -o \
+	-path $(CURDIR)/third_party -prune -o \
+	-regextype posix-extended -regex '.*\.(c|cpp|h|hpp|cc|cxx|cu)' -print)
+CLANG_FORMAT ?= clang-format-14
 
 .PHONY: cpplint cppformat cppbuild thirdparty postinstall
 
 cpplint:
-	clang-format --verbose --dry-run --Werror $(CPPSOURCES)
+	$(CLANG_FORMAT) --verbose --dry-run --Werror $(CPPSOURCES)
 
 cppformat:
-	clang-format --verbose -i $(CPPSOURCES)
+	$(CLANG_FORMAT) --verbose -i $(CPPSOURCES)
 
 cppbuild:
 	cd ./superbench/benchmarks/ && bash build.sh

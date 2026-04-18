@@ -530,7 +530,7 @@ class SuperBenchRunner():
 
         return metrics_summary
 
-    def _run_proc(self, benchmark_name, mode, vars):
+    def _run_proc(self, benchmark_name, mode, vars):    # noqa: C901
         """Run the process.
 
         Args:

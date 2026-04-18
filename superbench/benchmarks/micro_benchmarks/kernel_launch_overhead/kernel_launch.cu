@@ -134,7 +134,7 @@ char *getCmdOption(char **begin, char **end, const std::string &option) {
     return 0;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char *argv[]) {
     int num_warmups = 100;

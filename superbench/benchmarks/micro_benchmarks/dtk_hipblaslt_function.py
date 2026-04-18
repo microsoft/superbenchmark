@@ -126,7 +126,6 @@ class DtkHipBlasLtBenchmark(BlasLtBaseBenchmark):
 
             batch_count_index = header.index('batch_count')
             m_index = header.index('m')
-            n_index = header.index('n')
             k_index = header.index('k')
             gflops_index = header.index('hipblaslt-Gflops')
 

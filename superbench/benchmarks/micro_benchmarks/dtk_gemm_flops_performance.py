@@ -253,7 +253,7 @@ class DtkGemmFlopsBenchmark(GemmFlopsBenchmark):
             help='Set default device to be used for the benchmark process.',
         )
 
-    def _preprocess(self):
+    def _preprocess(self):    # noqa: C901
         """Preprocess/preparation operations before the benchmarking.
 
         Return:
