@@ -69,9 +69,7 @@ class SuperBenchRunner():
         """Validate mpi bind_to option."""
         valid_mpi_bind_to = {'slot', 'hwthread', 'core', 'l1cache', 'l2cache', 'l3cache', 'package', 'numa', 'none'}
         if bind_to not in valid_mpi_bind_to:
-            raise ValueError(
-                'Invalid bind_to value {}. Must be one of: {}'.format(bind_to, sorted(valid_mpi_bind_to))
-            )
+            raise ValueError('Invalid bind_to value {}. Must be one of: {}'.format(bind_to, sorted(valid_mpi_bind_to)))
 
     def __validate_sb_config(self):    # noqa: C901
         """Validate SuperBench config object.
