@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - release/*
+      - dtk
   pull_request:
     branches:
       - main
       - release/*
+      - dtk
   schedule:
     - cron: "30 1 * * 1"
 
