@@ -8,8 +8,8 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 module.exports = {
   title: 'SuperBench',
   tagline: 'Hardware and Software Benchmarks for AI Systems',
-  url: 'https://alephpiece.github.io',
-  baseUrl: '/superbenchmark/',
+  url: 'https://superbenchmark.xonez.cn',
+  baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
