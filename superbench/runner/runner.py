@@ -65,6 +65,14 @@ class SuperBenchRunner():
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
+    def __validate_mpi_bind_to(self, bind_to):
+        """Validate mpi bind_to option."""
+        valid_mpi_bind_to = {'slot', 'hwthread', 'core', 'l1cache', 'l2cache', 'l3cache', 'package', 'numa', 'none'}
+        if bind_to not in valid_mpi_bind_to:
+            raise ValueError(
+                'Invalid bind_to value {}. Must be one of: {}'.format(bind_to, sorted(valid_mpi_bind_to))
+            )
+
     def __validate_sb_config(self):    # noqa: C901
         """Validate SuperBench config object.
 
@@ -98,6 +106,8 @@ class SuperBenchRunner():
                         }
                     if 'bind_to' not in mode:
                         self._sb_benchmarks[name].modes[idx].bind_to = 'numa'
+                    else:
+                        self.__validate_mpi_bind_to(mode.bind_to)
                     for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH', 'SB_WORKSPACE']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
                     if 'pattern' in mode:
