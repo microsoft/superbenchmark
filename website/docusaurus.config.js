@@ -8,7 +8,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 module.exports = {
   title: 'SuperBench',
   tagline: 'Hardware and Software Benchmarks for AI Systems',
-  url: 'https://superbenchmark.xonez.cn',
+  url: 'https://superbench.xonez.cn',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
