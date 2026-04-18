@@ -62,9 +62,11 @@ ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v4.3.5 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
-	# Hopper SM90 + Blackwell SM100 — CUTLASS v3.9.2, 3x WGMMA/UMMA kernels.
-	$(eval ARCHS := "90;100")
-	$(eval CUTLASS_KERNELS := cutlass3x_sm90_tensorop_gemm_tf32_*,cutlass3x_sm90_tensorop_gemm_f16_*,cutlass3x_sm90_tensorop_gemm_bf16_*,cutlass3x_sm90_tensorop_gemm_s8_*,cutlass3x_sm90_tensorop_gemm_e4m3_*,cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*,cutlass3x_sm100_tensorop_gemm_e4m3_*)
+	# Hopper SM90 + Blackwell SM100 — CUTLASS v3.9.2.
+	# SM90 non-FP8 precisions use legacy SM80 kernel names (SIMT + TensorOp) which
+	# are backward-compatible on Hopper.  SM90 FP8 and SM100 use 3x naming.
+	$(eval ARCHS := "80;90;100")
+	$(eval CUTLASS_KERNELS := cutlass_simt_dgemm_128x128_8x2_*,cutlass_simt_sgemm_128x128_8x2_*,cutlass_simt_hgemm_256x128_8x2_*,cutlass_tensorop_h884gemm_256x128_32x2_*,cutlass_tensorop_d884gemm_128x128_16x3_*,cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3_*,cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3_*,cutlass_tensorop_h16816gemm_256x128_32x3_*,cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*,cutlass3x_sm90_tensorop_gemm_e4m3_*,cutlass3x_sm100_tensorop_gemm_tf32_*,cutlass3x_sm100_tensorop_gemm_f16_*,cutlass3x_sm100_tensorop_gemm_bf16_*,cutlass3x_sm100_tensorop_gemm_s8_*,cutlass3x_sm100_tensorop_gemm_e4m3_*)
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v3.9.2 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
