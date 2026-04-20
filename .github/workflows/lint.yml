@@ -15,7 +15,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        curl -L https://git.io/misspell | sudo bash -s -- -b /bin
+        curl -L -o /tmp/install-misspell.sh https://raw.githubusercontent.com/client9/misspell/master/install-misspell.sh
+        sudo bash /tmp/install-misspell.sh -b /bin
     - name: Check spelling
       run: |
         misspell -error .
