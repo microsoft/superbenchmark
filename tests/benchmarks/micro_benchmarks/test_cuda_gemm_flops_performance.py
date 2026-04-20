@@ -112,7 +112,8 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
         benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
         benchmark._precision_need_to_run = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc']
 
-        # SM100 UMMA 3x kernel naming: cutlass3x_sm100_tensorop_gemm_{dtype_a}_{dtype_b}_{acc}_{c}_{d}_{tile}_{cluster}_{stages}_{layout}_align{al}_{schedule}
+        # SM100 UMMA 3x kernel naming:
+        #   cutlass3x_sm100_tensorop_gemm_{dtype_a}_{dtype_b}_{acc}_{c}_{d}_{tile}_{cluster}_{stages}_{layout}_align{al}_{schedule}
         raw_output_tf32_tc = """
 CSV Results:
 
