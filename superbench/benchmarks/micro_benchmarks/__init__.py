@@ -14,6 +14,7 @@ from superbench.benchmarks.micro_benchmarks.blaslt_function_base import BlasLtBa
 from superbench.benchmarks.micro_benchmarks.cublaslt_function import CublasLtBenchmark
 from superbench.benchmarks.micro_benchmarks.rocm_hipblaslt_function import RocmHipBlasLtBenchmark
 from superbench.benchmarks.micro_benchmarks.dtk_hipblaslt_function import DtkHipBlasLtBenchmark
+from superbench.benchmarks.micro_benchmarks.dtk_memory_bw_performance import DtkMemBwBenchmark
 from superbench.benchmarks.micro_benchmarks.dtk_gemm_flops_performance import DtkGemmFlopsBenchmark
 from superbench.benchmarks.micro_benchmarks.dtk_hpcg_performance import DtkHpcgBenchmark
 from superbench.benchmarks.micro_benchmarks.cuda_gemm_flops_performance import CudaGemmFlopsBenchmark
@@ -61,6 +62,7 @@ __all__ = [
     'DtkGemmFlopsBenchmark',
     'RocmHipBlasLtBenchmark',
     'DtkHipBlasLtBenchmark',
+    'DtkMemBwBenchmark',
     'GPCNetBenchmark',
     'GemmFlopsBenchmark',
     'GpuBurnBenchmark',

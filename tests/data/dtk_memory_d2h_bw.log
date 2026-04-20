@@ -1,0 +1,11 @@
+Using event timing to calculate bandwidth
+Use the following device for testing
+Device: deviceId 0, PciBusID 159 Name=BW Mem=64.0GB #CUs=80 Freq=1500Mhz
+
+=====================    HIP Bandwidth Test Type: D2H with host pinned    =====================
+Data Size      Avg Time(us)   Avg BW(GB/s)   Min Time(us)   Peak BW(GB/s)  Max Time(us)   Min BW(GB/s)
+16 B           10.120         0.002          10.080         0.002          10.240         0.002
+1 KB           10.500         0.098          10.240         0.100          10.880         0.094
+1 MB           42.000         24.967         41.500         25.267         42.900         24.444
+512 MB         16800.000      31.958         16790.000      31.977         16820.000      31.920
+1 GB           33500.000      32.058         33490.000      32.068         33520.000      32.039

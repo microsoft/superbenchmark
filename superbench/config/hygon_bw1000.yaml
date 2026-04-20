@@ -282,7 +282,7 @@ superbench:
       modes:
         - name: local
           proc_num: 8
-          prefix: HIP_VISIBLE_DEVICES={proc_rank} numactl -N $(({proc_rank}/4))
+          prefix: HIP_VISIBLE_DEVICES={proc_rank}
           parallel: no
     ib-loopback:
       enable: false
