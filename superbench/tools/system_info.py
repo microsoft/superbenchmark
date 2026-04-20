@@ -286,11 +286,69 @@ class SystemInfo():    # pragma: no cover
 
         return gpu_dict
 
+    def _merge_hygon_gpu_json_info(self, gpu_info, command):
+        """Merge Hygon GPU info from json command output.
+
+        Args:
+            gpu_info (dict): GPU info keyed by card id.
+            command (str): Command to get GPU info in json format.
+        """
+        command_output = self._run_cmd(command)
+        command_info = json.loads(command_output)
+        for card, card_info in command_info.items():
+            if not card.startswith('card'):
+                continue
+            if card not in gpu_info:
+                gpu_info[card] = {}
+            for key, value in card_info.items():
+                if key:
+                    gpu_info[card][key] = value
+
     def get_gpu_hygon(self):
         """Get hygon gpu info."""
-        gpu_dict = self.get_gpu_amd()
-        if gpu_dict:
-            gpu_dict['accelerator_vendor'] = 'hygon'
+        gpu_dict = {
+            'accelerator_vendor': 'hygon',
+            'rocm_info': {},
+        }
+
+        hygon_json_info_options = [
+            '--showid',
+            '--showproductname',
+            '--showserial',
+            '--showvbios',
+            '--showfwinfo',
+            '--showbus',
+            '--showtoponuma',
+            '--showreplaycount',
+            '--showmeminfo vram',
+            '--showmemavailable',
+            '--showmemvendor',
+            '--showmemuse',
+            '--showmemeccinfo',
+            '--showmemoverdrive',
+            '--showclocks',
+            '--showperflevel',
+            '--showoverdrive',
+            '--showpower',
+            '--showmaxpower',
+            '--showvoltage',
+            '--showtemp',
+            '--showuse',
+            '--showbw',
+        ]
+        for option in hygon_json_info_options:
+            command = 'hy-smi --json {}'.format(option)
+            try:
+                self._merge_hygon_gpu_json_info(gpu_dict['rocm_info'], command)
+            except Exception:
+                logger.exception('Error: get hygon gpu info failed with command: %s', command)
+
+        try:
+            gpu_dict['topo'] = self._run_cmd('hy-smi --showtopo')
+        except Exception:
+            logger.exception('Error: get hygon gpu topology info failed')
+
+        gpu_dict['gpu_count'] = len(gpu_dict['rocm_info'])
         return gpu_dict
 
     def get_gpu(self):
@@ -430,6 +488,7 @@ class SystemInfo():    # pragma: no cover
                 nic_list.append(nic_info)
         except Exception:
             logger.exception('Error: get nic info failed')
+        return nic_list
 
     def get_network(self):
         """Get network info, including nic info, ib info and ofed version.
