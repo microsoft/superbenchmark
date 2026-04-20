@@ -161,7 +161,7 @@ setup(
         'fallback_version': f'{superbench.__version__}+unknown',
     },
     setup_requires=[
-        'setuptools_scm<11',
+        'setuptools_scm',
         'vcs_versioning; python_version>="3.10"',
     ],
     install_requires=[
