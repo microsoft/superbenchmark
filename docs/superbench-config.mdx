@@ -371,6 +371,7 @@ node_num: int
 env: dict
 mca: dict
 prefix: str
+numactl: dict
 parallel: bool
 ```
 
@@ -401,6 +402,7 @@ Some attributes may only be suitable for specific mode.
 | `proc_num` |    ✓    |          ✓          |   ✓   |
 | `node_num` |    ✘    |          ✓          |   ✓   |
 | `prefix`   |    ✓    |          ✘          |   ✘   |
+| `numactl`  |    ✓    |          ✘          |   ✘   |
 | `env`      |    ✓    |          ✓          |   ✓   |
 | `mca`      |    ✘    |          ✘          |   ✓   |
 | `parallel` |    ✓    |          ✘          |   ✘   |
@@ -436,6 +438,33 @@ Available variables in formatted string include:
 + `proc_num`
 
 So `prefix: CUDA_VISIBLE_DEVICES={proc_rank}` will be expressed as `CUDA_VISIBLE_DEVICES=0`, `CUDA_VISIBLE_DEVICES=1`, etc.
+
+### `numactl`
+
+`numactl` binding to use in `local` mode. The generated `numactl` command runs after `prefix` and before the benchmark command.
+
+```yaml
+numactl:
+  cpunodebind: gpu_affinity
+  membind: gpu_affinity
+  physcpubind: null
+  gpu_id: "{proc_rank}"
+```
+
+Supported fields:
++ `cpunodebind`: CPU NUMA node for `numactl -N`.
++ `membind`: memory NUMA node for `numactl -m`.
++ `physcpubind`: physical CPU list for `numactl -C`.
++ `gpu_id`: GPU id used when `cpunodebind` or `membind` is GPU-relative. Defaults to `{proc_rank}`.
+
+`cpunodebind` and `membind` can be explicit NUMA node values, YAML lists, formatted strings using `proc_rank` and `proc_num`, or `gpu_affinity`. GPU-relative values are evaluated on the target node through `sb node topo --get gpu-numa-affinity --gpu-id`.
+
+`physcpubind` can be an explicit CPU list or a formatted string using `proc_rank` and `proc_num`. It does not support `gpu_affinity`.
+
+Limitations:
++ `numactl` is only supported in `local` mode.
++ `gpu_affinity` requires `sb node topo --get gpu-numa-affinity` to work on the target node.
++ `gpu_id` defaults to `{proc_rank}`. Set it explicitly if the local process rank does not match the GPU id used by node topology.
 
 ### `env`
 

@@ -28,6 +28,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('list-parameters', 'benchmark_list_params_command_handler')
         with CommandGroup(self, 'node', 'superbench.cli._node_handler#{}') as g:
             g.command('info', 'info_command_handler')
+            g.command('topo', 'topo_command_handler')
         with CommandGroup(self, 'result', 'superbench.cli._result_handler#{}') as g:
             g.command('diagnosis', 'diagnosis_command_handler')
             g.command('summary', 'summary_command_handler')
@@ -80,6 +81,10 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
 
         with ArgumentsContext(self, 'benchmark') as ac:
             ac.argument('name', options_list=('--name', '-n'), type=str, help='Benchmark name or regular expression.')
+
+        with ArgumentsContext(self, 'node topo') as ac:
+            ac.argument('get', options_list=('--get', ), type=str, help='Topology field to get.')
+            ac.argument('gpu_id', options_list=('--gpu-id', ), type=int, help='GPU id.')
 
         with ArgumentsContext(self, 'result') as ac:
             ac.argument('raw_data_file', options_list=('--data-file', '-d'), type=str, help='Path to raw data file.')

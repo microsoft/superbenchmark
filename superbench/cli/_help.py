@@ -109,6 +109,16 @@ helps['node info'] = """
           text: {cli_name} node info
 """.format(cli_name=CLI_NAME)
 
+helps['node topo'] = """
+    type: command
+    short-summary: Get node topology information.
+    examples:
+        - name: get GPU NUMA map
+          text: {cli_name} node topo --get gpu-numa-map
+        - name: get GPU NUMA affinity
+          text: {cli_name} node topo --get gpu-numa-affinity --gpu-id 0
+""".format(cli_name=CLI_NAME)
+
 helps['result'] = """
     type: group
     short-summary: Process or analyze the results of SuperBench benchmarks.

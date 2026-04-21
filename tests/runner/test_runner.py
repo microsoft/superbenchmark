@@ -598,6 +598,40 @@ class RunnerTestCase(unittest.TestCase):
         self.assertIn('docker exec sb-custom bash -lc', captured['cmd'])
 
     @mock.patch('superbench.runner.ansible.AnsibleClient.run')
+    def test_run_proc_injects_local_numactl_physcpubind(self, mock_ansible_client_run):
+        """Test _run_proc injects local numactl command."""
+        mock_ansible_client_run.return_value = 0
+        self.runner._sb_benchmarks = {'foo': {}}
+        captured = {}
+
+        def fake_get_shell_config(cmd):
+            captured['cmd'] = cmd
+            return {'module_args': cmd, 'cmdline': '', 'host_pattern': 'localhost', 'module': 'shell'}
+
+        self.runner._ansible_client.get_shell_config = fake_get_shell_config
+        mode = OmegaConf.create(
+            {
+                'name': 'local',
+                'proc_num': 2,
+                'env': {},
+                'prefix': 'HIP_VISIBLE_DEVICES={proc_rank}',
+                'numactl': {
+                    'cpunodebind': 'gpu_affinity',
+                    'membind': 'gpu_affinity',
+                    'physcpubind': '$(({proc_rank}*16))-$(({proc_rank}*16+15))',
+                },
+            }
+        )
+
+        self.runner._run_proc('foo', mode, {'proc_rank': 1})
+
+        self.assertIn(
+            'SB_GPU_NUMA_AFFINITY=$(sb node topo --get gpu-numa-affinity --gpu-id 1) && '
+            'PROC_RANK=1 HIP_VISIBLE_DEVICES=1 numactl -N ${SB_GPU_NUMA_AFFINITY} '
+            '-m ${SB_GPU_NUMA_AFFINITY} -C $((1*16))-$((1*16+15)) sb exec', captured['cmd']
+        )
+
+    @mock.patch('superbench.runner.ansible.AnsibleClient.run')
     def test_run_proc_no_docker_keeps_tmp_env_source(self, mock_ansible_client_run):
         """Test _run_proc still sources /tmp/sb.env in no_docker mode."""
         mock_ansible_client_run.return_value = 0
