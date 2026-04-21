@@ -13,6 +13,20 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 find_package(CUDAToolkit QUIET)
 
+if(NOT CUDAToolkit_FOUND)
+    message(WARNING "gpu_stream: CUDA not found, skipping build (requires NVIDIA GPU with NVML)")
+    return()
+endif()
+
+# Check for NVML (nvidia-ml) library, required for querying memory clock rates
+find_library(NVML_LIBRARY nvidia-ml PATHS ${CUDAToolkit_LIBRARY_DIR} PATH_SUFFIXES stubs)
+if(NOT NVML_LIBRARY)
+    message(WARNING "gpu_stream: NVML (nvidia-ml) not found, skipping build")
+    return()
+endif()
+
+message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
+
 # Source files
 set(SOURCES
     gpu_stream_test.cpp
@@ -21,40 +35,10 @@ set(SOURCES
     gpu_stream_kernels.cu
 )
 
-# Cuda environment
-if(CUDAToolkit_FOUND)
-    message(STATUS "Found CUDA: " ${CUDAToolkit_VERSION})
-
-    include(../cuda_common.cmake)
-    add_executable(gpu_stream ${SOURCES})
-    set_property(TARGET gpu_stream PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
-    target_include_directories(gpu_stream PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-    target_link_libraries(gpu_stream numa nvidia-ml)
-else()
-    # TODO: test for ROC
-    # ROCm environment
-    include(../rocm_common.cmake)
-    find_package(hip QUIET)
-    if(hip_FOUND)
-        message(STATUS "Found ROCm: " ${HIP_VERSION})
-
-        # Convert cuda code to hip code in cpp
-        execute_process(COMMAND hipify-perl -print-stats -o gpu_stream.cpp ${SOURCES} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
-
-        # link hip device lib
-        add_executable(gpu_stream gpu_stream.cpp)
-
-        include(CheckSymbolExists)
-        check_symbol_exists("hipDeviceMallocUncached" "hip/hip_runtime_api.h" HIP_UNCACHED_MEMORY)
-        if(${HIP_UNCACHED_MEMORY})
-            target_compile_definitions(gpu_stream PRIVATE HIP_UNCACHED_MEMORY)
-        endif()
-
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
-        target_link_libraries(gpu_stream numa hip::device)
-    else()
-        message(FATAL_ERROR "No CUDA or ROCm environment found.")
-    endif()
-endif()
+include(../cuda_common.cmake)
+add_executable(gpu_stream ${SOURCES})
+set_property(TARGET gpu_stream PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
+target_include_directories(gpu_stream PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+target_link_libraries(gpu_stream numa ${NVML_LIBRARY})
 
 install(TARGETS gpu_stream RUNTIME DESTINATION bin)
