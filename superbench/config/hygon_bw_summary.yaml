@@ -1,0 +1,303 @@
+# SuperBench summary rules for Hygon BW configurations
+#
+# Usage:
+#   sb result summary \
+#     --data-file <output-dir>/results-summary.jsonl \
+#     --rule-file superbench/config/hygon_bw_summary.yaml \
+#     --output-file-format md \
+#     --output-dir <summary-output-dir>
+#
+# Notes:
+# - This file covers common RCCL and GPU HPCG benchmark metrics used by
+#   Hygon BW configuration files.
+# - Unmatched benchmark sections are allowed. If a benchmark was not run,
+#   the corresponding category in the summary will be empty.
+
+version: v0.12
+superbench:
+  rules:
+    rccl_bw_allreduce_r16_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r16
+      metrics:
+        - rccl-bw:allreduce-r16/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r16/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r8_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r8
+      metrics:
+        - rccl-bw:allreduce-r8/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r8/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r8_pcie_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r8-pcie
+      metrics:
+        - rccl-bw:allreduce-r8-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r8-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r4_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r4
+      metrics:
+        - rccl-bw:allreduce-r4/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r4/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r4_graph_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r4-graph
+      metrics:
+        - rccl-bw:allreduce-r4-graph/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r4-graph/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r4_pcie_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r4-pcie
+      metrics:
+        - rccl-bw:allreduce-r4-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r4-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_allreduce_r4_graph_pcie_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:allreduce-r4-graph-pcie
+      metrics:
+        - rccl-bw:allreduce-r4-graph-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:allreduce-r4-graph-pcie/allreduce_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_alltoall_r8_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:alltoall-r8
+      metrics:
+        - rccl-bw:alltoall-r8/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:alltoall-r8/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_alltoall_r16_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:alltoall-r16
+      metrics:
+        - rccl-bw:alltoall-r16/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:alltoall-r16/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    rccl_bw_alltoall_r4_bandwidth:
+      statistics: mean
+      categories: RCCL rccl-bw:alltoall-r4
+      metrics:
+        - rccl-bw:alltoall-r4/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_busbw
+        - rccl-bw:alltoall-r4/alltoall_(8388608|67108864|1073741824|4294967296|8589934592|17179869184)_algbw
+
+    gpu_hpcg_r1:
+      statistics: mean
+      categories: HPCG gpu-hpcg:r1
+      metrics:
+        - gpu-hpcg:r1/is_valid
+        - gpu-hpcg:r1/final_gflops
+        - gpu-hpcg:r1/final_bandwidth
+        - gpu-hpcg:r1/final_gflops_per_process
+        - gpu-hpcg:r1/final_bandwidth_per_process
+        - gpu-hpcg:r1/ddot_gflops
+        - gpu-hpcg:r1/ddot_bandwidth
+        - gpu-hpcg:r1/ddot_gflops_per_process
+        - gpu-hpcg:r1/ddot_bandwidth_per_process
+        - gpu-hpcg:r1/waxpby_gflops
+        - gpu-hpcg:r1/waxpby_bandwidth
+        - gpu-hpcg:r1/waxpby_gflops_per_process
+        - gpu-hpcg:r1/waxpby_bandwidth_per_process
+        - gpu-hpcg:r1/spmv_gflops
+        - gpu-hpcg:r1/spmv_bandwidth
+        - gpu-hpcg:r1/spmv_gflops_per_process
+        - gpu-hpcg:r1/spmv_bandwidth_per_process
+        - gpu-hpcg:r1/mg_gflops
+        - gpu-hpcg:r1/mg_bandwidth
+        - gpu-hpcg:r1/mg_gflops_per_process
+        - gpu-hpcg:r1/mg_bandwidth_per_process
+        - gpu-hpcg:r1/total_gflops
+        - gpu-hpcg:r1/total_bandwidth
+        - gpu-hpcg:r1/total_gflops_per_process
+        - gpu-hpcg:r1/total_bandwidth_per_process
+        - gpu-hpcg:r1/local_domain_x
+        - gpu-hpcg:r1/local_domain_y
+        - gpu-hpcg:r1/local_domain_z
+        - gpu-hpcg:r1/process_domain_x
+        - gpu-hpcg:r1/process_domain_y
+        - gpu-hpcg:r1/process_domain_z
+
+    gpu_hpcg_r2:
+      statistics: mean
+      categories: HPCG gpu-hpcg:r2
+      metrics:
+        - gpu-hpcg:r2/is_valid
+        - gpu-hpcg:r2/final_gflops
+        - gpu-hpcg:r2/final_bandwidth
+        - gpu-hpcg:r2/final_gflops_per_process
+        - gpu-hpcg:r2/final_bandwidth_per_process
+        - gpu-hpcg:r2/ddot_gflops
+        - gpu-hpcg:r2/ddot_bandwidth
+        - gpu-hpcg:r2/ddot_gflops_per_process
+        - gpu-hpcg:r2/ddot_bandwidth_per_process
+        - gpu-hpcg:r2/waxpby_gflops
+        - gpu-hpcg:r2/waxpby_bandwidth
+        - gpu-hpcg:r2/waxpby_gflops_per_process
+        - gpu-hpcg:r2/waxpby_bandwidth_per_process
+        - gpu-hpcg:r2/spmv_gflops
+        - gpu-hpcg:r2/spmv_bandwidth
+        - gpu-hpcg:r2/spmv_gflops_per_process
+        - gpu-hpcg:r2/spmv_bandwidth_per_process
+        - gpu-hpcg:r2/mg_gflops
+        - gpu-hpcg:r2/mg_bandwidth
+        - gpu-hpcg:r2/mg_gflops_per_process
+        - gpu-hpcg:r2/mg_bandwidth_per_process
+        - gpu-hpcg:r2/total_gflops
+        - gpu-hpcg:r2/total_bandwidth
+        - gpu-hpcg:r2/total_gflops_per_process
+        - gpu-hpcg:r2/total_bandwidth_per_process
+        - gpu-hpcg:r2/local_domain_x
+        - gpu-hpcg:r2/local_domain_y
+        - gpu-hpcg:r2/local_domain_z
+        - gpu-hpcg:r2/process_domain_x
+        - gpu-hpcg:r2/process_domain_y
+        - gpu-hpcg:r2/process_domain_z
+
+    gpu_hpcg_r4:
+      statistics: mean
+      categories: HPCG gpu-hpcg:r4
+      metrics:
+        - gpu-hpcg:r4/is_valid
+        - gpu-hpcg:r4/final_gflops
+        - gpu-hpcg:r4/final_bandwidth
+        - gpu-hpcg:r4/final_gflops_per_process
+        - gpu-hpcg:r4/final_bandwidth_per_process
+        - gpu-hpcg:r4/ddot_gflops
+        - gpu-hpcg:r4/ddot_bandwidth
+        - gpu-hpcg:r4/ddot_gflops_per_process
+        - gpu-hpcg:r4/ddot_bandwidth_per_process
+        - gpu-hpcg:r4/waxpby_gflops
+        - gpu-hpcg:r4/waxpby_bandwidth
+        - gpu-hpcg:r4/waxpby_gflops_per_process
+        - gpu-hpcg:r4/waxpby_bandwidth_per_process
+        - gpu-hpcg:r4/spmv_gflops
+        - gpu-hpcg:r4/spmv_bandwidth
+        - gpu-hpcg:r4/spmv_gflops_per_process
+        - gpu-hpcg:r4/spmv_bandwidth_per_process
+        - gpu-hpcg:r4/mg_gflops
+        - gpu-hpcg:r4/mg_bandwidth
+        - gpu-hpcg:r4/mg_gflops_per_process
+        - gpu-hpcg:r4/mg_bandwidth_per_process
+        - gpu-hpcg:r4/total_gflops
+        - gpu-hpcg:r4/total_bandwidth
+        - gpu-hpcg:r4/total_gflops_per_process
+        - gpu-hpcg:r4/total_bandwidth_per_process
+        - gpu-hpcg:r4/local_domain_x
+        - gpu-hpcg:r4/local_domain_y
+        - gpu-hpcg:r4/local_domain_z
+        - gpu-hpcg:r4/process_domain_x
+        - gpu-hpcg:r4/process_domain_y
+        - gpu-hpcg:r4/process_domain_z
+
+    gpu_hpcg_r8:
+      statistics: mean
+      categories: HPCG gpu-hpcg:r8
+      metrics:
+        - gpu-hpcg:r8/is_valid
+        - gpu-hpcg:r8/final_gflops
+        - gpu-hpcg:r8/final_bandwidth
+        - gpu-hpcg:r8/final_gflops_per_process
+        - gpu-hpcg:r8/final_bandwidth_per_process
+        - gpu-hpcg:r8/ddot_gflops
+        - gpu-hpcg:r8/ddot_bandwidth
+        - gpu-hpcg:r8/ddot_gflops_per_process
+        - gpu-hpcg:r8/ddot_bandwidth_per_process
+        - gpu-hpcg:r8/waxpby_gflops
+        - gpu-hpcg:r8/waxpby_bandwidth
+        - gpu-hpcg:r8/waxpby_gflops_per_process
+        - gpu-hpcg:r8/waxpby_bandwidth_per_process
+        - gpu-hpcg:r8/spmv_gflops
+        - gpu-hpcg:r8/spmv_bandwidth
+        - gpu-hpcg:r8/spmv_gflops_per_process
+        - gpu-hpcg:r8/spmv_bandwidth_per_process
+        - gpu-hpcg:r8/mg_gflops
+        - gpu-hpcg:r8/mg_bandwidth
+        - gpu-hpcg:r8/mg_gflops_per_process
+        - gpu-hpcg:r8/mg_bandwidth_per_process
+        - gpu-hpcg:r8/total_gflops
+        - gpu-hpcg:r8/total_bandwidth
+        - gpu-hpcg:r8/total_gflops_per_process
+        - gpu-hpcg:r8/total_bandwidth_per_process
+        - gpu-hpcg:r8/local_domain_x
+        - gpu-hpcg:r8/local_domain_y
+        - gpu-hpcg:r8/local_domain_z
+        - gpu-hpcg:r8/process_domain_x
+        - gpu-hpcg:r8/process_domain_y
+        - gpu-hpcg:r8/process_domain_z
+
+    gpu_hpcg_r16:
+      statistics: mean
+      categories: HPCG gpu-hpcg:r16
+      metrics:
+        - gpu-hpcg:r16/is_valid
+        - gpu-hpcg:r16/final_gflops
+        - gpu-hpcg:r16/final_bandwidth
+        - gpu-hpcg:r16/final_gflops_per_process
+        - gpu-hpcg:r16/final_bandwidth_per_process
+        - gpu-hpcg:r16/ddot_gflops
+        - gpu-hpcg:r16/ddot_bandwidth
+        - gpu-hpcg:r16/ddot_gflops_per_process
+        - gpu-hpcg:r16/ddot_bandwidth_per_process
+        - gpu-hpcg:r16/waxpby_gflops
+        - gpu-hpcg:r16/waxpby_bandwidth
+        - gpu-hpcg:r16/waxpby_gflops_per_process
+        - gpu-hpcg:r16/waxpby_bandwidth_per_process
+        - gpu-hpcg:r16/spmv_gflops
+        - gpu-hpcg:r16/spmv_bandwidth
+        - gpu-hpcg:r16/spmv_gflops_per_process
+        - gpu-hpcg:r16/spmv_bandwidth_per_process
+        - gpu-hpcg:r16/mg_gflops
+        - gpu-hpcg:r16/mg_bandwidth
+        - gpu-hpcg:r16/mg_gflops_per_process
+        - gpu-hpcg:r16/mg_bandwidth_per_process
+        - gpu-hpcg:r16/total_gflops
+        - gpu-hpcg:r16/total_bandwidth
+        - gpu-hpcg:r16/total_gflops_per_process
+        - gpu-hpcg:r16/total_bandwidth_per_process
+        - gpu-hpcg:r16/local_domain_x
+        - gpu-hpcg:r16/local_domain_y
+        - gpu-hpcg:r16/local_domain_z
+        - gpu-hpcg:r16/process_domain_x
+        - gpu-hpcg:r16/process_domain_y
+        - gpu-hpcg:r16/process_domain_z
+
+    gpu_hpcg_r32:
+      statistics: mean
+      categories: HPCG gpu-hpcg:r32
+      metrics:
+        - gpu-hpcg:r32/is_valid
+        - gpu-hpcg:r32/final_gflops
+        - gpu-hpcg:r32/final_bandwidth
+        - gpu-hpcg:r32/final_gflops_per_process
+        - gpu-hpcg:r32/final_bandwidth_per_process
+        - gpu-hpcg:r32/ddot_gflops
+        - gpu-hpcg:r32/ddot_bandwidth
+        - gpu-hpcg:r32/ddot_gflops_per_process
+        - gpu-hpcg:r32/ddot_bandwidth_per_process
+        - gpu-hpcg:r32/waxpby_gflops
+        - gpu-hpcg:r32/waxpby_bandwidth
+        - gpu-hpcg:r32/waxpby_gflops_per_process
+        - gpu-hpcg:r32/waxpby_bandwidth_per_process
+        - gpu-hpcg:r32/spmv_gflops
+        - gpu-hpcg:r32/spmv_bandwidth
+        - gpu-hpcg:r32/spmv_gflops_per_process
+        - gpu-hpcg:r32/spmv_bandwidth_per_process
+        - gpu-hpcg:r32/mg_gflops
+        - gpu-hpcg:r32/mg_bandwidth
+        - gpu-hpcg:r32/mg_gflops_per_process
+        - gpu-hpcg:r32/mg_bandwidth_per_process
+        - gpu-hpcg:r32/total_gflops
+        - gpu-hpcg:r32/total_bandwidth
+        - gpu-hpcg:r32/total_gflops_per_process
+        - gpu-hpcg:r32/total_bandwidth_per_process
+        - gpu-hpcg:r32/local_domain_x
+        - gpu-hpcg:r32/local_domain_y
+        - gpu-hpcg:r32/local_domain_z
+        - gpu-hpcg:r32/process_domain_x
+        - gpu-hpcg:r32/process_domain_y
+        - gpu-hpcg:r32/process_domain_z
