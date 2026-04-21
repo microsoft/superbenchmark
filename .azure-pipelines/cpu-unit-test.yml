@@ -5,6 +5,14 @@ trigger:
   - main
   - release/*
 
+pr:
+  branches:
+    include:
+      - main
+      - release/*
+  forks:
+    enabled: false
+
 strategy:
   matrix:
     python-3.7:
