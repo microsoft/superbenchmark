@@ -91,7 +91,6 @@ jobs:
           tags: superbench/main:rocm6.3
           platforms: linux/amd64
           runner: [self-hosted, linux/amd64, rocm]
-          build_args: "NUM_MAKE_JOBS=16"
     steps:
       - name: Checkout
         uses: actions/checkout@v2

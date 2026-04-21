@@ -140,7 +140,7 @@ endif
 ROCM_OFFLOAD_ARCH_FLAGS := $(foreach arch,$(AMDGPU_TARGETS),--offload-arch=$(arch))
 rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
-ifdef AMDGPU_TARGETS
+ifneq ($(strip $(AMDGPU_TARGETS)),)
 	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIPCUFLAGS="-std=c++14 -O3 $(ROCM_OFFLOAD_ARCH_FLAGS) -I$(ROCM_PATH)/include -I$(ROCM_PATH)/include/rccl -I$(ROCM_PATH)/include/hip -DMPI_SUPPORT -I$(MPI_HOME)/include -I$(MPI_HOME)/include/mpi" -j
 else
 	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j

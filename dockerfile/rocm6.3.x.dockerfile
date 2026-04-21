@@ -24,8 +24,8 @@ FROM ${BASE_IMAGE}
 # Fix base image botocore/urllib3 incompatibility:
 # Base image ships botocore 1.22.12 (expects urllib3 1.x) with urllib3 2.6.3,
 # causing "cannot import name 'DEFAULT_CIPHERS' from 'urllib3.util.ssl_'".
-# Upgrading botocore/boto3 to versions compatible with urllib3 2.x.
-RUN python3 -m pip install --upgrade botocore boto3
+# Upgrade botocore/boto3 to specific versions compatible with urllib3 2.x.
+RUN python3 -m pip install --no-cache-dir "botocore==1.35.98" "boto3==1.35.98"
 
 LABEL maintainer="SuperBench"
 
@@ -66,8 +66,6 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
-ARG NUM_MAKE_JOBS=64
-
 # Install Docker
 ENV DOCKER_VERSION=27.5.1
 RUN cd /tmp && \
@@ -86,17 +84,14 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 
-# Get Ubuntu version and set as an environment variable
-RUN echo "Ubuntu version: $(lsb_release -r -s)"
-ARG UBUNTU_VERSION=22.04
-
 # Install OFED
 ENV OFED_VERSION=24.10-1.1.4.0
-# Check if ofed_info is present and has a version
+# Check if ofed_info command is present; install OFED if missing
 RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     echo "OFED not found. Installing OFED..."; \
+    UBUNTU_VERSION=$(lsb_release -r -s); \
     cd /tmp && \
-    wget -q http://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64.tgz && \
     PATH=/usr/bin:${PATH} MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu${UBUNTU_VERSION}-x86_64/mlnxofedinstall --user-space-only --without-fw-update --force --all && \
     rm -rf MLNX_OFED_LINUX-${OFED_VERSION}* ; \
@@ -128,8 +123,9 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
-RUN python3 -m pip install --upgrade pip wheel setuptools==65.7 && \
-    python3 -c "import pkg_resources" || python3 -m pip install setuptools
+RUN python3 -m pip install --upgrade pip wheel setuptools==65.7
+
+RUN python3 -c "import pkg_resources" || python3 -m pip install setuptools
 
 WORKDIR ${SB_HOME}
 
@@ -142,4 +138,5 @@ ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install --no-build-isolation .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
-    make postinstall
+    make postinstall && \
+    rm -rf .git
