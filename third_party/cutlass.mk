@@ -121,6 +121,12 @@ endif
 	# -----------------------------------------------------------------------
 	# Shared clone → patch → build → install pipeline
 	# -----------------------------------------------------------------------
+	# On aarch64, per-family shared libraries (e.g. libcutlass_gemm_sm100_f16_gemm_e4m3.so)
+	# can overflow R_AARCH64_PREL32 relocations in .eh_frame when thousands of FP8
+	# kernel objects are linked into a single SO.  Work around this by:
+	#   - Building static libs only (avoids the SO link that overflows)
+	#   - Suppressing unwind tables in generated kernel TUs (reduces .eh_frame)
+	# SuperBench only uses cutlass_profiler, which links statically, so no SO is needed.
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch $(CUTLASS_TAG) --depth 1 https://github.com/NVIDIA/cutlass.git
 	$(CUTLASS_PATCHES)
@@ -130,6 +136,10 @@ endif
 		-DCUTLASS_NVCC_ARCHS=$(CUTLASS_ARCHS) \
 		-DCUTLASS_ENABLE_EXAMPLES=OFF \
 		-DCUTLASS_ENABLE_TESTS=OFF \
+		-DCUTLASS_BUILD_SHARED_LIBS=OFF \
+		-DCUTLASS_BUILD_STATIC_LIBS=ON \
+		-DCMAKE_CXX_FLAGS="-fno-asynchronous-unwind-tables" \
+		-DCMAKE_CUDA_FLAGS="--compiler-options=-fno-asynchronous-unwind-tables" \
 		-S ./cutlass \
 		-B ./cutlass/build \
 		"-DCUTLASS_LIBRARY_KERNELS=$(CUTLASS_KERNS)"
