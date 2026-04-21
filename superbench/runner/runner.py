@@ -352,6 +352,7 @@ class SuperBenchRunner():
         results_summary = self.__merge_benchmark_metrics(results_summary, reduce_ops)
         monitor_summary = self.__merge_monitor_metrics(node_path)
         results_summary = {**results_summary, **monitor_summary}
+
         with (node_path / 'results-summary.json').open(mode='w') as f:
             json.dump(results_summary, f, indent=2)
 
