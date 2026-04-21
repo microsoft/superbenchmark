@@ -13,12 +13,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Install dependencies
+    - name: Install misspell
       run: |
-        curl -L https://git.io/misspell | sudo bash -s -- -b /bin
+        go install github.com/client9/misspell/cmd/misspell@v0.3.4
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
     - name: Check spelling
-      run: |
-        misspell -error .
+      run: misspell -error .
   cpp:
     name: CPP code lint
     runs-on: ubuntu-latest
