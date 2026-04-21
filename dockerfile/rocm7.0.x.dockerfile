@@ -170,6 +170,12 @@ RUN cd third_party && \
     git clone --depth 1 -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     cd hipBLASLt && \
     sed -i '/mxdatagenerator\|mxDataGenerator/d' clients/CMakeLists.txt && \
+    sed -i '/cmake_policy( SET CMP0037 OLD )/d; s/add_custom_target( install/add_custom_target( hipblaslt_deps_install/' deps/CMakeLists.txt && \
+    perl -0pi -e 's/set\(\s*gtest_custom_target\s+COMMAND\s+cd\s+\$\{GTEST_BINARY_ROOT\}\$<SEMICOLON>\s+\$\{CMAKE_COMMAND\}\s+--build\s+\.\s+--target\s+install\s*\)/set( gtest_custom_target COMMAND \${CMAKE_COMMAND} --build \${GTEST_BINARY_ROOT} --target install )/s; s/set\(\s*lapack_custom_target\s+COMMAND\s+cd\s+\$\{LAPACK_BINARY_ROOT\}\$<SEMICOLON>\s+\$\{CMAKE_COMMAND\}\s+--build\s+\.\s+--target\s+install\s*\)/set( lapack_custom_target COMMAND \${CMAKE_COMMAND} --build \${LAPACK_BINARY_ROOT} --target install )/s' deps/CMakeLists.txt && \
+    # Pre-build the cblas/lapack dependency (normally done by ./install.sh -d).
+    # install.sh -dc builds the full library which we want to skip; build deps standalone.
+    mkdir -p deps/build && cd deps/build && \
+        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake .. && cmake --build . -j$(nproc) --target hipblaslt_deps_install && cd ../.. && \
     mkdir -p build/release && cd build/release && \
     CMAKE_POLICY_VERSION_MINIMUM= cmake \
         -DHIPBLASLT_USE_ROCROLLER=OFF \
@@ -177,7 +183,7 @@ RUN cd third_party && \
         -DBUILD_CLIENTS_TESTS=OFF \
         -DBUILD_CLIENTS_SAMPLES=OFF \
         -DTensile_SKIP_BUILD=ON \
-        -DCMAKE_PREFIX_PATH=/opt/rocm \
+        -DCMAKE_PREFIX_PATH="/opt/rocm;/usr/local" \
         -DCMAKE_BUILD_TYPE=Release \
         ../.. && \
     make -j$(nproc) hipblaslt-bench && \

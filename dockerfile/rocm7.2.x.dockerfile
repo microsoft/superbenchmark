@@ -172,6 +172,9 @@ RUN cd third_party && \
     cd hipBLASLt && \
     sed -i '/origami/d' CMakeLists.txt tensilelite/CMakeLists.txt && \
     sed -i '/mxdatagenerator\|mxDataGenerator/d' clients/CMakeLists.txt && \
+    # Pre-build the cblas/lapack dependency (normally done by ./install.sh -d).
+    mkdir -p deps/build && cd deps/build && \
+        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake .. && make -j$(nproc) && cd ../.. && \
     mkdir -p build/release && cd build/release && \
     CMAKE_POLICY_VERSION_MINIMUM= cmake \
         -DHIPBLASLT_ENABLE_HOST=OFF \
@@ -181,7 +184,7 @@ RUN cd third_party && \
         -DHIPBLASLT_BUILD_TESTING=OFF \
         -DHIPBLASLT_ENABLE_SAMPLES=OFF \
         -DHIPBLASLT_ENABLE_LLVM=OFF \
-        -DCMAKE_PREFIX_PATH=/opt/rocm \
+        -DCMAKE_PREFIX_PATH="/opt/rocm;/usr/local" \
         -DCMAKE_BUILD_TYPE=Release \
         ../.. && \
     make -j$(nproc) hipblaslt-bench && \
