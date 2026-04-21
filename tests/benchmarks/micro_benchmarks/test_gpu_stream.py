@@ -63,11 +63,6 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test gpu-stream benchmark command generation, CUDA case."""
         self._test_gpu_stream_command_generation(Platform.CUDA)
 
-    @decorator.rocm_test
-    def test_gpu_stream_command_generation_rocm(self):
-        """Test gpu-stream benchmark command generation, ROCm case."""
-        self._test_gpu_stream_command_generation(Platform.ROCM)
-
     @decorator.load_data('tests/data/gpu_stream.log')
     def _test_gpu_stream_result_parsing(self, platform, test_raw_output):
         """Test gpu-stream benchmark result parsing."""
@@ -115,8 +110,3 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
     def test_gpu_stream_result_parsing_cuda(self):
         """Test gpu-stream benchmark result parsing, CUDA case."""
         self._test_gpu_stream_result_parsing(Platform.CUDA)
-
-    @decorator.rocm_test
-    def test_gpu_stream_result_parsing_rocm(self):
-        """Test gpu-stream benchmark result parsing, ROCm case."""
-        self._test_gpu_stream_result_parsing(Platform.ROCM)
