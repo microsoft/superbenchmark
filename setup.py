@@ -162,6 +162,7 @@ setup(
     },
     setup_requires=[
         'setuptools_scm',
+        'vcs_versioning; python_version>="3.10"',
     ],
     install_requires=[
         'ansible;os_name=="posix" and python_version>"3.10"',
