@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 #include <cuda/std/chrono>
 #include <cuda_runtime.h>
 #include <nvbench/nvbench.cuh>

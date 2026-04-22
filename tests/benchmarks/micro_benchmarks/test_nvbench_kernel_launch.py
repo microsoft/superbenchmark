@@ -73,12 +73,8 @@ class TestNvbenchKernelLaunchBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark.return_code == ReturnCode.SUCCESS
 
         # Validate parsed results
-        # assert benchmark.result['samples'][0] == 120000
         self.assertAlmostEqual(benchmark.result['cpu_time'][0], 24.222)
-        # self.assertAlmostEqual(benchmark.result['cpu_noise'][0], 30.44)
         self.assertAlmostEqual(benchmark.result['gpu_time'][0], 7.808)
-        # self.assertAlmostEqual(benchmark.result['gpu_noise'][0], 14.42)
-        # assert benchmark.result['batch_samples'][0] == 300000
         self.assertAlmostEqual(benchmark.result['batch_gpu_time'][0], 6.024)
 
     def test_nvbench_kernel_launch_process_raw_result_invalid_output(self):

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 #include <nvbench/nvbench.cuh>
 
 __global__ void empty_kernel() {}
