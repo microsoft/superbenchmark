@@ -170,12 +170,17 @@ RUN cd third_party && \
     git clone --depth 1 -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     cd hipBLASLt && \
     sed -i '/mxdatagenerator\|mxDataGenerator/d' clients/CMakeLists.txt && \
+    sed -i 's/if(OS_RELEASE MATCHES "Ubuntu")/if(FALSE AND OS_RELEASE MATCHES "Ubuntu")/' clients/benchmarks/CMakeLists.txt && \
+    sed -i '/add_dependencies(TENSILE_LIBRARY_TARGET rocisa)/d' library/src/amd_detail/rocblaslt/src/CMakeLists.txt && \
     sed -i '/cmake_policy( SET CMP0037 OLD )/d; s/add_custom_target( install/add_custom_target( hipblaslt_deps_install/' deps/CMakeLists.txt && \
-    perl -0pi -e 's/set\(\s*gtest_custom_target\s+COMMAND\s+cd\s+\$\{GTEST_BINARY_ROOT\}\$<SEMICOLON>\s+\$\{CMAKE_COMMAND\}\s+--build\s+\.\s+--target\s+install\s*\)/set( gtest_custom_target COMMAND \${CMAKE_COMMAND} --build \${GTEST_BINARY_ROOT} --target install )/s; s/set\(\s*lapack_custom_target\s+COMMAND\s+cd\s+\$\{LAPACK_BINARY_ROOT\}\$<SEMICOLON>\s+\$\{CMAKE_COMMAND\}\s+--build\s+\.\s+--target\s+install\s*\)/set( lapack_custom_target COMMAND \${CMAKE_COMMAND} --build \${LAPACK_BINARY_ROOT} --target install )/s' deps/CMakeLists.txt && \
     # Pre-build the cblas/lapack dependency (normally done by ./install.sh -d).
     # install.sh -dc builds the full library which we want to skip; build deps standalone.
     mkdir -p deps/build && cd deps/build && \
-        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake .. && cmake --build . -j$(nproc) --target hipblaslt_deps_install && cd ../.. && \
+        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake .. && \
+        cmake --build . -j$(nproc) --target googletest lapack && \
+        cmake --build gtest/src/googletest-build -j$(nproc) --target install && \
+        cmake --build lapack/src/lapack-build -j$(nproc) --target install && \
+        cd ../.. && \
     mkdir -p build/release && cd build/release && \
     CMAKE_POLICY_VERSION_MINIMUM= cmake \
         -DHIPBLASLT_USE_ROCROLLER=OFF \
