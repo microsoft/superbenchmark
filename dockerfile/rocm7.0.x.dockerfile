@@ -201,6 +201,8 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
 RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
     NVTE_FRAMEWORK=pytorch \
+    NVTE_FUSED_ATTN_CK=0 \
+    NVTE_FUSED_ATTN_AOTRITON=1 \
     NVTE_ROCM_ARCH="gfx942;gfx950" \
     python3 setup.py install
 RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfully')"
