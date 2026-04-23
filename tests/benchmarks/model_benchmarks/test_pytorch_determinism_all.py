@@ -62,6 +62,11 @@ MODELS = [
         '--batch_size 1 --num_classes 2 --seq_len 4 --num_warmup 1 --num_steps 20 '
         '--model_action train --precision float32',
     ),
+    (
+        'deepseek-r1-distill-qwen-1.5b',
+        '--batch_size 1 --num_classes 100 --seq_len 512 --num_warmup 1 --num_steps 20 '
+        '--model_action train --precision float32',
+    ),
 ]
 
 

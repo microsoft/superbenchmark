@@ -334,6 +334,20 @@ class PytorchBase(ModelBenchmark):
             required=False,
             help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
         )
+        # HuggingFace model loading parameters
+        self._parser.add_argument(
+            '--model_source',
+            type=str,
+            default='in-house',
+            choices=['in-house', 'huggingface'],
+            help='Source of the model: in-house (default) or huggingface.',
+        )
+        self._parser.add_argument(
+            '--model_identifier',
+            type=str,
+            default=None,
+            help='Model identifier: for HuggingFace, use format "org/model-name" (e.g., "bert-base-uncased").',
+        )
 
     def _post_run_model_log(self):
         """Add deterministic metrics to results.
@@ -461,21 +475,6 @@ class PytorchBase(ModelBenchmark):
                     'Disabling enable_determinism to avoid silently non-deterministic results.'
                 )
                 self._args.enable_determinism = False
-
-        # HuggingFace model loading parameters
-        self._parser.add_argument(
-            '--model_source',
-            type=str,
-            default='in-house',
-            choices=['in-house', 'huggingface'],
-            help='Source of the model: in-house (default) or huggingface.',
-        )
-        self._parser.add_argument(
-            '--model_identifier',
-            type=str,
-            default=None,
-            help='Model identifier: for HuggingFace, use format "org/model-name" (e.g., "bert-base-uncased").',
-        )
 
     def _set_force_fp32(self):
         """Set the config that controls whether full float32 precision will be used.
