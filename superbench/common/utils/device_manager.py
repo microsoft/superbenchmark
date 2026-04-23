@@ -389,10 +389,17 @@ class AmdDeviceManager(DeviceManager):
         """
         try:
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
+            # amdsmi sets fields to 'N/A' when the hardware reports 0xFFFF (unsupported).
+            # On MI300X, average_socket_power is unsupported, so fall back to current_socket_power.
+            power = power_measure.get('average_socket_power')
+            if not isinstance(power, (int, float)):
+                power = power_measure.get('current_socket_power')
+            if not isinstance(power, (int, float)):
+                return None
+            return int(power)
         except Exception as err:
             logger.warning('Get device power failed: {}'.format(str(err)))
             return None
-        return int(power_measure['average_socket_power'])
 
     def get_device_power_limit(self, idx):
         """Get the power management limit of device, unit: watt.
@@ -405,10 +412,16 @@ class AmdDeviceManager(DeviceManager):
         """
         try:
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
+            power_limit = power_measure.get('power_limit')
+            if not isinstance(power_limit, (int, float)):
+                return None
+            # amdsmi returns power_limit in microwatts (e.g. 750000000 for 750W), convert to watts.
+            if power_limit > 100000:
+                power_limit = power_limit // 1000000
+            return int(power_limit)
         except Exception as err:
             logger.warning('Get device power limit failed: {}'.format(str(err)))
             return None
-        return int(power_measure['power_limit'])
 
     def get_device_memory(self, idx):
         """Get the memory information of device, unit: byte.
