@@ -40,12 +40,22 @@ CUTLASS_KERNELS_VOLTA := \
 	cutlass_tensorop_h884gemm_256x128_32x2_*
 
 # SM100 Blackwell 3x UMMA GEMM kernels
+# On aarch64, kernel count must be kept under ~1000 per sub-group to avoid
+# R_AARCH64_PREL32 relocation overflow.  Use exact dtype patterns instead
+# of broad wildcards (e.g. gemm_e4m3_e4m3_f32_f32_f32_* not gemm_e4m3_*)
+# to exclude void-output, mixed-output, and e5m2/e3m2 input variants that
+# the cutlass_profiler gemm-flops benchmark does not need.
 CUTLASS_KERNELS_SM100 := \
-	cutlass3x_sm100_tensorop_tf32gemm*,\
-	cutlass3x_sm100_tensorop_gemm_f16_*,\
-	cutlass3x_sm100_tensorop_gemm_bf16_*,\
-	cutlass3x_sm100_tensorop_gemm_s8_*,\
-	cutlass3x_sm100_tensorop_gemm_e4m3_*
+	cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_*,\
+	cutlass3x_sm100_tensorop_gemm_f16_f16_f16_f16_f16_*,\
+	cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f16_f16_*,\
+	cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f32_f32_*,\
+	cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_bf16_bf16_*,\
+	cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_f32_f32_*,\
+	cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s32_s32_*,\
+	cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s8_s8_*,\
+	cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32_*,\
+	cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_f32_f32_f32_*
 
 # Strip spaces that Make inserts from the line-continuation backslashes.
 # Without this, cmake receives "cutlass_simt_dgemm..., cutlass_simt_sgemm..."
@@ -121,12 +131,9 @@ endif
 	# -----------------------------------------------------------------------
 	# Shared clone → patch → build → install pipeline
 	# -----------------------------------------------------------------------
-	# On aarch64, per-family shared libraries (e.g. libcutlass_gemm_sm100_f16_gemm_e4m3.so)
-	# can overflow R_AARCH64_PREL32 relocations in .eh_frame when thousands of FP8
-	# kernel objects are linked into a single SO.  Work around this by:
-	#   - Building static libs only (avoids the SO link that overflows)
-	#   - Suppressing unwind tables in generated kernel TUs (reduces .eh_frame)
-	# SuperBench only uses cutlass_profiler, which links statically, so no SO is needed.
+	# With the narrowed kernel filter (~3,900 objects, max ~614 per sub-group),
+	# shared per-family libraries stay under the R_AARCH64_PREL32 ±2 GB limit
+	# on aarch64.  Unwind table suppression further reduces .eh_frame pressure.
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch $(CUTLASS_TAG) --depth 1 https://github.com/NVIDIA/cutlass.git
 	$(CUTLASS_PATCHES)
@@ -136,10 +143,10 @@ endif
 		-DCUTLASS_NVCC_ARCHS=$(CUTLASS_ARCHS) \
 		-DCUTLASS_ENABLE_EXAMPLES=OFF \
 		-DCUTLASS_ENABLE_TESTS=OFF \
-		-DCUTLASS_BUILD_SHARED_LIBS=OFF \
-		-DCUTLASS_BUILD_STATIC_LIBS=ON \
-		-DCMAKE_CXX_FLAGS="-fno-asynchronous-unwind-tables" \
-		-DCMAKE_CUDA_FLAGS="--compiler-options=-fno-asynchronous-unwind-tables" \
+		-DCUTLASS_BUILD_SHARED_LIBS=ON \
+		-DCUTLASS_BUILD_STATIC_LIBS=OFF \
+		-DCMAKE_CXX_FLAGS="-fno-asynchronous-unwind-tables -fno-unwind-tables" \
+		-DCMAKE_CUDA_FLAGS="-Xcompiler=-fno-asynchronous-unwind-tables -Xcompiler=-fno-unwind-tables" \
 		-S ./cutlass \
 		-B ./cutlass/build \
 		"-DCUTLASS_LIBRARY_KERNELS=$(CUTLASS_KERNS)"

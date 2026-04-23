@@ -118,9 +118,9 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
 CSV Results:
 
 Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_tf32_tf32_f32_f32_f32_128x256x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.21,1072500
-1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_tf32_tf32_f32_f32_f32_256x128x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.45,1043800
-1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_tf32_tf32_f32_void_f32_128x256x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.10,1086300
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_128x256x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.21,1072500
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_256x128x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.45,1043800
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_128x256x32_1x2x1_0_ntn_align4_stream_k_1sm,passed,success,universal,16384,16384,16384,8.10,1086300
 """
         raw_output_bf16_tc = """
 CSV Results:
@@ -192,3 +192,32 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
 
         assert (benchmark.result['fp8_tc_flops'][0] == 2317200)
         assert (benchmark.result['fp8_tc_flops'][1] == 5425400)
+
+    @decorator.cuda_test
+    def test_flops_performance_cuda_fp4(self):
+        """Test gemm-flops benchmark FP4 (e4m3 x e2m1) kernel output parsing for SM100."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='--precision fp4_tc')
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        from superbench.benchmarks import BenchmarkType, ReturnCode
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = ['fp4_tc']
+
+        # SM100 Blackwell UMMA FP4 kernel: cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_{acc}_{c}_{d}_{tile}_...
+        raw_output_sm100_fp4 = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_f32_f32_f32_64x128x128_0x0x1_0_tnt_align128_1sm,passed,success,universal,16384,16384,16384,1.05,8388600
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_f32_f32_f32_64x128x128_2x1x1_0_tnt_align128_stream_k_1sm,passed,success,universal,16384,16384,16384,1.02,8627400
+"""
+        assert (benchmark._process_raw_result(0, raw_output_sm100_fp4))
+
+        assert (benchmark.result['fp4_tc_flops'][0] == 8627400)

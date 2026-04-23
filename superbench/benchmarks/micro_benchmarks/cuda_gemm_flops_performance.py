@@ -58,11 +58,12 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         # Kernel names use the 3x naming scheme: cutlass3x_sm100_tensorop_gemm_{dtypes}_{tile}_{cluster}_...
         # SIMT kernels (fp64/fp32/fp16) and fp64_tc are not generated for SM100 in CUTLASS v4.1.0.
         self.__kernel_map[10.0] = {
-            'tf32_tc': 'cutlass3x_sm100_tensorop_gemm_tf32_*',
+            'tf32_tc': 'cutlass3x_sm100_tensorop_tf32gemm_*',
             'bf16_tc': 'cutlass3x_sm100_tensorop_gemm_bf16_*',
             'fp16_tc': 'cutlass3x_sm100_tensorop_gemm_f16_*',
             'int8_tc': 'cutlass3x_sm100_tensorop_gemm_s8_*',
-            'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_*',
+            'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_*',
+            'fp4_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_*',
         }
         self.__kernel_map[10.3] = dict(self.__kernel_map[10.0])
         self.__parse_logline = [
@@ -75,10 +76,12 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'gemm,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3',
             # SM90 (Hopper) WGMMA kernels (3x naming: cutlass3x_sm90_tensorop_gemm_{dtype}_*)
             'gemm,cutlass3x_sm90_tensorop_gemm_e4m3_',
-            # SM100 (Blackwell) UMMA kernels (3x naming: cutlass3x_sm100_tensorop_gemm_{dtype}_*)
-            'gemm,cutlass3x_sm100_tensorop_gemm_tf32_', 'gemm,cutlass3x_sm100_tensorop_gemm_f16_',
+            # SM100 (Blackwell) UMMA kernels
+            'gemm,cutlass3x_sm100_tensorop_tf32gemm_', 'gemm,cutlass3x_sm100_tensorop_gemm_f16_',
             'gemm,cutlass3x_sm100_tensorop_gemm_bf16_', 'gemm,cutlass3x_sm100_tensorop_gemm_s8_',
-            'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_',
+            'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_',
+            # SM100 (Blackwell) FP4 UMMA kernels (NVFP4 / MXFP4: e4m3 × e2m1)
+            'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_',
         ]
 
     def add_parser_arguments(self):
