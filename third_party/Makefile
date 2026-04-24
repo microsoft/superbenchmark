@@ -134,9 +134,17 @@ ifneq (,$(wildcard fio/Makefile))
 endif
 
 # Build rccl-tests from commit 46375b1 of default branch.
+# If AMDGPU_TARGETS env var is set (space-separated, e.g. "gfx908 gfx90a gfx942"),
+# explicit --offload-arch flags and include paths are used.
+# Otherwise, the original build command is used (relies on hipcc auto-detection).
+ROCM_OFFLOAD_ARCH_FLAGS := $(foreach arch,$(AMDGPU_TARGETS),--offload-arch=$(arch))
 rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
+ifneq ($(strip $(AMDGPU_TARGETS)),)
+	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIPCUFLAGS="-std=c++14 -O3 $(ROCM_OFFLOAD_ARCH_FLAGS) -I$(ROCM_PATH)/include -I$(ROCM_PATH)/include/rccl -I$(ROCM_PATH)/include/hip -DMPI_SUPPORT -I$(MPI_HOME)/include -I$(MPI_HOME)/include/mpi" -j
+else
 	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
+endif
 	cp -v -r ./rccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
@@ -168,6 +176,7 @@ rocm_hipblaslt: sb_micro_path
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
+
 rocm_bandwidthTest: sb_micro_path
 	git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/HIP.git
 	cd ./HIP/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
