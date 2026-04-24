@@ -134,7 +134,7 @@ RUN cd /tmp && \
     make install
 
 ENV PATH="${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/mpi/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/mpi/lib:/opt/superbench/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
