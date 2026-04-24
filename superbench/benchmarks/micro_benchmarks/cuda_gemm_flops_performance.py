@@ -54,15 +54,18 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self.__kernel_map[9.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         # FP8 (e4m3) on Hopper SM90: CUTLASS 3x WGMMA kernels (CUTLASS v3.9.2+).
         self.__kernel_map[9.0]['fp8_tc'] = 'cutlass3x_sm90_tensorop_gemm_e4m3_*'
-        # Blackwell (SM100/SM103): CUTLASS v4.1.0 GenerateSM100 only generates UMMA TensorOp kernels.
-        # Kernel names use the 3x naming scheme: cutlass3x_sm100_tensorop_gemm_{dtypes}_{tile}_{cluster}_...
-        # SIMT kernels (fp64/fp32/fp16) and fp64_tc are not generated for SM100 in CUTLASS v4.1.0.
+        # Blackwell (SM100/SM103): CUTLASS v4.3.5 UMMA TensorOp kernels.
+        # Runtime --kernels patterns select only 256x256 tiles with stream_k
+        # scheduling and 2sm cooperative mode — the competitive subset for peak
+        # FLOPS at 16384x16384x16384.  This keeps profiler runtime under 1 hour
+        # (~56 kernels/precision × 5 + 49 FP4 ≈ 329 total ≈ 58 min).
+        # The build includes all tile/cluster/layout variants as a superset.
         self.__kernel_map[10.0] = {
-            'tf32_tc': 'cutlass3x_sm100_tensorop_tf32gemm_*',
-            'bf16_tc': 'cutlass3x_sm100_tensorop_gemm_bf16_*',
-            'fp16_tc': 'cutlass3x_sm100_tensorop_gemm_f16_*',
-            'int8_tc': 'cutlass3x_sm100_tensorop_gemm_s8_*',
-            'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_*',
+            'tf32_tc': 'cutlass3x_sm100_tensorop_tf32gemm*256x256x*stream_k_2sm',
+            'bf16_tc': 'cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_bf16_bf16*256x256x*stream_k_2sm',
+            'fp16_tc': 'cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f16_f16*256x256x*stream_k_2sm',
+            'int8_tc': 'cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s8_s8*256x256x*stream_k_2sm',
+            'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32*256x256x*stream_k_2sm',
             'fp4_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_*',
         }
         self.__kernel_map[10.3] = dict(self.__kernel_map[10.0])

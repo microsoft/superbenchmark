@@ -40,19 +40,19 @@ CUTLASS_KERNELS_VOLTA := \
 	cutlass_tensorop_h884gemm_256x128_32x2_*
 
 # SM100 Blackwell 3x UMMA GEMM kernels
-# On aarch64, kernel count must be kept under ~1000 per sub-group to avoid
-# R_AARCH64_PREL32 relocation overflow.  Use exact dtype patterns instead
-# of broad wildcards (e.g. gemm_e4m3_e4m3_f32_f32_f32_* not gemm_e4m3_*)
-# to exclude void-output, mixed-output, and e5m2/e3m2 input variants that
-# the cutlass_profiler gemm-flops benchmark does not need.
+# Optimized for peak-FLOPS benchmarking on GB200/GB300:
+#   - Only large tiles (128x256, 256x128, 256x256) that are competitive at 16K³
+#   - Only the canonical output type per precision (FP32-accum preferred)
+#   - FP4 kept in full (~49 kernels, small enough)
+#   - Keeps all cluster/layout/schedule variants per tile so the profiler
+#     can find the actual peak; runtime --kernels filtering in
+#     cuda_gemm_flops_performance.py further narrows to ~36/precision.
+# On aarch64, each sub-group must stay under ~1000 objects to avoid
+# R_AARCH64_PREL32 relocation overflow in per-family shared libraries.
 CUTLASS_KERNELS_SM100 := \
 	cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_*,\
-	cutlass3x_sm100_tensorop_gemm_f16_f16_f16_f16_f16_*,\
 	cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f16_f16_*,\
-	cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f32_f32_*,\
 	cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_bf16_bf16_*,\
-	cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_f32_f32_*,\
-	cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s32_s32_*,\
 	cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s8_s8_*,\
 	cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32_*,\
 	cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_f32_f32_f32_*
