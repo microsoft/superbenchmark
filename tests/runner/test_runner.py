@@ -56,6 +56,8 @@ class RunnerTestCase(unittest.TestCase):
                     self.assertIn('proc_num', mode)
                 if mode.name == 'mpi':
                     self.assertIn('mca', mode)
+                    self.assertIn('bind_to', mode)
+                    self.assertEqual('numa', mode.bind_to)
 
     def test_get_failure_count(self):
         """Test get_failure_count."""
@@ -153,6 +155,7 @@ class RunnerTestCase(unittest.TestCase):
                     'name': 'mpi',
                     'proc_num': 8,
                     'proc_rank': 1,
+                    'bind_to': 'numa',
                     'mca': {},
                     'env': {
                         'PATH': None,
@@ -172,6 +175,7 @@ class RunnerTestCase(unittest.TestCase):
                     'name': 'mpi',
                     'proc_num': 8,
                     'proc_rank': 2,
+                    'bind_to': 'numa',
                     'mca': {
                         'coll_hcoll_enable': 0,
                     },
@@ -196,6 +200,7 @@ class RunnerTestCase(unittest.TestCase):
                     'node_num': 1,
                     'proc_num': 8,
                     'proc_rank': 2,
+                    'bind_to': 'numa',
                     'mca': {
                         'coll_hcoll_enable': 0,
                     },
@@ -219,6 +224,7 @@ class RunnerTestCase(unittest.TestCase):
                     'name': 'mpi',
                     'proc_num': 8,
                     'proc_rank': 1,
+                    'bind_to': 'numa',
                     'mca': {},
                     'pattern': {
                         'type': 'all-nodes',
@@ -231,6 +237,44 @@ class RunnerTestCase(unittest.TestCase):
                 'expected_command': (
                     'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -bind-to numa '
                     ' -x PATH -x LD_LIBRARY_PATH '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
+                    'proc_num': 8,
+                    'proc_rank': 0,
+                    'bind_to': 'core',
+                    'mca': {},
+                    'env': {
+                        'PATH': None,
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to core '
+                    ' -x PATH '
+                    f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
+                ),
+            },
+            {
+                'benchmark_name':
+                'foo',
+                'mode': {
+                    'name': 'mpi',
+                    'proc_num': 8,
+                    'proc_rank': 0,
+                    'bind_to': 'none',
+                    'mca': {},
+                    'env': {
+                        'PATH': None,
+                    },
+                },
+                'expected_command': (
+                    'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to none '
+                    ' -x PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
@@ -263,6 +307,21 @@ class RunnerTestCase(unittest.TestCase):
                         test_case['timeout'],
                     ), expected_command
                 )
+
+    def test_validate_sb_config_invalid_mpi_bind_to(self):
+        """Test validate_sb_config rejects unsupported mpi bind_to values."""
+        test_config_file = Path(__file__).parent / '../../tests/data/test.yaml'
+        with test_config_file.open() as fp:
+            invalid_config = OmegaConf.create(yaml.load(fp, Loader=yaml.SafeLoader))
+        invalid_config.superbench.benchmarks['nccl-bw:all-nodes'].modes[0].bind_to = 'socket'
+
+        with self.assertRaisesRegex(ValueError, 'Invalid bind_to value'):
+            SuperBenchRunner(
+                invalid_config,
+                OmegaConf.create({}),
+                OmegaConf.create({}),
+                self.sb_output_dir,
+            )
 
     def test_run_empty_benchmarks(self):
         """Test run empty benchmarks, nothing should happen."""

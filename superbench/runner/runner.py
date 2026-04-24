@@ -60,6 +60,12 @@ class SuperBenchRunner():
         """
         SuperBenchLogger.add_handler(logger.logger, filename=str(self._output_path / filename))
 
+    def __validate_mpi_bind_to(self, bind_to):
+        """Validate mpi bind_to option."""
+        valid_mpi_bind_to = {'slot', 'hwthread', 'core', 'l1cache', 'l2cache', 'l3cache', 'package', 'numa', 'none'}
+        if bind_to not in valid_mpi_bind_to:
+            raise ValueError('Invalid bind_to value {}. Must be one of: {}'.format(bind_to, sorted(valid_mpi_bind_to)))
+
     def __validate_sb_config(self):    # noqa: C901
         """Validate SuperBench config object.
 
@@ -91,6 +97,10 @@ class SuperBenchRunner():
                             'btl_tcp_if_exclude': 'lo,docker0',
                             'coll_hcoll_enable': 0,
                         }
+                    if 'bind_to' not in mode:
+                        self._sb_benchmarks[name].modes[idx].bind_to = 'numa'
+                    else:
+                        self.__validate_mpi_bind_to(mode.bind_to)
                     for key in ['PATH', 'LD_LIBRARY_PATH', 'SB_MICRO_PATH', 'SB_WORKSPACE']:
                         self._sb_benchmarks[name].modes[idx].env.setdefault(key, None)
                     if 'pattern' in mode:
@@ -182,13 +192,14 @@ class SuperBenchRunner():
                 '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
                 '-allow-run-as-root '    # allow mpirun to run when executed by root user
                 '{host_list} '    # use prepared hostfile or specify nodes and launch {proc_num} processes on each node
-                '-bind-to numa '    # bind processes to numa
+                '-bind-to {bind_to} '    # bind processes according to mode config
                 '{mca_list} {env_list} {command}'
             ).format(
                 trace=trace_command,
                 host_list=f'-host localhost:{mode.proc_num}' if 'node_num' in mode and mode.node_num == 1 else
                 f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if 'host_list' not in mode else '-host ' +
                 ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
+                bind_to=mode.bind_to,
                 mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
