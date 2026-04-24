@@ -85,18 +85,23 @@ ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	# Arch tokens must use the "a" suffix; bare "100"/"103" do not trigger
 	# Blackwell code generation in CUTLASS v4.3.5's generator.py.
 	#
-	# CUTLASS gates int8 GEMM generation when 103a is in the arch list
-	# (arch_family_cc pruning heuristic). We patch that gate out because:
-	#   1. SM103 hardware fully supports tcgen05.mma.kind::i8 (0.165 POPS dense).
-	#   2. Generated int8 kernels use CC range [100, 110] (via ThorSMRenumbering),
-	#      so CUTLASS runtime dispatches them on both SM100 and SM103.
-	# The gate is a dead-kernel pruning optimization for family-binary builds,
-	# not a hardware limitation. The sed patch only affects the two int8 gates
-	# in GenerateSM100(); no other code paths use arch_family_cc.
+	# SM103a (GB300 "Blackwell Ultra") does NOT support INT8 UMMA
+	# (tcgen05.mma.kind::i8) — CuTe's config.hpp only defines
+	# CUTE_ARCH_TCGEN05_S8_MMA_ENABLED for SM100a/SM101a.
+	# However, CUTLASS's generator.py gates INT8 generation when ANY
+	# of ['100f','101f','103a'] is in the arch list.  Since we build
+	# with "100a;103a", the gate fires and skips INT8 for ALL archs
+	# — including SM100a (GB200) which DOES support INT8.
+	# Fix: remove only '103a' from the gate so INT8 is generated for
+	# SM100a.  The SM103a cubin will compile INT8 with a runtime trap
+	# (CUTE_INVALID_CONTROL_PATH) but the SM100a cubin will work.
+	# On a GB300 the profiler will load the SM103a cubin and correctly
+	# report the kernel as "failed"; cuda_gemm_flops_performance.py
+	# excludes int8_tc from the SM10.3 kernel map so it is never run.
 	$(eval CUTLASS_TAG     := v4.3.5)
 	$(eval CUTLASS_ARCHS   := "100a;103a")
 	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
-	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = []/" cutlass/python/cutlass_library/generator.py)
+	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py)
 
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	# -----------------------------------------------------------------------

@@ -69,7 +69,10 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32*256x*stream_k_2sm*',
             'fp4_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_*',
         }
-        self.__kernel_map[10.3] = dict(self.__kernel_map[10.0])
+        # SM103a (GB300 "Blackwell Ultra") lacks INT8 UMMA (tcgen05.mma.kind::i8).
+        # CuTe's config.hpp only defines CUTE_ARCH_TCGEN05_S8_MMA_ENABLED for
+        # SM100a/SM101a.  INT8 kernels compiled for SM103a hit a runtime trap.
+        self.__kernel_map[10.3] = {k: v for k, v in self.__kernel_map[10.0].items() if k != 'int8_tc'}
         self.__parse_logline = [
             # SM70/SM80 kernels (legacy 2x naming: cutlass_tensorop_*)
             'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
