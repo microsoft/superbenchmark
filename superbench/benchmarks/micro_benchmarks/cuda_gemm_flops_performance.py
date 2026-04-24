@@ -55,17 +55,18 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         # FP8 (e4m3) on Hopper SM90: CUTLASS 3x WGMMA kernels (CUTLASS v3.9.2+).
         self.__kernel_map[9.0]['fp8_tc'] = 'cutlass3x_sm90_tensorop_gemm_e4m3_*'
         # Blackwell (SM100/SM103): CUTLASS v4.3.5 UMMA TensorOp kernels.
-        # Runtime --kernels patterns select only 256x256 tiles with stream_k
-        # scheduling and 2sm cooperative mode — the competitive subset for peak
-        # FLOPS at 16384x16384x16384.  This keeps profiler runtime under 1 hour
-        # (~56 kernels/precision × 5 + 49 FP4 ≈ 329 total ≈ 58 min).
-        # The build includes all tile/cluster/layout variants as a superset.
+        # Runtime --kernels patterns select stream_k + 2sm kernels for peak FLOPS.
+        # TF32/FP16/BF16: 256x256 tiles only (best for 32/64-byte K-tiles).
+        # INT8/FP8: include 128x256 + 256x256 because their larger K-tile (128)
+        #   changes optimal tile shape; 256x256 non-epi_tma may fail at runtime.
+        # FP4: all ~49 kernels (small enough).
+        # Trailing * after stream_k_2sm matches both _2sm and _2sm_epi_tma.
         self.__kernel_map[10.0] = {
-            'tf32_tc': 'cutlass3x_sm100_tensorop_tf32gemm*256x256x*stream_k_2sm',
-            'bf16_tc': 'cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_bf16_bf16*256x256x*stream_k_2sm',
-            'fp16_tc': 'cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f16_f16*256x256x*stream_k_2sm',
-            'int8_tc': 'cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s8_s8*256x256x*stream_k_2sm',
-            'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32*256x256x*stream_k_2sm',
+            'tf32_tc': 'cutlass3x_sm100_tensorop_tf32gemm*256x256x*stream_k_2sm*',
+            'bf16_tc': 'cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_bf16_bf16*256x256x*stream_k_2sm*',
+            'fp16_tc': 'cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f16_f16*256x256x*stream_k_2sm*',
+            'int8_tc': 'cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s8_s8*256x*stream_k_2sm*',
+            'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32*256x*stream_k_2sm*',
             'fp4_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_*',
         }
         self.__kernel_map[10.3] = dict(self.__kernel_map[10.0])
