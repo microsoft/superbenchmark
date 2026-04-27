@@ -38,14 +38,22 @@ else()
 endif()
 
 # Set HIP architectures from AMDGPU_TARGETS environment variable if available.
-# AMDGPU_TARGETS should be a space-separated list of GPU architectures,
+# AMDGPU_TARGETS should be a whitespace-separated list of GPU architectures,
 # e.g. "gfx908 gfx90a gfx942".
-# Both the CMake variable AMDGPU_TARGETS and CMAKE_HIP_ARCHITECTURES must be set:
-# - AMDGPU_TARGETS is read by ROCm's hip-config-amd.cmake to set --offload-arch flags
-# - CMAKE_HIP_ARCHITECTURES is the native CMake variable for HIP (requires >= 3.21)
-if(DEFINED ENV{AMDGPU_TARGETS})
-    string(REPLACE " " ";" HIP_ARCH_LIST "$ENV{AMDGPU_TARGETS}")
-    set(AMDGPU_TARGETS ${HIP_ARCH_LIST} CACHE STRING "AMD GPU targets to compile for")
+# In this repository's micro-benchmarks, AMDGPU_TARGETS is what actually drives
+# --offload-arch selection, via ROCm's hip-config-amd.cmake and hipcc (the C++
+# compiler). CMAKE_HIP_ARCHITECTURES is set (when supported by CMake >= 3.21)
+# for compatibility with projects that enable the CMake HIP language, but is
+# not required for these CXX-only projects.
+set(_amdgpu_targets_raw "$ENV{AMDGPU_TARGETS}")
+string(STRIP "${_amdgpu_targets_raw}" _amdgpu_targets_stripped)
+# Collapse runs of spaces/tabs into a single ';' to avoid empty list elements
+# from leading/trailing or repeated whitespace (e.g., "gfx90a  gfx942").
+string(REGEX REPLACE "[ \t]+" ";" HIP_ARCH_LIST "${_amdgpu_targets_stripped}")
+if(NOT HIP_ARCH_LIST STREQUAL "")
+    # Use FORCE so the environment variable wins over any stale cached value
+    # when the build directory is reconfigured with a different AMDGPU_TARGETS.
+    set(AMDGPU_TARGETS ${HIP_ARCH_LIST} CACHE STRING "AMD GPU targets to compile for" FORCE)
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
         set(CMAKE_HIP_ARCHITECTURES ${HIP_ARCH_LIST})
     endif()
@@ -54,7 +62,7 @@ else()
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
         set(CMAKE_HIP_ARCHITECTURES OFF)
     endif()
-    message(STATUS "AMDGPU_TARGETS not set, relying on hipcc auto-detection")
+    message(STATUS "AMDGPU_TARGETS not set (or empty), relying on hipcc auto-detection")
 endif()
 
 if(EXISTS ${HIP_PATH})
