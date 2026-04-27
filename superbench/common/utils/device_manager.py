@@ -3,6 +3,7 @@
 
 """Device Managerment Library Utility."""
 
+import numbers
 from typing import Optional
 
 from superbench.common.utils import logger
@@ -14,6 +15,12 @@ if gpu.vendor == 'nvidia' or gpu.vendor == 'nvidia-graphics':
     import py3nvml.py3nvml as nvml
 elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics':
     import amdsmi as rocml
+
+# amdsmi reports power in microwatts; convert to watts when the raw value
+# is at or above this threshold (any plausible per-GPU watt value is well
+# below 100000, while µW values for real cards are tens of millions).
+_AMDSMI_MICROWATTS_PER_WATT = 1_000_000
+_AMDSMI_MICROWATTS_THRESHOLD = 100_000
 
 
 class DeviceManager:
@@ -391,12 +398,19 @@ class AmdDeviceManager(DeviceManager):
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
             # amdsmi sets fields to 'N/A' when the hardware reports 0xFFFF (unsupported).
             # On MI300X, average_socket_power is unsupported, so fall back to current_socket_power.
-            power = power_measure.get('average_socket_power')
-            if not isinstance(power, (int, float)):
-                power = power_measure.get('current_socket_power')
-            if not isinstance(power, (int, float)):
-                return None
-            return int(power)
+            for key in ('average_socket_power', 'current_socket_power'):
+                if key not in power_measure:
+                    logger.warning('amdsmi power_info missing expected key: {}'.format(key))
+                    continue
+                power = power_measure[key]
+                if isinstance(power, numbers.Real) and not isinstance(power, bool):
+                    try:
+                        return int(power)
+                    except (TypeError, ValueError) as conv_err:
+                        logger.warning(
+                            'Failed to convert amdsmi {} value {!r} to int: {}'.format(key, power, conv_err)
+                        )
+            return None
         except Exception as err:
             logger.warning('Get device power failed: {}'.format(str(err)))
             return None
@@ -412,12 +426,16 @@ class AmdDeviceManager(DeviceManager):
         """
         try:
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
-            power_limit = power_measure.get('power_limit')
-            if not isinstance(power_limit, (int, float)):
+            if 'power_limit' not in power_measure:
+                logger.warning('amdsmi power_info missing expected key: power_limit')
                 return None
-            # amdsmi returns power_limit in microwatts (e.g. 750000000 for 750W), convert to watts.
-            if power_limit > 100000:
-                power_limit = power_limit // 1000000
+            power_limit = power_measure['power_limit']
+            if not isinstance(power_limit, numbers.Real) or isinstance(power_limit, bool):
+                return None
+            # amdsmi returns power_limit in microwatts (e.g. 750000000 for 750W) on some
+            # ROCm versions and in watts on others. Detect µW by magnitude and convert.
+            if power_limit >= _AMDSMI_MICROWATTS_THRESHOLD:
+                power_limit = power_limit // _AMDSMI_MICROWATTS_PER_WATT
             return int(power_limit)
         except Exception as err:
             logger.warning('Get device power limit failed: {}'.format(str(err)))
