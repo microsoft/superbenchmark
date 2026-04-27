@@ -306,7 +306,7 @@ class MegatronGPT(ModelBenchmark):
     def __prepare_deespeed_config(self, precision_megatron):
         """Prepare deepspeed configs."""
         self._config_json_path = os.path.join(self._args.data_home, 'ds_config_gpt.json')
-        # Load deepspeed config template json file
+        # Build deepspeed config template in memory.
         # FP16 supports loss scaling parameters; BF16 does not (sufficient dynamic range).
         if precision_megatron == 'fp16':
             precision_template = {
