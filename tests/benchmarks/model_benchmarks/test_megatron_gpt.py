@@ -204,7 +204,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         assert ret is False
         assert mock_run_command.call_count >= 1
         cmd = mock_run_command.call_args_list[0].args[0]
-        assert '--workers 1' in cmd, cmd
+        assert '--workers 1 ' in cmd, cmd
         assert f'--output-prefix {os.path.join(self._tmp_dir, "dataset")} ' in cmd, cmd
 
         # Case 2: num_workers=4 with custom data_prefix='custom_text_document' should
@@ -221,7 +221,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark._preprocess()
         benchmark._generate_dataset()
         cmd = mock_run_command.call_args_list[0].args[0]
-        assert '--workers 4' in cmd, cmd
+        assert '--workers 4 ' in cmd, cmd
         assert f'--output-prefix {os.path.join(self._tmp_dir, "custom")} ' in cmd, cmd
 
         # Case 3: data_prefix without the '_text_document' suffix is used as-is.
@@ -237,7 +237,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         benchmark._preprocess()
         benchmark._generate_dataset()
         cmd = mock_run_command.call_args_list[0].args[0]
-        assert '--workers 2' in cmd, cmd
+        assert '--workers 2 ' in cmd, cmd
         assert f'--output-prefix {os.path.join(self._tmp_dir, "mydata")} ' in cmd, cmd
 
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
