@@ -44,6 +44,10 @@ CUTLASS_KERNELS_VOLTA := \
 #   - Only large tiles (128x256, 256x128, 256x256) that are competitive at 16K³
 #   - Only the canonical output type per precision (FP32-accum preferred)
 #   - FP4 kept in full (~49 kernels, small enough)
+#   - Block-scaled NVFP4 (true FP4 peak) added separately for SM103a (GB300)
+#     via the BlockScaledGemm operation kind.  The FP4 Ultra path uses
+#     cutlass3x_sm103_bstensorop_gemm_ue4m3x*_ultra_* kernels (ue4m3 scale,
+#     vs16 = NVFP4 16-element block).
 #   - Keeps all cluster/layout/schedule variants per tile so the profiler
 #     can find the actual peak; runtime --kernels filtering in
 #     cuda_gemm_flops_performance.py further narrows to ~36/precision.
@@ -55,7 +59,8 @@ CUTLASS_KERNELS_SM100 := \
 	cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_bf16_bf16_*,\
 	cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s8_s8_*,\
 	cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32_*,\
-	cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_f32_f32_f32_*
+	cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_f32_f32_*ultra_2sm*,\
+	cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_ue4m3xf4_f32_f32_f32_*ultra_2sm*
 
 # Strip spaces that Make inserts from the line-continuation backslashes.
 # Without this, cmake receives "cutlass_simt_dgemm..., cutlass_simt_sgemm..."

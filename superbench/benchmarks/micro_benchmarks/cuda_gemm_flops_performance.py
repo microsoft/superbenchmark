@@ -67,12 +67,18 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'fp16_tc': 'cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f16_f16*256x256x*stream_k_2sm*',
             'int8_tc': 'cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s8_s8*256x*stream_k_2sm*',
             'fp8_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32*256x*stream_k_2sm*',
-            'fp4_tc': 'cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_*',
         }
-        # SM103a (GB300 "Blackwell Ultra") lacks INT8 UMMA (tcgen05.mma.kind::i8).
-        # CuTe's config.hpp only defines CUTE_ARCH_TCGEN05_S8_MMA_ENABLED for
-        # SM100a/SM101a.  INT8 kernels compiled for SM103a hit a runtime trap.
+        # SM103a (GB300 "Blackwell Ultra"):
+        #   - Lacks INT8 UMMA (tcgen05.mma.kind::i8); CuTe's config.hpp only
+        #     defines CUTE_ARCH_TCGEN05_S8_MMA_ENABLED for SM100a/SM101a.
+        #   - Adds NVFP4 (block-scaled FP4) via the BlockScaledGemm operation.
+        #     The FP4 Ultra path uses sm103-specific bstensorop kernels with
+        #     ue4m3 scale factor and vs16 block size (NVFP4 spec).
+        # nvfp4_tc kernels are profiled with --operation=block_scaled_gemm
+        # (auto-detected from the kernel name prefix in _preprocess).
         self.__kernel_map[10.3] = {k: v for k, v in self.__kernel_map[10.0].items() if k != 'int8_tc'}
+        self.__kernel_map[10.3]['nvfp4_tc'] = \
+            'cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_f32_f32*256x*ultra_2sm*'
         self.__parse_logline = [
             # SM70/SM80 kernels (legacy 2x naming: cutlass_tensorop_*)
             'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
@@ -87,8 +93,9 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'gemm,cutlass3x_sm100_tensorop_tf32gemm_', 'gemm,cutlass3x_sm100_tensorop_gemm_f16_',
             'gemm,cutlass3x_sm100_tensorop_gemm_bf16_', 'gemm,cutlass3x_sm100_tensorop_gemm_s8_',
             'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_',
-            # SM100 (Blackwell) FP4 UMMA kernels (NVFP4 / MXFP4: e4m3 × e2m1)
-            'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e2m1_',
+            # SM103 (Blackwell Ultra) NVFP4 block-scaled UMMA kernels
+            'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_',
+            'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_',
         ]
 
     def add_parser_arguments(self):
@@ -123,7 +130,11 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         for p in self._precision_need_to_run:
             command = os.path.join(self._args.bin_dir, self._bin_name)
             command += (' --warmup-iterations=' + str(self._args.num_warmup))
-            command += (' --operation=gemm')
+            # NVFP4 (and MXFP4) require the block_scaled_gemm operation kind
+            # in cutlass_profiler — they have separate kernel registries from
+            # the standard gemm operation.
+            operation = 'block_scaled_gemm' if p in ('nvfp4_tc', 'mxfp4_tc') else 'gemm'
+            command += (' --operation=' + operation)
             command += (' --n=' + str(self._args.n))
             command += (' --k=' + str(self._args.k))
             command += (' --m=' + str(self._args.m))
