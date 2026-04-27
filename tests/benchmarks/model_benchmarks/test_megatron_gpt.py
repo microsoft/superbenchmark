@@ -174,6 +174,72 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._generate_dataset()
         assert (ret is True)
 
+    @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.run_command')
+    @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.download_file')
+    def test_megatron_gpt_dataset_generate_command(self, mock_download_file, mock_run_command):
+        """Verify _generate_dataset clamps --workers to >=1 and derives --output-prefix from data_prefix."""
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        assert (benchmark_cls)
+        os.environ['OMPI_COMM_WORLD_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_RANK'] = '0'
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12345'
+
+        # Case 1: num_workers=0 with default data_prefix should produce
+        # '--workers 1' (clamped) and '--output-prefix <data_home>/dataset'
+        # (default data_prefix='dataset_text_document' with the suffix stripped).
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=(
+                f'--code_base /root/Megatron-DeepSpeed --data_home {self._tmp_dir} '
+                f'--batch_size 2048 --num_workers 0 '
+                f'--dataset_url http://example.com/data.json'
+            ),
+        )
+        benchmark._preprocess()
+        ret = benchmark._generate_dataset()
+        # Dataset generation will fail because the mocked run_command does not actually
+        # produce .bin/.idx files; we only care about the constructed command.
+        assert ret is False
+        assert mock_run_command.call_count >= 1
+        cmd = mock_run_command.call_args_list[0].args[0]
+        assert '--workers 1' in cmd, cmd
+        assert f'--output-prefix {os.path.join(self._tmp_dir, "dataset")} ' in cmd, cmd
+
+        # Case 2: num_workers=4 with custom data_prefix='custom_text_document' should
+        # produce '--workers 4' and '--output-prefix <data_home>/custom'.
+        mock_run_command.reset_mock()
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=(
+                f'--code_base /root/Megatron-DeepSpeed --data_home {self._tmp_dir} '
+                f'--batch_size 2048 --num_workers 4 --data_prefix custom_text_document '
+                f'--dataset_url http://example.com/data.json'
+            ),
+        )
+        benchmark._preprocess()
+        benchmark._generate_dataset()
+        cmd = mock_run_command.call_args_list[0].args[0]
+        assert '--workers 4' in cmd, cmd
+        assert f'--output-prefix {os.path.join(self._tmp_dir, "custom")} ' in cmd, cmd
+
+        # Case 3: data_prefix without the '_text_document' suffix is used as-is.
+        mock_run_command.reset_mock()
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=(
+                f'--code_base /root/Megatron-DeepSpeed --data_home {self._tmp_dir} '
+                f'--batch_size 2048 --num_workers 2 --data_prefix mydata '
+                f'--dataset_url http://example.com/data.json'
+            ),
+        )
+        benchmark._preprocess()
+        benchmark._generate_dataset()
+        cmd = mock_run_command.call_args_list[0].args[0]
+        assert '--workers 2' in cmd, cmd
+        assert f'--output-prefix {os.path.join(self._tmp_dir, "mydata")} ' in cmd, cmd
+
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_gpt_command(self, mock_generate_dataset):
         """Test command generation."""

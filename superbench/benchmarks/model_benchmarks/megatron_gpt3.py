@@ -652,12 +652,22 @@ class MegatronGPT(ModelBenchmark):
                     self._raw_data_path = str(Path(self._args.data_home) / 'data.json')
                     download_file(self._args.dataset_url, self._raw_data_path)
 
+                    # Megatron's preprocess_data.py appends '_text_document' to --output-prefix
+                    # when producing the .bin/.idx files. Derive the output-prefix from
+                    # data_prefix (stripping the '_text_document' suffix when present) so that
+                    # the generated files match the existence checks above for any custom
+                    # data_prefix value.
+                    output_prefix_basename = self._args.data_prefix
+                    if output_prefix_basename.endswith('_text_document'):
+                        output_prefix_basename = output_prefix_basename[:-len('_text_document')]
+                    output_prefix = os.path.join(self._args.data_home, output_prefix_basename)
+
                     command = (
                         'python3 '
                         f'{os.path.join(self._args.code_base, "tools/preprocess_data.py")} '
                         f'--input {self._raw_data_path} '
                         f'--tokenizer-type {self._args.tokenizer_type} '
-                        f'--output-prefix {os.path.join(self._args.data_home, "dataset")} '
+                        f'--output-prefix {output_prefix} '
                         # num_workers=0 is valid for DataLoader (main process loads data),
                         # but preprocess_data.py requires workers>=1 for multiprocessing.Pool.
                         f'--workers {max(1, self._args.num_workers)} '
