@@ -434,7 +434,7 @@ class AmdDeviceManager(DeviceManager):
                 return None
             # amdsmi returns power_limit in microwatts (e.g. 750000000 for 750W) on some
             # ROCm versions and in watts on others. Detect µW by magnitude and convert.
-            if power_limit >= _AMDSMI_MICROWATTS_THRESHOLD:
+            if power_limit > _AMDSMI_MICROWATTS_THRESHOLD:
                 power_limit = power_limit // _AMDSMI_MICROWATTS_PER_WATT
             return int(power_limit)
         except Exception as err:
