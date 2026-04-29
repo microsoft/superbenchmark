@@ -3,28 +3,30 @@
 
 """Export PyTorch models to ONNX format."""
 
+import inspect
 from pathlib import Path
 
 from packaging import version
 import torch.hub
 import torch.onnx
 import torchvision.models
-from transformers import BertConfig, GPT2Config, LlamaConfig
 
-from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
-from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
-from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
-from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
-from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
+import traceback
 
-if MixtralBenchmarkModel is not None:
-    from transformers import MixtralConfig
+from superbench.common.utils import logger
 
 
 class torch2onnxExporter():
     """PyTorch model to ONNX exporter."""
     def __init__(self):
         """Constructor."""
+        from transformers import BertConfig, GPT2Config, LlamaConfig
+        from superbench.benchmarks.model_benchmarks.pytorch_bert import BertBenchmarkModel
+        from superbench.benchmarks.model_benchmarks.pytorch_gpt2 import GPT2BenchmarkModel
+        from superbench.benchmarks.model_benchmarks.pytorch_lstm import LSTMBenchmarkModel
+        from superbench.benchmarks.model_benchmarks.pytorch_llama import LlamaBenchmarkModel
+        from superbench.benchmarks.model_benchmarks.pytorch_mixtral import MixtralBenchmarkModel
+
         self.num_classes = 100
         self.lstm_input_size = 256
         self.benchmark_models = {
@@ -129,6 +131,7 @@ class torch2onnxExporter():
 
         # Only include Mixtral models if MixtralBenchmarkModel is available
         if MixtralBenchmarkModel is not None:
+            from transformers import MixtralConfig
             self.benchmark_models.update(
                 {
                     'mixtral-8x7b':
@@ -270,3 +273,152 @@ class torch2onnxExporter():
         del dummy_input
         torch.cuda.empty_cache()
         return file_name
+
+    def export_huggingface_model(self, model, model_name, batch_size=1, seq_length=512, output_dir=None):
+        """Export a HuggingFace model to ONNX format.
+
+        Args:
+            model: HuggingFace model instance to export.
+            model_name (str): Name for the exported ONNX model file.
+            batch_size (int): Batch size of input. Defaults to 1.
+            seq_length (int): Sequence length of input. Defaults to 512.
+            output_dir (str): Output directory path. If None, uses default path.
+
+        Returns:
+            str: Exported ONNX model file path, or empty string if export fails.
+        """
+        try:
+            # Use custom output directory if provided
+            output_path = Path(output_dir) if output_dir else self._onnx_model_path
+            file_name = str(output_path / (model_name + '.onnx'))
+
+            # Put model in eval mode and move to CUDA if available
+            model.eval()
+
+            # Disable cache to avoid DynamicCache issues with ONNX export
+            if hasattr(model.config, 'use_cache'):
+                model.config.use_cache = False
+
+            if torch.cuda.is_available():
+                model = model.cuda()
+
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+            # Get model's dtype for inputs
+            model_dtype = next(model.parameters()).dtype
+
+            # Detect model type and create appropriate inputs
+            # Vision models use pixel_values, NLP models use input_ids
+            # Use HuggingFace's main_input_name property for automatic detection
+            main_input = getattr(model, 'main_input_name', 'input_ids')
+            is_vision_model = main_input == 'pixel_values'
+
+            if is_vision_model:
+                # Vision models: use pixel_values (batch_size, channels, height, width)
+                # Derive C/H/W from model config rather than hard-coding 3x224x224
+                num_channels = getattr(model.config, 'num_channels', 3)
+                image_size = getattr(model.config, 'image_size', 224)
+                if isinstance(image_size, (list, tuple)):
+                    img_h, img_w = image_size[0], image_size[1]
+                else:
+                    img_h, img_w = image_size, image_size
+
+                dummy_input = torch.randn(batch_size, num_channels, img_h, img_w, dtype=model_dtype, device=device)
+                input_names = ['pixel_values']
+                dynamic_axes = {'pixel_values': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
+
+                # Wrapper for vision models
+                class VisionModelWrapper(torch.nn.Module):
+                    def __init__(self, model):
+                        super().__init__()
+                        self.model = model
+
+                    def forward(self, pixel_values):
+                        outputs = self.model(pixel_values=pixel_values)
+                        if hasattr(outputs, 'logits'):
+                            return outputs.logits
+                        elif hasattr(outputs, 'last_hidden_state'):
+                            return outputs.last_hidden_state
+                        else:
+                            return outputs[0] if isinstance(outputs, (tuple, list)) else outputs
+
+                wrapped_model = VisionModelWrapper(model)
+                export_args = (dummy_input, )
+            else:
+                # NLP models: use input_ids and attention_mask
+                dummy_input = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
+                attention_mask = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
+                input_names = ['input_ids', 'attention_mask']
+                dynamic_axes = {
+                    'input_ids': {
+                        0: 'batch_size',
+                        1: 'seq_length'
+                    },
+                    'attention_mask': {
+                        0: 'batch_size',
+                        1: 'seq_length'
+                    },
+                    'output': {
+                        0: 'batch_size',
+                        1: 'seq_length'
+                    },
+                }
+
+                # Wrapper for NLP models
+                class NLPModelWrapper(torch.nn.Module):
+                    def __init__(self, model):
+                        super().__init__()
+                        self.model = model
+
+                    def forward(self, input_ids, attention_mask):
+                        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
+                        if hasattr(outputs, 'logits'):
+                            return outputs.logits
+                        elif hasattr(outputs, 'last_hidden_state'):
+                            return outputs.last_hidden_state
+                        else:
+                            return outputs[0] if isinstance(outputs, (tuple, list)) else outputs
+
+                wrapped_model = NLPModelWrapper(model)
+                export_args = (dummy_input, attention_mask)
+
+            # Export to ONNX for large models (>2GB), use external data format
+            model_size_gb = sum(p.numel() * p.element_size() for p in model.parameters()) / (1024**3)
+            use_external_data = model_size_gb > 2.0
+
+            if use_external_data:
+                logger.info(f'Model size is {model_size_gb:.2f}GB, using external data format for ONNX export')
+
+            export_kwargs = {
+                'opset_version': 14,
+                'do_constant_folding': True,
+                'input_names': input_names,
+                'output_names': ['output'],
+                'dynamic_axes': dynamic_axes,
+            }
+            if use_external_data:
+                # PyTorch 2.8+ renamed 'use_external_data_format' to 'external_data'
+                sig = inspect.signature(torch.onnx.export)
+                if 'external_data' in sig.parameters:
+                    export_kwargs['external_data'] = True
+                else:
+                    export_kwargs['use_external_data_format'] = True
+
+            torch.onnx.export(
+                wrapped_model,
+                export_args,
+                file_name,
+                **export_kwargs,
+            )
+
+            # Clean up
+            del dummy_input
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+            return file_name
+
+        except Exception as e:
+            logger.error(f'Failed to export HuggingFace model to ONNX: {str(e)}')
+            logger.error(traceback.format_exc())
+            return ''

@@ -13,6 +13,7 @@ rocm_test = unittest.skipIf(os.environ.get('SB_TEST_ROCM', '0') == '0', 'Skip RO
 
 pytorch_test = unittest.skipIf(os.environ.get('SB_TEST_PYTORCH', '1') == '0', 'Skip PyTorch tests.')
 directx_test = unittest.skipIf(os.environ.get('SB_TEST_DIRECTX', '0') == '0', 'Skip DirectX tests.')
+hf_e2e_test = unittest.skipUnless(os.environ.get('SB_TEST_HF_E2E', '0') == '1', 'Skip HF E2E tests. Set SB_TEST_HF_E2E=1 to enable.')
 
 
 def load_data(filepath):
