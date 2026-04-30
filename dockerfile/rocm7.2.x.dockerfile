@@ -165,38 +165,45 @@ ADD third_party third_party
 # rocm_megatron_lm: broken upstream (pretrain_deepseek.py missing in rocm_dev branch)
 # apex_rocm: skipped — all imports guarded, PyTorch 2.9 has native fused optimizers/AMP.
 RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-7.2 HIPBLASLT_BRANCH=release/rocm-rel-7.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
-# Build hipblaslt-bench only (not the library) against system-installed hipBLASLt.
-# Origami is AMD-internal; sed it out. ROCROLLER disabled via flag, mxDataGenerator removed.
+# Build hipblaslt-bench using our standalone CMake. The upstream 7.2 build
+# system pulls in AMD-internal "origami" headers and a new tensilelite-host
+# C++ library that is broken under our system (link to system libhipblaslt
+# at runtime instead of building the full library). Our standalone CMake
+# compiles only the bench sources against system hipblaslt + LAPACK.
+COPY dockerfile/etc/hipblaslt-bench-standalone.cmake /tmp/hipblaslt-bench-standalone.cmake
 RUN cd third_party && \
     git clone --depth 1 -b release/rocm-rel-7.2 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
+    cp /tmp/hipblaslt-bench-standalone.cmake hipBLASLt/CMakeLists.txt && \
     cd hipBLASLt && \
-    sed -i '/origami/d' CMakeLists.txt tensilelite/CMakeLists.txt && \
-    sed -i '/mxdatagenerator\|mxDataGenerator/d' clients/CMakeLists.txt && \
-    # Pre-build the cblas/lapack dependency (normally done by ./install.sh -d).
+    # Pre-build cblas/lapack into /usr/local using the upstream deps script.
+    # The deps superbuild builds but does not install lapack; install both
+    # gtest and lapack explicitly so find_package(BLAS)/find_package(LAPACK)
+    # can locate /usr/local/lib/{liblapack.a,libcblas.a,libblas.a}.
     mkdir -p deps/build && cd deps/build && \
-        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake .. && make -j$(nproc) && cd ../.. && \
-    mkdir -p build/release && cd build/release && \
+        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake .. && \
+        cmake --build . -j$(nproc) --target lapack && \
+        cmake --build lapack/src/lapack-build -j$(nproc) --target install && \
+        cd ../.. && \
+    mkdir -p build && cd build && \
     CMAKE_POLICY_VERSION_MINIMUM= cmake \
-        -DHIPBLASLT_ENABLE_HOST=OFF \
-        -DHIPBLASLT_ENABLE_DEVICE=OFF \
-        -DHIPBLASLT_ENABLE_CLIENT=ON \
-        -DHIPBLASLT_ENABLE_ROCROLLER=OFF \
-        -DHIPBLASLT_BUILD_TESTING=OFF \
-        -DHIPBLASLT_ENABLE_SAMPLES=OFF \
-        -DHIPBLASLT_ENABLE_LLVM=OFF \
+        -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+        -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++ \
+        -DCMAKE_HIP_ARCHITECTURES=gfx942 \
         -DCMAKE_PREFIX_PATH="/opt/rocm;/usr/local" \
         -DCMAKE_BUILD_TYPE=Release \
-        ../.. && \
+        .. && \
     make -j$(nproc) hipblaslt-bench && \
-    cp -v clients/hipblaslt-bench /opt/superbench/bin/
+    cp -v hipblaslt-bench /opt/superbench/bin/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
-# Install TransformerEngine — ROCm 7.2 has hip_fp4.h and gfx950 support,
-# so we can use the latest dev branch with full CK + aotriton fused attention.
+# Install TransformerEngine — use AOTriton-only fused attention to avoid the
+# CK + AITER build chain (validated working on ROCm 7.0; same TE upstream).
 RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
     NVTE_FRAMEWORK=pytorch \
+    NVTE_FUSED_ATTN_CK=0 \
+    NVTE_FUSED_ATTN_AOTRITON=1 \
     NVTE_ROCM_ARCH="gfx942;gfx950" \
     python3 setup.py install
 RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfully')"
