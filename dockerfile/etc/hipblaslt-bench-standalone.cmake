@@ -30,6 +30,11 @@ find_package(LAPACK REQUIRED)  # also brings BLAS via implicit find_package(BLAS
 find_package(OpenMP REQUIRED)
 find_package(rocm_smi)         # optional
 
+# Locate cblas explicitly (not part of LAPACK's standard targets).
+# cblas_interface.cpp uses cblas_sgemm/dgemm so we need the C BLAS library.
+find_library(CBLAS_LIBRARY NAMES cblas PATHS /usr/local/lib /usr/lib REQUIRED)
+message(STATUS "Found CBLAS: ${CBLAS_LIBRARY}")
+
 # --- The bench static helper library ---
 add_library(hipblaslt-clients-common STATIC
     "${HIPBLASLT_SRC}/clients/common/src/singletons.cpp"
@@ -69,6 +74,8 @@ target_include_directories(hipblaslt-clients-common
         "${HIPBLASLT_SRC}/library/src/amd_detail/include"
         "${HIPBLASLT_SRC}/library/src/amd_detail/rocblaslt/include"
         "${HIPBLASLT_SRC}/library/src/amd_detail/rocblaslt/src/include"
+        # tensilelite headers used by clients (e.g. client/include/Utility.hpp).
+        "${HIPBLASLT_SRC}/tensilelite"
 )
 
 target_compile_definitions(hipblaslt-clients-common
@@ -88,7 +95,12 @@ target_link_libraries(hipblaslt-clients-common
     PUBLIC
         hip::host
         hip::device
+        # Order matters: cblas -> lapack -> blas -> gfortran (lapack needs blas
+        # which needs Fortran runtime).
+        ${CBLAS_LIBRARY}
         ${LAPACK_LIBRARIES}
+        ${BLAS_LIBRARIES}
+        gfortran
         OpenMP::OpenMP_CXX
 )
 

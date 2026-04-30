@@ -190,6 +190,8 @@ RUN cd third_party && \
         -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++ \
         -DCMAKE_HIP_ARCHITECTURES=gfx942 \
         -DCMAKE_PREFIX_PATH="/opt/rocm;/usr/local" \
+        -DBLAS_LIBRARIES=/usr/local/lib/libblas.a \
+        -DLAPACK_LIBRARIES=/usr/local/lib/liblapack.a \
         -DCMAKE_BUILD_TYPE=Release \
         .. && \
     make -j$(nproc) hipblaslt-bench && \
