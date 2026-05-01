@@ -201,7 +201,10 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
 
 # Install TransformerEngine — use AOTriton-only fused attention to avoid the
 # CK + AITER build chain (validated working on ROCm 7.0; same TE upstream).
-RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
+# onnxscript is now an unconditional import in TE main (export.py); install it
+# explicitly because TE's setup.py does not list it as a dependency.
+RUN python3 -m pip install onnxscript && \
+    git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
     NVTE_FRAMEWORK=pytorch \
     NVTE_FUSED_ATTN_CK=0 \
