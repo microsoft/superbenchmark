@@ -186,59 +186,67 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         os.environ['MASTER_ADDR'] = 'localhost'
         os.environ['MASTER_PORT'] = '12345'
 
-        # Case 1: num_workers=0 with default data_prefix should produce
-        # '--workers 1' (clamped) and '--output-prefix <data_home>/dataset'
-        # (default data_prefix='dataset_text_document' with the suffix stripped).
-        benchmark = benchmark_cls(
-            self.benchmark_name,
-            parameters=(
-                f'--code_base /root/Megatron-DeepSpeed --data_home {self._tmp_dir} '
-                f'--batch_size 2048 --num_workers 0 '
-                f'--dataset_url http://example.com/data.json'
-            ),
-        )
-        benchmark._preprocess()
-        ret = benchmark._generate_dataset()
-        # Dataset generation will fail because the mocked run_command does not actually
-        # produce .bin/.idx files; we only care about the constructed command.
-        assert ret is False
-        assert mock_run_command.call_count >= 1
-        cmd = mock_run_command.call_args_list[0].args[0]
-        assert '--workers 1 ' in cmd, cmd
-        assert f'--output-prefix {os.path.join(self._tmp_dir, "dataset")} ' in cmd, cmd
+        # Use a real, valid code_base so _preprocess() can validate it (avoid hardcoded /root path).
+        self.createMockFiles(['pretrain_gpt.py'])
 
-        # Case 2: num_workers=4 with custom data_prefix='custom_text_document' should
-        # produce '--workers 4' and '--output-prefix <data_home>/custom'.
-        mock_run_command.reset_mock()
-        benchmark = benchmark_cls(
-            self.benchmark_name,
-            parameters=(
-                f'--code_base /root/Megatron-DeepSpeed --data_home {self._tmp_dir} '
-                f'--batch_size 2048 --num_workers 4 --data_prefix custom_text_document '
-                f'--dataset_url http://example.com/data.json'
-            ),
+        # Helper: make run_command's side_effect create the expected .bin/.idx files
+        # so _generate_dataset() (invoked from within _preprocess()) succeeds.
+        created_files = []
+
+        def _make_dataset_files(prefix):
+            def _side_effect(*_args, **_kwargs):
+                for ext in ('.bin', '.idx'):
+                    p = Path(self._tmp_dir) / f'{prefix}{ext}'
+                    p.touch()
+                    created_files.append(p)
+            return _side_effect
+
+        self.addCleanup(lambda: [p.unlink() for p in created_files if p.is_file()])
+
+        def _run_case(extra_params, expected_workers, expected_prefix_basename, expected_data_prefix):
+            mock_run_command.reset_mock()
+            mock_run_command.side_effect = _make_dataset_files(expected_data_prefix)
+            benchmark = benchmark_cls(
+                self.benchmark_name,
+                parameters=(
+                    f'--code_base {self._tmp_dir} --data_home {self._tmp_dir} '
+                    f'--batch_size 2048 --dataset_url http://example.com/data.json '
+                    f'{extra_params}'
+                ),
+            )
+            assert benchmark._preprocess() is True
+            assert mock_run_command.call_count >= 1
+            cmd = mock_run_command.call_args_list[0].args[0]
+            units = normalize_command(cmd)
+            assert f'--workers {expected_workers}' in units, units
+            expected_output_prefix = os.path.join(self._tmp_dir, expected_prefix_basename)
+            assert f'--output-prefix {expected_output_prefix}' in units, units
+
+        # Case 1: num_workers=0 with default data_prefix should produce '--workers 1' (clamped)
+        # and '--output-prefix <data_home>/dataset' (default 'dataset_text_document' suffix stripped).
+        _run_case(
+            extra_params='--num_workers 0',
+            expected_workers=1,
+            expected_prefix_basename='dataset',
+            expected_data_prefix='dataset_text_document',
         )
-        benchmark._preprocess()
-        benchmark._generate_dataset()
-        cmd = mock_run_command.call_args_list[0].args[0]
-        assert '--workers 4 ' in cmd, cmd
-        assert f'--output-prefix {os.path.join(self._tmp_dir, "custom")} ' in cmd, cmd
+
+        # Case 2: num_workers=4 with custom data_prefix='custom_text_document' should produce
+        # '--workers 4' and '--output-prefix <data_home>/custom'.
+        _run_case(
+            extra_params='--num_workers 4 --data_prefix custom_text_document',
+            expected_workers=4,
+            expected_prefix_basename='custom',
+            expected_data_prefix='custom_text_document',
+        )
 
         # Case 3: data_prefix without the '_text_document' suffix is used as-is.
-        mock_run_command.reset_mock()
-        benchmark = benchmark_cls(
-            self.benchmark_name,
-            parameters=(
-                f'--code_base /root/Megatron-DeepSpeed --data_home {self._tmp_dir} '
-                f'--batch_size 2048 --num_workers 2 --data_prefix mydata '
-                f'--dataset_url http://example.com/data.json'
-            ),
+        _run_case(
+            extra_params='--num_workers 2 --data_prefix mydata',
+            expected_workers=2,
+            expected_prefix_basename='mydata',
+            expected_data_prefix='mydata',
         )
-        benchmark._preprocess()
-        benchmark._generate_dataset()
-        cmd = mock_run_command.call_args_list[0].args[0]
-        assert '--workers 2 ' in cmd, cmd
-        assert f'--output-prefix {os.path.join(self._tmp_dir, "mydata")} ' in cmd, cmd
 
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_gpt_command(self, mock_generate_dataset):
