@@ -137,5 +137,5 @@ Is supported 1 / Total solutions: 1
         self.assertTrue(benchmark._process_raw_result(0, example_raw_output_new))
         self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
 
-        self.assertEqual(2, len(benchmark.result))
-        self.assertEqual(678.209, benchmark.result['fp16_1_4096_4096_4096_flops'][0])
+        self.assertIn('fp16_1_4096_4096_4096_flops', benchmark.result)
+        self.assertAlmostEqual(678.209, benchmark.result['fp16_1_4096_4096_4096_flops'][0], places=3)

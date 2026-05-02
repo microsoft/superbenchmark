@@ -120,18 +120,18 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
 
             # Parse the header to find the column index of 'hipblaslt-Gflops'.
-            # This is needed because hipBLASLt output format varies across versions:
-            #   - v600  (old): 23 columns, Gflops at index -2
-            #   - v1500 (new): 34 columns, added a_type/b_type/c_type/scaleA-D/amaxD/
-            #                  bias_type/aux_type/GB_s columns, Gflops at index -3
-            # Using header-based lookup ensures compatibility with both formats
-            # and any future column additions.
+            # This is needed because the hipBLASLt output format varies across versions:
+            #   - v600  (old): 23 columns.
+            #   - v1500 (new): 34 columns, adding a_type/b_type/c_type/scaleA-D/amaxD/
+            #                  bias_type/aux_type/hipblaslt-GB/s columns.
+            # Using header-based lookup (plus header/data width validation) ensures
+            # compatibility across existing formats and resilience to future changes.
             header_fields = lines[index].strip().split(',')
             # Strip leading markers like '[0]' or '[0]:' from the first header field
             header_fields[0] = header_fields[0].split(']')[-1].lstrip(':')
             gflops_col = None
             for col_idx, col_name in enumerate(header_fields):
-                if 'hipblaslt-Gflops' in col_name:
+                if col_name.strip() == 'hipblaslt-Gflops':
                     gflops_col = col_idx
                     break
             if gflops_col is None:
