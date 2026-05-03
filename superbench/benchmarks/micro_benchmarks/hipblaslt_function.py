@@ -4,6 +4,7 @@
 """Module of the hipBlasLt GEMM benchmark."""
 
 import os
+import re
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -127,8 +128,10 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             # Using header-based lookup (plus header/data width validation) ensures
             # compatibility across existing formats and resilience to future changes.
             header_fields = lines[index].strip().split(',')
-            # Strip leading markers like '[0]' or '[0]:' from the first header field
-            header_fields[0] = header_fields[0].split(']')[-1].lstrip(':')
+            # Strip leading rank markers like '[0]' or '[0]:' from the first header field.
+            # Use a regex anchored at the start so a column name that legitimately contains
+            # ']' (unlikely, but defensive) is not truncated.
+            header_fields[0] = re.sub(r'^\s*\[\d+\]:?', '', header_fields[0])
             gflops_col = None
             for col_idx, col_name in enumerate(header_fields):
                 if col_name.strip() == 'hipblaslt-Gflops':
@@ -136,6 +139,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                     break
             if gflops_col is None:
                 raise ValueError('Column "hipblaslt-Gflops" not found in header.')
+
+            # Ensure a data line follows the header (e.g., hipblaslt-bench may have
+            # crashed after printing the header).
+            if index + 1 >= len(lines):
+                raise ValueError('Data line missing after "hipblaslt-Gflops" header.')
 
             # Split the data line into fields using a comma as the delimiter
             fields = lines[index + 1].strip().split(',')
