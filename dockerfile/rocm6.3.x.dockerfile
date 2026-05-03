@@ -99,8 +99,14 @@ RUN if ! command -v ofed_info >/dev/null 2>&1; then \
 
 ENV ROCM_PATH=/opt/rocm
 
-# Target GPU architectures for ROCm builds (space-separated)
-ENV AMDGPU_TARGETS="gfx908 gfx90a gfx942"
+# Target GPU architectures for ROCm builds (space-separated).
+# Override at build time with: --build-arg AMDGPU_TARGETS="gfx90a gfx942 gfx950".
+ARG AMDGPU_TARGETS="gfx908 gfx90a gfx942"
+ENV AMDGPU_TARGETS="${AMDGPU_TARGETS}"
+
+# Note: unlike rocm6.0/6.2 dockerfiles, RCCL is NOT rebuilt from source here
+# and LD_PRELOAD is not set. The base image (rocm/pytorch-training:v25.6) ships
+# rccl 2.21.5.60304-76 which is what we use at runtime.
 
 # Use pre-installed OpenMPI from base image at /opt/ompi
 ENV MPI_HOME=/opt/ompi

@@ -23,7 +23,10 @@ jobs:
       contents: read
       packages: write
     strategy:
-      fail-fast: true
+      # Do not cancel sibling image builds when one matrix entry fails. The ROCm
+      # entries run on self-hosted runners and can fail transiently; we don't
+      # want a flaky ROCm build to abort all CUDA images.
+      fail-fast: false
       matrix:
         include:
         - name: cuda13.0-arm64
