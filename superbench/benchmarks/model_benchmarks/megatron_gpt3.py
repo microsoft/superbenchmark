@@ -659,8 +659,24 @@ class MegatronGPT(ModelBenchmark):
                     # data_prefix value.
                     output_prefix_basename = self._args.data_prefix
                     if output_prefix_basename.endswith('_text_document'):
-                        output_prefix_basename = output_prefix_basename[:-len('_text_document')]
+                        stripped = output_prefix_basename[:-len('_text_document')]
+                        # Guard against data_prefix == '_text_document' which would
+                        # leave an empty basename and produce a malformed --output-prefix
+                        # ending in '/'. Fall back to the original value in that case.
+                        output_prefix_basename = stripped or output_prefix_basename
                     output_prefix = os.path.join(self._args.data_home, output_prefix_basename)
+
+                    # num_workers=0 is valid for DataLoader (main process loads data),
+                    # but preprocess_data.py requires workers>=1 for multiprocessing.Pool.
+                    preprocess_workers = max(1, self._args.num_workers)
+                    if preprocess_workers != self._args.num_workers:
+                        logger.warning(
+                            'preprocess_data.py requires --workers >= 1; '
+                            'overriding num_workers={} to {} for dataset preprocessing only '
+                            '(DataLoader still uses num_workers={}).'.format(
+                                self._args.num_workers, preprocess_workers, self._args.num_workers
+                            )
+                        )
 
                     command = (
                         'python3 '
@@ -668,9 +684,7 @@ class MegatronGPT(ModelBenchmark):
                         f'--input {self._raw_data_path} '
                         f'--tokenizer-type {self._args.tokenizer_type} '
                         f'--output-prefix {output_prefix} '
-                        # num_workers=0 is valid for DataLoader (main process loads data),
-                        # but preprocess_data.py requires workers>=1 for multiprocessing.Pool.
-                        f'--workers {max(1, self._args.num_workers)} '
+                        f'--workers {preprocess_workers} '
                         f'--vocab-file {self._vocab_path} '
                         f'--merge-file {self._merges_path}'
                     )

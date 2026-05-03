@@ -248,6 +248,16 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             expected_data_prefix='mydata',
         )
 
+        # Case 4: edge case - data_prefix == '_text_document' should NOT strip down
+        # to an empty basename (which would produce '--output-prefix <data_home>/').
+        # Fall back to using '_text_document' as the basename.
+        _run_case(
+            extra_params='--num_workers 1 --data_prefix _text_document',
+            expected_workers=1,
+            expected_prefix_basename='_text_document',
+            expected_data_prefix='_text_document',
+        )
+
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_gpt_command(self, mock_generate_dataset):
         """Test command generation."""
