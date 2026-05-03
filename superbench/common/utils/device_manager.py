@@ -16,11 +16,25 @@ if gpu.vendor == 'nvidia' or gpu.vendor == 'nvidia-graphics':
 elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics':
     import amdsmi as rocml
 
-# amdsmi reports power in microwatts; convert to watts when the raw value
-# is at or above this threshold (any plausible per-GPU watt value is well
-# below 100000, while µW values for real cards are tens of millions).
+# amdsmi reports power in microwatts on some ROCm versions and in watts on
+# others. Any plausible per-GPU watt value is well below 100,000, while µW
+# values for real cards are tens of millions, so we use a magnitude-based
+# heuristic to detect µW and convert.
 _AMDSMI_MICROWATTS_PER_WATT = 1_000_000
 _AMDSMI_MICROWATTS_THRESHOLD = 100_000
+
+
+def _amdsmi_power_to_watts(value):
+    """Convert an amdsmi power value to integer watts.
+
+    Returns None if value is not a plausible numeric reading (e.g. 'N/A' or bool).
+    Applies the µW->W heuristic above so callers never have to guess units.
+    """
+    if not isinstance(value, numbers.Real) or isinstance(value, bool):
+        return None
+    if value > _AMDSMI_MICROWATTS_THRESHOLD:
+        value = value // _AMDSMI_MICROWATTS_PER_WATT
+    return int(value)
 
 
 class DeviceManager:
@@ -339,7 +353,14 @@ class AmdDeviceManager(DeviceManager):
 
     def __del__(self):
         """Destructor."""
-        rocml.amdsmi_shut_down()
+        # Be defensive at interpreter shutdown / partial-import time: the
+        # module-level ``rocml`` global may have been torn down, or may never
+        # have been imported (e.g., when this class is constructed via
+        # __new__ in tests). Swallow any error so GC never raises.
+        try:
+            rocml.amdsmi_shut_down()
+        except Exception:
+            pass
 
     def get_device_count(self):
         """Get the number of device.
@@ -402,14 +423,9 @@ class AmdDeviceManager(DeviceManager):
                 if key not in power_measure:
                     logger.warning('amdsmi power_info missing expected key: {}'.format(key))
                     continue
-                power = power_measure[key]
-                if isinstance(power, numbers.Real) and not isinstance(power, bool):
-                    try:
-                        return int(power)
-                    except (TypeError, ValueError) as conv_err:
-                        logger.warning(
-                            'Failed to convert amdsmi {} value {!r} to int: {}'.format(key, power, conv_err)
-                        )
+                watts = _amdsmi_power_to_watts(power_measure[key])
+                if watts is not None:
+                    return watts
             return None
         except Exception as err:
             logger.warning('Get device power failed: {}'.format(str(err)))
@@ -429,14 +445,7 @@ class AmdDeviceManager(DeviceManager):
             if 'power_limit' not in power_measure:
                 logger.warning('amdsmi power_info missing expected key: power_limit')
                 return None
-            power_limit = power_measure['power_limit']
-            if not isinstance(power_limit, numbers.Real) or isinstance(power_limit, bool):
-                return None
-            # amdsmi returns power_limit in microwatts (e.g. 750000000 for 750W) on some
-            # ROCm versions and in watts on others. Detect µW by magnitude and convert.
-            if power_limit > _AMDSMI_MICROWATTS_THRESHOLD:
-                power_limit = power_limit // _AMDSMI_MICROWATTS_PER_WATT
-            return int(power_limit)
+            return _amdsmi_power_to_watts(power_measure['power_limit'])
         except Exception as err:
             logger.warning('Get device power limit failed: {}'.format(str(err)))
             return None
