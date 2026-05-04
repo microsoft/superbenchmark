@@ -121,8 +121,10 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                     header_idx = i
                     break
 
-            if header_idx is None or header_idx + 1 >= len(lines):
+            if header_idx is None:
                 raise ValueError('Header line with "hipblaslt-Gflops" not found in the log.')
+            if header_idx + 1 >= len(lines):
+                raise ValueError('Data row after header line with "hipblaslt-Gflops" not found in the log.')
 
             # Parse header. The first column may carry a "[N]" or "[N]:" prefix
             # (e.g. "[0]:transA" or "[0]transA"); strip it so column names match.
