@@ -9,7 +9,11 @@
 #include "gpu_stream.hpp"
 #include <cassert>
 #include <iostream>
+#if defined(__HIP_PLATFORM_AMD__)
+#include <rocm_smi/rocm_smi.h>
+#else
 #include <nvml.h>
+#endif
 
 /**
  * @brief Destroys the CUDA events used for benchmarking.
@@ -105,14 +109,16 @@ template <typename T> int GpuStream::Destroy(std::unique_ptr<BenchArgs<T>> &args
 }
 
 /**
- * @brief Gets the memory clock rate for a CUDA device.
+ * @brief Gets the memory clock rate for a GPU device.
  *
- * @details This function gets the memory clock rate using the appropriate method
- * based on CUDA version: CUDA 12.0+ uses NVML and cudaDeviceGetAttribute as a fallback;
- * older CUDA versions use cudaDeviceProp.
+ * @details This function gets the memory clock rate using the appropriate method:
+ *   - On NVIDIA with CUDA 12.0+: NVML for actual clock rate, falling back to
+ *     cudaDeviceGetAttribute. Older CUDA versions use cudaDeviceProp.memoryClockRate.
+ *   - On AMD: rocm_smi for actual clock rate, falling back to
+ *     hipDeviceProp_t.memoryClockRate.
  *
- * @param[in] device_id The ID of the CUDA device.
- * @param[in] prop The properties of the CUDA device.
+ * @param[in] device_id The ID of the GPU device.
+ * @param[in] prop The properties of the GPU device.
  * @return float The memory clock rate in MHz, or -1.0f if retrieval fails.
  */
 float GpuStream::GetMemoryClockRate(int device_id, const cudaDeviceProp &prop) {
@@ -123,7 +129,15 @@ float GpuStream::GetMemoryClockRate(int device_id, const cudaDeviceProp &prop) {
         return -1.0f;
     }
 
-#if CUDA_VERSION >= 12000
+#if defined(__HIP_PLATFORM_AMD__)
+    // ROCm: query actual memory clock rate via rocm_smi
+    memory_clock_mhz = GetActualMemoryClockRate(device_id);
+
+    // If rocm_smi fails, fall back to prop.memoryClockRate (kHz)
+    if (memory_clock_mhz < 0.0f) {
+        memory_clock_mhz = prop.memoryClockRate / 1000.0f;
+    }
+#elif CUDA_VERSION >= 12000
     // For CUDA 12.0+, first try NVML for actual clock rate
     memory_clock_mhz = GetActualMemoryClockRate(device_id);
 
@@ -511,6 +525,28 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
 }
 
 float GpuStream::GetActualMemoryClockRate(int gpu_id) {
+#if defined(__HIP_PLATFORM_AMD__)
+    // ROCm: query actual memory clock via rocm_smi.
+    // rsmi_dev_gpu_clk_freq_get returns frequencies in Hz; convert to MHz.
+    rsmi_status_t ret = rsmi_init(0);
+    if (ret != RSMI_STATUS_SUCCESS) {
+        std::cerr << "Failed to initialize ROCm SMI: status=" << ret << std::endl;
+        return -1.0f;
+    }
+
+    rsmi_frequencies_t freq{};
+    ret = rsmi_dev_gpu_clk_freq_get(static_cast<uint32_t>(gpu_id), RSMI_CLK_TYPE_MEM, &freq);
+    if (ret != RSMI_STATUS_SUCCESS) {
+        std::cerr << "Failed to get memory clock from ROCm SMI: status=" << ret << std::endl;
+        rsmi_shut_down();
+        return -1.0f;
+    }
+
+    // freq.current is the index of the active frequency level; values are in Hz.
+    float clock_mhz = static_cast<float>(freq.frequency[freq.current]) / 1.0e6f;
+    rsmi_shut_down();
+    return clock_mhz;
+#else
     nvmlReturn_t result;
     nvmlDevice_t device;
     unsigned int clock_mhz;
@@ -540,6 +576,7 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
 
     nvmlShutdown();
     return static_cast<float>(clock_mhz);
+#endif
 }
 
 /**
