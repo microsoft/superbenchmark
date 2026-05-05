@@ -97,6 +97,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
           self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
 
+        The hipblaslt-bench output schema has grown over ROCm releases (older
+        versions emit 23 columns, newer versions emit 33+ columns including
+        scale factors, GB/s, etc.). To be robust across versions, this parser
+        looks up columns by header name rather than by fixed index.
+
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
             raw_output (str): raw output string of the micro-benchmark.
@@ -108,27 +113,49 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         try:
             lines = raw_output.splitlines()
-            index = None
 
-            # Find the line containing 'hipblaslt-Gflops'
+            # Locate the header line (contains 'hipblaslt-Gflops').
+            header_idx = None
             for i, line in enumerate(lines):
                 if 'hipblaslt-Gflops' in line:
-                    index = i
+                    header_idx = i
                     break
 
-            if index is None:
-                raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
+            if header_idx is None:
+                raise ValueError('Header line with "hipblaslt-Gflops" not found in the log.')
+            if header_idx + 1 >= len(lines):
+                raise ValueError('Data row after header line with "hipblaslt-Gflops" not found in the log.')
 
-            # Split the line into fields using a comma as the delimiter
-            fields = lines[index + 1].strip().split(',')
+            # Parse header. The first column may carry a "[N]" or "[N]:" prefix
+            # (e.g. "[0]:transA" or "[0]transA"); strip it so column names match.
+            header_fields = [h.strip() for h in lines[header_idx].split(',')]
+            first_col = header_fields[0]
+            if ']' in first_col:
+                first_col = first_col.split(']', 1)[1].lstrip(':').strip()
+                header_fields[0] = first_col
 
-            # Check the number of fields and the format of the first two fields
-            if len(fields) != 23:
-                raise ValueError('Invalid result')
+            # Build a name -> index map.
+            header_index = {name: idx for idx, name in enumerate(header_fields)}
+            for required in ('batch_count', 'm', 'n', 'k', 'hipblaslt-Gflops'):
+                if required not in header_index:
+                    raise ValueError(f'Required column "{required}" not found in header.')
+
+            # Parse the data row (immediately after the header).
+            data_fields = [v.strip() for v in lines[header_idx + 1].strip().split(',')]
+            if len(data_fields) != len(header_fields):
+                raise ValueError(
+                    f'Data row has {len(data_fields)} fields but header has {len(header_fields)}.'
+                )
+
+            batch_count = data_fields[header_index['batch_count']]
+            m = data_fields[header_index['m']]
+            n = data_fields[header_index['n']]
+            k = data_fields[header_index['k']]
+            gflops = float(data_fields[header_index['hipblaslt-Gflops']])
 
             self._result.add_result(
-                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops',
-                float(fields[-2]) / 1000
+                f'{self._precision_in_commands[cmd_idx]}_{batch_count}_{m}_{n}_{k}_flops',
+                gflops / 1000,
             )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

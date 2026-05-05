@@ -108,5 +108,29 @@ N,N,0,1,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r
         self.assertEqual(2, len(benchmark.result))
         self.assertEqual(58.6245, benchmark.result['fp16_1_896_896_896_flops'][0])
 
+        # Positive case - newer hipblaslt-bench schema with 33 columns
+        # (adds a_type/b_type/c_type, scaleA/B/C/D, amaxD, bias_type, GB/s).
+        # The Gflops column is no longer the second-to-last field, so a
+        # robust parser must look up columns by name from the header row.
+        new_format_raw_output = """
+hipBLASLt version: 1200
+hipBLASLt git version: 5d47b8b46-dirty
+Query device success: there are 1 devices
+-------------------------------------------------------------------------------
+Device ID 0 : AMD Instinct MI300X VF gfx942:sramecc+:xnack-
+with 205.6 GB memory, max. SCLK 2100 MHz, max. MCLK 1300 MHz, compute capability 9.4
+maxGridDimX 2147483647, sharedMemPerBlock 65.5 KB, maxThreadsPerBlock 1024, warpSize 64
+-------------------------------------------------------------------------------
+
+Is supported 1 / Total solutions: 1
+[0]:transA,transB,grouped_gemm,batch_count,m,n,k,alpha,lda,stride_a,beta,ldb,stride_b,ldc,stride_c,ldd,stride_d,a_type,b_type,c_type,d_type,compute_type,scaleA,scaleB,scaleC,scaleD,amaxD,activation_type,bias_vector,bias_type,hipblaslt-Gflops,hipblaslt-GB/s,us
+    N,N,0,1,4096,4096,4096,1,4096,16777216,0,4096,16777216,4096,16777216,4096,16777216,f32_r,f32_r,f32_r,f32_r,f32_r,0,0,0,0,0,none,0,f32_r,134751,183.833,1019.95
+"""
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+        self.assertTrue(benchmark._process_raw_result(0, new_format_raw_output))
+        self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
+        self.assertEqual(2, len(benchmark.result))
+        self.assertEqual(134.751, benchmark.result['fp16_1_4096_4096_4096_flops'][0])
+
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'HipBLAS API failed'))

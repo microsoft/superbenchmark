@@ -15,7 +15,11 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <numa.h>
+#if defined(__HIP_PLATFORM_AMD__)
+#include <rocm_smi/rocm_smi.h>
+#else
 #include <nvml.h>
+#endif
 
 // Custom deleter for GPU buffers
 struct GpuBufferDeleter {

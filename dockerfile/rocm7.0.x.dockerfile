@@ -1,17 +1,17 @@
-ARG BASE_IMAGE=rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0
+ARG BASE_IMAGE=rocm/pytorch:rocm7.0.2_ubuntu24.04_py3.12_pytorch_release_2.9.1
 
 FROM ${BASE_IMAGE}
 
 # OS:
-#   - Ubuntu: 22.04
+#   - Ubuntu: 24.04
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 6.2
+#   - ROCm: 7.0
 # Lib:
-#   - torch: 2.3.0
-#   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
-#   - hipblaslt: release-staging/rocm-rel-6.2
-#   - rocblas: release-staging/rocm-rel-6.2
+#   - torch: 2.9.1
+#   - rccl: release/rocm-rel-7.0
+#   - hipblaslt: release-staging/rocm-rel-7.0
+#   - rocblas: release-staging/rocm-rel-7.0
 #   - openmpi: 4.1.x
 # Intel:
 #   - mlc: v3.12
@@ -38,7 +38,7 @@ RUN apt-get update && \
     libnuma-dev \
     libpci-dev \
     libssl-dev \
-    libtinfo5 \
+    libtinfo6 \
     libtool \
     lshw \
     net-tools \
@@ -57,22 +57,11 @@ RUN apt-get update && \
 
 ARG NUM_MAKE_JOBS=64
 
-# Check if CMake is installed and its version
-RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
-    required_version="3.24.1" && \
-    if [ "$(printf "%s\n" "$required_version" "$cmake_version" | sort -V | head -n 1)" != "$required_version" ]; then \
-    echo "existing cmake version is ${cmake_version}" && \
-    cd /tmp && \
-    wget -q https://github.com/Kitware/CMake/releases/download/v${required_version}/cmake-${required_version}.tar.gz && \
-    tar xzf cmake-${required_version}.tar.gz && \
-    cd cmake-${required_version} && \
-    ./bootstrap --prefix=/usr --no-system-curl --parallel=16 && \
-    make -j ${NUM_MAKE_JOBS} && \
-    make install && \
-    rm -rf /tmp/cmake-${required_version}* \
-    else \
-    echo "CMake version is greater than or equal to 3.24.1"; \
-    fi
+# Install CMake via apt if not already present (Ubuntu 24.04 provides >= 3.28)
+RUN if ! command -v cmake >/dev/null 2>&1; then \
+    apt-get update && apt-get install -y --no-install-recommends cmake; \
+    fi && \
+    echo "CMake version: $(cmake --version | head -1)"
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -92,13 +81,11 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 
-# Get Ubuntu version and set as an environment variable
-RUN export UBUNTU_VERSION=$(lsb_release -r -s)
-RUN echo "Ubuntu version: $UBUNTU_VERSION"
-ENV UBUNTU_VERSION=${UBUNTU_VERSION}
+# Set Ubuntu version
+ENV UBUNTU_VERSION=24.04
 
 # Install OFED
-ENV OFED_VERSION=5.9-0.5.6.0
+ENV OFED_VERSION=24.10-1.1.4.0
 # Check if ofed_info is present and has a version
 RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     echo "OFED not found. Installing OFED..."; \
@@ -114,7 +101,6 @@ ENV ROCM_PATH=/opt/rocm
 # Install OpenMPI
 ENV OPENMPI_VERSION=4.1.x
 ENV MPI_HOME=/usr/local/mpi
-# Check if Open MPI is installed
 RUN cd /tmp && \
     git clone --recursive https://github.com/open-mpi/ompi.git -b v${OPENMPI_VERSION}  && \
     cd ompi && \
@@ -136,8 +122,11 @@ RUN cd /tmp && \
     rm -rf ./Linux mlc.tgz
 
 # Install RCCL
+# Set CMAKE_POLICY_VERSION_MINIMUM globally so all subprojects (mscclpp, etc.)
+# work with CMake 4.0+ which dropped compat for cmake_minimum_required < 3.5
+ENV CMAKE_POLICY_VERSION_MINIMUM=3.5
 RUN cd /opt/ &&  \
-    git clone -b release/rocm-rel-6.2 https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    git clone -b release/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
     mkdir build && \
     cd build && \
@@ -151,9 +140,10 @@ RUN apt install amd-smi-lib -y && \
     cd /opt/rocm/share/amd_smi && \
     python3 -m pip install .
 
+# Note: Do NOT LD_PRELOAD librccl.so — it causes segfaults on process exit
+# due to HIP static object teardown order. Use LD_LIBRARY_PATH instead.
 ENV PATH="/usr/local/mpi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
-    LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
-    LD_LIBRARY_PATH="/usr/local/mpi/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/opt/rccl/build:/usr/local/mpi/lib:/opt/rocm/lib:/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -164,25 +154,58 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 RUN apt install rocm-cmake -y && \
-    python3 -m pip install --upgrade pip wheel setuptools==65.7
+    python3 -m pip install --upgrade pip wheel "setuptools>=69.0"
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-# Apply patch
-RUN cd third_party/perftest && \
-    git apply ../perftest_rocm6.patch
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
-RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
-    cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
+# perftest_rocm6.patch changes are already upstream in the submodule version
+# rocm_megatron_lm: broken upstream (pretrain_deepseek.py missing in rocm_dev branch)
+# apex_rocm: skipped — all imports guarded, PyTorch 2.9 has native fused optimizers/AMP.
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-7.0 HIPBLASLT_BRANCH=release-staging/rocm-rel-7.0 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
+# Build hipblaslt-bench only (not the library) against system-installed hipBLASLt.
+# Build hipblaslt-bench only against system hipBLASLt.
+# 7.0 uses HIPBLASLT_USE_ROCROLLER (not ENABLE), BUILD_CLIENTS_BENCHMARKS, Tensile_SKIP_BUILD.
+RUN cd third_party && \
+    git clone --depth 1 -b release-staging/rocm-rel-7.0 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
+    cd hipBLASLt && \
+    sed -i '/mxdatagenerator\|mxDataGenerator/d' clients/CMakeLists.txt && \
+    sed -i 's/if(OS_RELEASE MATCHES "Ubuntu")/if(FALSE AND OS_RELEASE MATCHES "Ubuntu")/' clients/benchmarks/CMakeLists.txt && \
+    sed -i '/add_dependencies(TENSILE_LIBRARY_TARGET rocisa)/d' library/src/amd_detail/rocblaslt/src/CMakeLists.txt && \
+    sed -i '/cmake_policy( SET CMP0037 OLD )/d; s/add_custom_target( install/add_custom_target( hipblaslt_deps_install/' deps/CMakeLists.txt && \
+    # Pre-build the cblas/lapack dependency (normally done by ./install.sh -d).
+    # install.sh -dc builds the full library which we want to skip; build deps standalone.
+    mkdir -p deps/build && cd deps/build && \
+        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake .. && \
+        cmake --build . -j$(nproc) --target googletest lapack && \
+        cmake --build gtest/src/googletest-build -j$(nproc) --target install && \
+        cmake --build lapack/src/lapack-build -j$(nproc) --target install && \
+        cd ../.. && \
+    mkdir -p build/release && cd build/release && \
+    CMAKE_POLICY_VERSION_MINIMUM= cmake \
+        -DHIPBLASLT_USE_ROCROLLER=OFF \
+        -DBUILD_CLIENTS_BENCHMARKS=ON \
+        -DBUILD_CLIENTS_TESTS=OFF \
+        -DBUILD_CLIENTS_SAMPLES=OFF \
+        -DTensile_SKIP_BUILD=ON \
+        -DCMAKE_PREFIX_PATH="/opt/rocm;/usr/local" \
+        -DCMAKE_BUILD_TYPE=Release \
+        ../.. && \
+    make -j$(nproc) hipblaslt-bench && \
+    cp -v clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
-# Install transformer_engine
+# Install TransformerEngine — ROCm 7.0 has hip_fp4.h and gfx950 support,
+# so we can use the latest dev branch with full CK fused attention.
 RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
-    export NVTE_FRAMEWORK=pytorch && \
-    pip install .
+    NVTE_FRAMEWORK=pytorch \
+    NVTE_FUSED_ATTN_CK=0 \
+    NVTE_FUSED_ATTN_AOTRITON=1 \
+    NVTE_ROCM_ARCH="gfx942;gfx950" \
+    python3 setup.py install
+RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfully')"
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
@@ -191,3 +214,6 @@ RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
 
+# Fix stale hypothesis plugin from base image (imports removed pkg_resources)
+# and add test dependencies missing from the base image.
+RUN python3 -m pip install --upgrade hypothesis setuptools pytest-timeout vcrpy
