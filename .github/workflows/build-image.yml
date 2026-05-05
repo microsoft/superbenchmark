@@ -86,6 +86,12 @@ jobs:
           platforms: linux/amd64
           runner: [self-hosted, linux/amd64, rocm]
           build_args: "NUM_MAKE_JOBS=16"
+        - name: rocm7.0
+          dockerfile: rocm7.0.x
+          tags: superbench/main:rocm7.0
+          platforms: linux/amd64
+          runner: [self-hosted, linux/amd64, rocm]
+          build_args: "NUM_MAKE_JOBS=16"
         # - name: rocm6.2
         #   dockerfile: rocm6.2.x
         #   tags: superbench/main:rocm6.2
