@@ -5,12 +5,12 @@
 # tree pulls in AMD-internal "origami" headers and a new tensilelite-host
 # C++ library that conflict with the goal of building only the bench tool.
 #
-# Place this file at the root of an upstream hipBLASLt source tree
-# (e.g. cp this to /path/to/hipBLASLt/CMakeLists-bench.txt) and invoke:
+# Place this file at the root of an upstream hipBLASLt source tree as the
+# top-level CMakeLists.txt and configure it as a normal CMake project, e.g.:
 #
-#   cmake -B build -S /path/to/hipBLASLt -P /path/to/this/file
-#
-# Or use it as the top-level CMakeLists.txt by overwriting it.
+#   cp /path/to/this/file /path/to/hipBLASLt/CMakeLists.txt
+#   cmake -S /path/to/hipBLASLt -B /path/to/hipBLASLt/build
+#   cmake --build /path/to/hipBLASLt/build --target hipblaslt-bench
 
 cmake_minimum_required(VERSION 3.21)
 project(hipblaslt-bench-standalone LANGUAGES CXX HIP)
