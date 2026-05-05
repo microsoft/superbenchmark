@@ -168,8 +168,11 @@ rocm_hipblaslt: sb_micro_path
 # Build hipBusBandwidth.
 # HIP is released with rocm, like rocm-4.2.0 and so on.
 # The version we use is the released tag which is consistent with the rocm version in the environment or docker.
+# Inject <cassert> include: newer clang (ROCm >= 7) rejects use of assert() without it.
 rocm_bandwidthTest: sb_micro_path
 	git clone -b ${ROCM_VER} https://github.com/ROCm-Developer-Tools/HIP.git
+	grep -q '<cassert>' ./HIP/samples/1_Utils/hipBusBandwidth/hipBusBandwidth.cpp || \
+		sed -i '1i #include <cassert>' ./HIP/samples/1_Utils/hipBusBandwidth/hipBusBandwidth.cpp
 	cd ./HIP/samples/1_Utils/hipBusBandwidth/ && mkdir -p build && cd build && cmake .. && make
 	cp -v ./HIP/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
 
