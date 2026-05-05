@@ -78,6 +78,7 @@ class StdLogger:
         """Restore the sys.stdout to termital."""
         if self.logger_stream is not None:
             self.logger_stream.restore()
+        self.logger_stream = None
 
     def log(self, message):
         """Write the message into the logger.
