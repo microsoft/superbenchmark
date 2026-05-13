@@ -135,12 +135,23 @@ class SuperBenchRunner():
         enable_nsys = os.environ.get('SB_ENABLE_NSYS', '') == '1'
         trace_dir = os.environ.get('SB_NSYS_TRACE_DIR', self._sb_output_dir)
 
+        # Enable rocprofv2 profiling based on environment variable
+        enable_rocprof = os.environ.get('SB_ENABLE_ROCPROF', '') == '1'
+        rocprof_trace_dir = os.environ.get('SB_ROCPROF_TRACE_DIR', self._sb_output_dir)
+
         mode_command = exec_command
         if mode.name == 'local':
-            trace_command = (
-                f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
-                f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
-            ) if enable_nsys and mode.proc_rank == 0 else ''
+            trace_command = ''
+            if enable_nsys and mode.proc_rank == 0:
+                trace_command = (
+                    f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                    f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
+                )
+            elif enable_rocprof and mode.proc_rank == 0:
+                trace_command = (
+                    f'rocprofv2 --hip-trace --kernel-trace --plugin json '
+                    f'-d {rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                )
             # Build the command parts, only including trace if it's not empty
             command_parts = []
             prefix = mode.prefix.format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)
@@ -159,10 +170,17 @@ class SuperBenchRunner():
                 '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
             )
 
-            nsys_prefix = (
-                f'nsys profile --output {trace_dir}/{benchmark_name}_traces '
-                f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
-            ) if enable_nsys else ''
+            nsys_prefix = ''
+            if enable_nsys:
+                nsys_prefix = (
+                    f'nsys profile --output {trace_dir}/{benchmark_name}_traces '
+                    f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
+                )
+            elif enable_rocprof:
+                nsys_prefix = (
+                    f'rocprofv2 --hip-trace --kernel-trace --plugin json '
+                    f'-d {rocprof_trace_dir}/{benchmark_name}_traces '
+                )
 
             mode_command = (
                 f'{nsys_prefix}'
@@ -172,10 +190,17 @@ class SuperBenchRunner():
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_backend=nccl'
             )
         elif mode.name == 'mpi':
-            trace_command = (
-                f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
-                f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
-            ) if enable_nsys else ''
+            trace_command = ''
+            if enable_nsys:
+                trace_command = (
+                    f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                    f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
+                )
+            elif enable_rocprof:
+                trace_command = (
+                    f'rocprofv2 --hip-trace --kernel-trace --plugin json '
+                    f'-d {rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                )
             mode_command = (
                 '{trace} '
                 'mpirun '    # use default OpenMPI in image

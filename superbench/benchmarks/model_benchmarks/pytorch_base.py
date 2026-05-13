@@ -591,8 +591,8 @@ class PytorchBase(ModelBenchmark):
         Run the benchmark then handle post-run model log save/compare.
         Set SB_ENABLE_PYTORCH_PROFILER='1' to enable profiling.
         """
-        # Check if this is a Nvidia GPU
-        if not (torch.cuda.is_available() and torch.version.cuda is not None):
+        # Check if this is a Nvidia or AMD GPU
+        if not (torch.cuda.is_available() and (torch.version.cuda is not None or torch.version.hip is not None)):
             ok = super()._benchmark()
             self._post_run_model_log()
             return ok
