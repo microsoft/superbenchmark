@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Device Managerment Library Utility."""
+"""Device Management Library Utility."""
 
 import numbers
 from typing import Optional
