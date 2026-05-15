@@ -630,7 +630,7 @@ class MegatronGPT(ModelBenchmark):
             f'--node_rank {node_rank} --master_addr {addr} --master_port {port}'
         return True
 
-    def _generate_dataset(self):
+    def _generate_dataset(self):    # noqa: C901
         """Generate dataset for benchmarking.
 
         Return:
@@ -653,17 +653,21 @@ class MegatronGPT(ModelBenchmark):
                     download_file(self._args.dataset_url, self._raw_data_path)
 
                     # Megatron's preprocess_data.py appends '_text_document' to --output-prefix
-                    # when producing the .bin/.idx files. Derive the output-prefix from
-                    # data_prefix (stripping the '_text_document' suffix when present) so that
-                    # the generated files match the existence checks above for any custom
-                    # data_prefix value.
-                    output_prefix_basename = self._args.data_prefix
-                    if output_prefix_basename.endswith('_text_document'):
-                        stripped = output_prefix_basename[:-len('_text_document')]
-                        # Guard against data_prefix == '_text_document' which would
-                        # leave an empty basename and produce a malformed --output-prefix
-                        # ending in '/'. Fall back to the original value in that case.
-                        output_prefix_basename = stripped or output_prefix_basename
+                    # when producing the .bin/.idx files. For the existence check below
+                    # (which looks for {data_prefix}.bin/.idx) to pass, data_prefix must end
+                    # with '_text_document' and have a non-empty stem when generation is needed.
+                    suffix = '_text_document'
+                    if not self._args.data_prefix.endswith(suffix) or self._args.data_prefix == suffix:
+                        logger.error(
+                            'data_prefix must end with "{}" and have a non-empty stem when '
+                            'dataset generation is required (got "{}"). preprocess_data.py '
+                            'always appends "{}" to --output-prefix.'.format(
+                                suffix, self._args.data_prefix, suffix
+                            )
+                        )
+                        self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
+                        return False
+                    output_prefix_basename = self._args.data_prefix[:-len(suffix)]
                     output_prefix = os.path.join(self._args.data_home, output_prefix_basename)
 
                     # num_workers=0 is valid for DataLoader (main process loads data),

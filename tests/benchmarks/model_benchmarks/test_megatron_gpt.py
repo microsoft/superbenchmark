@@ -187,7 +187,11 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         os.environ['MASTER_PORT'] = '12345'
 
         # Use a real, valid code_base so _preprocess() can validate it (avoid hardcoded /root path).
+        # Clean up after this test so the alphabetically-later test_megatron_gpt_preprocess
+        # (which expects pretrain_gpt.py to NOT exist initially) is not affected by leaked state.
         self.createMockFiles(['pretrain_gpt.py'])
+        pretrain_path = Path(self._tmp_dir) / 'pretrain_gpt.py'
+        self.addCleanup(lambda: pretrain_path.unlink() if pretrain_path.is_file() else None)
 
         # Helper: make run_command's side_effect create the expected .bin/.idx files
         # so _generate_dataset() (invoked from within _preprocess()) succeeds.
@@ -203,10 +207,8 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
         self.addCleanup(lambda: [p.unlink() for p in created_files if p.is_file()])
 
-        def _run_case(extra_params, expected_workers, expected_prefix_basename, expected_data_prefix):
-            mock_run_command.reset_mock()
-            mock_run_command.side_effect = _make_dataset_files(expected_data_prefix)
-            benchmark = benchmark_cls(
+        def _build_benchmark(extra_params):
+            return benchmark_cls(
                 self.benchmark_name,
                 parameters=(
                     f'--code_base {self._tmp_dir} --data_home {self._tmp_dir} '
@@ -214,13 +216,29 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
                     f'{extra_params}'
                 ),
             )
+
+        def _run_case(extra_params, expected_workers, expected_prefix_basename, expected_data_prefix):
+            mock_run_command.reset_mock()
+            mock_run_command.side_effect = _make_dataset_files(expected_data_prefix)
+            benchmark = _build_benchmark(extra_params)
             assert benchmark._preprocess() is True
             assert mock_run_command.call_count >= 1
-            cmd = mock_run_command.call_args_list[0].args[0]
+            # Use tuple indexing instead of `.args` for Python 3.7 compatibility
+            # (mock.call.args was added in Python 3.8).
+            cmd = mock_run_command.call_args_list[0][0][0]
             units = normalize_command(cmd)
             assert f'--workers {expected_workers}' in units, units
             expected_output_prefix = os.path.join(self._tmp_dir, expected_prefix_basename)
             assert f'--output-prefix {expected_output_prefix}' in units, units
+
+        def _run_invalid_case(extra_params):
+            """Assert _preprocess() fails fast (no run_command call) for invalid data_prefix."""
+            mock_run_command.reset_mock()
+            mock_run_command.side_effect = None
+            benchmark = _build_benchmark(extra_params)
+            assert benchmark._preprocess() is False
+            assert mock_run_command.call_count == 0
+            assert benchmark.return_code == ReturnCode.DATASET_GENERATION_FAILURE
 
         # Case 1: num_workers=0 with default data_prefix should produce '--workers 1' (clamped)
         # and '--output-prefix <data_home>/dataset' (default 'dataset_text_document' suffix stripped).
@@ -240,23 +258,14 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             expected_data_prefix='custom_text_document',
         )
 
-        # Case 3: data_prefix without the '_text_document' suffix is used as-is.
-        _run_case(
-            extra_params='--num_workers 2 --data_prefix mydata',
-            expected_workers=2,
-            expected_prefix_basename='mydata',
-            expected_data_prefix='mydata',
-        )
+        # Case 3: data_prefix without the '_text_document' suffix is invalid for generation
+        # because preprocess_data.py would produce 'mydata_text_document.bin/.idx' but the
+        # existence check looks for 'mydata.bin/.idx'. _preprocess() must fail fast.
+        _run_invalid_case(extra_params='--num_workers 2 --data_prefix mydata')
 
-        # Case 4: edge case - data_prefix == '_text_document' should NOT strip down
-        # to an empty basename (which would produce '--output-prefix <data_home>/').
-        # Fall back to using '_text_document' as the basename.
-        _run_case(
-            extra_params='--num_workers 1 --data_prefix _text_document',
-            expected_workers=1,
-            expected_prefix_basename='_text_document',
-            expected_data_prefix='_text_document',
-        )
+        # Case 4: data_prefix == '_text_document' has an empty stem after stripping the suffix,
+        # which would produce a malformed '--output-prefix <data_home>/'. Must fail fast.
+        _run_invalid_case(extra_params='--num_workers 1 --data_prefix _text_document')
 
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_gpt_command(self, mock_generate_dataset):
