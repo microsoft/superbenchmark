@@ -191,6 +191,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
   docker-merge:
     needs: docker-build
+    if: ${{ !cancelled() }}
     name: Docker merge ${{ matrix.name }}
     runs-on: self-hosted
     timeout-minutes: 300
