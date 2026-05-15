@@ -203,6 +203,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
                     p = Path(self._tmp_dir) / f'{prefix}{ext}'
                     p.touch()
                     created_files.append(p)
+
             return _side_effect
 
         self.addCleanup(lambda: [p.unlink() for p in created_files if p.is_file()])

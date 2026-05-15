@@ -661,9 +661,7 @@ class MegatronGPT(ModelBenchmark):
                         logger.error(
                             'data_prefix must end with "{}" and have a non-empty stem when '
                             'dataset generation is required (got "{}"). preprocess_data.py '
-                            'always appends "{}" to --output-prefix.'.format(
-                                suffix, self._args.data_prefix, suffix
-                            )
+                            'always appends "{}" to --output-prefix.'.format(suffix, self._args.data_prefix, suffix)
                         )
                         self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
                         return False
