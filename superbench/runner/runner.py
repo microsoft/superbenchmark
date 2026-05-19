@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import random
+import shlex
 import signal
 from pathlib import Path
 from pprint import pformat
@@ -143,14 +144,16 @@ class SuperBenchRunner():
         if mode.name == 'local':
             trace_command = ''
             if enable_nsys and mode.proc_rank == 0:
+                trace_output = shlex.quote(f'{trace_dir}/{benchmark_name}_{mode.proc_rank}_traces')
                 trace_command = (
-                    f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                    f'nsys profile --output {trace_output} '
                     f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
                 )
             elif enable_rocprof and mode.proc_rank == 0:
+                trace_output = shlex.quote(f'{rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces')
                 trace_command = (
                     f'rocprofv2 --hip-trace --kernel-trace --plugin json '
-                    f'-d {rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                    f'-d {trace_output} '
                 )
             # Build the command parts, only including trace if it's not empty
             command_parts = []
@@ -172,14 +175,16 @@ class SuperBenchRunner():
 
             nsys_prefix = ''
             if enable_nsys:
+                trace_output = shlex.quote(f'{trace_dir}/{benchmark_name}_traces')
                 nsys_prefix = (
-                    f'nsys profile --output {trace_dir}/{benchmark_name}_traces '
+                    f'nsys profile --output {trace_output} '
                     f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
                 )
             elif enable_rocprof:
+                trace_output = shlex.quote(f'{rocprof_trace_dir}/{benchmark_name}_traces')
                 nsys_prefix = (
                     f'rocprofv2 --hip-trace --kernel-trace --plugin json '
-                    f'-d {rocprof_trace_dir}/{benchmark_name}_traces '
+                    f'-d {trace_output} '
                 )
 
             mode_command = (
@@ -192,14 +197,16 @@ class SuperBenchRunner():
         elif mode.name == 'mpi':
             trace_command = ''
             if enable_nsys:
+                trace_output = shlex.quote(f'{trace_dir}/{benchmark_name}_{mode.proc_rank}_traces')
                 trace_command = (
-                    f'nsys profile --output {trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                    f'nsys profile --output {trace_output} '
                     f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
                 )
             elif enable_rocprof:
+                trace_output = shlex.quote(f'{rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces')
                 trace_command = (
                     f'rocprofv2 --hip-trace --kernel-trace --plugin json '
-                    f'-d {rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces '
+                    f'-d {trace_output} '
                 )
             mode_command = (
                 '{trace} '
