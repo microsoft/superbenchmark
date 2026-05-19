@@ -173,22 +173,22 @@ class SuperBenchRunner():
                 '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
             )
 
-            nsys_prefix = ''
+            trace_prefix = ''
             if enable_nsys:
                 trace_output = shlex.quote(f'{trace_dir}/{benchmark_name}_traces')
-                nsys_prefix = (
+                trace_prefix = (
                     f'nsys profile --output {trace_output} '
                     f'--backtrace none --sample none --force-overwrite true --cpuctxsw none --trace cuda,nvtx '
                 )
             elif enable_rocprof:
                 trace_output = shlex.quote(f'{rocprof_trace_dir}/{benchmark_name}_traces')
-                nsys_prefix = (
+                trace_prefix = (
                     f'rocprofv2 --hip-trace --kernel-trace --plugin json '
                     f'-d {trace_output} '
                 )
 
             mode_command = (
-                f'{nsys_prefix}'
+                f'{trace_prefix}'
                 f'torchrun'
                 f' --no_python --nproc_per_node={mode.proc_num} {torch_dist_params}{exec_command}'
                 f' superbench.benchmarks.{benchmark_name}.parameters.distributed_impl=ddp'
