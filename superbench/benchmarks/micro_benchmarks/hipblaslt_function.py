@@ -120,25 +120,26 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             if index is None:
                 raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
 
-            # Parse the header to find the column index of 'hipblaslt-Gflops'.
-            # This is needed because the hipBLASLt output format varies across versions:
-            #   - v600  (old): 23 columns.
-            #   - v1500 (new): 34 columns, adding a_type/b_type/c_type/scaleA-D/amaxD/
-            #                  bias_type/aux_type/hipblaslt-GB/s columns.
-            # Using header-based lookup (plus header/data width validation) ensures
-            # compatibility across existing formats and resilience to future changes.
+            # Parse the header and resolve every key column (batch_count/m/n/k/hipblaslt-Gflops)
+            # by name. This keeps the parser forward-compatible across known and future
+            # hipBLASLt output formats (v600: 23 columns; v1500: 34 columns with extra
+            # a_type/b_type/c_type/scaleA-D/amaxD/bias_type/aux_type/hipblaslt-GB/s),
+            # without relying on any fixed column position.
             header_fields = lines[index].strip().split(',')
             # Strip leading rank markers like '[0]' or '[0]:' from the first header field.
             # Use a regex anchored at the start so a column name that legitimately contains
             # ']' (unlikely, but defensive) is not truncated.
             header_fields[0] = re.sub(r'^\s*\[\d+\]:?', '', header_fields[0])
-            gflops_col = None
+
+            # Build a name -> column-index map (first occurrence wins for any duplicates).
+            col_idx_by_name = {}
             for col_idx, col_name in enumerate(header_fields):
-                if col_name.strip() == 'hipblaslt-Gflops':
-                    gflops_col = col_idx
-                    break
-            if gflops_col is None:
-                raise ValueError('Column "hipblaslt-Gflops" not found in header.')
+                col_idx_by_name.setdefault(col_name.strip(), col_idx)
+
+            required_columns = ['batch_count', 'm', 'n', 'k', 'hipblaslt-Gflops']
+            missing_columns = [c for c in required_columns if c not in col_idx_by_name]
+            if missing_columns:
+                raise ValueError(f'Required column(s) not found in header: {missing_columns}.')
 
             # Ensure a data line follows the header (e.g., hipblaslt-bench may have
             # crashed after printing the header).
@@ -155,9 +156,16 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                     f'but data has {len(fields)} columns'
                 )
 
-            # batch_count (index 3) and m,n,k (indices 4-6) are stable across all known formats
+            # Resolve every key value by header name and strip whitespace from each, so
+            # any padding around CSV values does not bleed into the metric key.
+            batch_count = fields[col_idx_by_name['batch_count']].strip()
+            m_val = fields[col_idx_by_name['m']].strip()
+            n_val = fields[col_idx_by_name['n']].strip()
+            k_val = fields[col_idx_by_name['k']].strip()
+            gflops_col = col_idx_by_name['hipblaslt-Gflops']
+
             self._result.add_result(
-                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops',
+                f'{self._precision_in_commands[cmd_idx]}_{batch_count}_{m_val}_{n_val}_{k_val}_flops',
                 float(fields[gflops_col]) / 1000
             )
         except BaseException as e:

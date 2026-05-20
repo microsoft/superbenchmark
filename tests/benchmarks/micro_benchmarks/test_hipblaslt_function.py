@@ -139,3 +139,58 @@ Is supported 1 / Total solutions: 1
 
         self.assertIn('fp16_1_4096_4096_4096_flops', benchmark.result)
         self.assertAlmostEqual(678.209, benchmark.result['fp16_1_4096_4096_4096_flops'][0], places=3)
+
+    def test_hipblaslt_gemm_result_parsing_future_format_with_inserted_column(self):
+        """Test that the parser is forward-compatible when a new column is inserted before batch_count.
+
+        This proves the metric key is built purely from header-named columns, not fixed
+        positions, so reordering or inserting columns in a future hipBLASLt release does
+        not silently produce a wrong metric key.
+        """
+        benchmark = self.get_benchmark()
+        self.assertTrue(benchmark._preprocess())
+        benchmark._args = SimpleNamespace(shapes=['4096,4096,4096'], in_types=['fp16'], log_raw_data=False)
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+
+        # Synthetic future format: a new column 'fake_new_col' is inserted before batch_count,
+        # and the data values for the key fields are padded with whitespace to confirm that
+        # individual field values are stripped before being used to build the metric key.
+        # A minimal header is used so the padded data line stays within the 120-column limit.
+        example_raw_output_future = """
+hipBLASLt version: 9999
+Is supported 1 / Total solutions: 1
+[0]:transA,transB,fake_new_col,batch_count,m,n,k,hipblaslt-Gflops,us
+N,N,FAKE, 1 , 4096 , 4096 , 4096 ,678209,202.65
+"""
+        self.assertTrue(benchmark._process_raw_result(0, example_raw_output_future))
+        self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
+
+        # The correct, header-driven key must be present with the correct value.
+        self.assertIn('fp16_1_4096_4096_4096_flops', benchmark.result)
+        self.assertAlmostEqual(678.209, benchmark.result['fp16_1_4096_4096_4096_flops'][0], places=3)
+
+        # No key derived from the wrong (positional) field should leak through.
+        for key in benchmark.result:
+            self.assertNotIn('FAKE', key)
+            self.assertNotIn('fake_new_col', key)
+
+    def test_hipblaslt_gemm_result_parsing_missing_required_column(self):
+        """Test that the parser fails loudly when a required key column (e.g. batch_count) is missing.
+
+        Failing surfaces unknown output formats explicitly instead of silently producing
+        a wrong metric key.
+        """
+        benchmark = self.get_benchmark()
+        self.assertTrue(benchmark._preprocess())
+        benchmark._args = SimpleNamespace(shapes=['896,896,896'], in_types=['fp16'], log_raw_data=False)
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+
+        # batch_count is removed from both the header and the data line.
+        example_raw_output_missing_col = """
+hipBLASLt version: 600
+Is supported 1 / Total solutions: 1
+[0]transA,transB,grouped_gemm,m,n,k,alpha,lda,stride_a,beta,ldb,stride_b,ldc,stride_c,ldd,stride_d,d_type,compute_type,activation_type,bias_vector,hipblaslt-Gflops,us
+N,N,0,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r,none,0, 58624.5, 24.54
+"""
+        self.assertFalse(benchmark._process_raw_result(0, example_raw_output_missing_col))
+        self.assertEqual(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE, benchmark.return_code)
