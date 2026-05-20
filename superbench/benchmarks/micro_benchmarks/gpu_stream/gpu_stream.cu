@@ -238,6 +238,10 @@ template <typename T> int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchAr
     if (args->check_data) {
         // Generate data to copy - use local NUMA node for best CPU access
         args->sub.data_buf = static_cast<T *>(numa_alloc_local(args->size));
+        if (args->sub.data_buf == nullptr) {
+            std::cerr << "PrepareBufAndStream::numa_alloc_local data_buf failed" << std::endl;
+            return -1;
+        }
 
         for (uint64_t j = 0; j < args->size / sizeof(T); j++) {
             args->sub.data_buf[j] = static_cast<T>(j % kUInt8Mod);
@@ -245,6 +249,12 @@ template <typename T> int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchAr
 
         // Allocate check buffer on local NUMA node
         args->sub.check_buf = static_cast<T *>(numa_alloc_local(args->size));
+        if (args->sub.check_buf == nullptr) {
+            std::cerr << "PrepareBufAndStream::numa_alloc_local check_buf failed" << std::endl;
+            numa_free(args->sub.data_buf, args->size);
+            args->sub.data_buf = nullptr;
+            return -1;
+        }
     }
 
     // Allocate buffers
@@ -351,7 +361,12 @@ template <typename T> int GpuStream::CheckBuf(std::unique_ptr<BenchArgs<T>> &arg
         return -1;
     }
 
-    // Validate result by comparing the data buffer and check buffer
+    // Validate result by comparing the data buffer and check buffer.
+    // NOTE: memcmp is exact (byte-for-byte). This works because the current test values
+    // (j % 256, scalar = 11.0) are exactly representable in both float and double IEEE-754.
+    // If kUInt8Mod or scalar are changed to values that cause rounding differences between
+    // host (two separate ops) and GPU (FMA), this check will need a tolerance-based comparison
+    // for T = float.
     memcmp_result = memcmp(args->sub.validation_buf_ptrs[kernel_idx].data(), args->sub.check_buf, args->size);
     if (memcmp_result) {
         std::cerr << "CheckBuf::Memory check failed for kernel index " << kernel_idx << std::endl;
@@ -420,10 +435,16 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
     uint64_t num_thread_blocks;
     int size_factor = 2;
 
+    if (num_threads_per_block == 0) {
+        std::cerr << "RunStreamKernel::num_threads_per_block must be > 0" << std::endl;
+        return -1;
+    }
+
     // Validate data size
-    // Each thread processes 128 bits (16 bytes) for optimal memory bandwidth.
-    // For double: uses double2 (16 bytes). For float: would use float4 (16 bytes).
-    constexpr uint64_t kBytesPerThread = 16; // 128-bit aligned access
+    // Each thread processes one VecT<T> element (128 bits / 16 bytes) for optimal memory bandwidth.
+    // Derived from VecT<T> so any vector type change is caught at compile time.
+    constexpr uint64_t kBytesPerThread = sizeof(VecT<T>);
+    static_assert(kBytesPerThread == 16, "Vector type must be 128-bit aligned for current PTX");
     uint64_t num_bytes_in_thread_block = num_threads_per_block * kBytesPerThread;
     if (args->size % num_bytes_in_thread_block) {
         std::cerr << "RunStreamKernel: Data size should be multiple of " << num_bytes_in_thread_block << std::endl;
@@ -612,15 +633,20 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
  *
  * @tparam T The data type (float or double) for the benchmark arguments.
  */
-template <typename T> void GpuStream::CreateBenchArgs() {
+template <typename T> int GpuStream::CreateBenchArgs() {
     auto args = std::make_unique<BenchArgs<T>>();
     args->gpu_id = 0;
-    cudaGetDeviceProperties(&args->gpu_device_prop, 0);
+    cudaError_t cuda_err = cudaGetDeviceProperties(&args->gpu_device_prop, 0);
+    if (cuda_err != cudaSuccess) {
+        std::cerr << "CreateBenchArgs::cudaGetDeviceProperties error: " << cuda_err << std::endl;
+        return -1;
+    }
     args->num_warm_up = opts_.num_warm_up;
     args->num_loops = opts_.num_loops;
     args->size = opts_.size;
     args->check_data = opts_.check_data;
     bench_args_ = std::move(args);
+    return 0;
 }
 
 /**
@@ -655,22 +681,48 @@ int GpuStream::Run() {
     }
 
     // Run on CUDA device 0 (the visible GPU assigned by CUDA_VISIBLE_DEVICES).
-    opts_.data_type == "float" ? CreateBenchArgs<float>() : CreateBenchArgs<double>();
+    if (opts_.data_type == "float") {
+        ret = CreateBenchArgs<float>();
+    } else if (opts_.data_type == "double") {
+        ret = CreateBenchArgs<double>();
+    } else {
+        std::cerr << "Run::Invalid data_type: " << opts_.data_type << std::endl;
+        return -1;
+    }
+    if (ret != 0) {
+        return ret;
+    }
 
-    // Pin the thread to its local NUMA node to prevent migration,
-    // ensuring numa_alloc_local buffers remain node-local.
-    int cpu = sched_getcpu();
-    if (cpu < 0) {
-        std::cerr << "Run::sched_getcpu failed" << std::endl;
-        return -1;
+    // Pin the thread to the GPU's NUMA node for optimal host↔device bandwidth.
+    // Query GPU 0's preferred CPU NUMA node via NVML; fall back to the process's
+    // current node if the NVML query fails (e.g. NUMA disabled, older driver).
+    int target_node = -1;
+    {
+        nvmlDevice_t nvml_dev;
+        unsigned int gpu_numa_node = 0;
+        if (nvmlInit() == NVML_SUCCESS) {
+            if (nvmlDeviceGetHandleByIndex(0, &nvml_dev) == NVML_SUCCESS &&
+                nvmlDeviceGetNumaNodeId(nvml_dev, &gpu_numa_node) == NVML_SUCCESS) {
+                target_node = static_cast<int>(gpu_numa_node);
+            }
+            nvmlShutdown();
+        }
     }
-    int local_node = numa_node_of_cpu(cpu);
-    if (local_node < 0) {
-        std::cerr << "Run::numa_node_of_cpu failed for cpu " << cpu << std::endl;
-        return -1;
+    if (target_node < 0) {
+        // Fallback: use the node where this process is currently scheduled
+        int cpu = sched_getcpu();
+        if (cpu < 0) {
+            std::cerr << "Run::sched_getcpu failed" << std::endl;
+            return -1;
+        }
+        target_node = numa_node_of_cpu(cpu);
+        if (target_node < 0) {
+            std::cerr << "Run::numa_node_of_cpu failed for cpu " << cpu << std::endl;
+            return -1;
+        }
     }
-    if (numa_run_on_node(local_node) != 0) {
-        std::cerr << "Run::numa_run_on_node failed for node " << local_node << std::endl;
+    if (numa_run_on_node(target_node) != 0) {
+        std::cerr << "Run::numa_run_on_node failed for node " << target_node << std::endl;
         return -1;
     }
 

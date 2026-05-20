@@ -56,7 +56,7 @@ class GpuStream {
     template <typename T> int RunStream(std::unique_ptr<BenchArgs<T>> &, const std::string &data_type, float peak_bw);
 
     // Helper functions
-    template <typename T> void CreateBenchArgs();
+    template <typename T> int CreateBenchArgs();
     int GetGpuCount(int *);
     int SetGpu(int gpu_id);
     float GetMemoryClockRate(int device_id, const cudaDeviceProp &prop);
