@@ -36,7 +36,7 @@ class GPT2BenchmarkModel(torch.nn.Module):
 
         Args:
             input (torch.LongTensor): Indices of input sequence tokens in the vocabulary,
-              shape (batch_size, sequence_length).
+                shape (batch_size, sequence_length).
 
         Return:
             result (torch.FloatTensor): Last layer hidden-state of the first token of the sequence
@@ -145,9 +145,7 @@ class PytorchGPT2(PytorchBase):
             )
             return False
 
-        self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
-        if self._gpu_available:
-            self._target = self._target.cuda()
+        self._target = self._create_target(self._args.num_classes)
 
         return True
 
@@ -158,11 +156,11 @@ class PytorchGPT2(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
-            The step-time list of every training step.
+            A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
-        check_frequency = 100
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = self._timer()
@@ -176,7 +174,12 @@ class PytorchGPT2(PytorchBase):
                         output = self._model(sample)
                 else:
                     output = self._model(sample)
-                loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
+                logits = output[range(self._args.batch_size), -1]
+                # Use FP32 logits for loss only when determinism is enabled; otherwise
+                # keep logits in their native precision to preserve benchmark semantics.
+                enable_determinism = getattr(self._args, 'enable_determinism', False)
+                logits_for_loss = logits.float() if enable_determinism else logits
+                loss = self._loss_fn(logits_for_loss, self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
@@ -184,9 +187,10 @@ class PytorchGPT2(PytorchBase):
                 if curr_step > self._args.num_warmup:
                     # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
+                    self.record_determinism_fingerprint(curr_step, loss, logits, periodic, self._args.check_frequency)
                     self._log_step_time(curr_step, precision, duration)
-                if self._is_finished(curr_step, end, check_frequency):
-                    return duration
+                if self._is_finished(curr_step, end, self._args.check_frequency):
+                    return duration, self._finalize_periodic_logging(periodic)
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -220,7 +224,7 @@ class PytorchGPT2(PytorchBase):
                         # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
                         self._log_step_time(curr_step, precision, duration)
-                    if self._is_finished(curr_step, end):
+                    if self._is_finished(curr_step, end, self._args.check_frequency):
                         return duration
 
 

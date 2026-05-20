@@ -238,7 +238,10 @@ class DataDiagnosis(RuleBase):
             'Category','Defective Details']
         """
         append_columns = ['Accept', 'Number Of Issues', 'Category', 'Defective Details']
-        all_data_df = (raw_data_df).astype('float64')
+        # Preserve all columns, but only convert numeric columns to float64
+        all_data_df = raw_data_df.copy()
+        numeric_cols = all_data_df.select_dtypes(include=['number']).columns
+        all_data_df[numeric_cols] = all_data_df[numeric_cols].astype('float64')
 
         if data_not_accept_df.shape[0] == 0:
             all_data_df['Accept'] = [True for i in range(len(all_data_df))]

@@ -110,14 +110,25 @@ class Benchmark(ABC):
                 logger.error('Invalid argument - benchmark: {}, message: {}.'.format(self._name, str(e)))
                 return False, None, []
 
-        ret = True
+        ret = self._check_unknown_args(unknown)
+
+        return ret, args, unknown
+
+    def _check_unknown_args(self, unknown):
+        """Check for unknown arguments and log an error if any are found.
+
+        Args:
+            unknown (list): List of unknown arguments.
+
+        Returns:
+            bool: False if unknown arguments are found, True otherwise.
+        """
         if len(unknown) > 0:
             logger.error(
                 'Unknown arguments - benchmark: {}, unknown arguments: {}'.format(self._name, ' '.join(unknown))
             )
-            ret = False
-
-        return ret, args, unknown
+            return False
+        return True
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
