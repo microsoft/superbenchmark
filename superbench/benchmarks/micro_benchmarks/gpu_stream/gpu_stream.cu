@@ -697,6 +697,8 @@ int GpuStream::Run() {
     // Query GPU 0's preferred CPU NUMA node via NVML; fall back to the process's
     // current node if the NVML query fails (e.g. NUMA disabled, older driver).
     int target_node = -1;
+#if CUDA_VERSION >= 11050
+    // nvmlDeviceGetNumaNodeId is available in NVML shipped with CUDA 11.5+
     {
         nvmlDevice_t nvml_dev;
         unsigned int gpu_numa_node = 0;
@@ -708,6 +710,7 @@ int GpuStream::Run() {
             nvmlShutdown();
         }
     }
+#endif
     if (target_node < 0) {
         // Fallback: use the node where this process is currently scheduled
         int cpu = sched_getcpu();
