@@ -103,13 +103,12 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 assert (len(benchmark.result[output_key]) == 1)
                 assert (isinstance(benchmark.result[output_key][0], numbers.Number))
                 if output_key.endswith('_bw'):
-                    assert (output_key.removesuffix('_bw') in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key.removesuffix('_bw')][0] == benchmark.result[output_key][0])
+                    assert (output_key[:-3] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-3]][0] == benchmark.result[output_key][0])
                 else:
-                    assert (output_key.removesuffix('_ratio') in test_raw_output_dict)
-                    assert (
-                        test_raw_output_dict[output_key.removesuffix('_ratio')][1] == benchmark.result[output_key][0]
-                    )
+                    assert (output_key.endswith('_ratio'))
+                    assert (output_key[:-6] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-6]][1] == benchmark.result[output_key][0])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
@@ -150,13 +149,12 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 assert (len(benchmark.result[output_key]) == 1)
                 assert (isinstance(benchmark.result[output_key][0], numbers.Number))
                 if output_key.endswith('_bw'):
-                    assert (output_key.removesuffix('_bw') in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key.removesuffix('_bw')][0] == benchmark.result[output_key][0])
+                    assert (output_key[:-3] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-3]][0] == benchmark.result[output_key][0])
                 else:
-                    assert (output_key.removesuffix('_ratio') in test_raw_output_dict)
-                    assert (
-                        test_raw_output_dict[output_key.removesuffix('_ratio')][1] == benchmark.result[output_key][0]
-                    )
+                    assert (output_key.endswith('_ratio'))
+                    assert (output_key[:-6] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-6]][1] == benchmark.result[output_key][0])
 
     @decorator.cuda_test
     def test_gpu_stream_result_parsing_cuda_float(self):
