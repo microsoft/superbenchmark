@@ -64,8 +64,8 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
             '--check_data',
             action='store_true',
             help='Enable data checking. Note: allocates 2x --size bytes of host memory per process '
-                 'for validation buffers (e.g. 8 GiB with default 4 GiB --size). '
-                 'Recommend using a small --size such as 1048576 (1 MiB) when this flag is enabled.',
+            'for validation buffers (e.g. 8 GiB with default 4 GiB --size). '
+            'Recommend using a small --size such as 1048576 (1 MiB) when this flag is enabled.',
         )
 
     def _preprocess(self):
