@@ -5,6 +5,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <type_traits>
 
 #include "gpu_stream_utils.hpp"
 
