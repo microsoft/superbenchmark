@@ -758,7 +758,7 @@ int GpuStream::Run() {
             }
 
             if (ret != 0) {
-                std::cerr << "Run::RunStream error: " << errno << std::endl;
+                std::cerr << "Run::RunStream error: " << ret << std::endl;
             }
         },
         bench_args_);
