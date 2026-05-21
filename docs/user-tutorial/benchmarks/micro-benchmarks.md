@@ -269,7 +269,7 @@ For measurements of peer-to-peer communication performance between AMD GPUs, GPU
 
 Measure the memory bandwidth of GPU using the STREAM benchmark. The benchmark tests various memory operations including copy, scale, add, and triad for double and float datatypes.
 
-__Note__: When `--check_data` is enabled, each process allocates 2× `--size` bytes of host memory for validation buffers (e.g. 8 GiB with the default 4 GiB `--size`). Under `default_local_mode` with 8 GPUs this totals ~64 GiB of host RAM. Recommend using a small `--size` such as `1048576` (1 MiB) when `--check_data` is enabled.
+__Note__: When `--check_data` is enabled, each process allocates 6× `--size` bytes of host memory (data\_buf + check\_buf + 4 validation buffers, e.g. 24 GiB with the default 4 GiB `--size`). Under `default_local_mode` with 8 GPUs this totals ~192 GiB of host RAM. Recommend using a small `--size` such as `1048576` (1 MiB) when `--check_data` is enabled.
 
 #### Metrics
 
