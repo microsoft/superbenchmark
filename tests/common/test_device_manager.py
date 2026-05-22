@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for nvidia_helper module."""
+"""Tests for the device_manager module across NVIDIA and AMD backends."""
 
 import numbers
 from unittest import mock
@@ -127,6 +127,7 @@ def test_amd_get_device_power_microwatts_converted():
     with mock.patch(f'{_DM_MODULE}.rocml', rocml_mock, create=True):
         assert manager.get_device_power(0) == 350
         assert manager.get_device_power_limit(0) == 750
+
 
 def test_amd_get_device_power_limit_microwatts_converted():
     """power_limit reported in µW (e.g., 750000000) -> converted to 750 W."""
