@@ -607,10 +607,17 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
         // run the stream benchmark over the stream kernels
         for (int i = 0; i < static_cast<int>(Kernel::kCount); ++i) {
             Kernel kernel = static_cast<Kernel>(i);
-            int ret = RunStreamKernel<T>(args, kernel, num_threads_in_block);
-            if (ret == 0 && args->check_data) {
-                // Compare buffer based on the kernel
+            ret = RunStreamKernel<T>(args, kernel, num_threads_in_block);
+            if (ret != 0) {
+                Destroy(args);
+                return ret;
+            }
+            if (args->check_data) {
                 ret = CheckBuf(args, i);
+                if (ret != 0) {
+                    Destroy(args);
+                    return ret;
+                }
             }
         }
     }
