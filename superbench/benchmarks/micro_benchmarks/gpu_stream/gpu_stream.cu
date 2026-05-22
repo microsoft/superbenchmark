@@ -547,8 +547,17 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
         return -1.0f;
     }
 
-    // Get device handle
-    result = nvmlDeviceGetHandleByIndex(gpu_id, &device);
+    // Map CUDA device index to NVML device via PCI bus ID.
+    // NVML does not honour CUDA_VISIBLE_DEVICES, so nvmlDeviceGetHandleByIndex
+    // would return the wrong physical GPU when the env var is set.
+    char pci_bus_id[16];
+    cudaError_t cuda_err = cudaDeviceGetPCIBusId(pci_bus_id, sizeof(pci_bus_id), gpu_id);
+    if (cuda_err != cudaSuccess) {
+        std::cerr << "GetActualMemoryClockRate::cudaDeviceGetPCIBusId error: " << cuda_err << std::endl;
+        nvmlShutdown();
+        return -1.0f;
+    }
+    result = nvmlDeviceGetHandleByPciBusId(pci_bus_id, &device);
     if (result != NVML_SUCCESS) {
         std::cerr << "Failed to get device handle: " << nvmlErrorString(result) << std::endl;
         nvmlShutdown();
@@ -700,19 +709,25 @@ int GpuStream::Run() {
     int target_node = -1;
     // Resolve nvmlDeviceGetNumaNodeId at runtime via dlsym so the binary
     // remains loadable on systems whose NVML driver predates this symbol.
+    // Map CUDA device 0 to NVML via PCI bus ID because NVML does not
+    // honour CUDA_VISIBLE_DEVICES.
     {
         using NvmlGetNumaNodeId_t = nvmlReturn_t (*)(nvmlDevice_t, unsigned int *);
         auto nvmlGetNumaNodeId = reinterpret_cast<NvmlGetNumaNodeId_t>(
             dlsym(RTLD_DEFAULT, "nvmlDeviceGetNumaNodeId"));
         if (nvmlGetNumaNodeId != nullptr) {
-            nvmlDevice_t nvml_dev;
-            unsigned int gpu_numa_node = 0;
-            if (nvmlInit() == NVML_SUCCESS) {
-                if (nvmlDeviceGetHandleByIndex(0, &nvml_dev) == NVML_SUCCESS &&
-                    nvmlGetNumaNodeId(nvml_dev, &gpu_numa_node) == NVML_SUCCESS) {
-                    target_node = static_cast<int>(gpu_numa_node);
+            char pci_bus_id[16];
+            cudaError_t cuda_err = cudaDeviceGetPCIBusId(pci_bus_id, sizeof(pci_bus_id), 0);
+            if (cuda_err == cudaSuccess) {
+                nvmlDevice_t nvml_dev;
+                unsigned int gpu_numa_node = 0;
+                if (nvmlInit() == NVML_SUCCESS) {
+                    if (nvmlDeviceGetHandleByPciBusId(pci_bus_id, &nvml_dev) == NVML_SUCCESS &&
+                        nvmlGetNumaNodeId(nvml_dev, &gpu_numa_node) == NVML_SUCCESS) {
+                        target_node = static_cast<int>(gpu_numa_node);
+                    }
+                    nvmlShutdown();
                 }
-                nvmlShutdown();
             }
         }
     }
