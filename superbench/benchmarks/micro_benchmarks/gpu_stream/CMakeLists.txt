@@ -40,6 +40,6 @@ add_executable(gpu_stream ${SOURCES})
 set_property(TARGET gpu_stream PROPERTY CUDA_ARCHITECTURES ${NVCC_ARCHS_SUPPORTED})
 target_compile_definitions(gpu_stream PRIVATE _GNU_SOURCE)
 target_include_directories(gpu_stream PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-target_link_libraries(gpu_stream numa ${NVML_LIBRARY})
+target_link_libraries(gpu_stream numa ${NVML_LIBRARY} ${CMAKE_DL_LIBS})
 
 install(TARGETS gpu_stream RUNTIME DESTINATION bin)

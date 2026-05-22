@@ -8,6 +8,7 @@
 
 #include "gpu_stream.hpp"
 #include <cassert>
+#include <dlfcn.h>
 #include <iostream>
 #include <nvml.h>
 #include <sched.h>
@@ -697,20 +698,24 @@ int GpuStream::Run() {
     // Query GPU 0's preferred CPU NUMA node via NVML; fall back to the process's
     // current node if the NVML query fails (e.g. NUMA disabled, older driver).
     int target_node = -1;
-#if CUDA_VERSION >= 11050
-    // nvmlDeviceGetNumaNodeId is available in NVML shipped with CUDA 11.5+
+    // Resolve nvmlDeviceGetNumaNodeId at runtime via dlsym so the binary
+    // remains loadable on systems whose NVML driver predates this symbol.
     {
-        nvmlDevice_t nvml_dev;
-        unsigned int gpu_numa_node = 0;
-        if (nvmlInit() == NVML_SUCCESS) {
-            if (nvmlDeviceGetHandleByIndex(0, &nvml_dev) == NVML_SUCCESS &&
-                nvmlDeviceGetNumaNodeId(nvml_dev, &gpu_numa_node) == NVML_SUCCESS) {
-                target_node = static_cast<int>(gpu_numa_node);
+        using NvmlGetNumaNodeId_t = nvmlReturn_t (*)(nvmlDevice_t, unsigned int *);
+        auto nvmlGetNumaNodeId = reinterpret_cast<NvmlGetNumaNodeId_t>(
+            dlsym(RTLD_DEFAULT, "nvmlDeviceGetNumaNodeId"));
+        if (nvmlGetNumaNodeId != nullptr) {
+            nvmlDevice_t nvml_dev;
+            unsigned int gpu_numa_node = 0;
+            if (nvmlInit() == NVML_SUCCESS) {
+                if (nvmlDeviceGetHandleByIndex(0, &nvml_dev) == NVML_SUCCESS &&
+                    nvmlGetNumaNodeId(nvml_dev, &gpu_numa_node) == NVML_SUCCESS) {
+                    target_node = static_cast<int>(gpu_numa_node);
+                }
+                nvmlShutdown();
             }
-            nvmlShutdown();
         }
     }
-#endif
     if (target_node < 0) {
         // Fallback: use the node where this process is currently scheduled
         int cpu = sched_getcpu();
