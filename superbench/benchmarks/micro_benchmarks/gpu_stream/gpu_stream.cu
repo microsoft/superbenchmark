@@ -713,8 +713,7 @@ int GpuStream::Run() {
     // honour CUDA_VISIBLE_DEVICES.
     {
         using NvmlGetNumaNodeId_t = nvmlReturn_t (*)(nvmlDevice_t, unsigned int *);
-        auto nvmlGetNumaNodeId = reinterpret_cast<NvmlGetNumaNodeId_t>(
-            dlsym(RTLD_DEFAULT, "nvmlDeviceGetNumaNodeId"));
+        auto nvmlGetNumaNodeId = reinterpret_cast<NvmlGetNumaNodeId_t>(dlsym(RTLD_DEFAULT, "nvmlDeviceGetNumaNodeId"));
         if (nvmlGetNumaNodeId != nullptr) {
             char pci_bus_id[16];
             cudaError_t cuda_err = cudaDeviceGetPCIBusId(pci_bus_id, sizeof(pci_bus_id), 0);
