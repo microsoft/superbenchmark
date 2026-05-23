@@ -1,17 +1,17 @@
-ARG BASE_IMAGE=rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0
+ARG BASE_IMAGE=rocm/pytorch:rocm6.4.4_ubuntu24.04_py3.12_pytorch_release_2.7.1
 
 FROM ${BASE_IMAGE}
 
 # OS:
-#   - Ubuntu: 22.04
+#   - Ubuntu: 24.04
 #   - Docker Client: 20.10.8
 # ROCm:
-#   - ROCm: 6.2
+#   - ROCm: 6.4
 # Lib:
-#   - torch: 2.3.0
-#   - rccl: 2.18.3+hip6.0 develop:7e1cbb4
-#   - hipblaslt: release-staging/rocm-rel-6.2
-#   - rocblas: release-staging/rocm-rel-6.2
+#   - torch: 2.7.1
+#   - rccl: release/rocm-rel-6.4
+#   - hipblaslt: release-staging/rocm-rel-6.4
+#   - rocblas: release-staging/rocm-rel-6.4
 #   - openmpi: 4.1.x
 # Intel:
 #   - mlc: v3.12
@@ -38,7 +38,7 @@ RUN apt-get update && \
     libnuma-dev \
     libpci-dev \
     libssl-dev \
-    libtinfo5 \
+    libtinfo6 \
     libtool \
     lshw \
     net-tools \
@@ -71,7 +71,7 @@ RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(
     make install && \
     rm -rf /tmp/cmake-${required_version}* \
     else \
-    echo "CMake version is greater than or equal to 3.24.1"; \
+    echo "CMake version ${cmake_version} is greater than or equal to ${required_version}"; \
     fi
 
 # Install Docker
@@ -92,13 +92,11 @@ RUN mkdir -p /root/.ssh && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
 
-# Get Ubuntu version and set as an environment variable
-RUN export UBUNTU_VERSION=$(lsb_release -r -s)
-RUN echo "Ubuntu version: $UBUNTU_VERSION"
-ENV UBUNTU_VERSION=${UBUNTU_VERSION}
+# Set Ubuntu version
+ENV UBUNTU_VERSION=24.04
 
 # Install OFED
-ENV OFED_VERSION=5.9-0.5.6.0
+ENV OFED_VERSION=24.10-1.1.4.0
 # Check if ofed_info is present and has a version
 RUN if ! command -v ofed_info >/dev/null 2>&1; then \
     echo "OFED not found. Installing OFED..."; \
@@ -137,7 +135,7 @@ RUN cd /tmp && \
 
 # Install RCCL
 RUN cd /opt/ &&  \
-    git clone -b release/rocm-rel-6.2 https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    git clone -b release/rocm-rel-6.4 https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
     mkdir build && \
     cd build && \
@@ -152,8 +150,7 @@ RUN apt install amd-smi-lib -y && \
     python3 -m pip install .
 
 ENV PATH="/usr/local/mpi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \
-    LD_PRELOAD="/opt/rccl/build/librccl.so:$LD_PRELOAD" \
-    LD_LIBRARY_PATH="/usr/local/mpi/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/lib/:/opt/rocm/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/opt/rccl/build:/usr/local/mpi/lib:/opt/rocm/lib:/usr/local/lib/:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
@@ -164,25 +161,47 @@ RUN echo PATH="$PATH" > /etc/environment && \
     echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment
 
 RUN apt install rocm-cmake -y && \
-    python3 -m pip install --upgrade pip wheel setuptools==65.7
+    python3 -m pip install --upgrade pip wheel "setuptools>=69.0"
 
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-# Apply patch
-RUN cd third_party/perftest && \
-    git apply ../perftest_rocm6.patch
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.2 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm
+# perftest_rocm6.patch changes are already upstream in the submodule version
+# rocm_megatron_lm: broken upstream (pretrain_deepseek.py missing in rocm_dev branch)
+# apex_rocm: skipped — all apex imports in Megatron-DeepSpeed are guarded with try/except,
+#   superbench has zero direct apex usage, and PyTorch 2.7 has native fused optimizers/AMP.
+RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
+# Build hipblaslt separately with Tensile target-triple fix for ROCm 6.4 clang
+# Also fix joblib race condition (github.com/joblib/joblib/issues/1788) in Python 3.12:
+# joblib's _retrieve() iterates _jobs_set while callbacks modify it.
+# Fix: copy the set before iterating. Patch all joblib instances system-wide.
+RUN pip install "joblib>=1.4.2" && \
+    find / -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
+        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} +
+RUN cd third_party && \
+    git clone -b release-staging/rocm-rel-6.4 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
+    sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' \
+        hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py && \
+    cd hipBLASLt && ./install.sh -dc && \
+    find /opt -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
+        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} + && \
+    cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
-# Install transformer_engine
+# Install TransformerEngine - pin to 386bd316 (before NVFP4/hip_fp4.h which needs ROCm 7.0+).
+# Disable CK fused attention (aiter submodule has gfx950-only code); aotriton stays enabled.
 RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
-    export NVTE_FRAMEWORK=pytorch && \
-    pip install .
+    git checkout 386bd316 && \
+    git submodule update --init --recursive && \
+    NVTE_FRAMEWORK=pytorch \
+    NVTE_FUSED_ATTN_CK=0 \
+    NVTE_ROCM_ARCH=gfx942 \
+    python3 setup.py install
+RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfully')"
 
 ADD . .
 ENV USE_HIP_DATATYPE=1
@@ -191,3 +210,6 @@ RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall
 
+# Fix stale hypothesis plugin from base image (imports removed pkg_resources)
+# and add test dependencies missing from the base image.
+RUN python3 -m pip install --upgrade hypothesis setuptools pytest-timeout vcrpy
