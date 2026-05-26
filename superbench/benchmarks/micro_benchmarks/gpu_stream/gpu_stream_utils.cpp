@@ -85,7 +85,7 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
                                      {"data_type", required_argument, nullptr, static_cast<int>(OptIdx::kDataType)}};
     int getopt_ret = 0;
     int opt_idx = 0;
-    bool size_specified = true;
+    bool size_specified = false;
     bool num_warm_up_specified = false;
     bool num_loops_specified = false;
 

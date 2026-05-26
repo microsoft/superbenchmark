@@ -30,15 +30,21 @@ template <typename T> int GpuStream::DestroyEvent(std::unique_ptr<BenchArgs<T>> 
     if (SetGpu(args->gpu_id)) {
         return -1;
     }
-    cuda_err = cudaEventDestroy(args->sub.start_event);
-    if (cuda_err != cudaSuccess) {
-        std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
-        return -1;
+    if (args->sub.start_event != nullptr) {
+        cuda_err = cudaEventDestroy(args->sub.start_event);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
+            return -1;
+        }
+        args->sub.start_event = nullptr;
     }
-    cuda_err = cudaEventDestroy(args->sub.end_event);
-    if (cuda_err != cudaSuccess) {
-        std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
-        return -1;
+    if (args->sub.end_event != nullptr) {
+        cuda_err = cudaEventDestroy(args->sub.end_event);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
+            return -1;
+        }
+        args->sub.end_event = nullptr;
     }
     return 0;
 }
@@ -100,10 +106,8 @@ int GpuStream::GetGpuCount(int *gpu_count) {
  */
 template <typename T> int GpuStream::Destroy(std::unique_ptr<BenchArgs<T>> &args) {
     int ret = DestroyBufAndStream(args);
-    if (ret == 0) {
-        ret = DestroyEvent(args);
-    }
-    return ret;
+    int event_ret = DestroyEvent(args);
+    return (ret != 0) ? ret : event_ret;
 }
 
 /**
@@ -407,10 +411,13 @@ template <typename T> int GpuStream::DestroyBufAndStream(std::unique_ptr<BenchAr
         return -1;
     }
 
-    cuda_err = cudaStreamDestroy(args->sub.stream);
-    if (cuda_err != cudaSuccess) {
-        std::cerr << "DestroyBufAndStream::cudaStreamDestroy error: " << cuda_err << std::endl;
-        return -1;
+    if (args->sub.stream != nullptr) {
+        cuda_err = cudaStreamDestroy(args->sub.stream);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "DestroyBufAndStream::cudaStreamDestroy error: " << cuda_err << std::endl;
+            return -1;
+        }
+        args->sub.stream = nullptr;
     }
 
     return ret;
@@ -599,7 +606,9 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
 
     ret = PrepareEvent(args);
     if (ret != 0) {
-        return DestroyEvent(args);
+        DestroyEvent(args);
+        DestroyBufAndStream(args);
+        return -1;
     }
 
     // benchmark over the kThreadsPerBlock array
@@ -629,7 +638,7 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
         std::string tag = "STREAM_" + KernelToString(i) + "_" + data_type + "_buffer_" + std::to_string(args->size);
         for (size_t j = 0; j < args->sub.times_in_ms[i].size(); j++) {
             // Calculate and display bandwidth
-            double bw = args->size * args->num_loops / args->sub.times_in_ms[i][j] / 1e6;
+            double bw = static_cast<double>(args->size) * args->num_loops / args->sub.times_in_ms[i][j] / 1e6;
             std::cout << tag << "_block_" << kThreadsPerBlock[j] << "\t" << bw << "\t";
 
             if (peak_bw < 0) { // cannot get peak_bw -> prints -1 for efficiency

@@ -64,13 +64,13 @@ template <typename T> struct SubBenchArgs {
     std::vector<std::vector<T>> validation_buf_ptrs;
 
     // CUDA stream to be used.
-    cudaStream_t stream;
+    cudaStream_t stream = nullptr;
 
     // CUDA event to record start time.
-    cudaEvent_t start_event;
+    cudaEvent_t start_event = nullptr;
 
     // CUDA event to record end time.
-    cudaEvent_t end_event;
+    cudaEvent_t end_event = nullptr;
 
     // CUDA event to record end time.
     std::vector<std::vector<float>> times_in_ms;
