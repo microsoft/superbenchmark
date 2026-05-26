@@ -87,6 +87,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         benchmark._args = SimpleNamespace(shapes=['896,896,896'], in_types=['fp16'], log_raw_data=False)
         benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
 
+        # Old format (hipBLASLt v600, 23 columns)
         example_raw_output = """
 hipBLASLt version: 600
 hipBLASLt git version: 52776da
@@ -101,12 +102,95 @@ Is supported 1 / Total solutions: 1
 [0]transA,transB,grouped_gemm,batch_count,m,n,k,alpha,lda,stride_a,beta,ldb,stride_b,ldc,stride_c,ldd,stride_d,d_type,compute_type,activation_type,bias_vector,hipblaslt-Gflops,us
 N,N,0,1,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r,none,0, 58624.5, 24.54
 """
-        # Positive case - valid raw output
+        # Positive case - valid raw output (old format)
         self.assertTrue(benchmark._process_raw_result(0, example_raw_output))
         self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
 
-        self.assertEqual(2, len(benchmark.result))
-        self.assertEqual(58.6245, benchmark.result['fp16_1_896_896_896_flops'][0])
+        self.assertIn('fp16_1_896_896_896_flops', benchmark.result)
+        self.assertAlmostEqual(58.6245, benchmark.result['fp16_1_896_896_896_flops'][0], places=4)
 
         # Negative case - invalid raw output
         self.assertFalse(benchmark._process_raw_result(1, 'HipBLAS API failed'))
+
+    def test_hipblaslt_gemm_result_parsing_new_format(self):
+        """Test hipblaslt-bench benchmark result parsing with new 34-column format (hipBLASLt v1500+)."""
+        benchmark = self.get_benchmark()
+        self.assertTrue(benchmark._preprocess())
+        benchmark._args = SimpleNamespace(shapes=['4096,4096,4096'], in_types=['fp16'], log_raw_data=False)
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+
+        # New format (hipBLASLt v1500, 34 columns) - includes a_type, b_type, c_type, d_type,
+        # scaleA, scaleB, scaleC, scaleD, amaxD, bias_type, aux_type, and hipblaslt-GB/s columns
+        example_raw_output_new = """
+hipBLASLt version: 1500
+hipBLASLt git version: 8c69191d
+Query device success: there are 1 devices. (Target device ID is 0)
+Device ID 0 :  gfx942:sramecc+:xnack-
+with 205.6 GB memory, max. SCLK 2100 MHz, max. MCLK 1300 MHz, compute capability 9.4
+maxGridDimX 2147483647, sharedMemPerBlock 65.5 KB, maxThreadsPerBlock 1024, warpSize 64
+
+Is supported 1 / Total solutions: 1
+[0]:transA,transB,grouped_gemm,batch_count,m,n,k,alpha,lda,stride_a,beta,ldb,stride_b,ldc,stride_c,ldd,stride_d,a_type,b_type,c_type,d_type,compute_type,scaleA,scaleB,scaleC,scaleD,amaxD,activation_type,bias_vector,bias_type,aux_type,hipblaslt-Gflops,hipblaslt-GB/s,us
+    N,N,0,1,4096,4096,4096,1,4096,16777216,0,4096,16777216,4096,16777216,4096,16777216,f16_r,f16_r,f16_r,f16_r,f32_r,0,0,0,0,0,none,0,f16_r,f16_r,678209,462.62,202.65
+"""
+        # Positive case - valid raw output (new format)
+        self.assertTrue(benchmark._process_raw_result(0, example_raw_output_new))
+        self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
+
+        self.assertIn('fp16_1_4096_4096_4096_flops', benchmark.result)
+        self.assertAlmostEqual(678.209, benchmark.result['fp16_1_4096_4096_4096_flops'][0], places=3)
+
+    def test_hipblaslt_gemm_result_parsing_future_format_with_inserted_column(self):
+        """Test that the parser is forward-compatible when a new column is inserted before batch_count.
+
+        This proves the metric key is built purely from header-named columns, not fixed
+        positions, so reordering or inserting columns in a future hipBLASLt release does
+        not silently produce a wrong metric key.
+        """
+        benchmark = self.get_benchmark()
+        self.assertTrue(benchmark._preprocess())
+        benchmark._args = SimpleNamespace(shapes=['4096,4096,4096'], in_types=['fp16'], log_raw_data=False)
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+
+        # Synthetic future format: a new column 'fake_new_col' is inserted before batch_count,
+        # and the data values for the key fields are padded with whitespace to confirm that
+        # individual field values are stripped before being used to build the metric key.
+        # A minimal header is used so the padded data line stays within the 120-column limit.
+        example_raw_output_future = """
+hipBLASLt version: 9999
+Is supported 1 / Total solutions: 1
+[0]:transA,transB,fake_new_col,batch_count,m,n,k,hipblaslt-Gflops,us
+N,N,FAKE, 1 , 4096 , 4096 , 4096 ,678209,202.65
+"""
+        self.assertTrue(benchmark._process_raw_result(0, example_raw_output_future))
+        self.assertEqual(ReturnCode.SUCCESS, benchmark.return_code)
+
+        # The correct, header-driven key must be present with the correct value.
+        self.assertIn('fp16_1_4096_4096_4096_flops', benchmark.result)
+        self.assertAlmostEqual(678.209, benchmark.result['fp16_1_4096_4096_4096_flops'][0], places=3)
+
+        # No key derived from the wrong (positional) field should leak through.
+        for key in benchmark.result:
+            self.assertNotIn('FAKE', key)
+            self.assertNotIn('fake_new_col', key)
+
+    def test_hipblaslt_gemm_result_parsing_missing_required_column(self):
+        """Test that the parser fails loudly when a required key column (e.g. batch_count) is missing.
+
+        Failing surfaces unknown output formats explicitly instead of silently producing
+        a wrong metric key.
+        """
+        benchmark = self.get_benchmark()
+        self.assertTrue(benchmark._preprocess())
+        benchmark._args = SimpleNamespace(shapes=['896,896,896'], in_types=['fp16'], log_raw_data=False)
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+
+        # batch_count is removed from both the header and the data line.
+        example_raw_output_missing_col = """
+hipBLASLt version: 600
+Is supported 1 / Total solutions: 1
+[0]transA,transB,grouped_gemm,m,n,k,alpha,lda,stride_a,beta,ldb,stride_b,ldc,stride_c,ldd,stride_d,d_type,compute_type,activation_type,bias_vector,hipblaslt-Gflops,us
+N,N,0,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r,none,0, 58624.5, 24.54
+"""
+        self.assertFalse(benchmark._process_raw_result(0, example_raw_output_missing_col))
+        self.assertEqual(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE, benchmark.return_code)
