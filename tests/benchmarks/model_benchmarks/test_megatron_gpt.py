@@ -206,7 +206,12 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
             return _side_effect
 
-        self.addCleanup(lambda: [p.unlink() for p in created_files if p.is_file()])
+        def _cleanup_created_files():
+            for p in created_files:
+                if p.is_file():
+                    p.unlink()
+
+        self.addCleanup(_cleanup_created_files)
 
         def _build_benchmark(extra_params):
             return benchmark_cls(
@@ -241,6 +246,18 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             assert mock_run_command.call_count == 0
             assert benchmark.return_code == ReturnCode.DATASET_GENERATION_FAILURE
 
+        def _run_invalid_workers_case(extra_params):
+            """Assert _preprocess() rejects negative num_workers as invalid input."""
+            mock_run_command.reset_mock()
+            mock_run_command.side_effect = None
+            mock_download_file.reset_mock()
+            benchmark = _build_benchmark(extra_params)
+            assert benchmark._preprocess() is False
+            assert mock_run_command.call_count == 0
+            # Only vocab + merges are downloaded before validation failure.
+            assert mock_download_file.call_count == 2
+            assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
         # Case 1: num_workers=0 with default data_prefix should produce '--workers 1' (clamped)
         # and '--output-prefix <data_home>/dataset' (default 'dataset_text_document' suffix stripped).
         _run_case(
@@ -267,6 +284,9 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # Case 4: data_prefix == '_text_document' has an empty stem after stripping the suffix,
         # which would produce a malformed '--output-prefix <data_home>/'. Must fail fast.
         _run_invalid_case(extra_params='--num_workers 1 --data_prefix _text_document')
+
+        # Case 5: negative num_workers is invalid input and should fail fast.
+        _run_invalid_workers_case(extra_params='--num_workers -1 --data_prefix negative_text_document')
 
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_gpt_command(self, mock_generate_dataset):

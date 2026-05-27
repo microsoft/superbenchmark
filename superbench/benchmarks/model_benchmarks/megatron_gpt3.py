@@ -649,9 +649,6 @@ class MegatronGPT(ModelBenchmark):
             if not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.bin')) \
                     or not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.idx')):
                 if self._args.dataset_url:
-                    self._raw_data_path = str(Path(self._args.data_home) / 'data.json')
-                    download_file(self._args.dataset_url, self._raw_data_path)
-
                     # Megatron's preprocess_data.py appends '_text_document' to --output-prefix
                     # when producing the .bin/.idx files. For the existence check below
                     # (which looks for {data_prefix}.bin/.idx) to pass, data_prefix must end
@@ -665,13 +662,25 @@ class MegatronGPT(ModelBenchmark):
                         )
                         self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
                         return False
+
+                    if self._args.num_workers < 0:
+                        logger.error(
+                            'num_workers must be >= 0 (got {}).'.format(self._args.num_workers)
+                        )
+                        self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                        return False
+
+                    self._raw_data_path = str(Path(self._args.data_home) / 'data.json')
+                    download_file(self._args.dataset_url, self._raw_data_path)
+
                     output_prefix_basename = self._args.data_prefix[:-len(suffix)]
                     output_prefix = os.path.join(self._args.data_home, output_prefix_basename)
 
                     # num_workers=0 is valid for DataLoader (main process loads data),
                     # but preprocess_data.py requires workers>=1 for multiprocessing.Pool.
-                    preprocess_workers = max(1, self._args.num_workers)
-                    if preprocess_workers != self._args.num_workers:
+                    preprocess_workers = self._args.num_workers
+                    if self._args.num_workers == 0:
+                        preprocess_workers = 1
                         logger.warning(
                             'preprocess_data.py requires --workers >= 1; '
                             'overriding num_workers={} to {} for dataset preprocessing only '
