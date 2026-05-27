@@ -401,10 +401,16 @@ template <typename T> int GpuStream::DestroyBufAndStream(std::unique_ptr<BenchAr
     // Destroy original data buffer and check buffer
     if (args->sub.data_buf != nullptr) {
         numa_free(args->sub.data_buf, args->size);
+        args->sub.data_buf = nullptr;
     }
     if (args->sub.check_buf != nullptr) {
         numa_free(args->sub.check_buf, args->size);
+        args->sub.check_buf = nullptr;
     }
+
+    // Release GPU buffers immediately to free device memory
+    args->sub.gpu_buf_ptrs.clear();
+    args->sub.validation_buf_ptrs.clear();
 
     // Set to buffer device for GPU buffer
     if (SetGpu(args->gpu_id)) {
@@ -601,13 +607,13 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
     ret = PrepareBufAndStream<T>(args);
 
     if (ret != 0) {
-        return DestroyBufAndStream(args);
+        Destroy(args);
+        return -1;
     }
 
     ret = PrepareEvent(args);
     if (ret != 0) {
-        DestroyEvent(args);
-        DestroyBufAndStream(args);
+        Destroy(args);
         return -1;
     }
 
