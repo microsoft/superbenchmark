@@ -527,14 +527,15 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             self.benchmark_name,
             parameters=(
                 f'--code_base {self._tmp_dir} --data_home {self._tmp_dir} '
-                f'--batch_size 2048 --deepspeed'
+                f'--batch_size 2048 --deepspeed --hysteresis 3'
             ),
         )
         mock_generate_dataset.return_value = True
         assert benchmark._preprocess() is True
+        benchmark._data_options = ''
 
         # bf16: only {'enabled': True}, no loss-scale fields, no fp16 section
-        benchmark._MegatronGPT__prepare_deespeed_config('bf16')
+        benchmark._megatron_command(Precision.BFLOAT16)
         with open(benchmark._config_json_path) as f:
             cfg = json.load(f)
         self.assertEqual(cfg.get('bf16'), {'enabled': True})
@@ -543,7 +544,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             self.assertNotIn(forbidden, cfg['bf16'])
 
         # fp16: keeps loss-scale fields
-        benchmark._MegatronGPT__prepare_deespeed_config('fp16')
+        benchmark._megatron_command(Precision.FLOAT16)
         with open(benchmark._config_json_path) as f:
             cfg = json.load(f)
         self.assertIn('fp16', cfg)
@@ -553,15 +554,14 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         self.assertEqual(cfg['fp16']['loss_scale_window'], 500)
         self.assertEqual(cfg['fp16']['min_loss_scale'], 1)
         self.assertEqual(cfg['fp16']['initial_scale_power'], 11)
+        self.assertEqual(cfg['fp16']['hysteresis'], 3)
 
-        # empty precision (e.g., fp32 path which calls __prepare with ''):
-        # no precision section attached.
-        benchmark._MegatronGPT__prepare_deespeed_config('')
+        # FP32 path: no precision section attached.
+        benchmark._megatron_command(Precision.FLOAT32)
         with open(benchmark._config_json_path) as f:
             cfg = json.load(f)
         self.assertNotIn('fp16', cfg)
         self.assertNotIn('bf16', cfg)
-        self.assertNotIn('', cfg)
 
     @decorator.load_data('tests/data/megatron_deepspeed.log')
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')

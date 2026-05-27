@@ -303,7 +303,7 @@ class MegatronGPT(ModelBenchmark):
 
         return iteration_times, tflops, mem_allocated, max_mem_allocated
 
-    def __prepare_deespeed_config(self, precision_megatron):
+    def __prepare_deepspeed_config(self, precision_megatron):
         """Prepare deepspeed configs."""
         self._config_json_path = os.path.join(self._args.data_home, 'ds_config_gpt.json')
         # Build deepspeed config template in memory.
@@ -529,7 +529,7 @@ class MegatronGPT(ModelBenchmark):
 
         script_path = os.path.join(self._args.code_base, f'pretrain_{self._args.model}.py')
         if self._args.deepspeed:
-            deepspeed_option = self.__prepare_deespeed_config(precision_megatron.lstrip('--'))
+            deepspeed_option = self.__prepare_deepspeed_config(precision_megatron.lstrip('--'))
             megatron_options = megatron_options.replace('--log-throughput', '').strip()
             if self._num_nodes > 1:
                 command = f'torchrun {self._distributed_args} {script_path} \
