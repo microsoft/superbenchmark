@@ -500,6 +500,69 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
         self.assertEqual(actual_units, expected_units)
 
+    @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
+    def test_megatron_gpt_deepspeed_config(self, mock_generate_dataset):
+        """Lock in the deepspeed JSON schema written for fp16 / bf16 / fp32.
+
+        BF16 must NOT include loss_scale / loss_scale_window / min_loss_scale /
+        initial_scale_power / hysteresis (DeepSpeed's BF16 config schema rejects
+        them); FP16 must keep them; FP32 must omit any precision section.
+        """
+        import json
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        assert (benchmark_cls)
+        os.environ['OMPI_COMM_WORLD_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_RANK'] = '0'
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12345'
+        self.createMockFiles(['pretrain_gpt.py'])
+        # createMockFiles only cleans up at tearDownClass; remove at test end so
+        # we don't leak the file into other tests (e.g. test_megatron_gpt_preprocess
+        # which exercises the "no code_base" negative path).
+        pretrain_path = Path(self._tmp_dir) / 'pretrain_gpt.py'
+        self.addCleanup(lambda: pretrain_path.is_file() and pretrain_path.unlink())
+
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters=(
+                f'--code_base {self._tmp_dir} --data_home {self._tmp_dir} '
+                f'--batch_size 2048 --deepspeed --hysteresis 3'
+            ),
+        )
+        mock_generate_dataset.return_value = True
+        assert benchmark._preprocess() is True
+        benchmark._data_options = ''
+
+        # bf16: only {'enabled': True}, no loss-scale fields, no fp16 section
+        benchmark._megatron_command(Precision.BFLOAT16)
+        with open(benchmark._config_json_path) as f:
+            cfg = json.load(f)
+        self.assertEqual(cfg.get('bf16'), {'enabled': True})
+        self.assertNotIn('fp16', cfg)
+        for forbidden in ('loss_scale', 'loss_scale_window', 'min_loss_scale', 'initial_scale_power', 'hysteresis'):
+            self.assertNotIn(forbidden, cfg['bf16'])
+
+        # fp16: keeps loss-scale fields
+        benchmark._megatron_command(Precision.FLOAT16)
+        with open(benchmark._config_json_path) as f:
+            cfg = json.load(f)
+        self.assertIn('fp16', cfg)
+        self.assertNotIn('bf16', cfg)
+        self.assertTrue(cfg['fp16']['enabled'])
+        self.assertEqual(cfg['fp16']['loss_scale'], 0)
+        self.assertEqual(cfg['fp16']['loss_scale_window'], 500)
+        self.assertEqual(cfg['fp16']['min_loss_scale'], 1)
+        self.assertEqual(cfg['fp16']['initial_scale_power'], 11)
+        self.assertEqual(cfg['fp16']['hysteresis'], 3)
+
+        # FP32 path: no precision section attached.
+        benchmark._megatron_command(Precision.FLOAT32)
+        with open(benchmark._config_json_path) as f:
+            cfg = json.load(f)
+        self.assertNotIn('fp16', cfg)
+        self.assertNotIn('bf16', cfg)
+
     @decorator.load_data('tests/data/megatron_deepspeed.log')
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_parse_log(self, raw_output, mock_generate_dataset):
