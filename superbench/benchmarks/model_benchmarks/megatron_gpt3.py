@@ -644,6 +644,13 @@ class MegatronGPT(ModelBenchmark):
         Return:
             True if dataset is created successfully.
         """
+        # Validate num_workers unconditionally so a negative value is rejected even when
+        # dataset files already exist (it would otherwise be emitted as `--num-workers -1`
+        # into the Megatron training command).
+        if self._args.num_workers < 0:
+            logger.error('num_workers must be >= 0 (got {}).'.format(self._args.num_workers))
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
         self._data_options = ''
         if self._args.mock_data:
             logger.info('Using mock data.')
@@ -667,13 +674,6 @@ class MegatronGPT(ModelBenchmark):
                             'data_prefix must end with "{}" and have a non-empty stem when '
                             'dataset generation is required (got "{}"). preprocess_data.py '
                             'always appends "{}" to --output-prefix.'.format(suffix, self._args.data_prefix, suffix)
-                        )
-                        self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
-                        return False
-
-                    if self._args.num_workers < 0:
-                        logger.error(
-                            'num_workers must be >= 0 (got {}).'.format(self._args.num_workers)
                         )
                         self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
                         return False

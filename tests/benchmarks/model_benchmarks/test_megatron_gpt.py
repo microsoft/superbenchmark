@@ -176,7 +176,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
     @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.run_command')
     @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.download_file')
-    def test_megatron_gpt_dataset_generate_command(self, mock_download_file, mock_run_command):
+    def test_megatron_gpt_dataset_generate_command(self, mock_download_file, mock_run_command):    # noqa: C901
         """Verify _generate_dataset clamps --workers to >=1 and derives --output-prefix from data_prefix."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
         assert (benchmark_cls)
@@ -244,18 +244,18 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             benchmark = _build_benchmark(extra_params)
             assert benchmark._preprocess() is False
             assert mock_run_command.call_count == 0
-            assert benchmark.return_code == ReturnCode.DATASET_GENERATION_FAILURE
+            assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
 
         def _run_invalid_workers_case(extra_params):
-            """Assert _preprocess() rejects negative num_workers as invalid input."""
+            """Assert _preprocess() rejects negative num_workers as invalid input before any downloads."""
             mock_run_command.reset_mock()
             mock_run_command.side_effect = None
             mock_download_file.reset_mock()
             benchmark = _build_benchmark(extra_params)
             assert benchmark._preprocess() is False
             assert mock_run_command.call_count == 0
-            # Only vocab + merges are downloaded before validation failure.
-            assert mock_download_file.call_count == 2
+            # num_workers is validated before _generate_dataset() runs, so no downloads happen.
+            assert mock_download_file.call_count == 0
             assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
 
         # Case 1: num_workers=0 with default data_prefix should produce '--workers 1' (clamped)
