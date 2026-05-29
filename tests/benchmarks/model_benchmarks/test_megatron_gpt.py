@@ -176,7 +176,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
     @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.run_command')
     @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.download_file')
-    def test_megatron_gpt_dataset_generate_command(self, mock_download_file, mock_run_command):    # noqa: C901
+    def test_megatron_gpt_dataset_generate_command(self, mock_download_file, mock_run_command):
         """Verify _generate_dataset clamps --workers to >=1 and derives --output-prefix from data_prefix."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
         assert (benchmark_cls)
@@ -191,7 +191,6 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         # (which expects pretrain_gpt.py to NOT exist initially) is not affected by leaked state.
         self.createMockFiles(['pretrain_gpt.py'])
         pretrain_path = Path(self._tmp_dir) / 'pretrain_gpt.py'
-        self.addCleanup(lambda: pretrain_path.unlink() if pretrain_path.is_file() else None)
 
         # Helper: make run_command's side_effect create the expected .bin/.idx files
         # so _generate_dataset() (invoked from within _preprocess()) succeeds.
@@ -207,7 +206,7 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             return _side_effect
 
         def _cleanup_created_files():
-            for p in created_files:
+            for p in created_files + [pretrain_path]:
                 if p.is_file():
                     p.unlink()
 
@@ -237,25 +236,20 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
             expected_output_prefix = os.path.join(self._tmp_dir, expected_prefix_basename)
             assert f'--output-prefix {expected_output_prefix}' in units, units
 
-        def _run_invalid_case(extra_params):
-            """Assert _preprocess() fails fast (no run_command call) for invalid data_prefix."""
-            mock_run_command.reset_mock()
-            mock_run_command.side_effect = None
-            benchmark = _build_benchmark(extra_params)
-            assert benchmark._preprocess() is False
-            assert mock_run_command.call_count == 0
-            assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+        def _run_invalid_case(extra_params, expected_downloads):
+            """Assert _preprocess() fails fast with INVALID_ARGUMENT and no run_command call.
 
-        def _run_invalid_workers_case(extra_params):
-            """Assert _preprocess() rejects negative num_workers as invalid input before any downloads."""
+            expected_downloads is the number of download_file calls before validation fails:
+            negative num_workers is rejected before any download (0), while an invalid
+            data_prefix is rejected only after the vocab + merges downloads (2).
+            """
             mock_run_command.reset_mock()
             mock_run_command.side_effect = None
             mock_download_file.reset_mock()
             benchmark = _build_benchmark(extra_params)
             assert benchmark._preprocess() is False
             assert mock_run_command.call_count == 0
-            # num_workers is validated before _generate_dataset() runs, so no downloads happen.
-            assert mock_download_file.call_count == 0
+            assert mock_download_file.call_count == expected_downloads
             assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
 
         # Case 1: num_workers=0 with default data_prefix should produce '--workers 1' (clamped)
@@ -278,15 +272,16 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
 
         # Case 3: data_prefix without the '_text_document' suffix is invalid for generation
         # because preprocess_data.py would produce 'mydata_text_document.bin/.idx' but the
-        # existence check looks for 'mydata.bin/.idx'. _preprocess() must fail fast.
-        _run_invalid_case(extra_params='--num_workers 2 --data_prefix mydata')
+        # existence check looks for 'mydata.bin/.idx'. _preprocess() must fail fast (after the
+        # vocab + merges downloads).
+        _run_invalid_case(extra_params='--num_workers 2 --data_prefix mydata', expected_downloads=2)
 
         # Case 4: data_prefix == '_text_document' has an empty stem after stripping the suffix,
         # which would produce a malformed '--output-prefix <data_home>/'. Must fail fast.
-        _run_invalid_case(extra_params='--num_workers 1 --data_prefix _text_document')
+        _run_invalid_case(extra_params='--num_workers 1 --data_prefix _text_document', expected_downloads=2)
 
-        # Case 5: negative num_workers is invalid input and should fail fast.
-        _run_invalid_workers_case(extra_params='--num_workers -1 --data_prefix negative_text_document')
+        # Case 5: negative num_workers is invalid input and is rejected before any downloads.
+        _run_invalid_case(extra_params='--num_workers -1 --data_prefix negative_text_document', expected_downloads=0)
 
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_gpt_command(self, mock_generate_dataset):
