@@ -247,137 +247,8 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 return False
 
-            # Step 2: Download and load the full model
-
-            # Get GPU rank to create unique file paths and avoid race conditions
-            # when multiple processes export the same model simultaneously
-            gpu_rank = os.getenv('CUDA_VISIBLE_DEVICES', '0')
-            proc_rank = os.getenv('PROC_RANK', gpu_rank)
-
-            # Create model source config - load on CPU to avoid accelerate dispatching
-            # model across multiple GPUs which causes device mismatch during ONNX export.
-            # TensorRT handles precision internally via --fp16/--int8 flags,
-            # so the ONNX model is always exported in float32.
-            model_config = ModelSourceConfig(
-                source='huggingface',
-                identifier=self._args.model_identifier,
-                hf_token=hf_token,
-                torch_dtype='float32',
-                device_map=None,
-            )
-
-            logger.info(f'Loading HuggingFace model: {self._args.model_identifier}')
-
-            # Load model from HuggingFace on CPU
-            loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
-            hf_model, hf_config, _ = loader.load_model_from_config(model_config, device='cpu')
-            self._hf_config = hf_config
-            exporter = torch2onnxExporter()
-
-            model_name = self._args.model_identifier.replace('/', '_')
-
-            # Prepare output path - use proc_rank subdirectory to avoid race conditions
-            # when multiple processes export the same model simultaneously
-            output_dir = str(Path(torch.hub.get_dir()) / 'checkpoints' / f'trt_rank_{proc_rank}')
-            os.makedirs(output_dir, exist_ok=True)
-
-            # Defense-in-depth: confirm resolved output path stays inside the rank directory
-            # even though validate_model_identifier already rejected '..' / '\\' / control chars.
-            proc_root = Path(output_dir).resolve()
-            resolved_out = (Path(output_dir) / f'{model_name}.onnx').resolve()
-            if proc_root not in resolved_out.parents:
-                logger.error(f'Refusing to write ONNX outside rank dir: {resolved_out} not under {proc_root}')
-                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
-                return False
-
-            onnx_path = exporter.export_huggingface_model(
-                model=hf_model,
-                model_name=model_name,
-                batch_size=self._args.batch_size,
-                seq_length=self._args.seq_length,
-                output_dir=output_dir,
-            )
-
-            if not onnx_path:
-                logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
-                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
-                return False
-
-            # Determine input shape based on model type by checking ONNX file.
-            # Pass load_external_data=False because we only need graph input metadata;
-            # the default True would materialize all sidecar tensors and OOM on the
-            # >2GB external-data models that this branch was written for.
-            import onnx as onnx_lib
-            onnx_model = onnx_lib.load(onnx_path, load_external_data=False)
-
-            # Filter out initializers from graph.input to get only runtime inputs
-            initializer_names = {init.name for init in onnx_model.graph.initializer}
-            runtime_inputs = [inp for inp in onnx_model.graph.input if inp.name not in initializer_names]
-
-            # Get the first runtime input to determine shape and name
-            input_name = runtime_inputs[0].name
-
-            # Vision models typically have 4D input (batch, channels, height, width)
-            # NLP models typically have 2D input (batch, sequence)
-            if input_name == 'pixel_values' or len(runtime_inputs[0].type.tensor_type.shape.dim) == 4:
-                # Vision model: derive C/H/W from ONNX graph or HF config
-                dims = runtime_inputs[0].type.tensor_type.shape.dim
-                # dims[0] is batch, dims[1:] are C, H, W
-                c_dim = dims[1].dim_value if dims[1].dim_value > 0 else None
-                h_dim = dims[2].dim_value if dims[2].dim_value > 0 else None
-                w_dim = dims[3].dim_value if dims[3].dim_value > 0 else None
-
-                # Fall back to HF config metadata when ONNX dims are dynamic/unknown
-                if hasattr(self, '_hf_config'):
-                    channels = c_dim or getattr(self._hf_config, 'num_channels', 3)
-                    image_size = getattr(self._hf_config, 'image_size', 224)
-                    if isinstance(image_size, (list, tuple)):
-                        height = h_dim or image_size[0]
-                        width = w_dim or image_size[1]
-                    else:
-                        height = h_dim or image_size
-                        width = w_dim or image_size
-                else:
-                    channels = c_dim or 3
-                    height = h_dim or 224
-                    width = w_dim or 224
-
-                input_shapes = f'{input_name}:{self._args.batch_size}x{channels}x{height}x{width}'
-            else:
-                # NLP model: batch x sequence - need to specify all inputs with same batch and seq length
-                seq_len = getattr(self._args, 'seq_length', 512)
-                shapes_list = []
-                for inp in runtime_inputs:
-                    inp_name = inp.name
-                    num_dims = len(inp.type.tensor_type.shape.dim)
-                    if num_dims == 2:
-                        # Standard 2D input: batch x sequence
-                        shapes_list.append(f'{inp_name}:{self._args.batch_size}x{seq_len}')
-                    elif num_dims == 4:
-                        # 4D input (rare for NLP, but handle it)
-                        shapes_list.append(f'{inp_name}:{self._args.batch_size}x1x{seq_len}x{seq_len}')
-                    else:
-                        # Default to 2D
-                        shapes_list.append(f'{inp_name}:{self._args.batch_size}x{seq_len}')
-                input_shapes = ','.join(shapes_list)
-
-            # Build TensorRT command with correct input name
-            args = [
-                self.__bin_path,
-                f'--onnx={onnx_path}',
-                f'--optShapes={input_shapes}',
-                self.__workspace_flag,
-                None if self._args.precision == 'fp32' else f'--{self._args.precision}',
-                f'--iterations={self._args.iterations}',
-                '--percentile=99',
-            ]
-            self._commands.append(' '.join(filter(None, args)))
-
-            # Store model name for result processing
-            self._args.pytorch_models = [self._args.model_identifier.replace('/', '_')]
-
-            logger.info('Successfully prepared HuggingFace model for TensorRT inference')
-            return True
+            # Step 2: Download, export to ONNX, and build the trtexec command.
+            return self._build_trtexec_command_for_hf(hf_token, allow_remote_code)
 
         except Exception as e:
             logger.error(f'Failed to prepare HuggingFace model: {str(e)}')
@@ -385,6 +256,158 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             logger.error(traceback.format_exc())
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
+
+    def _build_trtexec_command_for_hf(self, hf_token, allow_remote_code):
+        """Download HF model, export to ONNX, derive input shapes, and append the trtexec command.
+
+        Args:
+            hf_token (str | None): HuggingFace token, or None.
+            allow_remote_code (bool): Whether to allow trust_remote_code on load.
+
+        Returns:
+            bool: True on success; False (with return code set) on failure.
+        """
+        # Get GPU rank to create unique file paths and avoid race conditions
+        # when multiple processes export the same model simultaneously
+        gpu_rank = os.getenv('CUDA_VISIBLE_DEVICES', '0')
+        proc_rank = os.getenv('PROC_RANK', gpu_rank)
+
+        # Create model source config - load on CPU to avoid accelerate dispatching
+        # model across multiple GPUs which causes device mismatch during ONNX export.
+        # TensorRT handles precision internally via --fp16/--int8 flags,
+        # so the ONNX model is always exported in float32.
+        model_config = ModelSourceConfig(
+            source='huggingface',
+            identifier=self._args.model_identifier,
+            hf_token=hf_token,
+            torch_dtype='float32',
+            device_map=None,
+        )
+
+        logger.info(f'Loading HuggingFace model: {self._args.model_identifier}')
+
+        # Load model from HuggingFace on CPU
+        loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
+        hf_model, hf_config, _ = loader.load_model_from_config(model_config, device='cpu')
+        self._hf_config = hf_config
+        exporter = torch2onnxExporter()
+
+        model_name = self._args.model_identifier.replace('/', '_')
+
+        # Prepare output path - use proc_rank subdirectory to avoid race conditions
+        # when multiple processes export the same model simultaneously
+        output_dir = str(Path(torch.hub.get_dir()) / 'checkpoints' / f'trt_rank_{proc_rank}')
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Defense-in-depth: confirm resolved output path stays inside the rank directory
+        # even though validate_model_identifier already rejected '..' / '\\' / control chars.
+        proc_root = Path(output_dir).resolve()
+        resolved_out = (Path(output_dir) / f'{model_name}.onnx').resolve()
+        if proc_root not in resolved_out.parents:
+            logger.error(f'Refusing to write ONNX outside rank dir: {resolved_out} not under {proc_root}')
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
+        onnx_path = exporter.export_huggingface_model(
+            model=hf_model,
+            model_name=model_name,
+            batch_size=self._args.batch_size,
+            seq_length=self._args.seq_length,
+            output_dir=output_dir,
+        )
+
+        if not onnx_path:
+            logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
+        input_shapes = self._derive_trt_input_shapes(onnx_path)
+
+        # Build TensorRT command with correct input name
+        args = [
+            self.__bin_path,
+            f'--onnx={onnx_path}',
+            f'--optShapes={input_shapes}',
+            self.__workspace_flag,
+            None if self._args.precision == 'fp32' else f'--{self._args.precision}',
+            f'--iterations={self._args.iterations}',
+            '--percentile=99',
+        ]
+        self._commands.append(' '.join(filter(None, args)))
+
+        # Store model name for result processing
+        self._args.pytorch_models = [self._args.model_identifier.replace('/', '_')]
+
+        logger.info('Successfully prepared HuggingFace model for TensorRT inference')
+        return True
+
+    def _derive_trt_input_shapes(self, onnx_path):
+        """Inspect the exported ONNX graph and produce the trtexec ``--optShapes`` value.
+
+        Args:
+            onnx_path (str): Path to the exported ONNX file.
+
+        Returns:
+            str: Comma-separated ``name:DxDxD...`` string suitable for trtexec ``--optShapes``.
+        """
+        # Pass load_external_data=False because we only need graph input metadata;
+        # the default True would materialize all sidecar tensors and OOM on the
+        # >2GB external-data models that this branch was written for.
+        import onnx as onnx_lib
+        onnx_model = onnx_lib.load(onnx_path, load_external_data=False)
+
+        # Filter out initializers from graph.input to get only runtime inputs
+        initializer_names = {init.name for init in onnx_model.graph.initializer}
+        runtime_inputs = [inp for inp in onnx_model.graph.input if inp.name not in initializer_names]
+
+        # Get the first runtime input to determine shape and name
+        input_name = runtime_inputs[0].name
+
+        # Vision models typically have 4D input (batch, channels, height, width)
+        # NLP models typically have 2D input (batch, sequence)
+        if input_name == 'pixel_values' or len(runtime_inputs[0].type.tensor_type.shape.dim) == 4:
+            return self._derive_vision_input_shape(runtime_inputs[0], input_name)
+        return self._derive_nlp_input_shapes(runtime_inputs)
+
+    def _derive_vision_input_shape(self, runtime_input, input_name):
+        """Build the optShapes string for a vision model with 4D input."""
+        dims = runtime_input.type.tensor_type.shape.dim
+        # dims[0] is batch, dims[1:] are C, H, W
+        c_dim = dims[1].dim_value if dims[1].dim_value > 0 else None
+        h_dim = dims[2].dim_value if dims[2].dim_value > 0 else None
+        w_dim = dims[3].dim_value if dims[3].dim_value > 0 else None
+
+        # Fall back to HF config metadata when ONNX dims are dynamic/unknown
+        if hasattr(self, '_hf_config'):
+            channels = c_dim or getattr(self._hf_config, 'num_channels', 3)
+            image_size = getattr(self._hf_config, 'image_size', 224)
+            if isinstance(image_size, (list, tuple)):
+                height = h_dim or image_size[0]
+                width = w_dim or image_size[1]
+            else:
+                height = h_dim or image_size
+                width = w_dim or image_size
+        else:
+            channels = c_dim or 3
+            height = h_dim or 224
+            width = w_dim or 224
+
+        return f'{input_name}:{self._args.batch_size}x{channels}x{height}x{width}'
+
+    def _derive_nlp_input_shapes(self, runtime_inputs):
+        """Build the optShapes string for an NLP model (2D batch x sequence inputs)."""
+        seq_len = getattr(self._args, 'seq_length', 512)
+        shapes_list = []
+        for inp in runtime_inputs:
+            inp_name = inp.name
+            num_dims = len(inp.type.tensor_type.shape.dim)
+            if num_dims == 4:
+                # 4D input (rare for NLP, but handle it)
+                shapes_list.append(f'{inp_name}:{self._args.batch_size}x1x{seq_len}x{seq_len}')
+            else:
+                # Default to 2D batch x sequence
+                shapes_list.append(f'{inp_name}:{self._args.batch_size}x{seq_len}')
+        return ','.join(shapes_list)
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.

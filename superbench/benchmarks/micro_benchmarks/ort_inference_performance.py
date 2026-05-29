@@ -239,80 +239,8 @@ class ORTInferenceBenchmark(MicroBenchmark):
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 return False
 
-            # Step 2: Proceed with model download and ONNX export
-
-            # Get GPU rank to create unique file paths and avoid race conditions
-            # when multiple processes export the same model simultaneously
-            gpu_rank = os.getenv('CUDA_VISIBLE_DEVICES', '0')
-            proc_rank = os.getenv('PROC_RANK', gpu_rank)
-
-            # Create model source config - load on CPU to avoid accelerate dispatching
-            # model across multiple GPUs which causes device mismatch during ONNX export
-            model_config = ModelSourceConfig(
-                source='huggingface',
-                identifier=self._args.model_identifier,
-                hf_token=hf_token,
-                torch_dtype=self._args.precision.value if self._args.precision != Precision.INT8 else 'float32',
-                device_map=None,
-            )
-
-            # Load model from HuggingFace on CPU
-            loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
-            hf_model, _, _ = loader.load_model_from_config(model_config, device='cpu')
-            from superbench.benchmarks.micro_benchmarks._export_torch_to_onnx import torch2onnxExporter
-            exporter = torch2onnxExporter()
-
-            model_name = self._args.model_identifier.replace('/', '_')
-
-            # Prepare output path - use proc_rank subdirectory to avoid race conditions
-            # when multiple processes export the same model simultaneously
-            proc_output_path = self.__model_cache_path / f'rank_{proc_rank}'
-            proc_output_path.mkdir(parents=True, exist_ok=True)
-
-            # For INT8, export as float32 first then quantize (matching in-house model behavior).
-            # For other precisions, include precision in the model name directly.
-            if self._args.precision == Precision.INT8:
-                export_precision = Precision.FLOAT32.value
-            else:
-                export_precision = self._args.precision.value
-            model_name_with_precision = f'{model_name}.{export_precision}'
-
-            # Defense-in-depth: confirm the resolved output path stays inside the rank
-            # directory even though validate_model_identifier already rejected '..' / '\\'.
-            proc_root = proc_output_path.resolve()
-            resolved_out = (proc_output_path / f'{model_name_with_precision}.onnx').resolve()
-            if proc_root not in resolved_out.parents:
-                logger.error(f'Refusing to write ONNX outside rank dir: {resolved_out} not under {proc_root}')
-                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
-                return False
-
-            # Export directly to final destination to avoid path issues with external data
-            onnx_path = exporter.export_huggingface_model(
-                model=hf_model,
-                model_name=model_name_with_precision,
-                batch_size=self._args.batch_size,
-                seq_length=self._args.seq_length,
-                output_dir=str(proc_output_path),
-            )
-
-            if not onnx_path:
-                logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
-                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
-                return False
-
-            # Apply INT8 quantization if requested (matching in-house model behavior)
-            if self._args.precision == Precision.INT8:
-                from onnxruntime.quantization import quantize_dynamic
-                quantized_path = str(proc_output_path / f'{model_name}.{Precision.INT8.value}.onnx')
-                quantize_dynamic(onnx_path, quantized_path)
-                logger.info('Applied INT8 quantization to HuggingFace model')
-
-            # Update model list and cache path for benchmarking
-            self._args.pytorch_models = [model_name]
-            self.__model_cache_path = proc_output_path
-
-            logger.info('Successfully prepared HuggingFace model for ORT inference')
-            return True
+            # Step 2: Export the model to ONNX (and quantize for INT8) on a per-rank path.
+            return self._export_hf_model_to_onnx(hf_token, allow_remote_code)
 
         except Exception as e:
             logger.error(f'Failed to prepare HuggingFace model: {str(e)}')
@@ -320,6 +248,91 @@ class ORTInferenceBenchmark(MicroBenchmark):
             logger.error(traceback.format_exc())
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
+
+    def _export_hf_model_to_onnx(self, hf_token, allow_remote_code):
+        """Download the HF model, export to ONNX, and apply INT8 quantization if requested.
+
+        Args:
+            hf_token (str | None): HuggingFace token, or None.
+            allow_remote_code (bool): Whether to allow trust_remote_code on load.
+
+        Returns:
+            bool: True on success; False (with return code set) on failure.
+        """
+        import os
+
+        # Get GPU rank to create unique file paths and avoid race conditions
+        # when multiple processes export the same model simultaneously
+        gpu_rank = os.getenv('CUDA_VISIBLE_DEVICES', '0')
+        proc_rank = os.getenv('PROC_RANK', gpu_rank)
+
+        # Create model source config - load on CPU to avoid accelerate dispatching
+        # model across multiple GPUs which causes device mismatch during ONNX export
+        torch_dtype = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
+        model_config = ModelSourceConfig(
+            source='huggingface',
+            identifier=self._args.model_identifier,
+            hf_token=hf_token,
+            torch_dtype=torch_dtype,
+            device_map=None,
+        )
+
+        # Load model from HuggingFace on CPU
+        loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
+        hf_model, _, _ = loader.load_model_from_config(model_config, device='cpu')
+        from superbench.benchmarks.micro_benchmarks._export_torch_to_onnx import torch2onnxExporter
+        exporter = torch2onnxExporter()
+
+        model_name = self._args.model_identifier.replace('/', '_')
+
+        # Prepare output path - use proc_rank subdirectory to avoid race conditions
+        # when multiple processes export the same model simultaneously
+        proc_output_path = self.__model_cache_path / f'rank_{proc_rank}'
+        proc_output_path.mkdir(parents=True, exist_ok=True)
+
+        # For INT8, export as float32 first then quantize (matching in-house model behavior).
+        # For other precisions, include precision in the model name directly.
+        export_precision = (
+            Precision.FLOAT32.value if self._args.precision == Precision.INT8 else self._args.precision.value
+        )
+        model_name_with_precision = f'{model_name}.{export_precision}'
+
+        # Defense-in-depth: confirm the resolved output path stays inside the rank
+        # directory even though validate_model_identifier already rejected '..' / '\\'.
+        proc_root = proc_output_path.resolve()
+        resolved_out = (proc_output_path / f'{model_name_with_precision}.onnx').resolve()
+        if proc_root not in resolved_out.parents:
+            logger.error(f'Refusing to write ONNX outside rank dir: {resolved_out} not under {proc_root}')
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
+        # Export directly to final destination to avoid path issues with external data
+        onnx_path = exporter.export_huggingface_model(
+            model=hf_model,
+            model_name=model_name_with_precision,
+            batch_size=self._args.batch_size,
+            seq_length=self._args.seq_length,
+            output_dir=str(proc_output_path),
+        )
+
+        if not onnx_path:
+            logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
+        # Apply INT8 quantization if requested (matching in-house model behavior)
+        if self._args.precision == Precision.INT8:
+            from onnxruntime.quantization import quantize_dynamic
+            quantized_path = str(proc_output_path / f'{model_name}.{Precision.INT8.value}.onnx')
+            quantize_dynamic(onnx_path, quantized_path)
+            logger.info('Applied INT8 quantization to HuggingFace model')
+
+        # Update model list and cache path for benchmarking
+        self._args.pytorch_models = [model_name]
+        self.__model_cache_path = proc_output_path
+
+        logger.info('Successfully prepared HuggingFace model for ORT inference')
+        return True
 
     def _benchmark(self):
         """Implementation for benchmarking."""
