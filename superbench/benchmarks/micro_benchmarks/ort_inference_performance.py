@@ -12,10 +12,13 @@ import torchvision.models
 import numpy as np
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Platform, Precision
+from superbench.benchmarks import BenchmarkRegistry, Platform, Precision, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
-from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import HuggingFaceModelLoader
+from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
+    HuggingFaceModelLoader,
+    validate_model_identifier,
+)
 
 
 class ORTInferenceBenchmark(MicroBenchmark):
@@ -42,6 +45,9 @@ class ORTInferenceBenchmark(MicroBenchmark):
         ]
         self.__graph_opt_level = None
         self.__model_cache_path = Path(torch.hub.get_dir()) / 'checkpoints'
+        # Stashed HF config (populated in _preprocess_huggingface_models) so that
+        # __inference() can derive vocab_size / dynamic input shapes from it.
+        self._hf_config = None
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -124,6 +130,24 @@ class ORTInferenceBenchmark(MicroBenchmark):
             help='Sequence length for transformer models.',
         )
 
+        self._parser.add_argument(
+            '--require_cuda',
+            action='store_true',
+            default=False,
+            required=False,
+            help='Fail if CUDAExecutionProvider is not available. '
+            'Default: warn and fall back to other registered ORT providers (CPU/ROCm/etc.).',
+        )
+
+        self._parser.add_argument(
+            '--allow_remote_code',
+            action='store_true',
+            default=False,
+            required=False,
+            help='Allow HuggingFace to execute model-repo Python (trust_remote_code=True). '
+            'SECURITY: enables RCE from --model_identifier. Pin --revision <sha> when used.',
+        )
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -179,7 +203,18 @@ class ORTInferenceBenchmark(MicroBenchmark):
 
         if not self._args.model_identifier:
             logger.error('--model_identifier is required when using --model_source huggingface')
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
+
+        # Reject malformed / path-like identifiers up front, before any network or disk activity.
+        try:
+            validate_model_identifier(self._args.model_identifier)
+        except ValueError as e:
+            logger.error(str(e))
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
+        allow_remote_code = bool(getattr(self._args, 'allow_remote_code', False))
 
         try:
             logger.info(f'Loading HuggingFace model: {self._args.model_identifier}')
@@ -190,13 +225,18 @@ class ORTInferenceBenchmark(MicroBenchmark):
             load_kwargs = {}
             if hf_token:
                 load_kwargs['token'] = hf_token
-            hf_config = AutoConfig.from_pretrained(self._args.model_identifier, trust_remote_code=True, **load_kwargs)
+            hf_config = AutoConfig.from_pretrained(
+                self._args.model_identifier, trust_remote_code=allow_remote_code, **load_kwargs
+            )
+            # Stash for __inference() to read vocab_size / other model metadata later.
+            self._hf_config = hf_config
 
             precision_str = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
             fits, param_m, est_gb, avail_gb = HuggingFaceModelLoader.check_memory_fits(
                 self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token
             )
             if not fits:
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 return False
 
             # Step 2: Proceed with model download and ONNX export
@@ -217,7 +257,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             )
 
             # Load model from HuggingFace on CPU
-            loader = HuggingFaceModelLoader()
+            loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
             hf_model, _, _ = loader.load_model_from_config(model_config, device='cpu')
             from superbench.benchmarks.micro_benchmarks._export_torch_to_onnx import torch2onnxExporter
             exporter = torch2onnxExporter()
@@ -237,6 +277,15 @@ class ORTInferenceBenchmark(MicroBenchmark):
                 export_precision = self._args.precision.value
             model_name_with_precision = f'{model_name}.{export_precision}'
 
+            # Defense-in-depth: confirm the resolved output path stays inside the rank
+            # directory even though validate_model_identifier already rejected '..' / '\\'.
+            proc_root = proc_output_path.resolve()
+            resolved_out = (proc_output_path / f'{model_name_with_precision}.onnx').resolve()
+            if proc_root not in resolved_out.parents:
+                logger.error(f'Refusing to write ONNX outside rank dir: {resolved_out} not under {proc_root}')
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+                return False
+
             # Export directly to final destination to avoid path issues with external data
             onnx_path = exporter.export_huggingface_model(
                 model=hf_model,
@@ -248,6 +297,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
 
             if not onnx_path:
                 logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 return False
 
             # Apply INT8 quantization if requested (matching in-house model behavior)
@@ -268,6 +318,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             logger.error(f'Failed to prepare HuggingFace model: {str(e)}')
             import traceback
             logger.error(traceback.format_exc())
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
 
     def _benchmark(self):
@@ -275,18 +326,24 @@ class ORTInferenceBenchmark(MicroBenchmark):
         import onnxruntime as ort
         precision_metric = {'float16': 'fp16', 'float32': 'fp32', 'int8': 'int8'}
 
-        # Require CUDAExecutionProvider — this benchmark targets GPU inference
         available = ort.get_available_providers()
-        if 'CUDAExecutionProvider' not in available:
-            logger.error(f'CUDAExecutionProvider is not available (available: {available}).')
-            return False
+        cuda_available = 'CUDAExecutionProvider' in available
+        if not cuda_available:
+            msg = f'CUDAExecutionProvider is not available (available providers: {available}).'
+            if getattr(self._args, 'require_cuda', False):
+                logger.error(msg + ' --require_cuda was set, aborting.')
+                return False
+            logger.warning(
+                msg + ' Falling back to registered providers; pass --require_cuda to fail instead.'
+            )
+        providers = ['CUDAExecutionProvider'] if cuda_available else available
 
         for model in self._args.pytorch_models:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = self.__graph_opt_level[self._args.graph_opt_level]
             file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision)
             ort_sess = ort.InferenceSession(
-                f'{self.__model_cache_path / file_name}', sess_options, providers=['CUDAExecutionProvider']
+                f'{self.__model_cache_path / file_name}', sess_options, providers=providers
             )
 
             elapse_times = self.__inference(ort_sess)
@@ -318,18 +375,30 @@ class ORTInferenceBenchmark(MicroBenchmark):
         """
         precision = np.float16 if self._args.precision == Precision.FLOAT16 else np.float32
 
-        # Get input names from the ONNX session to determine input format
-        input_names = [input.name for input in ort_sess.get_inputs()]
+        # Get input metadata from the ONNX session to determine input format and shapes
+        ort_inputs = ort_sess.get_inputs()
+        input_names = [inp.name for inp in ort_inputs]
 
         # Determine input format based on what the model expects
         if 'pixel_values' in input_names:
-            # Vision model: use pixel_values (batch_size, 3, 224, 224)
-            pixel_values = np.random.randn(self._args.batch_size, 3, 224, 224).astype(dtype=precision)
+            # Vision model: derive (C, H, W) from the exported ONNX graph so that models
+            # with non-default shapes (e.g. 384x384 ViT, 1-channel medical models) work.
+            # Fall back to (3, 224, 224) only for dynamic / unknown axes.
+            meta = next(inp for inp in ort_inputs if inp.name == 'pixel_values')
+            dims = [d if isinstance(d, int) else None for d in (meta.shape or [])]
+            # Expected layout is (N, C, H, W); pad to length 4 if shorter.
+            dims = (dims + [None] * 4)[:4]
+            _, c, h, w = dims
+            c, h, w = c or 3, h or 224, w or 224
+            pixel_values = np.random.randn(self._args.batch_size, c, h, w).astype(dtype=precision)
             inputs = {'pixel_values': pixel_values}
         elif 'input_ids' in input_names:
-            # NLP model: use input_ids and attention_mask
+            # NLP model: use input_ids and attention_mask. Cap token IDs at the model's
+            # actual vocab_size to avoid out-of-range embedding lookups (undefined behavior
+            # on CUDA — silent NaNs / device-side asserts).
             seq_len = getattr(self._args, 'seq_length', 512)
-            input_ids = np.random.randint(0, 30000, (self._args.batch_size, seq_len)).astype(np.int64)
+            vocab_size = getattr(self._hf_config, 'vocab_size', None) or 30000
+            input_ids = np.random.randint(0, vocab_size, (self._args.batch_size, seq_len)).astype(np.int64)
             attention_mask = np.ones((self._args.batch_size, seq_len), dtype=np.int64)
             inputs = {'input_ids': input_ids, 'attention_mask': attention_mask}
         else:

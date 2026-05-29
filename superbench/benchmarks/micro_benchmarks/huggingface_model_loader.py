@@ -4,6 +4,7 @@
 """Hugging Face model loader for benchmarking."""
 
 import os
+import re
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -19,6 +20,39 @@ from transformers import (
 
 from superbench.common.utils import logger
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
+
+# Strict allow-list for HuggingFace model identifiers. Accepts either a bare
+# repo name ('bert-base-uncased') or 'namespace/name' form, restricted to the
+# character set HF itself uses and bounded in length. Rejects '..', backslash,
+# colon, control chars, absolute paths, and anything that could be interpreted
+# as a local filesystem path by AutoConfig.from_pretrained (which silently
+# loads from disk when given a path that exists).
+_SAFE_MODEL_ID_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}(/[A-Za-z0-9._-]{1,128})?$')
+
+
+def validate_model_identifier(model_identifier: Optional[str]) -> str:
+    """Validate a HuggingFace model identifier against a strict allow-list.
+
+    Args:
+        model_identifier: The identifier to validate (typically from CLI input).
+
+    Returns:
+        The validated identifier (unchanged) for convenient inline use.
+
+    Raises:
+        ValueError: If the identifier is missing or does not match the
+            permitted ``[namespace/]name`` shape. The check intentionally
+            rejects path-traversal sequences and characters that could let
+            ``from_pretrained`` load attacker-staged files from disk.
+    """
+    if not model_identifier or not _SAFE_MODEL_ID_RE.match(model_identifier):
+        raise ValueError(
+            f'Invalid model_identifier {model_identifier!r}. '
+            'Must be a HuggingFace repo id matching '
+            "'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}(/[A-Za-z0-9._-]{1,128})?$' "
+            '(e.g. "bert-base-uncased" or "meta-llama/Llama-2-7b-hf").'
+        )
+    return model_identifier
 
 
 class ModelLoadError(Exception):
@@ -46,16 +80,29 @@ class HuggingFaceModelLoader:
     Attributes:
         cache_dir: Directory to cache downloaded models.
         token: HuggingFace authentication token for private/gated models.
+        allow_remote_code: Whether to allow HuggingFace to download and execute
+            repository-provided Python (``trust_remote_code=True``). Default
+            ``False``; enabling this turns ``--model_identifier`` into an RCE
+            sink, so it is opt-in only.
     """
-    def __init__(self, cache_dir: Optional[str] = None, token: Optional[str] = None):
+    def __init__(
+        self,
+        cache_dir: Optional[str] = None,
+        token: Optional[str] = None,
+        allow_remote_code: bool = False,
+    ):
         """Initialize the HuggingFace model loader.
 
         Args:
             cache_dir: Directory to cache downloaded models. If None, uses HF default.
             token: HuggingFace authentication token for private/gated models.
+            allow_remote_code: If True, allow execution of model-repo Python via
+                ``trust_remote_code=True``. Default False. Only enable for
+                trusted ``--model_identifier`` values; pin ``--revision <sha>``.
         """
         self.cache_dir = cache_dir or os.getenv('HF_HOME') or os.path.expanduser('~/.cache/huggingface')
         self.token = token or os.getenv('HF_TOKEN') or os.getenv('HUGGING_FACE_HUB_TOKEN')
+        self.allow_remote_code = bool(allow_remote_code)
 
         # Ensure cache directory exists
         Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
@@ -63,6 +110,11 @@ class HuggingFaceModelLoader:
         logger.info(f'HuggingFaceModelLoader initialized with cache_dir: {self.cache_dir}')
         if self.token:
             logger.info('Authentication token provided for private/gated models (token not logged)')
+        if self.allow_remote_code:
+            logger.warning(
+                'allow_remote_code=True: HuggingFace may download and execute arbitrary Python '
+                'from model repositories. Only enable for trusted model identifiers; pin --revision.'
+            )
 
     def load_model(
         self,
@@ -94,6 +146,9 @@ class HuggingFaceModelLoader:
         """
         logger.info(f'Loading model: {model_identifier}')
 
+        # Reject malformed / path-like identifiers before any network or disk activity.
+        validate_model_identifier(model_identifier)
+
         try:
             # Convert torch_dtype string to torch dtype
             dtype = self._get_torch_dtype(torch_dtype) if torch_dtype else None
@@ -112,7 +167,9 @@ class HuggingFaceModelLoader:
             # Load config (use pre-downloaded config if provided)
             if config is None:
                 logger.info('Loading model configuration...')
-                config = AutoConfig.from_pretrained(model_identifier, trust_remote_code=True, **load_kwargs)
+                config = AutoConfig.from_pretrained(
+                    model_identifier, trust_remote_code=self.allow_remote_code, **load_kwargs
+                )
             else:
                 logger.info('Using pre-downloaded model configuration.')
 
@@ -120,14 +177,16 @@ class HuggingFaceModelLoader:
             tokenizer = None
             try:
                 logger.info('Loading tokenizer...')
-                tokenizer = AutoTokenizer.from_pretrained(model_identifier, trust_remote_code=True, **load_kwargs)
+                tokenizer = AutoTokenizer.from_pretrained(
+                    model_identifier, trust_remote_code=self.allow_remote_code, **load_kwargs
+                )
             except Exception as e:
                 logger.warning(f'Could not load tokenizer: {e}. Continuing without tokenizer.')
 
             # Load model
             logger.info(f'Loading model weights (dtype={torch_dtype}, device={device})...')
             model_kwargs = load_kwargs.copy()
-            model_kwargs['trust_remote_code'] = True
+            model_kwargs['trust_remote_code'] = self.allow_remote_code
 
             # Handle device mapping for large models
             effective_device_map = device_map
@@ -202,16 +261,31 @@ class HuggingFaceModelLoader:
         if device is None:
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        # Extract loading parameters
-        return self.load_model(
-            model_identifier=config.identifier,
-            torch_dtype=config.torch_dtype,
-            device=device,
-            revision=config.revision,
-            device_map=config.device_map,
-            config=config_pretrained,
-            **config.additional_kwargs
-        )
+        # Honor explicit per-call hf_token / cache_dir from the config without permanently
+        # mutating the loader instance. This makes ModelSourceConfig the single source of
+        # truth for callers that don't rely on HF_TOKEN / HF_HOME env vars.
+        original_token = self.token
+        original_cache_dir = self.cache_dir
+        try:
+            if config.hf_token:
+                self.token = config.hf_token
+            if config.cache_dir:
+                self.cache_dir = config.cache_dir
+                Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
+
+            # Extract loading parameters
+            return self.load_model(
+                model_identifier=config.identifier,
+                torch_dtype=config.torch_dtype,
+                device=device,
+                revision=config.revision,
+                device_map=config.device_map,
+                config=config_pretrained,
+                **config.additional_kwargs
+            )
+        finally:
+            self.token = original_token
+            self.cache_dir = original_cache_dir
 
     def _get_torch_dtype(self, dtype_str: str) -> torch.dtype:
         """Convert dtype string to torch.dtype.
@@ -242,7 +316,7 @@ class HuggingFaceModelLoader:
         }
 
         if normalized_dtype not in dtype_map:
-            raise ValueError(f"Invalid dtype '{dtype_str}'.Must be one of {list(dtype_map.keys())}")
+            raise ValueError(f"Invalid dtype '{dtype_str}'. Must be one of {list(dtype_map.keys())}")
 
         return dtype_map[normalized_dtype]
 

@@ -71,16 +71,18 @@ class TestHuggingFaceModelLoader:
         assert config == mock_cfg
         assert tokenizer == mock_tok
 
-        # Verify mocks were called with correct arguments
+        # Verify mocks were called with correct arguments. trust_remote_code must
+        # default to False (matches loader.allow_remote_code=False) so that arbitrary
+        # repo Python is not executed unless the caller explicitly opts in.
         mock_config.from_pretrained.assert_called_once()
         call_kwargs = mock_config.from_pretrained.call_args
         assert call_kwargs[0][0] == 'test/model'
-        assert call_kwargs[1]['trust_remote_code'] is True
+        assert call_kwargs[1]['trust_remote_code'] is False
         assert call_kwargs[1]['cache_dir'] == loader.cache_dir
 
         mock_model.from_pretrained.assert_called_once()
         model_call_kwargs = mock_model.from_pretrained.call_args
-        assert model_call_kwargs[1]['trust_remote_code'] is True
+        assert model_call_kwargs[1]['trust_remote_code'] is False
         assert model_call_kwargs[1]['cache_dir'] == loader.cache_dir
 
         mock_tokenizer.from_pretrained.assert_called_once()

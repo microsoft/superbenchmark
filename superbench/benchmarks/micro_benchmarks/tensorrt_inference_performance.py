@@ -5,6 +5,7 @@
 
 import os
 import re
+import subprocess
 from pathlib import Path
 
 import torch
@@ -14,7 +15,10 @@ from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 from superbench.benchmarks.micro_benchmarks._export_torch_to_onnx import torch2onnxExporter
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
-from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import HuggingFaceModelLoader
+from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
+    HuggingFaceModelLoader,
+    validate_model_identifier,
+)
 
 
 class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
@@ -94,6 +98,47 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             help='Model identifier for HuggingFace models (e.g., bert-base-uncased).',
         )
 
+        self._parser.add_argument(
+            '--allow_remote_code',
+            action='store_true',
+            default=False,
+            required=False,
+            help='Allow HuggingFace to execute model-repo Python (trust_remote_code=True). '
+            'SECURITY: enables RCE from --model_identifier. Pin --revision <sha> when used.',
+        )
+
+    @staticmethod
+    def __detect_workspace_flag(bin_path: str) -> str:
+        """Return the trtexec workspace flag supported by the installed binary.
+
+        Args:
+            bin_path: Absolute path to the trtexec binary.
+
+        Returns:
+            ``'--memPoolSize=workspace:8192M'`` on TensorRT >= 8.4,
+            ``'--workspace=8192'`` on older runtimes or when probing fails.
+        """
+        modern = '--memPoolSize=workspace:8192M'
+        legacy = '--workspace=8192'
+        try:
+            proc = subprocess.run(
+                [bin_path, '--help'], capture_output=True, text=True, timeout=10, check=False
+            )
+            help_text = (proc.stdout or '') + (proc.stderr or '')
+            if '--memPoolSize' in help_text:
+                return modern
+            logger.warning(
+                'trtexec at %s does not advertise --memPoolSize; falling back to --workspace=8192 '
+                '(TensorRT < 8.4 detected).', bin_path
+            )
+            return legacy
+        except (OSError, subprocess.SubprocessError) as e:
+            logger.warning(
+                'Could not probe trtexec at %s for --memPoolSize support (%s); using --workspace=8192.',
+                bin_path, e,
+            )
+            return legacy
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -104,6 +149,11 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             return False
 
         self.__bin_path = str(Path(self._args.bin_dir) / self._bin_name)
+        # Pick the right workspace flag for the installed trtexec. --memPoolSize was
+        # introduced in TensorRT 8.4; older runtimes (TRT 8.0-8.3, still found in
+        # some CUDA 11.x base images) only accept the deprecated-but-still-supported
+        # --workspace=. Probe once here and reuse for every model.
+        self.__workspace_flag = self.__detect_workspace_flag(self.__bin_path)
 
         # Handle HuggingFace models if specified
         if self._args.model_source == 'huggingface':
@@ -131,7 +181,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 f'--onnx={onnx_model}',
                 # build options
                 f'--optShapes=input:{input_shape}',
-                '--memPoolSize=workspace:8192M',
+                self.__workspace_flag,
                 None if self._args.precision == 'fp32' else f'--{self._args.precision}',
                 # inference options
                 f'--iterations={self._args.iterations}',
@@ -148,11 +198,34 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         Returns:
             bool: True if preprocessing succeeds.
         """
-        import os
         from transformers import AutoConfig
 
         if not self._args.model_identifier:
             logger.error('--model_identifier is required when using --model_source huggingface')
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
+        # Reject malformed / path-like identifiers up front, before any network or disk activity.
+        try:
+            validate_model_identifier(self._args.model_identifier)
+        except ValueError as e:
+            logger.error(str(e))
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
+        allow_remote_code = bool(getattr(self._args, 'allow_remote_code', False))
+
+        # Reject INT8 on the HuggingFace path: the current pipeline emits `--int8` to
+        # trtexec without `--calib=<file>` and without a Q/DQ-embedded ONNX, so trtexec
+        # would fall back to fake dynamic ranges and report misleading latencies.
+        if str(getattr(self._args, 'precision', '')).lower() == 'int8':
+            logger.error(
+                'TensorRT --precision int8 on HuggingFace models is not supported: '
+                'no calibration data / Q-DQ ONNX is generated, so reported latencies '
+                'would not represent a correctly-calibrated INT8 engine. '
+                'Use --precision fp16 or fp32, or run ORT INT8 quantization first.'
+            )
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
 
         try:
@@ -163,12 +236,15 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             if hf_token:
                 load_kwargs['token'] = hf_token
 
-            hf_config = AutoConfig.from_pretrained(self._args.model_identifier, trust_remote_code=True, **load_kwargs)
+            hf_config = AutoConfig.from_pretrained(
+                self._args.model_identifier, trust_remote_code=allow_remote_code, **load_kwargs
+            )
             precision_str = self._args.precision    # already a string: 'fp16', 'fp32', 'int8'
             fits, param_m, est_gb, avail_gb = HuggingFaceModelLoader.check_memory_fits(
                 self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token
             )
             if not fits:
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 return False
 
             # Step 2: Download and load the full model
@@ -193,7 +269,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             logger.info(f'Loading HuggingFace model: {self._args.model_identifier}')
 
             # Load model from HuggingFace on CPU
-            loader = HuggingFaceModelLoader()
+            loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
             hf_model, hf_config, _ = loader.load_model_from_config(model_config, device='cpu')
             self._hf_config = hf_config
             exporter = torch2onnxExporter()
@@ -205,6 +281,15 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             output_dir = str(Path(torch.hub.get_dir()) / 'checkpoints' / f'trt_rank_{proc_rank}')
             os.makedirs(output_dir, exist_ok=True)
 
+            # Defense-in-depth: confirm resolved output path stays inside the rank directory
+            # even though validate_model_identifier already rejected '..' / '\\' / control chars.
+            proc_root = Path(output_dir).resolve()
+            resolved_out = (Path(output_dir) / f'{model_name}.onnx').resolve()
+            if proc_root not in resolved_out.parents:
+                logger.error(f'Refusing to write ONNX outside rank dir: {resolved_out} not under {proc_root}')
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+                return False
+
             onnx_path = exporter.export_huggingface_model(
                 model=hf_model,
                 model_name=model_name,
@@ -215,11 +300,15 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
 
             if not onnx_path:
                 logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 return False
 
-            # Determine input shape based on model type by checking ONNX file
+            # Determine input shape based on model type by checking ONNX file.
+            # Pass load_external_data=False because we only need graph input metadata;
+            # the default True would materialize all sidecar tensors and OOM on the
+            # >2GB external-data models that this branch was written for.
             import onnx as onnx_lib
-            onnx_model = onnx_lib.load(onnx_path)
+            onnx_model = onnx_lib.load(onnx_path, load_external_data=False)
 
             # Filter out initializers from graph.input to get only runtime inputs
             initializer_names = {init.name for init in onnx_model.graph.initializer}
@@ -277,7 +366,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 self.__bin_path,
                 f'--onnx={onnx_path}',
                 f'--optShapes={input_shapes}',
-                '--memPoolSize=workspace:8192M',
+                self.__workspace_flag,
                 None if self._args.precision == 'fp32' else f'--{self._args.precision}',
                 f'--iterations={self._args.iterations}',
                 '--percentile=99',
@@ -294,6 +383,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             logger.error(f'Failed to prepare HuggingFace model: {str(e)}')
             import traceback
             logger.error(traceback.format_exc())
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
 
     def _process_raw_result(self, cmd_idx, raw_output):

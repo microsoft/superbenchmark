@@ -47,8 +47,10 @@ class ModelSourceConfig:
         if self.source not in ['in-house', 'huggingface']:
             raise ValueError(f"Invalid model source '{self.source}'. Must be 'in-house' or 'huggingface'.")
 
-        # Validate torch_dtype
-        valid_dtypes = ['float32', 'float16', 'bfloat16', 'int8']
+        # Validate torch_dtype. NOTE: 'int8' is intentionally excluded here — it is handled
+        # post-export via quantize_dynamic (see ort_inference_performance.py) rather than via
+        # the HF torch_dtype loading path, which does not accept torch.int8.
+        valid_dtypes = ['float32', 'float16', 'bfloat16']
         if self.torch_dtype not in valid_dtypes:
             raise ValueError(f"Invalid torch_dtype '{self.torch_dtype}'. Must be one of {valid_dtypes}.")
 

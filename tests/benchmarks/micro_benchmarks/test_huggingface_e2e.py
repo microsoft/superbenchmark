@@ -20,13 +20,16 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import Hugg
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
 
 
-@pytest.mark.skipif(os.environ.get('SB_TEST_HF_E2E', '0') != '1', reason='Skip HF E2E tests. Set SB_TEST_HF_E2E=1 to enable.')
+@pytest.mark.skipif(
+    os.environ.get('SB_TEST_HF_E2E', '0') != '1',
+    reason='Skip HF E2E tests. Set SB_TEST_HF_E2E=1 to enable.',
+)
 class TestHuggingFaceE2E:
     """End-to-end tests for HuggingFace model loading."""
     @pytest.fixture
-    def loader(self):
-        """Create a loader instance."""
-        return HuggingFaceModelLoader(cache_dir='/tmp/hf_test_cache')
+    def loader(self, tmp_path):
+        """Create a loader instance with an isolated per-test cache dir."""
+        return HuggingFaceModelLoader(cache_dir=str(tmp_path / 'hf_cache'))
 
     def test_load_tiny_bert_model(self, loader):
         """Test loading a tiny BERT model from HuggingFace Hub.
