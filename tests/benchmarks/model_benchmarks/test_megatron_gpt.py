@@ -174,6 +174,115 @@ class MegatronGPTTest(BenchmarkTestCase, unittest.TestCase):
         ret = benchmark._generate_dataset()
         assert (ret is True)
 
+    @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.run_command')
+    @mock.patch('superbench.benchmarks.model_benchmarks.megatron_gpt3.download_file')
+    def test_megatron_gpt_dataset_generate_command(self, mock_download_file, mock_run_command):
+        """Verify _generate_dataset clamps --workers to >=1 and derives --output-prefix from data_prefix."""
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        assert (benchmark_cls)
+        os.environ['OMPI_COMM_WORLD_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'] = '1'
+        os.environ['OMPI_COMM_WORLD_RANK'] = '0'
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12345'
+
+        # Use a real, valid code_base so _preprocess() can validate it (avoid hardcoded /root path).
+        # Clean up after this test so the alphabetically-later test_megatron_gpt_preprocess
+        # (which expects pretrain_gpt.py to NOT exist initially) is not affected by leaked state.
+        self.createMockFiles(['pretrain_gpt.py'])
+        pretrain_path = Path(self._tmp_dir) / 'pretrain_gpt.py'
+
+        # Helper: make run_command's side_effect create the expected .bin/.idx files
+        # so _generate_dataset() (invoked from within _preprocess()) succeeds.
+        created_files = []
+
+        def _make_dataset_files(prefix):
+            def _side_effect(*_args, **_kwargs):
+                for ext in ('.bin', '.idx'):
+                    p = Path(self._tmp_dir) / f'{prefix}{ext}'
+                    p.touch()
+                    created_files.append(p)
+
+            return _side_effect
+
+        def _cleanup_created_files():
+            for p in created_files + [pretrain_path]:
+                if p.is_file():
+                    p.unlink()
+
+        self.addCleanup(_cleanup_created_files)
+
+        def _build_benchmark(extra_params):
+            return benchmark_cls(
+                self.benchmark_name,
+                parameters=(
+                    f'--code_base {self._tmp_dir} --data_home {self._tmp_dir} '
+                    f'--batch_size 2048 --dataset_url http://example.com/data.json '
+                    f'{extra_params}'
+                ),
+            )
+
+        def _run_case(extra_params, expected_workers, expected_prefix_basename, expected_data_prefix):
+            mock_run_command.reset_mock()
+            mock_run_command.side_effect = _make_dataset_files(expected_data_prefix)
+            benchmark = _build_benchmark(extra_params)
+            assert benchmark._preprocess() is True
+            assert mock_run_command.call_count >= 1
+            # Use tuple indexing instead of `.args` for Python 3.7 compatibility
+            # (mock.call.args was added in Python 3.8).
+            cmd = mock_run_command.call_args_list[0][0][0]
+            units = normalize_command(cmd)
+            assert f'--workers {expected_workers}' in units, units
+            expected_output_prefix = os.path.join(self._tmp_dir, expected_prefix_basename)
+            assert f'--output-prefix {expected_output_prefix}' in units, units
+
+        def _run_invalid_case(extra_params, expected_downloads):
+            """Assert _preprocess() fails fast with INVALID_ARGUMENT and no run_command call.
+
+            expected_downloads is the number of download_file calls before validation fails:
+            negative num_workers is rejected before any download (0), while an invalid
+            data_prefix is rejected only after the vocab + merges downloads (2).
+            """
+            mock_run_command.reset_mock()
+            mock_run_command.side_effect = None
+            mock_download_file.reset_mock()
+            benchmark = _build_benchmark(extra_params)
+            assert benchmark._preprocess() is False
+            assert mock_run_command.call_count == 0
+            assert mock_download_file.call_count == expected_downloads
+            assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
+        # Case 1: num_workers=0 with default data_prefix should produce '--workers 1' (clamped)
+        # and '--output-prefix <data_home>/dataset' (default 'dataset_text_document' suffix stripped).
+        _run_case(
+            extra_params='--num_workers 0',
+            expected_workers=1,
+            expected_prefix_basename='dataset',
+            expected_data_prefix='dataset_text_document',
+        )
+
+        # Case 2: num_workers=4 with custom data_prefix='custom_text_document' should produce
+        # '--workers 4' and '--output-prefix <data_home>/custom'.
+        _run_case(
+            extra_params='--num_workers 4 --data_prefix custom_text_document',
+            expected_workers=4,
+            expected_prefix_basename='custom',
+            expected_data_prefix='custom_text_document',
+        )
+
+        # Case 3: data_prefix without the '_text_document' suffix is invalid for generation
+        # because preprocess_data.py would produce 'mydata_text_document.bin/.idx' but the
+        # existence check looks for 'mydata.bin/.idx'. _preprocess() must fail fast (after the
+        # vocab + merges downloads).
+        _run_invalid_case(extra_params='--num_workers 2 --data_prefix mydata', expected_downloads=2)
+
+        # Case 4: data_prefix == '_text_document' has an empty stem after stripping the suffix,
+        # which would produce a malformed '--output-prefix <data_home>/'. Must fail fast.
+        _run_invalid_case(extra_params='--num_workers 1 --data_prefix _text_document', expected_downloads=2)
+
+        # Case 5: negative num_workers is invalid input and is rejected before any downloads.
+        _run_invalid_case(extra_params='--num_workers -1 --data_prefix negative_text_document', expected_downloads=0)
+
     @mock.patch('superbench.benchmarks.model_benchmarks.MegatronGPT._generate_dataset')
     def test_megatron_gpt_command(self, mock_generate_dataset):
         """Test command generation."""

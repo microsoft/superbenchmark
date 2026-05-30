@@ -638,12 +638,19 @@ class MegatronGPT(ModelBenchmark):
             f'--node_rank {node_rank} --master_addr {addr} --master_port {port}'
         return True
 
-    def _generate_dataset(self):
+    def _generate_dataset(self):    # noqa: C901
         """Generate dataset for benchmarking.
 
         Return:
             True if dataset is created successfully.
         """
+        # Validate num_workers unconditionally so a negative value is rejected even when
+        # dataset files already exist (it would otherwise be emitted as `--num-workers -1`
+        # into the Megatron training command).
+        if self._args.num_workers < 0:
+            logger.error('num_workers must be >= 0 (got {}).'.format(self._args.num_workers))
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
         self._data_options = ''
         if self._args.mock_data:
             logger.info('Using mock data.')
@@ -657,15 +664,46 @@ class MegatronGPT(ModelBenchmark):
             if not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.bin')) \
                     or not os.path.exists(os.path.join(self._args.data_home, f'{self._args.data_prefix}.idx')):
                 if self._args.dataset_url:
+                    # Megatron's preprocess_data.py appends '_text_document' to --output-prefix
+                    # when producing the .bin/.idx files. For the existence check below
+                    # (which looks for {data_prefix}.bin/.idx) to pass, data_prefix must end
+                    # with '_text_document' and have a non-empty stem when generation is needed.
+                    suffix = '_text_document'
+                    if not self._args.data_prefix.endswith(suffix) or self._args.data_prefix == suffix:
+                        logger.error(
+                            'data_prefix must end with "{}" and have a non-empty stem when '
+                            'dataset generation is required (got "{}"). preprocess_data.py '
+                            'always appends "{}" to --output-prefix.'.format(suffix, self._args.data_prefix, suffix)
+                        )
+                        self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+                        return False
+
                     self._raw_data_path = str(Path(self._args.data_home) / 'data.json')
                     download_file(self._args.dataset_url, self._raw_data_path)
+
+                    output_prefix_basename = self._args.data_prefix[:-len(suffix)]
+                    output_prefix = os.path.join(self._args.data_home, output_prefix_basename)
+
+                    # num_workers=0 is valid for DataLoader (main process loads data),
+                    # but preprocess_data.py requires workers>=1 for multiprocessing.Pool.
+                    preprocess_workers = self._args.num_workers
+                    if self._args.num_workers == 0:
+                        preprocess_workers = 1
+                        logger.warning(
+                            'preprocess_data.py requires --workers >= 1; '
+                            'overriding num_workers={} to {} for dataset preprocessing only '
+                            '(DataLoader still uses num_workers={}).'.format(
+                                self._args.num_workers, preprocess_workers, self._args.num_workers
+                            )
+                        )
+
                     command = (
                         'python3 '
                         f'{os.path.join(self._args.code_base, "tools/preprocess_data.py")} '
                         f'--input {self._raw_data_path} '
                         f'--tokenizer-type {self._args.tokenizer_type} '
-                        f'--output-prefix {os.path.join(self._args.data_home, "dataset")} '
-                        f'--workers {str(self._args.num_workers)} '
+                        f'--output-prefix {output_prefix} '
+                        f'--workers {preprocess_workers} '
                         f'--vocab-file {self._vocab_path} '
                         f'--merge-file {self._merges_path}'
                     )
