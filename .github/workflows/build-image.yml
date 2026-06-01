@@ -23,7 +23,10 @@ jobs:
       contents: read
       packages: write
     strategy:
-      fail-fast: true
+      # Do not cancel sibling image builds when one matrix entry fails. The ROCm
+      # entries run on self-hosted runners and can fail transiently; we don't
+      # want a flaky ROCm build to abort all CUDA images.
+      fail-fast: false
       matrix:
         include:
         - name: cuda13.0-arm64
@@ -86,6 +89,11 @@ jobs:
         #   platforms: linux/amd64
         #   runner: [self-hosted, linux/amd64, rocm]
         #   build_args: "NUM_MAKE_JOBS=16"
+        - name: rocm6.3
+          dockerfile: rocm6.3.x
+          tags: superbench/main:rocm6.3
+          platforms: linux/amd64
+          runner: [self-hosted, linux/amd64, rocm]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -183,6 +191,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
   docker-merge:
     needs: docker-build
+    if: ${{ !cancelled() }}
     name: Docker merge ${{ matrix.name }}
     runs-on: self-hosted
     timeout-minutes: 300

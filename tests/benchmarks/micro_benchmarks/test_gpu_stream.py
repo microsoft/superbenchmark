@@ -20,7 +20,7 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/gpu_stream'])
 
-    def _test_gpu_stream_command_generation(self, platform):
+    def _test_gpu_stream_command_generation(self, platform, data_type='double'):
         """Test gpu-stream benchmark command generation."""
         benchmark_name = 'gpu-stream'
         (benchmark_class,
@@ -31,9 +31,9 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         num_loops = 10
         size = 25769803776
 
-        parameters = '--num_warm_up %d --num_loops %d --size %d ' \
+        parameters = '--num_warm_up %d --num_loops %d --size %d --data_type %s ' \
             '--check_data' % \
-            (num_warm_up, num_loops, size)
+            (num_warm_up, num_loops, size, data_type)
         benchmark = benchmark_class(benchmark_name, parameters=parameters)
 
         # Check basic information
@@ -49,6 +49,7 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.num_warm_up == num_warm_up)
         assert (benchmark._args.num_loops == num_loops)
         assert (benchmark._args.check_data)
+        assert (benchmark._args.data_type == data_type)
 
         # Check command
         assert (1 == len(benchmark._commands))
@@ -56,6 +57,7 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert ('--size %d' % size in benchmark._commands[0])
         assert ('--num_warm_up %d' % num_warm_up in benchmark._commands[0])
         assert ('--num_loops %d' % num_loops in benchmark._commands[0])
+        assert ('--data_type %s' % data_type in benchmark._commands[0])
         assert ('--check_data' in benchmark._commands[0])
 
     @decorator.cuda_test
@@ -63,10 +65,10 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test gpu-stream benchmark command generation, CUDA case."""
         self._test_gpu_stream_command_generation(Platform.CUDA)
 
-    @decorator.rocm_test
-    def test_gpu_stream_command_generation_rocm(self):
-        """Test gpu-stream benchmark command generation, ROCm case."""
-        self._test_gpu_stream_command_generation(Platform.ROCM)
+    @decorator.cuda_test
+    def test_gpu_stream_command_generation_cuda_float(self):
+        """Test gpu-stream benchmark command generation with float, CUDA case."""
+        self._test_gpu_stream_command_generation(Platform.CUDA, data_type='float')
 
     @decorator.load_data('tests/data/gpu_stream.log')
     def _test_gpu_stream_result_parsing(self, platform, test_raw_output):
@@ -101,11 +103,12 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
                 assert (len(benchmark.result[output_key]) == 1)
                 assert (isinstance(benchmark.result[output_key][0], numbers.Number))
                 if output_key.endswith('_bw'):
-                    assert (output_key.strip('_bw') in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key.strip('_bw')][0] == benchmark.result[output_key][0])
+                    assert (output_key[:-3] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-3]][0] == benchmark.result[output_key][0])
                 else:
-                    assert (output_key.strip('_ratio') in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key.strip('_ratio')][1] == benchmark.result[output_key][0])
+                    assert (output_key.endswith('_ratio'))
+                    assert (output_key[:-6] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-6]][1] == benchmark.result[output_key][0])
 
         # Negative case - invalid raw output.
         assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
@@ -116,7 +119,44 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Test gpu-stream benchmark result parsing, CUDA case."""
         self._test_gpu_stream_result_parsing(Platform.CUDA)
 
-    @decorator.rocm_test
-    def test_gpu_stream_result_parsing_rocm(self):
-        """Test gpu-stream benchmark result parsing, ROCm case."""
-        self._test_gpu_stream_result_parsing(Platform.ROCM)
+    @decorator.load_data('tests/data/gpu_stream_float.log')
+    def _test_gpu_stream_result_parsing_float(self, platform, test_raw_output):
+        """Test gpu-stream benchmark result parsing for float data type."""
+        benchmark_name = 'gpu-stream'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
+        assert (benchmark_class)
+        benchmark = benchmark_class(benchmark_name, parameters='--data_type float')
+        assert (benchmark)
+        ret = benchmark._preprocess()
+        assert (ret is True)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
+
+        # Positive case - valid raw output with float tags.
+        assert (benchmark._process_raw_result(0, test_raw_output))
+        assert (benchmark.return_code == ReturnCode.SUCCESS)
+
+        assert (1 == len(benchmark.raw_data))
+        test_raw_output_dict = {
+            x.split()[0]: [float(x.split()[1]), float(x.split()[2])]
+            for x in test_raw_output.strip().splitlines() if x.startswith('STREAM_')
+        }
+        assert (len(test_raw_output_dict) * 2 + benchmark.default_metric_count == len(benchmark.result))
+        for output_key in benchmark.result:
+            if output_key == 'return_code':
+                assert (benchmark.result[output_key] == [0])
+            else:
+                assert (len(benchmark.result[output_key]) == 1)
+                assert (isinstance(benchmark.result[output_key][0], numbers.Number))
+                if output_key.endswith('_bw'):
+                    assert (output_key[:-3] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-3]][0] == benchmark.result[output_key][0])
+                else:
+                    assert (output_key.endswith('_ratio'))
+                    assert (output_key[:-6] in test_raw_output_dict)
+                    assert (test_raw_output_dict[output_key[:-6]][1] == benchmark.result[output_key][0])
+
+    @decorator.cuda_test
+    def test_gpu_stream_result_parsing_cuda_float(self):
+        """Test gpu-stream benchmark result parsing for float, CUDA case."""
+        self._test_gpu_stream_result_parsing_float(Platform.CUDA)

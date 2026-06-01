@@ -134,7 +134,26 @@ class PytorchMixtral(PytorchBase):
         Args:
             precision (Precision): precision of model and input data, such as float32, float16.
         """
-        self._config = MixtralConfig(
+        self._config = self._build_config()
+        if not self._check_fp8_support(precision):
+            return False
+
+        try:
+            self._model = self._instantiate_model()
+            self._postprocess_model(precision)
+        except Exception as e:
+            logger.error(
+                'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
+                    self._name, precision, str(e)
+                )
+            )
+            return False
+
+        self._setup_target()
+        return True
+
+    def _build_config(self):
+        return MixtralConfig(
             hidden_size=self._args.hidden_size,
             num_hidden_layers=self._args.num_hidden_layers,
             num_attention_heads=self._args.num_attention_heads,
@@ -144,46 +163,42 @@ class PytorchMixtral(PytorchBase):
             router_aux_loss_coef=self._args.router_aux_loss_coef,
         )
 
+    def _check_fp8_support(self, precision):
         enable_fp8 = precision.name.startswith('FP8_')
         if enable_fp8 and te is None:
             logger.error(
-                f'Create model with fp8 failed - model: {self._name}, precision: {precision},'
-                ' message: Cannot find transformer_engine.'
+                f'Create model with fp8 failed - model: {self._name}, precision: {precision}, '
+                'message: Cannot find transformer_engine.'
             )
             return False
         if enable_fp8 and not self._gpu_available:
             logger.error(
-                f'Create model with fp8 failed - model: {self._name}, precision: {precision},'
-                ' message: FP8 is only supported on GPU.'
+                f'Create model with fp8 failed - model: {self._name}, precision: {precision}, '
+                'message: FP8 is only supported on GPU.'
             )
             return False
-
-        try:
-            self._model = MixtralBenchmarkModel(self._config, self._args.num_classes)
-            if enable_fp8:
-                self._fp8_recipe = DelayedScaling(
-                    fp8_format=Format[precision.name.strip('FP8_')],
-                    amax_history_len=16,
-                    amax_compute_algo='max',
-                )
-                self._to_te_model(self._model.to(dtype=torch.float16))
-            else:
-                self._model = self._model.to(dtype=getattr(torch, precision.value))
-            if self._gpu_available:
-                self._model = self._model.cuda()
-        except Exception as e:
-            logger.error(
-                'Create model with specified precision failed - model: {}, precision: {}, message: {}.'.format(
-                    self._name, precision, str(e)
-                )
-            )
-            return False
-
-        self._target = torch.LongTensor(self._args.batch_size).random_(self._args.num_classes)
-        if self._gpu_available:
-            self._target = self._target.cuda()
-
         return True
+
+    def _instantiate_model(self):
+        return MixtralBenchmarkModel(self._config, self._args.num_classes)
+
+    def _postprocess_model(self, precision):
+        enable_fp8 = precision.name.startswith('FP8_')
+        if enable_fp8:
+            self._fp8_recipe = DelayedScaling(
+                fp8_format=Format[precision.name.strip('FP8_')],
+                amax_history_len=16,
+                amax_compute_algo='max',
+            )
+            self._to_te_model(self._model.to(dtype=torch.float16))
+        else:
+            self._model = self._model.to(dtype=getattr(torch, precision.value))
+        if self._gpu_available:
+            self._model = self._model.cuda()
+
+    def _setup_target(self):
+        """Set up target tensor using the shared deterministic-aware helper."""
+        self._target = self._create_target(self._args.num_classes)
 
     def _train_step(self, precision):
         """Define the training process.
@@ -192,11 +207,11 @@ class PytorchMixtral(PytorchBase):
             precision (Precision): precision of model and input data, such as float32, float16.
 
         Return:
-            The step-time list of every training step.
+            A tuple of (step_times_ms, info) of every training step.
         """
         duration = []
+        periodic = {'loss': [], 'act_mean': [], 'step': []}
         curr_step = 0
-        check_frequency = 100
         while True:
             for idx, sample in enumerate(self._dataloader):
                 start = self._timer()
@@ -210,17 +225,22 @@ class PytorchMixtral(PytorchBase):
                         output = self._model(sample)
                 else:
                     output = self._model(sample)
-                loss = self._loss_fn(output[range(self._args.batch_size), -1], self._target)
+                logits = output[range(self._args.batch_size), -1]
+                # Use FP32 logits for loss only when determinism is enabled; otherwise
+                # keep logits in their native precision to preserve benchmark semantics.
+                enable_determinism = getattr(self._args, 'enable_determinism', False)
+                logits_for_loss = logits.float() if enable_determinism else logits
+                loss = self._loss_fn(logits_for_loss, self._target)
                 loss.backward()
                 self._optimizer.step()
                 end = self._timer()
                 curr_step += 1
                 if curr_step > self._args.num_warmup:
-                    # Save the step time of every training/inference step, unit is millisecond.
                     duration.append((end - start) * 1000)
+                    self.record_determinism_fingerprint(curr_step, loss, logits, periodic, self._args.check_frequency)
                     self._log_step_time(curr_step, precision, duration)
-                if self._is_finished(curr_step, end, check_frequency):
-                    return duration
+                if self._is_finished(curr_step, end, self._args.check_frequency):
+                    return duration, self._finalize_periodic_logging(periodic)
 
     def _inference_step(self, precision):
         """Define the inference process.
@@ -254,5 +274,5 @@ class PytorchMixtral(PytorchBase):
                         # Save the step time of every training/inference step, unit is millisecond.
                         duration.append((end - start) * 1000)
                         self._log_step_time(curr_step, precision, duration)
-                    if self._is_finished(curr_step, end):
+                    if self._is_finished(curr_step, end, self._args.check_frequency):
                         return duration
