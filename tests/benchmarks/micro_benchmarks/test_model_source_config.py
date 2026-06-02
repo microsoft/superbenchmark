@@ -36,7 +36,7 @@ class TestModelSourceConfig:
 
     def test_missing_identifier(self):
         """Test missing identifier raises error."""
-        with pytest.raises(ValueError, match='identifier must be provided'):
+        with pytest.raises(ValueError, match='Model identifier must be provided'):
             ModelSourceConfig(identifier='')
 
     def test_validate_huggingface_empty(self):
