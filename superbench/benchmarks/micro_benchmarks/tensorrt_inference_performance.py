@@ -358,6 +358,8 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         # Filter out initializers from graph.input to get only runtime inputs
         initializer_names = {init.name for init in onnx_model.graph.initializer}
         runtime_inputs = [inp for inp in onnx_model.graph.input if inp.name not in initializer_names]
+        if not runtime_inputs:
+            raise ValueError(f'No runtime inputs found in exported ONNX model: {onnx_path}')
 
         # Get the first runtime input to determine shape and name
         input_name = runtime_inputs[0].name
