@@ -121,9 +121,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         modern = '--memPoolSize=workspace:8192M'
         legacy = '--workspace=8192'
         try:
-            proc = subprocess.run(
-                [bin_path, '--help'], capture_output=True, text=True, timeout=10, check=False
-            )
+            proc = subprocess.run([bin_path, '--help'], capture_output=True, text=True, timeout=10, check=False)
             help_text = (proc.stdout or '') + (proc.stderr or '')
             if '--memPoolSize' in help_text:
                 return modern
@@ -135,7 +133,8 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         except (OSError, subprocess.SubprocessError) as e:
             logger.warning(
                 'Could not probe trtexec at %s for --memPoolSize support (%s); using --workspace=8192.',
-                bin_path, e,
+                bin_path,
+                e,
             )
             return legacy
 

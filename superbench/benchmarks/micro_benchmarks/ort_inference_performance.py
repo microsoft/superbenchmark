@@ -346,18 +346,14 @@ class ORTInferenceBenchmark(MicroBenchmark):
             if getattr(self._args, 'require_cuda', False):
                 logger.error(msg + ' --require_cuda was set, aborting.')
                 return False
-            logger.warning(
-                msg + ' Falling back to registered providers; pass --require_cuda to fail instead.'
-            )
+            logger.warning(msg + ' Falling back to registered providers; pass --require_cuda to fail instead.')
         providers = ['CUDAExecutionProvider'] if cuda_available else available
 
         for model in self._args.pytorch_models:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = self.__graph_opt_level[self._args.graph_opt_level]
             file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision)
-            ort_sess = ort.InferenceSession(
-                f'{self.__model_cache_path / file_name}', sess_options, providers=providers
-            )
+            ort_sess = ort.InferenceSession(f'{self.__model_cache_path / file_name}', sess_options, providers=providers)
 
             elapse_times = self.__inference(ort_sess)
 
