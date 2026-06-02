@@ -175,8 +175,6 @@ jobs:
       contents: read
       packages: write
     strategy:
-      # Keep merging independent CUDA manifests even if one merge leg fails, so a
-      # single failed build does not block publishing other successfully built images.
       fail-fast: false
       matrix:
         include:
