@@ -23,6 +23,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
 
 class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
     """TensorRT inference micro-benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -320,6 +321,12 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
+
+        # Release the torch model now that ONNX export is done; export_huggingface_model() may
+        # have moved it onto GPU, and we don't want it holding VRAM while trtexec builds the engine.
+        del hf_model
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         input_shapes = self._derive_trt_input_shapes(onnx_path)
 

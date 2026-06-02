@@ -23,6 +23,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
 
 class ORTInferenceBenchmark(MicroBenchmark):
     """ONNXRuntime inference micro-benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -240,7 +241,8 @@ class ORTInferenceBenchmark(MicroBenchmark):
                 return False
 
             # Step 2: Export the model to ONNX (and quantize for INT8) on a per-rank path.
-            return self._export_hf_model_to_onnx(hf_token, allow_remote_code)
+            # Reuse the already-downloaded hf_config to avoid a redundant fetch in load_model_from_config.
+            return self._export_hf_model_to_onnx(hf_token, allow_remote_code, hf_config)
 
         except Exception as e:
             logger.error(f'Failed to prepare HuggingFace model: {str(e)}')
@@ -249,12 +251,13 @@ class ORTInferenceBenchmark(MicroBenchmark):
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
 
-    def _export_hf_model_to_onnx(self, hf_token, allow_remote_code):
+    def _export_hf_model_to_onnx(self, hf_token, allow_remote_code, hf_config=None):
         """Download the HF model, export to ONNX, and apply INT8 quantization if requested.
 
         Args:
             hf_token (str | None): HuggingFace token, or None.
             allow_remote_code (bool): Whether to allow trust_remote_code on load.
+            hf_config: Pre-downloaded HF config to reuse; avoids a redundant fetch.
 
         Returns:
             bool: True on success; False (with return code set) on failure.
@@ -277,9 +280,9 @@ class ORTInferenceBenchmark(MicroBenchmark):
             device_map=None,
         )
 
-        # Load model from HuggingFace on CPU
+        # Load model from HuggingFace on CPU, reusing the preloaded config when available.
         loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
-        hf_model, _, _ = loader.load_model_from_config(model_config, device='cpu')
+        hf_model, _, _ = loader.load_model_from_config(model_config, device='cpu', config_pretrained=hf_config)
         from superbench.benchmarks.micro_benchmarks._export_torch_to_onnx import torch2onnxExporter
         exporter = torch2onnxExporter()
 
@@ -319,6 +322,12 @@ class ORTInferenceBenchmark(MicroBenchmark):
             logger.error(f'Failed to export {self._args.model_identifier} to ONNX')
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
+
+        # Release the torch model now that ONNX export is done; export_huggingface_model() may
+        # have moved it onto GPU, and we don't want it occupying VRAM during ORT session creation.
+        del hf_model
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         # Apply INT8 quantization if requested (matching in-house model behavior)
         if self._args.precision == Precision.INT8:

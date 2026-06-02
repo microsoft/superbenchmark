@@ -350,7 +350,7 @@ class HuggingFaceModelLoader:
         Returns:
             Number of parameters in millions.
         """
-        return float(sum(p.numel() for p in model.parameters())) / 1_000_000
+        return float(sum(p.numel() for p in model.parameters())) / 1_000_000    # type: ignore[attr-defined]
 
     @staticmethod
     def estimate_param_count_from_config(hf_config) -> Optional[int]:

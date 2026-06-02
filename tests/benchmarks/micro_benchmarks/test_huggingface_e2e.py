@@ -18,8 +18,12 @@ pytest.importorskip('transformers')
 
 # Imports below this point depend on `transformers` being available, so they
 # must be deferred until after the `importorskip` call above.
-from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import HuggingFaceModelLoader    # noqa: E402
-from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig    # noqa: E402
+from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (    # noqa: E402
+    HuggingFaceModelLoader,
+)
+from superbench.benchmarks.micro_benchmarks.model_source_config import (    # noqa: E402
+    ModelSourceConfig,
+)
 
 
 @pytest.mark.skipif(
@@ -38,7 +42,7 @@ class TestHuggingFaceE2E:
 
         Uses prajjwal1/bert-tiny which is a small public BERT model (~17MB).
         """
-        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
+        model, config, _ = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         assert model is not None
         assert config is not None
@@ -55,7 +59,7 @@ class TestHuggingFaceE2E:
 
         Uses distilbert/distilgpt2 which is a small public GPT-2 model (~82MB).
         """
-        model, config, tokenizer = loader.load_model('distilbert/distilgpt2', device='cpu')
+        model, config, _ = loader.load_model('distilbert/distilgpt2', device='cpu')
 
         assert model is not None
         assert config is not None
@@ -71,14 +75,14 @@ class TestHuggingFaceE2E:
         """Test loading model using ModelSourceConfig via load_model_from_config."""
         config = ModelSourceConfig(source='huggingface', identifier='prajjwal1/bert-tiny', torch_dtype='float32')
 
-        model, hf_config, tokenizer = loader.load_model_from_config(config, device='cpu')
+        model, hf_config, _ = loader.load_model_from_config(config, device='cpu')
 
         assert model is not None
         assert hf_config.model_type == 'bert'
 
     def test_load_model_with_dtype(self, loader):
         """Test loading model and converting dtype after load."""
-        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
+        model, _, _ = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         # Convert to float32 after loading
         model = model.float()
@@ -90,7 +94,7 @@ class TestHuggingFaceE2E:
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='Requires GPU')
     def test_load_model_to_gpu(self, loader):
         """Test loading model and moving to GPU."""
-        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
+        model, _, _ = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         # Move to GPU manually
         model = model.cuda()
@@ -101,7 +105,7 @@ class TestHuggingFaceE2E:
 
     def test_architecture_detection(self, loader):
         """Test that architecture is correctly detected from loaded model."""
-        model, config, tokenizer = loader.load_model('prajjwal1/bert-tiny', device='cpu')
+        _, config, _ = loader.load_model('prajjwal1/bert-tiny', device='cpu')
 
         # Architecture should be detected from config
         assert config.model_type is not None
