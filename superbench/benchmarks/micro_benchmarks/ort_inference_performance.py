@@ -345,6 +345,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             msg = f'CUDAExecutionProvider is not available (available providers: {available}).'
             if getattr(self._args, 'require_cuda', False):
                 logger.error(msg + ' --require_cuda was set, aborting.')
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
                 return False
             logger.warning(msg + ' Falling back to registered providers; pass --require_cuda to fail instead.')
         providers = ['CUDAExecutionProvider'] if cuda_available else available
