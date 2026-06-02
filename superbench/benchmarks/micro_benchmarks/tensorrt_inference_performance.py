@@ -239,7 +239,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 self._args.model_identifier, trust_remote_code=allow_remote_code, **load_kwargs
             )
             precision_str = self._args.precision    # already a string: 'fp16', 'fp32', 'int8'
-            fits, param_m, est_gb, avail_gb = HuggingFaceModelLoader.check_memory_fits(
+            fits, _, _, _ = HuggingFaceModelLoader.check_memory_fits(
                 self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token
             )
             if not fits:
