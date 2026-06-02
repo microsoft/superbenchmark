@@ -104,7 +104,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             default=False,
             required=False,
             help='Allow HuggingFace to execute model-repo Python (trust_remote_code=True). '
-            'SECURITY: enables RCE from --model_identifier. Pin --revision <sha> when used.',
+            'SECURITY: enables RCE from --model_identifier; only enable for trusted model identifiers.',
         )
 
     @staticmethod
@@ -238,9 +238,10 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             hf_config = AutoConfig.from_pretrained(
                 self._args.model_identifier, trust_remote_code=allow_remote_code, **load_kwargs
             )
-            precision_str = self._args.precision    # already a string: 'fp16', 'fp32', 'int8'
+            # ONNX export is always done in float32 (see _build_trtexec_command_for_hf), so gate
+            # the pre-download check on fp32 memory regardless of the requested runtime precision.
             fits, _, _, _ = HuggingFaceModelLoader.check_memory_fits(
-                self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token
+                self._args.model_identifier, hf_config, 'fp32', mode='inference', token=hf_token
             )
             if not fits:
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)

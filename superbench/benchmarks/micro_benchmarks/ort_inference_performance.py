@@ -145,7 +145,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             default=False,
             required=False,
             help='Allow HuggingFace to execute model-repo Python (trust_remote_code=True). '
-            'SECURITY: enables RCE from --model_identifier. Pin --revision <sha> when used.',
+            'SECURITY: enables RCE from --model_identifier; only enable for trusted model identifiers.',
         )
 
     def _preprocess(self):

@@ -91,6 +91,12 @@ if __name__ == '__main__':
     parser.add_argument('--iterations', type=int, default=2048)
     args = parser.parse_args()
 
+    if args.model_source == 'huggingface' and args.precision == 'int8':
+        parser.error(
+            '--precision int8 is not supported with --model_source huggingface '
+            '(no calibration data / Q-DQ ONNX is generated). Use fp16 or fp32.'
+        )
+
     if args.model_source == 'huggingface':
         run_huggingface_benchmark(
             args.model_identifier, args.precision, args.batch_size, args.seq_length, args.iterations

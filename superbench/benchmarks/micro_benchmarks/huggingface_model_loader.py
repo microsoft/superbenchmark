@@ -89,7 +89,6 @@ class HuggingFaceModelLoader:
             ``False``; enabling this turns ``--model_identifier`` into an RCE
             sink, so it is opt-in only.
     """
-
     def __init__(
         self,
         cache_dir: Optional[str] = None,
@@ -154,6 +153,11 @@ class HuggingFaceModelLoader:
         # Reject malformed / path-like identifiers before any network or disk activity.
         validate_model_identifier(model_identifier)
 
+        # Fall back to CPU on hosts without CUDA so default device='cuda' callers don't fail.
+        if device == 'cuda' and not torch.cuda.is_available():
+            logger.warning('CUDA not available; falling back to CPU.')
+            device = 'cpu'
+
         try:
             load_kwargs = self._build_load_kwargs(torch_dtype, revision, kwargs)
 
@@ -211,10 +215,12 @@ class HuggingFaceModelLoader:
 
     def _try_load_tokenizer(self, model_identifier, load_kwargs):
         """Attempt to load a tokenizer; return None if the model has no associated tokenizer."""
+        # Tokenizers don't accept model-only kwargs like torch_dtype/device_map; strip before passing.
+        tokenizer_kwargs = {k: v for k, v in load_kwargs.items() if k not in ('torch_dtype', 'device_map')}
         try:
             logger.info('Loading tokenizer...')
             return AutoTokenizer.from_pretrained(
-                model_identifier, trust_remote_code=self.allow_remote_code, **load_kwargs
+                model_identifier, trust_remote_code=self.allow_remote_code, **tokenizer_kwargs
             )
         except Exception as e:
             logger.warning(f'Could not load tokenizer: {e}. Continuing without tokenizer.')
@@ -373,7 +379,15 @@ class HuggingFaceModelLoader:
 
             # Embeddings: token + (optional) position
             max_pos = getattr(hf_config, 'max_position_embeddings', 0)
-            has_pos_embed = getattr(hf_config, 'position_embedding_type', None) not in ('rotary', None)
+            pos_embed_type = getattr(hf_config, 'position_embedding_type', None)
+            # When position_embedding_type is missing/None, default to assuming learned
+            # position embeddings exist (common for BERT-style configs that omit the field).
+            # Only skip the term when the type is explicitly rotary, or the config clearly
+            # indicates RoPE/rotary via rope_theta/rotary_pct/rotary_emb_base.
+            uses_rotary = pos_embed_type == 'rotary' or any(
+                getattr(hf_config, attr, None) is not None for attr in ('rope_theta', 'rotary_pct', 'rotary_emb_base')
+            )
+            has_pos_embed = not uses_rotary
             embed_params = vocab * hidden
             if has_pos_embed and max_pos > 0:
                 embed_params += max_pos * hidden

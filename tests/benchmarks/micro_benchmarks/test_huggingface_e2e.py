@@ -28,7 +28,6 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 )
 class TestHuggingFaceE2E:
     """End-to-end tests for HuggingFace model loading."""
-
     @pytest.fixture
     def loader(self, tmp_path):
         """Create a loader instance with an isolated per-test cache dir."""

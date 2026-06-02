@@ -18,7 +18,6 @@ from superbench.common.utils import logger
 
 class torch2onnxExporter():
     """PyTorch model to ONNX exporter."""
-
     def __init__(self):
         """Constructor."""
         from transformers import BertConfig, GPT2Config, LlamaConfig
@@ -360,7 +359,6 @@ class torch2onnxExporter():
         dynamic_axes = {'pixel_values': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
 
         class VisionModelWrapper(torch.nn.Module):
-
             def __init__(self, model):
                 super().__init__()
                 self.model = model
@@ -398,7 +396,6 @@ class torch2onnxExporter():
         }
 
         class NLPModelWrapper(torch.nn.Module):
-
             def __init__(self, model):
                 super().__init__()
                 self.model = model
