@@ -167,7 +167,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
   docker-merge:
     needs: docker-build
-    if: ${{ success() }}
+    if: ${{ !cancelled() }}
     name: Docker merge ${{ matrix.name }}
     runs-on: self-hosted
     timeout-minutes: 300
@@ -175,6 +175,9 @@ jobs:
       contents: read
       packages: write
     strategy:
+      # Keep merging independent CUDA manifests even if one merge leg fails, so a
+      # single failed build does not block publishing other successfully built images.
+      fail-fast: false
       matrix:
         include:
         - name: cuda12.9
