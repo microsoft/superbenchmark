@@ -16,8 +16,10 @@ import torch
 
 pytest.importorskip('transformers')
 
-from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import HuggingFaceModelLoader
-from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
+# Imports below this point depend on `transformers` being available, so they
+# must be deferred until after the `importorskip` call above.
+from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import HuggingFaceModelLoader    # noqa: E402
+from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig    # noqa: E402
 
 
 @pytest.mark.skipif(
@@ -26,6 +28,7 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 )
 class TestHuggingFaceE2E:
     """End-to-end tests for HuggingFace model loading."""
+
     @pytest.fixture
     def loader(self, tmp_path):
         """Create a loader instance with an isolated per-test cache dir."""

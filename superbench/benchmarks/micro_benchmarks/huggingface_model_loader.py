@@ -85,6 +85,7 @@ class HuggingFaceModelLoader:
             ``False``; enabling this turns ``--model_identifier`` into an RCE
             sink, so it is opt-in only.
     """
+
     def __init__(
         self,
         cache_dir: Optional[str] = None,
@@ -150,19 +151,7 @@ class HuggingFaceModelLoader:
         validate_model_identifier(model_identifier)
 
         try:
-            # Convert torch_dtype string to torch dtype
-            dtype = self._get_torch_dtype(torch_dtype) if torch_dtype else None
-
-            # Prepare loading kwargs
-            load_kwargs = {'cache_dir': self.cache_dir, 'revision': revision, **kwargs}
-
-            # Add token if available
-            if self.token:
-                load_kwargs['token'] = self.token
-
-            # Add dtype if specified
-            if dtype:
-                load_kwargs['torch_dtype'] = dtype
+            load_kwargs = self._build_load_kwargs(torch_dtype, revision, kwargs)
 
             # Load config (use pre-downloaded config if provided)
             if config is None:
@@ -173,35 +162,11 @@ class HuggingFaceModelLoader:
             else:
                 logger.info('Using pre-downloaded model configuration.')
 
-            # Load tokenizer (may fail for some models, that's ok)
-            tokenizer = None
-            try:
-                logger.info('Loading tokenizer...')
-                tokenizer = AutoTokenizer.from_pretrained(
-                    model_identifier, trust_remote_code=self.allow_remote_code, **load_kwargs
-                )
-            except Exception as e:
-                logger.warning(f'Could not load tokenizer: {e}. Continuing without tokenizer.')
+            tokenizer = self._try_load_tokenizer(model_identifier, load_kwargs)
 
             # Load model
             logger.info(f'Loading model weights (dtype={torch_dtype}, device={device})...')
-            model_kwargs = load_kwargs.copy()
-            model_kwargs['trust_remote_code'] = self.allow_remote_code
-
-            # Handle device mapping for large models
-            effective_device_map = device_map
-            if device_map:
-                model_kwargs['device_map'] = device_map
-            elif device == 'cuda' and torch.cuda.is_available():
-                # Don't set device_map if device is explicitly cuda
-                pass
-            elif device != 'cpu':
-                model_kwargs['device_map'] = device
-                effective_device_map = device
-
-            # Pass pre-downloaded config to from_pretrained so any overrides take effect
-            if config is not None:
-                model_kwargs['config'] = config
+            model_kwargs, effective_device_map = self._build_model_kwargs(load_kwargs, device, device_map, config)
 
             try:
                 model = AutoModel.from_pretrained(model_identifier, **model_kwargs)
@@ -229,6 +194,52 @@ class HuggingFaceModelLoader:
             raise ModelLoadError(f"Failed to load model '{model_identifier}': {e}") from e
         except Exception as e:
             raise ModelLoadError(f"Unexpected error loading model '{model_identifier}': {e}") from e
+
+    def _build_load_kwargs(self, torch_dtype, revision, extra_kwargs):
+        """Assemble the base ``from_pretrained`` kwargs (cache_dir, token, dtype, revision)."""
+        dtype = self._get_torch_dtype(torch_dtype) if torch_dtype else None
+        load_kwargs = {'cache_dir': self.cache_dir, 'revision': revision, **extra_kwargs}
+        if self.token:
+            load_kwargs['token'] = self.token
+        if dtype:
+            load_kwargs['torch_dtype'] = dtype
+        return load_kwargs
+
+    def _try_load_tokenizer(self, model_identifier, load_kwargs):
+        """Attempt to load a tokenizer; return None if the model has no associated tokenizer."""
+        try:
+            logger.info('Loading tokenizer...')
+            return AutoTokenizer.from_pretrained(
+                model_identifier, trust_remote_code=self.allow_remote_code, **load_kwargs
+            )
+        except Exception as e:
+            logger.warning(f'Could not load tokenizer: {e}. Continuing without tokenizer.')
+            return None
+
+    def _build_model_kwargs(self, load_kwargs, device, device_map, config):
+        """Build model-loading kwargs and resolve the effective device_map.
+
+        Returns:
+            Tuple[dict, Optional[str]]: ``(model_kwargs, effective_device_map)``.
+        """
+        model_kwargs = load_kwargs.copy()
+        model_kwargs['trust_remote_code'] = self.allow_remote_code
+
+        effective_device_map = device_map
+        if device_map:
+            model_kwargs['device_map'] = device_map
+        elif device == 'cuda' and torch.cuda.is_available():
+            # Don't set device_map if device is explicitly cuda
+            pass
+        elif device != 'cpu':
+            model_kwargs['device_map'] = device
+            effective_device_map = device
+
+        # Pass pre-downloaded config to from_pretrained so any overrides take effect
+        if config is not None:
+            model_kwargs['config'] = config
+
+        return model_kwargs, effective_device_map
 
     def load_model_from_config(
         self,

@@ -232,7 +232,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             self._hf_config = hf_config
 
             precision_str = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
-            fits, param_m, est_gb, avail_gb = HuggingFaceModelLoader.check_memory_fits(
+            fits, _, _, _ = HuggingFaceModelLoader.check_memory_fits(
                 self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token
             )
             if not fits:
