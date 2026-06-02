@@ -52,6 +52,10 @@ def validate_model_identifier(model_identifier: Optional[str]) -> str:
             "'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}(/[A-Za-z0-9._-]{1,128})?$' "
             '(e.g. "bert-base-uncased" or "meta-llama/Llama-2-7b-hf").'
         )
+    if Path(model_identifier).exists():
+        raise ValueError(
+            f'Invalid model_identifier {model_identifier!r}. Refusing to treat an existing local path as a Hub repo id.'
+        )
     return model_identifier
 
 
