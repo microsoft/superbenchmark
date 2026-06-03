@@ -41,18 +41,6 @@ jobs:
           platforms: linux/amd64
           runner: [self-hosted, linux/amd64]
           build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda12.8-arm64
-          dockerfile: cuda12.8
-          tags: superbench/main:cuda12.8-arm64
-          platforms: linux/arm64
-          runner: [self-hosted, linux/arm64]
-          build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda12.8-amd64
-          dockerfile: cuda12.8
-          tags: superbench/main:cuda12.8-amd64
-          platforms: linux/amd64
-          runner: [self-hosted, linux/amd64]
-          build_args: "NUM_MAKE_JOBS=16"
         - name: cuda12.9-arm64
           dockerfile: cuda12.9
           tags: superbench/main:cuda12.9-arm64
@@ -62,18 +50,6 @@ jobs:
         - name: cuda12.9-amd64
           dockerfile: cuda12.9
           tags: superbench/main:cuda12.9-amd64
-          platforms: linux/amd64
-          runner: [self-hosted, linux/amd64]
-          build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda12.4
-          dockerfile: cuda12.4
-          tags: superbench/main:cuda12.4
-          platforms: linux/amd64
-          runner: [self-hosted, linux/amd64]
-          build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda12.2
-          dockerfile: cuda12.2
-          tags: superbench/main:cuda12.2
           platforms: linux/amd64
           runner: [self-hosted, linux/amd64]
           build_args: "NUM_MAKE_JOBS=16"
@@ -199,18 +175,19 @@ jobs:
       contents: read
       packages: write
     strategy:
+      fail-fast: false
       matrix:
         include:
-        - name: cuda12.8
-          tags: superbench/main:cuda12.8
-          sources: >-
-            superbench/main:cuda12.8-amd64
-            superbench/main:cuda12.8-arm64
         - name: cuda12.9
           tags: superbench/main:cuda12.9
           sources: >-
             superbench/main:cuda12.9-amd64
             superbench/main:cuda12.9-arm64
+        - name: cuda13.0
+          tags: superbench/main:cuda13.0
+          sources: >-
+            superbench/main:cuda13.0-amd64
+            superbench/main:cuda13.0-arm64
     steps:
     - name: Checkout
       uses: actions/checkout@v4
