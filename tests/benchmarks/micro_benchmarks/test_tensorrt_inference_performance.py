@@ -27,9 +27,7 @@ def _make_onnx_input(name, dims):
     """
     return SimpleNamespace(
         name=name,
-        type=SimpleNamespace(
-            tensor_type=SimpleNamespace(shape=SimpleNamespace(dim=[_make_onnx_dim(d) for d in dims]))
-        ),
+        type=SimpleNamespace(tensor_type=SimpleNamespace(shape=SimpleNamespace(dim=[_make_onnx_dim(d) for d in dims]))),
     )
 
 
@@ -41,6 +39,7 @@ def _make_onnx_model(inputs, initializer_names=()):
 
 class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     """Class for tensorrt-inferencee benchmark test cases."""
+
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""
@@ -195,13 +194,9 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         workspace flag already resolved) without actually invoking trtexec or
         touching the filesystem.
         """
-        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(
-            self.benchmark_name, Platform.CUDA
-        )
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
         benchmark = benchmark_cls(self.benchmark_name, parameters='')
-        benchmark._result = BenchmarkResult(
-            self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1
-        )
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
         defaults = dict(
             model_source='huggingface',
             model_identifier='prajjwal1/bert-tiny',
