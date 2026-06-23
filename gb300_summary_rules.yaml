@@ -1,0 +1,217 @@
+# SuperBench rules
+version: v0.12
+superbench:
+  rules:
+    model-benchmarks:
+      statistics:
+        - mean
+      categories: Model
+      metrics:
+        - model-benchmarks:.*/.*/.*_train_throughput
+
+    model-benchmarks-deterministic:
+      statistics:
+        - mean
+      categories: Deterministic
+      metrics:
+        - model-benchmarks:.*/deterministic_loss.*
+        - model-benchmarks:.*/deterministic_loss_max.*
+        - model-benchmarks:.*/deterministic_loss_min.*
+        - model-benchmarks:.*/deterministic_act_mean.*
+        - model-benchmarks:.*/deterministic_act_mean_max.*
+        - model-benchmarks:.*/deterministic_act_mean_min.*
+        - model-benchmarks:.*/deterministic_check_count.*
+        - model-benchmarks:.*/deterministic_step.*
+        - model-benchmarks:.*/deterministic_config_.*
+        - model-benchmarks:.*/return_code.*
+
+    micro-aggregation:
+      statistics: mean
+      categories: MICRO1
+      aggregate: True
+      metrics:
+        - gemm-flops:*.*/.*ops
+        - kernel-launch:*.*/.*_time
+        - computation-communication-overlap:*.*/.*_time
+        - cublas-function:*.*/.*_time
+        - cudnn-function:*.*/.*_time
+        - ort-inference/.*_time.*
+        - tensorrt-inference:*.*/.*_time.*
+        - cublaslt-gemm:*.*/.*ops
+        - hipblaslt-gemm:*.*/.*ops
+    micro-nonaggregation:
+      statistics: mean
+      categories: MICRO2
+      metrics:
+        - nccl-bw:bw*.*/.*_busbw
+        - nccl-bw:lat*.*/.*_time
+        - rccl-bw:bw*.*/.*_busbw
+        - rccl-bw:lat*.*/.*_time
+        - nccl-bw:nvlink*.*/.*_busbw
+        - nccl-bw:nvlink*.*/.*_time
+        - sharding-matmul:*.*/.*_time
+        - matmul:*.*/.*_time
+        - gpu-burn/.*_pass
+        - gpu_burn/.*_abort
+        - cpu-memory-bw-latency/.*_bw
+        - cpu-memory-bw-latency/.*_lat
+        - megatron-gpt:*.*/.*_train_.*
+        - dist-inference:*.*/.*step_times.*
+    ib-loopback:
+      statistics: mean
+      categories: IB
+      metrics:
+        - ib-loopback:*.*/ib_write_bw_.*
+      aggregate: True
+    gpu-copy-bw:
+      statistics: mean
+      categories: DTOD
+      metrics:
+        - gpu-copy-bw:*.*/gpu(\d+)_to_gpu(\d+)_.*_by_.*_bw
+      aggregate: gpu-copy-bw:*.*/gpu(\d+)_to_gpu(\d+)_.*_by_.*_bw
+    gpu-copy-bw-alltoall:
+      statistics: mean
+      categories: DTOD-atoa
+      metrics:
+        - gpu-copy-bw:*.*/gpu_all_to_gpu_all_.*_by_.*_bw
+    gpu-mem-bw:
+      statistics: mean
+      categories: GPUMEM
+      metrics:
+        - gpu-copy-bw:*.*/gpu\d+_to_gpu\d+_by_.*_bw
+      aggregate: gpu-copy-bw:*.*/gpu(\d+)_to_gpu(\d+)_by_.*_bw
+    gpu-copy-bw-sm1:
+      statistics: mean
+      categories: DTOH-SM
+      metrics:
+        #- gpu-copy-bw:*.*/.*gpu._to_gpu.*_write_by_.*_bw
+        - gpu-copy-bw:*.*/gpu.*_to_cpu_by_sm_under_numa.*_bw
+      aggregate: gpu-copy-bw:*.*/gpu(.*)_to_cpu_by_sm_under_numa.*_bw
+    gpu-copy-bw-sm2:
+      statistics: mean
+      categories: HTOD-SM
+      metrics:
+        #- gpu-copy-bw:*.*/.*gpu._to_gpu.*_write_by_.*_bw
+        - gpu-copy-bw:*.*/cpu_to_gpu(.*)_by_sm_under_numa.*_bw
+      aggregate: gpu-copy-bw:*.*/cpu_to_gpu(.*)_by_sm_under_numa.*_bw
+    gpu-copy-bw-dma1:
+      statistics: mean
+      categories: DTOH-DMA
+      metrics:
+        #- gpu-copy-bw:*.*/.*gpu._to_gpu.*_write_by_.*_bw
+        - gpu-copy-bw:*.*/gpu.*_to_cpu_by_dma_under_numa.*_bw
+      aggregate: gpu-copy-bw:*.*/gpu(.*)_to_cpu_by_dma_under_numa.*_bw
+    gpu-copy-bw-dma2:
+      statistics: mean
+      categories: HTOD-DMA
+      metrics:
+        #- gpu-copy-bw:*.*/.*gpu._to_gpu.*_write_by_.*_bw
+        - gpu-copy-bw:*.*/cpu_to_gpu(.*)_by_dma_under_numa.*_bw
+      aggregate: gpu-copy-bw:*.*/cpu_to_gpu(.*)_by_dma_under_numa.*_bw
+    disk:
+      statistics: mean
+      categories: DISK
+      aggregate: disk-benchmark/nvme(\d+n1)_.*_iops
+      metrics:
+        - disk-benchmark/nvme(\d+n1)_.*_iops
+    dist-ib:
+      statistics: mean
+      categories: IB
+      metrics:
+        - ib-traffic:*.*/ib_.*
+      aggregate: ib-traffic:*.*/ib_.*?:(.*?):(\d+)
+
+    nvbandwidth-h&d:
+      statistics: mean
+      categories: nvbandwidth/h&d
+      metrics:
+        - nvbandwidth/host_to_device_memcpy_(ce|sm)_cpu0_gpu0_bw # HTOD local by CE/SM
+        - nvbandwidth/host_to_device_memcpy_(ce|sm)_cpu0_gpu3_bw # HTOD remote by CE/SM
+        - nvbandwidth/device_to_host_memcpy_(ce|sm)_cpu0_gpu0_bw # DTOH local by CE/SM
+        - nvbandwidth/device_to_host_memcpy_(ce|sm)_cpu0_gpu3_bw # DTOH remote by CE/SM
+        
+    nvbandwidth-d2d:
+      statistics: mean
+      categories: nvbandwidth/d2d
+      aggregate: nvbandwidth/device_to_device_memcpy_(?:read|write)_(?:ce|sm)_gpu([0-9]+)_gpu([0-9]+)_bw
+      metrics:
+        - nvbandwidth/device_to_device_memcpy_(?:read|write)_(?:ce|sm)_gpu[0-9]+_gpu[0-9]+_bw
+
+    nvbandwidth-h&d-bidirectional:
+      statistics: mean
+      categories: nvbandwidth/h&d-bidir
+      metrics:
+        - nvbandwidth/host_to_device_bidirectional_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+        - nvbandwidth/device_to_host_bidirectional_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+
+    nvbandwidth-d2d-bidirectional:
+      statistics: mean
+      categories: nvbandwidth/d2d-bidir
+      aggregate: nvbandwidth/device_to_device_bidirectional_memcpy_(?:read|write)_(?:ce|sm)_gpu([0-9]+)_gpu([0-9]+)_bw
+      metrics:
+        - nvbandwidth/device_to_device_bidirectional_memcpy_(?:read|write)_(?:ce|sm)_gpu[0-9]+_gpu[0-9]+_bw
+
+    nvbandwidth-host-all:
+      statistics: mean
+      categories: nvbandwidth/host-all
+      metrics:
+        - nvbandwidth/all_to_host_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+        - nvbandwidth/host_to_all_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+
+    nvbandwidth-host-all-bidirectional:
+      statistics: mean
+      categories: nvbandwidth/host-all-bidir
+      metrics:
+        - nvbandwidth/all_to_host_bidirectional_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+        - nvbandwidth/host_to_all_bidirectional_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+
+    nvbandwidth-host-all-batch:
+      statistics: mean
+      categories: nvbandwidth/host-all-batch
+      metrics:
+        - nvbandwidth/all_to_host_batch_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+        - nvbandwidth/host_to_all_batch_memcpy_(ce|sm)_cpu0_gpu[0-9]+_bw
+
+    nvbandwidth-all-to-one:
+      statistics: mean
+      categories: nvbandwidth/all-to-one
+      aggregate: nvbandwidth/all_to_one_(?:read|write)_(?:ce|sm)_gpu([0-9]+)_gpu([0-9]+)_bw
+      metrics:
+        - nvbandwidth/all_to_one_(?:read|write)_(?:ce|sm)_gpu[0-9]+_gpu[0-9]+_bw
+
+    nvbandwidth-one-to-all:
+      statistics: mean
+      categories: nvbandwidth/one-to-all
+      aggregate: nvbandwidth/one_to_all_(?:read|write)_(?:ce|sm)_gpu([0-9]+)_gpu([0-9]+)_bw
+      metrics:
+        - nvbandwidth/one_to_all_(?:read|write)_(?:ce|sm)_gpu[0-9]+_gpu[0-9]+_bw
+
+    nvbandwidth-local-copy:
+      statistics: mean
+      categories: nvbandwidth/local
+      metrics:
+        - nvbandwidth/device_local_copy_.*_gpu[0-9]+_bw
+
+    nvbandwidth-summary:
+      statistics: mean
+      categories: nvbandwidth/summary
+      metrics:
+        - nvbandwidth/.*_sum_bw
+        
+    cpu-stream:
+      statistics: mean
+      categories: cpu-stream
+      metrics:
+        - cpu-stream:cross-socket(\d+)/copy_throughput
+        - cpu-stream:cross-socket(\d+)/copy_time_avg
+        - cpu-stream:numa(\d+)/copy_throughput
+        - cpu-stream:numa(\d+)/copy_time_avg
+        - cpu-stream:spread(\d+)/copy_throughput
+        - cpu-stream:spread(\d+)/copy_time_avg
+
+    gpu-stream:
+      statistics: mean
+      categories: gpu-stream
+      metrics:
+        - gpu-stream:*.*/STREAM.*_bw
+        - gpu-stream:*.*/STREAM.*_ratio
