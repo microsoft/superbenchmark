@@ -1,0 +1,39 @@
+superbench:
+  rules:
+    deterministic_rule:
+      function: variance
+      criteria: "lambda x: x != 0"
+      categories: SDC-Fingerprint
+      metrics:
+        - model-benchmarks:.*/deterministic_loss.*
+        - model-benchmarks:.*/deterministic_loss_max.*
+        - model-benchmarks:.*/deterministic_loss_min.*
+        - model-benchmarks:.*/deterministic_act_mean.*
+        - model-benchmarks:.*/deterministic_act_mean_max.*
+        - model-benchmarks:.*/deterministic_act_mean_min.*
+        - model-benchmarks:.*/deterministic_check_count.*
+
+    deterministic_config_rule:
+      function: variance
+      criteria: "lambda x: x != 0"
+      categories: SDC-Config
+      metrics:
+        - model-benchmarks:.*/deterministic_config_batch_size.*
+        - model-benchmarks:.*/deterministic_config_num_warmup.*
+        - model-benchmarks:.*/deterministic_config_deterministic_seed.*
+        - model-benchmarks:.*/deterministic_config_check_frequency.*
+        - model-benchmarks:.*/deterministic_config_seq_len.*
+        - model-benchmarks:.*/deterministic_config_hidden_size.*
+        - model-benchmarks:.*/deterministic_config_num_classes.*
+        - model-benchmarks:.*/deterministic_config_input_size.*
+        - model-benchmarks:.*/deterministic_config_num_layers.*
+        - model-benchmarks:.*/deterministic_config_num_hidden_layers.*
+        - model-benchmarks:.*/deterministic_config_num_attention_heads.*
+        - model-benchmarks:.*/deterministic_config_intermediate_size.*
+
+    deterministic_failure_rule:
+      function: failure_check
+      criteria: "lambda x: x != 0"
+      categories: SDC-Failed
+      metrics:
+        - model-benchmarks:.*/return_code

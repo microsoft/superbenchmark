@@ -1,0 +1,42 @@
+# SuperBench config: 6h llama2-7b determinism (SDC) test run.
+# Uses a FIXED step count (not duration) so the fingerprint sequence length is
+# reproducible across machines, which makes the per-checkpoint max/min/mean
+# determinism metrics comparable. ~5500 steps ≈ 6h at ~3.87 s/step on this node.
+version: v0.11
+superbench:
+  enable:
+  - model-benchmarks:llama2-7b-det
+  monitor:
+    enable: false
+  var:
+    default_local_mode:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: yes
+  benchmarks:
+    model-benchmarks:llama2-7b-det:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: yes
+      frameworks: [pytorch]
+      timeout: 25200            # >= ~6h + setup overhead (6h = 21600s)
+      models:
+      - llama2-7b
+      parameters:
+        duration: 0             # disable wall-clock cap; use fixed steps instead
+        num_warmup: 32
+        num_steps: 5500         # ~6h at ~3.87 s/step (reproducible fingerprint length)
+        sample_count: 8192
+        batch_size: 24
+        precision: [float32]
+        model_action: [train]
+        pin_memory: yes
+        num_workers: 0
+        seq_len: 256
+        enable_determinism: true
+        deterministic_seed: 42
+        check_frequency: 100    # ~55 checkpoints -> exercises max/min metrics well

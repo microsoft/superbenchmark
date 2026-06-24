@@ -182,6 +182,11 @@ class PytorchBase(ModelBenchmark):
                     filtered_values = [v for v in values if v is not None]
                     if filtered_values:
                         self._result.add_result(metric_name, statistics.mean(filtered_values))
+                        # Add max/min of checkpointed values. Unlike the mean, these are not
+                        # diluted by averaging, so a single corrupted checkpoint (potential SDC)
+                        # still surfaces regardless of how many checkpoints were recorded.
+                        self._result.add_result(f'{metric_name}_max', max(filtered_values))
+                        self._result.add_result(f'{metric_name}_min', min(filtered_values))
                     else:
                         # No valid (non-None) values recorded; record NaN to avoid StatisticsError
                         self._result.add_result(metric_name, float('nan'))
