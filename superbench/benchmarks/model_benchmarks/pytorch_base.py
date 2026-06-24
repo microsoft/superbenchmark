@@ -105,7 +105,11 @@ class PytorchBase(ModelBenchmark):
         # Record per-step loss for determinism checks
         loss_value = model_log_utils.record_step_loss(loss, curr_step, self._model_run_losses, logger)
 
-        # Record periodic fingerprint (loss and activation mean)
+        # Optional finer-grained fingerprints (off by default; enabled per-node for SDC hunting).
+        num_chunks = getattr(self._args, 'fingerprint_chunks', 0)
+        enable_hash = getattr(self._args, 'fingerprint_hash', False)
+
+        # Record periodic fingerprint (loss and activation mean, plus optional chunks/hash)
         model_log_utils.record_periodic_fingerprint(
             curr_step,
             loss_value,
@@ -114,6 +118,8 @@ class PytorchBase(ModelBenchmark):
             check_frequency,
             enable_determinism,
             logger,
+            num_chunks=num_chunks,
+            enable_hash=enable_hash,
         )
 
     def _finalize_periodic_logging(self, periodic, info_key='loss'):
@@ -151,6 +157,19 @@ class PytorchBase(ModelBenchmark):
             required=False,
             help='How often (in steps) to run lightweight periodic checks/logs and evaluate early-stop conditions.',
         )
+        self._parser.add_argument(
+            '--fingerprint_chunks',
+            type=int,
+            default=0,
+            required=False,
+            help='If > 0, record per-chunk activation checksums (Approach A) with this many chunks per checkpoint.',
+        )
+        self._parser.add_argument(
+            '--fingerprint_hash',
+            action='store_true',
+            default=False,
+            help='If set, record a bitwise activation hash (Approach B) at each checkpoint for exact SDC detection.',
+        )
 
     def _post_run_model_log(self):
         """Add deterministic metrics to results.
@@ -171,6 +190,10 @@ class PytorchBase(ModelBenchmark):
         # Add periodic fingerprints (loss, activation mean) to results
         if self._model_run_periodic:
             for key, values in self._model_run_periodic.items():
+                # 'act_chunks' (list-of-lists) and 'act_hash' (list of ints) are not scalar
+                # sequences; they get dedicated, non-diluting reductions below.
+                if key in ('act_chunks', 'act_hash'):
+                    continue
                 if isinstance(values, list) and values:
                     # Include rank in metric name for distributed training
                     if self._global_rank is not None:
@@ -191,6 +214,16 @@ class PytorchBase(ModelBenchmark):
                         # No valid (non-None) values recorded; record NaN to avoid StatisticsError
                         self._result.add_result(metric_name, float('nan'))
 
+        # Approach A: per-chunk activation checksums. For each chunk index, surface the
+        # max/min across checkpoints so a corruption localized to one chunk shows up even
+        # if it stays within the model-wide value range.
+        self._add_chunk_metrics_to_result()
+
+        # Approach B: bitwise activation hash. Collapse the ordered per-checkpoint hashes
+        # into a single combined hash; any per-checkpoint difference changes it, and the
+        # diagnosis compares it for exact equality against the gold baseline.
+        self._add_hash_metric_to_result()
+
         # Add count of deterministic checks performed
         if self._model_run_periodic.get('step'):
             if self._global_rank is not None:
@@ -201,6 +234,47 @@ class PytorchBase(ModelBenchmark):
 
         # Add configuration parameters for validation
         self._add_determinism_config_to_result()
+
+    def _metric_prefix(self, base):
+        """Build a metric name, appending rank information for distributed runs."""
+        if self._global_rank is not None:
+            return f'deterministic_{base}_rank{self._global_rank}'
+        return f'deterministic_{base}'
+
+    def _add_chunk_metrics_to_result(self):
+        """Emit per-chunk activation checksum max/min across checkpoints (Approach A).
+
+        Each checkpoint stored a list of per-chunk sums. For every chunk index we report
+        the max and min across all checkpoints, so a corruption localized to a single
+        chunk surfaces even when it stays within the overall activation value range.
+        """
+        chunk_series = self._model_run_periodic.get('act_chunks')
+        if not chunk_series:
+            return
+        valid = [c for c in chunk_series if c is not None]
+        if not valid:
+            return
+        num_chunks = min(len(c) for c in valid)
+        for i in range(num_chunks):
+            column = [c[i] for c in valid if c[i] is not None]
+            if not column:
+                continue
+            self._result.add_result(self._metric_prefix(f'act_chunk{i}_max'), max(column))
+            self._result.add_result(self._metric_prefix(f'act_chunk{i}_min'), min(column))
+
+    def _add_hash_metric_to_result(self):
+        """Emit one combined bitwise activation hash across checkpoints (Approach B).
+
+        The ordered per-checkpoint hashes are folded into a single stable hash int. Any
+        per-checkpoint difference changes it, so a deterministic run that diverges from
+        the gold baseline (potential SDC) produces a different value.
+        """
+        hash_series = self._model_run_periodic.get('act_hash')
+        if not hash_series:
+            return
+        combined = model_log_utils.combine_hashes(hash_series)
+        if combined is not None:
+            self._result.add_result(self._metric_prefix('act_hash'), combined)
 
     def _add_determinism_config_to_result(self):
         """Add benchmark configuration parameters as metrics for determinism validation.

@@ -20,6 +20,8 @@ superbench:
         - model-benchmarks:.*/deterministic_act_mean.*
         - model-benchmarks:.*/deterministic_act_mean_max.*
         - model-benchmarks:.*/deterministic_act_mean_min.*
+        - model-benchmarks:.*/deterministic_act_chunk.*
+        - model-benchmarks:.*/deterministic_act_hash.*
         - model-benchmarks:.*/deterministic_check_count.*
         - model-benchmarks:.*/deterministic_step.*
         - model-benchmarks:.*/deterministic_config_.*

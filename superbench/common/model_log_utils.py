@@ -61,8 +61,99 @@ def _record_activation_fingerprint(curr_step, logits, periodic_dict, logger):
         periodic_dict.setdefault('act_mean', []).append(None)
 
 
+def _record_activation_chunks(curr_step, logits, periodic_dict, logger, num_chunks):
+    """Record per-chunk checksums of the activation (Approach A: granular fingerprint).
+
+    The activation is flattened and split into ``num_chunks`` segments, and the sum of
+    each segment is recorded separately. Unlike a single mean over the whole tensor, a
+    corruption that lands inside the normal value range still changes its own chunk's
+    checksum, and errors in different chunks cannot cancel each other out.
+
+    Args:
+        curr_step (int): Current training step.
+        logits: Logits tensor for the activation fingerprint.
+        periodic_dict (dict): Dictionary to store periodic data; appends to 'act_chunks'.
+        logger: Optional logger for warnings.
+        num_chunks (int): Number of segments to split the activation into.
+    """
+    try:
+        if logits is None or num_chunks <= 0:
+            periodic_dict.setdefault('act_chunks', []).append(None)
+            return
+        import torch
+
+        flat = logits[0].detach().float().flatten()
+        # double() accumulation so small bit-flips are not masked by fp32 rounding.
+        chunk_sums = [float(c.double().sum().item()) for c in torch.chunk(flat, num_chunks)]
+        periodic_dict.setdefault('act_chunks', []).append(chunk_sums)
+    except Exception:
+        if logger:
+            logger.warning(f'Unable to log act_chunks at curr_step {curr_step}')
+        periodic_dict.setdefault('act_chunks', []).append(None)
+
+
+def _record_activation_hash(curr_step, logits, periodic_dict, logger):
+    """Record a bitwise hash of the activation (Approach B: exact fingerprint).
+
+    Hashes the raw tensor bytes of the activation. A deterministic run should produce
+    byte-identical activations, so any difference -- even a single flipped bit deep
+    inside the normal value range -- changes the digest and is caught. The digest is
+    stored as an int so it flows through the existing scalar-based diagnosis rules.
+
+    Args:
+        curr_step (int): Current training step.
+        logits: Logits tensor for the activation fingerprint.
+        periodic_dict (dict): Dictionary to store periodic data; appends to 'act_hash'.
+        logger: Optional logger for warnings.
+    """
+    try:
+        if logits is None:
+            periodic_dict.setdefault('act_hash', []).append(None)
+            return
+        import hashlib
+
+        raw = logits[0].detach().contiguous().cpu().numpy().tobytes()
+        # Truncate to 15 hex digits so the value fits comfortably in a 64-bit-ish int
+        # while still making collisions astronomically unlikely.
+        digest = int(hashlib.sha1(raw).hexdigest()[:15], 16)
+        periodic_dict.setdefault('act_hash', []).append(digest)
+    except Exception:
+        if logger:
+            logger.warning(f'Unable to log act_hash at curr_step {curr_step}')
+        periodic_dict.setdefault('act_hash', []).append(None)
+
+
+def combine_hashes(hash_values):
+    """Combine an ordered list of per-checkpoint hash ints into a single stable hash int.
+
+    Any change to any checkpoint's hash (value or position) changes the combined result,
+    so the whole run collapses to one scalar that the diagnosis can compare for equality.
+
+    Args:
+        hash_values (list): Ordered list of per-checkpoint hash ints (None entries allowed).
+
+    Returns:
+        int: Combined hash, or None if there are no valid hashes.
+    """
+    import hashlib
+
+    valid = [h for h in hash_values if h is not None]
+    if not valid:
+        return None
+    joined = ','.join(str(h) for h in valid).encode('utf-8')
+    return int(hashlib.sha1(joined).hexdigest()[:15], 16)
+
+
 def record_periodic_fingerprint(
-    curr_step, loss_value, logits, periodic_dict, check_frequency, enable_determinism, logger=None
+    curr_step,
+    loss_value,
+    logits,
+    periodic_dict,
+    check_frequency,
+    enable_determinism,
+    logger=None,
+    num_chunks=0,
+    enable_hash=False,
 ):
     """Record periodic fingerprints (loss and activation mean) for deterministic runs.
 
@@ -74,6 +165,8 @@ def record_periodic_fingerprint(
         check_frequency (int): Frequency for fingerprint logging.
         enable_determinism (bool): Whether determinism is enabled.
         logger: Optional logger for info/warnings.
+        num_chunks (int): If > 0, also record per-chunk activation checksums (Approach A).
+        enable_hash (bool): If True, also record a bitwise activation hash (Approach B).
     """
     # Defensively handle invalid check_frequency values to avoid ZeroDivisionError and
     # undefined behavior for non-positive frequencies.
@@ -89,3 +182,7 @@ def record_periodic_fingerprint(
 
     _record_loss_fingerprint(curr_step, loss_value, periodic_dict, logger)
     _record_activation_fingerprint(curr_step, logits, periodic_dict, logger)
+    if num_chunks and num_chunks > 0:
+        _record_activation_chunks(curr_step, logits, periodic_dict, logger, num_chunks)
+    if enable_hash:
+        _record_activation_hash(curr_step, logits, periodic_dict, logger)

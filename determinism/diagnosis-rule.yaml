@@ -11,6 +11,11 @@ superbench:
         - model-benchmarks:.*/deterministic_act_mean.*
         - model-benchmarks:.*/deterministic_act_mean_max.*
         - model-benchmarks:.*/deterministic_act_mean_min.*
+        # Approach A (per-chunk checksums) and Approach B (bitwise hash). Any deviation
+        # from the gold baseline yields a non-zero variance and is flagged. These metrics
+        # only appear when fingerprint_chunks / fingerprint_hash are enabled for the run.
+        - model-benchmarks:.*/deterministic_act_chunk.*
+        - model-benchmarks:.*/deterministic_act_hash.*
         - model-benchmarks:.*/deterministic_check_count.*
 
     deterministic_config_rule:

@@ -1,0 +1,47 @@
+# SuperBench config: 6h llama2-7b determinism (SDC) test run -- Approach B (bitwise hash).
+# Identical to llama2-7b-det-6h.yaml but enables the exact activation hash fingerprint.
+# Use on the node assigned to compute/SM-path SDC detection. The hash catches any
+# divergence from the gold baseline, including tiny in-range bit-flips the mean misses.
+#
+# KEEP num_steps, deterministic_seed, batch_size, seq_len and precision IDENTICAL to the
+# good (gold) node so the fingerprint is comparable. num_steps below is tuned to ~3.87 s/step
+# on node0-atp; recompute the wall-clock per machine but DO NOT change num_steps.
+version: v0.11
+superbench:
+  enable:
+  - model-benchmarks:llama2-7b-det
+  monitor:
+    enable: false
+  var:
+    default_local_mode:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: yes
+  benchmarks:
+    model-benchmarks:llama2-7b-det:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: yes
+      frameworks: [pytorch]
+      timeout: 25200            # >= ~6h + setup overhead (6h = 21600s)
+      models:
+      - llama2-7b
+      parameters:
+        duration: 0             # disable wall-clock cap; use fixed steps instead
+        num_warmup: 32
+        num_steps: 5500         # ~6h at ~3.87 s/step (reproducible fingerprint length)
+        sample_count: 8192
+        batch_size: 24
+        precision: [float32]
+        model_action: [train]
+        pin_memory: yes
+        num_workers: 0
+        seq_len: 256
+        enable_determinism: true
+        deterministic_seed: 42
+        check_frequency: 100    # ~55 checkpoints
+        fingerprint_hash: true  # Approach B: exact bitwise activation hash per checkpoint

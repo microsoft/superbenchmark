@@ -1,0 +1,47 @@
+# SuperBench config: 6h llama2-7b determinism (SDC) test run -- Approach A (per-chunk checksums).
+# Identical to llama2-7b-det-6h.yaml but enables per-chunk activation checksums. The activation
+# is split into N segments per checkpoint and each segment's checksum is reported (max/min across
+# checkpoints), so a corruption localized to one chunk surfaces even if it stays in-range globally.
+#
+# KEEP num_steps, deterministic_seed, batch_size, seq_len and precision IDENTICAL to the
+# good (gold) node so the fingerprint is comparable. num_steps below is tuned to ~3.87 s/step
+# on node0-atp; recompute the wall-clock per machine but DO NOT change num_steps.
+version: v0.11
+superbench:
+  enable:
+  - model-benchmarks:llama2-7b-det
+  monitor:
+    enable: false
+  var:
+    default_local_mode:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: yes
+  benchmarks:
+    model-benchmarks:llama2-7b-det:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: yes
+      frameworks: [pytorch]
+      timeout: 25200            # >= ~6h + setup overhead (6h = 21600s)
+      models:
+      - llama2-7b
+      parameters:
+        duration: 0             # disable wall-clock cap; use fixed steps instead
+        num_warmup: 32
+        num_steps: 5500         # ~6h at ~3.87 s/step (reproducible fingerprint length)
+        sample_count: 8192
+        batch_size: 24
+        precision: [float32]
+        model_action: [train]
+        pin_memory: yes
+        num_workers: 0
+        seq_len: 256
+        enable_determinism: true
+        deterministic_seed: 42
+        check_frequency: 100    # ~55 checkpoints
+        fingerprint_chunks: 16  # Approach A: split activation into 16 per-chunk checksums
