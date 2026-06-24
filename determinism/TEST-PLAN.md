@@ -75,9 +75,12 @@ improvement already catch it, or do we need the heavier hash?"
 Run both detector configs on the good node:
 
 ```bash
-sb run --no-docker -c determinism/llama2-7b-det-6h-hash.yaml
-sb run --no-docker -c determinism/llama2-7b-det-6h-chunks.yaml
+sb run --no-docker --host-list localhost -c determinism/llama2-7b-det-6h-hash.yaml
+sb run --no-docker --host-list localhost -c determinism/llama2-7b-det-6h-chunks.yaml
 ```
+
+> `--host-list localhost` is REQUIRED for a local run. Without it `sb run` fails
+> with `Must specify one of host_file or host_list.`
 
 Generate a baseline from each good run (use the matching results-summary.jsonl):
 
@@ -108,7 +111,7 @@ load** — intermittent faults need many passes and heat:
 ```bash
 # Example loop wrapper (adjust count as needed)
 for i in $(seq 1 5); do
-  sb run --no-docker -c determinism/llama2-7b-det-6h-hash.yaml   # node's own config
+  sb run --no-docker --host-list localhost -c determinism/llama2-7b-det-6h-hash.yaml   # node's own config
 done
 ```
 

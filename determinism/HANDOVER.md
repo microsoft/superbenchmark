@@ -227,7 +227,7 @@ The `Deterministic` category metrics list should be:
 2. Run the 6h test:
    ```bash
    cd /opt/superbench
-   sb run --no-docker -c determinism/llama2-7b-det-6h.yaml
+   sb run --no-docker --host-list localhost -c determinism/llama2-7b-det-6h.yaml
    ```
    Output goes to `outputs/<datetime>/`. Results file:
    `outputs/<datetime>/results-summary.jsonl`.
