@@ -1,0 +1,44 @@
+version: v0.11
+superbench:
+  enable:
+  - model-benchmarks:llama2-7b-det
+  monitor:
+    enable: false
+  var:
+    default_local_mode:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: true
+  benchmarks:
+    model-benchmarks:llama2-7b-det:
+      modes:
+      - name: local
+        proc_num: 4
+        prefix: CUDA_VISIBLE_DEVICES={proc_rank}
+        parallel: true
+        env: {}
+      frameworks:
+      - pytorch
+      timeout: 25200
+      models:
+      - llama2-7b
+      parameters:
+        duration: 0
+        num_warmup: 32
+        num_steps: 5500
+        sample_count: 8192
+        batch_size: 24
+        precision:
+        - float32
+        model_action:
+        - train
+        pin_memory: true
+        num_workers: 0
+        seq_len: 256
+        enable_determinism: true
+        deterministic_seed: 42
+        check_frequency: 100
+        fingerprint_hash: true
+  env: {}

@@ -1,0 +1,35 @@
+[2026-06-25 06:00:24,321 GB30002:2878674][runner.py:47][INFO] Runner uses config: {'superbench': {'benchmarks': {'model-benchmarks:llama2-7b-det': {'frameworks': ['pytorch'],
+                                                                  'models': ['llama2-7b'],
+                                                                  'modes': [{'name': 'local',
+                                                                             'parallel': True,
+                                                                             'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank}',
+                                                                             'proc_num': 4}],
+                                                                  'parameters': {'batch_size': 24,
+                                                                                 'check_frequency': 100,
+                                                                                 'deterministic_seed': 42,
+                                                                                 'duration': 0,
+                                                                                 'enable_determinism': True,
+                                                                                 'fingerprint_hash': True,
+                                                                                 'model_action': ['train'],
+                                                                                 'num_steps': 5500,
+                                                                                 'num_warmup': 32,
+                                                                                 'num_workers': 0,
+                                                                                 'pin_memory': True,
+                                                                                 'precision': ['float32'],
+                                                                                 'sample_count': 8192,
+                                                                                 'seq_len': 256},
+                                                                  'timeout': 25200}},
+                'enable': ['model-benchmarks:llama2-7b-det'],
+                'monitor': {'enable': False},
+                'var': {'default_local_mode': {'modes': [{'name': 'local',
+                                                          'parallel': True,
+                                                          'prefix': 'CUDA_VISIBLE_DEVICES={proc_rank}',
+                                                          'proc_num': 4}]}}},
+ 'version': 'v0.11'}.
+[2026-06-25 06:00:24,321 GB30002:2878674][runner.py:48][INFO] Runner writes to: /workspace/superbenchmark/outputs/2026-06-25_06-00-24.
+[2026-06-25 06:00:24,322 GB30002:2878674][runner.py:53][INFO] Runner will run: ['model-benchmarks:llama2-7b-det']
+[2026-06-25 06:00:24,322 GB30002:2878674][runner.py:253][INFO] Checking SuperBench environment.
+[2026-06-25 06:00:24,323 GB30002:2878674][ansible.py:128][INFO] Run playbook check_env.yaml ...
+[2026-06-25 06:00:37,613 GB30002:2878674][ansible.py:80][INFO] Run succeed, return code 0.
+[2026-06-25 11:58:59,361 GB30002:2878674][ansible.py:128][INFO] Run playbook fetch_results.yaml ...
+[2026-06-25 11:59:04,399 GB30002:2878674][ansible.py:80][INFO] Run succeed, return code 0.
