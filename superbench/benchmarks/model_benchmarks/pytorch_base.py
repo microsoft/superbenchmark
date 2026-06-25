@@ -268,6 +268,13 @@ class PytorchBase(ModelBenchmark):
         The ordered per-checkpoint hashes are folded into a single stable hash int. Any
         per-checkpoint difference changes it, so a deterministic run that diverges from
         the gold baseline (potential SDC) produces a different value.
+
+        In addition to the combined hash, each checkpoint's hash is emitted individually
+        as ``act_hash_ckpt{i}`` so a single 6h run yields one comparison per checkpoint
+        (~55) instead of one comparison for the whole run -- materially increasing
+        sensitivity to a transient SDC that touches only one checkpoint. Per-checkpoint
+        values are reduced modulo 1e15 so they are represented exactly in float64 (the
+        baseline storage type), avoiding rounding that could mask the lowest digits.
         """
         hash_series = self._model_run_periodic.get('act_hash')
         if not hash_series:
@@ -275,6 +282,12 @@ class PytorchBase(ModelBenchmark):
         combined = model_log_utils.combine_hashes(hash_series)
         if combined is not None:
             self._result.add_result(self._metric_prefix('act_hash'), combined)
+        # Per-checkpoint hashes. Index i maps to the same step across all nodes because
+        # num_steps and check_frequency are identical, so index-based comparison is valid.
+        for i, h in enumerate(hash_series):
+            if h is None:
+                continue
+            self._result.add_result(self._metric_prefix(f'act_hash_ckpt{i}'), h % (10 ** 15))
 
     def _add_determinism_config_to_result(self):
         """Add benchmark configuration parameters as metrics for determinism validation.
