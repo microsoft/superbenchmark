@@ -23,7 +23,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'stream'
-        self.__cpu_arch = ['other', 'zen3', 'zen4', 'neo2']
+        self.__cpu_arch = ['other', 'zen3', 'zen4', 'neo2', 'olympus']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -103,6 +103,8 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             self._bin_name = 'streamZen4'
         elif self._args.cpu_arch == 'neo2':
             self._bin_name = 'streamNeo2'
+        elif self._args.cpu_arch == 'olympus':
+            self._bin_name = 'streamOlympus'
 
         binary_path = os.path.join(self._args.bin_dir, self._bin_name)
         command = f'{envar} {numa_cmd} {binary_path}'

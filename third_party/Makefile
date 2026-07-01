@@ -41,7 +41,14 @@ sb_micro_path:
 # Build cutlass.
 # for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
+	# CUDA 13.4+ sm_107. The pinned cutlass tag predates native sm_107, so build
+	# sm_100/sm_103 which the driver JIT-promotes from PTX to sm_107 at runtime
+	# (forward compatibility). Change ARCHS to include "107" once cutlass supports it.
+	$(eval ARCHS := "100;103")
+	if [ -d cutlass ]; then rm -rf cutlass; fi
+	git clone --branch v4.1.0 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
+else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := "100;103")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v4.1.0 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
@@ -84,11 +91,12 @@ endif
 # The Makefile of bandwidthTest does not have 'install' target, so need to copy bin to $(SB_MICRO_PATH)/bin/ and create $(SB_MICRO_PATH)/bin/ if not existing.
 # The bandwidthTest sample was out-of-date and has been removed as of the CUDA Samples 12.9 release (see the change log). For up-to-date bandwidth measurements, refer instead to the NVBandwith utility.
 cuda_bandwidthTest: sb_micro_path
+ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+	@echo "Skip cuda-samples build for CUDA>=12.9 (bandwidthTest removed upstream; use nvbandwidth instead)"
+else
 	if [ -d cuda-samples ]; then rm -rf cuda-samples; fi
 	git clone --depth 1 -b v$(CUDA_VER) https://github.com/NVIDIA/cuda-samples.git
-ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
-	@echo "Skip cuda-samples build for CUDA>=12.9"
-else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval TEST_PATH := "./cuda-samples/Samples/1_Utilities/bandwidthTest")
 	cd ./$(TEST_PATH) && mkdir build && cd build && cmake .. && make
 	cp -v ./$(TEST_PATH)/build/bandwidthTest $(SB_MICRO_PATH)/bin/
@@ -102,6 +110,7 @@ else
 	$(eval ARCHS := "70 75 80 86")
 	cd ./$(TEST_PATH) && make clean && make SMS=$(ARCHS)
 	cp -v ./$(TEST_PATH)/bandwidthTest $(SB_MICRO_PATH)/bin/
+endif
 endif
 
 # Build nccl-tests.
@@ -183,8 +192,14 @@ rocm_bandwidthTest: sb_micro_path
 	cp -v ./HIP/samples/1_Utils/hipBusBandwidth/build/hipBusBandwidth $(SB_MICRO_PATH)/bin/
 
 # Build GPCNET from commit c56fd9.
+# HPC-X 2.50+ removed hpcx-init.sh; if the script exists, source it for mpicc.
+# Otherwise assume mpicc is already on PATH (e.g. via MPI_HOME in the dockerfile).
 gpcnet: sb_micro_path
+ifeq ($(wildcard ${HPCX_HOME}/hpcx-init.sh),)
+	make CC=mpicc -C GPCNET all
+else
 	bash -c "source ${HPCX_HOME}/hpcx-init.sh && hpcx_load && make CC=mpicc -C GPCNET all && hpcx_unload"
+endif
 	cp -v ./GPCNET/network_test $(SB_MICRO_PATH)/bin/
 	cp -v ./GPCNET/network_load_test $(SB_MICRO_PATH)/bin/
 
@@ -213,10 +228,11 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 endif
 
 # Build STREAM
+# stream.c is vendored locally under stream-tests/ (upstream source:
+# https://github.com/jeffhammond/STREAM). Avoids a network fetch on every build.
 cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
-    wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
 	make all
 	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
@@ -278,7 +294,15 @@ apex_rocm:
 
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
-ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
+	# CUDA 13.4+ sm_107. msccl's pinned commit predates native sm_107; build
+	# sm_100/sm_103 + PTX which the driver JIT-promotes to sm_107 at runtime.
+	# Add 107 to ARCHS once msccl/nccl supports it.
+	$(eval ARCHS := 100 103)
+	if [ -d msccl ]; then rm -rf msccl; fi; \
+	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
+	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
+else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := 100 103)
 	if [ -d msccl ]; then rm -rf msccl; fi; \
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \

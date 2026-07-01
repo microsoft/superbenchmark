@@ -5,21 +5,23 @@ GENFLAGS := -DSTREAM_ARRAY_SIZE=120000000
 ZEN3FLAGS := -DSTREAM_ARRAY_SIZE=400000000 -march=znver3
 ZEN4FLAGS := -DSTREAM_ARRAY_SIZE=800000000 -march=znver4
 NEO2FLAGS := -DSTREAM_ARRAY_SIZE=120000000 -mcpu=neoverse-v2
+OLYMPUSFLAGS := -DSTREAM_ARRAY_SIZE=120000000 -mcpu=olympus
 
 GEN_OUTPUT := stream
 ZEN3_OUTPUT := streamZen3
 ZEN4_OUTPUT := streamZen4
 NEO2_OUTPUT := streamNeo2
+OLYMPUS_OUTPUT := streamOlympus
 
 ALL_TARGETS := GEN
 
 ARCH := $(shell uname -m)
 
-# ARM64 build gets NEO2 added
+# ARM64 build gets NEO2 and OLYMPUS added
 ifeq ($(ARCH), aarch64)
   CC      := gcc
   CFLAGS  := -Ofast -fopenmp -DNTIMES=200
-  ALL_TARGETS += NEO2
+  ALL_TARGETS += NEO2 OLYMPUS
 endif
 
 # AMD AOCC clang present? add ZEN3 and ZEN4
@@ -41,7 +43,9 @@ ZEN4:
 	$(CC) $(CFLAGS) $(ZEN4FLAGS) stream.c -o $(ZEN4_OUTPUT)
 NEO2:
 	$(CC) $(CFLAGS) $(NEO2FLAGS) stream.c -o $(NEO2_OUTPUT)
+OLYMPUS:
+	$(CC) $(CFLAGS) $(OLYMPUSFLAGS) stream.c -o $(OLYMPUS_OUTPUT)
 
 # clean up the generated files
 clean:
-	rm -f $(GEN_OUTPUT) $(ZEN3_OUTPUT) $(ZEN4_OUTPUT) $(NEO2_OUTPUT)
+	rm -f $(GEN_OUTPUT) $(ZEN3_OUTPUT) $(ZEN4_OUTPUT) $(NEO2_OUTPUT) $(OLYMPUS_OUTPUT)
