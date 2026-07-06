@@ -454,17 +454,19 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
         return -1;
     }
 
-    // Validate data size
-    // Each thread processes one VecT<T> element (128 bits / 16 bytes) for optimal memory bandwidth.
-    // Derived from VecT<T> so any vector type change is caught at compile time.
+    // Each thread processes kUnroll VecT<T> elements (128 bits / 16 bytes each) per loop iteration
+    // via a grid-stride loop. The grid is sized as a small multiple of the SM count to keep all
+    // SMs busy with long-lived blocks, while the loop + unroll provides memory-level parallelism.
     constexpr uint64_t kBytesPerThread = sizeof(VecT<T>);
     static_assert(kBytesPerThread == 16, "Vector type must be 128-bit aligned for current PTX");
-    uint64_t num_bytes_in_thread_block = num_threads_per_block * kBytesPerThread;
-    if (args->size % num_bytes_in_thread_block) {
-        std::cerr << "RunStreamKernel: Data size should be multiple of " << num_bytes_in_thread_block << std::endl;
-        return -1;
-    }
-    num_thread_blocks = args->size / num_bytes_in_thread_block;
+
+    // Number of vector elements to process
+    uint64_t n = args->size / kBytesPerThread;
+
+    // Use a fixed grid: numSMs * kGridMultiplier blocks.
+    // This keeps blocks long-lived (many loop iterations) and minimizes scheduling overhead.
+    constexpr int kGridMultiplier = 4;
+    num_thread_blocks = static_cast<uint64_t>(args->gpu_device_prop.multiProcessorCount) * kGridMultiplier;
 
     args->sub.times_in_ms.resize(static_cast<int>(Kernel::kCount));
 
@@ -488,20 +490,20 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
         case Kernel::kCopy:
             CopyKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
                 reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()));
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()), n);
             args->sub.kernel_name = "COPY";
             break;
         case Kernel::kScale:
             ScaleKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
                 reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()), static_cast<T>(scalar));
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()), static_cast<T>(scalar), n);
             args->sub.kernel_name = "SCALE";
             break;
         case Kernel::kAdd:
             AddKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
                 reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
                 reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()));
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()), n);
             size_factor = 3;
             args->sub.kernel_name = "ADD";
             break;
@@ -509,7 +511,7 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
             TriadKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
                 reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
                 reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()), static_cast<T>(scalar));
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()), static_cast<T>(scalar), n);
             size_factor = 3;
             args->sub.kernel_name = "TRIAD";
             break;
