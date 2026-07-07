@@ -153,7 +153,7 @@ class SuperBenchRunner():
                 trace_output = shlex.quote(f'{rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces')
                 trace_command = (
                     f'rocprofv2 --hip-trace --kernel-trace --plugin json '
-                    f'-d {trace_output} '
+                    f'-d {trace_output} -- '
                 )
             # Build the command parts, only including trace if it's not empty
             command_parts = []
@@ -184,7 +184,7 @@ class SuperBenchRunner():
                 trace_output = shlex.quote(f'{rocprof_trace_dir}/{benchmark_name}_traces')
                 trace_prefix = (
                     f'rocprofv2 --hip-trace --kernel-trace --plugin json '
-                    f'-d {trace_output} '
+                    f'-d {trace_output} -- '
                 )
 
             mode_command = (
@@ -206,7 +206,7 @@ class SuperBenchRunner():
                 trace_output = shlex.quote(f'{rocprof_trace_dir}/{benchmark_name}_{mode.proc_rank}_traces')
                 trace_command = (
                     f'rocprofv2 --hip-trace --kernel-trace --plugin json '
-                    f'-d {trace_output} '
+                    f'-d {trace_output} -- '
                 )
             mode_command = (
                 '{trace} '
