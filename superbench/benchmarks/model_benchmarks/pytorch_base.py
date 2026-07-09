@@ -24,6 +24,7 @@ from superbench.benchmarks import (
     ReturnCode,
     DistributedBackend,
     DistributedImpl,
+    ModelAction,
 )
 from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBenchmark
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
@@ -173,20 +174,37 @@ class PytorchBase(ModelBenchmark):
         """
         return HuggingFaceModelLoader.estimate_param_count_from_config(hf_config)
 
-    def _estimate_training_memory(self, param_count, precision):
-        """Estimate GPU memory required for training a model.
+    def _get_hf_memory_mode(self):
+        """Determine the memory-estimation mode based on the requested model action(s).
 
-        Delegates to HuggingFaceModelLoader.estimate_memory() with mode='training'.
+        Training needs far more memory (weights + gradients + optimizer states) than
+        inference (weights + runtime overhead). When only inference is requested, use the
+        cheaper inference estimate so large models (e.g. 70B) that fit for inference are
+        not rejected by the training-sized pre-check.
+
+        Returns:
+            str: 'training' if any training action is requested, otherwise 'inference'.
+        """
+        actions = getattr(self._args, 'model_action', None)
+        if actions and ModelAction.TRAIN not in actions:
+            return 'inference'
+        return 'training'
+
+    def _estimate_hf_memory(self, param_count, precision, mode='training'):
+        """Estimate GPU memory required for a HuggingFace model.
+
+        Delegates to HuggingFaceModelLoader.estimate_memory().
 
         Args:
             param_count (int): Number of model parameters.
             precision (Precision): Model precision (float32, float16, etc.).
+            mode (str): 'training' or 'inference'.
 
         Returns:
             tuple: (estimated_bytes, gpu_total_bytes, fits) where fits is True if
                    the model is estimated to fit in available memory.
         """
-        return HuggingFaceModelLoader.estimate_memory(param_count, precision.value, mode='training')
+        return HuggingFaceModelLoader.estimate_memory(param_count, precision.value, mode=mode)
 
     def _customize_hf_config(self, hf_config):
         """Hook for subclasses to customize the HF config after download.
@@ -232,6 +250,7 @@ class PytorchBase(ModelBenchmark):
 
             # Step 2: Estimate param count from config (no model instantiation — avoids
             # allocating hundreds of GB of CPU RAM for large models like 70B)
+            mem_mode = self._get_hf_memory_mode()
             param_count_raw = self._estimate_param_count_from_config(hf_config)
             if param_count_raw is None:
                 logger.warning(
@@ -242,15 +261,18 @@ class PytorchBase(ModelBenchmark):
                 estimated_bytes, gpu_mem = 0, 0
                 param_count = 0
             else:
-                estimated_bytes, gpu_mem, fits = self._estimate_training_memory(param_count_raw, precision)
+                estimated_bytes, gpu_mem, fits = self._estimate_hf_memory(param_count_raw, precision, mode=mem_mode)
                 param_count = param_count_raw / 1e6
 
             # Step 3: If model doesn't fit, fail gracefully without downloading weights
             if not fits:
                 mem_type = 'GPU memory' if self._gpu_available else 'system RAM'
+                mem_detail = (
+                    'weights + gradients + optimizer states' if mem_mode == 'training' else 'weights + runtime overhead'
+                )
                 logger.error(
                     f'Model {model_config.identifier} ({param_count:.1f}M params) estimated to need '
-                    f'~{estimated_bytes / 1e9:.1f}GB for training (weights + gradients + optimizer states), '
+                    f'~{estimated_bytes / 1e9:.1f}GB for {mem_mode} ({mem_detail}), '
                     f'which exceeds available {mem_type} ({gpu_mem / 1e9:.1f}GB). '
                     f'Skipping benchmark. To fix this, either: '
                     f'(1) reduce num_hidden_layers to use a smaller model, '
@@ -261,7 +283,7 @@ class PytorchBase(ModelBenchmark):
 
             logger.info(
                 f'Model {model_config.identifier} ({param_count:.1f}M params) estimated to need '
-                f'~{estimated_bytes / 1e9:.1f}GB for training'
+                f'~{estimated_bytes / 1e9:.1f}GB for {mem_mode}'
                 f'{f", fits in available memory ({gpu_mem / 1e9:.1f}GB)" if gpu_mem > 0 else ""}. '
                 f'Downloading pretrained weights...'
             )

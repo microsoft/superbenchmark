@@ -10,10 +10,11 @@ Commands to run:
   python3 examples/benchmarks/pytorch_huggingface_models.py (Single GPU)
   python3 examples/benchmarks/pytorch_huggingface_models.py --model bert (BERT model)
   python3 examples/benchmarks/pytorch_huggingface_models.py --model gpt2 (GPT-2 model)
+  python3 examples/benchmarks/pytorch_huggingface_models.py --model llama2-7b (Llama 2 7B, gated)
   torchrun --nproc_per_node=2 examples/benchmarks/pytorch_huggingface_models.py --distributed (Distributed, 2 GPUs)
 
 Environment variables:
-  HF_TOKEN: HuggingFace token for gated models (optional)
+  HF_TOKEN: HuggingFace token for gated models such as Llama (required for meta-llama/*)
 """
 
 import argparse
@@ -31,6 +32,44 @@ HF_MODELS = {
     'gpt2': {
         'name': 'gpt2-small',
         'identifier': 'openai-community/gpt2',
+        'parameters': '--batch_size 8 --seq_len 128',
+    },
+    # Generic GPT/Llama benchmarks served by PytorchHFLanguageModel. These pull the
+    # checkpoint straight from the HuggingFace Hub and are gated by the pre-flight
+    # memory check, so a model only runs if the hardware can support it.
+    'gptj-6b': {
+        'name': 'hf-gptj-6b',
+        'identifier': 'EleutherAI/gpt-j-6b',
+        'parameters': '--batch_size 4 --seq_len 128',
+    },
+    'gpt-neox-20b': {
+        'name': 'hf-gpt-neox-20b',
+        'identifier': 'EleutherAI/gpt-neox-20b',
+        'parameters': '--batch_size 1 --seq_len 128',
+    },
+    'llama2-7b': {
+        'name': 'hf-llama2-7b',
+        'identifier': 'meta-llama/Llama-2-7b-hf',
+        'parameters': '--batch_size 4 --seq_len 128',
+    },
+    'llama2-13b': {
+        'name': 'hf-llama2-13b',
+        'identifier': 'meta-llama/Llama-2-13b-hf',
+        'parameters': '--batch_size 2 --seq_len 128',
+    },
+    'llama2-70b': {
+        'name': 'hf-llama2-70b',
+        'identifier': 'meta-llama/Llama-2-70b-hf',
+        'parameters': '--batch_size 1 --seq_len 128 --model_action inference',
+    },
+    'llama3-8b': {
+        'name': 'hf-llama3-8b',
+        'identifier': 'meta-llama/Meta-Llama-3-8B',
+        'parameters': '--batch_size 4 --seq_len 128',
+    },
+    'llama3.2-1b': {
+        'name': 'hf-llama3.2-1b',
+        'identifier': 'meta-llama/Llama-3.2-1B',
         'parameters': '--batch_size 8 --seq_len 128',
     },
 }
