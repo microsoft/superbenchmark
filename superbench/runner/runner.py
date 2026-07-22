@@ -151,6 +151,14 @@ class SuperBenchRunner():
         enable_rocprof = os.environ.get('SB_ENABLE_ROCPROF', '') == '1'
         rocprof_trace_dir = os.environ.get('SB_ROCPROF_TRACE_DIR', self._sb_output_dir)
 
+        # SB_ENABLE_NSYS and SB_ENABLE_ROCPROF are mutually exclusive; nsys takes precedence when both are set.
+        if enable_nsys and enable_rocprof:
+            logger.warning(
+                'Both SB_ENABLE_NSYS and SB_ENABLE_ROCPROF are set; using nsys and ignoring rocprofv2. '
+                'Unset SB_ENABLE_NSYS to enable rocprofv2 tracing on AMD hardware.'
+            )
+            enable_rocprof = False
+
         mode_command = exec_command
         if mode.name == 'local':
             trace_command = ''
