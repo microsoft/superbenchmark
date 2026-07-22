@@ -148,7 +148,7 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     if (autotune) {
         workspace_size = gemm->GetAlgorithmExhaustive(
             8, 2 * m * n, 1.0f, 0.0f, reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-            reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), iter_autotune, warmup_autotune);
+            reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), iter_autotune, warmup_autotune);
     } else {
         workspace_size = gemm->GetAlgorithm(1, 2 * m * n);
     }
@@ -163,12 +163,12 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
 
     for (int i = 0; i < warmup; i++)
         gemm->Execute(reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-                      reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
+                      reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
                       workspace_size, 0);
     cudaEventRecord(startTime, 0);
     for (int i = 0; i < iter; i++)
         gemm->Execute(reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-                      reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
+                      reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
                       workspace_size, 0);
     cudaEventRecord(endTime, 0);
     cudaEventSynchronize(endTime);
@@ -178,6 +178,7 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     cudaFree(workspace);
     cudaFree(matrix_a);
     cudaFree(matrix_b);
+    cudaFree(matrix_c);
     cudaFree(matrix_out);
     return (time * 1e3 / iter);
 }
