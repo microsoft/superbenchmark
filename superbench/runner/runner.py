@@ -27,11 +27,11 @@ AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
 
 
 def _quote_for_bash_lc(value):
-    """Quote a value so it is safe both for the shell and for embedding inside an outer bash -lc '...' string.
+    r"""Quote a value so it is safe both for the shell and for embedding inside an outer bash -lc '...' string.
 
     ``shlex.quote`` wraps values containing whitespace or shell metacharacters in single quotes. When the
     resulting command is later interpolated into ``bash -lc '{command}'``, those single quotes would
-    terminate the outer single-quoted context. Escape any single quotes as ``'\\''`` so the value survives
+    terminate the outer single-quoted context. Escape any single quotes as ``'\''`` so the value survives
     both quoting layers.
     """
     return shlex.quote(value).replace("'", "'\\''")
@@ -146,10 +146,7 @@ class SuperBenchRunner():
             )
         if enable_rocprof:
             trace_output = _quote_for_bash_lc(f'{rocprof_trace_dir}/{benchmark_name}{suffix}_traces')
-            return (
-                f'rocprofv2 --hip-trace --kernel-trace --plugin json '
-                f'-d {trace_output} -- '
-            )
+            return (f'rocprofv2 --hip-trace --kernel-trace --plugin json ' f'-d {trace_output} -- ')
         return ''
 
     def __get_mode_command(self, benchmark_name, mode, timeout=None):
