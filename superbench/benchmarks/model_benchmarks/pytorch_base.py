@@ -622,6 +622,9 @@ class PytorchBase(ModelBenchmark):
             local_rank = self._local_rank
 
         diag_agent_prof = profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True)
+        # Note: on ROCm builds of PyTorch, ProfilerActivity.CUDA and event.cuda_time are aliases that cover
+        # HIP kernels; the same code path therefore works for both NVIDIA and AMD GPUs (verified on MI300x,
+        # ROCm 6.3.4).
         dump_file_dir = os.environ.get('SB_TORCH_PROFILER_TRACE_DIR', '.')
         diag_agent_dump_file_path = f'{dump_file_dir}/torch-profiler-sb-{self._name}-{local_rank}.json'
         diag_agent_prof.__enter__()
