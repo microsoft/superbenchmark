@@ -146,7 +146,10 @@ class SuperBenchRunner():
             )
         if enable_rocprof:
             trace_output = _quote_for_bash_lc(f'{rocprof_trace_dir}/{benchmark_name}{suffix}_traces')
-            return (f'rocprofv2 --hip-trace --kernel-trace --plugin json ' f'-d {trace_output} -- ')
+            # rocprofv2 does not accept the conventional ``--`` end-of-options separator; passing it triggers
+            # ``Wrong option "--"``. The trailing space is sufficient since rocprofv2 treats the first
+            # non-option token as the target executable.
+            return (f'rocprofv2 --hip-trace --kernel-trace --plugin json ' f'-d {trace_output} ')
         return ''
 
     def __get_mode_command(self, benchmark_name, mode, timeout=None):
