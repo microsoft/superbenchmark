@@ -133,7 +133,7 @@ ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) --disable-native && make -j && make install
 endif
 
-# Build rccl-tests from commit 46375b1 of default branch.
+# Build rccl-tests from commit 0039629 of default branch.
 # If AMDGPU_TARGETS env var is set (space-separated, e.g. "gfx908 gfx90a gfx942"),
 # explicit --offload-arch flags and include paths are used.
 # Otherwise, the original build command is used (relies on hipcc auto-detection).
