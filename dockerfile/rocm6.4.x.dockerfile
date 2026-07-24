@@ -181,9 +181,13 @@ ADD third_party third_party
 RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
 
 # Build hipblaslt separately with the Tensile target-triple fix for the ROCm 6.4 clang.
-# Also fix a joblib race condition (github.com/joblib/joblib/issues/1788) in Python 3.12:
-# joblib's _retrieve() iterates _jobs_set while callbacks modify it.
-# Fix: copy the set before iterating. Patch all joblib instances system-wide.
+# Also work around a joblib race (github.com/joblib/joblib/issues/1788, fixed upstream in
+# PR #1789 but not yet in a joblib release) that crashes Tensile's parallel library build
+# on Python 3.12 with "RuntimeError: Set changed size during iteration". The primary fix is
+# applied below by patching Tensile to use the ordered generator (return_as="generator"),
+# which avoids the buggy generator_unordered code path entirely. The system-wide joblib
+# source patch here is kept as defense-in-depth for the base env; note it cannot reach the
+# fresh --clear virtualenv that Tensile's install.sh creates and pip-installs joblib into.
 RUN pip install "joblib>=1.4.2" && \
     find / -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
         's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} +
@@ -191,9 +195,9 @@ RUN cd third_party && \
     git clone -b release-staging/rocm-rel-6.4 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' \
         hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py && \
+    find hipBLASLt/tensilelite -type f -name '*.py' -exec sed -i -E \
+        "s/return_as=(['\"])generator_unordered\1/return_as=\1generator\1/g" {} + && \
     cd hipBLASLt && ./install.sh -dc && \
-    find /opt -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
-        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} + && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
