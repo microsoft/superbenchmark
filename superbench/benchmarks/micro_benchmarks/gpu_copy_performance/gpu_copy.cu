@@ -599,8 +599,11 @@ int DestroyEvent(BenchArgs *args) {
 // https://github.com/ROCmSoftwarePlatform/rccl/blob/5c8380ff5b5925cae4bce00b1879a5f930226e8d/src/collectives/device/common_kernel.h#L268
 inline __device__ void FetchULong2(ulong2 &v, const ulong2 *p) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
-    v.x = p->x;
-    v.y = p->y;
+    // Use a volatile access so the compiler does not cache/reorder this zero-copy read of
+    // host-mapped (or peer) memory, matching the uncached ld.volatile.global on the CUDA path.
+    const volatile ulong2 *vp = reinterpret_cast<const volatile ulong2 *>(p);
+    v.x = vp->x;
+    v.y = vp->y;
 #else
     asm volatile("ld.volatile.global.v2.u64 {%0,%1}, [%2];" : "=l"(v.x), "=l"(v.y) : "l"(p) : "memory");
 #endif
@@ -614,8 +617,11 @@ inline __device__ void FetchULong2(ulong2 &v, const ulong2 *p) {
 // https://github.com/ROCmSoftwarePlatform/rccl/blob/5c8380ff5b5925cae4bce00b1879a5f930226e8d/src/collectives/device/common_kernel.h#L276
 inline __device__ void StoreULong2(ulong2 *p, ulong2 &v) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
-    p->x = v.x;
-    p->y = v.y;
+    // Use a volatile access so the compiler does not cache/reorder this zero-copy write to
+    // host-mapped (or peer) memory, matching the uncached st.volatile.global on the CUDA path.
+    volatile ulong2 *vp = reinterpret_cast<volatile ulong2 *>(p);
+    vp->x = v.x;
+    vp->y = v.y;
 #else
     asm volatile("st.volatile.global.v2.u64 [%0], {%1,%2};" ::"l"(p), "l"(v.x), "l"(v.y) : "memory");
 #endif
