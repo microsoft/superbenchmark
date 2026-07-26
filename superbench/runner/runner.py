@@ -154,8 +154,11 @@ class SuperBenchRunner():
         elif mode.name == 'torch.distributed':
             # TODO: replace with torch.distributed.run in v1.9
             # TODO: only supports node_num=1 and node_num=all currently
+            # For single-node runs use torchrun's standalone rendezvous, which binds a random free
+            # port instead of the fixed default (29500). This avoids transient EADDRINUSE failures
+            # when consecutive distributed benchmarks reuse the same rendezvous port.
             torch_dist_params = (
-                '' if 'node_num' in mode and mode.node_num == 1 else
+                '--standalone ' if 'node_num' in mode and mode.node_num == 1 else
                 '--nnodes=$NNODES --node_rank=$NODE_RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT '
             )
 

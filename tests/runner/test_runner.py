@@ -141,6 +141,7 @@ class RunnerTestCase(unittest.TestCase):
                 'expected_command': (
                     'torchrun '
                     '--no_python --nproc_per_node=8 '
+                    '--standalone '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo '
                     'superbench.benchmarks.foo.parameters.distributed_impl=ddp '
                     'superbench.benchmarks.foo.parameters.distributed_backend=nccl'
