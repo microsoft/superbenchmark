@@ -61,6 +61,14 @@ RUN apt-get update && \
 
 ARG NUM_MAKE_JOBS=64
 
+# Target GPU architecture(s) for ROCm micro-benchmark builds (space-separated).
+# Without this, AMDGPU_TARGETS is empty and hipcc defaults to gfx906 at build time
+# (no GPU is present during `docker build`), producing wrong-arch kernels that run
+# incorrectly on MI300X — e.g. gpu-copy-bw:correctness fails its CheckBuf data check.
+# Override at build time with: --build-arg AMDGPU_TARGETS="gfx90a gfx942 gfx950".
+ARG AMDGPU_TARGETS="gfx942"
+ENV AMDGPU_TARGETS="${AMDGPU_TARGETS}"
+
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
     required_version="3.24.1" && \
