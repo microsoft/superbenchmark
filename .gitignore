@@ -211,3 +211,8 @@ ipch/
 *.[Cc]ache
 # but keep track of directories ending in .cache
 !?*.[Cc]ache/
+
+# DNM6 SDC reference image artifacts (do not commit ~4GB image)
+DNM6.tar.zst
+DNM6/
+build.log

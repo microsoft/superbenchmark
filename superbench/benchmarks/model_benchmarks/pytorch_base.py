@@ -3,6 +3,7 @@
 
 """Module of the Pytorch model-benchmark base class."""
 
+import json
 import os
 import statistics
 import time
@@ -49,6 +50,9 @@ class PytorchBase(ModelBenchmark):
 
         self._model_run_losses = []
         self._model_run_periodic = {}
+        # Per-step fingerprints for bit-exact quorum comparison (every step, not
+        # just at check_frequency). Keyed by step number.
+        self._model_run_per_step = {'loss': {}, 'act_mean': {}}
 
     def _judge_gpu_availability(self):
         """Judge GPUs' availability according to arguments and running environment."""
@@ -87,6 +91,13 @@ class PytorchBase(ModelBenchmark):
             logger.warning('SDP kernel backend configuration not available')
             # Older PyTorch versions may not expose these APIs; ignore in that case
 
+        # NCCL determinism: force Ring algorithm and disable optimizations that
+        # introduce non-deterministic reduction ordering across GPUs.
+        os.environ.setdefault('NCCL_ALGO', 'Ring')
+        os.environ.setdefault('NCCL_P2P_NET_CHUNKSIZE', '2097152')
+        os.environ.setdefault('NCCL_SHM_DISABLE', '1')
+        os.environ.setdefault('NCCL_NVLS_ENABLE', '0')
+
     def record_determinism_fingerprint(self, curr_step, loss, logits, periodic, check_frequency):
         """Centralized logic for recording per-step loss and periodic fingerprints for deterministic runs.
 
@@ -112,6 +123,16 @@ class PytorchBase(ModelBenchmark):
             logits,
             periodic,
             check_frequency,
+            enable_determinism,
+            logger,
+        )
+
+        # Record EVERY step for per-step quorum comparison (not just at check_frequency)
+        model_log_utils.record_step_fingerprint(
+            curr_step,
+            loss_value,
+            logits,
+            self._model_run_per_step,
             enable_determinism,
             logger,
         )
@@ -185,6 +206,33 @@ class PytorchBase(ModelBenchmark):
                     else:
                         # No valid (non-None) values recorded; record NaN to avoid StatisticsError
                         self._result.add_result(metric_name, float('nan'))
+
+        # Add per-step data as JSON for bit-exact quorum comparison (sb result sdc-check)
+        if self._model_run_per_step:
+            loss_steps = self._model_run_per_step.get('loss', {})
+            act_steps = self._model_run_per_step.get('act_mean', {})
+
+            if loss_steps:
+                if self._global_rank is not None:
+                    metric_name = f'deterministic_loss_per_step_rank{self._global_rank}'
+                else:
+                    metric_name = 'deterministic_loss_per_step'
+                self._result.add_result(metric_name, json.dumps(loss_steps))
+
+            if act_steps:
+                if self._global_rank is not None:
+                    metric_name = f'deterministic_act_mean_per_step_rank{self._global_rank}'
+                else:
+                    metric_name = 'deterministic_act_mean_per_step'
+                self._result.add_result(metric_name, json.dumps(act_steps))
+
+            # Total steps recorded
+            total_steps = len(loss_steps)
+            if self._global_rank is not None:
+                metric_name = f'deterministic_total_steps_rank{self._global_rank}'
+            else:
+                metric_name = 'deterministic_total_steps'
+            self._result.add_result(metric_name, total_steps)
 
         # Add count of deterministic checks performed
         if self._model_run_periodic.get('step'):

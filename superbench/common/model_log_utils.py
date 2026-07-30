@@ -3,6 +3,11 @@
 
 """Utility functions for deterministic model training and validation."""
 
+# Sentinel prefix for NaN/Inf anomalies in per-step fingerprints. A sentinel
+# string never equals a float, so the affected step becomes an automatic outlier
+# during quorum comparison (see superbench.analyzer.sdc_quorum).
+ANOMALY_SENTINEL_PREFIX = 'anomaly:'
+
 
 def record_step_loss(loss, curr_step, losses_list, logger=None):
     """Record per-step loss value for determinism tracking.
@@ -89,3 +94,46 @@ def record_periodic_fingerprint(
 
     _record_loss_fingerprint(curr_step, loss_value, periodic_dict, logger)
     _record_activation_fingerprint(curr_step, logits, periodic_dict, logger)
+
+
+def record_step_fingerprint(curr_step, loss_value, logits, per_step_dict, enable_determinism, logger=None):
+    """Record EVERY step's loss and activation mean for per-step quorum comparison.
+
+    Unlike record_periodic_fingerprint() which only fires at check_frequency
+    intervals, this records at every single step for bit-exact quorum voting.
+
+    Args:
+        curr_step (int): Current training step.
+        loss_value: Pre-converted loss float value (or None).
+        logits: Logits tensor for activation fingerprint.
+        per_step_dict (dict): Dict with 'loss' and 'act_mean' sub-dicts mapping step->value.
+        enable_determinism (bool): Whether determinism is enabled.
+        logger: Optional logger for info/warnings.
+    """
+    if not enable_determinism:
+        return
+
+    # Record loss with NaN/Inf sentinel handling.
+    if loss_value is None or (isinstance(loss_value, float) and loss_value != loss_value):
+        per_step_dict.setdefault('loss', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}nan'
+    elif isinstance(loss_value, float) and abs(loss_value) == float('inf'):
+        per_step_dict.setdefault('loss', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}inf'
+    else:
+        per_step_dict.setdefault('loss', {})[curr_step] = loss_value
+
+    # Record activation mean (per-rank, local, not reduced -- a sensitive per-GPU signal).
+    try:
+        if logits is not None:
+            act_mean = (
+                float(logits[0].detach().float().mean().item()) if hasattr(logits[0], 'detach') else float(logits[0])
+            )
+            if act_mean != act_mean:  # NaN
+                per_step_dict.setdefault('act_mean', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}nan'
+            elif abs(act_mean) == float('inf'):
+                per_step_dict.setdefault('act_mean', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}inf'
+            else:
+                per_step_dict.setdefault('act_mean', {})[curr_step] = act_mean
+        else:
+            per_step_dict.setdefault('act_mean', {})[curr_step] = None
+    except Exception:
+        per_step_dict.setdefault('act_mean', {})[curr_step] = None

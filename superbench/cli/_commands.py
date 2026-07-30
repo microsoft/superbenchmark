@@ -32,6 +32,7 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             g.command('diagnosis', 'diagnosis_command_handler')
             g.command('summary', 'summary_command_handler')
             g.command('generate-baseline', 'generate_baseline_command_handler')
+            g.command('sdc-check', 'sdc_check_command_handler')
         return super().load_command_table(args)
 
     def load_arguments(self, command):
@@ -101,5 +102,11 @@ class SuperBenchCommandsLoader(CLICommandsLoader):
             ac.argument('output_file_format', type=str, help='Format of output file, excel or json.')
             ac.argument('decimal_place_value', type=int, help='Number of decimal places to show in output.')
             ac.argument('output_all', action='store_true', help='Output results of all nodes.')
+            ac.argument(
+                'metric_pattern',
+                options_list=('--metric-pattern', ),
+                type=str,
+                help='Metric name substring for per-step data (default: deterministic_loss_per_step).'
+            )
 
         super().load_arguments(command)
