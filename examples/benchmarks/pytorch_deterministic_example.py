@@ -120,6 +120,16 @@ def main():
                 metric_key = f'{prefix}/{metric}'
             summary[metric_key] = val
 
+    # Per-step fingerprints live in raw_data as a flat [step, value, ...] list.
+    # Rebuild the {step: value} mapping and store it as JSON so `sb result
+    # sdc-check` can parse it directly.
+    raw_data = benchmark_results.get('raw_data', {})
+    for metric in ('deterministic_loss_per_step', 'deterministic_act_mean_per_step'):
+        if metric in raw_data and raw_data[metric]:
+            flat = raw_data[metric][0]
+            per_step = {int(flat[i]): flat[i + 1] for i in range(0, len(flat) - 1, 2)}
+            summary[f'{prefix}/{metric}_rank0'] = json.dumps(per_step)
+
     # Add node identifier
     summary['node'] = socket.gethostname()
 

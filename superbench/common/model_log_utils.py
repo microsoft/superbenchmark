@@ -3,11 +3,6 @@
 
 """Utility functions for deterministic model training and validation."""
 
-# Sentinel prefix for NaN/Inf anomalies in per-step fingerprints. A sentinel
-# string never equals a float, so the affected step becomes an automatic outlier
-# during quorum comparison (see superbench.analyzer.sdc_quorum).
-ANOMALY_SENTINEL_PREFIX = 'anomaly:'
-
 
 def record_step_loss(loss, curr_step, losses_list, logger=None):
     """Record per-step loss value for determinism tracking.
@@ -113,11 +108,13 @@ def record_step_fingerprint(curr_step, loss_value, logits, per_step_dict, enable
     if not enable_determinism:
         return
 
-    # Record loss with NaN/Inf sentinel handling.
+    # Record loss numerically; NaN/Inf are kept as float sentinels so the series
+    # stays List[Number] for raw-data validation. NaN never equals itself, so a
+    # corrupted step is always its own quorum group (an outlier).
     if loss_value is None or (isinstance(loss_value, float) and loss_value != loss_value):
-        per_step_dict.setdefault('loss', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}nan'
+        per_step_dict.setdefault('loss', {})[curr_step] = float('nan')
     elif isinstance(loss_value, float) and abs(loss_value) == float('inf'):
-        per_step_dict.setdefault('loss', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}inf'
+        per_step_dict.setdefault('loss', {})[curr_step] = loss_value
     else:
         per_step_dict.setdefault('loss', {})[curr_step] = loss_value
 
@@ -127,13 +124,8 @@ def record_step_fingerprint(curr_step, loss_value, logits, per_step_dict, enable
             act_mean = (
                 float(logits[0].detach().float().mean().item()) if hasattr(logits[0], 'detach') else float(logits[0])
             )
-            if act_mean != act_mean:  # NaN
-                per_step_dict.setdefault('act_mean', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}nan'
-            elif abs(act_mean) == float('inf'):
-                per_step_dict.setdefault('act_mean', {})[curr_step] = f'{ANOMALY_SENTINEL_PREFIX}inf'
-            else:
-                per_step_dict.setdefault('act_mean', {})[curr_step] = act_mean
+            per_step_dict.setdefault('act_mean', {})[curr_step] = act_mean
         else:
-            per_step_dict.setdefault('act_mean', {})[curr_step] = None
+            per_step_dict.setdefault('act_mean', {})[curr_step] = float('nan')
     except Exception:
-        per_step_dict.setdefault('act_mean', {})[curr_step] = None
+        per_step_dict.setdefault('act_mean', {})[curr_step] = float('nan')

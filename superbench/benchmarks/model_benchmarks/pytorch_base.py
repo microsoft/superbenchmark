@@ -3,7 +3,6 @@
 
 """Module of the Pytorch model-benchmark base class."""
 
-import json
 import os
 import statistics
 import time
@@ -207,32 +206,25 @@ class PytorchBase(ModelBenchmark):
                         # No valid (non-None) values recorded; record NaN to avoid StatisticsError
                         self._result.add_result(metric_name, float('nan'))
 
-        # Add per-step data as JSON for bit-exact quorum comparison (sb result sdc-check)
+        # Add per-step data for bit-exact quorum comparison (sb result sdc-check).
+        # Stored as raw data in flat [step, value, step, value, ...] numeric form
+        # (a valid List[List[Number]] once wrapped) rather than a summarized
+        # result, which must be scalar List[Number].
         if self._model_run_per_step:
             loss_steps = self._model_run_per_step.get('loss', {})
             act_steps = self._model_run_per_step.get('act_mean', {})
+            rank_suffix = f'_rank{self._global_rank}' if self._global_rank is not None else ''
 
             if loss_steps:
-                if self._global_rank is not None:
-                    metric_name = f'deterministic_loss_per_step_rank{self._global_rank}'
-                else:
-                    metric_name = 'deterministic_loss_per_step'
-                self._result.add_result(metric_name, json.dumps(loss_steps))
+                flat_loss = [v for step in sorted(loss_steps) for v in (step, loss_steps[step])]
+                self._result.add_raw_data(f'deterministic_loss_per_step{rank_suffix}', flat_loss, False)
 
             if act_steps:
-                if self._global_rank is not None:
-                    metric_name = f'deterministic_act_mean_per_step_rank{self._global_rank}'
-                else:
-                    metric_name = 'deterministic_act_mean_per_step'
-                self._result.add_result(metric_name, json.dumps(act_steps))
+                flat_act = [v for step in sorted(act_steps) for v in (step, act_steps[step])]
+                self._result.add_raw_data(f'deterministic_act_mean_per_step{rank_suffix}', flat_act, False)
 
-            # Total steps recorded
-            total_steps = len(loss_steps)
-            if self._global_rank is not None:
-                metric_name = f'deterministic_total_steps_rank{self._global_rank}'
-            else:
-                metric_name = 'deterministic_total_steps'
-            self._result.add_result(metric_name, total_steps)
+            # Total steps recorded (scalar summary metric).
+            self._result.add_result(f'deterministic_total_steps{rank_suffix}', len(loss_steps))
 
         # Add count of deterministic checks performed
         if self._model_run_periodic.get('step'):
