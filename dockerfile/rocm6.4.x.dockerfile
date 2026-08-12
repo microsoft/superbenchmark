@@ -70,7 +70,8 @@ ARG AMDGPU_TARGETS="gfx942"
 ENV AMDGPU_TARGETS="${AMDGPU_TARGETS}"
 
 # Check if CMake is installed and its version
-RUN cmake_version=$(cmake --version 2>/dev/null | grep -oP "(?<=cmake version )(\d+\.\d+)" || echo "0.0") && \
+RUN cmake_version=$(cmake --version 2>/dev/null | awk 'NR == 1 { print $3 }') && \
+    cmake_version=${cmake_version:-0.0.0} && \
     required_version="3.24.1" && \
     if [ "$(printf "%s\n" "$required_version" "$cmake_version" | sort -V | head -n 1)" != "$required_version" ]; then \
     echo "existing cmake version is ${cmake_version}" && \
@@ -139,7 +140,7 @@ RUN cd /tmp && \
     make -j $(nproc) install && \
     ldconfig && \
     cd / && \
-    rm -rf /tmp/openmpi-${OPENMPI_VERSION}*
+    rm -rf /tmp/ompi
 
 # Install Intel MLC
 RUN cd /tmp && \
@@ -197,15 +198,16 @@ RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 
 # source patch here is kept as defense-in-depth for the base env; note it cannot reach the
 # fresh --clear virtualenv that Tensile's install.sh creates and pip-installs joblib into.
 RUN pip install "joblib>=1.4.2" && \
-    find / -path '*/joblib/parallel.py' -not -path '*/.git/*' -exec sed -i \
-        's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' {} +
+    joblib_parallel_py=$(python3 -c 'import joblib, pathlib; print(pathlib.Path(joblib.__file__).resolve().parent / "parallel.py")') && \
+    sed -i 's/timeout_control_job = next(iter(self\._jobs_set), None)/timeout_control_job = next(iter(set(self._jobs_set)), None)/' "${joblib_parallel_py}"
 RUN cd third_party && \
     git clone -b release-staging/rocm-rel-6.4 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     sed -i 's/host-x86_64-unknown-linux,/host-x86_64-unknown-linux-gnu,/' \
         hipBLASLt/tensilelite/Tensile/BuildCommands/SharedCommands.py && \
     find hipBLASLt/tensilelite -type f -name '*.py' -exec sed -i -E \
         "s/return_as=(['\"])generator_unordered\1/return_as=\1generator\1/g" {} + && \
-    cd hipBLASLt && ./install.sh -dc && \
+    sed -i -E 's/make -j(\$\(nproc\)|[0-9]+)/make -j'"${NUM_MAKE_JOBS}"'/g' hipBLASLt/install.sh && \
+    cd hipBLASLt && ./install.sh -dc -j ${NUM_MAKE_JOBS} && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
