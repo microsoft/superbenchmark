@@ -207,7 +207,8 @@ RUN cd third_party && \
     find hipBLASLt/tensilelite -type f -name '*.py' -exec sed -i -E \
         "s/return_as=(['\"])generator_unordered\1/return_as=\1generator\1/g" {} + && \
     sed -i -E 's/make -j(\$\(nproc\)|[0-9]+)/make -j'"${NUM_MAKE_JOBS}"'/g' hipBLASLt/install.sh && \
-    cd hipBLASLt && ./install.sh -dc -j ${NUM_MAKE_JOBS} && \
+    hipblaslt_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr ' ' ';') && \
+    cd hipBLASLt && ./install.sh -dc -j ${NUM_MAKE_JOBS} -a "${hipblaslt_architectures}" && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
