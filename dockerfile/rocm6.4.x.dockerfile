@@ -69,6 +69,10 @@ ARG NUM_MAKE_JOBS=64
 ARG AMDGPU_TARGETS="gfx942"
 ENV AMDGPU_TARGETS="${AMDGPU_TARGETS}"
 
+# Limit hipBLASLt's Tensile catalog to standard MI300X logic. Reduced-CU gfx942
+# directories target CPX/SPX variants and are intentionally excluded.
+ARG HIPBLASLT_LOGIC_FILTER="aquavanjaram/gfx942/**/*"
+
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | awk 'NR == 1 { print $3 }') && \
     cmake_version=${cmake_version:-0.0.0} && \
@@ -208,7 +212,8 @@ RUN cd third_party && \
         "s/return_as=(['\"])generator_unordered\1/return_as=\1generator\1/g" {} + && \
     sed -i -E 's/make -j(\$\(nproc\)|[0-9]+)/make -j'"${NUM_MAKE_JOBS}"'/g' hipBLASLt/install.sh && \
     hipblaslt_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr ' ' ';') && \
-    cd hipBLASLt && ./install.sh -dc -j ${NUM_MAKE_JOBS} -a "${hipblaslt_architectures}" && \
+    cd hipBLASLt && ./install.sh -dc -j ${NUM_MAKE_JOBS} -a "${hipblaslt_architectures}" \
+        --logic-yaml-filter "${HIPBLASLT_LOGIC_FILTER}" && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
