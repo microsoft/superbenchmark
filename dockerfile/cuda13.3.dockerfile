@@ -158,7 +158,8 @@ ADD third_party third_party
 RUN make -C third_party cuda
 
 ADD . .
-RUN python3 -m pip install --upgrade "setuptools>=78.1.1" && \
+# 81.0.0 is what the base image already ships; pinned so the build stays reproducible.
+RUN python3 -m pip install --upgrade setuptools==81.0.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
