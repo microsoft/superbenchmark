@@ -3,7 +3,7 @@ FROM nvcr.io/nvidia/pytorch:25.08-py3
 # OS:
 #   - Ubuntu: 24.04
 #   - OpenMPI: 4.1.9a1
-#   - Docker Client: 20.10.8 (installed in this dockerfile)
+#   - Docker Client: 29.7.2 (installed in this dockerfile)
 # NVIDIA:
 #   - CUDA: 13.0.0.044
 #   - cuDNN: 9.12.0.46
@@ -67,7 +67,7 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 
 # Install Docker
-ENV DOCKER_VERSION=20.10.8
+ENV DOCKER_VERSION=29.7.2
 RUN TARGETARCH_HW=$(uname -m) && \
     wget -q https://download.docker.com/linux/static/stable/${TARGETARCH_HW}/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
