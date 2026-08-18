@@ -122,7 +122,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     mv amd-blis /opt/AMD && \
     rm -rf aocl-blis-linux-aocc-4.0.tar.gz; \
     else \
-    echo "Skipping Intel MLC, AOCC and AMD Bliss installations for non-amd64 architecture: $TARGETARCH"; \
+    echo "Skipping Intel MLC, AOCC and AMD BLIS installations for non-amd64 architecture: $TARGETARCH"; \
     fi
 
 # Install UCX with multi-threading support
