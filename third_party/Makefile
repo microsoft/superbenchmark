@@ -16,13 +16,13 @@ ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm cuda_nvbench
 
 # Build targets.
 all: cuda rocm
 # msccl: api change in cudaStreamUpdateCaptureDependencies
 cuda_with_msccl: cuda cuda_msccl
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth cuda_nvbench
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
 cpu: common cpu_perftest
 common: fio cpu_stream
@@ -332,6 +332,12 @@ else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 else
 	$(eval ARCHS := "70;75;80;86")
 endif
+	@required_cmake="3.30.4"; \
+	current_cmake=$$(cmake --version 2>/dev/null | head -n1 | awk '{print $$3}'); \
+	if [ -z "$$current_cmake" ] || [ "$$(printf '%s\n' "$$required_cmake" "$$current_cmake" | sort -V | head -n1)" != "$$required_cmake" ]; then \
+		echo "Skipping nvbench build: requires CMake >= $$required_cmake (found $${current_cmake:-none})"; \
+		exit 0; \
+	fi; \
 	cd ./nvbench && mkdir -p build && cd build && \
 	cmake										 \
 	-DCMAKE_INSTALL_PREFIX=$(SB_MICRO_PATH)	   \

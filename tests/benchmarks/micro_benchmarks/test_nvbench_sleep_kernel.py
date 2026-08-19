@@ -58,7 +58,7 @@ class TestNvbenchSleepKernelBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert ('--throttle-threshold 80.0' in benchmark._commands[0])
         assert ('--throttle-recovery-delay 1.0' in benchmark._commands[0])
 
-    @decorator.load_data('tests/data/nvbench_sleep_kernel.log')
+    @decorator.load_data('tests/data/nvbench_sleep_kernel.json')
     def test_nvbench_sleep_kernel_result_parsing_real_output(self, results):
         """Test NVBench Sleep Kernel benchmark result parsing."""
         benchmark_name = 'nvbench-sleep-kernel'

@@ -3,9 +3,8 @@
 
 """Module of the NVBench Sleep Kernel benchmark."""
 
-import re
 from superbench.benchmarks import BenchmarkRegistry, Platform
-from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_time_to_us
+from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
 
 
 class NvbenchSleepKernel(NvbenchBase):
@@ -34,24 +33,17 @@ class NvbenchSleepKernel(NvbenchBase):
             '"50" (single value), "[25,50,75]" (list), "[25:75]" (range), "[0:50:10]" (range with step).',
         )
 
-    def _preprocess(self):
-        """Preprocess/preparation operations before the benchmarking.
+    def _extend_command(self, parts):
+        """Add sleep-kernel specific arguments.
 
-        Return:
-            True if _preprocess() succeed.
+        Args:
+            parts (list): Base command parts.
+
+        Returns:
+            list: Command parts including the duration axis.
         """
-        if not super()._preprocess():
-            return False
-
-        # Build base command with common nvbench arguments
-        parts = self._build_base_command()
-
-        # Add sleep-kernel specific arguments
         parts.extend(['--axis', f'"Duration (us)={self._args.duration_us.strip()}"'])
-
-        # Finalize command
-        self._commands = [' '.join(parts)]
-        return True
+        return parts
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
@@ -65,37 +57,24 @@ class NvbenchSleepKernel(NvbenchBase):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
         try:
-            gpu_section = r'### \[(\d+)\] NVIDIA'
-            # Regex pattern to handle different time units and flexible spacing
-            row_pat = (
-                r'\|\s*([0-9]+)\s*\|\s*'    # Duration (us)
-                r'([0-9]+)x\s*\|\s*'    # Samples
-                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # CPU Time (μs, ns, ms, us, s)
-                r'([\d.]+%)\s*\|\s*'    # CPU Noise percentage
-                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # GPU Time
-                r'([\d.]+%)\s*\|\s*'    # GPU Noise percentage
-                r'([0-9]+)x\s*\|\s*'    # Batch Samples
-                r'([\d.]+\s*[μmun]?s)\s*\|'    # Batch GPU Time
-            )
+            data = self._load_result_json(cmd_idx, raw_output)
             parsed_any = False
-            for line in raw_output.splitlines():
-                line = line.strip()
-                g = re.match(gpu_section, line)
-                if g:
+            for axes, summaries in self._iter_states(data):
+                duration = axes.get('Duration (us)')
+                if duration is None:
                     continue
-                r = re.match(row_pat, line)
-                if r:
-                    duration_us, samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups(
-                    )
-                    self._result.add_result(f'duration_us_{duration_us}_cpu_time', parse_time_to_us(cpu_time))
-                    self._result.add_result(f'duration_us_{duration_us}_gpu_time', parse_time_to_us(gpu_time))
-                    self._result.add_result(f'duration_us_{duration_us}_batch_gpu_time', parse_time_to_us(batch_gpu))
-                    parsed_any = True
+                prefix = f'duration_us_{duration}'
+                cpu_time = self._summary_value(summaries, 'nv/cold/time/cpu/mean') * 1e6
+                gpu_time = self._summary_value(summaries, 'nv/cold/time/gpu/mean') * 1e6
+                batch_gpu_time = self._summary_value(summaries, 'nv/batch/time/gpu/mean') * 1e6
+                self._result.add_result(f'{prefix}_cpu_time', cpu_time)
+                self._result.add_result(f'{prefix}_gpu_time', gpu_time)
+                self._result.add_result(f'{prefix}_batch_gpu_time', batch_gpu_time)
+                parsed_any = True
 
             if not parsed_any:
-                raise ValueError('No valid result rows parsed')
+                raise ValueError('No valid result states parsed')
 
         except BaseException as e:
             self._handle_parsing_error(str(e), raw_output)

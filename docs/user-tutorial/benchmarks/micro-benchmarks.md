@@ -179,10 +179,10 @@ Supports the use of double unit types and the use of tensor cores.
 Measure GPU kernel execution time using NVBench's sleep kernel benchmark. This benchmark creates CUDA kernels that sleep for specified durations (in microseconds) and measures the actual execution time, providing insights into GPU scheduling overhead and timing accuracy.
 
 The benchmark supports multiple duration specification formats:
-- Single value: `"50"` - Test single duration of 50μs
+- Single value: `"50"` - Test single duration of 50 us
 - List format: `"[25,50,75]"` - Test multiple specific durations
-- Range format: `"[25:75]"` - Test all values from 25μs to 75μs  
-- Range with step: `"[0:50:10]"` - Test from 0μs to 50μs in steps of 10μs
+- Range format: `"[25:75]"` - Test all values from 25 us to 75 us
+- Range with step: `"[0:50:10]"` - Test from 0 us to 50 us in steps of 10 us
 
 Performed by [NVBench](https://github.com/NVIDIA/nvbench) sleep kernel benchmark.
 
@@ -190,9 +190,9 @@ Performed by [NVBench](https://github.com/NVIDIA/nvbench) sleep kernel benchmark
 
 | Name                                    | Unit      | Description                                           |
 |-----------------------------------------|-----------|-------------------------------------------------------|
-| nvbench-sleep-kernel/duration_us_{X}_cpu_time     | time (μs) | CPU-measured time for duration X microseconds.       |
-| nvbench-sleep-kernel/duration_us_{X}_gpu_time     | time (μs) | GPU-measured time for duration X microseconds.       |
-| nvbench-sleep-kernel/duration_us_{X}_batch_gpu_time | time (μs) | GPU batch execution time for duration X microseconds. |
+| nvbench-sleep-kernel/duration_us_{X}_cpu_time     | time (us) | CPU-measured time for duration X microseconds.       |
+| nvbench-sleep-kernel/duration_us_{X}_gpu_time     | time (us) | GPU-measured time for duration X microseconds.       |
+| nvbench-sleep-kernel/duration_us_{X}_batch_gpu_time | time (us) | GPU batch execution time for duration X microseconds. |
 
 Where `{X}` is the sleep duration in microseconds (e.g., 25, 50, 75).
 
@@ -229,9 +229,9 @@ Choose based on what scenario matters for your workload:
 
 | Name                                | Unit      | Description                                    |
 |-------------------------------------|-----------|------------------------------------------------|
-| nvbench-kernel-launch/cpu_time      | time (μs) | CPU-measured kernel execution time.            |
-| nvbench-kernel-launch/gpu_time      | time (μs) | GPU-measured kernel execution time.            |
-| nvbench-kernel-launch/batch_gpu_time | time (μs) | GPU batch execution time.                     |
+| nvbench-kernel-launch/cpu_time      | time (us) | CPU-measured kernel execution time.            |
+| nvbench-kernel-launch/gpu_time      | time (us) | GPU-measured kernel execution time.            |
+| nvbench-kernel-launch/batch_gpu_time | time (us) | GPU batch execution time.                     |
 
 ### `nvbench-auto-throughput`
 
@@ -257,9 +257,9 @@ Performed by [NVBench](https://github.com/NVIDIA/nvbench) auto throughput benchm
 
 | Name                                                                    | Unit         | Description                                                                           |
 |-------------------------------------------------------------------------|--------------|--------------------------------------------------------------------------------------|
-| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_cpu\_time       | time (μs)    | CPU-measured execution time.             |
-| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_gpu\_time       | time (μs)    | GPU-measured execution time.             |
-| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_batch\_gpu\_time | time (μs)    | GPU batch execution time.                |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_cpu\_time       | time (us)    | CPU-measured execution time.             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_gpu\_time       | time (us)    | GPU-measured execution time.             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_batch\_gpu\_time | time (us)    | GPU batch execution time.                |
 | nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_hbw\_peak       | percent (%)  | HBM peak bandwidth utilization percentage.                                            |
 | nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_load\_eff       | percent (%)  | Global memory load efficiency percentage.                                             |
 | nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_store\_eff      | percent (%)  | Global memory store efficiency percentage.                                            |

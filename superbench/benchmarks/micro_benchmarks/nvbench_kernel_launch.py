@@ -3,9 +3,8 @@
 
 """Module of the NVBench Kernel Launch benchmark."""
 
-import re
 from superbench.benchmarks import BenchmarkRegistry, Platform
-from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_time_to_us
+from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
 
 
 class NvbenchKernelLaunch(NvbenchBase):
@@ -30,33 +29,20 @@ class NvbenchKernelLaunch(NvbenchBase):
         Return:
             True if the raw output string is valid and result can be extracted.
         """
-        self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
-
         try:
-            # Regex pattern to handle different time units and flexible spacing
-            row_pat = (
-                r'\|\s*([0-9]+)x\s*\|\s*'    # Samples
-                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # CPU Time (μs, ns, ms, us, s)
-                r'([\d.]+%)\s*\|\s*'    # CPU Noise percentage
-                r'([\d.]+\s*[μmun]?s)\s*\|\s*'    # GPU Time
-                r'([\d.]+%)\s*\|\s*'    # GPU Noise percentage
-                r'([0-9]+)x\s*\|\s*'    # Batch Samples
-                r'([\d.]+\s*[μmun]?s)\s*\|'    # Batch GPU Time
-            )
+            data = self._load_result_json(cmd_idx, raw_output)
             parsed_any = False
-
-            for line in raw_output.splitlines():
-                line = line.strip()
-                r = re.match(row_pat, line)
-                if r:
-                    samples, cpu_time, cpu_noise, gpu_time, gpu_noise, batch_samples, batch_gpu = r.groups()
-                    self._result.add_result('cpu_time', parse_time_to_us(cpu_time))
-                    self._result.add_result('gpu_time', parse_time_to_us(gpu_time))
-                    self._result.add_result('batch_gpu_time', parse_time_to_us(batch_gpu))
-                    parsed_any = True
+            for _axes, summaries in self._iter_states(data):
+                cpu_time = self._summary_value(summaries, 'nv/cold/time/cpu/mean') * 1e6
+                gpu_time = self._summary_value(summaries, 'nv/cold/time/gpu/mean') * 1e6
+                batch_gpu_time = self._summary_value(summaries, 'nv/batch/time/gpu/mean') * 1e6
+                self._result.add_result('cpu_time', cpu_time)
+                self._result.add_result('gpu_time', gpu_time)
+                self._result.add_result('batch_gpu_time', batch_gpu_time)
+                parsed_any = True
 
             if not parsed_any:
-                raise ValueError('No valid result rows parsed')
+                raise ValueError('No valid result states parsed')
 
         except BaseException as e:
             self._handle_parsing_error(str(e), raw_output)

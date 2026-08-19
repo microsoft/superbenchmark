@@ -96,7 +96,7 @@ class TestNvbenchAutoThroughputBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark._preprocess()
         assert '--axis "BlockSize=[128,256,512,1024]"' in benchmark._commands[0]
 
-    @decorator.load_data('tests/data/nvbench_auto_throughput.log')
+    @decorator.load_data('tests/data/nvbench_auto_throughput.json')
     def test_nvbench_auto_throughput_result_parsing(self, results):
         """Test NVBench Auto Throughput benchmark result parsing."""
         benchmark_name = 'nvbench-auto-throughput'

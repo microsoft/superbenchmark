@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.18)
-project(nvbench_benchmarks LANGUAGES CUDA)
 
 # Check if we have a recent enough CMake for nvbench (which requires 3.30.4)
 if(CMAKE_VERSION VERSION_LESS "3.30.4")
@@ -7,16 +6,19 @@ if(CMAKE_VERSION VERSION_LESS "3.30.4")
   return()
 endif()
 
+project(nvbench_benchmarks LANGUAGES CXX)
+
 find_package(CUDAToolkit QUIET)
 if (CUDAToolkit_FOUND)
   include(../cuda_common.cmake)
-  
+
   # Try to find nvbench, but don't require it
+  list(PREPEND CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX}")
   find_package(nvbench CONFIG QUIET)
-  
+
   if (nvbench_FOUND)
     message(STATUS "Found nvbench, building nvbench benchmarks")
-    
+
     # list all your CUDA benchmark source files here
     set(NVBENCH_SOURCES
       kernel_launch.cu
