@@ -3,7 +3,7 @@ FROM nvcr.io/nvidia/pytorch:26.07-py3
 # OS:
 #   - Ubuntu: 24.04
 #   - OpenMPI: 5.0.10
-#   - Docker Client: 29.7.2 (installed in this dockerfile)
+#   - Docker: 29.7.2 (full static bundle installed in this dockerfile)
 # NVIDIA:
 #   - CUDA: 13.3.1.008
 #   - cuDNN: 9.24.0.43
