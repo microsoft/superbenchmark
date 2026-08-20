@@ -69,13 +69,13 @@ RUN apt-get update && \
     cd /tmp && \
     ARCH=$(uname -m) && \
     case ${ARCH} in \
-        "aarch64") CMAKE_ARCH="aarch64" ;; \
-        "x86_64") CMAKE_ARCH="x86_64" ;; \
-        "arm64") CMAKE_ARCH="aarch64" ;; \
-        *) CMAKE_ARCH="x86_64" ;; \
+        "aarch64"|"arm64") CMAKE_ARCH="aarch64"; CMAKE_SHA256="510537b32f8ae82100a2eb25e422575477e994a033754d3c8091ca66698bca29" ;; \
+        "x86_64") CMAKE_ARCH="x86_64"; CMAKE_SHA256="c959e6d15714f798424960cd296632634f3ef57c2712559a7945170f0bcad205" ;; \
+        *) echo "Unsupported architecture: ${ARCH}"; exit 1 ;; \
     esac && \
     echo "Detected architecture: ${ARCH}, using CMAKE_ARCH: ${CMAKE_ARCH}" && \
     wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
+    echo "${CMAKE_SHA256}  cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz" | sha256sum -c - && \
     tar -xzf cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
     mv cmake-3.30.4-linux-${CMAKE_ARCH} /opt/cmake && \
     ln -sf /opt/cmake/bin/* /usr/local/bin/ && \
