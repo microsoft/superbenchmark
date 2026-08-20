@@ -30,9 +30,7 @@ def parse_time_to_us(raw: str) -> float:
     return val
 
 
-_NVBENCH_INT_VALUES_PATTERN = re.compile(
-    r'(?:\d+|\[\s*\d+\s*(?:(?:,\s*\d+\s*)+|:\s*\d+\s*(?::\s*\d+\s*)?)?\])'
-)
+_NVBENCH_INT_VALUES_PATTERN = re.compile(r'(?:\d+|\[\s*\d+\s*(?:(?:,\s*\d+\s*)+|:\s*\d+\s*(?::\s*\d+\s*)?)?\])')
 
 
 def parse_nvbench_int_values(value):
