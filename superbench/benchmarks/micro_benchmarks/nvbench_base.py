@@ -6,6 +6,7 @@
 import json
 import os
 import re
+import shlex
 import shutil
 import tempfile
 from superbench.common.utils import logger
@@ -29,16 +30,34 @@ def parse_time_to_us(raw: str) -> float:
     return val
 
 
+_NVBENCH_INT_VALUES_PATTERN = re.compile(
+    r'(?:\d+|\[\s*\d+\s*(?:(?:,\s*\d+\s*)+|:\s*\d+\s*(?::\s*\d+\s*)?)?\])'
+)
+
+
+def parse_nvbench_int_values(value):
+    """Validate an NVBench integer value specification."""
+    # Accepted formats: '0', '[0,1,2]', '[0:4]', and '[0:4:2]' (range with step).
+    if not _NVBENCH_INT_VALUES_PATTERN.fullmatch(value):
+        raise ValueError(
+            'Invalid NVBench integer values. Use a single value like "0", '
+            'a list like "[0,1,2]", or a range like "[0:4]" or "[0:4:2]".'
+        )
+    return value
+
+
 def _parse_devices(value):
     """Validate an NVBench device selection."""
-    # Accepted formats: 'all', '0', '0,1,2', '[0,1,2]', '[0:4]', and '[0:4:2]'(range with step).
-    device_pattern = r'(?:all|\d+(?:,\d+)*|\[\s*\d+\s*(?:(?:,\s*\d+\s*)+|:\s*\d+\s*(?::\s*\d+\s*)?)?\])'
-    if not re.fullmatch(device_pattern, value):
+    # Devices also accept 'all' and the legacy unbracketed list form '0,1,2'.
+    if value == 'all' or re.fullmatch(r'\d+(?:,\d+)*', value):
+        return value
+    try:
+        return parse_nvbench_int_values(value)
+    except ValueError as error:
         raise ValueError(
             'Invalid --devices format. Use "all", GPU indices like "0,1,2", '
             'or an NVBench list/range like "[0,1,2]" or "[0:4]".'
-        )
-    return value
+        ) from error
 
 
 class NvbenchBase(MicroBenchmarkWithInvoke):
@@ -273,7 +292,7 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         for idx, command in enumerate(commands):
             json_path = os.path.join(base_dir, f'{self._bin_name}_{idx}.json')
             self._json_paths.append(json_path)
-            finalized.append(f'{command} --json {json_path}')
+            finalized.append(f'{command} --json {shlex.quote(json_path)}')
         return finalized
 
     def _load_result_json(self, cmd_idx, raw_output):

@@ -4,7 +4,7 @@
 """Module of the NVBench Sleep Kernel benchmark."""
 
 from superbench.benchmarks import BenchmarkRegistry, Platform
-from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
+from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_nvbench_int_values
 
 
 class NvbenchSleepKernel(NvbenchBase):
@@ -27,7 +27,7 @@ class NvbenchSleepKernel(NvbenchBase):
         # Sleep-kernel specific argument
         self._parser.add_argument(
             '--duration_us',
-            type=str,
+            type=parse_nvbench_int_values,
             default='[0,25,50,75,100]',
             help='Duration axis values in microseconds. Supports multiple formats: '
             '"50" (single value), "[25,50,75]" (list), "[25:75]" (range), "[0:50:10]" (range with step).',

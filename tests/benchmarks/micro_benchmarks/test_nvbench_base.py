@@ -3,6 +3,9 @@
 
 """Tests for nvbench_base module."""
 
+import os
+import shlex
+import tempfile
 import unittest
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import ReturnCode
@@ -142,6 +145,15 @@ class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
                 benchmark = ConcreteNvbenchBase('test-benchmark', parameters=f'--devices "{devices}"')
                 assert not benchmark._preprocess()
                 assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
+    def test_nvbench_base_quotes_json_output_path(self):
+        """Test NvbenchBase shell-quotes the JSON output path."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = os.path.join(temp_dir, "json output;$(echo injected)'s")
+            benchmark = ConcreteNvbenchBase('test-benchmark', parameters=f'--output_dir "{output_dir}"')
+            assert benchmark._preprocess()
+            assert benchmark._json_paths[0] == os.path.join(output_dir, 'test_nvbench_binary_0.json')
+            assert f'--json {shlex.quote(benchmark._json_paths[0])}' in benchmark._commands[0]
 
     def test_nvbench_base_preprocess_with_benchmark_properties(self):
         """Test NvbenchBase preprocess with benchmark properties."""

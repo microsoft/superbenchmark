@@ -110,6 +110,14 @@ class TestNvbenchSleepKernelBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark._preprocess()
         assert '--axis "Duration (us)=[0,25,50,75,100]"' in benchmark._commands[0]
 
+    def test_nvbench_sleep_kernel_rejects_invalid_duration(self):
+        """Test NVBench Sleep Kernel rejects unsafe duration values."""
+        benchmark_name = 'nvbench-sleep-kernel'
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        benchmark = benchmark_class(benchmark_name, parameters='--duration_us "$(echo injected)"')
+        assert not benchmark._preprocess()
+        assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
     def test_nvbench_sleep_kernel_process_raw_result_invalid_output(self):
         """Test NVBench Sleep Kernel benchmark result parsing with invalid output."""
         benchmark_name = 'nvbench-sleep-kernel'

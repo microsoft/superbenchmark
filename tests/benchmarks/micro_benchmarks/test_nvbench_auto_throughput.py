@@ -96,6 +96,16 @@ class TestNvbenchAutoThroughputBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark._preprocess()
         assert '--axis "BlockSize=[128,256,512,1024]"' in benchmark._commands[0]
 
+    def test_nvbench_auto_throughput_rejects_invalid_axis_values(self):
+        """Test NVBench Auto Throughput rejects unsafe axis values."""
+        benchmark_name = 'nvbench-auto-throughput'
+        (benchmark_class, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        for argument in ['--stride "$(echo injected)"', '--block_size "256; echo injected"']:
+            with self.subTest(argument=argument):
+                benchmark = benchmark_class(benchmark_name, parameters=argument)
+                assert not benchmark._preprocess()
+                assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
     @decorator.load_data('tests/data/nvbench_auto_throughput.json')
     def test_nvbench_auto_throughput_result_parsing(self, results):
         """Test NVBench Auto Throughput benchmark result parsing."""

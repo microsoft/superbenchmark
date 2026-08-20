@@ -4,7 +4,7 @@
 """Module of the NVBench Auto Throughput benchmark."""
 
 from superbench.benchmarks import BenchmarkRegistry, Platform
-from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase
+from superbench.benchmarks.micro_benchmarks.nvbench_base import NvbenchBase, parse_nvbench_int_values
 
 
 class NvbenchAutoThroughput(NvbenchBase):
@@ -29,14 +29,14 @@ class NvbenchAutoThroughput(NvbenchBase):
 
         self._parser.add_argument(
             '--stride',
-            type=str,
+            type=parse_nvbench_int_values,
             default='[1:4]',
             help='Stride axis values. Supports: "2" (single), "[1,2,4]" (list), "[1:4]" (range), "[1:8:2]" (step).',
         )
 
         self._parser.add_argument(
             '--block_size',
-            type=str,
+            type=parse_nvbench_int_values,
             default='[128,256,512,1024]',
             help='Block size (threads per block). Supports: "256" (single), "[128,256,512,1024]" (list).',
         )
