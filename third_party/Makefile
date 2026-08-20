@@ -332,7 +332,11 @@ else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 else
 	$(eval ARCHS := "70;75;80;86")
 endif
-	@required_cmake="3.30.4"; \
+	@if [ "$$(echo "$(CUDA_VER) < 12.0" | bc -l)" = "1" ]; then \
+		echo "Skipping nvbench build: requires CUDA >= 12.0 (found $(CUDA_VER))"; \
+		exit 0; \
+	fi; \
+	required_cmake="3.30.4"; \
 	current_cmake=$$(cmake --version 2>/dev/null | head -n1 | awk '{print $$3}'); \
 	if [ -z "$$current_cmake" ] || [ "$$(printf '%s\n' "$$required_cmake" "$$current_cmake" | sort -V | head -n1)" != "$$required_cmake" ]; then \
 		echo "Skipping nvbench build: requires CMake >= $$required_cmake (found $${current_cmake:-none})"; \
