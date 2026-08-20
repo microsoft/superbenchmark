@@ -127,6 +127,22 @@ class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
         assert benchmark._preprocess()
         assert '--devices 0,1,2' in benchmark._commands[0]
 
+        # Test native NVBench list and range formats
+        for devices in ['[0,1,2]', '[0:4]', '[0:4:2]']:
+            with self.subTest(devices=devices):
+                benchmark = ConcreteNvbenchBase('test-benchmark', parameters=f'--devices "{devices}"')
+                assert benchmark._preprocess()
+                assert f'--devices {devices}' in benchmark._commands[0]
+
+    def test_nvbench_base_preprocess_with_invalid_devices(self):
+        """Test NvbenchBase rejects invalid device configuration."""
+        invalid_devices = ['0;echo injected', '0, 1', '0,,1', 'gpu0', 'ALL']
+        for devices in invalid_devices:
+            with self.subTest(devices=devices):
+                benchmark = ConcreteNvbenchBase('test-benchmark', parameters=f'--devices "{devices}"')
+                assert not benchmark._preprocess()
+                assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
     def test_nvbench_base_preprocess_with_benchmark_properties(self):
         """Test NvbenchBase preprocess with benchmark properties."""
         parameters = (

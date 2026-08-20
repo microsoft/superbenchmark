@@ -29,6 +29,18 @@ def parse_time_to_us(raw: str) -> float:
     return val
 
 
+def _parse_devices(value):
+    """Validate an NVBench device selection."""
+    # Accepted formats: 'all', '0', '0,1,2', '[0,1,2]', '[0:4]', and '[0:4:2]'(range with step).
+    device_pattern = r'(?:all|\d+(?:,\d+)*|\[\s*\d+\s*(?:(?:,\s*\d+\s*)+|:\s*\d+\s*(?::\s*\d+\s*)?)?\])'
+    if not re.fullmatch(device_pattern, value):
+        raise ValueError(
+            'Invalid --devices format. Use "all", GPU indices like "0,1,2", '
+            'or an NVBench list/range like "[0,1,2]" or "[0:4]".'
+        )
+    return value
+
+
 class NvbenchBase(MicroBenchmarkWithInvoke):
     """Base class for NVBench benchmarks with common functionality."""
     def __init__(self, name, parameters=''):
@@ -52,7 +64,7 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         # Device configuration
         self._parser.add_argument(
             '--devices',
-            type=str,
+            type=_parse_devices,
             default=None,
             help='Device list to run the benchmark, e.g., "0,1,2,3" or "all".',
         )
