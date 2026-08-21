@@ -19,10 +19,8 @@ import superbench
 print(f'Python {sys.version_info.major}.{sys.version_info.minor} detected.')
 if sys.version_info[:2] < (3, 11):
     import pkg_resources
-    # setuptools 66+ no longer supports Python 3.7, newer runtimes work with any recent version.
-    setuptools_req = 'setuptools>=45, <66' if sys.version_info[:2] < (3, 8) else 'setuptools>=45'
     try:
-        pkg_resources.require(['pip>=18', setuptools_req])
+        pkg_resources.require(['pip>=18', 'setuptools>=45, <66'])
     except (pkg_resources.VersionConflict, pkg_resources.DistributionNotFound):
         print(
             '\033[93mTry update pip/setuptools versions, for example, '

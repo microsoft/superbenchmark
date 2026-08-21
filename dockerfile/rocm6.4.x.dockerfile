@@ -20,6 +20,13 @@ FROM ${BASE_IMAGE}
 
 LABEL maintainer="SuperBench"
 
+# Target GPU architectures for ROCm builds (space-separated). Without an explicit
+# target, hipcc defaults to gfx906 when no GPU is present at build time, producing
+# kernels that run incorrectly on MI300X. The default targets MI300X; lower
+# architectures can be included with AMDGPU_TARGETS="gfx908 gfx90a gfx942".
+ARG AMDGPU_TARGETS="gfx942"
+ENV AMDGPU_TARGETS="${AMDGPU_TARGETS}"
+
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get -q install -y --no-install-recommends  \
@@ -60,18 +67,6 @@ RUN apt-get update && \
     rm -rf /tmp/*
 
 ARG NUM_MAKE_JOBS=64
-
-# Target GPU architecture(s) for ROCm micro-benchmark builds (space-separated).
-# Without this, AMDGPU_TARGETS is empty and hipcc defaults to gfx906 at build time
-# (no GPU is present during `docker build`), producing wrong-arch kernels that run
-# incorrectly on MI300X — e.g. gpu-copy-bw:correctness fails its CheckBuf data check.
-# Override at build time with: --build-arg AMDGPU_TARGETS="gfx90a gfx942 gfx950".
-ARG AMDGPU_TARGETS="gfx942"
-ENV AMDGPU_TARGETS="${AMDGPU_TARGETS}"
-
-# Limit hipBLASLt's Tensile catalog to standard MI300X logic. Reduced-CU gfx942
-# directories target CPX/SPX variants and are intentionally excluded.
-ARG HIPBLASLT_LOGIC_FILTER="aquavanjaram/gfx942/**/*"
 
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | awk 'NR == 1 { print $3 }') && \
@@ -211,9 +206,14 @@ RUN cd third_party && \
     find hipBLASLt/tensilelite -type f -name '*.py' -exec sed -i -E \
         "s/return_as=(['\"])generator_unordered\1/return_as=\1generator\1/g" {} + && \
     sed -i -E 's/make -j(\$\(nproc\)|[0-9]+)/make -j'"${NUM_MAKE_JOBS}"'/g' hipBLASLt/install.sh && \
-    hipblaslt_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr ' ' ';') && \
-    cd hipBLASLt && ./install.sh -dc -j ${NUM_MAKE_JOBS} -a "${hipblaslt_architectures}" \
-        --logic-yaml-filter "${HIPBLASLT_LOGIC_FILTER}" && \
+    hipblaslt_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//') && \
+    set -- ./install.sh -dc -j "${NUM_MAKE_JOBS}" -a "${hipblaslt_architectures}" && \
+    case "${hipblaslt_architectures}" in \
+        gfx908) set -- "$@" --logic-yaml-filter "arcturus/**/*" ;; \
+        gfx90a) set -- "$@" --logic-yaml-filter "aldebaran/**/*" ;; \
+        gfx942) set -- "$@" --logic-yaml-filter "aquavanjaram/gfx942/**/*" ;; \
+    esac && \
+    cd hipBLASLt && "$@" && \
     cp -v build/release/clients/staging/hipblaslt-bench /opt/superbench/bin/
 RUN cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/lib/*  /opt/rocm/lib/ && \
     cp -r /opt/superbench/third_party/hipBLASLt/build/release/hipblaslt-install/include/*  /opt/rocm/include/
@@ -221,14 +221,22 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
 # Install TransformerEngine - pin to 386bd316 (before NVFP4/hip_fp4.h which needs ROCm 7.0+).
-# Disable CK fused attention (aiter submodule has gfx950-only code); aotriton stays enabled.
-RUN git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
+# Disable CK fused attention (aiter submodule has gfx950-only code). The pinned AOTriton
+# backend supports the default gfx942 build, but is disabled for lower or multi-architecture builds.
+RUN transformer_engine_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//') && \
+    if [ "${transformer_engine_architectures}" = "gfx942" ]; then \
+        nvte_fused_attn_aotriton=1; \
+    else \
+        nvte_fused_attn_aotriton=0; \
+    fi && \
+    git clone --recursive https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
     git checkout 386bd316 && \
     git submodule update --init --recursive && \
     NVTE_FRAMEWORK=pytorch \
     NVTE_FUSED_ATTN_CK=0 \
-    NVTE_ROCM_ARCH=gfx942 \
+    NVTE_FUSED_ATTN_AOTRITON="${nvte_fused_attn_aotriton}" \
+    NVTE_ROCM_ARCH="${transformer_engine_architectures}" \
     python3 setup.py install
 RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfully')"
 
