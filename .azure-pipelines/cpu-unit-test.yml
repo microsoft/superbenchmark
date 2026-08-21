@@ -30,6 +30,10 @@ steps:
         python3 -m pip install --upgrade setuptools==65.7
       fi
       python3 -m pip install --no-cache-dir .[test,cpuworker]
+      if python3 -c "import sys; exit(0 if sys.version_info < (3, 11) else 1)"; then
+        python3 -m pip install --force-reinstall setuptools==65.7
+      fi
+      python3 -c "import setuptools; print(f'setuptools {setuptools.__version__} ({setuptools.__file__})')"
       make postinstall
     displayName: Install dependencies
   - script: |
