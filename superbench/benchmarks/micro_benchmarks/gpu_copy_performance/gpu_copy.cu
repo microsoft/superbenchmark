@@ -599,10 +599,10 @@ int DestroyEvent(BenchArgs *args) {
 // https://github.com/ROCmSoftwarePlatform/rccl/blob/5c8380ff5b5925cae4bce00b1879a5f930226e8d/src/collectives/device/common_kernel.h#L268
 inline __device__ void FetchULong2(ulong2 &v, const ulong2 *p) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
-    // HIP drops volatile on ulong2 member access, so access its scalar storage directly
-    // to prevent the compiler from eliding or reordering this zero-copy read.
-    const volatile unsigned long *x_pointer = &p->x;
-    const volatile unsigned long *y_pointer = &p->y;
+    // ROCm clang drops volatile when ulong2 members are accessed through a volatile ulong2 pointer,
+    // so use volatile scalar member pointers to prevent compiler elision or reordering.
+    const volatile decltype(p->x) *x_pointer = &p->x;
+    const volatile decltype(p->y) *y_pointer = &p->y;
     v.x = *x_pointer;
     v.y = *y_pointer;
 #else
@@ -618,10 +618,10 @@ inline __device__ void FetchULong2(ulong2 &v, const ulong2 *p) {
 // https://github.com/ROCmSoftwarePlatform/rccl/blob/5c8380ff5b5925cae4bce00b1879a5f930226e8d/src/collectives/device/common_kernel.h#L276
 inline __device__ void StoreULong2(ulong2 *p, ulong2 &v) {
 #if defined(__HIP_PLATFORM_HCC__) || defined(__HCC__) || defined(__HIPCC__)
-    // HIP drops volatile on ulong2 member access, so access its scalar storage directly
-    // to prevent the compiler from eliding or reordering this zero-copy write.
-    volatile unsigned long *x_pointer = &p->x;
-    volatile unsigned long *y_pointer = &p->y;
+    // ROCm clang drops volatile when ulong2 members are accessed through a volatile ulong2 pointer,
+    // so use volatile scalar member pointers to prevent compiler elision or reordering.
+    volatile decltype(p->x) *x_pointer = &p->x;
+    volatile decltype(p->y) *y_pointer = &p->y;
     *x_pointer = v.x;
     *y_pointer = v.y;
 #else
