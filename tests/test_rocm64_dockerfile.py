@@ -32,7 +32,7 @@ class Rocm64DockerfileTestCase(unittest.TestCase):
         """Extract an executable shell block between two Dockerfile markers."""
         start = cls.dockerfile.index(start_marker)
         end = cls.dockerfile.index(end_marker, start)
-        return cls.dockerfile[start:end].replace('\\\n', '\n') + result_command
+        return cls.dockerfile[start:end] + result_command
 
     def _run_script(self, script, targets):
         """Run an extracted routing block for the requested targets."""
