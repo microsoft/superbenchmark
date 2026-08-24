@@ -133,15 +133,19 @@ ifneq (,$(wildcard fio/Makefile))
 	cd ./fio && ./configure --prefix=$(SB_MICRO_PATH) --disable-native && make -j && make install
 endif
 
-# Build rccl-tests from commit 46375b1 of default branch.
+# Build rccl-tests from commit 0039629 of default branch.
 # If AMDGPU_TARGETS env var is set (space-separated, e.g. "gfx908 gfx90a gfx942"),
-# explicit --offload-arch flags and include paths are used.
+# explicit --offload-arch flags and include paths are used. Because passing
+# HIPCUFLAGS on the command line overrides (not appends to) the rccl-tests
+# Makefile's own value, the HIP platform defines it normally adds
+# (-x hip -D__HIP_PLATFORM_AMD__ -D__HIPCC__) must be repeated here, otherwise
+# hip_runtime.h errors with "Must define exactly one of __HIP_PLATFORM_AMD__...".
 # Otherwise, the original build command is used (relies on hipcc auto-detection).
 ROCM_OFFLOAD_ARCH_FLAGS := $(foreach arch,$(AMDGPU_TARGETS),--offload-arch=$(arch))
 rocm_rccl_tests: sb_micro_path
 ifneq (, $(wildcard rccl-tests/Makefile))
 ifneq ($(strip $(AMDGPU_TARGETS)),)
-	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIPCUFLAGS="-std=c++14 -O3 $(ROCM_OFFLOAD_ARCH_FLAGS) -I$(ROCM_PATH)/include -I$(ROCM_PATH)/include/rccl -I$(ROCM_PATH)/include/hip -DMPI_SUPPORT -I$(MPI_HOME)/include -I$(MPI_HOME)/include/mpi" -j
+	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) HIPCUFLAGS="-std=c++14 -O3 -x hip -D__HIP_PLATFORM_AMD__ -D__HIPCC__ $(ROCM_OFFLOAD_ARCH_FLAGS) -I$(ROCM_PATH)/include -I$(ROCM_PATH)/include/rccl -I$(ROCM_PATH)/include/hip -DMPI_SUPPORT -I$(MPI_HOME)/include -I$(MPI_HOME)/include/mpi" -j
 else
 	cd ./rccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
 endif
