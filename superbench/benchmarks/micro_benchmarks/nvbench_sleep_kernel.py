@@ -46,9 +46,9 @@ class NvbenchSleepKernel(NvbenchBase):
         return parts
 
     def _process_raw_result(self, cmd_idx, raw_output):
-        """Function to parse raw results and save the summarized results.
+        """Parse NVBench JSON results and save the summarized results.
 
-        self._result.add_raw_data() and self._result.add_result() need to be called to save the results.
+        The raw NVBench JSON is recorded via `_load_result_json()`.
 
         Args:
             cmd_idx (int): the index of command corresponding with the raw_output.
