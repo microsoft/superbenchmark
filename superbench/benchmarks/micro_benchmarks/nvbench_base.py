@@ -180,6 +180,8 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         if hasattr(self._args, 'devices') and self._args.devices is not None:
             if self._args.devices == 'all':
                 parts.extend(['--devices', 'all'])
+            elif self._args.devices.startswith('['):
+                parts.extend(['--devices', f'"{self._args.devices}"'])
             else:
                 parts.extend(['--devices', self._args.devices])
 

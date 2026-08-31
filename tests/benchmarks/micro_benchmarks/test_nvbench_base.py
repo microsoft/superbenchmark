@@ -135,7 +135,7 @@ class TestNvbenchBase(BenchmarkTestCase, unittest.TestCase):
             with self.subTest(devices=devices):
                 benchmark = ConcreteNvbenchBase('test-benchmark', parameters=f'--devices "{devices}"')
                 assert benchmark._preprocess()
-                assert f'--devices {devices}' in benchmark._commands[0]
+                assert f'--devices "{devices}"' in benchmark._commands[0]
 
     def test_nvbench_base_preprocess_with_invalid_devices(self):
         """Test NvbenchBase rejects invalid device configuration."""
