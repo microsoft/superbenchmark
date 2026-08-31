@@ -12,7 +12,7 @@ FROM nvcr.io/nvidia/pytorch:26.07-py3
 #   - TransformerEngine: v2.17
 #   - torch: 2.13.0a0+9186a08
 # Mellanox:
-#   - MOFED_VERSION: (installed in this dockerfile)
+#   - MOFED: 24.10-1.1.4.0 (installed in this dockerfile)
 #   - HPC-X: 2.50
 # Intel:
 #   - mlc: 3.12 (amd64 only)
@@ -93,8 +93,7 @@ RUN TARGETARCH_HW=$(uname -m) && \
     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
 
 # Install HPC-X
-# Keep in sync with the base image, which ships HPC-X 2.50. A lower version here
-# would replace /opt/hpcx with an older stack than PyTorch was built against.
+# Must match the base image, because this replaces /opt/hpcx wholesale.
 ENV HPCX_VERSION=v2.50
 RUN TARGETARCH_HW=$(uname -m) && \
     cd /opt && \
@@ -126,8 +125,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # Install UCX with multi-threading support
-# /usr/local/lib precedes the base image libraries in LD_LIBRARY_PATH, so this
-# version has to match the base image's UCX 1.21.0 to stay ABI compatible.
+# Must match the base image: /usr/local/lib precedes it in LD_LIBRARY_PATH.
 ENV UCX_VERSION=1.21.0
 RUN cd /tmp && \
     wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx-${UCX_VERSION}.tar.gz && \
@@ -158,9 +156,7 @@ ADD third_party third_party
 RUN make -C third_party cuda
 
 ADD . .
-# 81.0.0 is what the base image already ships; pinned so the build stays reproducible.
-RUN python3 -m pip install --upgrade setuptools==81.0.0 && \
-    python3 -m pip install --no-cache-dir .[nvworker] && \
+RUN python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
     make postinstall && \
     rm -rf .git
