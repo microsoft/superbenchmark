@@ -39,7 +39,7 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# The CUTLASS tag is picked per CUDA_VER because each release only supports the SM archs of its own CUDA generation.
+# Tag tracks the CUDA toolkit: v4.7.0 documents optimal codegen for 13.3, v4.1.0 for 12.9.
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=13.3" | bc -l), 1)
 	$(eval ARCHS := "100;103")
