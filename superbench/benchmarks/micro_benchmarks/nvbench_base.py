@@ -269,6 +269,15 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
         self._commands = self._finalize_commands([' '.join(parts)])
         return True
 
+    def _benchmark(self):
+        """Run benchmark commands and always clean up the temporary NVBench output directory."""
+        try:
+            return super()._benchmark()
+        finally:
+            if self._nvbench_tmp_dir:
+                shutil.rmtree(self._nvbench_tmp_dir, ignore_errors=True)
+                self._nvbench_tmp_dir = None
+
     def _finalize_commands(self, commands):
         """Attach a unique NVBench --json output path to each command.
 
@@ -318,8 +327,6 @@ class NvbenchBase(MicroBenchmarkWithInvoke):
                     os.remove(json_path)
                 except OSError:
                     pass
-        if self._nvbench_tmp_dir and cmd_idx == len(self._json_paths) - 1:
-            shutil.rmtree(self._nvbench_tmp_dir, ignore_errors=True)
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_json, self._args.log_raw_data)
         return json.loads(raw_json)
 
