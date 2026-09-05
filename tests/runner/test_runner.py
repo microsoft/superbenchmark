@@ -4,6 +4,7 @@
 """SuperBench Runner test."""
 
 import json
+import subprocess
 import unittest
 import shutil
 import tempfile
@@ -14,6 +15,7 @@ import yaml
 from omegaconf import OmegaConf
 
 from superbench.runner import SuperBenchRunner
+from superbench.runner.runner import _quote_for_bash_lc
 
 
 class RunnerTestCase(unittest.TestCase):
@@ -269,6 +271,69 @@ class RunnerTestCase(unittest.TestCase):
         """Test run empty benchmarks, nothing should happen."""
         self.runner._sb_enabled_benchmarks = []
         self.runner.run()
+
+    def test_quote_for_bash_lc_survives_bash_lc_wrapper(self):
+        """Test _quote_for_bash_lc survives the outer bash -lc / bash -c single-quoted wrapper.
+
+        The helper must produce a token that (a) round-trips through the shell literally and (b) does
+        not prematurely close the outer single-quoted command string used by the Docker (``bash -lc``)
+        and skip-Docker (``bash -c``) dispatch paths.
+        """
+        cases = [
+            '/tmp/traces',
+            '/tmp/my traces/foo_traces',
+            "/tmp/mia's dir/foo_traces",
+            '/tmp/$(id)/foo_traces',
+            '/tmp/`whoami`/foo_traces',
+            '/tmp/foo;rm -rf x/foo_traces',
+            '/tmp/foo|bar/foo_traces',
+        ]
+        # The two wrapper shapes actually used by run_sys_info / _run_proc.
+        wrapper_shapes = [
+            "bash -lc 'echo {token}'",
+            "bash -c 'echo {token}'",
+        ]
+        for value in cases:
+            quoted = _quote_for_bash_lc(value)
+            for wrapper in wrapper_shapes:
+                cmd = wrapper.format(token=quoted)
+                with self.subTest(value=value, wrapper=wrapper):
+                    result = subprocess.run(
+                        ['bash', '-c', cmd],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, msg=result.stderr)
+                    self.assertEqual(result.stdout.rstrip('\n'), value)
+
+    def test_get_mode_command_rocprof_local(self):
+        """Test __get_mode_command with SB_ENABLE_ROCPROF for local mode, including a trace dir with whitespace."""
+        mode = OmegaConf.create({'name': 'local', 'proc_num': 1, 'proc_rank': 0, 'prefix': '', 'env': {}})
+        env = {'SB_ENABLE_ROCPROF': '1', 'SB_ROCPROF_TRACE_DIR': '/tmp/my traces'}
+        with mock.patch.dict('os.environ', env, clear=False):
+            cmd = self.runner._SuperBenchRunner__get_mode_command('kernel-launch', mode, timeout=60)
+        self.assertIn('rocprofv2 --hip-trace --kernel-trace --plugin json', cmd)
+        self.assertIn(_quote_for_bash_lc('/tmp/my traces/kernel-launch_0_traces'), cmd)
+        self.assertNotIn(' -- ', cmd)
+
+    def test_get_mode_command_nsys_local(self):
+        """Test __get_mode_command with SB_ENABLE_NSYS for local mode, including a trace dir with whitespace."""
+        mode = OmegaConf.create({'name': 'local', 'proc_num': 1, 'proc_rank': 0, 'prefix': '', 'env': {}})
+        env = {'SB_ENABLE_NSYS': '1', 'SB_NSYS_TRACE_DIR': '/tmp/my traces'}
+        with mock.patch.dict('os.environ', env, clear=False):
+            cmd = self.runner._SuperBenchRunner__get_mode_command('kernel-launch', mode, timeout=60)
+        self.assertIn('nsys profile --output', cmd)
+        self.assertIn(_quote_for_bash_lc('/tmp/my traces/kernel-launch_0_traces'), cmd)
+
+    def test_get_mode_command_nsys_takes_precedence_over_rocprof(self):
+        """Test that nsys takes precedence and rocprofv2 is suppressed when both env vars are set."""
+        mode = OmegaConf.create({'name': 'local', 'proc_num': 1, 'proc_rank': 0, 'prefix': '', 'env': {}})
+        env = {'SB_ENABLE_NSYS': '1', 'SB_ENABLE_ROCPROF': '1'}
+        with mock.patch.dict('os.environ', env, clear=False):
+            cmd = self.runner._SuperBenchRunner__get_mode_command('kernel-launch', mode, timeout=60)
+        self.assertIn('nsys profile', cmd)
+        self.assertNotIn('rocprofv2', cmd)
 
     @mock.patch('superbench.runner.ansible.AnsibleClient.run')
     def test_run_default_benchmarks(self, mock_ansible_client_run):
