@@ -16,13 +16,13 @@ ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm cuda_nvbench
 
 # Build targets.
 all: cuda rocm
 # msccl: api change in cudaStreamUpdateCaptureDependencies
 cuda_with_msccl: cuda cuda_msccl
-cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth
+cuda: common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest gpcnet cuda_gpuburn megatron_lm megatron_deepspeed nvbandwidth cuda_nvbench
 rocm: common rocm_perftest rocm_rccl_tests rocm_rocblas rocm_bandwidthTest rocm_hipblaslt megatron_deepspeed apex_rocm rocm_megatron_lm
 cpu: common cpu_perftest
 common: fio cpu_stream
@@ -204,7 +204,7 @@ endif
 cpu_hpl: sb_micro_path
 ifneq (,$(wildcard hpl-tests/Makefile))
 	cd ./hpl-tests && \
-    wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
+	wget https://netlib.org/benchmark/hpl/hpl-2.3.tar.gz && \
 	tar xzf hpl-2.3.tar.gz && \
 	cp Make.Linux_zen3 hpl-2.3 && \
 	cp Make.Linux_zen4 hpl-2.3 && \
@@ -220,7 +220,7 @@ endif
 cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
-    wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
+	wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
 	make all
 	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
@@ -255,10 +255,10 @@ rocm_megatron_lm:
 	fi
 	cp Megatron/rocm/Megatron-LM/examples/deepseek_v2/pretrain_deepseek.py Megatron/rocm/Megatron-LM/
 	git clone https://github.com/caaatch22/grouped_gemm.git &&\
-    	cd grouped_gemm &&\
-    	git checkout 8a9b438 &&\
-    	git submodule update --init --recursive &&\
-    	pip install .
+		cd grouped_gemm &&\
+		git checkout 8a9b438 &&\
+		git submodule update --init --recursive &&\
+		pip install .
 
 # Instal apex of ROCm due to dependency of Megatron
 apex_rocm:
@@ -276,7 +276,7 @@ apex_rocm:
 	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 2)" -eq 1 ] && [ "$$(expr $(TORCH_MINOR_VERSION) == 0)" -eq 1 ]; then \
 		git checkout release/1.0.0 ; \
 	elif [ "$$(expr $(TORCH_MAJOR_VERSION) == 1)" -eq 1 ]; then \
-	    git checkout release/1.0.0 ; \
+		git checkout release/1.0.0 ; \
 	fi
 	pip install -v --disable-pip-version-check --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./apex
 
@@ -288,11 +288,11 @@ ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
 	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
-    # Get commit 87048bd from msscl to support updated nccl and sm_100
+	# Get commit 87048bd from msccl to support updated nccl and sm_100
 	$(eval ARCHS := 75 80 86 89 90 100)
 	if [ -d msccl ]; then rm -rf msccl; fi; \
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
-    && git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
+	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	$(eval ARCHS := 70 75 80 86 89 90)
 else
@@ -324,3 +324,34 @@ endif
 nvbandwidth: sb_micro_path
 	cd ./nvbandwidth && git apply ../nvbandwidth.patch && cp ../nvbandwidth_testcases_patched.h ./testcases_patched.h && cmake . && make && cd ..
 	cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin
+
+# Build nvbench
+cuda_nvbench: sb_micro_path
+ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+	$(eval ARCHS := "100;103")
+else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
+	$(eval ARCHS := "90;100")
+else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
+	$(eval ARCHS := "70;75;80;86;89;90")
+else
+	$(eval ARCHS := "70;75;80;86")
+endif
+	@if [ "$$(echo "$(CUDA_VER) < 12.0" | bc -l)" = "1" ]; then \
+		echo "Skipping nvbench build: requires CUDA >= 12.0 (found $(CUDA_VER))"; \
+		exit 0; \
+	fi; \
+	required_cmake="3.30.4"; \
+	current_cmake=$$(cmake --version 2>/dev/null | head -n1 | awk '{print $$3}'); \
+	if [ -z "$$current_cmake" ] || [ "$$(printf '%s\n' "$$required_cmake" "$$current_cmake" | sort -V | head -n1)" != "$$required_cmake" ]; then \
+		echo "Skipping nvbench build: requires CMake >= $$required_cmake (found $${current_cmake:-none})"; \
+		exit 0; \
+	fi; \
+	cd ./nvbench && mkdir -p build && cd build && \
+	cmake										 \
+	-DCMAKE_INSTALL_PREFIX=$(SB_MICRO_PATH)	   \
+	-DCMAKE_CUDA_ARCHITECTURES=$(ARCHS)		   \
+	-DNVBench_ENABLE_CUPTI=ON					 \
+	-DCMAKE_BUILD_TYPE=Release					\
+	.. &&										 \
+	make -j $(NUM_MAKE_JOBS) &&				   \
+	make install
