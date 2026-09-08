@@ -10,7 +10,6 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -172,7 +171,7 @@ template <typename T1, typename T2> CudnnFunction<T1, T2> *get_cudnn_function_po
     case e_cudnnConvolutionBackwardFilter:
         return new ConvolutionBackwardFilterFunction<T1, T2>(function);
     default:
-        throw std::invalid_argument("invalid function name");
+        throw "invalid function name";
     }
 }
 
@@ -186,24 +185,36 @@ template <typename T1, typename T2> CudnnFunction<T1, T2> *get_cudnn_function_po
  * @param  options  the cmd arguments of the application
  */
 void run_benchmark(Options &options) {
-    json function_config = json::parse(options.para_info_json);
-    cudnn_test::CudnnConfig function = function_config.get<cudnn_test::CudnnConfig>();
-    function.set_num_test(options.num_test);
-    function.set_warm_up(options.warm_up);
-    function.set_num_in_step(options.num_in_step);
-    function.set_random_seed(options.random_seed);
-    function.set_auto_algo(options.auto_algo);
-    if (function.get_input_type() == CUDNN_DATA_FLOAT && function.get_conv_type() == CUDNN_DATA_FLOAT) {
-        std::unique_ptr<CudnnFunction<float, float>> p_function(get_cudnn_function_pointer<float, float>(function));
-        p_function->benchmark();
-    } else if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_FLOAT) {
-        std::unique_ptr<CudnnFunction<half, float>> p_function(get_cudnn_function_pointer<half, float>(function));
-        p_function->benchmark();
-    } else if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_HALF) {
-        std::unique_ptr<CudnnFunction<half, half>> p_function(get_cudnn_function_pointer<half, half>(function));
-        p_function->benchmark();
-    } else {
-        throw std::invalid_argument("invalid input and conv type");
+    try {
+        json function_config = json::parse(options.para_info_json);
+        // convert function params from json to CudnnConfig class
+        cudnn_test::CudnnConfig function = function_config.get<cudnn_test::CudnnConfig>();
+        function.set_num_test(options.num_test);
+        function.set_warm_up(options.warm_up);
+        function.set_num_in_step(options.num_in_step);
+        function.set_random_seed(options.random_seed);
+        function.set_auto_algo(options.auto_algo);
+        if (function.get_input_type() == CUDNN_DATA_FLOAT && function.get_conv_type() == CUDNN_DATA_FLOAT) {
+            auto p_function = get_cudnn_function_pointer<float, float>(function);
+            p_function->benchmark();
+            delete p_function;
+        } else {
+            if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_FLOAT) {
+                auto p_function = get_cudnn_function_pointer<half, float>(function);
+                p_function->benchmark();
+                delete p_function;
+            } else {
+                if (function.get_input_type() == CUDNN_DATA_HALF && function.get_conv_type() == CUDNN_DATA_HALF) {
+                    auto p_function = get_cudnn_function_pointer<half, half>(function);
+                    p_function->benchmark();
+                    delete p_function;
+                } else {
+                    throw "invalid input and conv type";
+                }
+            }
+        }
+    } catch (std::exception &e) {
+        std::cout << "Error: " << e.what() << std::endl;
     }
 }
 } // namespace cudnn_test

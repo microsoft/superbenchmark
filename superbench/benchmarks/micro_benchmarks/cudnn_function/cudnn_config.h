@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <stdexcept>
 #include <unordered_map>
 
 #include "cudnn_helper.h"
@@ -112,7 +111,7 @@ class CudnnConfig {
             this->e_name = it->second;
             return e_name;
         } else {
-            throw std::invalid_argument("invalid input function name");
+            throw "ERROR: invalid input function name";
         }
     }
 };

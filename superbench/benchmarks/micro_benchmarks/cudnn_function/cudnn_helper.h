@@ -8,11 +8,8 @@
 #pragma once
 
 #include <iostream>
-#include <limits>
 #include <memory>
-#include <numeric>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -50,26 +47,6 @@ void cudnn_handle_free(cudnnHandle_t *cudnn_handle);
  * @param  random_seed      the random seed to generate random data
  */
 template <typename T> void rand(T **input, std::vector<int> dims_, int random_seed);
-template <typename T> void rand(T **input, size_t elements, int random_seed);
-
-inline size_t tensor_storage_size(const std::vector<int> &dims, const std::vector<int> &strides) {
-    if (dims.empty() || dims.size() != strides.size()) {
-        throw std::invalid_argument("tensor dimensions and strides must have the same nonzero rank");
-    }
-    size_t elements = 1;
-    for (size_t axis = 0; axis < dims.size(); ++axis) {
-        if (dims[axis] <= 0 || strides[axis] <= 0) {
-            throw std::invalid_argument("tensor dimensions and strides must be positive");
-        }
-        const size_t dimension = static_cast<size_t>(dims[axis] - 1);
-        const size_t stride = static_cast<size_t>(strides[axis]);
-        if (dimension > (std::numeric_limits<size_t>::max() - elements) / stride) {
-            throw std::invalid_argument("tensor storage size overflows size_t");
-        }
-        elements += dimension * stride;
-    }
-    return elements;
-}
 /**
  * @brief Malloc cuda memory and fill in zero
  * @tparam T
@@ -121,9 +98,8 @@ template <typename T> class TensorDescriptorNd {
     std::shared_ptr<cudnnTensorDescriptor_t> desc_;
 
     struct TensorDescriptorNdDeleter {
-        void operator()(cudnnTensorDescriptor_t *desc) noexcept {
-            if (*desc != nullptr)
-                cudnnDestroyTensorDescriptor(*desc);
+        void operator()(cudnnTensorDescriptor_t *desc) {
+            CHECK_CUDNN_ERROR(cudnnDestroyTensorDescriptor(*desc));
             delete desc;
         }
     };
@@ -131,8 +107,7 @@ template <typename T> class TensorDescriptorNd {
   public:
     TensorDescriptorNd() {}
     TensorDescriptorNd(const std::vector<int> &dim, const std::vector<int> &stride)
-        : desc_(new cudnnTensorDescriptor_t{}, TensorDescriptorNdDeleter()) {
-        tensor_storage_size(dim, stride);
+        : desc_(new cudnnTensorDescriptor_t, TensorDescriptorNdDeleter()) {
         cudnnDataType_t type;
         get_tensor_type<T>(type);
 
@@ -151,9 +126,8 @@ template <typename T> class FilterDescriptorNd {
     std::shared_ptr<cudnnFilterDescriptor_t> desc_;
 
     struct FilterDescriptorNdDeleter {
-        void operator()(cudnnFilterDescriptor_t *desc) noexcept {
-            if (*desc != nullptr)
-                cudnnDestroyFilterDescriptor(*desc);
+        void operator()(cudnnFilterDescriptor_t *desc) {
+            CHECK_CUDNN_ERROR(cudnnDestroyFilterDescriptor(*desc));
             delete desc;
         }
     };
@@ -161,10 +135,7 @@ template <typename T> class FilterDescriptorNd {
   public:
     FilterDescriptorNd() {}
 
-    FilterDescriptorNd(const std::vector<int> &dim)
-        : desc_(new cudnnFilterDescriptor_t{}, FilterDescriptorNdDeleter()) {
-        if (dim.empty())
-            throw std::invalid_argument("filter dimensions must not be empty");
+    FilterDescriptorNd(const std::vector<int> &dim) : desc_(new cudnnFilterDescriptor_t, FilterDescriptorNdDeleter()) {
         cudnnTensorFormat_t tensor_format;
         get_tensor_format<T>(tensor_format);
         cudnnDataType_t type;
@@ -185,9 +156,8 @@ template <typename T> class ConvolutionDescriptor {
     std::shared_ptr<cudnnConvolutionDescriptor_t> desc_;
 
     struct ConvolutionDescriptorDeleter {
-        void operator()(cudnnConvolutionDescriptor_t *desc) noexcept {
-            if (*desc != nullptr)
-                cudnnDestroyConvolutionDescriptor(*desc);
+        void operator()(cudnnConvolutionDescriptor_t *desc) {
+            CHECK_CUDNN_ERROR(cudnnDestroyConvolutionDescriptor(*desc));
             delete desc;
         }
     };
@@ -196,12 +166,7 @@ template <typename T> class ConvolutionDescriptor {
     ConvolutionDescriptor() {}
     ConvolutionDescriptor(int array_length, const std::vector<int> &padA, const std::vector<int> &filter_strideA,
                           const std::vector<int> &dilationA, cudnnConvolutionMode_t mode)
-        : desc_(new cudnnConvolutionDescriptor_t{}, ConvolutionDescriptorDeleter()) {
-        if (array_length <= 0 || padA.size() != static_cast<size_t>(array_length) ||
-            filter_strideA.size() != static_cast<size_t>(array_length) ||
-            dilationA.size() != static_cast<size_t>(array_length)) {
-            throw std::invalid_argument("convolution dimension arrays have different lengths");
-        }
+        : desc_(new cudnnConvolutionDescriptor_t, ConvolutionDescriptorDeleter()) {
         cudnnDataType_t type;
         get_tensor_type<T>(type);
 
