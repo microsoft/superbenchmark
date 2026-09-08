@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <unordered_map>
 
 #include "cudnn_helper.h"
@@ -79,7 +80,7 @@ class CudnnConfig {
     void set_mode(const cudnnConvolutionMode_t &mode) { mode_ = mode; }
     void set_use_tensor_op(bool use_tensor_op) { use_tensor_op_ = use_tensor_op; }
     void set_input_type(const cudnnDataType_t &input_type) { input_type_ = input_type; }
-    void set_conv_type(const cudnnDataType_t &conv_type) { input_type_ = conv_type; }
+    void set_conv_type(const cudnnDataType_t &conv_type) { conv_type_ = conv_type; }
     void set_function(const std::string &str) { function_str_ = str; }
     void set_auto_algo(bool auto_algo) { auto_algo_ = auto_algo; }
 
@@ -96,7 +97,7 @@ class CudnnConfig {
     cudnnConvolutionMode_t &get_mode() { return mode_; }
     bool get_use_tensor_op() { return use_tensor_op_; }
     cudnnDataType_t &get_input_type() { return input_type_; }
-    cudnnDataType_t &get_conv_type() { return input_type_; }
+    cudnnDataType_t &get_conv_type() { return conv_type_; }
     std::string &get_name() { return name; }
     cudnn_function_name_enum get_e_name() { return e_name; }
     std::string &get_function_str() { return function_str_; }
@@ -111,7 +112,7 @@ class CudnnConfig {
             this->e_name = it->second;
             return e_name;
         } else {
-            throw "ERROR: invalid input function name";
+            throw std::invalid_argument("invalid input function name");
         }
     }
 };

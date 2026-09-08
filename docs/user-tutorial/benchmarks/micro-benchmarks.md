@@ -110,6 +110,21 @@ The supported functions for cuDNN are as follows:
 |-----------------------------------------------------------|-----------|------------------------------------------------------------------|
 | cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
+#### Precision and compatibility
+
+`inputType` selects tensor and filter storage, while `convType` independently selects convolution compute precision.
+The cuDNN enum values `0` and `2` represent FP32 and FP16, respectively; supported combinations and algorithms depend on the GPU and cuDNN version.
+
+Versions with the aliased storage/compute-field defect execute cases requesting `inputType: 2, convType: 0` with FP32 storage instead of FP16 storage.
+This affects nine of the eighteen default cuDNN configurations, not other SuperBench benchmarks.
+After applying the fix, rebuild the native benchmark and helper library and regenerate baselines for these cases using the repaired source/image.
+Do not compare repaired FP16 measurements with the old effective-FP32 baselines just because their metric names match.
+Metric names, microsecond units, and the host-wall timing loop are unchanged.
+
+Native execution failures and missing, malformed, duplicate, or non-finite timing records are not successful measurements.
+Keep unsupported configurations visible as failures; do not silently accept them as timing data.
+See the [cuDNN regression checks](../../../superbench/benchmarks/micro_benchmarks/cudnn_function/README.md) for focused validation commands.
+
 ### `tensorrt-inference`
 
 #### Introduction

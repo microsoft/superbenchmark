@@ -18,14 +18,16 @@ namespace cudnn_test {
  */
 template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
   protected:
-    cudnnHandle_t cudnn_handle;
+    cudnnHandle_t cudnn_handle = nullptr;
     TensorDescriptorNd<T1> x_desc_;
     FilterDescriptorNd<T1> w_desc_;
     ConvolutionDescriptor<T2> conv_desc_;
     TensorDescriptorNd<T1> h_desc_;
-    size_t fwd_workspace_size_;
-    float *fwd_workspace_;
-    T1 *x, *filter, *h;
+    size_t fwd_workspace_size_ = 0;
+    float *fwd_workspace_ = nullptr;
+    T1 *x = nullptr;
+    T1 *filter = nullptr;
+    T1 *h = nullptr;
     const float alpha_ = 1.f;
     const float beta_ = 0.f;
 
@@ -64,12 +66,18 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
     /**
      * @brief Destroy the Cudnn Function object, including free cuda memory and handle of cudnn and curand
      */
-    virtual ~CudnnFunction() {
+    virtual ~CudnnFunction() noexcept {
         // free context and memory
-        CUDA_SAFE_CALL(cudaFree(x));
-        CUDA_SAFE_CALL(cudaFree(filter));
-        CUDA_SAFE_CALL(cudaFree(h));
-        cudnn_handle_free(&this->cudnn_handle);
+        if (x != nullptr)
+            cudaFree(x);
+        if (filter != nullptr)
+            cudaFree(filter);
+        if (h != nullptr)
+            cudaFree(h);
+        if (fwd_workspace_ != nullptr)
+            cudaFree(fwd_workspace_);
+        if (cudnn_handle != nullptr)
+            cudnnDestroy(cudnn_handle);
     }
     /**
      * @brief The main procedure for cudnn function test, including warmup, function test and time measurement
@@ -96,7 +104,10 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_func
     }
     // Set convolution algorithm and workspace size
     this->get_workspace_size();
-    zeros<float>(&fwd_workspace_, std::vector<int>{static_cast<int>(this->fwd_workspace_size_ / sizeof(float)), 1});
+    if (fwd_workspace_size_ > 0) {
+        CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void **>(&fwd_workspace_), fwd_workspace_size_));
+        CUDA_SAFE_CALL(cudaMemset(fwd_workspace_, 0, fwd_workspace_size_));
+    }
 }
 /**
  * @brief Malloc cuda memory and fill in value for data params used in the cudnn function
@@ -105,9 +116,9 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_input() 
     // Allocate memory for filter data
     rand<T1>(&filter, get_filter_dims(), random_seed);
     // Allocate memory for input data
-    rand<T1>(&x, get_input_dims(), random_seed);
+    rand<T1>(&x, tensor_storage_size(get_input_dims(), get_input_stride()), random_seed);
     // Allocate memory for output data
-    rand<T1>(&h, get_output_dims(), random_seed);
+    rand<T1>(&h, tensor_storage_size(get_output_dims(), get_output_stride()), random_seed);
 }
 /**
  * @brief The main procedure for cudnn function test, including warmup, function test and time measurement

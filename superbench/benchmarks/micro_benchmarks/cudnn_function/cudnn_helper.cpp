@@ -57,30 +57,56 @@ void cudnn_handle_free(cudnnHandle_t *cudnn_handle) { CHECK_CUDNN_ERROR(cudnnDes
  * @param  random_seed      the random seed to generate random data
  */
 template <typename T> void rand(T **input, std::vector<int> dims_, int random_seed) {
-    throw "unsupported rand data type";
+    throw std::invalid_argument("unsupported rand data type");
 }
-template <> void rand(float **input, std::vector<int> dims_, int random_seed) {
-    int size = std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<int>());
+template <> void rand(float **input, size_t size, int random_seed) {
+    if (size == 0 || size > std::numeric_limits<size_t>::max() / sizeof(float)) {
+        throw std::invalid_argument("invalid float allocation size");
+    }
     CUDA_SAFE_CALL(cudaMalloc((void **)input, sizeof(float) * size));
     float *host_input;
     CUDA_SAFE_CALL(cudaMallocHost(&host_input, sizeof(float) * size));
+    std::unique_ptr<float, decltype(&cudaFreeHost)> host_owner(host_input, cudaFreeHost);
     srand(random_seed);
-    for (int i = 0; i < size; i++) {
-        host_input[i] = (float)std::rand() / (float)(RAND_MAX);
+    for (size_t index = 0; index < size; ++index) {
+        host_input[index] = (float)std::rand() / (float)(RAND_MAX);
     }
     // copy input data from host to device
     CUDA_SAFE_CALL(cudaMemcpy(*input, host_input, sizeof(float) * size, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaFreeHost(host_input));
 }
-template <> void rand(half **input, std::vector<int> dims_, int random_seed) {
-    int size = std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<int>());
+template <> void rand(half **input, size_t size, int random_seed) {
+    if (size == 0 || size > std::numeric_limits<size_t>::max() / sizeof(half)) {
+        throw std::invalid_argument("invalid half allocation size");
+    }
     CUDA_SAFE_CALL(cudaMalloc((void **)input, sizeof(half) * size));
     half *host_input;
     CUDA_SAFE_CALL(cudaMallocHost(&host_input, sizeof(half) * size));
-    for (int i = 0; i < size; i++) {
-        host_input[i] = __float2half((float)std::rand() / (float)(RAND_MAX));
+    std::unique_ptr<half, decltype(&cudaFreeHost)> host_owner(host_input, cudaFreeHost);
+    srand(random_seed);
+    for (size_t index = 0; index < size; ++index) {
+        host_input[index] = __float2half((float)std::rand() / (float)(RAND_MAX));
     }
-    CUDA_SAFE_CALL(cudaMemcpy(host_input, *input, sizeof(half) * size, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaFreeHost(host_input));
+    CUDA_SAFE_CALL(cudaMemcpy(*input, host_input, sizeof(half) * size, cudaMemcpyHostToDevice));
+}
+
+size_t contiguous_elements(const std::vector<int> &dims) {
+    if (dims.empty())
+        throw std::invalid_argument("allocation dimensions must not be empty");
+    size_t elements = 1;
+    for (int dimension : dims) {
+        if (dimension <= 0 || elements > std::numeric_limits<size_t>::max() / static_cast<size_t>(dimension)) {
+            throw std::invalid_argument("invalid or overflowing allocation dimensions");
+        }
+        elements *= static_cast<size_t>(dimension);
+    }
+    return elements;
+}
+
+template <> void rand(float **input, std::vector<int> dims_, int random_seed) {
+    rand(input, contiguous_elements(dims_), random_seed);
+}
+
+template <> void rand(half **input, std::vector<int> dims_, int random_seed) {
+    rand(input, contiguous_elements(dims_), random_seed);
 }
 } // namespace cudnn_test

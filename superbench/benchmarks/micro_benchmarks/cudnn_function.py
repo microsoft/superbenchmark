@@ -429,18 +429,22 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     metric = metric + '_' + key + '_' + str(cmd_config[key])
             metric = metric.replace(' ', '').replace(',', '_')
 
-            error = False
-            raw_data = []
-            for line in lines:
-                if '[raw_data]' in line:
-                    raw_data = line[line.index('[raw_data]: ') + len('[raw_data]: '):]
-                    raw_data = raw_data.split(',')
-                    raw_data.pop()
-                    raw_data = [float(item) for item in raw_data]
-                    self._result.add_result(metric.lower() + '_time', statistics.mean(raw_data) * 1000)
-                    self._result.add_raw_data(metric.lower() + '_time', raw_data, self._args.log_raw_data)
-                if 'Error' in line:
-                    error = True
+            if 'Error' in raw_output:
+                raise ValueError('Error reported in cuDNN output.')
+            timing_records = [line for line in lines if '[raw_data]' in line]
+            if len(timing_records) != 1:
+                raise ValueError('Expected exactly one timing record.')
+            raw_data = timing_records[0].split('[raw_data]:', 1)[1].strip()
+            if raw_data.endswith(','):
+                raw_data = raw_data[:-1]
+            raw_data = [float(item) for item in raw_data.split(',')]
+            if len(raw_data) != self._args.num_steps or not all(0 < sample < float('inf') for sample in raw_data):
+                raise ValueError('Expected exactly {} finite positive timing samples.'.format(self._args.num_steps))
+            mean_time = statistics.mean(raw_data) * 1000
+            if not 0 < mean_time < float('inf'):
+                raise ValueError('Expected a finite positive mean time after unit conversion.')
+            self._result.add_result(metric.lower() + '_time', mean_time)
+            self._result.add_raw_data(metric.lower() + '_time', raw_data, self._args.log_raw_data)
         except BaseException as e:
             logger.error(
                 'Cannot extract results from cudnn functions - round: {}, index of cmd: {}, \
@@ -448,8 +452,6 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._curr_run_index, cmd_idx, self._name, raw_output, str(e)
                 )
             )
-            error = True
-        if error:
             logger.error(
                 'Error in running cudnn test - round: {}, index of cmd: {}, benchmark: {}, raw data: {}'.format(
                     self._curr_run_index, cmd_idx, self._name, raw_output
