@@ -5,10 +5,14 @@
 #include <numeric>
 #include <stdexcept>
 
+#include <nlohmann/json.hpp>
+
 #include "cudnn_config.h"
+#include "cudnn_reference.h"
 
 namespace cudnn_test {
 class CudnnPreparedPlan {
+    nlohmann::json verification_;
     static std::vector<int64_t> packed_strides(const std::vector<int> &dimensions) {
         if (dimensions.size() != 4) {
             throw std::invalid_argument("prepared execution requires four-dimensional tensors");
@@ -37,6 +41,14 @@ class CudnnPreparedPlan {
     struct Workspace {
         void *pointer = nullptr;
         ~Workspace() { cudaFree(pointer); }
+        void reset(size_t bytes) {
+            void *previous = pointer;
+            pointer = nullptr;
+            CUDA_SAFE_CALL(cudaFree(previous));
+            if (bytes != 0) {
+                CUDA_SAFE_CALL(cudaMalloc(&pointer, bytes));
+            }
+        }
     } workspace_;
     cudnnBackendDescriptor_t plan_ = nullptr;
     cudnnBackendDescriptor_t pack_ = nullptr;
@@ -76,7 +88,31 @@ class CudnnPreparedPlan {
         return descriptor;
     }
 
-    void select(cudnnHandle_t handle, cudnnBackendDescriptor_t graph, CudnnConfig &config) {
+    void bind(void *input, void *filter, void *output) {
+        workspace_.reset(static_cast<size_t>(workspace_bytes_));
+        pack_ = create(CUDNN_BACKEND_VARIANT_PACK_DESCRIPTOR);
+        int64_t ids[] = {101, 102, 103};
+        void *pointers[] = {input, filter, output};
+        CHECK_CUDNN_ERROR(
+            cudnnBackendSetAttribute(pack_, CUDNN_ATTR_VARIANT_PACK_UNIQUE_IDS, CUDNN_TYPE_INT64, 3, ids));
+        CHECK_CUDNN_ERROR(
+            cudnnBackendSetAttribute(pack_, CUDNN_ATTR_VARIANT_PACK_DATA_POINTERS, CUDNN_TYPE_VOID_PTR, 3, pointers));
+        set(pack_, CUDNN_ATTR_VARIANT_PACK_WORKSPACE, CUDNN_TYPE_VOID_PTR, workspace_.pointer);
+        CHECK_CUDNN_ERROR(cudnnBackendFinalize(pack_));
+    }
+
+    void select(cudnnHandle_t handle, cudnnBackendDescriptor_t graph, CudnnConfig &config, void *input, void *filter,
+                void *output) {
+        CudnnReference reference(config, input, filter, output);
+        verification_ = {{"policy", "full-output-v1"},
+                         {"passed", false},
+                         {"inputs", 5},
+                         {"reference", "cuBLAS-FP64-with-CPU-crosschecks"},
+                         {"atol", 0.0005},
+                         {"rtol", 0.0005 + (config.get_input_type() == CUDNN_DATA_HALF ? 1.0 / 2048 : 0)},
+                         {"checked_elements", reference.checked_elements()},
+                         {"rejected", nlohmann::json::array()}};
+        std::vector<std::string> attempted;
         for (auto mode : {CUDNN_HEUR_MODE_A, CUDNN_HEUR_MODE_FALLBACK}) {
             auto heuristic = create(CUDNN_BACKEND_ENGINEHEUR_DESCRIPTOR);
             set(heuristic, CUDNN_ATTR_ENGINEHEUR_OPERATION_GRAPH, CUDNN_TYPE_BACKEND_DESCRIPTOR, graph);
@@ -98,6 +134,10 @@ class CudnnPreparedPlan {
             CHECK_CUDNN_ERROR(cudnnBackendGetAttribute(heuristic, CUDNN_ATTR_ENGINEHEUR_RESULTS,
                                                        CUDNN_TYPE_BACKEND_DESCRIPTOR, count, &count,
                                                        candidates.data()));
+            if (count < 0 || static_cast<size_t>(count) > candidates.size()) {
+                throw std::runtime_error("unexpected prepared-plan result count");
+            }
+            candidates.resize(static_cast<size_t>(count));
             for (auto candidate : candidates) {
                 auto engine = create(CUDNN_BACKEND_ENGINE_DESCRIPTOR);
                 int64_t returned = 0;
@@ -108,11 +148,13 @@ class CudnnPreparedPlan {
                                                            CUDNN_TYPE_NUMERICAL_NOTE, notes.size(), &returned,
                                                            notes.data()));
                 notes.resize(returned);
-                if (std::any_of(notes.begin(), notes.end(), [&config](cudnnBackendNumericalNote_t note) {
+                const bool tensor_core =
+                    std::find(notes.begin(), notes.end(), CUDNN_NUMERICAL_NOTE_TENSOR_CORE) != notes.end();
+                if (tensor_core != config.get_use_tensor_op() ||
+                    std::any_of(notes.begin(), notes.end(), [](cudnnBackendNumericalNote_t note) {
                         return note == CUDNN_NUMERICAL_NOTE_NONDETERMINISTIC ||
                                note == CUDNN_NUMERICAL_NOTE_DOWN_CONVERT_INPUTS ||
-                               note == CUDNN_NUMERICAL_NOTE_REDUCED_PRECISION_REDUCTION ||
-                               (!config.get_use_tensor_op() && note == CUDNN_NUMERICAL_NOTE_TENSOR_CORE);
+                               note == CUDNN_NUMERICAL_NOTE_REDUCED_PRECISION_REDUCTION;
                     })) {
                     continue;
                 }
@@ -143,10 +185,24 @@ class CudnnPreparedPlan {
                                                            &returned, &engine_index_));
                 plan_ = plan;
                 workspace_bytes_ = required;
+                auto identity = json();
+                if (std::find(attempted.begin(), attempted.end(), identity) != attempted.end()) {
+                    continue;
+                }
+                attempted.push_back(identity);
+                bind(input, filter, output);
+                if (!reference.accepts([&]() { execute(handle); })) {
+                    verification_["rejected"].push_back({{"engine", engine_index_},
+                                                         {"failures", reference.failures()},
+                                                         {"maximum_tolerance_ratio", reference.maximum_ratio()}});
+                    continue;
+                }
+                verification_["passed"] = true;
+                verification_["maximum_tolerance_ratio"] = reference.maximum_ratio();
                 return;
             }
         }
-        throw std::runtime_error("prepared execution unsupported under deterministic-v1 policy and workspace limit");
+        throw std::runtime_error("prepared execution unsupported under screened-v1 policy: " + verification_.dump());
     }
 #endif
 
@@ -223,19 +279,7 @@ class CudnnPreparedPlan {
         set(graph, CUDNN_ATTR_OPERATIONGRAPH_HANDLE, CUDNN_TYPE_HANDLE, handle);
         set(graph, CUDNN_ATTR_OPERATIONGRAPH_OPS, CUDNN_TYPE_BACKEND_DESCRIPTOR, operation);
         CHECK_CUDNN_ERROR(cudnnBackendFinalize(graph));
-        select(handle, graph, config);
-        if (workspace_bytes_ != 0) {
-            CUDA_SAFE_CALL(cudaMalloc(&workspace_.pointer, static_cast<size_t>(workspace_bytes_)));
-        }
-        pack_ = create(CUDNN_BACKEND_VARIANT_PACK_DESCRIPTOR);
-        int64_t ids[] = {101, 102, 103};
-        void *pointers[] = {input, filter, output};
-        CHECK_CUDNN_ERROR(
-            cudnnBackendSetAttribute(pack_, CUDNN_ATTR_VARIANT_PACK_UNIQUE_IDS, CUDNN_TYPE_INT64, 3, ids));
-        CHECK_CUDNN_ERROR(
-            cudnnBackendSetAttribute(pack_, CUDNN_ATTR_VARIANT_PACK_DATA_POINTERS, CUDNN_TYPE_VOID_PTR, 3, pointers));
-        set(pack_, CUDNN_ATTR_VARIANT_PACK_WORKSPACE, CUDNN_TYPE_VOID_PTR, workspace_.pointer);
-        CHECK_CUDNN_ERROR(cudnnBackendFinalize(pack_));
+        select(handle, graph, config, input, filter, output);
 #endif
     }
 
@@ -259,6 +303,7 @@ class CudnnPreparedPlan {
 #endif
     }
 
+    const nlohmann::json &verification() const { return verification_; }
     CudnnPreparedPlan(const CudnnPreparedPlan &) = delete;
     CudnnPreparedPlan &operator=(const CudnnPreparedPlan &) = delete;
 };

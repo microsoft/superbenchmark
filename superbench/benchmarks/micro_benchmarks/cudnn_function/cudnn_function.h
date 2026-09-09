@@ -128,11 +128,12 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
         CUDA_SAFE_CALL(cudaDeviceSynchronize());
     }
     auto setup_end = std::chrono::steady_clock::now();
-    double first_call_ms = 0;
+    double postcheck_call_ms = 0;
     if (get_prepared()) {
         kernel_entry();
         CUDA_SAFE_CALL(cudaDeviceSynchronize());
-        first_call_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - setup_end).count();
+        postcheck_call_ms =
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - setup_end).count();
     }
 
     // Warm up
@@ -163,7 +164,7 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
     // Output results
     if (get_prepared()) {
         print_execution_info(
-            std::chrono::duration<double, std::milli>(setup_end - benchmark_start).count(), first_call_ms,
+            std::chrono::duration<double, std::milli>(setup_end - benchmark_start).count(), postcheck_call_ms,
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - benchmark_start).count());
     }
     std::cout << "[function config]: " << this->get_function_str() << std::endl;

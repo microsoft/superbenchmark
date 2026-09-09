@@ -387,6 +387,8 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             return config
         if self._args.enable_auto_algo:
             raise ValueError('Prepared execution does not use legacy auto algorithm selection.')
+        if config.get('planPolicy', 'screened-v1') != 'screened-v1':
+            raise ValueError('Prepared execution requires screened-v1 numerical qualification.')
         if not 0 <= self._args.workspace_limit_mib <= 1048576:
             raise ValueError('Prepared workspace limit must be between 0 and 1048576 MiB.')
         if (config['name'] != 'cudnnConvolutionBackwardFilter' or config['inputType'] not in (0, 2)
@@ -395,7 +397,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         config = dict(config)
         config.pop('algo', None)
         config.update(
-            executionMode='prepared', planPolicy='deterministic-v1', workspaceLimitMiB=self._args.workspace_limit_mib
+            executionMode='prepared', planPolicy='screened-v1', workspaceLimitMiB=self._args.workspace_limit_mib
         )
         return config
 
@@ -443,6 +445,28 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             return False
         return True
 
+    @staticmethod
+    def _validate_prepared_verification(verification, config):
+        """Require the full-output screen with the declared, unchanged tolerances."""
+        elements = 5
+        for dimension in config['filterDims']:
+            if type(dimension) is not int or dimension <= 0:
+                raise ValueError('Invalid prepared filter dimensions.')
+            elements *= dimension
+        expected = {
+            'policy': 'full-output-v1', 'inputs': 5, 'checked_elements': elements,
+            'reference': 'cuBLAS-FP64-with-CPU-crosschecks', 'atol': 0.0005,
+            'rtol': 0.0005 + (1.0 / 2048 if config['inputType'] == 2 else 0),
+        }
+        if (
+            verification.get('passed') is not True
+            or any(verification.get(key) != value for key, value in expected.items())
+        ):
+            raise ValueError('Missing or mismatched prepared numerical qualification.')
+        ratio = verification.get('maximum_tolerance_ratio')
+        if type(ratio) not in (int, float) or not math.isfinite(ratio) or not 0 <= ratio <= 1:
+            raise ValueError('Prepared numerical qualification failed.')
+
     def _process_prepared_result(self, metric, lines, config):
         """Validate prepared evidence before publishing any timing."""
         metadata_lines = [line for line in lines if line.startswith('[prepared_plan]: ')]
@@ -453,16 +477,20 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         if (metadata['execution_mode'] != 'prepared' or metadata['policy'] != config['planPolicy']
                 or not isinstance(metadata['plan'], dict) or not metadata['plan']):
             raise ValueError('Prepared plan identity or policy mismatch.')
+        self._validate_prepared_verification(metadata['verification'], config)
         fields = timing_lines[0].split(': ', 1)[1].split(',')
         if fields[-1] != '':
             raise ValueError('Incomplete prepared timing output.')
         raw_data = [float(value) for value in fields[:-1]]
         if len(raw_data) != self._args.num_steps or any(not math.isfinite(value) or value <= 0 for value in raw_data):
             raise ValueError('Invalid prepared timing samples.')
-        costs = {name: metadata[name + '_ms'] for name in ('plan_build', 'setup', 'first_call', 'benchmark')}
+        costs = {name: metadata[name + '_ms'] for name in ('plan_build', 'setup', 'postcheck_call', 'benchmark')}
         if any(type(value) not in (float, int) or not math.isfinite(value) or value < 0 for value in costs.values()):
             raise ValueError('Invalid prepared setup timings.')
-        serialized = json.dumps(metadata['plan'], sort_keys=True, separators=(',', ':')).encode()
+        identity = {key: metadata['plan'][key] for key in ('schemaVersion', 'cudnnVersion', 'engine', 'operationGraph')}
+        if not isinstance(identity['engine'], dict) or 'smVersion' not in identity['engine']:
+            raise ValueError('Prepared plan lacks stable architecture identity.')
+        serialized = json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()
         metric = metric.lower() + '_plan_' + hashlib.sha256(serialized).hexdigest()[:16]
         self._result.add_result(metric + '_time', statistics.mean(raw_data) * 1000)
         self._result.add_raw_data(metric + '_time', raw_data, self._args.log_raw_data)

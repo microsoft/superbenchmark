@@ -47,7 +47,7 @@ class CudnnConfig {
         output_dims_; ///< array of outpur dimension that contain the size of the tensor for every dimension
     std::vector<int>
         output_stride_; ///< array of output dimension that contain the stride of the tensor for every dimension
-    int algo_;          ///< enumerant that specifies which convolution algorithm should be used to compute the results
+    int algo_ = 0;      ///< enumerant that specifies which convolution algorithm should be used to compute the results
     int array_length_;  ///< dimension of the convolution
     std::vector<int> padA_; ///< array of convolution dimension containing the zero-padding size for each dimension.
     std::vector<int>

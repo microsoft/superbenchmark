@@ -27,13 +27,14 @@ template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : pu
         }
     }
 
-    void print_execution_info(double setup_ms, double first_call_ms, double benchmark_ms) override {
+    void print_execution_info(double setup_ms, double postcheck_call_ms, double benchmark_ms) override {
         nlohmann::json metadata = {{"execution_mode", "prepared"},
-                                   {"policy", "deterministic-v1"},
+                                   {"policy", "screened-v1"},
+                                   {"verification", prepared_plan_->verification()},
                                    {"cudnn_version", cudnnGetVersion()},
                                    {"plan_build_ms", plan_build_ms_},
                                    {"setup_ms", setup_ms},
-                                   {"first_call_ms", first_call_ms},
+                                   {"postcheck_call_ms", postcheck_call_ms},
                                    {"benchmark_ms", benchmark_ms},
                                    {"plan", nlohmann::json::parse(prepared_plan_->json())}};
         std::cout << "[prepared_plan]: " << metadata.dump() << std::endl;

@@ -111,12 +111,25 @@ cross-correlation, FP32 compute, and FP32 or FP16 storage. Without custom config
 only the six backward-filter defaults are selected. The Python wrapper removes
 legacy `algo` indices; `--enable_auto_algo` cannot be combined with this mode.
 
-The `deterministic-v1` policy selects the first supported heuristic A/fallback
+The `screened-v1` policy selects the first numerically passing heuristic A/fallback
 plan within `--workspace_limit_mib` (default 1024). It rejects nondeterminism,
-input down-conversion and reduced-precision reduction notes, and excludes Tensor
-Core plans when `tensorOp` is false. Unsupported configurations fail explicitly;
-there is no legacy fallback. These filters are not a universal numerical accuracy
-guarantee, and different plans can change the executed algorithm and performance.
+input down-conversion and reduced-precision reduction notes. In this policy,
+`tensorOp=true` requires a Tensor Core plan and `false` excludes it; selection
+does not silently switch between these modes to obtain a passing result.
+
+Before timing, every candidate is checked over every output using independent
+cuBLAS FP64 GEMM, calibrated against CPU scalar convolution checks. The inputs
+are scaled seeds 58613/91817, uniform seed 104729, cancellation seed 130363 and
+the actual stored benchmark operands. FP16 values are rounded before reference
+calculation. The fixed componentwise screen is
+`abs(error) <= 0.0005 + (0.0005 + u_out) * abs(reference)`, with `u_out=0` for
+FP32 and `2^-11` for FP16. A passing plan must pass all five inputs. Rejected
+candidate errors and passing verification counts are retained in raw metadata.
+Actual operands are restored before warmup. If no candidate qualifies, the case
+fails without publishing timing; there is no legacy or relaxed-tolerance fallback.
+This is an explicit benchmark screen, not a universal cuDNN accuracy guarantee.
+The independent reference requires temporary host/device memory beyond the plan
+workspace limit and adds setup cost; it does not run inside the measured loop.
 
 #### Metrics
 
@@ -125,15 +138,25 @@ guarantee, and different plans can change the executed algorithm and performance
 | cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
 Prepared metric parameters include the execution mode, policy and workspace limit,
-and append `_plan_<fingerprint>` before `_time`. They require separate baselines.
-Raw output retains the complete serialized plan and cuDNN version. Per-case
-`_plan_build_time`, `_setup_time`, `_first_call_time` and `_benchmark_time` metrics
-are also in microseconds. Setup is excluded from steady timing; benchmark time
-includes setup, the first call, warmup and measured loops inside `benchmark()`,
+and append `_plan_<fingerprint>` before `_time`. The fingerprint covers the plan
+schema, cuDNN version, engine/knobs/architecture and operation graph, excluding
+incidental GPU profile fields such as device ordinal and nominal clocks. They
+require separate baselines from legacy and the earlier unscreened policy.
+Raw output retains the full profile, plan and numerical verification. Per-case
+`_plan_build_time`, `_setup_time`, `_postcheck_call_time` and `_benchmark_time`
+metrics are also in microseconds. Plan preparation includes reference construction
+and candidate screening; the postcheck call is not a cold first execution.
+Setup is excluded from steady timing; benchmark time includes setup, that call,
+warmup and measured loops inside `benchmark()`,
 but excludes process startup and result serialization. The timed loop still
 includes host submission and final synchronization; it is not pure kernel time.
 
-The opt-in native regression target is `cmake --build <build-dir> --target check_cudnn_prepared`.
+With `BUILD_TESTING=ON` (default), native regressions build and install normally.
+Run `ctest --test-dir <build-dir> -L cudnn --output-on-failure` on a GPU worker.
+The CUDA pytest suite also invokes both installed regression binaries using
+`SB_MICRO_PATH`; missing binaries fail the check instead of silently skipping.
+Prepared tests explicitly skip unsupported pre-8.9 API builds. API compilation
+against a version is not equivalent to GPU/runtime qualification on that version.
 
 ### `tensorrt-inference`
 

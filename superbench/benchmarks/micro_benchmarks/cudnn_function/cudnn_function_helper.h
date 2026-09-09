@@ -158,8 +158,8 @@ void from_json(const json &j, cudnn_test::CudnnConfig &fn) {
         throw std::invalid_argument("invalid cuDNN execution mode");
     }
     if (execution_mode == "prepared") {
-        if (j.contains("algo") || j.value("planPolicy", std::string("deterministic-v1")) != "deterministic-v1") {
-            throw std::invalid_argument("prepared execution requires deterministic-v1 policy and no legacy algo index");
+        if (j.contains("algo") || j.value("planPolicy", std::string("screened-v1")) != "screened-v1") {
+            throw std::invalid_argument("prepared execution requires screened-v1 policy and no legacy algo index");
         }
         fn.set_prepared(true);
         fn.set_workspace_limit_mib(j.value("workspaceLimitMiB", int64_t{1024}));
