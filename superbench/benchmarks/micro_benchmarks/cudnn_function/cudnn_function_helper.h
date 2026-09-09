@@ -153,6 +153,18 @@ void from_json(const json &j, cudnn_test::CudnnConfig &fn) {
     fn.set_mode(mode);
     auto use_tensor_op = j.at("tensorOp").get<bool>();
     fn.set_use_tensor_op(use_tensor_op);
+    auto execution_mode = j.value("executionMode", std::string("legacy"));
+    if (execution_mode != "legacy" && execution_mode != "prepared") {
+        throw std::invalid_argument("invalid cuDNN execution mode");
+    }
+    if (execution_mode == "prepared") {
+        if (j.contains("algo") || j.value("planPolicy", std::string("deterministic-v1")) != "deterministic-v1") {
+            throw std::invalid_argument("prepared execution requires deterministic-v1 policy and no legacy algo index");
+        }
+        fn.set_prepared(true);
+        fn.set_workspace_limit_mib(j.value("workspaceLimitMiB", int64_t{1024}));
+        CudnnPreparedPlan::validate(fn);
+    }
     fn.name2enum();
 }
 
@@ -185,8 +197,10 @@ template <typename T1, typename T2> CudnnFunction<T1, T2> *get_cudnn_function_po
  * @param  options  the cmd arguments of the application
  */
 void run_benchmark(Options &options) {
+    bool explicit_execution_mode = false;
     try {
         json function_config = json::parse(options.para_info_json);
+        explicit_execution_mode = function_config.contains("executionMode");
         // convert function params from json to CudnnConfig class
         cudnn_test::CudnnConfig function = function_config.get<cudnn_test::CudnnConfig>();
         function.set_num_test(options.num_test);
@@ -194,6 +208,21 @@ void run_benchmark(Options &options) {
         function.set_num_in_step(options.num_in_step);
         function.set_random_seed(options.random_seed);
         function.set_auto_algo(options.auto_algo);
+        if (function.get_prepared()) {
+            if (options.auto_algo || options.num_test <= 0 || options.warm_up <= 0 || options.num_in_step <= 0) {
+                throw std::invalid_argument(
+                    "prepared execution requires positive iteration counts and no legacy auto selection");
+            }
+            if (function.get_input_type() == CUDNN_DATA_FLOAT) {
+                std::unique_ptr<CudnnFunction<float, float>> prepared(
+                    get_cudnn_function_pointer<float, float>(function));
+                prepared->benchmark();
+            } else {
+                std::unique_ptr<CudnnFunction<half, float>> prepared(get_cudnn_function_pointer<half, float>(function));
+                prepared->benchmark();
+            }
+            return;
+        }
         if (function.get_input_type() == CUDNN_DATA_FLOAT && function.get_conv_type() == CUDNN_DATA_FLOAT) {
             auto p_function = get_cudnn_function_pointer<float, float>(function);
             p_function->benchmark();
@@ -214,6 +243,9 @@ void run_benchmark(Options &options) {
             }
         }
     } catch (std::exception &e) {
+        if (explicit_execution_mode) {
+            throw;
+        }
         std::cout << "Error: " << e.what() << std::endl;
     }
 }

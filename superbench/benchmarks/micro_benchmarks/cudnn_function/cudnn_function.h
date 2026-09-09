@@ -23,9 +23,9 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
     FilterDescriptorNd<T1> w_desc_;
     ConvolutionDescriptor<T2> conv_desc_;
     TensorDescriptorNd<T1> h_desc_;
-    size_t fwd_workspace_size_;
-    float *fwd_workspace_;
-    T1 *x, *filter, *h;
+    size_t fwd_workspace_size_ = 0;
+    float *fwd_workspace_ = nullptr;
+    T1 *x = nullptr, *filter = nullptr, *h = nullptr;
     const float alpha_ = 1.f;
     const float beta_ = 0.f;
 
@@ -49,6 +49,8 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
      * @brief Find the best algorithm for cudnn convolution functions
      */
     virtual void find_best_algo() {}
+    virtual void prepare_execution() {}
+    virtual void print_execution_info(double, double, double) {}
 
   public:
     /**
@@ -81,6 +83,9 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
  * @brief Generate some params used in the cudnn function
  */
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_function() {
+    if (get_prepared()) {
+        return;
+    }
     // Generate descriptor
     conv_desc_ =
         ConvolutionDescriptor<T2>(get_array_length(), get_padA(), get_filter_strideA(), get_dilationA(), get_mode());
@@ -113,10 +118,22 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_input() 
  * @brief The main procedure for cudnn function test, including warmup, function test and time measurement
  */
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
+    auto benchmark_start = std::chrono::steady_clock::now();
     // Prepare some Prerequisites for function running
     prepare_for_function();
     // Allocate memory and fill with data of input and output tensor
     prepare_input();
+    prepare_execution();
+    if (get_prepared()) {
+        CUDA_SAFE_CALL(cudaDeviceSynchronize());
+    }
+    auto setup_end = std::chrono::steady_clock::now();
+    double first_call_ms = 0;
+    if (get_prepared()) {
+        kernel_entry();
+        CUDA_SAFE_CALL(cudaDeviceSynchronize());
+        first_call_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - setup_end).count();
+    }
 
     // Warm up
     for (int i = 0; i < warm_up; ++i) {
@@ -144,6 +161,11 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
     }
 
     // Output results
+    if (get_prepared()) {
+        print_execution_info(
+            std::chrono::duration<double, std::milli>(setup_end - benchmark_start).count(), first_call_ms,
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - benchmark_start).count());
+    }
     std::cout << "[function config]: " << this->get_function_str() << std::endl;
     std::cout << "[raw_data]: ";
     for (int i = 0; i < iteration_time.size(); i++) {

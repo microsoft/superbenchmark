@@ -5,6 +5,8 @@
 
 import os
 import json
+import hashlib
+import math
 import yaml
 import statistics
 
@@ -364,6 +366,38 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             required=False,
             help='Whether to use auto algorithm selection.'
         )
+        self._parser.add_argument(
+            '--execution_mode',
+            choices=['legacy', 'prepared'],
+            default='legacy',
+            help='Prepared mode reuses a cuDNN execution plan for backward-filter only.'
+        )
+        self._parser.add_argument(
+            '--workspace_limit_mib',
+            type=int,
+            default=1024,
+            help='Maximum prepared-plan workspace in MiB.'
+        )
+
+    def _execution_config(self, config):
+        """Normalize a prepared request without changing legacy configurations."""
+        if self._args.execution_mode == 'legacy':
+            if 'executionMode' in config:
+                raise ValueError('Select prepared execution with --execution_mode prepared.')
+            return config
+        if self._args.enable_auto_algo:
+            raise ValueError('Prepared execution does not use legacy auto algorithm selection.')
+        if not 0 <= self._args.workspace_limit_mib <= 1048576:
+            raise ValueError('Prepared workspace limit must be between 0 and 1048576 MiB.')
+        if (config['name'] != 'cudnnConvolutionBackwardFilter' or config['inputType'] not in (0, 2)
+                or config['convType'] != 0):
+            raise ValueError('Prepared execution requires backward-filter with FP32 compute and FP32/FP16 storage.')
+        config = dict(config)
+        config.pop('algo', None)
+        config.update(
+            executionMode='prepared', planPolicy='deterministic-v1', workspaceLimitMiB=self._args.workspace_limit_mib
+        )
+        return config
 
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
@@ -374,7 +408,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         if not super()._preprocess():
             return False
 
-        self._args.tolerant_fail = True
+        self._args.tolerant_fail = self._args.execution_mode == 'legacy'
         command = os.path.join(self._args.bin_dir, self._bin_name)
         command += (' --num_test ' + str(self._args.num_steps))
         command += (' --warm_up ' + str(self._args.num_warmup))
@@ -386,6 +420,10 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         try:
             if not self._args.config_json_str:
                 for config_dict in self.__default_params_dict_list:
+                    if (self._args.execution_mode == 'prepared'
+                            and config_dict['name'] != 'cudnnConvolutionBackwardFilter'):
+                        continue
+                    config_dict = self._execution_config(config_dict)
                     config_json_str = "\'" + json.dumps(config_dict).replace(' ', '') + "\'"
                     complete_command = command + (' --config_json ') + config_json_str
                     self._commands.append(complete_command)
@@ -395,6 +433,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                     self._args.config_json_str = [self._args.config_json_str]
                 for config_json_str in self._args.config_json_str:
                     custom_config_str = yaml.safe_load(config_json_str)
+                    custom_config_str = self._execution_config(custom_config_str)
                     config_json_str = "\'" + json.dumps(custom_config_str).replace(' ', '') + "\'"
                     complete_command = command + (' --config_json ') + config_json_str
                     self._commands.append(complete_command)
@@ -402,6 +441,33 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             logger.error('Invalid input params - benchmark: {},  message: {}'.format(self._name, str(e)))
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
+        return True
+
+    def _process_prepared_result(self, metric, lines, config):
+        """Validate prepared evidence before publishing any timing."""
+        metadata_lines = [line for line in lines if line.startswith('[prepared_plan]: ')]
+        timing_lines = [line for line in lines if line.startswith('[raw_data]: ')]
+        if len(metadata_lines) != 1 or len(timing_lines) != 1 or any('Error' in line for line in lines):
+            raise ValueError('Missing, duplicate or failed prepared execution output.')
+        metadata = json.loads(metadata_lines[0].split(': ', 1)[1])
+        if (metadata['execution_mode'] != 'prepared' or metadata['policy'] != config['planPolicy']
+                or not isinstance(metadata['plan'], dict) or not metadata['plan']):
+            raise ValueError('Prepared plan identity or policy mismatch.')
+        fields = timing_lines[0].split(': ', 1)[1].split(',')
+        if fields[-1] != '':
+            raise ValueError('Incomplete prepared timing output.')
+        raw_data = [float(value) for value in fields[:-1]]
+        if len(raw_data) != self._args.num_steps or any(not math.isfinite(value) or value <= 0 for value in raw_data):
+            raise ValueError('Invalid prepared timing samples.')
+        costs = {name: metadata[name + '_ms'] for name in ('plan_build', 'setup', 'first_call', 'benchmark')}
+        if any(type(value) not in (float, int) or not math.isfinite(value) or value < 0 for value in costs.values()):
+            raise ValueError('Invalid prepared setup timings.')
+        serialized = json.dumps(metadata['plan'], sort_keys=True, separators=(',', ':')).encode()
+        metric = metric.lower() + '_plan_' + hashlib.sha256(serialized).hexdigest()[:16]
+        self._result.add_result(metric + '_time', statistics.mean(raw_data) * 1000)
+        self._result.add_raw_data(metric + '_time', raw_data, self._args.log_raw_data)
+        for name, value in costs.items():
+            self._result.add_result(metric + '_' + name + '_time', value * 1000)
         return True
 
     def _process_raw_result(self, cmd_idx, raw_output):
@@ -428,6 +494,9 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                 else:
                     metric = metric + '_' + key + '_' + str(cmd_config[key])
             metric = metric.replace(' ', '').replace(',', '_')
+
+            if cmd_config.get('executionMode') == 'prepared':
+                return self._process_prepared_result(metric, lines, cmd_config)
 
             error = False
             raw_data = []

@@ -30,5 +30,16 @@ if(CUDAToolkit_FOUND)
 
   add_executable(cudnn_benchmark cudnn_test.cpp)
   target_link_libraries(cudnn_benchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart ${CUDNN_LIBRARY})
+
+  set(CUDNN_PREPARED_TEST_SOURCE
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/benchmarks/micro_benchmarks/test_cudnn_prepared.cpp)
+  if(EXISTS "${CUDNN_PREPARED_TEST_SOURCE}")
+    add_executable(cudnn_prepared_test EXCLUDE_FROM_ALL ${CUDNN_PREPARED_TEST_SOURCE})
+    target_include_directories(cudnn_prepared_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(cudnn_prepared_test ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart ${CUDNN_LIBRARY})
+    add_custom_target(check_cudnn_prepared COMMAND $<TARGET_FILE:cudnn_prepared_test>
+                      DEPENDS cudnn_prepared_test USES_TERMINAL)
+  endif()
+
   install(TARGETS cudnn_benchmark ${TARGET_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 endif()

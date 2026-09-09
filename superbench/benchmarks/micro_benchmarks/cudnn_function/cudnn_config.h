@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <unordered_map>
 
 #include "cudnn_helper.h"
@@ -59,8 +60,14 @@ class CudnnConfig {
     cudnnDataType_t conv_type_;   ///< selects the data type in which the convolution will be done
     std::string function_str_;    ///< the str representing the cudnn function with params
     bool auto_algo_;              ///< whether to use auto algo selection
+    bool prepared_ = false;
+    int64_t workspace_limit_mib_ = 1024;
 
   public:
+    void set_prepared(bool prepared) { prepared_ = prepared; }
+    bool get_prepared() const { return prepared_; }
+    void set_workspace_limit_mib(int64_t limit) { workspace_limit_mib_ = limit; }
+    int64_t get_workspace_limit_mib() const { return workspace_limit_mib_; }
     void set_num_test(int num_test) { this->num_test = num_test; }
     void set_warm_up(int warm_up) { this->warm_up = warm_up; }
     void set_num_in_step(int num_in_step) { this->num_in_step = num_in_step; }

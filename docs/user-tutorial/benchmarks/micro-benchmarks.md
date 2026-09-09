@@ -104,11 +104,36 @@ The supported functions for cuDNN are as follows:
  - cudnnConvolutionBackwardData
  - cudnnConvolutionForward
 
+`--execution_mode prepared` optionally builds a cuDNN execution plan once per case
+and reuses it outside algorithm selection. Legacy execution remains the default.
+Prepared execution requires cuDNN 8.9 or newer, packed NCHW tensors, 2D
+cross-correlation, FP32 compute, and FP32 or FP16 storage. Without custom configs,
+only the six backward-filter defaults are selected. The Python wrapper removes
+legacy `algo` indices; `--enable_auto_algo` cannot be combined with this mode.
+
+The `deterministic-v1` policy selects the first supported heuristic A/fallback
+plan within `--workspace_limit_mib` (default 1024). It rejects nondeterminism,
+input down-conversion and reduced-precision reduction notes, and excludes Tensor
+Core plans when `tensorOp` is false. Unsupported configurations fail explicitly;
+there is no legacy fallback. These filters are not a universal numerical accuracy
+guarantee, and different plans can change the executed algorithm and performance.
+
 #### Metrics
 
 | Name                                                      | Unit      | Description                                                      |
 |-----------------------------------------------------------|-----------|------------------------------------------------------------------|
 | cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
+
+Prepared metric parameters include the execution mode, policy and workspace limit,
+and append `_plan_<fingerprint>` before `_time`. They require separate baselines.
+Raw output retains the complete serialized plan and cuDNN version. Per-case
+`_plan_build_time`, `_setup_time`, `_first_call_time` and `_benchmark_time` metrics
+are also in microseconds. Setup is excluded from steady timing; benchmark time
+includes setup, the first call, warmup and measured loops inside `benchmark()`,
+but excludes process startup and result serialization. The timed loop still
+includes host submission and final synchronization; it is not pure kernel time.
+
+The opt-in native regression target is `cmake --build <build-dir> --target check_cudnn_prepared`.
 
 ### `tensorrt-inference`
 
