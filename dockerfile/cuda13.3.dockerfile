@@ -1,0 +1,162 @@
+FROM nvcr.io/nvidia/pytorch:26.07-py3
+
+# OS:
+#   - Ubuntu: 24.04
+#   - OpenMPI: 5.0.10
+#   - Docker: 29.7.2 (full static bundle installed in this dockerfile)
+# NVIDIA:
+#   - CUDA: 13.3.1.008
+#   - cuDNN: 9.24.0.43
+#   - cuBLAS: 13.6.0.2
+#   - NCCL: 2.30.7
+#   - TransformerEngine: v2.17
+#   - torch: 2.13.0a0+9186a08
+# Mellanox:
+#   - MOFED: 24.10-1.1.4.0 (installed in this dockerfile)
+#   - HPC-X: 2.50
+# Intel:
+#   - mlc: 3.12 (amd64 only)
+
+LABEL maintainer="SuperBench"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
+    bc \
+    build-essential \
+    curl \
+    dmidecode \
+    ffmpeg \
+    git \
+    iproute2 \
+    jq \
+    libaio-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libboost-program-options-dev \
+    libcap2 \
+    libcurl4-openssl-dev \
+    libnuma-dev \
+    libpci-dev \
+    libswresample-dev \
+    libncurses-dev \
+    libtool \
+    lshw \
+    python3-mpi4py \
+    net-tools \
+    nlohmann-json3-dev \
+    openssh-client \
+    openssh-server \
+    pciutils \
+    sudo \
+    util-linux \
+    vim \
+    wget \
+    rsync \
+    && \
+    apt-get autoremove && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+ARG NUM_MAKE_JOBS=
+ARG TARGETPLATFORM
+ARG TARGETARCH
+
+# Install Docker
+ENV DOCKER_VERSION=29.7.2
+RUN TARGETARCH_HW=$(uname -m) && \
+    wget -q https://download.docker.com/linux/static/stable/${TARGETARCH_HW}/docker-${DOCKER_VERSION}.tgz -O docker.tgz && \
+    tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
+    rm docker.tgz
+
+# Update system config
+RUN mkdir -p /root/.ssh && \
+    touch /root/.ssh/authorized_keys && \
+    mkdir -p /var/run/sshd && \
+    sed -i "s/[# ]*PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config && \
+    sed -i "s/[# ]*PermitUserEnvironment no/PermitUserEnvironment yes/" /etc/ssh/sshd_config && \
+    sed -i "s/[# ]*Port.*/Port 22/" /etc/ssh/sshd_config && \
+    echo "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
+    echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
+
+# Install OFED
+ENV OFED_VERSION=24.10-1.1.4.0
+RUN TARGETARCH_HW=$(uname -m) && \
+    cd /tmp && \
+    wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}.tgz && \
+    tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}.tgz && \
+    MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
+    rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
+
+# Install HPC-X
+# Must match the base image, because this replaces /opt/hpcx wholesale.
+ENV HPCX_VERSION=v2.50
+RUN TARGETARCH_HW=$(uname -m) && \
+    cd /opt && \
+    rm -rf hpcx && \
+    wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}_cuda13/hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda13-${TARGETARCH_HW}.tbz -O hpcx.tbz && \
+    tar xf hpcx.tbz && \
+    mv hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda13-${TARGETARCH_HW} hpcx && \
+    rm hpcx.tbz
+
+# Installs specific to amd64 platform
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    # Install Intel MLC
+    cd /tmp && \
+    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    tar xzf mlc.tgz Linux/mlc && \
+    cp ./Linux/mlc /usr/local/bin/ && \
+    rm -rf ./Linux mlc.tgz && \
+    # Install AOCC compiler
+    wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
+    apt install -y ./aocc-compiler-4.0.0_1_amd64.deb && \
+    rm -rf aocc-compiler-4.0.0_1_amd64.deb && \
+    # Install AMD BLIS
+    wget https://download.amd.com/developer/eula/blis/blis-4-0/aocl-blis-linux-aocc-4.0.tar.gz && \
+    tar xzf aocl-blis-linux-aocc-4.0.tar.gz && \
+    mv amd-blis /opt/AMD && \
+    rm -rf aocl-blis-linux-aocc-4.0.tar.gz; \
+    else \
+    echo "Skipping Intel MLC, AOCC and AMD BLIS installations for non-amd64 architecture: $TARGETARCH"; \
+    fi
+
+# Install UCX with multi-threading support
+# Must match the base image: /usr/local/lib precedes it in LD_LIBRARY_PATH.
+ENV UCX_VERSION=1.21.0
+RUN cd /tmp && \
+    wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx-${UCX_VERSION}.tar.gz && \
+    tar xzf ucx-${UCX_VERSION}.tar.gz && \
+    cd ucx-${UCX_VERSION} && \
+    ./contrib/configure-release-mt --prefix=/usr/local && \
+    make -j ${NUM_MAKE_JOBS} && \
+    make install
+
+ENV PATH="${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/mpi/lib:${LD_LIBRARY_PATH}" \
+    SB_HOME=/opt/superbench \
+    SB_MICRO_PATH=/opt/superbench \
+    ANSIBLE_DEPRECATION_WARNINGS=FALSE \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+
+RUN echo PATH="$PATH" > /etc/environment && \
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH" >> /etc/environment && \
+    echo SB_MICRO_PATH="$SB_MICRO_PATH" >> /etc/environment && \
+    echo "source /opt/hpcx/hpcx-init.sh && hpcx_load" | tee -a /etc/bash.bashrc >> /etc/profile.d/10-hpcx.sh
+
+# Add config files
+ADD dockerfile/etc /opt/microsoft/
+
+WORKDIR ${SB_HOME}
+
+ADD third_party third_party
+RUN make -C third_party cuda
+
+ADD . .
+RUN python3 -m pip install --no-cache-dir .[nvworker] && \
+    make cppbuild && \
+    make postinstall && \
+    rm -rf .git

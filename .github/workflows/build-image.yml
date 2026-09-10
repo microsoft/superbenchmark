@@ -29,15 +29,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - name: cuda13.0-arm64
-          dockerfile: cuda13.0
-          tags: superbench/main:cuda13.0-arm64
+        - name: cuda13.3-arm64
+          dockerfile: cuda13.3
+          tags: superbench/main:cuda13.3-arm64
           platforms: linux/arm64
           runner: [self-hosted, linux/arm64]
           build_args: "NUM_MAKE_JOBS=16"
-        - name: cuda13.0-amd64
-          dockerfile: cuda13.0
-          tags: superbench/main:cuda13.0-amd64
+        - name: cuda13.3-amd64
+          dockerfile: cuda13.3
+          tags: superbench/main:cuda13.3-amd64
           platforms: linux/amd64
           runner: [self-hosted, linux/amd64]
           build_args: "NUM_MAKE_JOBS=16"
@@ -183,11 +183,11 @@ jobs:
           sources: >-
             superbench/main:cuda12.9-amd64
             superbench/main:cuda12.9-arm64
-        - name: cuda13.0
-          tags: superbench/main:cuda13.0
+        - name: cuda13.3
+          tags: superbench/main:cuda13.3
           sources: >-
-            superbench/main:cuda13.0-amd64
-            superbench/main:cuda13.0-arm64
+            superbench/main:cuda13.3-amd64
+            superbench/main:cuda13.3-arm64
     steps:
     - name: Checkout
       uses: actions/checkout@v4
