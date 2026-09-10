@@ -108,8 +108,11 @@ The supported functions for cuDNN are as follows:
 and reuses it outside algorithm selection. Legacy execution remains the default.
 Prepared execution requires cuDNN 8.9 or newer, packed NCHW tensors, 2D
 cross-correlation, FP32 compute, and FP32 or FP16 storage. Without custom configs,
-only the six backward-filter defaults are selected. The Python wrapper removes
-legacy `algo` indices; `--enable_auto_algo` cannot be combined with this mode.
+the six backward-filter workloads are converted to the prepared selection policy
+without legacy `algo` indices. Custom prepared configs must omit `algo`: an
+explicit algorithm constraint is rejected, not silently ignored. Use legacy
+execution to benchmark a specific legacy `algo`. `--enable_auto_algo` cannot be
+combined with prepared execution.
 
 The `screened-v1` policy selects the first numerically passing heuristic A/fallback
 plan within `--workspace_limit_mib` (default 1024). It rejects nondeterminism,

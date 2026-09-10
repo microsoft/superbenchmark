@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from tests.helper import decorator
+from superbench.benchmarks import ReturnCode
 from superbench.benchmarks.micro_benchmarks.cudnn_function import CudnnBenchmark
 
 
@@ -66,6 +67,50 @@ class CudnnPreparedTests(unittest.TestCase):
         self.assertEqual(len(self.benchmark._commands), 18)
         self.assertTrue(self.benchmark._args.tolerant_fail)
         self.assertTrue(all('executionMode' not in command for command in self.benchmark._commands))
+        self.assertTrue(all('algo' in json.loads(command.split('--config_json ')[1][1:-1])
+                            for command in self.benchmark._commands))
+
+    def test_custom_prepared_rejects_legacy_algorithm(self):
+        """Never discard a user-supplied legacy algorithm constraint."""
+        config = json.loads(self.benchmark._commands[0].split('--config_json ')[1][1:-1])
+        for algorithm in (0, 1):
+            with self.subTest(algorithm=algorithm):
+                custom = dict(config, algo=algorithm)
+                with self.assertRaisesRegex(ValueError, 'omit algo or use --execution_mode legacy'):
+                    self.benchmark._execution_config(custom)
+                self.assertEqual(custom['algo'], algorithm)
+                self.benchmark._args.config_json_str = [json.dumps(custom)]
+                self.benchmark._commands = []
+                self.benchmark._result.reset_mock()
+                with patch('superbench.benchmarks.micro_benchmarks.MicroBenchmarkWithInvoke._preprocess',
+                           return_value=True):
+                    self.assertFalse(self.benchmark._preprocess())
+                self.assertEqual(self.benchmark._commands, [])
+                self.benchmark._result.set_return_code.assert_called_once_with(ReturnCode.INVALID_ARGUMENT)
+
+    def test_custom_workload_and_legacy_algorithm_are_preserved(self):
+        """Accept prepared workloads without algo and keep explicit legacy algorithms."""
+        config = json.loads(self.benchmark._commands[0].split('--config_json ')[1][1:-1])
+        for key in ('executionMode', 'planPolicy', 'workspaceLimitMiB'):
+            config.pop(key)
+        for mode in ('prepared', 'legacy'):
+            with self.subTest(mode=mode):
+                custom = dict(config) if mode == 'prepared' else dict(config, algo=1)
+                self.benchmark._args.execution_mode = mode
+                self.benchmark._args.config_json_str = [json.dumps(custom)]
+                self.benchmark._commands = []
+                with patch('superbench.benchmarks.micro_benchmarks.MicroBenchmarkWithInvoke._preprocess',
+                           return_value=True):
+                    self.assertTrue(self.benchmark._preprocess())
+                self.assertEqual(len(self.benchmark._commands), 1)
+                generated = json.loads(self.benchmark._commands[0].split('--config_json ')[1][1:-1])
+                if mode == 'prepared':
+                    self.assertNotIn('algo', generated)
+                    self.assertEqual(generated['executionMode'], 'prepared')
+                    for key, value in custom.items():
+                        self.assertEqual(generated[key], value)
+                else:
+                    self.assertEqual(generated, custom)
 
     def test_prepared_metrics_include_plan_and_costs(self):
         """Keep steady timing separate from setup and legacy metric identity."""

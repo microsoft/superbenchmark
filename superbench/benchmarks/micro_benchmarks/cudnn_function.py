@@ -387,6 +387,8 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
             return config
         if self._args.enable_auto_algo:
             raise ValueError('Prepared execution does not use legacy auto algorithm selection.')
+        if 'algo' in config:
+            raise ValueError('Prepared execution selects a plan; omit algo or use --execution_mode legacy.')
         if config.get('planPolicy', 'screened-v1') != 'screened-v1':
             raise ValueError('Prepared execution requires screened-v1 numerical qualification.')
         if not 0 <= self._args.workspace_limit_mib <= 1048576:
@@ -395,7 +397,6 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                 or config['convType'] != 0):
             raise ValueError('Prepared execution requires backward-filter with FP32 compute and FP32/FP16 storage.')
         config = dict(config)
-        config.pop('algo', None)
         config.update(
             executionMode='prepared', planPolicy='screened-v1', workspaceLimitMiB=self._args.workspace_limit_mib
         )
@@ -421,10 +422,13 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
 
         try:
             if not self._args.config_json_str:
-                for config_dict in self.__default_params_dict_list:
-                    if (self._args.execution_mode == 'prepared'
-                            and config_dict['name'] != 'cudnnConvolutionBackwardFilter'):
-                        continue
+                configs = self.__default_params_dict_list
+                if self._args.execution_mode == 'prepared':
+                    configs = [
+                        {key: value for key, value in config.items() if key != 'algo'} for config in configs
+                        if config['name'] == 'cudnnConvolutionBackwardFilter'
+                    ]
+                for config_dict in configs:
                     config_dict = self._execution_config(config_dict)
                     config_json_str = "\'" + json.dumps(config_dict).replace(' ', '') + "\'"
                     complete_command = command + (' --config_json ') + config_json_str
