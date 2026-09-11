@@ -1,0 +1,40 @@
+version: v0.11
+superbench:
+  enable:
+  - model-benchmarks:llama-3.3-70b-hf-inference
+
+  monitor:
+    enable: false
+    sample_duration: 1
+    sample_interval: 10
+
+  benchmarks:
+    # HuggingFace Llama 3.3 70B inference. The generic HF model path does not
+    # shard a model across GPUs, so run one instance on GPU 0.
+    model-benchmarks:llama-3.3-70b-hf-inference:
+      modes:
+      - name: local
+        proc_num: 1
+        prefix: CUDA_VISIBLE_DEVICES=0
+        parallel: no
+        # `sb run --no-docker` executes from /root/sb-workspace. Use the
+        # feature checkout instead of the older system-installed package.
+        env:
+          PYTHONPATH: /root/superbenchmark
+      frameworks: [pytorch]
+      timeout: 14400
+      models:
+      - hf-lm
+      parameters:
+        duration: 0
+        num_warmup: 4
+        num_steps: 16
+        sample_count: 32
+        batch_size: 1
+        precision: [float16]
+        model_action: [inference]
+        pin_memory: yes
+        num_workers: 0
+        seq_len: 128
+        model_source: huggingface
+        model_identifier: meta-llama/Llama-3.3-70B-Instruct
