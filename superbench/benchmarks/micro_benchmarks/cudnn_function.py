@@ -450,7 +450,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         return True
 
     @staticmethod
-    def _validate_prepared_verification(verification, config):
+    def _validate_prepared_verification(verification, config, input_type):
         """Require the full-output screen with the declared, unchanged tolerances."""
         elements = 5
         for dimension in config['filterDims']:
@@ -460,7 +460,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         expected = {
             'policy': 'full-output-v1', 'inputs': 5, 'checked_elements': elements,
             'reference': 'cuBLAS-FP64-with-CPU-crosschecks', 'atol': 0.0005,
-            'rtol': 0.0005 + (1.0 / 2048 if config['inputType'] == 2 else 0),
+            'rtol': 0.0005 + (1.0 / 2048 if input_type == 2 else 0),
         }
         if (
             verification.get('passed') is not True
@@ -481,7 +481,10 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         if (metadata['execution_mode'] != 'prepared' or metadata['policy'] != config['planPolicy']
                 or not isinstance(metadata['plan'], dict) or not metadata['plan']):
             raise ValueError('Prepared plan identity or policy mismatch.')
-        self._validate_prepared_verification(metadata['verification'], config)
+        input_type = metadata['input_type']
+        if type(input_type) is not int or input_type not in (0, config['inputType']):
+            raise ValueError('Invalid prepared execution storage type.')
+        self._validate_prepared_verification(metadata['verification'], config, input_type)
         fields = timing_lines[0].split(': ', 1)[1].split(',')
         if fields[-1] != '':
             raise ValueError('Incomplete prepared timing output.')
@@ -495,7 +498,8 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
         if not isinstance(identity['engine'], dict) or 'smVersion' not in identity['engine']:
             raise ValueError('Prepared plan lacks stable architecture identity.')
         serialized = json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()
-        metric = metric.lower() + '_plan_' + hashlib.sha256(serialized).hexdigest()[:16]
+        metric = metric.lower() + '_actualinputtype_' + str(input_type) + '_plan_'
+        metric += hashlib.sha256(serialized).hexdigest()[:16]
         self._result.add_result(metric + '_time', statistics.mean(raw_data) * 1000)
         self._result.add_raw_data(metric + '_time', raw_data, self._args.log_raw_data)
         for name, value in costs.items():

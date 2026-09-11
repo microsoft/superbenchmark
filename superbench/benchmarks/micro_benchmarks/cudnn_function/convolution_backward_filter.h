@@ -30,6 +30,7 @@ template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : pu
     void print_execution_info(double setup_ms, double postcheck_call_ms, double benchmark_ms) override {
         nlohmann::json metadata = {{"execution_mode", "prepared"},
                                    {"policy", "screened-v1"},
+                                   {"input_type", static_cast<int>(this->get_input_type())},
                                    {"verification", prepared_plan_->verification()},
                                    {"cudnn_version", cudnnGetVersion()},
                                    {"plan_build_ms", plan_build_ms_},

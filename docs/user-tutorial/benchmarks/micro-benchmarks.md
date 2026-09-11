@@ -114,6 +114,12 @@ explicit algorithm constraint is rejected, not silently ignored. Use legacy
 execution to benchmark a specific legacy `algo`. `--enable_auto_algo` cannot be
 combined with prepared execution.
 
+Prepared mode does not change the existing precision parser or initializer.
+On revisions without the separate [storage/compute fix](https://github.com/microsoft/superbenchmark/pull/852),
+an FP16-storage/FP32-compute request resolves to FP32 and is not an FP16 measurement.
+Native `input_type` metadata reports the actual storage type; numerical screening
+and metric identity use that type. This does not relax the requested math policy.
+
 The `screened-v1` policy selects the first numerically passing heuristic A/fallback
 plan within `--workspace_limit_mib` (default 1024). It rejects nondeterminism,
 input down-conversion and reduced-precision reduction notes. In this policy,
@@ -141,7 +147,8 @@ workspace limit and adds setup cost; it does not run inside the measured loop.
 | cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
 Prepared metric parameters include the execution mode, policy and workspace limit,
-and append `_plan_<fingerprint>` before `_time`. The fingerprint covers the plan
+and append `_actualinputtype_<type>_plan_<fingerprint>` before `_time`. The actual
+storage type is `0` for FP32 or `2` for FP16. The fingerprint covers the plan
 schema, cuDNN version, engine/knobs/architecture and operation graph, excluding
 incidental GPU profile fields such as device ordinal and nominal clocks. They
 require separate baselines from legacy and the earlier unscreened policy.
@@ -154,11 +161,12 @@ warmup and measured loops inside `benchmark()`,
 but excludes process startup and result serialization. The timed loop still
 includes host submission and final synchronization; it is not pure kernel time.
 
-With `BUILD_TESTING=ON` (default), native regressions build and install normally.
+With `BUILD_TESTING=ON` (default), the native prepared regression builds and installs normally.
 Run `ctest --test-dir <build-dir> -L cudnn --output-on-failure` on a GPU worker.
-The CUDA pytest suite also invokes both installed regression binaries using
+The CUDA pytest suite also invokes the installed prepared regression using
 `SB_MICRO_PATH`; missing binaries fail the check instead of silently skipping.
-Prepared tests explicitly skip unsupported pre-8.9 API builds. API compilation
+Storage subcases unavailable through the existing parser are explicitly reported
+as skipped. Prepared tests also skip unsupported pre-8.9 API builds. API compilation
 against a version is not equivalent to GPU/runtime qualification on that version.
 
 ### `tensorrt-inference`

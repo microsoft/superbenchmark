@@ -62,6 +62,11 @@ static void test_execution(cudnnDataType_t type, unsigned seed, json value = con
     value["inputType"] = static_cast<int>(type);
     value["tensorOp"] = type == CUDNN_DATA_HALF;
     CudnnConfig config = value.get<CudnnConfig>();
+    if (config.get_input_type() != type) {
+        std::cout << "Requested storage " << type << " resolves to " << config.get_input_type()
+                  << "; skipping unavailable storage test" << std::endl;
+        return;
+    }
     struct Resources {
         cudnnHandle_t handle = nullptr;
         Value *input = nullptr;
@@ -215,7 +220,7 @@ int main() {
         test_execution<half>(CUDNN_DATA_HALF, 33931u, strided);
         test_default_shapes();
         std::cout
-            << "Prepared full-shape screening, independent scalar checks, rejection and operand restoration passed"
+            << "Prepared available-storage screening, scalar checks, rejection and operand restoration passed"
             << std::endl;
     } catch (const std::exception &error) {
         std::cerr << error.what() << std::endl;

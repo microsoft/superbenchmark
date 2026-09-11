@@ -32,7 +32,7 @@ class CudnnPreparedTests(unittest.TestCase):
         with patch('superbench.benchmarks.micro_benchmarks.MicroBenchmarkWithInvoke._preprocess', return_value=True):
             self.assertTrue(self.benchmark._preprocess())
         self.metadata = {
-            'execution_mode': 'prepared', 'policy': 'screened-v1',
+            'execution_mode': 'prepared', 'policy': 'screened-v1', 'input_type': 0,
             'verification': {
                 'policy': 'full-output-v1', 'passed': True, 'inputs': 5, 'checked_elements': 5 * 32 * 128 * 3 * 3,
                 'reference': 'cuBLAS-FP64-with-CPU-crosschecks', 'atol': 0.0005, 'rtol': 0.0005,
@@ -121,6 +121,35 @@ class CudnnPreparedTests(unittest.TestCase):
         self.assertIn('_plan_', calls[0][0][0])
         self.assertEqual(calls[0][0][1], 15)
         self.assertEqual({call[0][1] for call in calls[1:]}, {1000, 2000, 3000, 6000})
+
+    def test_actual_storage_controls_screen_and_metric(self):
+        """Keep existing FP32 dispatch distinct from a correctly executed FP16 request."""
+        for input_type in (0, 2):
+            with self.subTest(input_type=input_type):
+                self.metadata['input_type'] = input_type
+                self.metadata['verification']['rtol'] = 0.0005 + (1.0 / 2048 if input_type == 2 else 0)
+                self.benchmark._result.reset_mock()
+                self.assertTrue(self.benchmark._process_raw_result(1, self.output()))
+                metric = self.benchmark._result.add_result.call_args_list[0][0][0]
+                self.assertIn('_inputtype_2_', metric)
+                self.assertIn('_actualinputtype_{}_plan_'.format(input_type), metric)
+                self.metadata['verification']['rtol'] = 0.0005 + (1.0 / 2048 if input_type == 0 else 0)
+                self.benchmark._result.reset_mock()
+                self.assertFalse(self.benchmark._process_raw_result(1, self.output()))
+                self.assertEqual(self.benchmark._result.add_result.call_count, 1)
+                self.assertEqual(self.benchmark._result.add_result.call_args[0][1], -1)
+
+    def test_missing_or_invalid_actual_storage_is_rejected(self):
+        """Reject absent storage identity and undeclared precision reduction."""
+        for input_type in (None, True, '0', 1, 2):
+            with self.subTest(input_type=input_type):
+                self.metadata['input_type'] = input_type
+                if input_type is None:
+                    self.metadata.pop('input_type')
+                self.benchmark._result.reset_mock()
+                self.assertFalse(self.benchmark._process_raw_result(0, self.output()))
+                self.assertEqual(self.benchmark._result.add_result.call_count, 1)
+                self.assertEqual(self.benchmark._result.add_result.call_args[0][1], -1)
 
     def test_missing_or_invalid_output_never_publishes_positive_timing(self):
         """Reject old binaries, malformed samples and late native failures."""
@@ -226,22 +255,21 @@ class CudnnPreparedTests(unittest.TestCase):
 
 @decorator.cuda_test
 def test_cudnn_native_regressions():
-    """Run installed native precision and full-shape prepared checks in CUDA test jobs."""
+    """Run installed full-shape prepared checks in CUDA test jobs."""
     environment = os.environ.copy()
     search_path = environment.get('PATH', '')
     if environment.get('SB_MICRO_PATH'):
         root = environment['SB_MICRO_PATH']
         search_path = os.path.join(root, 'bin') + os.pathsep + search_path
         environment['LD_LIBRARY_PATH'] = os.path.join(root, 'lib') + os.pathsep + environment.get('LD_LIBRARY_PATH', '')
-    for name in ('cudnn_data_types_test', 'cudnn_prepared_test'):
-        binary = shutil.which(name, path=search_path)
-        assert binary, 'Build and install cuDNN with BUILD_TESTING=ON before running CUDA tests: ' + name
-        result = subprocess.run(
-            [binary], env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=900
-        )
-        if name == 'cudnn_prepared_test' and result.returncode == 77:
-            raise unittest.SkipTest(result.stdout.strip())
-        assert result.returncode == 0, result.stdout
+    binary = shutil.which('cudnn_prepared_test', path=search_path)
+    assert binary, 'Build and install cuDNN with BUILD_TESTING=ON before running CUDA tests: cudnn_prepared_test'
+    result = subprocess.run(
+        [binary], env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=900
+    )
+    if result.returncode == 77:
+        raise unittest.SkipTest(result.stdout.strip())
+    assert result.returncode == 0, result.stdout
     binary = shutil.which('cudnn_benchmark', path=search_path)
     assert binary, 'Install cudnn_benchmark before running CUDA tests.'
     config = {
