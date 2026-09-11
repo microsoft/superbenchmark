@@ -1,0 +1,82 @@
+[
+  {
+    "name": "model-benchmarks:llama-3.3-70b-hf-inference/pytorch-hf-lm",
+    "type": "model",
+    "run_count": 1,
+    "return_code": 0,
+    "start_time": "2026-09-11 20:57:56",
+    "end_time": "2026-09-11 21:11:31",
+    "raw_data": {
+      "fp16_inference_step_time": [
+        [
+          69.2293643951416,
+          68.34769248962402,
+          68.13335418701172,
+          67.42072105407715,
+          66.82658195495605,
+          66.22695922851562,
+          66.61868095397949,
+          66.20550155639648,
+          67.0003890991211,
+          66.74790382385254,
+          67.23976135253906,
+          68.27235221862793,
+          68.45378875732422,
+          68.20821762084961,
+          67.10433959960938,
+          67.91472434997559
+        ]
+      ],
+      "fp16_inference_throughput": [
+        [
+          14.44473755807266,
+          14.63107185589055,
+          14.677099225956356,
+          14.83223531824756,
+          14.964105162135066,
+          15.09959103738264,
+          15.010804562323965,
+          15.10448492181817,
+          14.925286456479967,
+          14.981743885755517,
+          14.872152724590816,
+          14.647217614499485,
+          14.608395213084608,
+          14.660990051942424,
+          14.90216588027969,
+          14.724347475031156
+        ]
+      ]
+    },
+    "result": {
+      "return_code": [0],
+      "fp16_inference_step_time": [67.4968957901001],
+      "fp16_inference_throughput": [14.817901808968164],
+      "fp16_inference_step_time_50": [67.42072105407715],
+      "fp16_inference_step_time_90": [68.45378875732422],
+      "fp16_inference_step_time_95": [68.45378875732422],
+      "fp16_inference_step_time_99": [69.2293643951416],
+      "fp16_inference_step_time_99.9": [69.2293643951416],
+      "fp16_inference_throughput_50": [14.872152724590816],
+      "fp16_inference_throughput_90": [15.09959103738264],
+      "fp16_inference_throughput_95": [15.09959103738264],
+      "fp16_inference_throughput_99": [15.10448492181817],
+      "fp16_inference_throughput_99.9": [15.10448492181817]
+    },
+    "reduce_op": {
+      "return_code": null,
+      "fp16_inference_step_time": null,
+      "fp16_inference_throughput": null,
+      "fp16_inference_step_time_50": null,
+      "fp16_inference_step_time_90": null,
+      "fp16_inference_step_time_95": null,
+      "fp16_inference_step_time_99": null,
+      "fp16_inference_step_time_99.9": null,
+      "fp16_inference_throughput_50": null,
+      "fp16_inference_throughput_90": null,
+      "fp16_inference_throughput_95": null,
+      "fp16_inference_throughput_99": null,
+      "fp16_inference_throughput_99.9": null
+    }
+  }
+]
