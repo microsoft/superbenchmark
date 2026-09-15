@@ -1,0 +1,46 @@
+{
+    "benchmarks": [
+        {
+            "name": "kernel_launch",
+            "states": [
+                {
+                    "name": "Device=0",
+                    "is_skipped": false,
+                    "axis_values": null,
+                    "summaries": [
+                        {
+                            "tag": "nv/cold/time/cpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "2.4222e-05"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "7.808e-06"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/batch/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "6.024e-06"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
