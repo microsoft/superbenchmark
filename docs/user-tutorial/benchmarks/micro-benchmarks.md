@@ -126,7 +126,17 @@ input down-conversion and reduced-precision reduction notes. In this policy,
 `tensorOp=true` requires a Tensor Core plan and `false` excludes it; selection
 does not silently switch between these modes to obtain a passing result.
 
-Before timing, every candidate is checked over every output using independent
+Internally, a frozen convolution workload contains only the operation, dimensions,
+layout and actual precision. Plan/accuracy policies decide candidate acceptance;
+the first-passing selector qualifies candidates before exposing a const selected
+plan to repeated execution. The reference owns its workload snapshot. Policy,
+reference construction and candidate selection do not run in the timed loop.
+This separation does not add policy knobs or change `screened-v1`: legacy default
+math may use TF32 Tensor Cores, unlike this policy's `tensorOp=false` setting.
+An executor change alone is not a matched-math comparison. Fixed-algorithm legacy
+requests retain their separate contract, and no per-GPU fastest-path routing occurs.
+
+Before timing, numerical qualification checks every output using independent
 cuBLAS FP64 GEMM, calibrated against CPU scalar convolution checks. The inputs
 are scaled seeds 58613/91817, uniform seed 104729, cancellation seed 130363 and
 the actual stored benchmark operands. FP16 values are rounded before reference
@@ -161,7 +171,22 @@ warmup and measured loops inside `benchmark()`,
 but excludes process startup and result serialization. The timed loop still
 includes host submission and final synchronization; it is not pure kernel time.
 
-With `BUILD_TESTING=ON` (default), the native prepared regression builds and installs normally.
+With `BUILD_TESTING=ON` (default), `cudnn_policy` checks the candidate rules,
+accuracy thresholds, workspace boundaries, first-passing selection and rejection
+paths without CUDA headers or a GPU. From the repository root:
+
+```bash
+build=$(mktemp -d)
+cmake -S superbench/benchmarks/micro_benchmarks/cudnn_function -B "$build" \
+   -DBUILD_TESTING=ON -DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON
+cmake --build "$build" --target cudnn_policy_test
+ctest --test-dir "$build" -R '^cudnn_policy$' --output-on-failure
+```
+
+A CUDA-enabled build also registers `cudnn_workload`, which checks immutable
+workload snapshots and shape validation using the vendor headers but makes no GPU
+calls. Run `ctest --test-dir <build-dir> -L cpu --output-on-failure` for these host
+tests. The native `cudnn_prepared` GPU regression still builds and installs normally.
 Run `ctest --test-dir <build-dir> -L cudnn --output-on-failure` on a GPU worker.
 The CUDA pytest suite also invokes the installed prepared regression using
 `SB_MICRO_PATH`; missing binaries fail the check instead of silently skipping.

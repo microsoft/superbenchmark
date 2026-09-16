@@ -6,6 +6,16 @@ project(cudnn_benchmark LANGUAGES CXX)
 
 include(CTest)
 
+set(CUDNN_POLICY_TEST_SOURCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/benchmarks/micro_benchmarks/test_cudnn_plan_policy.cpp)
+if(BUILD_TESTING AND EXISTS "${CUDNN_POLICY_TEST_SOURCE}")
+  add_executable(cudnn_policy_test ${CUDNN_POLICY_TEST_SOURCE})
+  target_include_directories(cudnn_policy_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_compile_features(cudnn_policy_test PRIVATE cxx_std_11)
+  add_test(NAME cudnn_policy COMMAND cudnn_policy_test)
+  set_tests_properties(cudnn_policy PROPERTIES LABELS "cpu;cudnn")
+endif()
+
 find_package(CUDAToolkit QUIET)
 if(CUDAToolkit_FOUND)
   include(../cuda_common.cmake)
@@ -32,6 +42,16 @@ if(CUDAToolkit_FOUND)
 
   add_executable(cudnn_benchmark cudnn_test.cpp)
   target_link_libraries(cudnn_benchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart CUDA::cublas ${CUDNN_LIBRARY})
+
+  set(CUDNN_WORKLOAD_TEST_SOURCE
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/benchmarks/micro_benchmarks/test_cudnn_workload.cpp)
+  if(BUILD_TESTING AND EXISTS "${CUDNN_WORKLOAD_TEST_SOURCE}")
+    add_executable(cudnn_workload_test ${CUDNN_WORKLOAD_TEST_SOURCE})
+    target_include_directories(cudnn_workload_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_compile_features(cudnn_workload_test PRIVATE cxx_std_11)
+    add_test(NAME cudnn_workload COMMAND cudnn_workload_test)
+    set_tests_properties(cudnn_workload PROPERTIES LABELS "cpu;cudnn")
+  endif()
 
   set(CUDNN_PREPARED_TEST_SOURCE
       ${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/benchmarks/micro_benchmarks/test_cudnn_prepared.cpp)

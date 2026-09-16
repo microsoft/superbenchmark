@@ -163,7 +163,7 @@ void from_json(const json &j, cudnn_test::CudnnConfig &fn) {
         }
         fn.set_prepared(true);
         fn.set_workspace_limit_mib(j.value("workspaceLimitMiB", int64_t{1024}));
-        CudnnPreparedPlan::validate(fn);
+        CudnnPreparedSelection::validate(fn);
     }
     fn.name2enum();
 }

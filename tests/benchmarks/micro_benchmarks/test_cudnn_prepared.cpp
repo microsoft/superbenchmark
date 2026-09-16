@@ -1,10 +1,15 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <type_traits>
+#include <utility>
 
 #include "cudnn_function_helper.h"
 
 using namespace cudnn_test;
+
+static_assert(std::is_same<decltype(std::declval<CudnnPreparedSelection &>().plan()), const CudnnPreparedPlan &>::value,
+              "prepared selection must expose only an immutable plan");
 
 static json configuration() {
     return {{"name", "cudnnConvolutionBackwardFilter"},
@@ -102,9 +107,13 @@ static void test_execution(cudnnDataType_t type, unsigned seed, json value = con
     CUDA_SAFE_CALL(cudaMemcpy(resources.input, input.data(), input.size() * sizeof(Value), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(
         cudaMemcpy(resources.gradient, gradient.data(), gradient.size() * sizeof(Value), cudaMemcpyHostToDevice));
-    CudnnPreparedPlan plan(resources.handle, config, resources.input, resources.filter, resources.gradient);
-    require(plan.verification().at("passed").get<bool>(), "plan lacks a passing numerical screen");
-    require(plan.verification().at("checked_elements").get<size_t>() == result.size() * 5,
+    const CudnnConvolutionWorkload workload(config);
+    const CudnnPlanPolicy policy(config.get_use_tensor_op(), config.get_workspace_limit_mib());
+    CudnnPreparedSelection selection(resources.handle, workload, policy, resources.input, resources.filter,
+                                     resources.gradient);
+    const auto &plan = selection.plan();
+    require(selection.verification().at("passed").get<bool>(), "plan lacks a passing numerical screen");
+    require(selection.verification().at("checked_elements").get<size_t>() == result.size() * 5,
             "plan was not checked over every output for all screening inputs");
     const auto identity = plan.json();
     for (int repeat = 0; repeat < 2; ++repeat) {
@@ -169,13 +178,14 @@ static void test_execution(cudnnDataType_t type, unsigned seed, json value = con
                 std::memcmp(restored_gradient.data(), gradient.data(), gradient.size() * sizeof(Value)) == 0,
             "numerical screening did not restore actual benchmark operands");
     if (scalar_check && type == CUDNN_DATA_FLOAT && seed == 33931u) {
-        CudnnReference reference(config, resources.input, resources.filter, resources.gradient);
+        const CudnnAccuracyPolicy accuracy(type == CUDNN_DATA_HALF);
+        CudnnReference reference(workload, accuracy, resources.input, resources.filter, resources.gradient);
         require(!reference.accepts([&]() {}), "numerical screen accepted a no-op");
         require(reference.failures() != 0, "numerical rejection did not retain failure count");
         CUDA_SAFE_CALL(cudaMemset(resources.input, 0xff, input.size() * sizeof(Value)));
         bool rejected = false;
         try {
-            CudnnReference invalid(config, resources.input, resources.filter, resources.gradient);
+            CudnnReference invalid(workload, accuracy, resources.input, resources.filter, resources.gradient);
         } catch (const std::runtime_error &error) {
             rejected = std::string(error.what()).find("FP64 reference disagrees") != std::string::npos;
         }
@@ -219,9 +229,8 @@ int main() {
         test_execution<float>(CUDNN_DATA_FLOAT, 33931u, strided);
         test_execution<half>(CUDNN_DATA_HALF, 33931u, strided);
         test_default_shapes();
-        std::cout
-            << "Prepared available-storage screening, scalar checks, rejection and operand restoration passed"
-            << std::endl;
+        std::cout << "Prepared available-storage screening, scalar checks, rejection and operand restoration passed"
+                  << std::endl;
     } catch (const std::exception &error) {
         std::cerr << error.what() << std::endl;
         return 1;

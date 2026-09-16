@@ -9,7 +9,8 @@
 
 #include <cublas_v2.h>
 
-#include "cudnn_config.h"
+#include "cudnn_convolution_workload.h"
+#include "cudnn_plan_policy.h"
 
 namespace cudnn_test {
 class CudnnReference {
@@ -35,7 +36,8 @@ class CudnnReference {
         std::vector<double> reference;
     };
 
-    CudnnConfig &config_;
+    const CudnnConvolutionWorkload workload_;
+    const CudnnAccuracyPolicy accuracy_;
     void *input_;
     void *filter_;
     void *gradient_;
@@ -54,7 +56,7 @@ class CudnnReference {
         return std::accumulate(dimensions.begin(), dimensions.end(), size_t{1}, std::multiplies<size_t>());
     }
 
-    bool is_half() const { return config_.get_input_type() == CUDNN_DATA_HALF; }
+    bool is_half() const { return workload_.input_type == CUDNN_DATA_HALF; }
 
     std::vector<float> download(void *pointer, size_t elements) const {
         std::vector<float> values(elements);
@@ -105,9 +107,9 @@ class CudnnReference {
     }
 
     double scalar(const Sample &sample, size_t element) const {
-        const auto &input = config_.get_input_dims();
-        const auto &output = config_.get_output_dims();
-        const auto &filter = config_.get_filter_dims();
+        const auto &input = workload_.input_dims;
+        const auto &output = workload_.output_dims;
+        const auto &filter = workload_.filter_dims;
         const int kernel_x = element % filter[3];
         element /= filter[3];
         const int kernel_y = element % filter[2];
@@ -117,11 +119,11 @@ class CudnnReference {
         double result = 0;
         for (int batch = 0; batch < input[0]; ++batch) {
             for (int output_y = 0; output_y < output[2]; ++output_y) {
-                const int64_t input_y = int64_t{output_y} * config_.get_filter_strideA()[0] - config_.get_padA()[0] +
-                                        int64_t{kernel_y} * config_.get_dilationA()[0];
+                const int64_t input_y = int64_t{output_y} * workload_.filter_stride[0] - workload_.padding[0] +
+                                        int64_t{kernel_y} * workload_.dilation[0];
                 for (int output_x = 0; output_x < output[3]; ++output_x) {
-                    const int64_t input_x = int64_t{output_x} * config_.get_filter_strideA()[1] -
-                                            config_.get_padA()[1] + int64_t{kernel_x} * config_.get_dilationA()[1];
+                    const int64_t input_x = int64_t{output_x} * workload_.filter_stride[1] - workload_.padding[1] +
+                                            int64_t{kernel_x} * workload_.dilation[1];
                     if (input_y >= 0 && input_y < input[2] && input_x >= 0 && input_x < input[3]) {
                         size_t source =
                             ((static_cast<size_t>(batch) * input[1] + channel) * input[2] + input_y) * input[3] +
@@ -139,9 +141,9 @@ class CudnnReference {
     }
 
     void reference(Sample &sample) const {
-        const auto &input = config_.get_input_dims();
-        const auto &output = config_.get_output_dims();
-        const auto &filter = config_.get_filter_dims();
+        const auto &input = workload_.input_dims;
+        const auto &output = workload_.output_dims;
+        const auto &filter = workload_.filter_dims;
         const int features = filter[1] * filter[2] * filter[3];
         const int positions = output[2] * output[3];
         const int tile = std::max(1, std::min(positions, 1048576 / features));
@@ -163,10 +165,10 @@ class CudnnReference {
                         int kernel_x = feature % filter[3];
                         int kernel_y = feature / filter[3] % filter[2];
                         int channel = feature / (filter[2] * filter[3]);
-                        int64_t input_y = int64_t{output_y} * config_.get_filter_strideA()[0] - config_.get_padA()[0] +
-                                          int64_t{kernel_y} * config_.get_dilationA()[0];
-                        int64_t input_x = int64_t{output_x} * config_.get_filter_strideA()[1] - config_.get_padA()[1] +
-                                          int64_t{kernel_x} * config_.get_dilationA()[1];
+                        int64_t input_y = int64_t{output_y} * workload_.filter_stride[0] - workload_.padding[0] +
+                                          int64_t{kernel_y} * workload_.dilation[0];
+                        int64_t input_x = int64_t{output_x} * workload_.filter_stride[1] - workload_.padding[1] +
+                                          int64_t{kernel_x} * workload_.dilation[1];
                         double value = 0;
                         if (input_y >= 0 && input_y < input[2] && input_x >= 0 && input_x < input[3]) {
                             size_t source =
@@ -211,11 +213,12 @@ class CudnnReference {
     }
 
   public:
-    CudnnReference(CudnnConfig &config, void *input, void *filter, void *gradient)
-        : config_(config), input_(input), filter_(filter), gradient_(gradient),
-          filter_count_(count(config.get_filter_dims())) {
+    CudnnReference(const CudnnConvolutionWorkload &workload, const CudnnAccuracyPolicy &accuracy, void *input,
+                   void *filter, void *gradient)
+        : workload_(workload), accuracy_(accuracy), input_(input), filter_(filter), gradient_(gradient),
+          filter_count_(count(workload.filter_dims)) {
         Sample actual{
-            download(input_, count(config.get_input_dims())), download(gradient_, count(config.get_output_dims())), {}};
+            download(input_, count(workload.input_dims)), download(gradient_, count(workload.output_dims)), {}};
         for (const auto &probe : {std::make_pair(58613u, "scaled"), std::make_pair(91817u, "scaled"),
                                   std::make_pair(104729u, "uniform"), std::make_pair(130363u, "cancellation")}) {
             Sample sample{std::vector<float>(actual.input.size()), std::vector<float>(actual.gradient.size()), {}};
@@ -238,8 +241,7 @@ class CudnnReference {
             CUDA_SAFE_CALL(cudaDeviceSynchronize());
             auto result = download(filter_, filter_count_);
             for (size_t element = 0; element < result.size(); ++element) {
-                double tolerance =
-                    0.0005 + (0.0005 + (is_half() ? 1.0 / 2048 : 0)) * std::abs(sample.reference[element]);
+                double tolerance = accuracy_.tolerance(sample.reference[element]);
                 double ratio = std::abs(static_cast<double>(result[element]) - sample.reference[element]) / tolerance;
                 if (!std::isfinite(result[element]) || !std::isfinite(sample.reference[element]) || ratio > 1) {
                     ++failures_;

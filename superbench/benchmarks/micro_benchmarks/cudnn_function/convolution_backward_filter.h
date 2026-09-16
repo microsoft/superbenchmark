@@ -4,7 +4,7 @@
 #pragma once
 
 #include "cudnn_function.h"
-#include "cudnn_prepared_plan.h"
+#include "cudnn_prepared_selection.h"
 #include <nlohmann/json.hpp>
 
 namespace cudnn_test {
@@ -15,13 +15,16 @@ namespace cudnn_test {
  */
 template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : public CudnnFunction<T1, T2> {
     cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo_;
-    std::unique_ptr<CudnnPreparedPlan> prepared_plan_;
+    std::unique_ptr<CudnnPreparedSelection> prepared_;
     double plan_build_ms_ = 0;
 
     void prepare_execution() override {
         if (this->get_prepared()) {
             auto start = std::chrono::steady_clock::now();
-            prepared_plan_.reset(new CudnnPreparedPlan(this->cudnn_handle, *this, this->x, this->filter, this->h));
+            const CudnnConvolutionWorkload workload(*this);
+            const CudnnPlanPolicy policy(this->get_use_tensor_op(), this->get_workspace_limit_mib());
+            prepared_.reset(
+                new CudnnPreparedSelection(this->cudnn_handle, workload, policy, this->x, this->filter, this->h));
             plan_build_ms_ =
                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
         }
@@ -29,23 +32,23 @@ template <typename T1, typename T2> class ConvolutionBackwardFilterFunction : pu
 
     void print_execution_info(double setup_ms, double postcheck_call_ms, double benchmark_ms) override {
         nlohmann::json metadata = {{"execution_mode", "prepared"},
-                                   {"policy", "screened-v1"},
+                                   {"policy", prepared_->policy().name()},
                                    {"input_type", static_cast<int>(this->get_input_type())},
-                                   {"verification", prepared_plan_->verification()},
+                                   {"verification", prepared_->verification()},
                                    {"cudnn_version", cudnnGetVersion()},
                                    {"plan_build_ms", plan_build_ms_},
                                    {"setup_ms", setup_ms},
                                    {"postcheck_call_ms", postcheck_call_ms},
                                    {"benchmark_ms", benchmark_ms},
-                                   {"plan", nlohmann::json::parse(prepared_plan_->json())}};
+                                   {"plan", nlohmann::json::parse(prepared_->plan().json())}};
         std::cout << "[prepared_plan]: " << metadata.dump() << std::endl;
     }
     /**
      * @brief Execute the kernel/function
      */
     virtual void kernel_entry() {
-        if (prepared_plan_) {
-            prepared_plan_->execute(this->cudnn_handle);
+        if (prepared_) {
+            prepared_->plan().execute(this->cudnn_handle);
             return;
         }
         CHECK_CUDNN_ERROR(cudnnConvolutionBackwardFilter(
