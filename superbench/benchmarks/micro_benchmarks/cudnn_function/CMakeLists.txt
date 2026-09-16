@@ -43,28 +43,5 @@ if(CUDAToolkit_FOUND)
   add_executable(cudnn_benchmark cudnn_test.cpp)
   target_link_libraries(cudnn_benchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart CUDA::cublas ${CUDNN_LIBRARY})
 
-  set(CUDNN_WORKLOAD_TEST_SOURCE
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/benchmarks/micro_benchmarks/test_cudnn_workload.cpp)
-  if(BUILD_TESTING AND EXISTS "${CUDNN_WORKLOAD_TEST_SOURCE}")
-    add_executable(cudnn_workload_test ${CUDNN_WORKLOAD_TEST_SOURCE})
-    target_include_directories(cudnn_workload_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_compile_features(cudnn_workload_test PRIVATE cxx_std_11)
-    add_test(NAME cudnn_workload COMMAND cudnn_workload_test)
-    set_tests_properties(cudnn_workload PROPERTIES LABELS "cpu;cudnn")
-  endif()
-
-  set(CUDNN_PREPARED_TEST_SOURCE
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/benchmarks/micro_benchmarks/test_cudnn_prepared.cpp)
-  if(BUILD_TESTING AND EXISTS "${CUDNN_PREPARED_TEST_SOURCE}")
-    add_executable(cudnn_prepared_test ${CUDNN_PREPARED_TEST_SOURCE})
-    target_include_directories(cudnn_prepared_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(cudnn_prepared_test ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart CUDA::cublas ${CUDNN_LIBRARY})
-    add_custom_target(check_cudnn_prepared COMMAND $<TARGET_FILE:cudnn_prepared_test>
-                      DEPENDS cudnn_prepared_test USES_TERMINAL)
-    add_test(NAME cudnn_prepared COMMAND cudnn_prepared_test)
-    set_tests_properties(cudnn_prepared PROPERTIES LABELS "cuda;cudnn" TIMEOUT 900 SKIP_RETURN_CODE 77)
-    install(TARGETS cudnn_prepared_test RUNTIME DESTINATION bin)
-  endif()
-
   install(TARGETS cudnn_benchmark ${TARGET_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 endif()

@@ -104,51 +104,14 @@ The supported functions for cuDNN are as follows:
  - cudnnConvolutionBackwardData
  - cudnnConvolutionForward
 
-`--execution_mode prepared` optionally builds a cuDNN execution plan once per case
-and reuses it outside algorithm selection. Legacy execution remains the default.
-Prepared execution requires cuDNN 8.9 or newer, packed NCHW tensors, 2D
-cross-correlation, FP32 compute, and FP32 or FP16 storage. Without custom configs,
-the six backward-filter workloads are converted to the prepared selection policy
-without legacy `algo` indices. Custom prepared configs must omit `algo`: an
-explicit algorithm constraint is rejected, not silently ignored. Use legacy
-execution to benchmark a specific legacy `algo`. `--enable_auto_algo` cannot be
-combined with prepared execution.
-
-Prepared mode does not change the existing precision parser or initializer.
-On revisions without the separate [storage/compute fix](https://github.com/microsoft/superbenchmark/pull/852),
-an FP16-storage/FP32-compute request resolves to FP32 and is not an FP16 measurement.
-Native `input_type` metadata reports the actual storage type; numerical screening
-and metric identity use that type. This does not relax the requested math policy.
-
-The `screened-v1` policy selects the first numerically passing heuristic A/fallback
-plan within `--workspace_limit_mib` (default 1024). It rejects nondeterminism,
-input down-conversion and reduced-precision reduction notes. In this policy,
-`tensorOp=true` requires a Tensor Core plan and `false` excludes it; selection
-does not silently switch between these modes to obtain a passing result.
-
-Internally, a frozen convolution workload contains only the operation, dimensions,
-layout and actual precision. Plan/accuracy policies decide candidate acceptance;
-the first-passing selector qualifies candidates before exposing a const selected
-plan to repeated execution. The reference owns its workload snapshot. Policy,
-reference construction and candidate selection do not run in the timed loop.
-This separation does not add policy knobs or change `screened-v1`: legacy default
-math may use TF32 Tensor Cores, unlike this policy's `tensorOp=false` setting.
-An executor change alone is not a matched-math comparison. Fixed-algorithm legacy
-requests retain their separate contract, and no per-GPU fastest-path routing occurs.
-
-Before timing, numerical qualification checks every output using independent
-cuBLAS FP64 GEMM, calibrated against CPU scalar convolution checks. The inputs
-are scaled seeds 58613/91817, uniform seed 104729, cancellation seed 130363 and
-the actual stored benchmark operands. FP16 values are rounded before reference
-calculation. The fixed componentwise screen is
-`abs(error) <= 0.0005 + (0.0005 + u_out) * abs(reference)`, with `u_out=0` for
-FP32 and `2^-11` for FP16. A passing plan must pass all five inputs. Rejected
-candidate errors and passing verification counts are retained in raw metadata.
-Actual operands are restored before warmup. If no candidate qualifies, the case
-fails without publishing timing; there is no legacy or relaxed-tolerance fallback.
-This is an explicit benchmark screen, not a universal cuDNN accuracy guarantee.
-The independent reference requires temporary host/device memory beyond the plan
-workspace limit and adds setup cost; it does not run inside the measured loop.
+`--execution_mode prepared` opts into retained cuDNN plans; legacy remains the
+default. It requires cuDNN 8.9+, packed NCHW, 2D backward-filter cross-correlation
+and FP32 compute. `screened-v1` selects the first numerically passing plan within
+`--workspace_limit_mib` (default 1024), not the fastest plan. Qualification occurs
+before timing; failure does not fall back to legacy. Custom configs must omit
+`algo`, and `--enable_auto_algo` is unsupported in prepared mode.
+Math policy differs from legacy; actual FP16 storage still requires the separate
+[precision fix](https://github.com/microsoft/superbenchmark/pull/852).
 
 #### Metrics
 
@@ -156,43 +119,9 @@ workspace limit and adds setup cost; it does not run inside the measured loop.
 |-----------------------------------------------------------|-----------|------------------------------------------------------------------|
 | cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
-Prepared metric parameters include the execution mode, policy and workspace limit,
-and append `_actualinputtype_<type>_plan_<fingerprint>` before `_time`. The actual
-storage type is `0` for FP32 or `2` for FP16. The fingerprint covers the plan
-schema, cuDNN version, engine/knobs/architecture and operation graph, excluding
-incidental GPU profile fields such as device ordinal and nominal clocks. They
-require separate baselines from legacy and the earlier unscreened policy.
-Raw output retains the full profile, plan and numerical verification. Per-case
-`_plan_build_time`, `_setup_time`, `_postcheck_call_time` and `_benchmark_time`
-metrics are also in microseconds. Plan preparation includes reference construction
-and candidate screening; the postcheck call is not a cold first execution.
-Setup is excluded from steady timing; benchmark time includes setup, that call,
-warmup and measured loops inside `benchmark()`,
-but excludes process startup and result serialization. The timed loop still
-includes host submission and final synchronization; it is not pure kernel time.
-
-With `BUILD_TESTING=ON` (default), `cudnn_policy` checks the candidate rules,
-accuracy thresholds, workspace boundaries, first-passing selection and rejection
-paths without CUDA headers or a GPU. From the repository root:
-
-```bash
-build=$(mktemp -d)
-cmake -S superbench/benchmarks/micro_benchmarks/cudnn_function -B "$build" \
-   -DBUILD_TESTING=ON -DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON
-cmake --build "$build" --target cudnn_policy_test
-ctest --test-dir "$build" -R '^cudnn_policy$' --output-on-failure
-```
-
-A CUDA-enabled build also registers `cudnn_workload`, which checks immutable
-workload snapshots and shape validation using the vendor headers but makes no GPU
-calls. Run `ctest --test-dir <build-dir> -L cpu --output-on-failure` for these host
-tests. The native `cudnn_prepared` GPU regression still builds and installs normally.
-Run `ctest --test-dir <build-dir> -L cudnn --output-on-failure` on a GPU worker.
-The CUDA pytest suite also invokes the installed prepared regression using
-`SB_MICRO_PATH`; missing binaries fail the check instead of silently skipping.
-Storage subcases unavailable through the existing parser are explicitly reported
-as skipped. Prepared tests also skip unsupported pre-8.9 API builds. API compilation
-against a version is not equivalent to GPU/runtime qualification on that version.
+Prepared metrics include actual storage, policy and a plan fingerprint and need
+separate baselines. Plan-build, setup, postcheck-call and total benchmark costs are
+reported separately in microseconds; steady timing excludes plan qualification.
 
 ### `tensorrt-inference`
 
