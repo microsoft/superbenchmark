@@ -1,0 +1,235 @@
+{
+    "benchmarks": [
+        {
+            "name": "throughput_bench",
+            "states": [
+                {
+                    "name": "Device=0 T=1 Stride=1 BlockSize=128",
+                    "is_skipped": false,
+                    "axis_values": [
+                        {
+                            "name": "T",
+                            "type": "string",
+                            "value": "1"
+                        },
+                        {
+                            "name": "Stride",
+                            "type": "int64",
+                            "value": "1"
+                        },
+                        {
+                            "name": "BlockSize",
+                            "type": "int64",
+                            "value": "128"
+                        }
+                    ],
+                    "summaries": [
+                        {
+                            "tag": "nv/cupti/dram__throughput.avg.pct_of_peak_sustained_elapsed",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "0.20"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/smsp__sass_average_data_bytes_per_sector_mem_global_op_ld.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "1.0"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/smsp__sass_average_data_bytes_per_sector_mem_global_op_st.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "1.0"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/l1tex__t_sector_hit_rate.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "0.0"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/lts__t_sector_hit_rate.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "0.0005"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/cpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "1.20e-04"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "1.00e-04"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/bw/item_rate",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "100000000000"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/batch/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "9.5e-05"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Device=0 T=2 Stride=4 BlockSize=256",
+                    "is_skipped": false,
+                    "axis_values": [
+                        {
+                            "name": "T",
+                            "type": "string",
+                            "value": "2"
+                        },
+                        {
+                            "name": "Stride",
+                            "type": "int64",
+                            "value": "4"
+                        },
+                        {
+                            "name": "BlockSize",
+                            "type": "int64",
+                            "value": "256"
+                        }
+                    ],
+                    "summaries": [
+                        {
+                            "tag": "nv/cupti/dram__throughput.avg.pct_of_peak_sustained_elapsed",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "0.80"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/smsp__sass_average_data_bytes_per_sector_mem_global_op_ld.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "0.125"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/smsp__sass_average_data_bytes_per_sector_mem_global_op_st.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "1.0"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/l1tex__t_sector_hit_rate.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "0.30"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cupti/lts__t_sector_hit_rate.pct",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "0.10"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/cpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "2.20e-04"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "2.00e-04"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/bw/item_rate",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "200000000000"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/batch/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "1.95e-04"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
