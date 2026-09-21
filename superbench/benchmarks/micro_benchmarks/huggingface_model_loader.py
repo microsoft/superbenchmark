@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import torch
+import transformers
 from transformers import (
     AutoModel,
-    AutoModelForCausalLM,
     AutoConfig,
     AutoTokenizer,
     PreTrainedModel,
@@ -184,10 +184,8 @@ class HuggingFaceModelLoader:
             logger.info(f'Loading model weights (dtype={torch_dtype}, device={device})...')
             model_kwargs, effective_device_map = self._build_model_kwargs(load_kwargs, device, device_map, config)
 
-            if self._is_causal_lm_config(config):
-                model = AutoModelForCausalLM.from_pretrained(model_identifier, **model_kwargs)
-            else:
-                model = AutoModel.from_pretrained(model_identifier, **model_kwargs)
+            model_class = self._get_auto_model_class(config)
+            model = model_class.from_pretrained(model_identifier, **model_kwargs)
 
             # Move to device if not using device_map
             if not effective_device_map and device != 'auto':
@@ -259,10 +257,30 @@ class HuggingFaceModelLoader:
         return model_kwargs, effective_device_map
 
     @staticmethod
-    def _is_causal_lm_config(config) -> bool:
-        """Return whether the config declares a causal language-model architecture."""
+    def _get_auto_model_class(config):
+        """Select the task-specific auto class declared by the model architecture."""
         architectures = getattr(config, 'architectures', None) or []
-        return any(architecture.endswith('ForCausalLM') for architecture in architectures)
+        task_classes = (
+            ('ForAudioClassification', 'AutoModelForAudioClassification'),
+            ('ForCausalLM', 'AutoModelForCausalLM'),
+            ('ForImageClassification', 'AutoModelForImageClassification'),
+            ('ForMaskedLM', 'AutoModelForMaskedLM'),
+            ('ForMultipleChoice', 'AutoModelForMultipleChoice'),
+            ('ForObjectDetection', 'AutoModelForObjectDetection'),
+            ('ForQuestionAnswering', 'AutoModelForQuestionAnswering'),
+            ('ForSemanticSegmentation', 'AutoModelForSemanticSegmentation'),
+            ('ForSeq2SeqLM', 'AutoModelForSeq2SeqLM'),
+            ('ForSequenceClassification', 'AutoModelForSequenceClassification'),
+            ('ForSpeechSeq2Seq', 'AutoModelForSpeechSeq2Seq'),
+            ('ForTableQuestionAnswering', 'AutoModelForTableQuestionAnswering'),
+            ('ForTokenClassification', 'AutoModelForTokenClassification'),
+            ('ForVision2Seq', 'AutoModelForVision2Seq'),
+        )
+        for architecture in architectures:
+            for suffix, class_name in task_classes:
+                if architecture.endswith(suffix):
+                    return getattr(transformers, class_name, AutoModel)
+        return AutoModel
 
     def load_model_from_config(
         self,

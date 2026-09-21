@@ -92,7 +92,7 @@ class TestHuggingFaceModelLoader:
         # Verify model was moved to the requested device
         mock_mdl.to.assert_called_once_with('cpu')
 
-    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModelForCausalLM')
+    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.transformers.AutoModelForCausalLM')
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModel')
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoTokenizer')
     def test_load_model_uses_causal_lm_architecture(self, mock_tokenizer, mock_model, mock_causal_model, loader):
@@ -107,6 +107,25 @@ class TestHuggingFaceModelLoader:
 
         assert loaded_model is model
         mock_causal_model.from_pretrained.assert_called_once()
+        mock_model.from_pretrained.assert_not_called()
+
+    @patch(
+        'superbench.benchmarks.micro_benchmarks.huggingface_model_loader.transformers.AutoModelForImageClassification'
+    )
+    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModel')
+    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoTokenizer')
+    def test_load_model_preserves_image_classification_head(self, mock_tokenizer, mock_model, mock_image_model, loader):
+        """Image-classification configs load the model with its task head."""
+        config = MagicMock(architectures=['ResNetForImageClassification'])
+        model = MagicMock()
+        model.parameters.return_value = []
+        model.to.return_value = model
+        mock_image_model.from_pretrained.return_value = model
+
+        loaded_model, _, _ = loader.load_model('microsoft/resnet-50', device='cpu', config=config)
+
+        assert loaded_model is model
+        mock_image_model.from_pretrained.assert_called_once()
         mock_model.from_pretrained.assert_not_called()
 
     def test_estimate_param_count_requires_attention_heads(self):

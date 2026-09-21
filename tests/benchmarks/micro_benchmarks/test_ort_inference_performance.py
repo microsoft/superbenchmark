@@ -114,6 +114,29 @@ def _make_ort_benchmark(**arg_overrides):
     return benchmark
 
 
+def test_preprocess_inhouse_int8_uses_enum_value_in_filename(tmp_path):
+    """In-house INT8 preprocessing writes the filename consumed by _benchmark."""
+    benchmark = _make_ort_benchmark(
+        model_source='pytorch', pytorch_models=['resnet50'], precision=Precision.INT8, batch_size=1
+    )
+    benchmark._ORTInferenceBenchmark__model_cache_path = tmp_path
+    quantization = MagicMock()
+    onnxruntime = MagicMock()
+    model = MagicMock()
+    model.to.return_value.cuda.return_value = model
+
+    with patch(f'{_ORT_MODULE}.MicroBenchmark._preprocess', return_value=True), \
+            patch(f'{_ORT_MODULE}.torchvision.models.resnet50', return_value=model), \
+            patch(f'{_ORT_MODULE}.torch.randn', return_value=MagicMock()), \
+            patch(f'{_ORT_MODULE}.torch.onnx.export'), \
+            patch.dict('sys.modules', {'onnxruntime': onnxruntime, 'onnxruntime.quantization': quantization}):
+        assert benchmark._preprocess()
+
+    quantization.quantize_dynamic.assert_called_once_with(
+        str(tmp_path / 'resnet50.float32.onnx'), str(tmp_path / 'resnet50.int8.onnx')
+    )
+
+
 # ---------------------------------------------------------------------------
 # _preprocess_huggingface_models
 # ---------------------------------------------------------------------------

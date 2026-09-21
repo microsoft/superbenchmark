@@ -192,7 +192,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
                     input_names=['input'],
                 )
                 if self._args.precision == Precision.INT8:
-                    file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision)
+                    file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision.value)
                     # For quantization of ONNXRuntime, refer
                     # https://onnxruntime.ai/docs/performance/quantization.html#quantization-overview
                     from onnxruntime.quantization import quantize_dynamic
