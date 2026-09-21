@@ -35,6 +35,7 @@ _EXPORTER_MODULE = 'superbench.benchmarks.micro_benchmarks._export_torch_to_onnx
 def exporter(tmp_path, monkeypatch):
     """Build a torch2onnxExporter rooted at a tmp dir to avoid touching the real torch hub."""
     monkeypatch.setattr(torch.hub, 'get_dir', lambda: str(tmp_path))
+    monkeypatch.setattr(torch.cuda, 'is_available', lambda: False)
     return torch2onnxExporter()
 
 
