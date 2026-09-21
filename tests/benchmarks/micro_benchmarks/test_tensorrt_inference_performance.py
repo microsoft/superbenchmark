@@ -39,7 +39,6 @@ def _make_onnx_model(inputs, initializer_names=()):
 
 class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     """Class for tensorrt-inferencee benchmark test cases."""
-
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in the class."""

@@ -152,7 +152,6 @@ def test_build_vision_export_inputs_wrapper_handles_last_hidden_state(exporter):
 
 def test_build_vision_export_inputs_wrapper_handles_tuple_output(exporter):
     """The wrapper returns ``outputs[0]`` when the model emits a tuple."""
-
     class _TupleModel(torch.nn.Module):
         main_input_name = 'pixel_values'
 
@@ -203,7 +202,6 @@ def test_build_nlp_export_inputs_basic(exporter):
 
 def test_build_nlp_export_inputs_wrapper_handles_logits(exporter):
     """When the inner model exposes ``logits``, the wrapper returns those."""
-
     class _LogitsModel(torch.nn.Module):
         main_input_name = 'input_ids'
 
@@ -223,7 +221,6 @@ def test_build_nlp_export_inputs_wrapper_handles_logits(exporter):
 
 def test_build_nlp_export_inputs_wrapper_handles_tuple(exporter):
     """The wrapper returns ``outputs[0]`` when the model emits a tuple."""
-
     class _TupleNLP(torch.nn.Module):
         main_input_name = 'input_ids'
 
@@ -421,7 +418,6 @@ def test_export_huggingface_model_disables_use_cache(exporter, tmp_path):
 
 def test_export_huggingface_model_default_main_input_name_is_nlp(exporter, tmp_path):
     """Models without ``main_input_name`` default to the NLP path."""
-
     class _NoMainInput(torch.nn.Module):
         # Intentionally no main_input_name attribute.
         def __init__(self):

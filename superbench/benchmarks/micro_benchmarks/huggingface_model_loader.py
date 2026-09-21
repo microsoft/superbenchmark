@@ -96,7 +96,6 @@ class HuggingFaceModelLoader:
             ``False``; enabling this turns ``--model_identifier`` into an RCE
             sink, so it is opt-in only.
     """
-
     def __init__(
         self,
         cache_dir: Optional[str] = None,
