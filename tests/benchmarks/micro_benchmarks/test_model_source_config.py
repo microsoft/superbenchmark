@@ -9,6 +9,7 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 
 class TestModelSourceConfig:
     """Test cases for ModelSourceConfig class."""
+
     def test_default_config(self):
         """Test default configuration."""
         config = ModelSourceConfig(identifier='bert-base')

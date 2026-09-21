@@ -24,6 +24,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
 
 class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
     """TensorRT inference micro-benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -308,9 +309,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
 
         # Load model from HuggingFace on CPU
         loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
-        hf_model, hf_config, _ = loader.load_model_from_config(
-            model_config, device='cpu', config_pretrained=hf_config
-        )
+        hf_model, hf_config, _ = loader.load_model_from_config(model_config, device='cpu', config_pretrained=hf_config)
         self._hf_config = hf_config
         exporter = torch2onnxExporter()
 

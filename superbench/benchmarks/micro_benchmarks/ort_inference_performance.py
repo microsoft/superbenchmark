@@ -24,6 +24,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
 
 class ORTInferenceBenchmark(MicroBenchmark):
     """ONNXRuntime inference micro-benchmark class."""
+
     def __init__(self, name, parameters=''):
         """Constructor.
 

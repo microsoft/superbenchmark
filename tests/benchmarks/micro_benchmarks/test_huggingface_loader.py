@@ -17,6 +17,7 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 
 class TestHuggingFaceModelLoader:
     """Test cases for HuggingFaceModelLoader class."""
+
     @pytest.fixture
     def loader(self, tmp_path):
         """Create a loader instance for testing."""

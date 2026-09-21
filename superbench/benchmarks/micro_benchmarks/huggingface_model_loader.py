@@ -96,6 +96,7 @@ class HuggingFaceModelLoader:
             ``False``; enabling this turns ``--model_identifier`` into an RCE
             sink, so it is opt-in only.
     """
+
     def __init__(
         self,
         cache_dir: Optional[str] = None,
@@ -386,8 +387,8 @@ class HuggingFaceModelLoader:
             num_kv_heads = getattr(hf_config, 'num_key_value_heads', num_heads)
 
             if (
-                vocab == 0 or hidden == 0 or layers == 0 or num_heads <= 0 or num_kv_heads <= 0 or
-                hidden % num_heads != 0
+                vocab == 0 or hidden == 0 or layers == 0 or num_heads <= 0 or num_kv_heads <= 0
+                or hidden % num_heads != 0
             ):
                 return None
             head_dim = hidden // num_heads
