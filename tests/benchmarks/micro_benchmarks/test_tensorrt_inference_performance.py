@@ -201,6 +201,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
             model_source='huggingface',
             model_identifier='prajjwal1/bert-tiny',
             allow_remote_code=False,
+            revision=None,
             precision='fp16',
             batch_size=8,
             seq_length=128,
@@ -351,6 +352,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         # ModelSourceConfig is constructed with float32 + device_map=None (CPU load).
         msc_kwargs = mock_msc.call_args.kwargs
         self.assertEqual('float32', msc_kwargs['torch_dtype'])
+        self.assertIsNone(msc_kwargs['revision'])
         self.assertIsNone(msc_kwargs['device_map'])
         self.assertEqual('huggingface', msc_kwargs['source'])
         # Exporter called with the configured batch_size / seq_length.
@@ -430,6 +432,17 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
             self.assertTrue(benchmark._build_trtexec_command_for_hf(None, False))
 
         self.assertTrue(mock_makedirs.call_args.args[0].endswith('trt_rank_3'))
+
+    def test_build_trtexec_command_for_hf_rejects_invalid_proc_rank(self):
+        """A path-like PROC_RANK is rejected before loading or exporting a model."""
+        benchmark = self._make_benchmark()
+
+        with patch.dict('os.environ', {'PROC_RANK': '../../outside'}, clear=False), \
+                patch(f'{_TENSORRT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls:
+            self.assertFalse(benchmark._build_trtexec_command_for_hf(None, False))
+
+        self.assertEqual(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE, benchmark.return_code)
+        mock_loader_cls.assert_not_called()
 
     # ------------------------------------------------------------------
     # _derive_trt_input_shapes

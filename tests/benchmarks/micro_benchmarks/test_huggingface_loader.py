@@ -5,6 +5,7 @@
 
 import pytest
 import torch
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
@@ -89,6 +90,106 @@ class TestHuggingFaceModelLoader:
 
         # Verify model was moved to the requested device
         mock_mdl.to.assert_called_once_with('cpu')
+
+    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModelForCausalLM')
+    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModel')
+    @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoTokenizer')
+    def test_load_model_uses_causal_lm_architecture(self, mock_tokenizer, mock_model, mock_causal_model, loader):
+        """Causal-LM configs load the model with its language-model head."""
+        config = MagicMock(architectures=['Qwen2ForCausalLM'])
+        model = MagicMock()
+        model.parameters.return_value = []
+        model.to.return_value = model
+        mock_causal_model.from_pretrained.return_value = model
+
+        loaded_model, _, _ = loader.load_model('test/model', device='cpu', config=config)
+
+        assert loaded_model is model
+        mock_causal_model.from_pretrained.assert_called_once()
+        mock_model.from_pretrained.assert_not_called()
+
+    def test_estimate_param_count_requires_attention_heads(self):
+        """Configs without usable attention-head metadata are not estimated."""
+        config = MagicMock(
+            vocab_size=32000,
+            hidden_size=4096,
+            num_hidden_layers=32,
+            intermediate_size=11008,
+            num_attention_heads=0,
+            num_key_value_heads=0,
+        )
+
+        assert HuggingFaceModelLoader.estimate_param_count_from_config(config) is None
+
+    def test_estimate_param_count_dense_and_moe_models(self):
+        """Parameter estimation accounts for dense, rotary, gated, and MoE layers."""
+        dense_config = SimpleNamespace(
+            vocab_size=1000,
+            hidden_size=64,
+            num_hidden_layers=2,
+            intermediate_size=256,
+            num_attention_heads=8,
+            num_key_value_heads=4,
+            max_position_embeddings=128,
+            position_embedding_type='absolute',
+            hidden_act='gelu',
+            num_local_experts=1,
+        )
+        moe_config = SimpleNamespace(
+            vocab_size=1000,
+            hidden_size=64,
+            num_hidden_layers=2,
+            intermediate_size=256,
+            num_attention_heads=8,
+            num_key_value_heads=4,
+            max_position_embeddings=128,
+            position_embedding_type='rotary',
+            hidden_act='silu',
+            num_local_experts=4,
+        )
+
+        dense_count = HuggingFaceModelLoader.estimate_param_count_from_config(dense_config)
+        moe_count = HuggingFaceModelLoader.estimate_param_count_from_config(moe_config)
+
+        assert dense_count is not None
+        assert moe_count is not None
+        assert moe_count > dense_count
+
+    def test_estimate_memory_for_cpu_and_gpu(self):
+        """Memory estimates apply precision/mode multipliers and device capacity."""
+        with patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.torch.cuda') as cuda:
+            cuda.is_available.return_value = False
+            estimated, available, fits = HuggingFaceModelLoader.estimate_memory(1_000_000, 'fp16', 'inference')
+            assert estimated == 2_400_000
+            assert available > 0
+            assert fits is True
+
+            cuda.is_available.return_value = True
+            cuda.get_device_properties.return_value = SimpleNamespace(total_memory=1_000_000)
+            estimated, available, fits = HuggingFaceModelLoader.estimate_memory(1_000_000, 'int8', 'training')
+            assert estimated == 4_000_000
+            assert available == 1_000_000
+            assert fits is False
+
+    def test_check_memory_fits_reports_fit_failure_and_unknown(self):
+        """Preflight reports fit status and skips only genuinely unestimable configs."""
+        with patch.object(HuggingFaceModelLoader, 'estimate_param_count_from_config', return_value=None):
+            assert HuggingFaceModelLoader.check_memory_fits('test/model', MagicMock(), 'fp16') == (True, 0, 0, 0)
+
+        with patch.object(HuggingFaceModelLoader, 'estimate_param_count_from_config', return_value=2_000_000), \
+                patch.object(
+                    HuggingFaceModelLoader, 'estimate_memory', return_value=(4_000_000, 8_000_000, True)
+                ):
+            result = HuggingFaceModelLoader.check_memory_fits('test/model', MagicMock(), 'fp16', mode='inference')
+            assert result == (True, 2.0, 0.004, 0.008)
+
+        with patch.object(HuggingFaceModelLoader, 'estimate_param_count_from_config', return_value=2_000_000), \
+                patch.object(
+                    HuggingFaceModelLoader, 'estimate_memory', return_value=(8_000_000, 4_000_000, False)
+                ), patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.torch.cuda') as cuda:
+            cuda.is_available.return_value = True
+            result = HuggingFaceModelLoader.check_memory_fits('test/model', MagicMock(), 'fp32')
+            assert result == (False, 2.0, 0.008, 0.004)
 
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoTokenizer')
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModel')

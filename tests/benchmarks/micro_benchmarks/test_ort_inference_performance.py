@@ -95,6 +95,7 @@ def _make_ort_benchmark(**arg_overrides):
         model_source='huggingface',
         model_identifier='prajjwal1/bert-tiny',
         allow_remote_code=False,
+        revision=None,
         precision=Precision.FLOAT16,
         batch_size=8,
         seq_length=128,
@@ -219,6 +220,20 @@ def test_preprocess_hf_allow_remote_code_propagates():
     assert mock_auto_config.from_pretrained.call_args.kwargs['trust_remote_code'] is True
 
 
+def test_preprocess_hf_revision_propagates():
+    """--revision is forwarded to the config download."""
+    benchmark = _make_ort_benchmark(revision='abc123')
+
+    with patch('transformers.AutoConfig') as mock_auto_config, \
+            patch(f'{_ORT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls, \
+            patch.object(benchmark, '_export_hf_model_to_onnx', return_value=True):
+        mock_auto_config.from_pretrained.return_value = MagicMock()
+        mock_loader_cls.check_memory_fits.return_value = (True, 1.0, 0.01, 16.0)
+        assert benchmark._preprocess_huggingface_models() is True
+
+    assert mock_auto_config.from_pretrained.call_args.kwargs['revision'] == 'abc123'
+
+
 # ---------------------------------------------------------------------------
 # _export_hf_model_to_onnx
 # ---------------------------------------------------------------------------
@@ -279,6 +294,7 @@ def test_export_hf_model_to_onnx_fp16_success(mock_export_dependencies, tmp_path
     assert msc_kwargs['torch_dtype'] == 'float16'
     assert msc_kwargs['device_map'] is None
     assert msc_kwargs['hf_token'] == 'abc'
+    assert msc_kwargs['revision'] is None
     # load_model_from_config is invoked with the pre-downloaded config to skip a redundant fetch.
     load_kwargs = mock_export_dependencies.loader.load_model_from_config.call_args.kwargs
     assert load_kwargs['device'] == 'cpu'
@@ -345,6 +361,18 @@ def test_export_hf_model_to_onnx_uses_proc_rank_env(mock_export_dependencies, tm
     export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args.kwargs
     assert export_kwargs['output_dir'].endswith('rank_7')
     assert str(benchmark._ORTInferenceBenchmark__model_cache_path).endswith('rank_7')
+
+
+def test_export_hf_model_to_onnx_rejects_invalid_proc_rank(mock_export_dependencies, tmp_path):
+    """A path-like PROC_RANK is rejected before creating an output directory."""
+    benchmark = _make_ort_benchmark()
+    benchmark._ORTInferenceBenchmark__model_cache_path = tmp_path / 'checkpoints'
+
+    with patch.dict('os.environ', {'PROC_RANK': '../../outside'}, clear=False):
+        assert benchmark._export_hf_model_to_onnx(None, False, MagicMock()) is False
+
+    assert benchmark.return_code == ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE
+    mock_export_dependencies.loader.load_model_from_config.assert_not_called()
 
 
 def test_export_hf_model_to_onnx_passes_allow_remote_code_to_loader(mock_export_dependencies, tmp_path):

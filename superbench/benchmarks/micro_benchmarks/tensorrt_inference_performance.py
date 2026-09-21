@@ -18,6 +18,7 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
     validate_model_identifier,
+    validate_process_rank,
 )
 
 
@@ -51,9 +52,9 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             '--precision',
             type=str,
             choices=['int8', 'fp16', 'fp32'],
-            default='int8',
+            default=None,
             required=False,
-            help='Precision for inference, allow int8, fp16, or fp32 only.',
+            help='Precision for inference. Defaults to int8 for in-house models and fp16 for HuggingFace models.',
         )
 
         self._parser.add_argument(
@@ -107,6 +108,14 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             'SECURITY: enables RCE from --model_identifier; only enable for trusted model identifiers.',
         )
 
+        self._parser.add_argument(
+            '--revision',
+            type=str,
+            default=None,
+            required=False,
+            help='HuggingFace model revision (prefer an immutable commit SHA with --allow_remote_code).',
+        )
+
     @staticmethod
     def __detect_workspace_flag(bin_path: str) -> str:
         """Return the trtexec workspace flag supported by the installed binary.
@@ -146,6 +155,9 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         """
         if not super()._preprocess():
             return False
+
+        if self._args.precision is None:
+            self._args.precision = 'fp16' if self._args.model_source == 'huggingface' else 'int8'
 
         self.__bin_path = str(Path(self._args.bin_dir) / self._bin_name)
         # Pick the right workspace flag for the installed trtexec. --memPoolSize was
@@ -236,7 +248,10 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 load_kwargs['token'] = hf_token
 
             hf_config = AutoConfig.from_pretrained(
-                self._args.model_identifier, trust_remote_code=allow_remote_code, **load_kwargs
+                self._args.model_identifier,
+                trust_remote_code=allow_remote_code,
+                revision=self._args.revision,
+                **load_kwargs,
             )
             # ONNX export is always done in float32 (see _build_trtexec_command_for_hf), so gate
             # the pre-download check on fp32 memory regardless of the requested runtime precision.
@@ -248,7 +263,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 return False
 
             # Step 2: Download, export to ONNX, and build the trtexec command.
-            return self._build_trtexec_command_for_hf(hf_token, allow_remote_code)
+            return self._build_trtexec_command_for_hf(hf_token, allow_remote_code, hf_config)
 
         except Exception as e:
             logger.error(f'Failed to prepare HuggingFace model: {str(e)}')
@@ -257,7 +272,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
 
-    def _build_trtexec_command_for_hf(self, hf_token, allow_remote_code):
+    def _build_trtexec_command_for_hf(self, hf_token, allow_remote_code, hf_config=None):
         """Download HF model, export to ONNX, derive input shapes, and append the trtexec command.
 
         Args:
@@ -269,8 +284,12 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         """
         # Get GPU rank to create unique file paths and avoid race conditions
         # when multiple processes export the same model simultaneously
-        gpu_rank = os.getenv('CUDA_VISIBLE_DEVICES', '0')
-        proc_rank = os.getenv('PROC_RANK', gpu_rank)
+        try:
+            proc_rank = validate_process_rank(os.getenv('PROC_RANK', '0'))
+        except ValueError as e:
+            logger.error(str(e))
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
 
         # Create model source config - load on CPU to avoid accelerate dispatching
         # model across multiple GPUs which causes device mismatch during ONNX export.
@@ -281,6 +300,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             identifier=self._args.model_identifier,
             hf_token=hf_token,
             torch_dtype='float32',
+            revision=self._args.revision,
             device_map=None,
         )
 
@@ -288,7 +308,9 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
 
         # Load model from HuggingFace on CPU
         loader = HuggingFaceModelLoader(allow_remote_code=allow_remote_code)
-        hf_model, hf_config, _ = loader.load_model_from_config(model_config, device='cpu')
+        hf_model, hf_config, _ = loader.load_model_from_config(
+            model_config, device='cpu', config_pretrained=hf_config
+        )
         self._hf_config = hf_config
         exporter = torch2onnxExporter()
 

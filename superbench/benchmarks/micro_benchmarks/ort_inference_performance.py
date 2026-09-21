@@ -18,6 +18,7 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
     validate_model_identifier,
+    validate_process_rank,
 )
 
 
@@ -148,6 +149,14 @@ class ORTInferenceBenchmark(MicroBenchmark):
             'SECURITY: enables RCE from --model_identifier; only enable for trusted model identifiers.',
         )
 
+        self._parser.add_argument(
+            '--revision',
+            type=str,
+            default=None,
+            required=False,
+            help='HuggingFace model revision (prefer an immutable commit SHA with --allow_remote_code).',
+        )
+
     def _preprocess(self):
         """Preprocess/preparation operations before the benchmarking.
 
@@ -226,7 +235,10 @@ class ORTInferenceBenchmark(MicroBenchmark):
             if hf_token:
                 load_kwargs['token'] = hf_token
             hf_config = AutoConfig.from_pretrained(
-                self._args.model_identifier, trust_remote_code=allow_remote_code, **load_kwargs
+                self._args.model_identifier,
+                trust_remote_code=allow_remote_code,
+                revision=self._args.revision,
+                **load_kwargs,
             )
             # Stash for __inference() to read vocab_size / other model metadata later.
             self._hf_config = hf_config
@@ -265,8 +277,12 @@ class ORTInferenceBenchmark(MicroBenchmark):
 
         # Get GPU rank to create unique file paths and avoid race conditions
         # when multiple processes export the same model simultaneously
-        gpu_rank = os.getenv('CUDA_VISIBLE_DEVICES', '0')
-        proc_rank = os.getenv('PROC_RANK', gpu_rank)
+        try:
+            proc_rank = validate_process_rank(os.getenv('PROC_RANK', '0'))
+        except ValueError as e:
+            logger.error(str(e))
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
 
         # Create model source config - load on CPU to avoid accelerate dispatching
         # model across multiple GPUs which causes device mismatch during ONNX export
@@ -276,6 +292,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             identifier=self._args.model_identifier,
             hf_token=hf_token,
             torch_dtype=torch_dtype,
+            revision=self._args.revision,
             device_map=None,
         )
 

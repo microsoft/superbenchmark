@@ -30,6 +30,13 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 _SAFE_MODEL_ID_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}(/[A-Za-z0-9._-]{1,128})?$')
 
 
+def validate_process_rank(process_rank: str) -> str:
+    """Validate and normalize a process rank used in cache directory names."""
+    if not process_rank.isdigit():
+        raise ValueError(f'Invalid process rank {process_rank!r}. Expected a non-negative integer.')
+    return str(int(process_rank))
+
+
 def validate_model_identifier(model_identifier: Optional[str]) -> str:
     """Validate a HuggingFace model identifier against a strict allow-list.
 
@@ -176,11 +183,10 @@ class HuggingFaceModelLoader:
             logger.info(f'Loading model weights (dtype={torch_dtype}, device={device})...')
             model_kwargs, effective_device_map = self._build_model_kwargs(load_kwargs, device, device_map, config)
 
-            try:
-                model = AutoModel.from_pretrained(model_identifier, **model_kwargs)
-            except ValueError:
-                logger.info('AutoModel failed, trying AutoModelForCausalLM...')
+            if self._is_causal_lm_config(config):
                 model = AutoModelForCausalLM.from_pretrained(model_identifier, **model_kwargs)
+            else:
+                model = AutoModel.from_pretrained(model_identifier, **model_kwargs)
 
             # Move to device if not using device_map
             if not effective_device_map and device != 'auto':
@@ -250,6 +256,12 @@ class HuggingFaceModelLoader:
             model_kwargs['config'] = config
 
         return model_kwargs, effective_device_map
+
+    @staticmethod
+    def _is_causal_lm_config(config) -> bool:
+        """Return whether the config declares a causal language-model architecture."""
+        architectures = getattr(config, 'architectures', None) or []
+        return any(architecture.endswith('ForCausalLM') for architecture in architectures)
 
     def load_model_from_config(
         self,
@@ -372,10 +384,13 @@ class HuggingFaceModelLoader:
             intermediate = getattr(hf_config, 'intermediate_size', hidden * 4)
             num_heads = getattr(hf_config, 'num_attention_heads', 0)
             num_kv_heads = getattr(hf_config, 'num_key_value_heads', num_heads)
-            head_dim = hidden // num_heads if num_heads > 0 else 0
 
-            if vocab == 0 or hidden == 0 or layers == 0:
+            if (
+                vocab == 0 or hidden == 0 or layers == 0 or num_heads <= 0 or num_kv_heads <= 0 or
+                hidden % num_heads != 0
+            ):
                 return None
+            head_dim = hidden // num_heads
 
             # Embeddings: token + (optional) position
             max_pos = getattr(hf_config, 'max_position_embeddings', 0)
