@@ -400,3 +400,33 @@ def test_export_hf_model_to_onnx_releases_cuda_cache(mock_export_dependencies, t
 
     assert ok is True
     torch_cuda.empty_cache.assert_called_once()
+
+
+def test_benchmark_uses_precision_value_in_onnx_path(tmp_path):
+    """The ORT session path uses the precision value rather than the Enum representation."""
+    benchmark = _make_ort_benchmark(pytorch_models=['test_model'])
+    benchmark._ORTInferenceBenchmark__model_cache_path = tmp_path
+    benchmark._ORTInferenceBenchmark__graph_opt_level = {3: MagicMock()}
+    ort = MagicMock()
+    ort.get_available_providers.return_value = ['CPUExecutionProvider']
+
+    with patch.dict('sys.modules', {'onnxruntime': ort}), \
+            patch.object(benchmark, '_ORTInferenceBenchmark__inference', return_value=[1.0]), \
+            patch.object(benchmark, '_process_numeric_result', return_value=True):
+        assert benchmark._benchmark() is True
+
+    session_path = ort.InferenceSession.call_args.args[0]
+    assert session_path.endswith('test_model.float16.onnx')
+
+
+def test_inference_omits_unexpected_attention_mask():
+    """NLP feeds include attention_mask only when it is an exported ONNX input."""
+    benchmark = _make_ort_benchmark(num_warmup=0, num_steps=1)
+    benchmark._hf_config = SimpleNamespace(vocab_size=100)
+    session = MagicMock()
+    session.get_inputs.return_value = [SimpleNamespace(name='input_ids', shape=[None, None])]
+
+    benchmark._ORTInferenceBenchmark__inference(session)
+
+    inputs = session.run.call_args.args[1]
+    assert set(inputs) == {'input_ids'}

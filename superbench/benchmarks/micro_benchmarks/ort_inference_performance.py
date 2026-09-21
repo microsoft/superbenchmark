@@ -378,7 +378,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
         for model in self._args.pytorch_models:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = self.__graph_opt_level[self._args.graph_opt_level]
-            file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision)
+            file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision.value)
             ort_sess = ort.InferenceSession(f'{self.__model_cache_path / file_name}', sess_options, providers=providers)
 
             elapse_times = self.__inference(ort_sess)
@@ -434,8 +434,9 @@ class ORTInferenceBenchmark(MicroBenchmark):
             seq_len = getattr(self._args, 'seq_length', 512)
             vocab_size = getattr(self._hf_config, 'vocab_size', None) or 30000
             input_ids = np.random.randint(0, vocab_size, (self._args.batch_size, seq_len)).astype(np.int64)
-            attention_mask = np.ones((self._args.batch_size, seq_len), dtype=np.int64)
-            inputs = {'input_ids': input_ids, 'attention_mask': attention_mask}
+            inputs = {'input_ids': input_ids}
+            if 'attention_mask' in input_names:
+                inputs['attention_mask'] = np.ones((self._args.batch_size, seq_len), dtype=np.int64)
         else:
             # Default for in-house torchvision models: use 'input' (batch_size, 3, 224, 224)
             input_tensor = np.random.randn(self._args.batch_size, 3, 224, 224).astype(dtype=precision)
