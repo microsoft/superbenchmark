@@ -244,6 +244,10 @@ class ORTInferenceBenchmark(MicroBenchmark):
             # Stash for __inference() to read vocab_size / other model metadata later.
             self._hf_config = hf_config
 
+            if self._args.precision == Precision.FLOAT16 and not torch.cuda.is_available():
+                logger.warning('CUDA is unavailable; using float32 for HuggingFace ORT export and CPU inference.')
+                self._args.precision = Precision.FLOAT32
+
             precision_str = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
             fits, _, _, _ = HuggingFaceModelLoader.check_memory_fits(
                 self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token
@@ -453,6 +457,8 @@ class ORTInferenceBenchmark(MicroBenchmark):
             inputs = {'input_ids': input_ids}
             if 'attention_mask' in input_names:
                 inputs['attention_mask'] = np.ones((self._args.batch_size, seq_len), dtype=np.int64)
+            if 'decoder_input_ids' in input_names:
+                inputs['decoder_input_ids'] = np.ones((self._args.batch_size, seq_len), dtype=np.int64)
         else:
             # Default for in-house torchvision models: use 'input' (batch_size, 3, 224, 224)
             input_tensor = np.random.randn(self._args.batch_size, 3, 224, 224).astype(dtype=precision)

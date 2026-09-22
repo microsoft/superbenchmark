@@ -212,6 +212,23 @@ def test_preprocess_hf_happy_path_delegates_to_export():
     assert export_args[2] is fake_hf_config
 
 
+def test_preprocess_hf_uses_float32_without_cuda():
+    """CPU provider fallback exports and benchmarks HuggingFace models in float32."""
+    benchmark = _make_ort_benchmark(precision=Precision.FLOAT16)
+
+    with patch('transformers.AutoConfig') as mock_auto_config, \
+            patch(f'{_ORT_MODULE}.torch.cuda.is_available', return_value=False), \
+            patch(f'{_ORT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls, \
+            patch.object(benchmark, '_export_hf_model_to_onnx', return_value=True):
+        mock_auto_config.from_pretrained.return_value = MagicMock()
+        mock_loader_cls.check_memory_fits.return_value = (True, 1.0, 0.01, 16.0)
+
+        assert benchmark._preprocess_huggingface_models() is True
+
+    assert benchmark._args.precision == Precision.FLOAT32
+    assert mock_loader_cls.check_memory_fits.call_args.args[2] == 'float32'
+
+
 def test_preprocess_hf_int8_uses_float32_for_memory_check():
     """INT8 precision still does the memory check against float32 weights."""
     benchmark = _make_ort_benchmark(precision=Precision.INT8)
@@ -473,3 +490,21 @@ def test_inference_omits_unexpected_attention_mask():
 
     inputs = session.run.call_args.args[1]
     assert set(inputs) == {'input_ids'}
+
+
+def test_inference_includes_seq2seq_decoder_inputs():
+    """Encoder-decoder ONNX graphs receive decoder input IDs."""
+    benchmark = _make_ort_benchmark(num_warmup=0, num_steps=1)
+    benchmark._hf_config = SimpleNamespace(vocab_size=100)
+    session = MagicMock()
+    session.get_inputs.return_value = [
+        SimpleNamespace(name='input_ids', shape=[None, None]),
+        SimpleNamespace(name='attention_mask', shape=[None, None]),
+        SimpleNamespace(name='decoder_input_ids', shape=[None, None]),
+    ]
+
+    benchmark._ORTInferenceBenchmark__inference(session)
+
+    inputs = session.run.call_args.args[1]
+    assert set(inputs) == {'input_ids', 'attention_mask', 'decoder_input_ids'}
+    assert inputs['decoder_input_ids'].shape == (8, 128)

@@ -81,6 +81,21 @@ class _TinyNLPModel(torch.nn.Module):
         return SimpleNamespace(last_hidden_state=h * attention_mask.unsqueeze(-1).to(h.dtype))
 
 
+class _TinySeq2SeqModel(torch.nn.Module):
+    """Minimal encoder-decoder model that requires decoder input IDs."""
+
+    main_input_name = 'input_ids'
+
+    def __init__(self, vocab_size=128, hidden=8):
+        super().__init__()
+        self.config = SimpleNamespace(use_cache=True, is_encoder_decoder=True)
+        self.embed = torch.nn.Embedding(vocab_size, hidden)
+
+    def forward(self, input_ids, attention_mask, decoder_input_ids):
+        del input_ids, attention_mask
+        return SimpleNamespace(logits=self.embed(decoder_input_ids))
+
+
 # ---------------------------------------------------------------------------
 # _build_vision_export_inputs
 # ---------------------------------------------------------------------------
@@ -362,6 +377,31 @@ def test_export_huggingface_model_nlp_routes_to_nlp_helper(exporter, tmp_path):
     assert tuple(input_ids.shape) == (2, 8)
     assert tuple(attention_mask.shape) == (2, 8)
     assert captured['kwargs']['input_names'] == ['input_ids', 'attention_mask']
+
+
+def test_export_huggingface_model_seq2seq_includes_decoder_inputs(exporter, tmp_path):
+    """Encoder-decoder models export with the required decoder input IDs."""
+    captured = {}
+
+    def fake_export(wrapped_model, args, file_name, **kwargs):
+        captured['output'] = wrapped_model(*args)
+        captured['args'] = args
+        captured['kwargs'] = kwargs
+        Path(file_name).touch()
+
+    with patch(f'{_EXPORTER_MODULE}.torch.onnx.export', side_effect=fake_export):
+        result = exporter.export_huggingface_model(
+            model=_TinySeq2SeqModel(),
+            model_name='t5-tiny',
+            batch_size=2,
+            seq_length=8,
+            output_dir=str(tmp_path),
+        )
+
+    assert result == str(tmp_path / 't5-tiny.onnx')
+    assert len(captured['args']) == 3
+    assert captured['kwargs']['input_names'] == ['input_ids', 'attention_mask', 'decoder_input_ids']
+    assert tuple(captured['output'].shape) == (2, 8, 8)
 
 
 def test_export_huggingface_model_default_output_dir(exporter):

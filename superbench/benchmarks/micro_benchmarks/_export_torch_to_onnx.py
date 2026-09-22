@@ -379,7 +379,9 @@ class torch2onnxExporter():
         # NLP models: use input_ids and attention_mask
         dummy_input = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
         attention_mask = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
+        is_encoder_decoder = bool(getattr(model.config, 'is_encoder_decoder', False))
         input_names = ['input_ids', 'attention_mask']
+        export_args = (dummy_input, attention_mask)
         dynamic_axes = {
             'input_ids': {
                 0: 'batch_size',
@@ -395,13 +397,23 @@ class torch2onnxExporter():
             },
         }
 
+        if is_encoder_decoder:
+            decoder_input_ids = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
+            input_names.append('decoder_input_ids')
+            export_args += (decoder_input_ids, )
+            dynamic_axes['decoder_input_ids'] = {0: 'batch_size', 1: 'decoder_seq_length'}
+
         class NLPModelWrapper(torch.nn.Module):
-            def __init__(self, model):
+            def __init__(self, model, is_encoder_decoder):
                 super().__init__()
                 self.model = model
+                self.is_encoder_decoder = is_encoder_decoder
 
-            def forward(self, input_ids, attention_mask):
-                outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
+            def forward(self, input_ids, attention_mask, decoder_input_ids=None):
+                model_inputs = {'input_ids': input_ids, 'attention_mask': attention_mask}
+                if self.is_encoder_decoder:
+                    model_inputs['decoder_input_ids'] = decoder_input_ids
+                outputs = self.model(**model_inputs)
                 if hasattr(outputs, 'logits'):
                     return outputs.logits
                 elif hasattr(outputs, 'last_hidden_state'):
@@ -409,7 +421,7 @@ class torch2onnxExporter():
                 else:
                     return outputs[0] if isinstance(outputs, (tuple, list)) else outputs
 
-        return NLPModelWrapper(model), (dummy_input, attention_mask), input_names, dynamic_axes
+        return NLPModelWrapper(model, is_encoder_decoder), export_args, input_names, dynamic_axes
 
     def _build_onnx_export_kwargs(self, model, input_names, dynamic_axes):
         """Assemble torch.onnx.export kwargs, enabling external-data format for >2GB models."""
