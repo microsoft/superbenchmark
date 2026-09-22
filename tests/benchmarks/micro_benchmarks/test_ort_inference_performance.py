@@ -191,6 +191,8 @@ def test_preprocess_hf_happy_path_delegates_to_export():
 
     fake_hf_config = MagicMock(name='hf_config')
     with patch('transformers.AutoConfig') as mock_auto_config, \
+            patch(f'{_ORT_MODULE}.torch.cuda.is_available', return_value=True), \
+            patch.object(benchmark, '_cuda_execution_provider_available', return_value=True), \
             patch(f'{_ORT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls, \
             patch.object(benchmark, '_export_hf_model_to_onnx', return_value=True) as mock_export:
         mock_auto_config.from_pretrained.return_value = fake_hf_config
@@ -218,6 +220,24 @@ def test_preprocess_hf_uses_float32_without_cuda():
 
     with patch('transformers.AutoConfig') as mock_auto_config, \
             patch(f'{_ORT_MODULE}.torch.cuda.is_available', return_value=False), \
+            patch(f'{_ORT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls, \
+            patch.object(benchmark, '_export_hf_model_to_onnx', return_value=True):
+        mock_auto_config.from_pretrained.return_value = MagicMock()
+        mock_loader_cls.check_memory_fits.return_value = (True, 1.0, 0.01, 16.0)
+
+        assert benchmark._preprocess_huggingface_models() is True
+
+    assert benchmark._args.precision == Precision.FLOAT32
+    assert mock_loader_cls.check_memory_fits.call_args.args[2] == 'float32'
+
+
+def test_preprocess_hf_uses_float32_without_cuda_execution_provider():
+    """CPU-only ONNX Runtime uses float32 even when PyTorch can access CUDA."""
+    benchmark = _make_ort_benchmark(precision=Precision.FLOAT16)
+
+    with patch('transformers.AutoConfig') as mock_auto_config, \
+            patch(f'{_ORT_MODULE}.torch.cuda.is_available', return_value=True), \
+            patch.object(benchmark, '_cuda_execution_provider_available', return_value=False), \
             patch(f'{_ORT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls, \
             patch.object(benchmark, '_export_hf_model_to_onnx', return_value=True):
         mock_auto_config.from_pretrained.return_value = MagicMock()
@@ -265,6 +285,8 @@ def test_preprocess_hf_revision_propagates():
     benchmark = _make_ort_benchmark(revision='abc123')
 
     with patch('transformers.AutoConfig') as mock_auto_config, \
+            patch(f'{_ORT_MODULE}.torch.cuda.is_available', return_value=True), \
+            patch.object(benchmark, '_cuda_execution_provider_available', return_value=True), \
             patch(f'{_ORT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls, \
             patch.object(benchmark, '_export_hf_model_to_onnx', return_value=True):
         mock_auto_config.from_pretrained.return_value = MagicMock()
@@ -421,6 +443,19 @@ def test_export_hf_model_to_onnx_uses_proc_rank_env(mock_export_dependencies, tm
     export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args.kwargs
     assert export_kwargs['output_dir'].endswith('rank_7')
     assert str(benchmark._ORTInferenceBenchmark__model_cache_path).endswith('rank_7')
+
+
+def test_export_hf_model_to_onnx_uses_local_rank_env(mock_export_dependencies, tmp_path):
+    """LOCAL_RANK controls the rank subdirectory when PROC_RANK is absent."""
+    benchmark = _make_ort_benchmark()
+    benchmark._ORTInferenceBenchmark__model_cache_path = tmp_path / 'checkpoints'
+
+    with patch.dict('os.environ', {'LOCAL_RANK': '4'}, clear=True):
+        ok = benchmark._export_hf_model_to_onnx(hf_token=None, allow_remote_code=False, hf_config=MagicMock())
+
+    assert ok is True
+    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args.kwargs
+    assert export_kwargs['output_dir'].endswith('rank_4')
 
 
 def test_export_hf_model_to_onnx_rejects_invalid_proc_rank(mock_export_dependencies, tmp_path):

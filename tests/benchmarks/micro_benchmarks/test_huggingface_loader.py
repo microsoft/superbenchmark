@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
     ModelNotFoundError,
+    get_process_rank,
 )
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
 
@@ -34,6 +35,20 @@ class TestHuggingFaceModelLoader:
         monkeypatch.setenv('HF_HOME', str(tmp_path / 'hf_cache'))
         loader = HuggingFaceModelLoader()
         assert loader.token == 'env_token'
+
+    def test_get_process_rank_uses_executor_precedence(self, monkeypatch):
+        """Process rank resolution matches the executor's environment precedence."""
+        monkeypatch.setenv('PROC_RANK', '2')
+        monkeypatch.setenv('LOCAL_RANK', '3')
+        monkeypatch.setenv('OMPI_COMM_WORLD_LOCAL_RANK', '4')
+
+        assert get_process_rank() == '2'
+
+        monkeypatch.delenv('PROC_RANK')
+        assert get_process_rank() == '3'
+
+        monkeypatch.delenv('LOCAL_RANK')
+        assert get_process_rank() == '4'
 
     def test_get_torch_dtype_valid(self, loader):
         """Test torch dtype conversion."""

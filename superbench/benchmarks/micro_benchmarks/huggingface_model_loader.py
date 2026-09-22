@@ -37,6 +37,15 @@ def validate_process_rank(process_rank: str) -> str:
     return str(int(process_rank))
 
 
+def get_process_rank() -> str:
+    """Resolve the local process rank using the executor's environment precedence."""
+    for rank_env in ('PROC_RANK', 'LOCAL_RANK', 'OMPI_COMM_WORLD_LOCAL_RANK'):
+        process_rank = os.getenv(rank_env)
+        if process_rank is not None:
+            return validate_process_rank(process_rank)
+    return '0'
+
+
 def validate_model_identifier(model_identifier: Optional[str]) -> str:
     """Validate a HuggingFace model identifier against a strict allow-list.
 

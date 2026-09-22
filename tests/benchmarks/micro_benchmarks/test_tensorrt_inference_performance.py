@@ -432,6 +432,26 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
 
         self.assertTrue(mock_makedirs.call_args.args[0].endswith('trt_rank_3'))
 
+    def test_build_trtexec_command_for_hf_uses_local_rank_env(self):
+        """LOCAL_RANK controls the rank subdir when PROC_RANK is absent."""
+        benchmark = self._make_benchmark()
+
+        loader_p, msc_p, exporter_p, makedirs_p, torch_p = self._patch_build_dependencies()
+        with loader_p as mock_loader_cls, msc_p, exporter_p as mock_exporter_cls, \
+                makedirs_p as mock_makedirs, torch_p as mock_torch, \
+                patch.object(benchmark, '_derive_trt_input_shapes', return_value='input_ids:8x128'), \
+                patch.dict('os.environ', {'LOCAL_RANK': '5'}, clear=True):
+            mock_torch.hub.get_dir.return_value = '/tmp/torchhub'
+            mock_torch.cuda.is_available.return_value = False
+            mock_loader_cls.return_value.load_model_from_config.return_value = (MagicMock(), MagicMock(), None)
+            mock_exporter_cls.return_value.export_huggingface_model.return_value = (
+                '/tmp/torchhub/checkpoints/trt_rank_5/m.onnx'
+            )
+
+            self.assertTrue(benchmark._build_trtexec_command_for_hf(None, False))
+
+        self.assertTrue(mock_makedirs.call_args.args[0].endswith('trt_rank_5'))
+
     def test_build_trtexec_command_for_hf_rejects_invalid_proc_rank(self):
         """A path-like PROC_RANK is rejected before loading or exporting a model."""
         benchmark = self._make_benchmark()

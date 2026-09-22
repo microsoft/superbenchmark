@@ -18,8 +18,8 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmark
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
+    get_process_rank,
     validate_model_identifier,
-    validate_process_rank,
 )
 
 
@@ -244,8 +244,13 @@ class ORTInferenceBenchmark(MicroBenchmark):
             # Stash for __inference() to read vocab_size / other model metadata later.
             self._hf_config = hf_config
 
-            if self._args.precision == Precision.FLOAT16 and not torch.cuda.is_available():
-                logger.warning('CUDA is unavailable; using float32 for HuggingFace ORT export and CPU inference.')
+            if self._args.precision == Precision.FLOAT16 and (
+                not torch.cuda.is_available() or not self._cuda_execution_provider_available()
+            ):
+                logger.warning(
+                    'CUDA or CUDAExecutionProvider is unavailable; using float32 for HuggingFace ORT export and '
+                    'fallback inference.'
+                )
                 self._args.precision = Precision.FLOAT32
 
             precision_str = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
@@ -278,12 +283,10 @@ class ORTInferenceBenchmark(MicroBenchmark):
         Returns:
             bool: True on success; False (with return code set) on failure.
         """
-        import os
-
         # Get GPU rank to create unique file paths and avoid race conditions
         # when multiple processes export the same model simultaneously
         try:
-            proc_rank = validate_process_rank(os.getenv('PROC_RANK', '0'))
+            proc_rank = get_process_rank()
         except ValueError as e:
             logger.error(str(e))
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
@@ -378,6 +381,12 @@ class ORTInferenceBenchmark(MicroBenchmark):
         from onnx.external_data_helper import uses_external_data
         model = onnx.load(model_path, load_external_data=False)
         return any(uses_external_data(initializer) for initializer in model.graph.initializer)
+
+    @staticmethod
+    def _cuda_execution_provider_available():
+        """Return whether ONNX Runtime can execute models with its CUDA provider."""
+        import onnxruntime as ort
+        return 'CUDAExecutionProvider' in ort.get_available_providers()
 
     def _benchmark(self):
         """Implementation for benchmarking."""

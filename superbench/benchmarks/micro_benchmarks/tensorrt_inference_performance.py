@@ -17,8 +17,8 @@ from superbench.benchmarks.micro_benchmarks._export_torch_to_onnx import torch2o
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
+    get_process_rank,
     validate_model_identifier,
-    validate_process_rank,
 )
 
 
@@ -285,7 +285,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         # Get GPU rank to create unique file paths and avoid race conditions
         # when multiple processes export the same model simultaneously
         try:
-            proc_rank = validate_process_rank(os.getenv('PROC_RANK', '0'))
+            proc_rank = get_process_rank()
         except ValueError as e:
             logger.error(str(e))
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
