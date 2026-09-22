@@ -3,6 +3,7 @@
 
 """TensorRT inference micro-benchmark."""
 
+import inspect
 import time
 import statistics
 from pathlib import Path
@@ -349,7 +350,14 @@ class ORTInferenceBenchmark(MicroBenchmark):
         if self._args.precision == Precision.INT8:
             from onnxruntime.quantization import quantize_dynamic
             quantized_path = str(proc_output_path / f'{model_name}.{Precision.INT8.value}.onnx')
-            quantize_dynamic(onnx_path, quantized_path)
+            quantize_kwargs = {}
+            if self._onnx_uses_external_data(onnx_path):
+                if 'use_external_data_format' not in inspect.signature(quantize_dynamic).parameters:
+                    logger.error('Installed ONNX Runtime cannot quantize models that use external data.')
+                    self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+                    return False
+                quantize_kwargs['use_external_data_format'] = True
+            quantize_dynamic(onnx_path, quantized_path, **quantize_kwargs)
             logger.info('Applied INT8 quantization to HuggingFace model')
 
         # Update model list and cache path for benchmarking
@@ -358,6 +366,14 @@ class ORTInferenceBenchmark(MicroBenchmark):
 
         logger.info('Successfully prepared HuggingFace model for ORT inference')
         return True
+
+    @staticmethod
+    def _onnx_uses_external_data(model_path):
+        """Return whether an ONNX graph stores any initializer externally."""
+        import onnx
+        from onnx.external_data_helper import uses_external_data
+        model = onnx.load(model_path, load_external_data=False)
+        return any(uses_external_data(initializer) for initializer in model.graph.initializer)
 
     def _benchmark(self):
         """Implementation for benchmarking."""

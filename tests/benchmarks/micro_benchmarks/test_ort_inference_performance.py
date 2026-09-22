@@ -340,7 +340,8 @@ def test_export_hf_model_to_onnx_int8_invokes_quantize(mock_export_dependencies,
     benchmark._ORTInferenceBenchmark__model_cache_path = tmp_path / 'checkpoints'
 
     fake_quantize_module = MagicMock()
-    with patch.dict('sys.modules', {'onnxruntime.quantization': fake_quantize_module}), \
+    with patch.object(benchmark, '_onnx_uses_external_data', return_value=False), \
+            patch.dict('sys.modules', {'onnxruntime.quantization': fake_quantize_module}), \
             patch.dict('os.environ', {'CUDA_VISIBLE_DEVICES': '0'}, clear=False):
         ok = benchmark._export_hf_model_to_onnx(hf_token=None, allow_remote_code=False, hf_config=MagicMock())
 
@@ -355,6 +356,25 @@ def test_export_hf_model_to_onnx_int8_invokes_quantize(mock_export_dependencies,
     quantize_args = fake_quantize_module.quantize_dynamic.call_args.args
     assert quantize_args[0].endswith('prajjwal1_bert-tiny.float32.onnx')
     assert quantize_args[1].endswith('prajjwal1_bert-tiny.int8.onnx')
+
+
+def test_export_hf_model_to_onnx_int8_preserves_external_data(mock_export_dependencies, tmp_path):
+    """INT8 quantization keeps large ONNX model tensors in external data files."""
+    benchmark = _make_ort_benchmark(precision=Precision.INT8)
+    benchmark._ORTInferenceBenchmark__model_cache_path = tmp_path / 'checkpoints'
+    quantize_calls = []
+
+    def quantize_dynamic(model_input, model_output, use_external_data_format=False):
+        quantize_calls.append((model_input, model_output, use_external_data_format))
+
+    fake_quantize_module = SimpleNamespace(quantize_dynamic=quantize_dynamic)
+    with patch.object(benchmark, '_onnx_uses_external_data', return_value=True), \
+            patch.dict('sys.modules', {'onnxruntime.quantization': fake_quantize_module}), \
+            patch.dict('os.environ', {'CUDA_VISIBLE_DEVICES': '0'}, clear=False):
+        ok = benchmark._export_hf_model_to_onnx(hf_token=None, allow_remote_code=False, hf_config=MagicMock())
+
+    assert ok is True
+    assert quantize_calls[0][2] is True
 
 
 def test_export_hf_model_to_onnx_export_failure(mock_export_dependencies, tmp_path):

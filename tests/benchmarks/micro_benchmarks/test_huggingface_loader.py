@@ -5,6 +5,7 @@
 
 import pytest
 import torch
+import transformers
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -126,6 +127,19 @@ class TestHuggingFaceModelLoader:
         assert loaded_model is model
         mock_image_model.from_pretrained.assert_called_once()
         mock_model.from_pretrained.assert_not_called()
+
+    @pytest.mark.parametrize(
+        'architecture, auto_class_name',
+        [
+            ('GPT2LMHeadModel', 'AutoModelForCausalLM'),
+            ('T5ForConditionalGeneration', 'AutoModelForSeq2SeqLM'),
+        ],
+    )
+    def test_get_auto_model_class_supports_legacy_architecture_names(self, architecture, auto_class_name):
+        """Legacy architecture names retain their language-model task heads."""
+        config = SimpleNamespace(architectures=[architecture])
+
+        assert HuggingFaceModelLoader._get_auto_model_class(config) is getattr(transformers, auto_class_name)
 
     def test_estimate_param_count_requires_attention_heads(self):
         """Configs without usable attention-head metadata are not estimated."""

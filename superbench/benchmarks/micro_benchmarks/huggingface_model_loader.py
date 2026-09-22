@@ -260,6 +260,8 @@ class HuggingFaceModelLoader:
         """Select the task-specific auto class declared by the model architecture."""
         architectures = getattr(config, 'architectures', None) or []
         task_classes = (
+            ('GPT2LMHeadModel', 'AutoModelForCausalLM'),
+            ('ForConditionalGeneration', 'AutoModelForSeq2SeqLM'),
             ('ForAudioClassification', 'AutoModelForAudioClassification'),
             ('ForCausalLM', 'AutoModelForCausalLM'),
             ('ForImageClassification', 'AutoModelForImageClassification'),
