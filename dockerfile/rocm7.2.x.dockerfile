@@ -136,8 +136,8 @@ RUN cd /tmp && \
     mkdir build && \
     cd build && \
     ../configure --prefix=/usr/local/mpi  --enable-orterun-prefix-by-default --enable-mpirun-prefix-by-default  --enable-prte-prefix-by-default --with-rocm=/opt/rocm && \
-    make -j $(nproc) && \
-    make -j $(nproc) install && \
+    make -j ${NUM_MAKE_JOBS} && \
+    make -j ${NUM_MAKE_JOBS} install && \
     ldconfig && \
     cd / && \
     rm -rf /tmp/ompi
