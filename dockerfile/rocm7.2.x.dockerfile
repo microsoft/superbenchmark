@@ -229,7 +229,7 @@ RUN cd third_party && \
         -DCMAKE_BUILD_TYPE=Release \
         .. && \
     mkdir -p build && cd build && \
-    CMAKE_POLICY_VERSION_MINIMUM= "$@" && \
+    "$@" && \
     make -j${NUM_MAKE_JOBS} hipblaslt-bench && \
     cp -v hipblaslt-bench /opt/superbench/bin/
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
