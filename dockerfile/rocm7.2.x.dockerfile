@@ -196,7 +196,10 @@ ADD third_party third_party
 # rocm_megatron_lm: skipped (broken upstream - pretrain_deepseek.py missing in rocm_dev branch).
 # apex_rocm: skipped - all apex imports in Megatron-DeepSpeed are guarded with try/except,
 #   superbench has zero direct apex usage, and PyTorch 2.9 has native fused optimizers/AMP.
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-7.2 HIPBLASLT_BRANCH=release/rocm-rel-7.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
+# Refresh the apt index first: rocBLAS's install.sh --dependencies runs apt-get install, and the
+# earlier apt-get update layer may come from a stale registry cache (404s on superseded packages).
+RUN apt-get update && \
+    make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-7.2 HIPBLASLT_BRANCH=release/rocm-rel-7.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
 
 # Build hipblaslt-bench only (not the hipBLASLt library/Tensile kernels) and run it against the
 # hipBLASLt shipped in the base image. This avoids the multi-hour, memory-hungry Tensile library
