@@ -73,7 +73,7 @@ ARG NUM_MAKE_JOBS=64
 # Check if CMake is installed and its version
 RUN cmake_version=$(cmake --version 2>/dev/null | awk 'NR == 1 { print $3 }') && \
     cmake_version=${cmake_version:-0.0.0} && \
-    required_version="3.24.4" && \
+    required_version="3.25.3" && \
     if [ "$(printf "%s\n" "$required_version" "$cmake_version" | sort -V | head -n 1)" != "$required_version" ]; then \
     echo "existing cmake version is ${cmake_version}" && \
     cd /tmp && \
