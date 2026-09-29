@@ -1,20 +1,20 @@
-FROM nvcr.io/nvidia/pytorch:26.06-py3
+FROM nvcr.io/nvidia/pytorch:26.09-py3
 
 # OS:
 #   - Ubuntu: 24.04
-#   - OpenMPI: 5.0.10rc2 (from HPC-X 2.50)
+#   - OpenMPI: 5.0.10rc2 (from HPC-X 2.51)
 #   - Docker Client: 20.10.8 (installed in this dockerfile)
 # NVIDIA:
-#   - CUDA: 13.3 V13.3.33 base (pytorch:26.06-py3), upgraded to 13.4.0 (local .deb)
-#   - cuDNN: 9.23.0
-#   - cuBLAS: 13.5.1
-#   - NCCL: 2.30.5
-#   - TransformerEngine: 2.16.0
-#   - torch: 2.13.0a0+8145d630e8.nv26.06
+#   - CUDA: 13.4 V13.4.59 (from pytorch:26.09-py3)
+#   - cuDNN: 9.26.0
+#   - cuBLAS: 13.8.0.4
+#   - NCCL: 2.31.2
+#   - TransformerEngine: 2.19.0
+#   - torch: 2.14.0a0+b2c75dd062.nv26.09
 #   - sm_107 / compute capability 10.7
 # Mellanox (from base image — not reinstalled):
 #   - OFED: inbox (kernel-provided)
-#   - HPC-X: 2.50 (includes ompi4 + ompi5, UCX 1.21.0)
+#   - HPC-X: 2.51 (includes ompi4 + ompi5, UCX 1.22.0)
 # Intel:
 #   - mlc: 3.12 (amd64 only)
 #
@@ -25,7 +25,6 @@ FROM nvcr.io/nvidia/pytorch:26.06-py3
 #     to sm_107 at runtime (forward compatibility).
 #
 # Build (from repo root), e.g.:
-#   cp /home/hpcperf/cuda-repo-ubuntu2404-13-4-local_13.4.0-1_arm64.deb dockerfile/
 #   docker build -t superbench-cuda13.4 \
 #     --build-arg NUM_MAKE_JOBS=64 \
 #     -f dockerfile/cuda13.4.dockerfile .
@@ -122,29 +121,11 @@ RUN apt-get update && \
 
 ENV PATH="/usr/local/bin:${PATH}"
 
-# Upgrade CUDA toolkit 13.3 -> 13.4 from the local .deb repo package.
-# The .deb must be copied into dockerfile/ before building (build context = repo root):
-#   cp /home/hpcperf/cuda-repo-ubuntu2404-13-4-local_13.4.0-1_arm64.deb dockerfile/
-COPY dockerfile/cuda-repo-ubuntu2404-13-4-local_13.4.0-1_arm64.deb /tmp/cuda-repo-13-4.deb
-RUN dpkg -i /tmp/cuda-repo-13-4.deb && \
-    cp /var/cuda-repo-ubuntu2404-13-4-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
-    apt-get update && \
-    apt-get install -y cuda-toolkit-13-4 && \
-    (update-alternatives --set cuda /usr/local/cuda-13.4 || ln -sfn /usr/local/cuda-13.4 /usr/local/cuda) && \
-    rm -f /tmp/cuda-repo-13-4.deb && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Machine has 176 cores (352 threads); raise make jobs to speed up the build.
 # Max ~176 (cores) / 352 (threads). Override at build time with --build-arg NUM_MAKE_JOBS=...
 ARG NUM_MAKE_JOBS=64
 ARG TARGETPLATFORM
 ARG TARGETARCH
-
-# Make CUDA 13.4 the default toolkit on PATH for all subsequent build steps.
-ENV CUDA_HOME=/usr/local/cuda-13.4
-ENV PATH=/usr/local/cuda-13.4/bin:${PATH}
-ENV LD_LIBRARY_PATH=/usr/local/cuda-13.4/lib64:${LD_LIBRARY_PATH}
 
 ENV CUDA_ARCH_LIST="10.7"
 ENV TORCH_CUDA_ARCH_LIST="10.7"
@@ -166,10 +147,10 @@ RUN mkdir -p /root/.ssh && \
     echo "* soft nofile 1048576\n* hard nofile 1048576" >> /etc/security/limits.conf && \
     echo "root soft nofile 1048576\nroot hard nofile 1048576" >> /etc/security/limits.conf
 
-# OFED and HPC-X: Using the base image's versions (inbox OFED, HPC-X 2.50).
-# The base NGC pytorch:26.06-py3 image ships HPC-X 2.50 at /opt/hpcx with
+# OFED and HPC-X: Using the base image's versions (inbox OFED, HPC-X 2.51).
+# The base NGC pytorch:26.09-py3 image ships HPC-X at /opt/hpcx with
 # ompi4+ompi5 and the ompi_mpi_short_float symbol that PyTorch is linked against.
-# Note: HPC-X 2.50 no longer has hpcx-init.sh; use /opt/hpcx/ompi/bin directly.
+# Note: HPC-X 2.51 no longer has hpcx-init.sh; use /opt/hpcx/ompi/bin directly.
 # DO NOT install a separate OFED or HPC-X — it breaks PyTorch's MPI linkage.
 # The commented-out sections below are kept for reference only.
 #
@@ -223,7 +204,7 @@ RUN cd /tmp && \
     make -j ${NUM_MAKE_JOBS} && \
     make install
 
-# Add the base image's HPC-X 2.50 ompi to PATH so mpicc is available for builds.
+# Add the base image's HPC-X 2.51 ompi to PATH so mpicc is available for builds.
 ENV MPI_HOME=/opt/hpcx/ompi
 ENV PATH="/opt/hpcx/ompi/bin:${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:/opt/hpcx/ompi/lib:${LD_LIBRARY_PATH}" \
@@ -242,7 +223,7 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-# Build all CUDA targets. The base image's HPC-X 2.50 provides mpicc on PATH
+# Build all CUDA targets. The base image's HPC-X 2.51 provides mpicc on PATH
 # (via MPI_HOME=/opt/hpcx/ompi set above).
 RUN make -C third_party cuda NUM_MAKE_JOBS=${NUM_MAKE_JOBS}
 
