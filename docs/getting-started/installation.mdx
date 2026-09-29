@@ -110,3 +110,113 @@ Here're the system requirements for all managed GPU nodes.
 
 </TabItem>
 </Tabs>
+
+### Building the ROCm 7 images
+
+The ROCm 7.0 and 7.2 Dockerfiles use ROCm 7.0.2 and 7.2.4 respectively,
+with Ubuntu 24.04, Python 3.12, and PyTorch 2.9.1. Both default to
+`AMDGPU_TARGETS="gfx942 gfx950"` (MI300X and MI355X).
+Initialize the submodules before building; otherwise some third-party benchmark
+binaries can be silently omitted by the Makefile.
+
+```bash
+git submodule update --init --recursive
+docker build --build-arg NUM_MAKE_JOBS=8 \
+  -f dockerfile/rocm7.0.x.dockerfile -t superbench:rocm70 .
+docker build --build-arg NUM_MAKE_JOBS=8 \
+  -f dockerfile/rocm7.2.x.dockerfile -t superbench:rocm72 .
+
+# CPU-only architecture-routing regression tests:
+python3 -m unittest discover -s tests -p 'test_rocm*dockerfile.py' -v
+```
+
+Use `--build-arg AMDGPU_TARGETS="gfx942"` for an MI300X-only benchmark build.
+This does not prune the base image's libraries or the source-built RCCL library.
+An image build alone does not qualify either GPU architecture. On an otherwise
+idle GPU node, expose `/dev/kfd` and `/dev/dri` to the container and check:
+
+* Device enumeration, architecture names, and loaded ROCm/RCCL library paths.
+* PyTorch GEMM and attention correctness, including backward passes, and
+  TransformerEngine execution (not just its import).
+* SuperBench `gemm-flops`, `hipblaslt-gemm`, `mem-bw`, and `gpu-copy-bw`, including
+  successful result parsing and finite, positive metrics.
+* RCCL collectives with data checking on all local GPUs. Multi-node RCCL and
+  RDMA require separate network validation.
+
+### ROCm 10 migration considerations
+
+The following is a scouting snapshot from **2026-09-29**, not a claim that the
+ROCm 7 images support ROCm 10 or a new GPU. Keep the ROCm 7 baseline while
+qualifying a separately pinned ROCm 10 image.
+
+#### Confirm the new GPU target first
+
+TheRock's public
+[target definitions](https://github.com/ROCm/TheRock/blob/68ac349433a9a1f8434010c2751404d0f6192916/cmake/therock_amdgpu_targets.cmake)
+identify **MI450/MI450X/MI455X as `gfx1250`**, not `gfx1251`.
+Its [development support table](https://github.com/ROCm/TheRock/blob/68ac349433a9a1f8434010c2751404d0f6192916/SUPPORTED_GPUS.md)
+marks `gfx1250` build-passing and sanity-tested but not release-ready.
+The public [ROCm 10 compatibility matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
+lists MI300X and MI355X, but does not yet list MI455X.
+
+Treat `gfx1251` as a separate, unqualified target until the actual device's
+`rocminfo` output and its vendor support matrix establish the mapping.
+Compiler recognition is not proof of runtime, library kernel, or framework
+support. Do not simply add either target to the ROCm 7 Dockerfiles or their
+TransformerEngine AOTriton allowlists.
+
+#### Installation and dependency changes
+
+[ROCm 10 is a production Core SDK release built through TheRock](https://rocm.docs.amd.com/en/latest/about/transition-guide-TheRock.html).
+It changes more than the base-image tag:
+
+| Area | ROCm 7 baseline | ROCm 10 work to qualify |
+| --- | --- | --- |
+| SDK packaging | Legacy packages such as `amd-smi-lib`, `rocm-cmake`, and `hipify-clang`; `/opt/rocm` paths | Core SDK under `/opt/rocm/core-10.0`; packages such as `amdrocm-amdsmi`, `amdrocm-base`, `amdrocm-hipify`, `amdrocm-blas`, and `amdrocm-rccl`. Package-manager installs provide compatibility symlinks; tarballs/wheels need explicit path discovery. |
+| Source builds | Separate RCCL, rocBLAS, hipBLASLt and HIP clones | Pin a coherent TheRock release and its dependencies. Math libraries now live in [rocm-libraries](https://github.com/ROCm/rocm-libraries); runtime, HIP and management/profiling components in [rocm-systems](https://github.com/ROCm/rocm-systems). Do not assume old branches, `install.sh` options, or the 7.2 standalone hipBLASLt client shim remain applicable. |
+| Device libraries | Prebuilt gfx942/gfx950 kernels plus locally compiled benchmarks | Install the matching device kernel packs as well as host libraries, compiler, headers and benchmark clients. Confirm each requested target is actually in the shipped artifacts. Keep MI300X as a regression target. |
+| Frameworks | PyTorch 2.9.1; TE `v2.4_rocm` / `v2.10_rocm`; CK attention disabled | Select matched PyTorch, Triton, TE and attention-library releases. Current [TE development](https://github.com/ROCm/TransformerEngine/blob/03afd8f813300417ee1a41a4471d89be71c88f2d/README.rst) uses hipBLASLt for GEMM and AITER/CK JIT for attention; warm and record JIT caches before timing. AOTriton remains version/ABI-sensitive and its development builds add FlyDSL dependencies. |
+| Monitoring | Python device manager already uses AMD SMI, but system-info collection invokes `rocm-smi` | ROCm SMI is removed from Core SDK. Port system-info commands and parsers to AMD SMI; retest enumeration, power units, ECC, topology and partition identifiers. |
+| Profiling | Runner builds `rocprofv2` commands | Qualify ROCprofiler-SDK / `rocprofv3`, its CLI arguments and output formats; update runner tests and trace collection rather than only renaming the executable. |
+| Host integration | Container uses the host's kernel driver and network devices | Qualify the OS, AMDGPU driver/firmware and user-space compatibility together. Preserve matched OFED/RDMA libraries and test single-node then multi-node RCCL; installing a newer SDK inside a container does not update the host driver. |
+
+For Python-distributed SDKs, TheRock now separates `rocm-sdk-core`,
+`rocm-sdk-libraries`, `rocm-sdk-devel`, and `rocm-sdk-device-*`.
+[TheRock's release instructions](https://github.com/ROCm/TheRock/blob/68ac349433a9a1f8434010c2751404d0f6192916/RELEASES.md)
+describe `rocm[libraries,devel,device-gfx942,device-gfx950]`, `rocm-sdk init`,
+`rocm-sdk test`, and `rocm-sdk path` for discovery. Pin the release/index;
+nightly package availability does not establish hardware qualification.
+Do not mix a wheel SDK with unrelated `/opt/rocm` libraries through
+`LD_LIBRARY_PATH`.
+
+#### RVS and the validation matrix
+
+[RVS and TransferBench are ROCm Extras](https://rocm.docs.amd.com/en/latest/components/extras.html),
+not part of the Core SDK install. The current
+[RVS installation guide](https://rocm.docs.amd.com/projects/ROCmValidationSuite/en/latest/install/installation.html)
+uses the separate Extras repository, package `amdrocm10-rvs`, and
+`/opt/rocm/extras-10`. RVS includes TransferBench; source builds make its
+standalone CLI optional.
+
+ROCm Bandwidth Test is end-of-life, with RVS/TransferBench the recommended
+replacements. SuperBench's current `mem-bw` is a **different legacy path**:
+it builds `hipBusBandwidth` from the HIP 5.5 samples. Replace that dependency
+with an explicit RVS-backed benchmark/parser rather than assuming the old
+command and metric format work unchanged.
+
+| Coverage | Candidate RVS module / retained test |
+| --- | --- |
+| Inventory, configuration and PCIe qualification | GPUP, RCQT, PEQT; AMD SMI inventory and telemetry |
+| Host/device and peer transfers | PEBB and PBQT, now using TransferBench; retain SuperBench SM/DMA copy correctness checks |
+| HBM bandwidth and integrity | BABEL (BabelStream) and MEM; qualify duration, allocation size and fault reporting |
+| Sustained compute, power and thermal behavior | GST, IET and TST with per-SKU limits and opt-in durations |
+| Communication and application regressions | Retain RCCL correctness/scaling, RDMA tests, rocBLAS/hipBLASLt precision checks, and PyTorch/TE forward/backward/attention tests |
+
+See the [RVS module descriptions](https://rocm.docs.amd.com/projects/ROCmValidationSuite/en/latest/features.html)
+and [TransferBench integration notes](https://rocm.docs.amd.com/projects/ROCmValidationSuite/en/latest/transferbench.html).
+The documented TransferBench default offload targets do not include gfx1250
+or gfx1251; verify actual package contents or build with explicitly supported
+targets before claiming new-GPU coverage. RVS is not a replacement for all
+SuperBench application/network tests. Keep stress tests opt-in on shared nodes,
+preserve units and GPU identifiers in new parsers, and establish new per-SKU
+thresholds rather than reusing MI300X baselines.
