@@ -20,6 +20,8 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         cls.createMockFiles(cls, ['bin/stream'])
         cls.createMockFiles(cls, ['bin/streamZen3'])
         cls.createMockFiles(cls, ['bin/streamNeo2'])
+        cls.createMockFiles(cls, ['bin/streamOlympus'])
+        cls.createMockFiles(cls, ['bin/streamNative'])
         return True
 
     @decorator.load_data('tests/data/streamResultZen.log')
@@ -105,6 +107,22 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         for index in range(0, 4):
             result = float(benchmark.result[functions[index] + '_throughput'][0])
             assert (result == values[index])
+
+    def test_stream_arm64_binary_selection(self):
+        """Test STREAM benchmark binary selection for ARM64 architectures."""
+        benchmark_name = 'cpu-stream'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        for arch, binary_name in [('olympus', 'streamOlympus'), ('native', 'streamNative')]:
+            with self.subTest(cpu_arch=arch):
+                benchmark = benchmark_class(benchmark_name, parameters='--cpu_arch ' + arch + ' --cores 0')
+
+                assert (benchmark._preprocess() is True)
+                assert (benchmark._args.cpu_arch == arch)
+                assert (benchmark._bin_name == binary_name)
+                assert (binary_name in benchmark._commands[0])
 
 
 if __name__ == '__main__':

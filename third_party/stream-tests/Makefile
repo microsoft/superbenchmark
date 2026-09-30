@@ -19,11 +19,16 @@ ALL_TARGETS := GEN
 
 ARCH := $(shell uname -m)
 
-# ARM64 build gets NEO2, OLYMPUS, and NATIVE added
+# ARM64 build gets NEO2 and NATIVE, plus OLYMPUS when supported by the compiler
 ifeq ($(ARCH), aarch64)
   CC      := gcc
   CFLAGS  := -Ofast -fopenmp -DNTIMES=200
-  ALL_TARGETS += NEO2 OLYMPUS NATIVE
+  ALL_TARGETS += NEO2 NATIVE
+  OLYMPUS_SUPPORTED := $(shell printf 'int main(void) { return 0; }\n' | \
+    $(CC) $(OLYMPUSFLAGS) -x c -c -o /dev/null - >/dev/null 2>&1 && echo yes)
+  ifeq ($(OLYMPUS_SUPPORTED),yes)
+    ALL_TARGETS += OLYMPUS
+  endif
 endif
 
 # AMD AOCC clang present? add ZEN3 and ZEN4
