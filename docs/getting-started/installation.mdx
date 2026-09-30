@@ -111,37 +111,113 @@ Here're the system requirements for all managed GPU nodes.
 </TabItem>
 </Tabs>
 
-### Building the ROCm 7 images
+### Experimental ROCm 10 image scaffold
 
-The ROCm 7.0 and 7.2 Dockerfiles use ROCm 7.0.2 and 7.2.4 respectively,
-with Ubuntu 24.04, Python 3.12, and PyTorch 2.9.1. Both default to
-`AMDGPU_TARGETS="gfx942 gfx950"` (MI300X and MI355X).
-Initialize the submodules before building; otherwise some third-party benchmark
-binaries can be silently omitted by the Makefile.
+`dockerfile/rocm10.0.x.dockerfile` starts from AMD's digest-pinned
+`rocm10.0_ubuntu26.04_py3.14_pytorch_release_2.13.0` image.
+It is a scaffold, not a feature-equivalent replacement for the ROCm 7 images,
+and is intentionally not yet in the release-image workflow matrix.
 
 ```bash
 git submodule update --init --recursive
 docker build --build-arg NUM_MAKE_JOBS=8 \
-  -f dockerfile/rocm7.0.x.dockerfile -t superbench:rocm70 .
-docker build --build-arg NUM_MAKE_JOBS=8 \
-  -f dockerfile/rocm7.2.x.dockerfile -t superbench:rocm72 .
-
-# CPU-only architecture-routing regression tests:
-python3 -m unittest discover -s tests -p 'test_rocm*dockerfile.py' -v
+  -f dockerfile/rocm10.0.x.dockerfile -t superbench:rocm10-scaffold .
 ```
 
-Use `--build-arg AMDGPU_TARGETS="gfx942"` for an MI300X-only benchmark build.
-This does not prune the base image's libraries or the source-built RCCL library.
-An image build alone does not qualify either GPU architecture. On an otherwise
-idle GPU node, expose `/dev/kfd` and `/dev/dri` to the container and check:
+The base contains a wheel-distributed SDK. The scaffold installs
+`rocm[devel,libraries,device-all]==10.0.0` and preserves the base's framework
+and SDK versions with pip constraints. **All-device GPU packages are the
+default**; this is not a multi-platform CPU image (the base is Linux x86_64).
+`rocm-sdk init` expands the development tree, and `/opt/rocm` points to the
+discovered SDK root. No second native-package ROCm SDK is installed.
+The development overlay's AMD SMI library aliases point to the core wheel's
+canonical library. Otherwise, importing PyTorch before the AMD SMI bindings
+can load two initialization states and report zero GPUs even when HIP sees
+all devices.
 
-* Device enumeration, architecture names, and loaded ROCm/RCCL library paths.
-* PyTorch GEMM and attention correctness, including backward passes, and
-  TransformerEngine execution (not just its import).
-* SuperBench `gemm-flops`, `hipblaslt-gemm`, `mem-bw`, and `gpu-copy-bw`, including
-  successful result parsing and finite, positive metrics.
-* RCCL collectives with data checking on all local GPUs. Multi-node RCCL and
-  RDMA require separate network validation.
+* RCCL is AMD's **prebuilt SDK library**, not rebuilt from source.
+  Only RCCL-tests is compiled, from the `rocm-systems` revision selected by
+  TheRock's `therock-10.0` release.
+* Open MPI from the `v4.1.8` source tag retains `/usr/local/mpi` (this source
+  build reports `4.1.8rc1`). Current built-in MPI calls exchange
+  host metadata, timing/error values, and NumPy arrays; GPU collectives use
+  RCCL. This scaffold does not claim ROCm-aware MPI support for applications
+  that pass device pointers directly to MPI.
+* Locally compiled benchmark kernels default to `gfx942 gfx950`, independently
+  of the all-device SDK packages. Other kernel targets require an explicit
+  `AMDGPU_TARGETS` build argument and hardware qualification.
+* RVS `1.6.122-708` and its bundled TransferBench are installed from AMD's
+  SHA-256-pinned relocatable Extras archive. Their prefix is
+  `/opt/rocm-extras-10`, separate from the wheel SDK. Native RVS packages are
+  not installed because their dependencies would bring in another SDK.
+* The image includes SuperBench, its native microbenchmarks, RCCL-tests, fio,
+  and ROCm-enabled perftest. It uses Ubuntu's RDMA development packages;
+  no DOCA/OFED userspace version or host driver is selected by this scaffold.
+
+The following remain deliberately unqualified or absent: TransformerEngine,
+Megatron/DeepSpeed setup, `rocblas-bench`, `hipblaslt-bench`, Intel MLC, and the
+old HIP 5.5 `hipBusBandwidth` sample. Consequently, the existing `gemm-flops`,
+`hipblaslt-gemm`, `cpu-memory-bw-latency`, and ROCm `mem-bw` wrappers are not
+ready to run in this scaffold. No executable aliases or silently substituted
+metrics are provided. Existing `rocm-smi` system-info collection and
+`rocprofv2` tracing still need their separate ROCm 10 migrations.
+
+Validation on 2026-09-30: the scaffold built successfully and passed `pip check`,
+34 targeted regression tests (three NVIDIA-only tests skipped), GEMM correctness
+on all eight MI300X GPUs, FP16/BF16 PyTorch flash SDPA forward/backward, and the
+SuperBench GPU-copy wrapper with data checking and 304 positive parsed metrics.
+An eight-rank Open MPI / packaged-RCCL all-reduce passed data checking
+(`NCCL_IB_DISABLE=1`, single node). RVS module/GPU discovery also worked.
+These checks do not qualify multi-node networking, additional GPU architectures,
+the omitted benchmarks, or sustained RVS stress workloads.
+
+#### TransferBench versus the legacy memory-bandwidth test
+
+The bundled CLI reports version 1.69.00, commit `5fbfa95`; do not assume that it includes every
+feature of upstream development. Inspect its actual presets with
+`TransferBench presets`.
+The [v1.69 preset definitions](https://github.com/ROCm/TransferBench/blob/5fbfa95a1111a7f33f20b9780e5f22bf739f82fa/src/client/Presets/Presets.hpp)
+and [transfer syntax](https://github.com/ROCm/TransferBench/blob/5fbfa95a1111a7f33f20b9780e5f22bf739f82fa/src/client/Presets/Help.hpp)
+provide these candidate replacements:
+
+| Interface | Fit for SuperBench |
+| --- | --- |
+| `p2p` preset | Closest ready-made CPU/NUMA/GPU bandwidth matrix, but it runs more than H2D/D2H and defaults to compute execution. Setting `USE_GPU_DMA=1` alone does not make the CPU-to-GPU rows GPU-executed. |
+| Explicit `cmdline` transfers | Best candidate for a new backend: `C0 D0 G0` selects pinned CPU-node-0 memory to GPU 0 via GPU-0 DMA; `G0 D0 C0` reverses the transfer. |
+| `hbm`, `a2a`, `one2all`, sweep presets | Useful additional coverage, not drop-in replacements for the two existing host/device metrics. |
+| RVS PEBB/PBQT with TransferBench | Suitable qualification workloads. The inspected PEBB adapter supports pinned CPU memory, not pageable memory, and uses only the first configured block size. |
+
+There is no `hipBusBandwidth`, `--h2d`/`--d2h`, or `rocm-bandwidth-test`
+compatibility preset. For a bounded manual smoke test on an idle node, select
+accessible NUMA/GPU indices and permit the required NUMA syscalls:
+
+```bash
+TransferBench dryrun 4M '1 1 C0 D0 G0'
+timeout 20s env TB_NUM_RANKS=1 NUM_ITERATIONS=3 NUM_WARMUPS=1 \
+  NUM_SUBITERATIONS=1 ALWAYS_VALIDATE=0 USE_HSA_DMA=0 \
+  USE_HIP_EVENTS=1 USE_INTERACTIVE=0 HIDE_ENV=1 \
+  TransferBench cmdline 4M '1 1 C0 D0 G0'
+# D2H: use '1 1 G0 D0 C0' instead.
+```
+
+`ALWAYS_VALIDATE=0` retains the final correctness check; negative values disable
+it. `P0` selects pinned host memory near GPU 0, while `H0` selects pageable
+memory on NUMA node 0. Both pinned and pageable 4-MiB transfers passed bounded
+H2D/D2H smoke tests on MI300X; other sizes, devices and placements still need
+qualification.
+Container policies must permit NUMA allocation/placement queries; failed
+placement checks are errors, not valid bandwidth results.
+The tested `OUTPUT_TO_CSV=1` output still includes banners and executor/aggregate
+rows; do not treat the complete stdout stream as a flat table of transfer results.
+
+Before replacing `mem-bw`, choose whether to introduce a separate benchmark/new
+baseline or retain strict compatibility. TransferBench's HIP asynchronous DMA
+path differs from the old sample's default synchronous `hipMemcpy`.
+It reports bytes divided by mean duration, whereas the old sample averages
+per-trial bandwidth. Its generic size sweep also omits the old sub-1-KiB
+sizes. A new parser must select individual transfer rows, retain device/NUMA
+identity, and define the size sweep, aggregation, and pageable-memory policy;
+simply renaming the executable would silently change the measurement.
 
 ### ROCm 10 migration considerations
 
