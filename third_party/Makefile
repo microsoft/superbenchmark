@@ -42,10 +42,7 @@ sb_micro_path:
 # for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
-	# CUDA 13.4+ sm_107. The pinned cutlass tag predates native sm_107, so build
-	# sm_100/sm_103 which the driver JIT-promotes from PTX to sm_107 at runtime
-	# (forward compatibility). Change ARCHS to include "107" once cutlass supports it.
-	$(eval ARCHS := "100;103")
+	$(eval ARCHS := "100;103;107")
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch v4.1.0 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
 else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
@@ -117,7 +114,17 @@ endif
 # The version we use is the tag v2.13.13
 cuda_nccl_tests: sb_micro_path
 ifneq (,$(wildcard nccl-tests/Makefile))
+ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
+	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) \
+		NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80 \
+		-gencode=arch=compute_90,code=sm_90 \
+		-gencode=arch=compute_100,code=sm_100 \
+		-gencode=arch=compute_107,code=sm_107 \
+		-gencode=arch=compute_120,code=sm_120 \
+		-gencode=arch=compute_120,code=compute_120" -j
+else
 	cd ./nccl-tests && make MPI=1 MPI_HOME=$(MPI_HOME) -j
+endif
 	cp -v -r ./nccl-tests/build/* $(SB_MICRO_PATH)/bin/
 endif
 
@@ -210,7 +217,11 @@ endif
 # Build GPU burn from main branch (only branch that exists)
 cuda_gpuburn: sb_micro_path
 ifneq (,$(wildcard gpu-burn/Makefile))
+ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
+	cd ./gpu-burn && make COMPUTE=107
+else
 	cd ./gpu-burn && make
+endif
 	cp -v ./gpu-burn/gpu_burn $(SB_MICRO_PATH)/bin/
 	cp -v ./gpu-burn/compare.ptx $(SB_MICRO_PATH)/bin/
 endif
@@ -299,10 +310,7 @@ apex_rocm:
 # Build MSCCL for CUDA
 cuda_msccl: sb_micro_path
 ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
-	# CUDA 13.4+ sm_107. msccl's pinned commit predates native sm_107; build
-	# sm_100/sm_103 + PTX which the driver JIT-promotes to sm_107 at runtime.
-	# Add 107 to ARCHS once msccl/nccl supports it.
-	$(eval ARCHS := 100 103)
+	$(eval ARCHS := 100 103 107)
 	if [ -d msccl ]; then rm -rf msccl; fi; \
 	git clone --single-branch --branch main https://github.com/Azure/msccl.git \
 	&& git -C msccl checkout 87048bd && git -C msccl submodule update --recursive --init
@@ -351,7 +359,9 @@ nvbandwidth: sb_micro_path
 
 # Build nvbench
 cuda_nvbench: sb_micro_path
-ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
+	$(eval ARCHS := "100;103;107")
+else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := "100;103")
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	$(eval ARCHS := "90;100")

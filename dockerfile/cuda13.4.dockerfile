@@ -20,9 +20,8 @@ FROM nvcr.io/nvidia/pytorch:26.09-py3
 #
 # Notes for sm_107:
 #   - This machine is aarch64 (ARM). cpu_hpl, Intel MLC, AOCC and AMD BLIS auto-skip on aarch64.
-#   - sm_107 native SASS requires CUDA 13.4. Where a pinned third-party repo cannot target
-#     compute_107 yet, the build falls back to compute_103 PTX which the driver JIT-compiles
-#     to sm_107 at runtime (forward compatibility).
+#   - CUDA 13.4 builds the in-tree CUDA benchmarks, CUTLASS, NVBench,
+#     cuBLASLt and NCCL tests for sm_107; gpu-burn generates compute_107 PTX.
 #
 # Build (from repo root), e.g.:
 #   docker build -t superbench-cuda13.4 \
