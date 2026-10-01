@@ -92,6 +92,10 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
+# Machine has 176 cores (352 threads); raise make jobs to speed up the build.
+# Max ~176 (cores) / 352 (threads). Override at build time with --build-arg NUM_MAKE_JOBS=...
+ARG NUM_MAKE_JOBS=64
+
 ENV BINUTILS_VERSION=2.46.1
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -105,7 +109,7 @@ RUN apt-get update && \
     --enable-64-bit-bfd \
     --with-system-zlib \
     --disable-werror && \
-    make -j"$(nproc)" MAKEINFO=true && \
+    make -j "${NUM_MAKE_JOBS}" MAKEINFO=true && \
     make install MAKEINFO=true && \
     for t in as ld ld.bfd nm ar ranlib objcopy objdump strip readelf addr2line c++filt size strings gprof; do \
     if [ -x /usr/local/bin/$t ]; then ln -sf /usr/local/bin/$t /usr/bin/$t; fi; \
@@ -120,9 +124,6 @@ RUN apt-get update && \
 
 ENV PATH="/usr/local/bin:${PATH}"
 
-# Machine has 176 cores (352 threads); raise make jobs to speed up the build.
-# Max ~176 (cores) / 352 (threads). Override at build time with --build-arg NUM_MAKE_JOBS=...
-ARG NUM_MAKE_JOBS=64
 ARG TARGETPLATFORM
 ARG TARGETARCH
 
@@ -191,22 +192,10 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     echo "Skipping Intel MLC, AOCC and AMD BLIS installations for non-amd64 architecture: $TARGETARCH"; \
     fi
 
-# Install UCX with multi-threading support
-# Note: UCX 1.18.0 is incompatible with GCC 15 (omp.h templates inside extern "C",
-# plus incompatible-pointer-type casts). Build with gcc-13 which is still installed.
-ENV UCX_VERSION=1.18.0
-RUN cd /tmp && \
-    wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}-rc1/ucx-${UCX_VERSION}.tar.gz && \
-    tar xzf ucx-${UCX_VERSION}.tar.gz && \
-    cd ucx-${UCX_VERSION} && \
-    CC=gcc-13 CXX=g++-13 ./contrib/configure-release-mt --prefix=/usr/local && \
-    make -j ${NUM_MAKE_JOBS} && \
-    make install
-
-# Add the base image's HPC-X 2.51 ompi to PATH so mpicc is available for builds.
+# Add the base image's HPC-X 2.51 UCX and ompi to the library path and add mpicc to PATH.
 ENV MPI_HOME=/opt/hpcx/ompi
 ENV PATH="/opt/hpcx/ompi/bin:${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:/opt/hpcx/ompi/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/opt/hpcx/ucx/lib:/opt/hpcx/ompi/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
