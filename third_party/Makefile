@@ -243,11 +243,10 @@ ifneq (,$(wildcard hpl-tests/Makefile))
 endif
 
 # Build STREAM
-# stream.c is vendored locally under stream-tests/ (upstream source:
-# https://github.com/jeffhammond/STREAM). Avoids a network fetch on every build.
 cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
 	cd ./stream-tests && \
+	wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
 	make all
 	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
