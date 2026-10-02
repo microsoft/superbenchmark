@@ -14,7 +14,7 @@ FROM ${BASE_IMAGE}
 #   - rocblas: release-staging/rocm-rel-6.2
 #   - openmpi: 4.1.x
 # Intel:
-#   - mlc: v3.12
+#   - mlc: v3.13
 
 LABEL maintainer="SuperBench"
 
@@ -130,9 +130,9 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/763324/mlc_v3.10.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
 # Install RCCL

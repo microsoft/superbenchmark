@@ -15,7 +15,7 @@ FROM nvcr.io/nvidia/pytorch:25.08-py3
 #   - MOFED_VERSION: (installed in this dockerfile)
 #   - HPC-X: 2.24
 # Intel:
-#   - mlc: 3.12 (amd64 only)
+#   - mlc: 3.13 (amd64 only)
 
 LABEL maintainer="SuperBench"
 
@@ -106,9 +106,9 @@ RUN TARGETARCH_HW=$(uname -m) && \
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
     cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz && \
     # Install AOCC compiler
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \

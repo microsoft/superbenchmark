@@ -14,7 +14,7 @@ FROM nvcr.io/nvidia/pytorch:24.03-py3
 #   - OFED: 23.07-0.5.1.2
 #   - HPC-X: v2.18.0-CUDA12.x
 # Intel:
-#   - mlc: v3.12
+#   - mlc: v3.13
 
 LABEL maintainer="SuperBench"
 
@@ -104,9 +104,9 @@ RUN TARGETARCH_HW=$(uname -m) && \
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
     cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz && \
     # Install AOCC compiler
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \

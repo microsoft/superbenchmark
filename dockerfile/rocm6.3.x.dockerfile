@@ -18,7 +18,7 @@ FROM ${BASE_IMAGE}
 #   - amd-smi: 25.1.0+8dc45db
 # Added by this Dockerfile:
 #   - Docker Client: 27.5.1
-#   - mlc: v3.12
+#   - mlc: v3.13
 #   - OFED: 24.10-1.1.4.0 LTS
 
 # Fix base image botocore/urllib3 incompatibility:
@@ -113,9 +113,9 @@ ENV MPI_HOME=/opt/ompi
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
 ENV PATH="/opt/ompi/bin:/opt/superbench/bin:/usr/local/bin/:/opt/rocm/hip/bin/:/opt/rocm/bin/:${PATH}" \

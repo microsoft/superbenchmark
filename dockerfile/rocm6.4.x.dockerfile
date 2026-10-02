@@ -14,7 +14,7 @@ FROM ${BASE_IMAGE}
 #   - rocblas: release-staging/rocm-rel-6.4
 #   - openmpi: 4.1.x
 # Intel:
-#   - mlc: v3.12
+#   - mlc: v3.13
 # Network:
 #   - OFED: 25.10-3.1.8 user-space (via NVIDIA DOCA-Host 3.2.3, matches host)
 
@@ -143,9 +143,9 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
 # Install RCCL
