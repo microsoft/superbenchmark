@@ -93,18 +93,30 @@ class Rocm64DockerfileTestCase(unittest.TestCase):
         self.assertIn('NVTE_ROCM_ARCH="${transformer_engine_architectures}"', self.dockerfile)
 
     def test_mlc_checksum_verification(self):
-        """Test MLC archive integrity is verified before extraction."""
+        """Test MLC integrity, executable installation, and cleanup."""
         mlc_url = 'https://downloadmirror.intel.com/926327/mlc_v3.13.tgz'
         mlc_sha256 = 'a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019'
-        mlc_install = self.dockerfile[self.dockerfile.index('# Install Intel MLC'):]
-        mlc_block = '\n'.join([
-            '    wget -q {} -O mlc.tgz && \\'.format(mlc_url),
-            '    echo "{}  mlc.tgz" | sha256sum -c - && \\'.format(mlc_sha256),
-            '    tar xzf mlc.tgz Linux/mlc && \\',
-        ])
+        mlc_marker = '# Install Intel MLC'
+        self.assertIn(mlc_marker, self.dockerfile)
+        mlc_install = self.dockerfile[self.dockerfile.index(mlc_marker):]
+        mlc_block = '\n'.join(
+            [
+                '    wget -q {} -O mlc.tgz && \\'.format(mlc_url),
+                '    echo "{}  mlc.tgz" | sha256sum -c - && \\'.format(mlc_sha256),
+                '    tar xzf mlc.tgz Linux/mlc && \\',
+                '    install -m 755 ./Linux/mlc /usr/local/bin/ && \\',
+                '    rm -rf ./Linux mlc.tgz',
+            ]
+        )
         self.assertIn(mlc_block, mlc_install)
         self.assertEqual(self.dockerfile.count(mlc_url), 1)
         self.assertEqual(self.dockerfile.count(mlc_sha256), 1)
+
+    def test_rocm_build_refreshes_package_index(self):
+        """Test APT metadata is refreshed before installing ROCm dependencies."""
+        build_command = 'RUN apt-get update && \\\n    make RCCL_HOME=/opt/rccl/build/ '
+        self.assertIn(build_command, self.dockerfile)
+        self.assertEqual(self.dockerfile.count('make RCCL_HOME='), 1)
 
 
 if __name__ == '__main__':
