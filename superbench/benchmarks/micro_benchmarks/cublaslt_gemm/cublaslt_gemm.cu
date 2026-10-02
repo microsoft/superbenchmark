@@ -125,15 +125,29 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     Tb *matrix_b = nullptr;
     Tc *matrix_c = nullptr;
     Tout *matrix_out = nullptr;
+    bool own_matrix_c = false;
     batch = std::max<size_t>(batch, 1);
     cudaMalloc(&matrix_a, m * k * batch * sizeof(Ta));
     cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
-    cudaMalloc(&matrix_c, m * n * batch * sizeof(Tc));
     cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
+
+    // Narrow types (fp4/fp8) can't alias C=D in-place; allocate a separate C buffer.
+    // For wider types, only allocate C when beta != 0.
+    if constexpr (std::is_same_v<Ta, fp8e4m3> || std::is_same_v<Ta, fp8e5m2>
+#if CUDA_VERSION >= 12080
+                  || std::is_same_v<Ta, fp4e2m1>
+#endif
+    ) {
+        cudaMalloc(&matrix_c, m * n * batch * sizeof(Tc));
+        own_matrix_c = true;
+    } else {
+        matrix_c = reinterpret_cast<Tc *>(matrix_out); // In-place when beta=0 and types are wide enough
+    }
 
     init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * batch);
     init_matrix<Tb><<<216, 1024>>>(matrix_b, 2.f, k * n * batch);
-    init_matrix<Tc><<<216, 1024>>>(matrix_c, 3.f, m * n * batch);
+    if (own_matrix_c)
+        init_matrix<Tc><<<216, 1024>>>(matrix_c, 3.f, m * n * batch);
 
     // init gemm
     size_t lda = k, ldb = k, ldc = m, ldd = m;
@@ -148,7 +162,7 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     if (autotune) {
         workspace_size = gemm->GetAlgorithmExhaustive(
             8, 2 * m * n, 1.0f, 0.0f, reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-            reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), iter_autotune, warmup_autotune);
+            reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), iter_autotune, warmup_autotune);
     } else {
         workspace_size = gemm->GetAlgorithm(1, 2 * m * n);
     }
@@ -163,12 +177,12 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
 
     for (int i = 0; i < warmup; i++)
         gemm->Execute(reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-                      reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
+                      reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
                       workspace_size, 0);
     cudaEventRecord(startTime, 0);
     for (int i = 0; i < iter; i++)
         gemm->Execute(reinterpret_cast<void *>(matrix_a), reinterpret_cast<void *>(matrix_b),
-                      reinterpret_cast<void *>(matrix_out), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
+                      reinterpret_cast<void *>(matrix_c), reinterpret_cast<void *>(matrix_out), 1.f, 0.f, workspace,
                       workspace_size, 0);
     cudaEventRecord(endTime, 0);
     cudaEventSynchronize(endTime);
@@ -178,6 +192,8 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     cudaFree(workspace);
     cudaFree(matrix_a);
     cudaFree(matrix_b);
+    if (own_matrix_c)
+        cudaFree(matrix_c);
     cudaFree(matrix_out);
     return (time * 1e3 / iter);
 }

@@ -64,6 +64,12 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul) or [`hipblasLt-bench`](https://github.com/ROCm/hipBLASLt/blob/develop/clients/benchmarks/README.md).
 
+The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1, and INT8 inputs.
+FP4 requires CUDA 12.8 or later; an available cuBLASLt algorithm for each input type and
+GPU must still be confirmed at runtime. CUDA 13.4 builds the benchmark for SM 107.
+FP6 and block-scaled MXFP formats are not covered by this benchmark's current matrix
+initialization and cuBLASLt configuration.
+
 #### Metrics
 
 | Name                                                      | Unit           | Description                     |
@@ -103,6 +109,19 @@ The supported functions for cuDNN are as follows:
  - cudnnConvolutionBackwardFilter
  - cudnnConvolutionBackwardData
  - cudnnConvolutionForward
+
+The benchmark already supports `--enable_auto_algo` (off by default), which calls
+`cudnnFindConvolution*Algorithm` before timing to choose an algorithm for each
+convolution. Without it, the configured legacy convolution algorithm is used.
+This option predates CUDA 13.4; it does not benchmark the algorithm search itself.
+
+With cuDNN 9.26 in the CUDA 13.4 image, these convolution benchmarks can use
+compute capability 10.7. The
+[cuDNN 9.26 release notes](https://docs.nvidia.com/deeplearning/cudnn/backend/latest/release-notes.html#cudnn-9-26-0)
+announce SM 107 and CUDA 13.4 support, but do not introduce new legacy convolution
+algorithms or deprecate existing ones. Backend graph features (such as attention and
+FP8 pointwise fusion) are not covered by this convolution-only benchmark; the notes
+also flag limitations for FP8 pointwise fusion and certain SM 107 attention engines.
 
 #### Metrics
 
