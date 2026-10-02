@@ -92,6 +92,20 @@ class Rocm64DockerfileTestCase(unittest.TestCase):
         self.assertIn('NVTE_FUSED_ATTN_AOTRITON="${nvte_fused_attn_aotriton}"', self.dockerfile)
         self.assertIn('NVTE_ROCM_ARCH="${transformer_engine_architectures}"', self.dockerfile)
 
+    def test_mlc_checksum_verification(self):
+        """Test MLC archive integrity is verified before extraction."""
+        mlc_url = 'https://downloadmirror.intel.com/926327/mlc_v3.13.tgz'
+        mlc_sha256 = 'a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019'
+        mlc_install = self.dockerfile[self.dockerfile.index('# Install Intel MLC'):]
+        mlc_block = '\n'.join([
+            '    wget -q {} -O mlc.tgz && \\'.format(mlc_url),
+            '    echo "{}  mlc.tgz" | sha256sum -c - && \\'.format(mlc_sha256),
+            '    tar xzf mlc.tgz Linux/mlc && \\',
+        ])
+        self.assertIn(mlc_block, mlc_install)
+        self.assertEqual(self.dockerfile.count(mlc_url), 1)
+        self.assertEqual(self.dockerfile.count(mlc_sha256), 1)
+
 
 if __name__ == '__main__':
     unittest.main()
