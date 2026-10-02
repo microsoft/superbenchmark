@@ -4,6 +4,7 @@
 """Tests for ROCm 6.4 Dockerfile build configuration."""
 
 import os
+import shlex
 import subprocess
 import unittest
 from pathlib import Path
@@ -98,17 +99,27 @@ class Rocm64DockerfileTestCase(unittest.TestCase):
         mlc_sha256 = 'a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019'
         mlc_marker = '# Install Intel MLC'
         self.assertIn(mlc_marker, self.dockerfile)
-        mlc_install = self.dockerfile[self.dockerfile.index(mlc_marker):]
-        mlc_block = '\n'.join(
-            [
-                '    wget -q {} -O mlc.tgz && \\'.format(mlc_url),
-                '    echo "{}  mlc.tgz" | sha256sum -c - && \\'.format(mlc_sha256),
-                '    tar xzf mlc.tgz Linux/mlc && \\',
-                '    install -m 755 ./Linux/mlc /usr/local/bin/ && \\',
-                '    rm -rf ./Linux mlc.tgz',
+        mlc_start = self.dockerfile.index(mlc_marker) + len(mlc_marker)
+        mlc_install = self.dockerfile[mlc_start:].split('\n\n', 1)[0]
+        mlc_lexer = shlex.shlex((mlc_install + '\n').replace('\\\n', ' '), posix=True, punctuation_chars='|&;')
+        mlc_lexer.wordchars += ':'
+        mlc_tokens = list(mlc_lexer)
+        expected_commands = [
+            ['wget', '-q', mlc_url, '-O', 'mlc.tgz', '&&'],
+            ['echo', '{}  mlc.tgz'.format(mlc_sha256), '|', 'sha256sum', '-c', '-', '&&'],
+            ['tar', 'xzf', 'mlc.tgz', 'Linux/mlc', '&&'],
+            ['install', '-m', '755', './Linux/mlc', '/usr/local/bin/', '&&'],
+            ['rm', '-rf', './Linux', 'mlc.tgz'],
+        ]
+        command_cursor = 0
+        for expected_command in expected_commands:
+            matches = [
+                token_index for token_index in range(command_cursor,
+                                                     len(mlc_tokens) - len(expected_command) + 1)
+                if mlc_tokens[token_index:token_index + len(expected_command)] == expected_command
             ]
-        )
-        self.assertIn(mlc_block, mlc_install)
+            self.assertTrue(matches, 'Missing or out-of-order MLC command: {}'.format(' '.join(expected_command)))
+            command_cursor = matches[0] + len(expected_command)
         self.assertEqual(self.dockerfile.count(mlc_url), 1)
         self.assertEqual(self.dockerfile.count(mlc_sha256), 1)
 
