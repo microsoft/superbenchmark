@@ -92,7 +92,6 @@ target_compile_definitions(hipblaslt-clients-common
         ROCM_USE_FLOAT16
         __HIP_PLATFORM_AMD__
         HIPBLASLT_BENCH
-        HIPBLASLT_INTERNAL_API
 )
 
 target_link_libraries(hipblaslt-clients-common

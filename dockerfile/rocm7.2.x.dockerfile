@@ -9,13 +9,13 @@ FROM ${BASE_IMAGE}
 #   - ROCm: 7.2
 # Lib:
 #   - torch: 2.9.1
-#   - rccl: release/rocm-rel-7.2
-#   - hipblaslt: release/rocm-rel-7.2 (hipblaslt-bench only, against system hipBLASLt)
-#   - rocblas: release/rocm-rel-7.2
+#   - rccl: rocm-7.2.4
+#   - hipblaslt: rocm-7.2.4 (hipblaslt-bench only, against system hipBLASLt)
+#   - rocblas: rocm-7.2.4
 #   - transformer_engine: v2.10_rocm
 #   - openmpi: 4.1.x
 # Intel:
-#   - mlc: v3.12
+#   - mlc: v3.13
 # Network:
 #   - OFED: 25.10-3.1.8 user-space (via NVIDIA DOCA-Host 3.2.3, matches host)
 
@@ -39,6 +39,7 @@ RUN apt-get update && \
     curl \
     dmidecode \
     flex \
+    gfortran \
     git \
     hipify-clang \
     iproute2 \
@@ -144,18 +145,20 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
+    echo "a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019  mlc.tgz" | sha256sum -c - && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
 # Set CMAKE_POLICY_VERSION_MINIMUM globally so subprojects (RCCL's mscclpp, etc.) still configure
 # with CMake 4.0+, which dropped compatibility for cmake_minimum_required < 3.5.
 ENV CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-# Install RCCL
+# Install RCCL. Pinned to the release tag matching the base image: /opt/rccl/build comes first on
+# LD_LIBRARY_PATH, so this build replaces the base image's RCCL for rccl-tests and PyTorch.
 RUN cd /opt/ && \
-    git clone -b release/rocm-rel-7.2 https://github.com/ROCmSoftwarePlatform/rccl.git && \
+    git clone -b rocm-7.2.4 https://github.com/ROCmSoftwarePlatform/rccl.git && \
     cd rccl && \
     mkdir build && \
     cd build && \
@@ -199,7 +202,7 @@ ADD third_party third_party
 # Refresh the apt index first: rocBLAS's install.sh --dependencies runs apt-get install, and the
 # earlier apt-get update layer may come from a stale registry cache (404s on superseded packages).
 RUN apt-get update && \
-    make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release/rocm-rel-7.2 HIPBLASLT_BRANCH=release/rocm-rel-7.2 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
+    make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=rocm-7.2.4 HIPBLASLT_BRANCH=rocm-7.2.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
 
 # Build hipblaslt-bench only (not the hipBLASLt library/Tensile kernels) and run it against the
 # hipBLASLt shipped in the base image. This avoids the multi-hour, memory-hungry Tensile library
@@ -210,9 +213,13 @@ RUN apt-get update && \
 # The deps superbuild builds but does not install LAPACK; install it explicitly so the standalone
 # build can find /usr/local/lib/{liblapack.a,libcblas.a,libblas.a}. The deps project's reserved
 # "install" target is renamed so it also configures on CMake versions without CMP0037 OLD.
+# The source is pinned to the release tag matching the base image, because the bench compiles
+# against this checkout's (including internal) headers but links the installed libhipblaslt.so.
+# CMAKE_HIP_ARCHITECTURES is only passed when AMDGPU_TARGETS is non-empty: a defined-but-empty
+# value makes CMake fail at generate time, while leaving it undefined lets CMake auto-detect.
 COPY dockerfile/etc/hipblaslt-bench-standalone.cmake /tmp/hipblaslt-bench-standalone.cmake
 RUN cd third_party && \
-    git clone --depth 1 -b release/rocm-rel-7.2 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
+    git clone --depth 1 -b rocm-7.2.4 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git && \
     cp /tmp/hipblaslt-bench-standalone.cmake hipBLASLt/CMakeLists.txt && \
     cd hipBLASLt && \
     sed -i '/cmake_policy( SET CMP0037 OLD )/d; s/add_custom_target( install/add_custom_target( hipblaslt_deps_install/' deps/CMakeLists.txt && \
@@ -224,8 +231,11 @@ RUN cd third_party && \
     hipblaslt_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//') && \
     set -- cmake \
         -DCMAKE_CXX_COMPILER="${ROCM_PATH}/llvm/bin/clang++" \
-        -DCMAKE_HIP_COMPILER="${ROCM_PATH}/llvm/bin/clang++" \
-        -DCMAKE_HIP_ARCHITECTURES="${hipblaslt_architectures}" \
+        -DCMAKE_HIP_COMPILER="${ROCM_PATH}/llvm/bin/clang++" && \
+    if [ -n "${hipblaslt_architectures}" ]; then \
+        set -- "$@" -DCMAKE_HIP_ARCHITECTURES="${hipblaslt_architectures}"; \
+    fi && \
+    set -- "$@" \
         -DCMAKE_PREFIX_PATH="${ROCM_PATH};/usr/local" \
         -DBLAS_LIBRARIES=/usr/local/lib/libblas.a \
         -DLAPACK_LIBRARIES=/usr/local/lib/liblapack.a \
@@ -234,7 +244,9 @@ RUN cd third_party && \
     mkdir -p build && cd build && \
     "$@" && \
     make -j${NUM_MAKE_JOBS} hipblaslt-bench && \
-    cp -v hipblaslt-bench /opt/superbench/bin/
+    cp -v hipblaslt-bench /opt/superbench/bin/ && \
+    cd /opt/superbench/third_party && \
+    rm -rf hipBLASLt /tmp/hipblaslt-bench-standalone.cmake
 RUN cd third_party/Megatron/Megatron-DeepSpeed && \
     git apply ../megatron_deepspeed_rocm6.patch
 
@@ -243,7 +255,9 @@ RUN cd third_party/Megatron/Megatron-DeepSpeed && \
 # ROCm 6.4 image. AOTriton is enabled only when every requested target is gfx942 or gfx950,
 # and disabled when any other architecture is requested.
 # onnxscript/onnx are imported unconditionally by transformer_engine.pytorch; install them with
-# pip up front rather than relying on `setup.py install` to resolve them.
+# pip up front rather than relying on `setup.py install` to resolve them. They are pinned to the
+# versions validated with TE v2.10_rocm and torch 2.9.1 so rebuilds don't pull newer releases
+# whose protobuf/numpy requirements conflict with the base image.
 RUN transformer_engine_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//') && \
     nvte_fused_attn_aotriton=0 && \
     if [ -n "${transformer_engine_architectures}" ]; then \
@@ -255,7 +269,7 @@ RUN transformer_engine_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '
             esac; \
         done; \
     fi && \
-    python3 -m pip install onnxscript onnx && \
+    python3 -m pip install onnxscript==0.7.2 onnx==1.23.0 && \
     git clone --recursive -b v2.10_rocm https://github.com/ROCm/TransformerEngine.git && \
     cd TransformerEngine && \
     MAX_JOBS="${NUM_MAKE_JOBS}" \

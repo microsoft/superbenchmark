@@ -24,7 +24,7 @@ class Rocm72DockerfileTestCase(unittest.TestCase):
         )
         cls.transformer_engine_script = cls._extract_script(
             'transformer_engine_architectures=$(printf',
-            '    python3 -m pip install onnxscript onnx',
+            '    python3 -m pip install onnxscript==0.7.2 onnx==1.23.0',
             'printf \'%s\\n\' "$transformer_engine_architectures" "$nvte_fused_attn_aotriton"\n',
         )
 
@@ -51,11 +51,12 @@ class Rocm72DockerfileTestCase(unittest.TestCase):
 
     def _expected_hipblaslt_command(self, architectures):
         """Return the expected standalone hipblaslt-bench CMake configure command."""
+        architecture_flags = [f'-DCMAKE_HIP_ARCHITECTURES={architectures}'] if architectures else []
         return [
             'cmake',
             '-DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++',
             '-DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++',
-            f'-DCMAKE_HIP_ARCHITECTURES={architectures}',
+            *architecture_flags,
             '-DCMAKE_PREFIX_PATH=/opt/rocm;/usr/local',
             '-DBLAS_LIBRARIES=/usr/local/lib/libblas.a',
             '-DLAPACK_LIBRARIES=/usr/local/lib/liblapack.a',
@@ -64,7 +65,11 @@ class Rocm72DockerfileTestCase(unittest.TestCase):
         ]
 
     def test_architecture_routing(self):
-        """Test default, single, lower, mixed, and whitespace-normalized target routing."""
+        """Test default, single, lower, mixed, whitespace-normalized, and empty target routing.
+
+        An empty target list must omit -DCMAKE_HIP_ARCHITECTURES entirely, because CMake rejects a
+        defined-but-empty value and only auto-detects when the variable is undefined.
+        """
         configurations = (
             ('gfx942 gfx950', 'gfx942;gfx950', ['gfx942;gfx950', '1']),
             ('gfx942', 'gfx942', ['gfx942', '1']),
@@ -100,6 +105,32 @@ class Rocm72DockerfileTestCase(unittest.TestCase):
             self.dockerfile,
         )
         self.assertIn('cp /tmp/hipblaslt-bench-standalone.cmake hipBLASLt/CMakeLists.txt', self.dockerfile)
+
+    def test_rocm_sources_pinned_to_base_image_release(self):
+        """Test that ROCm library sources are pinned to the tag matching the base image."""
+        self.assertIn('rocm/pytorch:rocm7.2.4_', self.dockerfile)
+        self.assertIn('git clone -b rocm-7.2.4 https://github.com/ROCmSoftwarePlatform/rccl.git', self.dockerfile)
+        self.assertIn(
+            'git clone --depth 1 -b rocm-7.2.4 https://github.com/ROCmSoftwarePlatform/hipBLASLt.git',
+            self.dockerfile,
+        )
+        self.assertIn('ROCBLAS_BRANCH=rocm-7.2.4', self.dockerfile)
+        self.assertNotIn('release/rocm-rel-7.2', self.dockerfile)
+
+    def test_mlc_checksum_verification(self):
+        """Test MLC download is checksum-verified and installed as an executable."""
+        self.assertIn('wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz', self.dockerfile)
+        self.assertIn(
+            'echo "a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019  mlc.tgz" | sha256sum -c -',
+            self.dockerfile,
+        )
+        self.assertIn('install -m 755 ./Linux/mlc /usr/local/bin/', self.dockerfile)
+
+    def test_rocm_build_refreshes_package_index(self):
+        """Test APT metadata is refreshed before installing ROCm dependencies."""
+        build_command = 'RUN apt-get update && \\\n    make RCCL_HOME=/opt/rccl/build/ '
+        self.assertIn(build_command, self.dockerfile)
+        self.assertEqual(self.dockerfile.count('make RCCL_HOME='), 1)
 
 
 if __name__ == '__main__':
