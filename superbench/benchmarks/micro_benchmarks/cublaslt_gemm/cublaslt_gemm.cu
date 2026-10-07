@@ -131,17 +131,13 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
     cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
 
-    // Narrow types (fp4/fp8) can't alias C=D in-place; allocate a separate C buffer.
-    // For wider types, only allocate C when beta != 0.
-    if constexpr (std::is_same_v<Ta, fp8e4m3> || std::is_same_v<Ta, fp8e5m2>
-#if CUDA_VERSION >= 12080
-                  || std::is_same_v<Ta, fp4e2m1>
-#endif
-    ) {
+    // cuBLASLt in-place (C == D) requires identical C/D descriptors, so a separate C buffer
+    // is only needed when Tc differs from Tout (e.g. fp4 inputs with fp16 C and fp4 D).
+    if constexpr (!std::is_same_v<Tc, Tout>) {
         cudaMalloc(&matrix_c, m * n * batch * sizeof(Tc));
         own_matrix_c = true;
     } else {
-        matrix_c = reinterpret_cast<Tc *>(matrix_out); // In-place when beta=0 and types are wide enough
+        matrix_c = reinterpret_cast<Tc *>(matrix_out);
     }
 
     init_matrix<Ta><<<216, 1024>>>(matrix_a, 1.f, m * k * batch);

@@ -1,3 +1,44 @@
+# Build the streamOlympus STREAM variant in a separate stage. -mcpu=olympus needs GCC 15 and
+# binutils 2.46, while the base image ships GCC 13 / binutils 2.42. Building it here keeps
+# that toolchain (and its runtime libraries) out of the final image.
+FROM nvcr.io/nvidia/pytorch:26.09-py3 AS stream-olympus-builder
+
+ARG NUM_MAKE_JOBS=64
+ENV DEBIAN_FRONTEND=noninteractive \
+    BINUTILS_VERSION=2.46.1 \
+    BINUTILS_SHA256=e127a709cba24c76de8936cb7083dd768f28cd37eb010492e2f19b71eb1294e4
+
+COPY third_party/stream-tests/Makefile /build/Makefile
+
+RUN mkdir -p /out && \
+    if [ "$(uname -m)" != "aarch64" ]; then \
+    echo "Skipping streamOlympus for non-aarch64 architecture"; \
+    exit 0; \
+    fi && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    software-properties-common ca-certificates wget xz-utils zlib1g-dev libzstd-dev && \
+    add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends gcc-15 && \
+    cd /tmp && \
+    for base in https://sourceware.org/pub/binutils/releases https://mirrors.kernel.org/gnu/binutils https://ftp.gnu.org/gnu/binutils; do \
+    wget -nv --tries=3 --timeout=60 "${base}/binutils-${BINUTILS_VERSION}.tar.xz" -O binutils.tar.xz && break; \
+    done && \
+    echo "${BINUTILS_SHA256}  binutils.tar.xz" | sha256sum -c - && \
+    tar -xf binutils.tar.xz && \
+    cd binutils-${BINUTILS_VERSION} && \
+    ./configure --prefix=/opt/binutils-${BINUTILS_VERSION} \
+    --with-system-zlib \
+    --disable-werror \
+    --disable-gprofng && \
+    make -j "${NUM_MAKE_JOBS}" MAKEINFO=true && \
+    make install MAKEINFO=true && \
+    cd /build && \
+    wget -nv https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
+    make OLYMPUS CC="gcc-15 -B/opt/binutils-${BINUTILS_VERSION}/bin/" && \
+    cp streamOlympus /out/
+
 FROM nvcr.io/nvidia/pytorch:26.09-py3
 
 # OS:
@@ -16,12 +57,13 @@ FROM nvcr.io/nvidia/pytorch:26.09-py3
 #   - OFED: inbox (kernel-provided)
 #   - HPC-X: 2.51 (includes ompi4 + ompi5, UCX 1.22.0)
 # Intel:
-#   - mlc: 3.12 (amd64 only)
+#   - mlc: 3.13 (amd64 only)
 #
 # Notes for sm_107:
 #   - This machine is aarch64 (ARM). cpu_hpl, Intel MLC, AOCC and AMD BLIS auto-skip on aarch64.
 #   - CUDA 13.4 builds the in-tree CUDA benchmarks, CUTLASS, NVBench,
-#     cuBLASLt and NCCL tests for sm_107; gpu-burn generates compute_107 PTX.
+#     cuBLASLt and NCCL tests for sm_107.
+#   - streamOlympus is built with GCC 15 in the stream-olympus-builder stage above.
 #
 # Build (from repo root), e.g.:
 #   docker build -t superbench-cuda13.4 \
@@ -73,62 +115,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
-# Upgrade GCC to 15 and binutils to 2.46.1 — required for -mcpu=olympus support
-# (Ubuntu 24.04 ships GCC 13 / binutils 2.42 which lack Olympus CPU definitions).
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends software-properties-common && \
-    add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends gcc-15 g++-15 && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 150 \
-    --slave   /usr/bin/g++  g++  /usr/bin/g++-15 \
-    --slave   /usr/bin/gcov gcov /usr/bin/gcov-15 && \
-    update-alternatives --install /usr/bin/cc  cc  /usr/bin/gcc-15 150 && \
-    update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-15 150 && \
-    update-alternatives --set gcc /usr/bin/gcc-15 && \
-    update-alternatives --set cc  /usr/bin/gcc-15 && \
-    update-alternatives --set c++ /usr/bin/g++-15 && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
-
-# Machine has 176 cores (352 threads); raise make jobs to speed up the build.
-# Max ~176 (cores) / 352 (threads). Override at build time with --build-arg NUM_MAKE_JOBS=...
+# Number of parallel jobs for the NVBench build. Override with --build-arg NUM_MAKE_JOBS=...
 ARG NUM_MAKE_JOBS=64
-
-ENV BINUTILS_VERSION=2.46.1
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    wget ca-certificates xz-utils zlib1g-dev libzstd-dev && \
-    cd /tmp && \
-    wget -nv https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.xz && \
-    tar -xf binutils-${BINUTILS_VERSION}.tar.xz && \
-    cd binutils-${BINUTILS_VERSION} && \
-    ./configure --prefix=/usr/local \
-    --enable-plugins \
-    --enable-64-bit-bfd \
-    --with-system-zlib \
-    --disable-werror && \
-    make -j "${NUM_MAKE_JOBS}" MAKEINFO=true && \
-    make install MAKEINFO=true && \
-    for t in as ld ld.bfd nm ar ranlib objcopy objdump strip readelf addr2line c++filt size strings gprof; do \
-    if [ -x /usr/local/bin/$t ]; then ln -sf /usr/local/bin/$t /usr/bin/$t; fi; \
-    done && \
-    ln -sf /usr/local/bin/as /usr/bin/aarch64-linux-gnu-as && \
-    ln -sf /usr/local/bin/ld /usr/bin/aarch64-linux-gnu-ld && \
-    cd / && \
-    rm -rf /tmp/binutils-${BINUTILS_VERSION}* && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
-
-ENV PATH="/usr/local/bin:${PATH}"
 
 ARG TARGETPLATFORM
 ARG TARGETARCH
-
-ENV CUDA_ARCH_LIST="10.7"
-ENV TORCH_CUDA_ARCH_LIST="10.7"
 
 # Install Docker
 ENV DOCKER_VERSION=20.10.8
@@ -152,32 +143,15 @@ RUN mkdir -p /root/.ssh && \
 # ompi4+ompi5 and the ompi_mpi_short_float symbol that PyTorch is linked against.
 # Note: HPC-X 2.51 no longer has hpcx-init.sh; use /opt/hpcx/ompi/bin directly.
 # DO NOT install a separate OFED or HPC-X — it breaks PyTorch's MPI linkage.
-# The commented-out sections below are kept for reference only.
-#
-# ENV OFED_VERSION=24.10-1.1.4.0
-# RUN TARGETARCH_HW=$(uname -m) && \
-#     cd /tmp && \
-#     wget -q https://content.mellanox.com/ofed/MLNX_OFED-${OFED_VERSION}/MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}.tgz && \
-#     tar xzf MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}.tgz && \
-#     MLNX_OFED_LINUX-${OFED_VERSION}-ubuntu24.04-${TARGETARCH_HW}/mlnxofedinstall --user-space-only --without-fw-update --without-ucx-cuda --force --all && \
-#     rm -rf /tmp/MLNX_OFED_LINUX-${OFED_VERSION}*
-#
-# ENV HPCX_VERSION=v2.24.1
-# RUN TARGETARCH_HW=$(uname -m) && \
-#     cd /opt && \
-#     rm -rf hpcx && \
-#     wget https://content.mellanox.com/hpc/hpc-x/${HPCX_VERSION}_cuda13/hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda13-${TARGETARCH_HW}.tbz -O hpcx.tbz && \
-#     tar xf hpcx.tbz && \
-#     mv hpcx-${HPCX_VERSION}-gcc-doca_ofed-ubuntu24.04-cuda13-${TARGETARCH_HW} hpcx && \
-#     rm hpcx.tbz
 
 # Installs specific to amd64 platform
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
     cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
+    echo "a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019  mlc.tgz" | sha256sum -c - && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz && \
     # Install AOCC compiler
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \
@@ -211,9 +185,10 @@ ADD dockerfile/etc /opt/microsoft/
 WORKDIR ${SB_HOME}
 
 ADD third_party third_party
-# Build all CUDA targets. The base image's HPC-X 2.51 provides mpicc on PATH
-# (via MPI_HOME=/opt/hpcx/ompi set above).
+# Build the CUDA targets (the `cuda` aggregate; MSCCL is not included). mpicc comes from the
+# base image's HPC-X 2.51 via the PATH set above.
 RUN make -C third_party cuda NUM_MAKE_JOBS=${NUM_MAKE_JOBS}
+COPY --from=stream-olympus-builder /out/ ${SB_MICRO_PATH}/bin/
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \

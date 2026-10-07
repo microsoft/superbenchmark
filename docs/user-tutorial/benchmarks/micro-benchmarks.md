@@ -117,7 +117,7 @@ This option predates CUDA 13.4; it does not benchmark the algorithm search itsel
 
 With cuDNN 9.26 in the CUDA 13.4 image, these convolution benchmarks can use
 compute capability 10.7. The
-[cuDNN 9.26 release notes](https://docs.nvidia.com/deeplearning/cudnn/backend/latest/release-notes.html#cudnn-9-26-0)
+[cuDNN 9.26 release notes](https://docs.nvidia.com/deeplearning/cudnn/backend/v9.26.0/release-notes.html#cudnn-9-26-0)
 announce SM 107 and CUDA 13.4 support, but do not introduce new legacy convolution
 algorithms or deprecate existing ones. Backend graph features (such as attention and
 FP8 pointwise fusion) are not covered by this convolution-only benchmark; the notes

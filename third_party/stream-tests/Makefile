@@ -5,7 +5,10 @@ GENFLAGS := -DSTREAM_ARRAY_SIZE=120000000
 ZEN3FLAGS := -DSTREAM_ARRAY_SIZE=400000000 -march=znver3
 ZEN4FLAGS := -DSTREAM_ARRAY_SIZE=800000000 -march=znver4
 NEO2FLAGS := -DSTREAM_ARRAY_SIZE=120000000 -mcpu=neoverse-v2
-OLYMPUSFLAGS := -DSTREAM_ARRAY_SIZE=120000000 -mcpu=olympus
+# Olympus has 328 MiB of L3 (352 MiB of L2) across 2 sockets; 400M doubles (~3 GiB per array) is
+# more than 4x the combined cache. The arrays exceed 4 GiB in total, so use the large code model
+# (which GCC does not support together with PIE).
+OLYMPUSFLAGS := -DSTREAM_ARRAY_SIZE=400000000 -mcpu=olympus -mcmodel=large -fno-pie -no-pie
 NATIVEFLAGS := -DSTREAM_ARRAY_SIZE=120000000 -mcpu=native
 
 GEN_OUTPUT := stream
