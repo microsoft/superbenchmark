@@ -312,6 +312,29 @@ Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computer
 Measure of memory bandwidth and computation rate for simple vector kernels.
 performed by [University of Virginia STREAM benchmark](https://www.cs.virginia.edu/stream/ref.html).
 
+#### Architectures
+
+The `--cpu_arch` parameter selects which STREAM binary is run. All binaries are built from the same checksum-verified `stream.c`
+by `third_party/stream-tests/Makefile`.
+
+| `--cpu_arch` | Binary           | Array size (doubles) | Built when                                                                                              |
+|--------------|------------------|----------------------|---------------------------------------------------------------------------------------------------------|
+| `other`      | `stream`         | 120M                 | Always.                                                                                                 |
+| `zen3`       | `streamZen3`     | 400M                 | AMD AOCC is installed (amd64 images).                                                                   |
+| `zen4`       | `streamZen4`     | 800M                 | AMD AOCC is installed (amd64 images).                                                                   |
+| `neo2`       | `streamNeo2`     | 120M                 | ARM64 images (Neoverse V2, e.g. Grace).                                                                 |
+| `olympus`    | `streamOlympus`  | 400M                 | ARM64 images whose compiler supports `-mcpu=olympus`. In `cuda13.4` it is built with GCC 15 in a separate build stage. |
+| `native`     | `streamNative`   | `NATIVE_ARRAY_SIZE`  | ARM64 only; build explicitly with `make NATIVE` on the host that will run it (see below).                       |
+
+`native` is tuned for the CPU of the build host, so it is not part of the published images. To use it, build it on the target host
+(`third_party` and `build-essential` are in the image), sizing the arrays to at least 4x the host's total cache:
+
+```bash
+cd ${SB_HOME}/third_party/stream-tests
+make NATIVE NATIVE_ARRAY_SIZE=400000000
+cp streamNative ${SB_MICRO_PATH}/bin/
+```
+
 #### Metrics
 
 | Name                                                     | Unit             | Description                                                    |

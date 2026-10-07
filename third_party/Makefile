@@ -241,9 +241,7 @@ endif
 # Build STREAM
 cpu_stream: sb_micro_path
 ifneq (,$(wildcard stream-tests/Makefile))
-	cd ./stream-tests && \
-	wget https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
-	make all
+	cd ./stream-tests && make all
 	cp -v ./stream-tests/stream* $(SB_MICRO_PATH)/bin/
 endif
 

@@ -35,8 +35,9 @@ RUN mkdir -p /out && \
     make -j "${NUM_MAKE_JOBS}" MAKEINFO=true && \
     make install MAKEINFO=true && \
     cd /build && \
-    wget -nv https://www.cs.virginia.edu/stream/FTP/Code/stream.c && \
+    gcc-15 --version | head -n1 && \
     make OLYMPUS CC="gcc-15 -B/opt/binutils-${BINUTILS_VERSION}/bin/" && \
+    sha256sum stream.c streamOlympus && \
     cp streamOlympus /out/
 
 FROM nvcr.io/nvidia/pytorch:26.09-py3
@@ -189,6 +190,13 @@ ADD third_party third_party
 # base image's HPC-X 2.51 via the PATH set above.
 RUN make -C third_party cuda NUM_MAKE_JOBS=${NUM_MAKE_JOBS}
 COPY --from=stream-olympus-builder /out/ ${SB_MICRO_PATH}/bin/
+# Validate runtime linkage.
+RUN f=${SB_MICRO_PATH}/bin/streamOlympus; \
+    if [ -e "$f" ]; then \
+    output="$(ldd -r "$f" 2>&1)" || { printf '%s\n' "$output"; exit 1; }; \
+    printf '%s\n' "$output"; \
+    if printf '%s\n' "$output" | grep -Eq 'not found|undefined symbol'; then exit 1; fi; \
+    fi
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \

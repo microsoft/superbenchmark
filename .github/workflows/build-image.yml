@@ -35,6 +35,8 @@ jobs:
           platforms: linux/arm64
           runner: [self-hosted, linux/arm64]
           build_args: "NUM_MAKE_JOBS=16"
+          # Cache the builder stage.
+          registry_cache: true
         - name: cuda13.0-arm64
           dockerfile: cuda13.0
           tags: superbench/main:cuda13.0-arm64
@@ -119,14 +121,24 @@ jobs:
 
           CACHE_FROM="type=registry,ref=$(cut -d, -f1 <<< ${TAGS})"
           CACHE_TO=""
-          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+          if [[ "${{ matrix.registry_cache }}" == "true" ]]; then
+            BUILDCACHE_REF="$(cut -d, -f1 <<< ${TAGS})-buildcache"
+            CACHE_FROM="${CACHE_FROM}"$'\n'"type=registry,ref=${BUILDCACHE_REF}"
+            if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+              CACHE_TO="type=registry,ref=${BUILDCACHE_REF},mode=max"
+            fi
+          elif [[ "${{ github.event_name }}" != "pull_request" ]]; then
             CACHE_TO="type=inline,mode=max"
           fi
 
           echo "dockerfile=${DOCKERFILE}" >> "$GITHUB_OUTPUT"
           echo "build_args=${BUILD_ARGS}" >> "$GITHUB_OUTPUT"
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
-          echo "cache_from=${CACHE_FROM}" >> "$GITHUB_OUTPUT"
+          {
+            echo "cache_from<<EOF"
+            echo "${CACHE_FROM}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
           echo "cache_to=${CACHE_TO}" >> "$GITHUB_OUTPUT"
       - name: Echo build args
         run: echo ${{ steps.metadata.outputs.build_args }}

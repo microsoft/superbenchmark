@@ -56,6 +56,8 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Check command
         assert (1 == len(benchmark._commands))
+        assert (benchmark._commands[0].startswith('env '))
+        assert ('&&' not in benchmark._commands[0])
         assert ('OMP_PLACES' in benchmark._commands[0])
 
         # Check results
