@@ -284,7 +284,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
             self.assertTrue(benchmark._preprocess_huggingface_models())
 
         # AutoConfig must be called with trust_remote_code matching --allow_remote_code (False here).
-        config_kwargs = mock_auto_config.from_pretrained.call_args.kwargs
+        config_kwargs = mock_auto_config.from_pretrained.call_args[1]
         self.assertFalse(config_kwargs['trust_remote_code'])
         # Memory check must run for fp32 (ONNX export dtype) regardless of --precision.
         mem_args, mem_kwargs = mock_loader_cls.check_memory_fits.call_args
@@ -304,7 +304,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
 
             benchmark._preprocess_huggingface_models()
 
-        self.assertTrue(mock_auto_config.from_pretrained.call_args.kwargs['trust_remote_code'])
+        self.assertTrue(mock_auto_config.from_pretrained.call_args[1]['trust_remote_code'])
 
     # ------------------------------------------------------------------
     # _build_trtexec_command_for_hf
@@ -347,15 +347,15 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         self.assertIs(benchmark._hf_config, mock_hf_config)
         # makedirs called once with the rank-scoped output dir.
         mock_makedirs.assert_called_once()
-        self.assertTrue(mock_makedirs.call_args.args[0].endswith('trt_rank_0'))
+        self.assertTrue(mock_makedirs.call_args[0][0].endswith('trt_rank_0'))
         # ModelSourceConfig is constructed with float32 + device_map=None (CPU load).
-        msc_kwargs = mock_msc.call_args.kwargs
+        msc_kwargs = mock_msc.call_args[1]
         self.assertEqual('float32', msc_kwargs['torch_dtype'])
         self.assertIsNone(msc_kwargs['revision'])
         self.assertIsNone(msc_kwargs['device_map'])
         self.assertEqual('huggingface', msc_kwargs['source'])
         # Exporter called with the configured batch_size / seq_length.
-        export_kwargs = mock_exporter.export_huggingface_model.call_args.kwargs
+        export_kwargs = mock_exporter.export_huggingface_model.call_args[1]
         self.assertEqual(8, export_kwargs['batch_size'])
         self.assertEqual(128, export_kwargs['seq_length'])
         # _derive_trt_input_shapes was invoked with the exported ONNX path.
@@ -433,7 +433,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
 
             self.assertTrue(benchmark._build_trtexec_command_for_hf(None, False))
 
-        self.assertTrue(mock_makedirs.call_args.args[0].endswith('trt_rank_3'))
+        self.assertTrue(mock_makedirs.call_args[0][0].endswith('trt_rank_3'))
 
     def test_build_trtexec_command_for_hf_uses_local_rank_env(self):
         """LOCAL_RANK controls the rank subdir when PROC_RANK is absent."""
@@ -453,7 +453,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
 
             self.assertTrue(benchmark._build_trtexec_command_for_hf(None, False))
 
-        self.assertTrue(mock_makedirs.call_args.args[0].endswith('trt_rank_5'))
+        self.assertTrue(mock_makedirs.call_args[0][0].endswith('trt_rank_5'))
 
     def test_build_trtexec_command_for_hf_rejects_invalid_proc_rank(self):
         """A path-like PROC_RANK is rejected before loading or exporting a model."""
@@ -478,8 +478,10 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         # Pad the input to 4D so vision helper can index dims[1..3] safely.
         vision_input_4d = _make_onnx_input('pixel_values', [0, 3, 224, 224])
         model = _make_onnx_model([vision_input_4d])
+        onnx = MagicMock()
+        onnx.load.return_value = model
 
-        with patch('onnx.load', return_value=model):
+        with patch.dict('sys.modules', {'onnx': onnx}):
             shapes = benchmark._derive_trt_input_shapes('/tmp/fake.onnx')
 
         self.assertEqual('pixel_values:4x3x224x224', shapes)
@@ -490,8 +492,10 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         benchmark = self._make_benchmark(batch_size=2)
         vision_input = _make_onnx_input('image', [0, 3, 256, 256])
         model = _make_onnx_model([vision_input])
+        onnx = MagicMock()
+        onnx.load.return_value = model
 
-        with patch('onnx.load', return_value=model):
+        with patch.dict('sys.modules', {'onnx': onnx}):
             shapes = benchmark._derive_trt_input_shapes('/tmp/fake.onnx')
 
         self.assertEqual('image:2x3x256x256', shapes)
@@ -504,8 +508,10 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
             _make_onnx_input('attention_mask', [0, 0]),
         ]
         model = _make_onnx_model(inputs)
+        onnx = MagicMock()
+        onnx.load.return_value = model
 
-        with patch('onnx.load', return_value=model):
+        with patch.dict('sys.modules', {'onnx': onnx}):
             shapes = benchmark._derive_trt_input_shapes('/tmp/fake.onnx')
 
         self.assertEqual('input_ids:4x64,attention_mask:4x64', shapes)
@@ -516,8 +522,10 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         runtime = _make_onnx_input('input_ids', [0, 0])
         weight = _make_onnx_input('weight', [768, 768])
         model = _make_onnx_model([weight, runtime], initializer_names=['weight'])
+        onnx = MagicMock()
+        onnx.load.return_value = model
 
-        with patch('onnx.load', return_value=model):
+        with patch.dict('sys.modules', {'onnx': onnx}):
             shapes = benchmark._derive_trt_input_shapes('/tmp/fake.onnx')
 
         self.assertEqual('input_ids:1x16', shapes)
@@ -527,8 +535,10 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         benchmark = self._make_benchmark()
         weight = _make_onnx_input('weight', [768, 768])
         model = _make_onnx_model([weight], initializer_names=['weight'])
+        onnx = MagicMock()
+        onnx.load.return_value = model
 
-        with patch('onnx.load', return_value=model):
+        with patch.dict('sys.modules', {'onnx': onnx}):
             with self.assertRaises(ValueError):
                 benchmark._derive_trt_input_shapes('/tmp/fake.onnx')
 

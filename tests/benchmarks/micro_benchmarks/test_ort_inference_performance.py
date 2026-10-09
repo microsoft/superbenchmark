@@ -217,7 +217,7 @@ def test_preprocess_hf_happy_path_delegates_to_export():
         assert benchmark._preprocess_huggingface_models() is True
 
     # AutoConfig is called with trust_remote_code matching --allow_remote_code (False).
-    config_kwargs = mock_auto_config.from_pretrained.call_args.kwargs
+    config_kwargs = mock_auto_config.from_pretrained.call_args[1]
     assert config_kwargs['trust_remote_code'] is False
     # _hf_config is stashed for __inference() to read vocab_size later.
     assert benchmark._hf_config is fake_hf_config
@@ -244,7 +244,7 @@ def test_preprocess_hf_uses_float32_without_cuda():
         assert benchmark._preprocess_huggingface_models() is True
 
     assert benchmark._args.precision == Precision.FLOAT32
-    assert mock_loader_cls.check_memory_fits.call_args.args[2] == 'float32'
+    assert mock_loader_cls.check_memory_fits.call_args[0][2] == 'float32'
 
 
 def test_preprocess_hf_uses_float32_without_cuda_execution_provider():
@@ -262,7 +262,7 @@ def test_preprocess_hf_uses_float32_without_cuda_execution_provider():
         assert benchmark._preprocess_huggingface_models() is True
 
     assert benchmark._args.precision == Precision.FLOAT32
-    assert mock_loader_cls.check_memory_fits.call_args.args[2] == 'float32'
+    assert mock_loader_cls.check_memory_fits.call_args[0][2] == 'float32'
 
 
 def test_preprocess_hf_int8_uses_float32_for_memory_check():
@@ -293,7 +293,7 @@ def test_preprocess_hf_allow_remote_code_propagates():
 
         benchmark._preprocess_huggingface_models()
 
-    assert mock_auto_config.from_pretrained.call_args.kwargs['trust_remote_code'] is True
+    assert mock_auto_config.from_pretrained.call_args[1]['trust_remote_code'] is True
 
 
 def test_preprocess_hf_revision_propagates():
@@ -309,7 +309,7 @@ def test_preprocess_hf_revision_propagates():
         mock_loader_cls.check_memory_fits.return_value = (True, 1.0, 0.01, 16.0)
         assert benchmark._preprocess_huggingface_models() is True
 
-    assert mock_auto_config.from_pretrained.call_args.kwargs['revision'] == 'abc123'
+    assert mock_auto_config.from_pretrained.call_args[1]['revision'] == 'abc123'
 
 
 # ---------------------------------------------------------------------------
@@ -368,17 +368,17 @@ def test_export_hf_model_to_onnx_fp16_success(mock_export_dependencies, tmp_path
 
     assert ok is True
     # ModelSourceConfig built with float16 (precision dtype) and device_map=None.
-    msc_kwargs = mock_export_dependencies.msc.call_args.kwargs
+    msc_kwargs = mock_export_dependencies.msc.call_args[1]
     assert msc_kwargs['torch_dtype'] == 'float16'
     assert msc_kwargs['device_map'] is None
     assert msc_kwargs['hf_token'] == 'abc'
     assert msc_kwargs['revision'] is None
     # load_model_from_config is invoked with the pre-downloaded config to skip a redundant fetch.
-    load_kwargs = mock_export_dependencies.loader.load_model_from_config.call_args.kwargs
+    load_kwargs = mock_export_dependencies.loader.load_model_from_config.call_args[1]
     assert load_kwargs['device'] == 'cpu'
     assert load_kwargs['config_pretrained'] is not None
     # Exporter receives precision-tagged model name and the rank-scoped output dir.
-    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args.kwargs
+    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args[1]
     assert export_kwargs['model_name'] == 'prajjwal1_bert-tiny.float16'
     assert export_kwargs['output_dir'].endswith('rank_0')
     assert export_kwargs['batch_size'] == 8
@@ -402,13 +402,13 @@ def test_export_hf_model_to_onnx_int8_invokes_quantize(mock_export_dependencies,
 
     assert ok is True
     # ModelSourceConfig dtype is float32 because INT8 is generated post-export.
-    msc_kwargs = mock_export_dependencies.msc.call_args.kwargs
+    msc_kwargs = mock_export_dependencies.msc.call_args[1]
     assert msc_kwargs['torch_dtype'] == 'float32'
     # Exporter wrote the float32 ONNX, then quantize_dynamic was called with that file.
-    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args.kwargs
+    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args[1]
     assert export_kwargs['model_name'] == 'prajjwal1_bert-tiny.float32'
     fake_quantize_module.quantize_dynamic.assert_called_once()
-    quantize_args = fake_quantize_module.quantize_dynamic.call_args.args
+    quantize_args = fake_quantize_module.quantize_dynamic.call_args[0]
     assert quantize_args[0].endswith('prajjwal1_bert-tiny.float32.onnx')
     assert quantize_args[1].endswith('prajjwal1_bert-tiny.int8.onnx')
 
@@ -456,7 +456,7 @@ def test_export_hf_model_to_onnx_uses_proc_rank_env(mock_export_dependencies, tm
         ok = benchmark._export_hf_model_to_onnx(hf_token=None, allow_remote_code=False, hf_config=MagicMock())
 
     assert ok is True
-    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args.kwargs
+    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args[1]
     assert export_kwargs['output_dir'].endswith('rank_7')
     assert str(benchmark._ORTInferenceBenchmark__model_cache_path).endswith('rank_7')
 
@@ -470,7 +470,7 @@ def test_export_hf_model_to_onnx_uses_local_rank_env(mock_export_dependencies, t
         ok = benchmark._export_hf_model_to_onnx(hf_token=None, allow_remote_code=False, hf_config=MagicMock())
 
     assert ok is True
-    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args.kwargs
+    export_kwargs = mock_export_dependencies.exporter.export_huggingface_model.call_args[1]
     assert export_kwargs['output_dir'].endswith('rank_4')
 
 
@@ -494,7 +494,7 @@ def test_export_hf_model_to_onnx_passes_allow_remote_code_to_loader(mock_export_
     with patch.dict('os.environ', {'CUDA_VISIBLE_DEVICES': '0'}, clear=False):
         benchmark._export_hf_model_to_onnx(hf_token=None, allow_remote_code=True, hf_config=MagicMock())
 
-    loader_kwargs = mock_export_dependencies.loader_cls.call_args.kwargs
+    loader_kwargs = mock_export_dependencies.loader_cls.call_args[1]
     assert loader_kwargs['allow_remote_code'] is True
 
 
@@ -526,7 +526,7 @@ def test_benchmark_uses_precision_value_in_onnx_path(tmp_path):
             patch.object(benchmark, '_process_numeric_result', return_value=True):
         assert benchmark._benchmark() is True
 
-    session_path = ort.InferenceSession.call_args.args[0]
+    session_path = ort.InferenceSession.call_args[0][0]
     assert session_path.endswith('test_model.float16.onnx')
 
 
@@ -539,7 +539,7 @@ def test_inference_omits_unexpected_attention_mask():
 
     benchmark._ORTInferenceBenchmark__inference(session)
 
-    inputs = session.run.call_args.args[1]
+    inputs = session.run.call_args[0][1]
     assert set(inputs) == {'input_ids'}
 
 
@@ -556,6 +556,6 @@ def test_inference_includes_seq2seq_decoder_inputs():
 
     benchmark._ORTInferenceBenchmark__inference(session)
 
-    inputs = session.run.call_args.args[1]
+    inputs = session.run.call_args[0][1]
     assert set(inputs) == {'input_ids', 'attention_mask', 'decoder_input_ids'}
     assert inputs['decoder_input_ids'].shape == (8, 128)

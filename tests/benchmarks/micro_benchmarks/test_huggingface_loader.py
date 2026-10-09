@@ -205,7 +205,10 @@ class TestHuggingFaceModelLoader:
 
     def test_estimate_memory_for_cpu_and_gpu(self):
         """Memory estimates apply precision/mode multipliers and device capacity."""
-        with patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.torch.cuda') as cuda:
+        psutil = MagicMock()
+        psutil.virtual_memory.return_value = SimpleNamespace(total=8 * 1024**3)
+        with patch.dict('sys.modules', {'psutil': psutil}), \
+                patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.torch.cuda') as cuda:
             cuda.is_available.return_value = False
             estimated, available, fits = HuggingFaceModelLoader.estimate_memory(1_000_000, 'fp16', 'inference')
             assert estimated == 2_400_000
