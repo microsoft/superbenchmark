@@ -421,6 +421,7 @@ class SystemInfo():    # pragma: no cover
                 nic_list.append(nic_info)
         except Exception:
             logger.exception('Error: get nic info failed')
+        return nic_list
 
     def get_network(self):
         """Get network info, including nic info, ib info and ofed version.
