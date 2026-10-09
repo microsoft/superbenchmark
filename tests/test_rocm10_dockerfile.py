@@ -26,8 +26,11 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         registration_end = cls.dockerfile.index('\n\n', registration_start)
         cls.registration_script = cls.dockerfile[registration_start + len('RUN '):registration_end]
         start = cls.dockerfile.index('rccl_architectures=$(printf')
-        end = cls.dockerfile.index('    cmake -S /tmp/rocm-systems', start)
+        end = cls.dockerfile.index('    if [ -n "${RCCL_SOURCE_COMMIT}" ]; then', start)
         cls.routing = cls.dockerfile[start:end] + 'printf \'%s\\n\' "$rccl_architectures"\n'
+        override_start = cls.dockerfile.index("printf 'export RCCL_HOME=%q")
+        override_end = cls.dockerfile.index('; \\\n    fi', override_start)
+        cls.rccl_override_script = cls.dockerfile[override_start:override_end].replace('\\\n', '\n')
 
     def run_routing(self, targets):
         """Execute the real Dockerfile routing block with a supplied target list."""
@@ -155,16 +158,50 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
             self.assertEqual(result.stdout, '')
             self.assertFalse(activation.exists())
 
-    def test_rccl_uses_packaged_library_and_matched_test_sources(self):
-        """Build only test clients and retain runtime library search paths."""
+    def test_rccl_source_build_includes_gfx1250_fixes(self):
+        """Build RCCL and its tests from one revision that contains the MI455X fixes."""
         self.assertIn('ARG AMDGPU_TARGETS="gfx942 gfx950 gfx1250"', self.dockerfile)
         self.assertIn('test -r "${ROCM_PATH}/lib/librccl.so"', self.dockerfile)
         self.assertIn('ARG ROCM_SYSTEMS_COMMIT=6b0e43f341195e203754e08f850e437ff2fc09f9', self.dockerfile)
-        self.assertIn('-DGPU_TARGETS="${rccl_architectures}"', self.dockerfile)
+        # Merge commit of ROCm/rocm-systems#12051.
+        self.assertIn('ARG RCCL_SOURCE_COMMIT=2a0c58ec63ea22487ea65458b68b92426119eb11', self.dockerfile)
+        self.assertIn('RCCL_SOURCE_PREFIX=/opt/rccl', self.dockerfile)
+        self.assertIn("rccl_projects='projects/rccl projects/rccl-tests'", self.dockerfile)
+        self.assertIn("rccl_projects='projects/rccl-tests'", self.dockerfile)
+        self.assertIn('cmake -S /tmp/rocm-systems/projects/rccl -B /tmp/rccl-build', self.dockerfile)
+        self.assertEqual(self.dockerfile.count('-DGPU_TARGETS="${rccl_architectures}"'), 2)
+        self.assertIn('-DCMAKE_PREFIX_PATH="${rccl_prefix};${ROCM_PATH};${MPI_HOME}"', self.dockerfile)
         self.assertIn('-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON', self.dockerfile)
+        self.assertIn('grep -F "${rccl_prefix}/lib/librccl.so"', self.dockerfile)
+        self.assertLess(
+            self.dockerfile.index('cmake --install /tmp/rccl-build'),
+            self.dockerfile.index('cmake -S /tmp/rocm-systems/projects/rccl-tests'),
+        )
         self.assertNotIn('https://github.com/ROCm/rccl.git', self.dockerfile)
         self.assertNotIn('https://github.com/ROCmSoftwarePlatform/rccl.git', self.dockerfile)
         self.assertNotIn('LD_PRELOAD=', self.dockerfile)
+
+    def test_source_built_rccl_precedes_the_sdk_library(self):
+        """Prepend the source-built RCCL once, even when the activation is sourced again."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            activation = root / 'rocm10-env.sh'
+            prefix = str(root / 'rccl with spaces')
+            activation.write_text('export ROCM_PATH=/sdk RCCL_HOME=/sdk\nexport LD_LIBRARY_PATH="/sdk/lib"\n')
+            env = os.environ.copy()
+            env.pop('BASH_ENV', None)
+            env['rccl_prefix'] = prefix
+            script = self.rccl_override_script.replace('/etc/profile.d/rocm10-env.sh', str(activation))
+            subprocess.run(['/bin/bash', '-e', '-c', script], env=env, check=True)
+            env.update({'BASH_ENV': str(activation), 'LD_LIBRARY_PATH': '/stale'})
+            result = subprocess.run(
+                ['/bin/bash', '-e', '-c', '. "$BASH_ENV"; printf "%s\\n%s\\n" "$RCCL_HOME" "$LD_LIBRARY_PATH"'],
+                env=env,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.stdout.splitlines(), [prefix, f'{prefix}/lib:/sdk/lib'])
 
     def test_doca_uses_only_the_userspace_profile(self):
         """Use the matching Ubuntu release without installing host kernel drivers."""
@@ -221,7 +258,8 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
             '"amdrocm10-rvs=${RVS_VERSION}"',
             'WORKDIR ${SB_HOME}',
             'COPY third_party third_party',
-            'RUN git init /tmp/rocm-systems',
+            'RUN rccl_architectures=$(printf',
+            'git init /tmp/rocm-systems',
             'make -C third_party fio rocm_perftest',
             'ARG ROCM_TESTS_SHA256=',
             'COPY . .',

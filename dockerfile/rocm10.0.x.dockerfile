@@ -11,12 +11,19 @@ ARG NUM_MAKE_JOBS=64
 ARG ROCM_VERSION=10.0.0
 # rocm-systems revision selected by TheRock's therock-10.0 release.
 ARG ROCM_SYSTEMS_COMMIT=6b0e43f341195e203754e08f850e437ff2fc09f9
+# MI455X (gfx1250) needs RCCL fixes merged to rocm-systems develop after that
+# release, including ROCm/rocm-systems#12051 (GPU->NIC distance and GDR on gfx1250
+# MLOPart partitions) and the gfx1250 symmetric-memory/VMM teardown fixes.
+# RCCL and RCCL-tests are built from this revision into RCCL_SOURCE_PREFIX.
+# Pass an empty value to keep the packaged RCCL with release-matched RCCL-tests.
+ARG RCCL_SOURCE_COMMIT=2a0c58ec63ea22487ea65458b68b92426119eb11
 
 ENV DEBIAN_FRONTEND=noninteractive \
     AMDGPU_TARGETS="${AMDGPU_TARGETS}" \
     CMAKE_BUILD_PARALLEL_LEVEL="${NUM_MAKE_JOBS}" \
     CMAKE_POLICY_VERSION_MINIMUM=3.5 \
     MPI_HOME=/usr/local/mpi \
+    RCCL_SOURCE_PREFIX=/opt/rccl \
     EXTRAS_PATH=/opt/rocm/extras-10 \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
@@ -72,7 +79,7 @@ RUN curl -fsSL "https://content.mellanox.com/DOCA/DOCA_v${DOCA_VERSION}/host/doc
     apt-get update && apt-get clean
 
 # Add development files to the base's SDK and use AMD's path discovery directly.
-# RCCL is AMD's prebuilt library in rocm-sdk-libraries, never built from source.
+# The SDK's prebuilt RCCL remains installed; RCCL_SOURCE_COMMIT may add an override.
 RUN python3 -m pip install --index-url https://stable.repo.amd.com/rocm/whl-next/ \
         "rocm[devel,libraries,device-all]==${ROCM_VERSION}" && \
     rocm-sdk init && \
@@ -131,28 +138,56 @@ RUN install -d -m 0755 /etc/apt/keyrings && \
 WORKDIR ${SB_HOME}
 COPY third_party third_party
 
-# Build only the release-matched RCCL test clients against the packaged library.
-RUN git init /tmp/rocm-systems && \
-    git -C /tmp/rocm-systems remote add origin https://github.com/ROCm/rocm-systems.git && \
-    git -C /tmp/rocm-systems sparse-checkout set projects/rccl-tests && \
-    git -C /tmp/rocm-systems fetch --depth 1 --filter=blob:none origin "${ROCM_SYSTEMS_COMMIT}" && \
-    git -C /tmp/rocm-systems checkout --detach FETCH_HEAD && \
-    rccl_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//') && \
+# Build RCCL-tests, and RCCL itself when RCCL_SOURCE_COMMIT is set, from one
+# rocm-systems revision. The source-built library precedes the SDK library on
+# LD_LIBRARY_PATH, which RUNPATH alone cannot override, so soname lookups
+# (including SuperBench's mpirun -x LD_LIBRARY_PATH) resolve the fixed RCCL.
+RUN rccl_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//') && \
     if [ -z "${rccl_architectures}" ]; then \
         echo 'AMDGPU_TARGETS must contain at least one GPU architecture.' >&2; exit 1; \
     fi && \
+    if [ -n "${RCCL_SOURCE_COMMIT}" ]; then \
+        rocm_systems_commit="${RCCL_SOURCE_COMMIT}"; rccl_prefix="${RCCL_SOURCE_PREFIX}"; \
+        rccl_projects='projects/rccl projects/rccl-tests'; \
+    else \
+        rocm_systems_commit="${ROCM_SYSTEMS_COMMIT}"; rccl_prefix="${ROCM_PATH}"; \
+        rccl_projects='projects/rccl-tests'; \
+    fi && \
+    git init /tmp/rocm-systems && \
+    git -C /tmp/rocm-systems remote add origin https://github.com/ROCm/rocm-systems.git && \
+    git -C /tmp/rocm-systems sparse-checkout set ${rccl_projects} && \
+    git -C /tmp/rocm-systems fetch --depth 1 --filter=blob:none origin "${rocm_systems_commit}" && \
+    git -C /tmp/rocm-systems checkout --detach FETCH_HEAD && \
+    if [ -n "${RCCL_SOURCE_COMMIT}" ]; then \
+        cmake -S /tmp/rocm-systems/projects/rccl -B /tmp/rccl-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER="${ROCM_PATH}/bin/hipcc" \
+            -DCMAKE_PREFIX_PATH="${ROCM_PATH}" \
+            -DROCM_PATH="${ROCM_PATH}" \
+            -DGPU_TARGETS="${rccl_architectures}" \
+            -DBUILD_TESTS=OFF \
+            -DCMAKE_INSTALL_PREFIX="${rccl_prefix}" \
+            -DCMAKE_INSTALL_LIBDIR=lib \
+            -DCMAKE_INSTALL_RPATH="${ROCM_PATH}/lib" && \
+        cmake --build /tmp/rccl-build -j"${NUM_MAKE_JOBS}" && \
+        cmake --install /tmp/rccl-build && \
+        test -r "${rccl_prefix}/lib/librccl.so" && \
+        printf 'export RCCL_HOME=%q\n' "${rccl_prefix}" >> /etc/profile.d/rocm10-env.sh && \
+        printf 'export LD_LIBRARY_PATH=%q:"${LD_LIBRARY_PATH}"\n' "${rccl_prefix}/lib" >> /etc/profile.d/rocm10-env.sh; \
+    fi && \
     cmake -S /tmp/rocm-systems/projects/rccl-tests -B /tmp/rccl-tests-build \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_PREFIX_PATH="${ROCM_PATH};${MPI_HOME}" \
+        -DCMAKE_PREFIX_PATH="${rccl_prefix};${ROCM_PATH};${MPI_HOME}" \
         -DROCM_PATH="${ROCM_PATH}" \
         -DGPU_TARGETS="${rccl_architectures}" \
         -DUSE_MPI=ON \
         -DCMAKE_INSTALL_PREFIX="${SB_HOME}" \
-        -DCMAKE_INSTALL_RPATH="${ROCM_PATH}/lib;${MPI_HOME}/lib" \
+        -DCMAKE_INSTALL_RPATH="${rccl_prefix}/lib;${ROCM_PATH}/lib;${MPI_HOME}/lib" \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON && \
     cmake --build /tmp/rccl-tests-build -j"${NUM_MAKE_JOBS}" && \
     cmake --install /tmp/rccl-tests-build && \
-    rm -rf /tmp/rocm-systems /tmp/rccl-tests-build
+    rm -rf /tmp/rocm-systems /tmp/rccl-build /tmp/rccl-tests-build && \
+    bash -c 'ldd "${SB_HOME}/bin/all_reduce_perf"' | grep -F "${rccl_prefix}/lib/librccl.so"
 
 # Do not invoke the legacy ROCm aggregate target: it clones HIP 5.5 samples,
 # rebuilds math libraries, and installs unqualified Megatron/DeepSpeed dependencies.

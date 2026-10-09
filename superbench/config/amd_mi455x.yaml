@@ -1,0 +1,145 @@
+# SuperBench Config - AMD Instinct MI455X (gfx1250), 4 GPUs per node.
+# Requires the dockerfile/rocm10.0.x.dockerfile image, whose RCCL and RCCL-tests
+# include the gfx1250 fixes from ROCm/rocm-systems#12051.
+# Run a subset with: sb run ... -C 'superbench.enable=["gpu-copy-bw:perf"]'
+version: v0.12
+superbench:
+  enable: null
+  env:
+    HIP_FORCE_DEV_KERNARG: '1'
+  var:
+    default_local_mode: &default_local_mode
+      enable: true
+      modes:
+        - name: local
+          proc_num: 4
+          prefix: HIP_VISIBLE_DEVICES={proc_rank}
+          parallel: yes
+    default_pytorch_mode: &default_pytorch_mode
+      enable: true
+      modes:
+        - name: torch.distributed
+          proc_num: 4
+          node_num: 1
+      frameworks:
+        - pytorch
+    # RCCL environment validated on MI455X. MNNVL uses fabric memory handles and
+    # needs cuMem; HSA_HOTSWAP_DISABLE turns off the gfx1250 code-object hotswap hook.
+    rccl_env: &rccl_env
+      NCCL_IGNORE_CPU_AFFINITY: '1'
+      NCCL_CUMEM_ENABLE: '1'
+      NCCL_MNNVL_ENABLE: '1'
+      HSA_HOTSWAP_DISABLE: '1'
+      NCCL_DEBUG: VERSION
+    rccl_mode: &rccl_mode
+      enable: true
+      timeout: 1800
+      modes:
+        - name: mpi
+          proc_num: 4
+          node_num: 1
+          env:
+            <<: *rccl_env
+    model_ddp_parameter: &model_ddp_param
+      duration: 0
+      num_warmup: 64
+      num_steps: 512
+      sample_count: 8192
+      batch_size: 128
+      precision: [float32, float16]
+      model_action: [train]
+      pin_memory: yes
+      num_workers: 0
+  benchmarks:
+    kernel-launch:
+      <<: *default_local_mode
+    gemm-flops:
+      <<: *default_local_mode
+      parameters:
+        m: 7680
+        n: 8192
+        k: 8192
+    hipblaslt-gemm:
+      <<: *default_local_mode
+      parameters:
+        in_types: ['fp32', 'fp16', 'bf16', 'fp8']
+        tolerant_fail: yes
+        num_warmup: 10
+        num_steps: 100
+        shapes:
+          - 4096,4096,4096
+          - 8192,8192,8192
+          - 16384,16384,16384
+    mem-bw:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 4
+          prefix: HIP_VISIBLE_DEVICES={proc_rank}
+          parallel: no
+    gpu-copy-bw:correctness:
+      enable: true
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type: [htod, dtoh, dtod, one_to_all, all_to_one, all_to_all]
+        copy_type: [sm, dma]
+        size: 4096
+        num_warm_up: 0
+        num_loops: 1
+        check_data: true
+    gpu-copy-bw:perf:
+      enable: true
+      timeout: 1800
+      modes:
+        - name: local
+          parallel: no
+      parameters:
+        mem_type: [dtod, all_to_all]
+        copy_type: [sm, dma]
+        size: 34359738368
+        num_warm_up: 1
+        num_loops: 10
+    # Data check over small sizes before the large-message bandwidth sweep.
+    rccl-bw:allreduce:correctness:
+      <<: *rccl_mode
+      parameters:
+        operation: allreduce
+        ngpus: 1
+        minbytes: 8
+        maxbytes: 64M
+        stepfactor: 2
+        check: 1
+        warmup_iters: 5
+        iters: 20
+    # Equivalent to: mpirun -np 4 all_reduce_perf -b 1G -e 32G -f 2 -g 1 -c 0 -w 10 -n 50
+    rccl-bw:allreduce:
+      <<: *rccl_mode
+      parameters:
+        operation: allreduce
+        ngpus: 1
+        minbytes: 1G
+        maxbytes: 32G
+        stepfactor: 2
+        check: 0
+        warmup_iters: 10
+        iters: 50
+    model-benchmarks:bert:
+      <<: *default_pytorch_mode
+      models:
+        - bert-base
+        - bert-large
+      parameters:
+        <<: *model_ddp_param
+        seq_len: 224
+        # The default 1e-8 underflows in FP16 Adam.
+        optimizer_eps: 0.0001
+    model-benchmarks:resnet:
+      <<: *default_pytorch_mode
+      models:
+        - resnet50
+        - resnet101
+      parameters:
+        <<: *model_ddp_param
+        batch_size: 384

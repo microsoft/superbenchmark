@@ -135,32 +135,35 @@ canonical library. Otherwise, importing PyTorch before the AMD SMI bindings
 can load two initialization states and report zero GPUs even when HIP sees
 all devices.
 
-* RCCL is AMD's **prebuilt SDK library**, not rebuilt from source.
-  Only RCCL-tests is compiled, from the `rocm-systems` revision selected by
-  TheRock's `therock-10.0` release.
-* Open MPI from the `v4.1.8` source tag retains `/usr/local/mpi` (this source
-  build reports `4.1.8rc1`). Current built-in MPI calls exchange
+* RCCL and RCCL-tests are built from one `rocm-systems` revision
+  (`RCCL_SOURCE_COMMIT`) and installed under `/opt/rccl` and
+  `/opt/superbench/bin`. The default revision contains the gfx1250 (MI455X)
+  fixes merged after TheRock's `therock-10.0` release, including
+  [ROCm/rocm-systems#12051](https://github.com/ROCm/rocm-systems/pull/12051).
+  `/opt/rccl/lib` precedes the SDK library on `LD_LIBRARY_PATH`, so RCCL-tests
+  and other soname lookups, including SuperBench MPI launches, resolve it. Build with
+  `--build-arg RCCL_SOURCE_COMMIT=` to keep AMD's prebuilt SDK RCCL and compile
+  only RCCL-tests from the `therock-10.0` revision.
+* Open MPI 5.0.10 from the DOCA 3.4.0 userspace packages retains
+  `/usr/local/mpi`. Current built-in MPI calls exchange
   host metadata, timing/error values, and NumPy arrays; GPU collectives use
   RCCL. This scaffold does not claim ROCm-aware MPI support for applications
   that pass device pointers directly to MPI.
-* Locally compiled benchmark kernels default to `gfx942 gfx950`, independently
-  of the all-device SDK packages. Other kernel targets require an explicit
-  `AMDGPU_TARGETS` build argument and hardware qualification.
-* RVS `1.6.122-708` and its bundled TransferBench are installed from AMD's
-  SHA-256-pinned relocatable Extras archive. Their prefix is
-  `/opt/rocm-extras-10`, separate from the wheel SDK. Native RVS packages are
-  not installed because their dependencies would bring in another SDK.
+* Locally compiled benchmark kernels default to `gfx942 gfx950 gfx1250`,
+  independently of the all-device SDK packages. Other kernel targets require an
+  explicit `AMDGPU_TARGETS` build argument and hardware qualification.
+* RVS `1.6.122-708` and its bundled TransferBench come from AMD's signed
+  Ubuntu 26.04 APT repositories under `/opt/rocm/extras-10`. ROCm `mem-bw`
+  uses the TransferBench backend (`SB_ROCM_MEM_BW_BACKEND=transferbench`).
 * The image includes SuperBench, its native microbenchmarks, RCCL-tests, fio,
-  and ROCm-enabled perftest. It uses Ubuntu's RDMA development packages;
-  no DOCA/OFED userspace version or host driver is selected by this scaffold.
+  ROCm-enabled perftest, `rocblas-bench`/`hipblaslt-bench` from TheRock's test
+  archive, and TransformerEngine, AITER and Megatron-LM built by
+  `dockerfile/etc/install-rocm10-frameworks.sh`. No host driver is installed.
 
-The following remain deliberately unqualified or absent: TransformerEngine,
-Megatron/DeepSpeed setup, `rocblas-bench`, `hipblaslt-bench`, Intel MLC, and the
-old HIP 5.5 `hipBusBandwidth` sample. Consequently, the existing `gemm-flops`,
-`hipblaslt-gemm`, `cpu-memory-bw-latency`, and ROCm `mem-bw` wrappers are not
-ready to run in this scaffold. No executable aliases or silently substituted
-metrics are provided. Existing `rocm-smi` system-info collection and
-`rocprofv2` tracing still need their separate ROCm 10 migrations.
+The following remain absent: Intel MLC (`cpu-memory-bw-latency`),
+Megatron-DeepSpeed, and the old HIP 5.5 `hipBusBandwidth` sample. Existing
+`rocm-smi` system-info collection and `rocprofv2` tracing still need their
+separate ROCm 10 migrations.
 
 Validation on 2026-09-30: the scaffold built successfully and passed `pip check`,
 34 targeted regression tests (three NVIDIA-only tests skipped), GEMM correctness
@@ -170,6 +173,25 @@ An eight-rank Open MPI / packaged-RCCL all-reduce passed data checking
 (`NCCL_IB_DISABLE=1`, single node). RVS module/GPU discovery also worked.
 These checks do not qualify multi-node networking, additional GPU architectures,
 the omitted benchmarks, or sustained RVS stress workloads.
+
+#### Running on MI455X (gfx1250)
+
+`superbench/config/amd_mi455x.yaml` is a small four-GPU configuration for this
+image. Its RCCL modes set the environment used for MI455X all-reduce runs
+(`NCCL_IGNORE_CPU_AFFINITY`, `NCCL_CUMEM_ENABLE`, `NCCL_MNNVL_ENABLE`,
+`HSA_HOTSWAP_DISABLE`, and `NCCL_DEBUG=VERSION` to log the loaded RCCL), and
+`rccl-bw:allreduce` runs the equivalent of
+`mpirun -np 4 all_reduce_perf -b 1G -e 32G -f 2 -g 1 -c 0 -w 10 -n 50`.
+
+```bash
+sb run --host-list localhost -i superbench:rocm10-scaffold \
+  -c superbench/config/amd_mi455x.yaml \
+  -C 'superbench.enable=["rccl-bw:allreduce:correctness","rccl-bw:allreduce"]'
+```
+
+MNNVL requires `NCCL_CUMEM_ENABLE=1`; set `NCCL_MNNVL_ENABLE=0` on hosts
+without a configured scale-up fabric. RCCL-tests' `-A 1` algorithm/protocol
+columns are a manual diagnostic and are not emitted by `rccl-bw`.
 
 #### TransferBench versus the legacy memory-bandwidth test
 
