@@ -319,7 +319,10 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         ):
             self.assertIn(url, self.dockerfile)
         self.assertIn('third_party/Megatron/megatron_core_0.19.2_rocm10.patch', self.dockerfile)
-        self.assertIn("NVTE_ROCM_ARCH='gfx942;gfx950;gfx1250'", self.dockerfile)
+        self.assertIn('NVTE_ROCM_ARCH="${te_architectures}"', self.dockerfile)
+        normalize = "$(printf '%s' \"${AMDGPU_TARGETS}\" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//')"
+        self.assertIn('rccl_architectures=' + normalize, self.dockerfile)
+        self.assertIn('te_architectures=' + normalize, self.dockerfile)
         self.assertIn('PIP_CONSTRAINT=/tmp/rocm10-constraints.txt', self.dockerfile)
         self.assertIn('python3 -m pip install --no-deps /tmp/rocm10-wheels/*.whl', self.dockerfile)
         self.assertIn('diff -u /tmp/rocm10-constraints.txt -', self.dockerfile)

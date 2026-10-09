@@ -128,12 +128,15 @@ The base contains a wheel-distributed SDK. The scaffold installs
 `rocm[devel,libraries,device-all]==10.0.0` and preserves the base's framework
 and SDK versions with pip constraints. **All-device GPU packages are the
 default**; this is not a multi-platform CPU image (the base is Linux x86_64).
-`rocm-sdk init` expands the development tree, and `/opt/rocm` points to the
-discovered SDK root. No second native-package ROCm SDK is installed.
-The development overlay's AMD SMI library aliases point to the core wheel's
-canonical library. Otherwise, importing PyTorch before the AMD SMI bindings
-can load two initialization states and report zero GPUs even when HIP sees
-all devices.
+`rocm-sdk init` expands the development tree. `ROCM_PATH` (and `ROCM_HOME`,
+`HIP_PATH`) is set to the discovered wheel SDK root in
+`/etc/profile.d/rocm10-env.sh`; no `/opt/rocm` alias is created. The native
+`amdrocm-*` 10.0.0 runtime, base, AMD SMI, BLAS, rand and LLVM packages from
+AMD's APT repository are installed only as RVS dependencies; SuperBench builds
+and `LD_LIBRARY_PATH` use the wheel SDK. The core wheel's bundled AMD SMI Python
+bindings are registered in place with a `.pth` entry (until
+[ROCm/TheRock#3054](https://github.com/ROCm/TheRock/issues/3054) is fixed), so
+`import amdsmi` does not pick up a separate PyPI wrapper.
 
 * RCCL and RCCL-tests are built from one `rocm-systems` revision
   (`RCCL_SOURCE_COMMIT`) and installed under `/opt/rccl` and
@@ -149,9 +152,10 @@ all devices.
   host metadata, timing/error values, and NumPy arrays; GPU collectives use
   RCCL. This scaffold does not claim ROCm-aware MPI support for applications
   that pass device pointers directly to MPI.
-* Locally compiled benchmark kernels default to `gfx942 gfx950 gfx1250`,
-  independently of the all-device SDK packages. Other kernel targets require an
-  explicit `AMDGPU_TARGETS` build argument and hardware qualification.
+* Locally compiled kernels (SuperBench benchmarks, RCCL and TransformerEngine)
+  default to `gfx942 gfx950 gfx1250`, independently of the all-device SDK
+  packages. Other kernel targets require an explicit `AMDGPU_TARGETS` build
+  argument and hardware qualification.
 * RVS `1.6.122-708` and its bundled TransferBench come from AMD's signed
   Ubuntu 26.04 APT repositories under `/opt/rocm/extras-10`. The image sets
   `SB_ROCM_MEM_BW_BACKEND=transferbench` for ROCm `mem-bw`; the TransferBench

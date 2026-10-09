@@ -5,7 +5,8 @@ LABEL maintainer="SuperBench"
 SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
 
 # Experimental scaffold: preserve AMD's matched Python 3.14 / PyTorch 2.13 stack.
-# SDK packages include all devices; this argument only selects locally built kernels.
+# SDK packages include all devices; this argument selects the targets of locally
+# built kernels (SuperBench benchmarks, RCCL and TransformerEngine).
 ARG AMDGPU_TARGETS="gfx942 gfx950 gfx1250"
 ARG NUM_MAKE_JOBS=64
 ARG ROCM_VERSION=10.0.0
@@ -239,10 +240,11 @@ ENV SB_ROCM10_FRAMEWORK_ROOT=/opt/rocm10-frameworks \
     NVTE_FUSED_ATTN_AOTRITON=0
 RUN framework_jobs="${NUM_MAKE_JOBS}" && \
     if [ "${framework_jobs}" -gt 16 ]; then framework_jobs=16; fi && \
+    te_architectures=$(printf '%s' "${AMDGPU_TARGETS}" | tr -s '[:space:]' ';' | sed 's/^;//; s/;$//') && \
     export MAX_JOBS="${framework_jobs}" CMAKE_BUILD_PARALLEL_LEVEL="${framework_jobs}" \
         NVTE_BUILD_MAX_JOBS="${framework_jobs}" PIP_CONSTRAINT=/tmp/rocm10-constraints.txt \
         TMPDIR=/tmp/rocm10-frameworks-scratch NVTE_USE_ROCM=1 NVTE_FRAMEWORK=pytorch \
-        NVTE_ROCM_ARCH='gfx942;gfx950;gfx1250' NVTE_NO_LOCAL_VERSION=1 NVTE_CK_JIT=1 \
+        NVTE_ROCM_ARCH="${te_architectures}" NVTE_NO_LOCAL_VERSION=1 NVTE_CK_JIT=1 \
         NVTE_FUSED_ATTN_AOTRITON=1 PREBUILD_KERNELS=0 BUILD_TARGET=rocm RCCL_HOME="${ROCM_PATH}" && \
     python3 -c 'import sys; from importlib.metadata import version; expected = {"torch": "2.13.0+rocm10.0.0", "triton": "3.8.0+git4cff872c.rocm10.0.0", "rocm-sdk-core": "10.0.0", "rocm-sdk-devel": "10.0.0"}; wrong = ["{}=={} (found {})".format(name, value, version(name)) for name, value in expected.items() if version(name) != value]; sys.exit("Unexpected base packages: " + ", ".join(wrong) if wrong else 0)' && \
     mkdir -p "${TMPDIR}" && \
