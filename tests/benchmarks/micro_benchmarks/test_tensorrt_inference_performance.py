@@ -212,7 +212,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         benchmark._args = SimpleNamespace(**defaults)
         # Set name-mangled private attributes that _preprocess() normally fills in.
         benchmark._TensorRTInferenceBenchmark__bin_path = '/fake/bin/trtexec'
-        benchmark._TensorRTInferenceBenchmark__workspace_flag = '--memPoolSize=workspace:8192M'
+        benchmark._TensorRTInferenceBenchmark__workspace_flag = '--memPoolSize=workspace:8192'
         benchmark._commands = []
         return benchmark
 
@@ -366,7 +366,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         self.assertIn('/fake/bin/trtexec', cmd)
         self.assertIn('--onnx=/tmp/torchhub/checkpoints/trt_rank_0/m.onnx', cmd)
         self.assertIn(f'--optShapes={derived_shapes}', cmd)
-        self.assertIn('--memPoolSize=workspace:8192M', cmd)
+        self.assertIn('--memPoolSize=workspace:8192', cmd)
         self.assertIn('--fp16', cmd)
         self.assertIn('--iterations=128', cmd)
         self.assertIn('--percentile=99', cmd)

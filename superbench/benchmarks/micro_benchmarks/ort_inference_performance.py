@@ -224,6 +224,11 @@ class ORTInferenceBenchmark(MicroBenchmark):
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
             return False
 
+        if self._args.require_cuda and not self._cuda_execution_provider_available():
+            logger.error('CUDAExecutionProvider is required but unavailable.')
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            return False
+
         allow_remote_code = bool(getattr(self._args, 'allow_remote_code', False))
 
         try:

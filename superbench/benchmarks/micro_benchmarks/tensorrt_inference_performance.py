@@ -124,10 +124,10 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             bin_path: Absolute path to the trtexec binary.
 
         Returns:
-            ``'--memPoolSize=workspace:8192M'`` on TensorRT >= 8.4,
+            ``'--memPoolSize=workspace:8192'`` on TensorRT >= 8.4,
             ``'--workspace=8192'`` on older runtimes or when probing fails.
         """
-        modern = '--memPoolSize=workspace:8192M'
+        modern = '--memPoolSize=workspace:8192'
         legacy = '--workspace=8192'
         try:
             proc = subprocess.run([bin_path, '--help'], capture_output=True, text=True, timeout=10, check=False)

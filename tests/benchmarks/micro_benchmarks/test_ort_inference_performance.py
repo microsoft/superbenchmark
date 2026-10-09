@@ -158,6 +158,22 @@ def test_preprocess_hf_invalid_identifier():
     assert benchmark.return_code == ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE
 
 
+def test_preprocess_hf_require_cuda_fails_before_download():
+    """Missing CUDAExecutionProvider fails before config download or model export."""
+    benchmark = _make_ort_benchmark(require_cuda=True)
+
+    with patch.object(benchmark, '_cuda_execution_provider_available', return_value=False), \
+            patch('transformers.AutoConfig') as mock_auto_config, \
+            patch(f'{_ORT_MODULE}.HuggingFaceModelLoader') as mock_loader_cls, \
+            patch.object(benchmark, '_export_hf_model_to_onnx') as mock_export:
+        assert benchmark._preprocess_huggingface_models() is False
+
+    assert benchmark.return_code == ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE
+    mock_auto_config.from_pretrained.assert_not_called()
+    mock_loader_cls.check_memory_fits.assert_not_called()
+    mock_export.assert_not_called()
+
+
 def test_preprocess_hf_memory_check_fails():
     """check_memory_fits=False short-circuits with EXECUTION_FAILURE."""
     benchmark = _make_ort_benchmark()
