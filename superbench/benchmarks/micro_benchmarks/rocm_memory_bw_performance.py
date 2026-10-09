@@ -138,7 +138,8 @@ class RocmMemBwBenchmark(MemBwBenchmark):
                     options, iterations, binary, size, source, destination
                 )
             )
-        return ' && '.join(commands)
+        # run_command() does not use a shell when --log_flushing is set, so invoke one explicitly.
+        return 'sh -c {}'.format(shlex.quote(' && '.join(commands)))
 
     @staticmethod
     def _transferbench_quantity(value, unit, allow_zero=False):

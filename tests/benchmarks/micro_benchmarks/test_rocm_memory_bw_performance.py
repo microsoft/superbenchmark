@@ -16,6 +16,7 @@ from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
 from superbench.benchmarks.micro_benchmarks.rocm_memory_bw_performance import RocmMemBwBenchmark
+from superbench.common.utils import run_command
 
 
 class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
@@ -48,6 +49,16 @@ class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
             benchmark = RocmMemBwBenchmark('mem-bw', parameters)
         self.assertTrue(benchmark._preprocess())
         return benchmark
+
+    def _chains(self, benchmark):
+        """Unwrap each direction's explicit `sh -c` invocation into its && chain."""
+        chains = []
+        for command in benchmark._commands:
+            tokens = shlex.split(command)
+            self.assertEqual(tokens[:2], ['sh', '-c'])
+            self.assertEqual(len(tokens), 3)
+            chains.append(tokens[2])
+        return chains
 
     @staticmethod
     def _fixture(memory='pinned', direction='htod'):
@@ -136,7 +147,7 @@ class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
         self.assertEqual(benchmark._TRANSFERBENCH_SIZES, sizes)
         self.assertEqual(benchmark._TRANSFERBENCH_ITERATIONS, iterations)
         self.assertEqual(len(benchmark._commands), 2)
-        for direction, command in enumerate(benchmark._commands):
+        for direction, command in enumerate(self._chains(benchmark)):
             commands = command.split(' && ')
             self.assertEqual(len(commands), 23)
             for subcommand, size, count in zip(commands, sizes, iterations):
@@ -158,7 +169,7 @@ class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
         """Preserve memory and direction selection without introducing new CLI arguments."""
         benchmark = self._transferbench('--memory unpinned --mem_type DTOH')
         self.assertEqual(len(benchmark._commands), 1)
-        self.assertIn("'1 1 G0 D0 H0'", benchmark._commands[0])
+        self.assertIn("'1 1 G0 D0 H0'", self._chains(benchmark)[0])
         self.assertNotIn('P0', benchmark._commands[0])
 
     def test_transferbench_numa_does_not_override_logical_gpu_locality(self):
@@ -169,8 +180,9 @@ class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
                     baseline = self._transferbench('--memory {}'.format(memory))
                     explicit = self._transferbench('--memory {} --numa 1'.format(memory))
                     self.assertEqual(baseline._commands, explicit._commands)
-                    self.assertIn("'1 1 {} D0 G0'".format(host), explicit._commands[0])
-                    self.assertIn("'1 1 G0 D0 {}'".format(host), explicit._commands[1])
+                    chains = self._chains(explicit)
+                    self.assertIn("'1 1 {} D0 G0'".format(host), chains[0])
+                    self.assertIn("'1 1 G0 D0 {}'".format(host), chains[1])
                     self.assertNotIn('C0', explicit._commands[0])
                     self.assertNotIn('G5', explicit._commands[0])
                     self.assertEqual(explicit._args.numa, 1)
@@ -184,8 +196,8 @@ class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
                 benchmark = self._transferbench('--memory unpinned --numa 3')
                 self.cpu_nodes.assert_called_with(Path('/sys/devices/system/cpu/cpu{}'.format(cpu)))
                 self.assertEqual(benchmark._worker_numa_node, node)
-                self.assertIn("'1 1 H{} D0 G0'".format(node), benchmark._commands[0])
-                self.assertIn("'1 1 G0 D0 H{}'".format(node), benchmark._commands[1])
+                self.assertIn("'1 1 H{} D0 G0'".format(node), self._chains(benchmark)[0])
+                self.assertIn("'1 1 G0 D0 H{}'".format(node), self._chains(benchmark)[1])
                 benchmark._TRANSFERBENCH_SIZES = (4194304,)
                 benchmark._TRANSFERBENCH_ITERATIONS = (3,)
                 raw = self._fixture('unpinned').replace('H0', 'H{}'.format(node))
@@ -230,7 +242,7 @@ class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
         """Keep pinned P0 GPU-local and leave both legacy allocation modes unchanged."""
         self.libc.side_effect = OSError('CPU detection unavailable')
         benchmark = self._transferbench('--memory pinned --numa 1')
-        self.assertIn("'1 1 P0 D0 G0'", benchmark._commands[0])
+        self.assertIn("'1 1 P0 D0 G0'", self._chains(benchmark)[0])
         for memory in ('pinned', 'unpinned'):
             with self.subTest(memory=memory):
                 benchmark = RocmMemBwBenchmark('mem-bw', '--memory {} --numa 1'.format(memory))
@@ -388,6 +400,26 @@ class RocmMemBwTest(BenchmarkTestCase, unittest.TestCase):
         result = subprocess.run(benchmark._commands[0], shell=True, text=True, stdout=subprocess.PIPE, timeout=5)
         self.assertEqual(result.returncode, 3)
         self.assertEqual(result.stdout.count('[ERROR] synthetic failure'), 1)
+
+    def test_transferbench_sweep_runs_with_and_without_log_flushing(self):
+        """Run every size whether or not run_command() uses a shell (--log_flushing)."""
+        binary_dir = Path(self._tmp_dir) / 'bin flushing'
+        binary_dir.mkdir(exist_ok=True)
+        binary = binary_dir / 'TransferBench'
+        binary.write_text('#!/bin/sh\necho "size $2 route $3"\n')
+        binary.chmod(0o755)
+        for flushing in (False, True):
+            with self.subTest(flushing=flushing):
+                parameters = '--bin_dir {}{}'.format(
+                    shlex.quote(str(binary_dir)), ' --log_flushing' if flushing else ''
+                )
+                benchmark = self._transferbench(parameters)
+                output = run_command(benchmark._commands[0], quiet=True, flush_output=flushing)
+                self.assertEqual(output.returncode, 0, output.stdout)
+                self.assertEqual(
+                    output.stdout.splitlines(),
+                    ['size {} route 1 1 P0 D0 G0'.format(size) for size in benchmark._TRANSFERBENCH_SIZES],
+                )
 
     def test_transferbench_invalid_memory_and_direction(self):
         """Retain existing validation for unsupported YAML/CLI options."""
