@@ -265,7 +265,9 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
             'COPY . .',
             "pip install -c /tmp/rocm10-constraints.txt '.[torch]'",
             'python3 -m pip install pytest pytest-timeout vcrpy',
-            'bash dockerfile/etc/install-rocm10-frameworks.sh',
+            'ARG TE_COMMIT=',
+            'python3 -m pip wheel --no-build-isolation --no-deps',
+            'RUN printf \'%s\\n\' \\\n        "PATH=${PATH}"',
             '> /etc/environment',
             'CXX="${ROCM_PATH}/bin/hipcc" make cppbuild',
             'make postinstall',
@@ -281,7 +283,6 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         self.assertIn('SB_MEGATRON_PATH=/opt/rocm10-frameworks/Megatron-LM', self.dockerfile)
         self.assertIn('AITER_USE_SYSTEM_TRITON=1', self.dockerfile)
         self.assertIn('TRITON_F32_DEFAULT=ieee', self.dockerfile)
-        self.assertIn('bash dockerfile/etc/install-rocm10-frameworks.sh', self.dockerfile)
         for name in (
             'ROCM_PATH', 'ROCM_HOME', 'HIP_PATH', 'RCCL_HOME',
             'SB_MEGATRON_PATH', 'AITER_USE_SYSTEM_TRITON', 'TRITON_F32_DEFAULT', 'MAX_JOBS',
@@ -294,8 +295,62 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         self.assertIn('NVTE_FUSED_ATTN_AOTRITON=0', self.dockerfile)
         self.assertLess(
             self.dockerfile.index("RUN python3 -c 'import sysconfig;"),
-            self.dockerfile.index('bash dockerfile/etc/install-rocm10-frameworks.sh'),
+            self.dockerfile.index('python3 -m pip wheel --no-build-isolation --no-deps'),
         )
+
+    def test_framework_build_settings_do_not_reach_runtime(self):
+        """Export build-only settings in a different layer from the runtime environment file."""
+        start = self.dockerfile.index('RUN framework_jobs=')
+        end = self.dockerfile.index('\n\n', start)
+        build = self.dockerfile[start:end]
+        self.assertIn('NVTE_FUSED_ATTN_AOTRITON=1', build)
+        self.assertIn('RCCL_HOME="${ROCM_PATH}"', build)
+        self.assertNotIn('/etc/environment', build)
+        self.assertEqual(self.dockerfile.count('NVTE_FUSED_ATTN_AOTRITON=1'), 1)
+
+    def test_framework_sources_are_pinned_and_built_without_resolution(self):
+        """Build immutable framework revisions without replacing the SDK, PyTorch or Triton."""
+        for name in ('TE_COMMIT', 'AITER_COMMIT', 'MEGATRON_COMMIT'):
+            self.assertRegex(self.dockerfile, r'(?m)^ARG {}=[0-9a-f]{{40}}$'.format(name))
+        for url in (
+            'https://github.com/ROCm/TransformerEngine.git ${TE_COMMIT}',
+            'https://github.com/ROCm/aiter.git ${AITER_COMMIT}',
+            'https://github.com/NVIDIA/Megatron-LM.git ${MEGATRON_COMMIT}',
+        ):
+            self.assertIn(url, self.dockerfile)
+        self.assertIn('third_party/Megatron/megatron_core_0.19.2_rocm10.patch', self.dockerfile)
+        self.assertIn("NVTE_ROCM_ARCH='gfx942;gfx950;gfx1250'", self.dockerfile)
+        self.assertIn('PIP_CONSTRAINT=/tmp/rocm10-constraints.txt', self.dockerfile)
+        self.assertIn('python3 -m pip install --no-deps /tmp/rocm10-wheels/*.whl', self.dockerfile)
+        self.assertIn('diff -u /tmp/rocm10-constraints.txt -', self.dockerfile)
+        self.assertNotIn('pip install transformer_engine', self.dockerfile)
+        self.assertNotIn('git clone --recursive https://github.com/ROCm/TransformerEngine.git', self.dockerfile)
+        self.assertFalse((Path(__file__).resolve().parents[1] / 'dockerfile/etc/install-rocm10-frameworks.sh').exists())
+
+    def test_framework_base_version_check(self):
+        """Stop before building frameworks unless the base provides the tested packages."""
+        start = self.dockerfile.index("python3 -c 'import sys; from importlib.metadata import version;")
+        check = self.dockerfile[start:self.dockerfile.index(' && \\\n', start)]
+        versions = {
+            'torch': '2.13.0+rocm10.0.0',
+            'triton': '3.8.0+git4cff872c.rocm10.0.0',
+            'rocm-sdk-core': '10.0.0',
+            'rocm-sdk-devel': '10.0.0',
+        }
+        for changed in (None, 'torch'):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as directory:
+                for name, version in versions.items():
+                    version = '0.0.0' if name == changed else version
+                    info = Path(directory) / '{}-{}.dist-info'.format(name.replace('-', '_'), version)
+                    info.mkdir()
+                    (info / 'METADATA').write_text(f'Metadata-Version: 2.1\nName: {name}\nVersion: {version}\n')
+                env = dict(os.environ, PYTHONPATH=directory)
+                result = subprocess.run(['/bin/bash', '-c', check], env=env, capture_output=True, text=True)
+                if changed:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('torch==2.13.0+rocm10.0.0 (found 0.0.0)', result.stderr)
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_mpi_prefix_and_scaffold_boundaries(self):
         """Keep the MPI prefix while avoiding unqualified legacy dependencies."""
@@ -303,7 +358,7 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         self.assertNotIn('--with-rocm=', self.dockerfile)
         self.assertIn('make -C third_party fio rocm_perftest', self.dockerfile)
         self.assertNotIn('ROCM_VER=rocm-5.5.0', self.dockerfile)
-        self.assertNotIn('https://github.com/ROCm/TransformerEngine.git', self.dockerfile)
+        self.assertNotIn('make -C third_party rocm ', self.dockerfile)
         self.assertIn("pip install -c /tmp/rocm10-constraints.txt '.[torch]'", self.dockerfile)
         self.assertIn('python3 -m pip check', self.dockerfile)
 

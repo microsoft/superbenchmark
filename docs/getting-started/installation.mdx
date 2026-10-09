@@ -153,93 +153,31 @@ all devices.
   independently of the all-device SDK packages. Other kernel targets require an
   explicit `AMDGPU_TARGETS` build argument and hardware qualification.
 * RVS `1.6.122-708` and its bundled TransferBench come from AMD's signed
-  Ubuntu 26.04 APT repositories under `/opt/rocm/extras-10`. ROCm `mem-bw`
-  uses the TransferBench backend (`SB_ROCM_MEM_BW_BACKEND=transferbench`).
+  Ubuntu 26.04 APT repositories under `/opt/rocm/extras-10`. The image sets
+  `SB_ROCM_MEM_BW_BACKEND=transferbench` for ROCm `mem-bw`; the TransferBench
+  backend itself is added by a separate benchmark change, and `mem-bw` is not
+  runnable in this image without it.
 * The image includes SuperBench, its native microbenchmarks, RCCL-tests, fio,
   ROCm-enabled perftest, `rocblas-bench`/`hipblaslt-bench` from TheRock's test
-  archive, and TransformerEngine, AITER and Megatron-LM built by
-  `dockerfile/etc/install-rocm10-frameworks.sh`. No host driver is installed.
+  archive, and TransformerEngine, AITER and Megatron-LM built in the Dockerfile
+  from pinned revisions (`TE_COMMIT`, `AITER_COMMIT`, `MEGATRON_COMMIT`) against
+  the base's PyTorch, Triton and SDK. No host driver is installed.
 
 The following remain absent: Intel MLC (`cpu-memory-bw-latency`),
 Megatron-DeepSpeed, and the old HIP 5.5 `hipBusBandwidth` sample. Existing
 `rocm-smi` system-info collection and `rocprofv2` tracing still need their
 separate ROCm 10 migrations.
 
-Validation on 2026-09-30: the scaffold built successfully and passed `pip check`,
+Validation on 2026-09-30 used the earlier variant with AMD's packaged SDK RCCL
+(equivalent to `--build-arg RCCL_SOURCE_COMMIT=`): the image built successfully and passed `pip check`,
 34 targeted regression tests (three NVIDIA-only tests skipped), GEMM correctness
 on all eight MI300X GPUs, FP16/BF16 PyTorch flash SDPA forward/backward, and the
 SuperBench GPU-copy wrapper with data checking and 304 positive parsed metrics.
 An eight-rank Open MPI / packaged-RCCL all-reduce passed data checking
 (`NCCL_IB_DISABLE=1`, single node). RVS module/GPU discovery also worked.
-These checks do not qualify multi-node networking, additional GPU architectures,
+The default source-built RCCL path has not yet been built or run. These checks
+do not qualify multi-node networking, additional GPU architectures,
 the omitted benchmarks, or sustained RVS stress workloads.
-
-#### Running on MI455X (gfx1250)
-
-`superbench/config/amd_mi455x.yaml` is a small four-GPU configuration for this
-image. Its RCCL modes set the environment used for MI455X all-reduce runs
-(`NCCL_IGNORE_CPU_AFFINITY`, `NCCL_CUMEM_ENABLE`, `NCCL_MNNVL_ENABLE`,
-`HSA_HOTSWAP_DISABLE`, and `NCCL_DEBUG=VERSION` to log the loaded RCCL), and
-`rccl-bw:allreduce` runs the equivalent of
-`mpirun -np 4 all_reduce_perf -b 1G -e 32G -f 2 -g 1 -c 0 -w 10 -n 50`.
-
-```bash
-sb run --host-list localhost -i superbench:rocm10-scaffold \
-  -c superbench/config/amd_mi455x.yaml \
-  -C 'superbench.enable=["rccl-bw:allreduce:correctness","rccl-bw:allreduce"]'
-```
-
-MNNVL requires `NCCL_CUMEM_ENABLE=1`; set `NCCL_MNNVL_ENABLE=0` on hosts
-without a configured scale-up fabric. RCCL-tests' `-A 1` algorithm/protocol
-columns are a manual diagnostic and are not emitted by `rccl-bw`.
-
-#### TransferBench versus the legacy memory-bandwidth test
-
-The bundled CLI reports version 1.69.00, commit `5fbfa95`; do not assume that it includes every
-feature of upstream development. Inspect its actual presets with
-`TransferBench presets`.
-The [v1.69 preset definitions](https://github.com/ROCm/TransferBench/blob/5fbfa95a1111a7f33f20b9780e5f22bf739f82fa/src/client/Presets/Presets.hpp)
-and [transfer syntax](https://github.com/ROCm/TransferBench/blob/5fbfa95a1111a7f33f20b9780e5f22bf739f82fa/src/client/Presets/Help.hpp)
-provide these candidate replacements:
-
-| Interface | Fit for SuperBench |
-| --- | --- |
-| `p2p` preset | Closest ready-made CPU/NUMA/GPU bandwidth matrix, but it runs more than H2D/D2H and defaults to compute execution. Setting `USE_GPU_DMA=1` alone does not make the CPU-to-GPU rows GPU-executed. |
-| Explicit `cmdline` transfers | Best candidate for a new backend: `C0 D0 G0` selects pinned CPU-node-0 memory to GPU 0 via GPU-0 DMA; `G0 D0 C0` reverses the transfer. |
-| `hbm`, `a2a`, `one2all`, sweep presets | Useful additional coverage, not drop-in replacements for the two existing host/device metrics. |
-| RVS PEBB/PBQT with TransferBench | Suitable qualification workloads. The inspected PEBB adapter supports pinned CPU memory, not pageable memory, and uses only the first configured block size. |
-
-There is no `hipBusBandwidth`, `--h2d`/`--d2h`, or `rocm-bandwidth-test`
-compatibility preset. For a bounded manual smoke test on an idle node, select
-accessible NUMA/GPU indices and permit the required NUMA syscalls:
-
-```bash
-TransferBench dryrun 4M '1 1 C0 D0 G0'
-timeout 20s env TB_NUM_RANKS=1 NUM_ITERATIONS=3 NUM_WARMUPS=1 \
-  NUM_SUBITERATIONS=1 ALWAYS_VALIDATE=0 USE_HSA_DMA=0 \
-  USE_HIP_EVENTS=1 USE_INTERACTIVE=0 HIDE_ENV=1 \
-  TransferBench cmdline 4M '1 1 C0 D0 G0'
-# D2H: use '1 1 G0 D0 C0' instead.
-```
-
-`ALWAYS_VALIDATE=0` retains the final correctness check; negative values disable
-it. `P0` selects pinned host memory near GPU 0, while `H0` selects pageable
-memory on NUMA node 0. Both pinned and pageable 4-MiB transfers passed bounded
-H2D/D2H smoke tests on MI300X; other sizes, devices and placements still need
-qualification.
-Container policies must permit NUMA allocation/placement queries; failed
-placement checks are errors, not valid bandwidth results.
-The tested `OUTPUT_TO_CSV=1` output still includes banners and executor/aggregate
-rows; do not treat the complete stdout stream as a flat table of transfer results.
-
-Before replacing `mem-bw`, choose whether to introduce a separate benchmark/new
-baseline or retain strict compatibility. TransferBench's HIP asynchronous DMA
-path differs from the old sample's default synchronous `hipMemcpy`.
-It reports bytes divided by mean duration, whereas the old sample averages
-per-trial bandwidth. Its generic size sweep also omits the old sub-1-KiB
-sizes. A new parser must select individual transfer rows, retain device/NUMA
-identity, and define the size sweep, aggregation, and pageable-memory policy;
-simply renaming the executable would silently change the measurement.
 
 ### ROCm 10 migration considerations
 

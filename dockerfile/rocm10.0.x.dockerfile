@@ -211,14 +211,22 @@ RUN curl -fsSL "https://stable.repo.amd.com/rocm/core/tarball/therock-dist-linux
 
 COPY . .
 # Keep AMD's framework and all-device SDK packages when resolving SuperBench deps.
-# Resolve these before the framework installer applies its tested dependency pins.
+# The same constraints protect them while building the frameworks below.
 # The SDK supplies amdsmi via .pth, not a separate distribution; use the torch
 # extra so amdworker does not install a PyPI wrapper that shadows the SDK module.
-RUN python3 -m pip freeze | grep -Ei '^(torch|torchvision|torchaudio|triton|rocm|rocm-sdk-[^=]+)==' > /tmp/rocm10-constraints.txt && \
+RUN python3 -m pip freeze | grep -Ei '^(torch|torchvision|torchaudio|triton|apex|rocm|rocm[-_][^=]+)==' > /tmp/rocm10-constraints.txt && \
     python3 -m pip install -c /tmp/rocm10-constraints.txt '.[torch]' && \
     python3 -m pip install pytest pytest-timeout vcrpy
 
-# Install TransformerEngine, AITER and Megatron before the final native build.
+# Build TransformerEngine, AITER and Megatron-LM from pinned sources against the
+# base's PyTorch, Triton and SDK, without build isolation or dependency resolution.
+# TE v2.15_rocm, AITER snapshot 2026-09-30, Megatron Core v0.19.2. The TE 2.18-dev
+# alternative cannot compile its BF16 small-sequence attention for gfx1250.
+# TE uses its own pinned AITER/CK. CK attention excludes gfx1250 and AOTriton ships
+# only gfx942/gfx950 images, so gfx1250 gets TE's common kernels.
+ARG TE_COMMIT=e7835ed1b134f56e58c575fba2455471064cab9b
+ARG AITER_COMMIT=89a47b84ac4b576339a50047e290c383c2377389
+ARG MEGATRON_COMMIT=4b4acac9a1d28ea6829c8d4f566d75698a21249d
 ENV SB_ROCM10_FRAMEWORK_ROOT=/opt/rocm10-frameworks \
     SB_MEGATRON_PATH=/opt/rocm10-frameworks/Megatron-LM \
     AITER_USE_SYSTEM_TRITON=1 \
@@ -231,8 +239,38 @@ ENV SB_ROCM10_FRAMEWORK_ROOT=/opt/rocm10-frameworks \
     NVTE_FUSED_ATTN_AOTRITON=0
 RUN framework_jobs="${NUM_MAKE_JOBS}" && \
     if [ "${framework_jobs}" -gt 16 ]; then framework_jobs=16; fi && \
-    MAX_JOBS="${framework_jobs}" bash dockerfile/etc/install-rocm10-frameworks.sh && \
-    printf '%s\n' \
+    export MAX_JOBS="${framework_jobs}" CMAKE_BUILD_PARALLEL_LEVEL="${framework_jobs}" \
+        NVTE_BUILD_MAX_JOBS="${framework_jobs}" PIP_CONSTRAINT=/tmp/rocm10-constraints.txt \
+        TMPDIR=/tmp/rocm10-frameworks-scratch NVTE_USE_ROCM=1 NVTE_FRAMEWORK=pytorch \
+        NVTE_ROCM_ARCH='gfx942;gfx950;gfx1250' NVTE_NO_LOCAL_VERSION=1 NVTE_CK_JIT=1 \
+        NVTE_FUSED_ATTN_AOTRITON=1 PREBUILD_KERNELS=0 BUILD_TARGET=rocm RCCL_HOME="${ROCM_PATH}" && \
+    python3 -c 'import sys; from importlib.metadata import version; expected = {"torch": "2.13.0+rocm10.0.0", "triton": "3.8.0+git4cff872c.rocm10.0.0", "rocm-sdk-core": "10.0.0", "rocm-sdk-devel": "10.0.0"}; wrong = ["{}=={} (found {})".format(name, value, version(name)) for name, value in expected.items() if version(name) != value]; sys.exit("Unexpected base packages: " + ", ".join(wrong) if wrong else 0)' && \
+    mkdir -p "${TMPDIR}" && \
+    python3 -m pip install \
+        pybind11==3.0.1 pydantic==2.13.5 einops==0.8.2 psutil==7.2.2 mpi4py==4.1.1 \
+        flydsl==0.3.4.1 pandas==3.0.5 nvdlfw-inspect==0.2.2 \
+        onnxscript==0.7.2 onnx-ir==1.0.0 onnx==1.23.1 ml_dtypes==0.6.0 && \
+    for source in "TransformerEngine https://github.com/ROCm/TransformerEngine.git ${TE_COMMIT}" \
+                  "aiter https://github.com/ROCm/aiter.git ${AITER_COMMIT}" \
+                  "Megatron-LM https://github.com/NVIDIA/Megatron-LM.git ${MEGATRON_COMMIT}"; do \
+        set -- ${source} && \
+        git init -q "${SB_ROCM10_FRAMEWORK_ROOT}/$1" && \
+        git -C "${SB_ROCM10_FRAMEWORK_ROOT}/$1" remote add origin "$2" && \
+        git -C "${SB_ROCM10_FRAMEWORK_ROOT}/$1" fetch -q --depth 1 origin "$3" && \
+        git -C "${SB_ROCM10_FRAMEWORK_ROOT}/$1" checkout -q --detach FETCH_HEAD && \
+        git -C "${SB_ROCM10_FRAMEWORK_ROOT}/$1" submodule update --init --recursive --depth 1 || exit 1; \
+    done && \
+    git -C "${SB_MEGATRON_PATH}" apply "${SB_HOME}/third_party/Megatron/megatron_core_0.19.2_rocm10.patch" && \
+    python3 -m pip wheel --no-build-isolation --no-deps -w /tmp/rocm10-wheels \
+        "${SB_ROCM10_FRAMEWORK_ROOT}/TransformerEngine" "${SB_ROCM10_FRAMEWORK_ROOT}/aiter" "${SB_MEGATRON_PATH}" && \
+    python3 -m pip install --no-deps /tmp/rocm10-wheels/*.whl && \
+    python3 -m pip check && \
+    python3 -m pip freeze | grep -Ei '^(torch|torchvision|torchaudio|triton|apex|rocm|rocm[-_][^=]+)==' | \
+        diff -u /tmp/rocm10-constraints.txt - && \
+    rm -rf /tmp/rocm10-wheels "${TMPDIR}"
+
+# Build-only framework settings above stay out of the runtime environment.
+RUN printf '%s\n' \
         "PATH=${PATH}" \
         "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" \
         "SB_MICRO_PATH=${SB_MICRO_PATH}" \
