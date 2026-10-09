@@ -65,9 +65,26 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     def test_cublaslt_gemm_command_generation(self):
         """Test cublaslt-gemm benchmark command generation."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        in_types = [
+            'fp16',
+            'fp32',
+            'fp64',
+            'int8',
+            'fp8e4m3',
+            'fp8e5m2',
+            'fp4e2m1',
+            'fp6e2m3',
+            'fp6e3m2',
+            'mxfp8_vec32_mn_k4_ue8m0',
+            'mxfp8_vec128_mn_k4_ue8m0',
+            'nvfp4_vec16_ue4m3',
+        ]
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters='--batch 2:16:2 --shapes 2:4,4:8,8:32 32:128:4,128,128 --in_types fp16 fp32 fp64 int8',
+            parameters=(
+                '--batch 2:16:2 --shapes 2:4,4:8,8:32 32:128:4,128,128 '
+                '--in_types {}'.format(' '.join(in_types))
+            ),
         )
         self.assertTrue(benchmark._preprocess())
         self.assertEqual(4 * (2 * 2 * 3 + 2) * len(benchmark._args.in_types), len(benchmark._commands))
@@ -75,7 +92,7 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         def cmd(t, b, m, n, k):
             return f'{benchmark._CublasLtBenchmark__bin_path} -m {m} -n {n} -k {k} -b {b} -w 20 -i 50 -t {t}'
 
-        for _t in ['fp16', 'fp32', 'fp64', 'int8']:
+        for _t in in_types:
             for _b in [2, 4, 8, 16]:
                 for _m in [2, 4]:
                     for _n in [4, 8]:
@@ -117,3 +134,16 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
         self.assertTrue(benchmark._process_raw_result(1, raw_output))
         self.assertEqual(0.74, benchmark.result['fp8e4m3_0_2208_2048_5608_DRAM_Throughput'][0])
+
+    def test_cublaslt_gemm_result_parsing_with_autotune(self):
+        """Test cublaslt-gemm result parsing uses precision names when autotune appends args."""
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters='--shapes 16,16,16 --in_types fp6e2m3 --enable_autotune',
+        )
+        self.assertTrue(benchmark._preprocess())
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+
+        self.assertTrue(benchmark._process_raw_result(0, '16   16    16    0       1.111      2.222'))
+        self.assertEqual(2.222, benchmark.result['fp6e2m3_0_16_16_16_flops'][0])

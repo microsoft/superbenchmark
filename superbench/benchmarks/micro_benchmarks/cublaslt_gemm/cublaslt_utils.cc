@@ -4,30 +4,166 @@
 #include "cublaslt_utils.h"
 #include <algorithm> // for std::sort
 #include <cassert>   // for assert
+#include <cstdint>
 #include <cuda.h>
 #include <cuda_fp8.h>
+#include <limits>
+#include <string>
 
 #if CUDA_VERSION >= 12080
-int GetScaleTensorSize(int inner, int outer, cublasLtMatmulMatrixScale_t scale_mode) {
+#ifndef SUPERBENCH_HAS_MXFP8_MN_K4_SCALE
+#define SUPERBENCH_HAS_MXFP8_MN_K4_SCALE 0
+#endif
+
+constexpr size_t DivideRoundUp(size_t value, size_t divisor) {
+    return value / divisor + static_cast<size_t>(value % divisor != 0);
+}
+
+constexpr size_t RoundUp(size_t value, size_t alignment) { return DivideRoundUp(value, alignment) * alignment; }
+
+constexpr size_t GetMnK4ScaleTensorSize(size_t inner, size_t outer, size_t vector_size) {
+    return RoundUp(outer, 4) * DivideRoundUp(inner, vector_size);
+}
+
+static_assert(GetMnK4ScaleTensorSize(160, 5, 32) == 40, "Unexpected VEC32 MN_K4 scale tensor size");
+static_assert(GetMnK4ScaleTensorSize(257, 5, 128) == 24, "Unexpected VEC128 MN_K4 scale tensor size");
+
+size_t GetScaleTensorSize(size_t inner, size_t outer, cublasLtMatmulMatrixScale_t scale_mode) {
     if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {
         return 1;
     }
-    if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0 ||
-        scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3) {
-        const auto s_vscale = scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0 ? 32 : 16;
-        const auto s_block_cols = 32;
-        const auto s_block_rows = 4;
-        const auto s_block_inner = 4;
+#if SUPERBENCH_HAS_MXFP8_MN_K4_SCALE
+    if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_MN_K4_UE8M0) {
+        return GetMnK4ScaleTensorSize(inner, outer, 32);
+    }
+    if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC128_MN_K4_UE8M0) {
+        return GetMnK4ScaleTensorSize(inner, outer, 128);
+    }
+#endif
+    if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3 ||
+        scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0) {
+        size_t s_vscale = 16;
+        if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0) {
+            s_vscale = 32;
+        }
+        constexpr size_t s_block_cols = 32;
+        constexpr size_t s_block_rows = 4;
+        constexpr size_t s_block_inner = 4;
         const auto block_rows = s_block_inner * s_vscale;
         const auto block_cols = s_block_cols * s_block_rows;
-        const auto round_off = [](auto x, auto granularity) {
-            return granularity * ((x + (granularity - 1)) / granularity);
-        };
-        const auto s_rows = round_off(inner, block_rows) / s_vscale;
-        const auto s_cols = round_off(outer, block_cols);
+        const auto s_rows = RoundUp(inner, block_rows) / s_vscale;
+        const auto s_cols = RoundUp(outer, block_cols);
         return s_rows * s_cols;
     }
     return 0;
+}
+#endif
+
+cublasLtGemm::~cublasLtGemm() {
+#if CUDA_VERSION >= 12080
+    ClearScaleBuffers();
+#endif
+}
+
+#if CUDA_VERSION >= 12080
+void cublasLtGemm::ClearScaleBuffers() {
+    for (auto *buffer : scale_buffers_) {
+        cudaFree(buffer);
+    }
+    scale_buffers_.clear();
+}
+
+void cublasLtGemm::AllocateScaleBuffer(size_t element_count, size_t element_size, const void *fill_value,
+                                       void **device_pointer) {
+    if (element_count == 0 || element_size == 0) {
+        throw std::runtime_error("Invalid cuBLASLt scale tensor size");
+    }
+    if (element_count > std::numeric_limits<size_t>::max() / element_size) {
+        throw std::overflow_error("cuBLASLt scale tensor size exceeds addressable memory");
+    }
+
+    std::vector<uint8_t> host_buffer(element_count * element_size);
+    for (size_t i = 0; i < element_count; ++i) {
+        std::copy_n(static_cast<const uint8_t *>(fill_value), element_size, host_buffer.data() + i * element_size);
+    }
+
+    auto status = cudaMalloc(device_pointer, host_buffer.size());
+    if (status != cudaSuccess) {
+        throw std::runtime_error("cudaMalloc for cuBLASLt scale tensor failed: " +
+                                 std::string(cudaGetErrorString(status)));
+    }
+
+    status = cudaMemcpy(*device_pointer, host_buffer.data(), host_buffer.size(), cudaMemcpyHostToDevice);
+    if (status != cudaSuccess) {
+        cudaFree(*device_pointer);
+        *device_pointer = nullptr;
+        throw std::runtime_error("cudaMemcpy for cuBLASLt scale tensor failed: " +
+                                 std::string(cudaGetErrorString(status)));
+    }
+
+    try {
+        scale_buffers_.push_back(*device_pointer);
+    } catch (...) {
+        cudaFree(*device_pointer);
+        *device_pointer = nullptr;
+        throw;
+    }
+}
+
+void cublasLtGemm::SetupScaleModes(const MatrixScaleModes &scale_modes, cublasOperation_t transa,
+                                   cublasOperation_t transb) {
+    if (!scale_modes.enabled) {
+        return;
+    }
+
+    ClearScaleBuffers();
+
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_MODE, &scale_modes.a,
+                                                sizeof(scale_modes.a)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_MODE, &scale_modes.b,
+                                                sizeof(scale_modes.b)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_SCALE_MODE, &scale_modes.d,
+                                                sizeof(scale_modes.d)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_MODE,
+                                                &scale_modes.d_out, sizeof(scale_modes.d_out)));
+
+    const auto a_scale_size =
+        GetScaleTensorSize(transa != CUBLAS_OP_N ? k_ : m_, transa != CUBLAS_OP_N ? m_ : k_, scale_modes.a);
+    const auto b_scale_size =
+        GetScaleTensorSize(transb != CUBLAS_OP_N ? n_ : k_, transb != CUBLAS_OP_N ? k_ : n_, scale_modes.b);
+    const auto d_scale_size = GetScaleTensorSize(m_, n_, scale_modes.d);
+    const auto d_out_scale_size = GetScaleTensorSize(m_, n_, scale_modes.d_out);
+
+    void *a_scale_dev = nullptr, *b_scale_dev = nullptr, *d_scale_dev = nullptr, *d_out_scale_dev = nullptr;
+    const auto ue4m3_one = __nv_fp8_e4m3{1.f};
+    const auto ue8m0_one = uint8_t{127};
+    const auto fp32_one = 1.f;
+
+    if (scale_modes.a == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3) {
+        AllocateScaleBuffer(a_scale_size, sizeof(ue4m3_one), &ue4m3_one, &a_scale_dev);
+    } else {
+        AllocateScaleBuffer(a_scale_size, sizeof(ue8m0_one), &ue8m0_one, &a_scale_dev);
+    }
+    if (scale_modes.b == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3) {
+        AllocateScaleBuffer(b_scale_size, sizeof(ue4m3_one), &ue4m3_one, &b_scale_dev);
+    } else {
+        AllocateScaleBuffer(b_scale_size, sizeof(ue8m0_one), &ue8m0_one, &b_scale_dev);
+    }
+    AllocateScaleBuffer(d_scale_size, sizeof(fp32_one), &fp32_one, &d_scale_dev);
+    if (scale_modes.d_out == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3) {
+        AllocateScaleBuffer(d_out_scale_size, sizeof(ue4m3_one), &ue4m3_one, &d_out_scale_dev);
+    } else {
+        AllocateScaleBuffer(d_out_scale_size, sizeof(ue8m0_one), &ue8m0_one, &d_out_scale_dev);
+    }
+
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_POINTER, &a_scale_dev,
+                                                sizeof(void *)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_POINTER, &b_scale_dev,
+                                                sizeof(void *)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_SCALE_POINTER, &d_scale_dev,
+                                                sizeof(void *)));
+    CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_POINTER,
+                                                &d_out_scale_dev, sizeof(void *)));
 }
 #endif
 
@@ -102,6 +238,12 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         gemm_compute_type = CUBLAS_COMPUTE_32F;
         scale_type = CUDA_R_32F;
 #endif
+#if CUDA_VERSION >= 12080 && __has_include(<cuda_fp6.h>)
+    } else if (a_type == CUDA_R_6F_E2M3 || b_type == CUDA_R_6F_E2M3 || a_type == CUDA_R_6F_E3M2 ||
+               b_type == CUDA_R_6F_E3M2) {
+        gemm_compute_type = CUBLAS_COMPUTE_32F;
+        scale_type = CUDA_R_32F;
+#endif
     } else if (a_type == CUDA_R_64F || b_type == CUDA_R_64F) {
         gemm_compute_type = CUBLAS_COMPUTE_64F;
         scale_type = CUDA_R_64F;
@@ -136,76 +278,6 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
     }
     CUBLAS_CHECK(
         cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_EPILOGUE, &epilogue, sizeof(epilogue)));
-
-#if CUDA_VERSION >= 12080
-    if (a_type == CUDA_R_4F_E2M1 || b_type == CUDA_R_4F_E2M1) {
-        // Allocate and copy device scale values
-        const auto a_scale = __nv_fp8_e4m3{1.f}, b_scale = __nv_fp8_e4m3{1.f}, d_out_scale = __nv_fp8_e4m3{1.f};
-        const auto d_scale = 1.f;
-        void *AscaleDev, *BscaleDev, *DscaleDev, *DOutscaleDev;
-
-        // Set scale modes
-        cublasLtMatmulMatrixScale_t AScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3;
-        cublasLtMatmulMatrixScale_t BScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3;
-        cublasLtMatmulMatrixScale_t DScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F;
-        cublasLtMatmulMatrixScale_t DOutScaleMode = CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3;
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_MODE, &AScaleMode,
-                                                    sizeof(AScaleMode)));
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_MODE, &BScaleMode,
-                                                    sizeof(BScaleMode)));
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_SCALE_MODE, &DScaleMode,
-                                                    sizeof(DScaleMode)));
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_MODE,
-                                                    &DOutScaleMode, sizeof(DOutScaleMode)));
-
-        const auto a_scale_size =
-            GetScaleTensorSize(transa != CUBLAS_OP_N ? k : m, transa != CUBLAS_OP_N ? m : k, AScaleMode);
-        const auto b_scale_size =
-            GetScaleTensorSize(transb != CUBLAS_OP_N ? n : k, transb != CUBLAS_OP_N ? k : n, BScaleMode);
-        const auto d_scale_size = GetScaleTensorSize(m, n, DScaleMode);
-        const auto d_out_scale_size = GetScaleTensorSize(m, n, DOutScaleMode);
-
-        if (a_scale_size > 0) {
-            __nv_fp8_e4m3 *a_scale_host = new __nv_fp8_e4m3[a_scale_size];
-            std::fill_n(a_scale_host, a_scale_size, a_scale);
-            cudaMalloc(&AscaleDev, a_scale_size * sizeof(__nv_fp8_e4m3));
-            cudaMemcpy(AscaleDev, a_scale_host, a_scale_size * sizeof(__nv_fp8_e4m3), cudaMemcpyHostToDevice);
-            delete[] a_scale_host;
-        }
-        if (b_scale_size > 0) {
-            __nv_fp8_e4m3 *b_scale_host = new __nv_fp8_e4m3[b_scale_size];
-            std::fill_n(b_scale_host, b_scale_size, b_scale);
-            cudaMalloc(&BscaleDev, b_scale_size * sizeof(__nv_fp8_e4m3));
-            cudaMemcpy(BscaleDev, b_scale_host, b_scale_size * sizeof(__nv_fp8_e4m3), cudaMemcpyHostToDevice);
-            delete[] b_scale_host;
-        }
-        if (d_scale_size > 0) {
-            float *d_scale_host = new float[d_scale_size];
-            std::fill_n(d_scale_host, d_scale_size, d_scale);
-            cudaMalloc(&DscaleDev, d_scale_size * sizeof(float));
-            cudaMemcpy(DscaleDev, d_scale_host, d_scale_size * sizeof(float), cudaMemcpyHostToDevice);
-            delete[] d_scale_host;
-        }
-        if (d_out_scale_size > 0) {
-            __nv_fp8_e4m3 *d_out_scale_host = new __nv_fp8_e4m3[d_out_scale_size];
-            std::fill_n(d_out_scale_host, d_out_scale_size, d_out_scale);
-            cudaMalloc(&DOutscaleDev, d_out_scale_size * sizeof(__nv_fp8_e4m3));
-            cudaMemcpy(DOutscaleDev, d_out_scale_host, d_out_scale_size * sizeof(__nv_fp8_e4m3),
-                       cudaMemcpyHostToDevice);
-            delete[] d_out_scale_host;
-        }
-
-        // Use device scale pointer attributes
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_A_SCALE_POINTER, &AscaleDev,
-                                                    sizeof(void *)));
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_B_SCALE_POINTER, &BscaleDev,
-                                                    sizeof(void *)));
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_SCALE_POINTER, &DscaleDev,
-                                                    sizeof(void *)));
-        CUBLAS_CHECK(cublasLtMatmulDescSetAttribute(op_desc_.get(), CUBLASLT_MATMUL_DESC_D_OUT_SCALE_POINTER,
-                                                    &DOutscaleDev, sizeof(void *)));
-    }
-#endif
 }
 
 size_t cublasLtGemm::GetAlgorithm(int max_algorithm_count, size_t max_workspace_size) {

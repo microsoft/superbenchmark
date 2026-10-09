@@ -64,11 +64,17 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul) or [`hipblasLt-bench`](https://github.com/ROCm/hipBLASLt/blob/develop/clients/benchmarks/README.md).
 
-The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1, and INT8 inputs.
-FP4 requires CUDA 12.8 or later; an available cuBLASLt algorithm for each input type and
-GPU must still be confirmed at runtime. CUDA 13.4 builds the benchmark for SM 107.
-FP6 and block-scaled MXFP formats are not covered by this benchmark's current matrix
-initialization and cuBLASLt configuration.
+The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1, FP6 E2M3/E3M2,
+explicit MXFP8 block-scaled modes, explicit NVFP4 block-scaled mode, and INT8 inputs. The
+supported `--in_types` names are `fp64`, `fp32`, `fp16`, `bf16`, `fp8e4m3`, `fp8e5m2`,
+`fp4e2m1`, `fp6e2m3`, `fp6e3m2`, `mxfp8_vec32_mn_k4_ue8m0`,
+`mxfp8_vec128_mn_k4_ue8m0`, `nvfp4_vec16_ue4m3`, and `int8`.
+
+FP4 and NVFP4 require CUDA 12.8 or later. The explicit MXFP8 `MN_K4_UE8M0` scale modes require
+cuBLASLt headers and runtime support for the corresponding matrix scale enum. FP6 requires CUDA
+FP6 headers and cuBLASLt FP6 datatype support. An available cuBLASLt algorithm for each input type,
+scaling mode, and GPU must still be confirmed at runtime; unsupported combinations fail during the
+native benchmark rather than running a different datatype.
 
 #### Metrics
 
