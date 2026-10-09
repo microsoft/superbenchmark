@@ -22,7 +22,21 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         super().__init__(name, parameters)
 
         self._bin_name = 'cublaslt_gemm'
-        self._in_types = ['fp64', 'fp32', 'fp16', 'bf16', 'fp8e4m3', 'fp8e5m2', 'fp4e2m1', 'int8']
+        self._in_types = [
+            'fp64',
+            'fp32',
+            'fp16',
+            'bf16',
+            'fp8e4m3',
+            'fp8e5m2',
+            'fp4e2m1',
+            'fp6e2m3',
+            'fp6e3m2',
+            'mxfp8_vec32_mn_k4_ue8m0',
+            'mxfp8_vec128_mn_k4_ue8m0',
+            'nvfp4_vec16_ue4m3',
+            'int8',
+        ]
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -83,6 +97,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
         self._commands = []
+        self._precision_in_commands = []
         for _m, _n, _k, _b, _in_type in self._shapes_to_run:
             # pull out the autotune args onto their own short f-string
             autotune_args = (
@@ -96,6 +111,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 skip_num = self._args.num_warmup - 1 if self._args.num_warmup > 1 else 0
                 command = f'ncu --set full --launch-skip {skip_num} --launch-count 1 --csv ' + command
             self._commands.append(command)
+            self._precision_in_commands.append(_in_type)
 
         return True
 
@@ -119,7 +135,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                 if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
                     raise ValueError('Invalid result.')
                 self._result.add_result(
-                    f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                    f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[:3])}_flops',
                     float(fields[-1])
                 )
             else:
@@ -137,7 +153,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                         result = True
                         size = f'{fields[3]}_{"_".join(fields[:3])}'
                         self._result.add_result(
-                            f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                            f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[:3])}_flops',
                             float(fields[-1])
                         )
                 if not result:
@@ -156,7 +172,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                         try:
                             float_value = float(value)
                             self._result.add_result(
-                                f'{self._commands[cmd_idx].split()[-1]}_{size}_{metric_name}', float_value
+                                f'{self._precision_in_commands[cmd_idx]}_{size}_{metric_name}', float_value
                             )
                         except ValueError:
                             pass
