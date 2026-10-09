@@ -1,0 +1,24 @@
+STREAM Benchmark
+Buffer size(bytes): 4294967296
+Number of warm up runs: 10
+Number of loops: 40
+Data type: float
+Check data: No
+
+Device 0: "NVIDIA Graphics Device"  152 SMs(10.0)  Memory: 4000MHz x 8192-bit = 8192 GB/s PEAK   ECC is ON
+STREAM_COPY_float_buffer_4294967296_block_128	6823.45	83.30
+STREAM_COPY_float_buffer_4294967296_block_256	6650.12	81.18
+STREAM_COPY_float_buffer_4294967296_block_512	6301.88	76.93
+STREAM_COPY_float_buffer_4294967296_block_1024	5812.34	70.95
+STREAM_SCALE_float_buffer_4294967296_block_128	6790.11	82.89
+STREAM_SCALE_float_buffer_4294967296_block_256	6620.33	80.81
+STREAM_SCALE_float_buffer_4294967296_block_512	6210.45	75.81
+STREAM_SCALE_float_buffer_4294967296_block_1024	5718.90	69.81
+STREAM_ADD_float_buffer_4294967296_block_128	7490.22	91.43
+STREAM_ADD_float_buffer_4294967296_block_256	7512.10	91.70
+STREAM_ADD_float_buffer_4294967296_block_512	7405.67	90.40
+STREAM_ADD_float_buffer_4294967296_block_1024	6890.33	84.11
+STREAM_TRIAD_float_buffer_4294967296_block_128	7485.55	91.38
+STREAM_TRIAD_float_buffer_4294967296_block_256	7520.88	91.81
+STREAM_TRIAD_float_buffer_4294967296_block_512	7390.12	90.21
+STREAM_TRIAD_float_buffer_4294967296_block_1024	6825.11	83.32

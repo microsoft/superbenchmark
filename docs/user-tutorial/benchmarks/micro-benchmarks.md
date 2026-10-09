@@ -64,6 +64,12 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul) or [`hipblasLt-bench`](https://github.com/ROCm/hipBLASLt/blob/develop/clients/benchmarks/README.md).
 
+The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1, and INT8 inputs.
+FP4 requires CUDA 12.8 or later; an available cuBLASLt algorithm for each input type and
+GPU must still be confirmed at runtime. CUDA 13.4 builds the benchmark for SM 107.
+FP6 and block-scaled MXFP formats are not covered by this benchmark's current matrix
+initialization and cuBLASLt configuration.
+
 #### Metrics
 
 | Name                                                      | Unit           | Description                     |
@@ -103,6 +109,19 @@ The supported functions for cuDNN are as follows:
  - cudnnConvolutionBackwardFilter
  - cudnnConvolutionBackwardData
  - cudnnConvolutionForward
+
+The benchmark already supports `--enable_auto_algo` (off by default), which calls
+`cudnnFindConvolution*Algorithm` before timing to choose an algorithm for each
+convolution. Without it, the configured legacy convolution algorithm is used.
+This option predates CUDA 13.4; it does not benchmark the algorithm search itself.
+
+With cuDNN 9.26 in the CUDA 13.4 image, these convolution benchmarks can use
+compute capability 10.7. The
+[cuDNN 9.26 release notes](https://docs.nvidia.com/deeplearning/cudnn/backend/v9.26.0/release-notes.html#cudnn-9-26-0)
+announce SM 107 and CUDA 13.4 support, but do not introduce new legacy convolution
+algorithms or deprecate existing ones. Backend graph features (such as attention and
+FP8 pointwise fusion) are not covered by this convolution-only benchmark; the notes
+also flag limitations for FP8 pointwise fusion and certain SM 107 attention engines.
 
 #### Metrics
 
@@ -172,6 +191,105 @@ Supports the use of double unit types and the use of tensor cores.
 | gpu-burn/gpu_[0-9]_pass | yes/no   | The result of the gpu-burn test for each GPU (1: yes, 0: no).                      |
 | gpu-burn/abort          | yes/no   | Whether or not GPU-burn test aborted before returning GPU results (1: yes, 0: no). |
 
+### `nvbench-sleep-kernel`
+
+#### Introduction
+
+Measure GPU kernel execution time using NVBench's sleep kernel benchmark. This benchmark creates CUDA kernels that sleep for specified durations (in microseconds) and measures the actual execution time, providing insights into GPU scheduling overhead and timing accuracy.
+
+The benchmark supports multiple duration specification formats:
+- Single value: `"50"` - Test single duration of 50 us
+- List format: `"[25,50,75]"` - Test multiple specific durations
+- Range format: `"[25:75]"` - Test all values from 25 us to 75 us
+- Range with step: `"[0:50:10]"` - Test from 0 us to 50 us in steps of 10 us
+
+Performed by [NVBench](https://github.com/NVIDIA/nvbench) sleep kernel benchmark.
+
+#### Metrics
+
+| Name                                    | Unit      | Description                                           |
+|-----------------------------------------|-----------|-------------------------------------------------------|
+| nvbench-sleep-kernel/duration_us_{X}_cpu_time     | time (us) | CPU-measured time for duration X microseconds.       |
+| nvbench-sleep-kernel/duration_us_{X}_gpu_time     | time (us) | GPU-measured time for duration X microseconds.       |
+| nvbench-sleep-kernel/duration_us_{X}_batch_gpu_time | time (us) | GPU batch execution time for duration X microseconds. |
+
+Where `{X}` is the sleep duration in microseconds (e.g., 25, 50, 75).
+
+### `nvbench-kernel-launch`
+
+#### Introduction
+
+Measure GPU kernel launch overhead and execution time using NVBench's kernel launch benchmark. This benchmark evaluates the time required to launch kernels on the GPU and measures both CPU-side and GPU-side timing for kernel execution.
+
+The benchmark provides insights into:
+- Kernel launch latency
+- CPU/GPU synchronization overhead  
+- Batch execution performance
+
+Performed by [NVBench](https://github.com/NVIDIA/nvbench) kernel launch benchmark.
+
+#### Comparison with `kernel-launch`
+
+Both `nvbench-kernel-launch` and `kernel-launch` measure kernel launch latency, but they differ in methodology:
+
+| Aspect | `kernel-launch` | `nvbench-kernel-launch` |
+|--------|-----------------|-------------------------|
+| L2 Cache | Warm (cached) | Cold (flushed before each sample) |
+| Measurement | Warm-cache / steady-state | Cold-cache / first-access |
+| Iterations | Fixed 2M iterations | Adaptive (statistical stopping) |
+
+**Important: Do not cross-compare results between these two benchmarks.** For performance regression detection, either benchmark works well. Always compare against historical data from the same benchmark.
+
+Choose based on what scenario matters for your workload:
+- **`kernel-launch`**: Measures warm-cache performance, reflecting steady-state behavior in long-running applications where caches are typically hot
+- **`nvbench-kernel-launch`**: Measures cold-cache performance, reflecting first-access scenarios or workloads with poor cache locality
+
+#### Metrics
+
+| Name                                | Unit      | Description                                    |
+|-------------------------------------|-----------|------------------------------------------------|
+| nvbench-kernel-launch/cpu_time      | time (us) | CPU-measured kernel execution time.            |
+| nvbench-kernel-launch/gpu_time      | time (us) | GPU-measured kernel execution time.            |
+| nvbench-kernel-launch/batch_gpu_time | time (us) | GPU batch execution time.                     |
+
+### `nvbench-auto-throughput`
+
+#### Introduction
+
+Measure GPU memory throughput and efficiency metrics using NVBench's auto throughput benchmark. This benchmark copies a 128 MiB buffer of int32 values with configurable stride and block size parameters, measuring memory bandwidth efficiency and CUPTI-based performance counters.
+
+#### Parameters
+
+- **Stride**: Controls the memory access pattern by specifying the gap between consecutive memory accesses. A stride of 1 means contiguous (coalesced) memory access. Larger stride values (2, 4, 8, etc.) create non-contiguous access patterns, useful for stress-testing memory subsystem behavior under different access patterns.
+- **BlockSize**: The number of threads per CUDA block (e.g., 128, 256, 512, 1024). Different block sizes affect occupancy and scheduling efficiency.
+- **ItemsPerThread**: The number of elements each thread processes (1 or 2). Higher values increase work per thread.
+
+The benchmark supports multiple parameter specification formats:
+- Single value: `"2"` - Test single value
+- List format: `"[1,2,4,8]"` - Test multiple specific values
+- Range format: `"[1:4]"` - Test all values from 1 to 4
+- Range with step: `"[1:8:2]"` - Test from 1 to 8 in steps of 2
+
+Performed by [NVBench](https://github.com/NVIDIA/nvbench) auto throughput benchmark with CUPTI metrics collection.
+
+#### Metrics
+
+| Name                                                                    | Unit         | Description                                                                           |
+|-------------------------------------------------------------------------|--------------|--------------------------------------------------------------------------------------|
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_cpu\_time       | time (us)    | CPU-measured execution time.             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_gpu\_time       | time (us)    | GPU-measured execution time.             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_batch\_gpu\_time | time (us)    | GPU batch execution time.                |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_hbw\_peak       | percent (%)  | HBM peak bandwidth utilization percentage.                                            |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_load\_eff       | percent (%)  | Global memory load efficiency percentage.                                             |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_store\_eff      | percent (%)  | Global memory store efficiency percentage.                                            |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_l1\_hit\_rate   | percent (%)  | L1 cache hit rate percentage (informational only, excluded from pass/fail criteria). |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_l2\_hit\_rate   | percent (%)  | L2 cache hit rate percentage (informational only, excluded from pass/fail criteria). |
+| nvbench-auto-throughput/ipt\_{T}\_stride\_{S}\_blk\_{B}\_throughput       | GB/s         | Memory throughput calculated from element rate (elements/s × 4 bytes for int32).     |
+
+Where `{T}` is ItemsPerThread (1 or 2), `{S}` is Stride value, and `{B}` is BlockSize (e.g., 128, 256, 512, 1024).
+
+> **Note:** L1 and L2 cache hit rates are collected for informational purposes only and should not be used for performance validation pass/fail criteria, as cache behavior can vary significantly based on system state and workload characteristics.
+
 ### `cpu-hpl`
 
 #### Introduction
@@ -193,6 +311,29 @@ Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computer
 
 Measure of memory bandwidth and computation rate for simple vector kernels.
 performed by [University of Virginia STREAM benchmark](https://www.cs.virginia.edu/stream/ref.html).
+
+#### Architectures
+
+The `--cpu_arch` parameter selects which STREAM binary is run. All binaries are built from the same checksum-verified `stream.c`
+by `third_party/stream-tests/Makefile`.
+
+| `--cpu_arch` | Binary           | Array size (doubles) | Built when                                                                                              |
+|--------------|------------------|----------------------|---------------------------------------------------------------------------------------------------------|
+| `other`      | `stream`         | 120M                 | Always.                                                                                                 |
+| `zen3`       | `streamZen3`     | 400M                 | AMD AOCC is installed (amd64 images).                                                                   |
+| `zen4`       | `streamZen4`     | 800M                 | AMD AOCC is installed (amd64 images).                                                                   |
+| `neo2`       | `streamNeo2`     | 120M                 | ARM64 images (Neoverse V2, e.g. Grace).                                                                 |
+| `olympus`    | `streamOlympus`  | 400M                 | ARM64 images whose compiler supports `-mcpu=olympus`. In `cuda13.4` it is built with GCC 15 in a separate build stage. |
+| `native`     | `streamNative`   | `NATIVE_ARRAY_SIZE`  | ARM64 only; build explicitly with `make NATIVE` on the host that will run it (see below).                       |
+
+`native` is tuned for the CPU of the build host, so it is not part of the published images. To use it, build it on the target host
+(`third_party` and `build-essential` are in the image), sizing the arrays to at least 4x the host's total cache:
+
+```bash
+cd ${SB_HOME}/third_party/stream-tests
+make NATIVE NATIVE_ARRAY_SIZE=400000000
+cp streamNative ${SB_MICRO_PATH}/bin/
+```
 
 #### Metrics
 
@@ -267,20 +408,22 @@ For measurements of peer-to-peer communication performance between AMD GPUs, GPU
 
 #### Introduction
 
-Measure the memory bandwidth of GPU using the STREAM benchmark. The benchmark tests various memory operations including copy, scale, add, and triad for double datatype.
+Measure the memory bandwidth of GPU using the STREAM benchmark. The benchmark tests various memory operations including copy, scale, add, and triad for double and float datatypes.
+
+__Note__: When `--check_data` is enabled, each process allocates 6× `--size` bytes of host memory (data\_buf + check\_buf + 4 validation buffers, e.g. 24 GiB with the default 4 GiB `--size`). Under `default_local_mode` with 8 GPUs this totals ~192 GiB of host RAM. Recommend using a small `--size` such as `1048576` (1 MiB) when `--check_data` is enabled.
 
 #### Metrics
 
 | Metric Name                                                | Unit             | Description                                                                                                                             |
 |------------------------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw  | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the copy operation with specified buffer size and block size.                         |
-| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the scale operation with specified buffer size and block size.                         |
-| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw   | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the add operation with specified buffer size and block size.                         |
-| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The fp64 memory bandwidth of the GPU for the triad operation with specified buffer size and block size.                         |
-| STREAM\_COPY\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio  | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the copy operation with specified buffer size and block size.                         |
-| STREAM\_SCALE\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the scale operation with specified buffer size and block size.                         |
-| STREAM\_ADD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio   | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the add operation with specified buffer size and block size.                         |
-| STREAM\_TRIAD\_double\_gpu\_[0-9]\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The fp64 memory bandwidth efficiency of the GPU for the triad operation with specified buffer size and block size.                         |
+| STREAM\_COPY\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw  | bandwidth (GB/s) | The memory bandwidth of the GPU for the copy operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| STREAM\_SCALE\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The memory bandwidth of the GPU for the scale operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| STREAM\_ADD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw   | bandwidth (GB/s) | The memory bandwidth of the GPU for the add operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| STREAM\_TRIAD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The memory bandwidth of the GPU for the triad operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| STREAM\_COPY\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio  | Efficiency (%) | The memory bandwidth efficiency of the GPU for the copy operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| STREAM\_SCALE\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The memory bandwidth efficiency of the GPU for the scale operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| STREAM\_ADD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio   | Efficiency (%) | The memory bandwidth efficiency of the GPU for the add operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| STREAM\_TRIAD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The memory bandwidth efficiency of the GPU for the triad operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
 
 ### `ib-loopback`
 

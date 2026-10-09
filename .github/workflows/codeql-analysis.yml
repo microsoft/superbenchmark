@@ -52,7 +52,11 @@ jobs:
       - name: Install Dependency
         run: |
           DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev sudo
+          DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswresample-dev sudo build-essential
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: '3.20.0'
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
