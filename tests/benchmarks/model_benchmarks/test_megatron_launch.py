@@ -9,7 +9,8 @@ from unittest import mock
 
 import pytest
 
-from superbench.benchmarks import Precision
+from superbench.benchmarks import Precision, ReturnCode
+from superbench.benchmarks.result import BenchmarkResult
 from superbench.benchmarks.model_benchmarks.megatron_gpt3 import MegatronGPT
 from superbench.benchmarks.model_benchmarks.model_base import ModelBenchmark
 
@@ -80,6 +81,27 @@ def test_training_failure_restores_environment(local_rank):
             'superbench.benchmarks.model_benchmarks.megatron_gpt3.run_command',
             return_value=CompletedProcess('torchrun', 2, 'training failed')
         ):
-            with pytest.raises(RuntimeError, match='exit code 2'):
-                benchmark._train_step(Precision.FLOAT32)
+            assert benchmark._train_step(Precision.FLOAT32) == ([], {})
         assert os.environ.get('OMPI_COMM_WORLD_LOCAL_RANK') == local_rank
+
+
+def test_training_failure_fails_run():
+    """A nonzero training exit must make run() return False, not only set a return code."""
+    benchmark = MegatronGPT('megatron-gpt', '--precision float32 --model_action train')
+    with mock.patch.object(MegatronGPT, '_preprocess', return_value=True), \
+            mock.patch.object(MegatronGPT, '_postprocess', return_value=True), \
+            mock.patch.object(MegatronGPT, '_megatron_command', return_value='torchrun pretrain_gpt.py'), \
+            mock.patch.object(MegatronGPT, '_sync_result') as sync, \
+            mock.patch(
+                'superbench.benchmarks.model_benchmarks.megatron_gpt3.run_command',
+                return_value=CompletedProcess('torchrun', 2, 'training failed')
+            ):
+        benchmark.add_parser_arguments()
+        valid, benchmark._args, _ = benchmark.parse_args()
+        assert valid
+        benchmark._result = BenchmarkResult(
+            benchmark._name, benchmark._benchmark_type, ReturnCode.SUCCESS, run_count=benchmark._args.run_count
+        )
+        assert benchmark.run() is False
+    assert benchmark.return_code == ReturnCode.INVALID_BENCHMARK_RESULT
+    sync.assert_not_called()

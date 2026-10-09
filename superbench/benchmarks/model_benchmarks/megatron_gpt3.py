@@ -557,7 +557,13 @@ class MegatronGPT(ModelBenchmark):
             if local_rank is not None:
                 os.environ['OMPI_COMM_WORLD_LOCAL_RANK'] = local_rank
         if output.returncode != 0:
-            raise RuntimeError('Megatron training failed with exit code {}.'.format(output.returncode))
+            # Return no timings so ModelBenchmark.__train() fails; Benchmark.run() does not fail on exceptions.
+            logger.error(
+                'Megatron training failed - model: {}, precision: {}, exit code: {}.'.format(
+                    self._name, precision, output.returncode
+                )
+            )
+            return [], {}
 
         iteration_times = []
         info = {}
