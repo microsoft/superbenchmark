@@ -365,7 +365,10 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         cmd = benchmark._commands[0]
         self.assertIn('/fake/bin/trtexec', cmd)
         self.assertIn('--onnx=/tmp/torchhub/checkpoints/trt_rank_0/m.onnx', cmd)
+        self.assertIn(f'--minShapes={derived_shapes}', cmd)
         self.assertIn(f'--optShapes={derived_shapes}', cmd)
+        self.assertIn(f'--maxShapes={derived_shapes}', cmd)
+        self.assertIn(f'--shapes={derived_shapes}', cmd)
         self.assertIn('--memPoolSize=workspace:8192', cmd)
         self.assertIn('--fp16', cmd)
         self.assertIn('--iterations=128', cmd)

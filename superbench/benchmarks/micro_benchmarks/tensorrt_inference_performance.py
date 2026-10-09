@@ -353,7 +353,10 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
         args = [
             self.__bin_path,
             f'--onnx={onnx_path}',
+            f'--minShapes={input_shapes}',
             f'--optShapes={input_shapes}',
+            f'--maxShapes={input_shapes}',
+            f'--shapes={input_shapes}',
             self.__workspace_flag,
             None if self._args.precision == 'fp32' else f'--{self._args.precision}',
             f'--iterations={self._args.iterations}',
