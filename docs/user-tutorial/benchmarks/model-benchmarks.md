@@ -34,6 +34,11 @@ For inference, supported percentiles include
 
 **New: Support fp8_hybrid and fp8_e4m3 precision for BERT models.**
 
+**New: Support bfloat16 precision for BERT, GPT-2 and LLaMA models.**
+
+Use `--optimizer_eps <value>` to set the Adam/AdamW epsilon (default: 1e-8). The default underflows in native
+float16 training; use a representable value such as 1e-4.
+
 **New: Deterministic Training Support**
 SuperBench now supports deterministic training to ensure reproducibility across runs. This includes fixed seeds and deterministic algorithms. To enable deterministic training, use the following flags:
 
@@ -153,6 +158,9 @@ For complete rule files covering all benchmark categories (micro-benchmarks, NCC
 Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) or [Megatron-DeepSpeed](https://github.com/microsoft/Megatron-DeepSpeed).
 
 `tips: batch_size in this benchmark represents global batch size, the batch size on each GPU instance is micro_batch_size.`
+
+Without `--code_base`, the Megatron-LM checkout defaults to `$SB_MEGATRON_PATH` when set, otherwise to the
+`third_party/Megatron/Megatron-LM` submodule. A nonzero training exit code fails the benchmark.
 
 #### Metrics
 | Name                                              | Unit                   | Description                                             |
