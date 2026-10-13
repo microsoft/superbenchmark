@@ -132,6 +132,12 @@ class PytorchBase(ModelBenchmark):
         """Add PyTorch model benchmark-specific arguments to the argument parser."""
         super().add_parser_arguments()
         self._parser.add_argument(
+            '--optimizer_eps',
+            type=float,
+            default=1e-8,
+            help='Adam/AdamW epsilon. Use a representable value (for example 1e-4) for native FP16 training.',
+        )
+        self._parser.add_argument(
             '--deterministic_seed',
             type=int,
             default=42,
@@ -446,12 +452,18 @@ class PytorchBase(ModelBenchmark):
                 self._model.parameters(), lr=1e-5, momentum=0.9, weight_decay=1e-4, nesterov=True
             )
         elif self._optimizer_type == Optimizer.ADAM:
-            self._optimizer = torch.optim.Adam(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
+            self._optimizer = torch.optim.Adam(
+                self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=self._args.optimizer_eps
+            )
         elif self._optimizer_type == Optimizer.ADAMW:
             if hasattr(torch.optim, 'AdamW'):
-                self._optimizer = torch.optim.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
+                self._optimizer = torch.optim.AdamW(
+                    self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=self._args.optimizer_eps
+                )
             else:
-                self._optimizer = transformers.AdamW(self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=1e-08)
+                self._optimizer = transformers.AdamW(
+                    self._model.parameters(), lr=1e-5, betas=(0.9, 0.999), eps=self._args.optimizer_eps
+                )
         else:
             self._optimizer = None
 

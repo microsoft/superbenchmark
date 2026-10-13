@@ -375,6 +375,19 @@ performed by [NVIDIA](https://github.com/NVIDIA/cuda-samples/tree/master/Samples
 or [AMD](https://github.com/ROCm-Developer-Tools/HIP/tree/master/samples/1_Utils/hipBusBandwidth) bandwidth test tool.
 The bandwidthTest sample was out-of-date and has been removed as of the CUDA Samples 12.9 release. For up-to-date bandwidth measurements, refer instead to the nvbandwidth benchmark.
 
+On ROCm, set `SB_ROCM_MEM_BW_BACKEND=transferbench` to measure `h2d_bw` and `d2h_bw` with
+[TransferBench](https://github.com/ROCm/TransferBench) instead of `hipBusBandwidth`, which is not available on
+ROCm 10. The default (`hipbusbandwidth`) is unchanged. The TransferBench backend keeps the `hipBusBandwidth` policy:
+
+* The same size sweep (64, 256 and 512 bytes, then 1 KiB to 512 MiB) and trial counts per size.
+* One `TransferBench cmdline` run per size, copying with one DMA engine of the visible GPU (`G0`, honoring
+  `HIP_VISIBLE_DEVICES`). Pinned memory uses `P0` (the GPU's nearest NUMA node); pageable (`--memory unpinned`)
+  uses `H<node>`, where `<node>` is the NUMA node of the CPU running the benchmark.
+* Each size reports the arithmetic mean of its per-iteration bandwidths, and the metric is the maximum over sizes.
+
+A size sweep fails on any TransferBench error, missing iteration or unexpected route; there is no fallback to
+`hipBusBandwidth`. Container policies must permit NUMA placement queries for pageable memory.
+
 #### Metrics
 
 | Name          | Unit             | Description                      |

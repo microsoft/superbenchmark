@@ -1,0 +1,31 @@
+TransferBench v1.69.00
+===============================================================
+[Common]                              (Suppress by setting HIDE_ENV=1)
+ALWAYS_VALIDATE     ,           0,Validating after all iterations
+BLOCK_BYTES         ,         256,Each CU gets a multiple of 256 bytes to copy
+BYTE_OFFSET         ,           0,Using byte offset of 0
+CU_MASK             ,           0,All
+FILL_PATTERN        ,           0,Element i = ((i * 517) modulo 383 + 31) * (srcBufferIdx + 1)
+GFX_UNROLL          ,           4,Using GFX unroll factor of 4
+HIDE_ENV            ,           0,Printing environment variable values
+MIN_VAR_SUBEXEC     ,           1,Using at least 1 subexecutor(s) for variable subExec transfers
+NUM_ITERATIONS      ,           3,Running 3 timed iteration(s)
+NUM_SUBITERATIONS   ,           1,Running 1 subiterations
+NUM_WARMUPS         ,           0,Running 0 warmup iteration(s) per Test
+OUTPUT_TO_CSV       ,           1,Output to CSV
+SHOW_ITERATIONS     ,           1,Showing per-iteration timing info
+USE_HIP_EVENTS      ,           1,Using HIP events for DMA executor timing
+USE_HSA_DMA         ,           0,Using hipMemcpyAsync for DMA execution
+USE_INTERACTIVE     ,           0,Running in non-interactive mode
+USE_SINGLE_STREAM   ,           1,Using single stream per device
+VALIDATE_DIRECT     ,           0,Validate GPU destination memory via device-to-host copy
+VALIDATE_SOURCE     ,           0,Do not perform source buffer validation
+
+Test 1:
+ Executor: DMA 00, 0.535 GB/s, 7.840 ms, 4194304 bytes, 0.535 GB/s (sum),
+     Transfer 0, 0.535 GB/s, 7.840 ms, 4194304 bytes, P0 -> D0:1 -> G0,
+      Iter 003, 40.330 GB/s, 0.104 ms, , ,
+      Iter 002, 42.133 GB/s, 0.100 ms, , ,
+      Iter 001, 0.180 GB/s, 23.315 ms, , ,
+      StandardDev, 0.000 GB/s, 10.943 ms, , ,
+ Aggregate (CPU), 0.534 GB/s, 7.852 ms, 4194304 bytes, Overhead 0.012 ms,
