@@ -110,3 +110,153 @@ Here're the system requirements for all managed GPU nodes.
 
 </TabItem>
 </Tabs>
+
+### Experimental ROCm 10 image scaffold
+
+`dockerfile/rocm10.0.x.dockerfile` starts from AMD's digest-pinned
+`rocm10.0_ubuntu26.04_py3.14_pytorch_release_2.13.0` image.
+It is a scaffold, not a feature-equivalent replacement for the ROCm 7 images,
+and is intentionally not yet in the release-image workflow matrix.
+
+```bash
+git submodule update --init --recursive
+docker build --build-arg NUM_MAKE_JOBS=8 \
+  -f dockerfile/rocm10.0.x.dockerfile -t superbench:rocm10-scaffold .
+```
+
+The base contains a wheel-distributed SDK. The scaffold installs
+`rocm[devel,libraries,device-all]==10.0.0` and preserves the base's framework
+and SDK versions with pip constraints. **All-device GPU packages are the
+default**; this is not a multi-platform CPU image (the base is Linux x86_64).
+`rocm-sdk init` expands the development tree. `ROCM_PATH` (and `ROCM_HOME`,
+`HIP_PATH`) is set to the discovered wheel SDK root in
+`/etc/profile.d/rocm10-env.sh`; no `/opt/rocm` alias is created. The native
+`amdrocm-*` 10.0.0 runtime, base, AMD SMI, BLAS, rand and LLVM packages from
+AMD's APT repository are installed only as RVS dependencies; SuperBench builds
+and `LD_LIBRARY_PATH` use the wheel SDK. The core wheel's bundled AMD SMI Python
+bindings are registered in place with a `.pth` entry (until
+[ROCm/TheRock#3054](https://github.com/ROCm/TheRock/issues/3054) is fixed), so
+`import amdsmi` does not pick up a separate PyPI wrapper.
+
+* RCCL and RCCL-tests are built from one `rocm-systems` revision
+  (`RCCL_SOURCE_COMMIT`) and installed under `/opt/rccl` and
+  `/opt/superbench/bin`. The default revision contains the gfx1250 (MI455X)
+  fixes merged after TheRock's `therock-10.0` release, including
+  [ROCm/rocm-systems#12051](https://github.com/ROCm/rocm-systems/pull/12051).
+  `/opt/rccl/lib` precedes the SDK library on `LD_LIBRARY_PATH`, so RCCL-tests
+  and other soname lookups, including SuperBench MPI launches, resolve it. Build with
+  `--build-arg RCCL_SOURCE_COMMIT=` to keep AMD's prebuilt SDK RCCL and compile
+  only RCCL-tests from the `therock-10.0` revision.
+* Open MPI 5.0.10 from the DOCA 3.4.0 userspace packages retains
+  `/usr/local/mpi`. Current built-in MPI calls exchange
+  host metadata, timing/error values, and NumPy arrays; GPU collectives use
+  RCCL. This scaffold does not claim ROCm-aware MPI support for applications
+  that pass device pointers directly to MPI.
+* Locally compiled kernels (SuperBench benchmarks, RCCL and TransformerEngine)
+  default to `gfx942 gfx950 gfx1250`, independently of the all-device SDK
+  packages. Other kernel targets require an explicit `AMDGPU_TARGETS` build
+  argument and hardware qualification.
+* RVS `1.6.122-708` and its bundled TransferBench come from AMD's signed
+  Ubuntu 26.04 APT repositories under `/opt/rocm/extras-10`. The image sets
+  `SB_ROCM_MEM_BW_BACKEND=transferbench` for ROCm `mem-bw`; the TransferBench
+  backend itself is added by a separate benchmark change, and `mem-bw` is not
+  runnable in this image without it.
+* The image includes SuperBench, its native microbenchmarks, RCCL-tests, fio,
+  ROCm-enabled perftest, `rocblas-bench`/`hipblaslt-bench` from TheRock's test
+  archive, and TransformerEngine, AITER and Megatron-LM built in the Dockerfile
+  from pinned revisions (`TE_COMMIT`, `AITER_COMMIT`, `MEGATRON_COMMIT`) against
+  the base's PyTorch, Triton and SDK. No host driver is installed.
+
+The following remain absent: Intel MLC (`cpu-memory-bw-latency`),
+Megatron-DeepSpeed, and the old HIP 5.5 `hipBusBandwidth` sample. Existing
+`rocm-smi` system-info collection and `rocprofv2` tracing still need their
+separate ROCm 10 migrations.
+
+Validation on 2026-09-30 used the earlier variant with AMD's packaged SDK RCCL
+(equivalent to `--build-arg RCCL_SOURCE_COMMIT=`): the image built successfully and passed `pip check`,
+34 targeted regression tests (three NVIDIA-only tests skipped), GEMM correctness
+on all eight MI300X GPUs, FP16/BF16 PyTorch flash SDPA forward/backward, and the
+SuperBench GPU-copy wrapper with data checking and 304 positive parsed metrics.
+An eight-rank Open MPI / packaged-RCCL all-reduce passed data checking
+(`NCCL_IB_DISABLE=1`, single node). RVS module/GPU discovery also worked.
+The default source-built RCCL path has not yet been built or run. These checks
+do not qualify multi-node networking, additional GPU architectures,
+the omitted benchmarks, or sustained RVS stress workloads.
+
+### ROCm 10 migration considerations
+
+The following is a scouting snapshot from **2026-09-29**, not a claim that the
+ROCm 7 images support ROCm 10 or a new GPU. Keep the ROCm 7 baseline while
+qualifying a separately pinned ROCm 10 image.
+
+#### Confirm the new GPU target first
+
+TheRock's public
+[target definitions](https://github.com/ROCm/TheRock/blob/68ac349433a9a1f8434010c2751404d0f6192916/cmake/therock_amdgpu_targets.cmake)
+identify **MI450/MI450X/MI455X as `gfx1250`**, not `gfx1251`.
+Its [development support table](https://github.com/ROCm/TheRock/blob/68ac349433a9a1f8434010c2751404d0f6192916/SUPPORTED_GPUS.md)
+marks `gfx1250` build-passing and sanity-tested but not release-ready.
+The public [ROCm 10 compatibility matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
+lists MI300X and MI355X, but does not yet list MI455X.
+
+Treat `gfx1251` as a separate, unqualified target until the actual device's
+`rocminfo` output and its vendor support matrix establish the mapping.
+Compiler recognition is not proof of runtime, library kernel, or framework
+support. Do not simply add either target to the ROCm 7 Dockerfiles or their
+TransformerEngine AOTriton allowlists.
+
+#### Installation and dependency changes
+
+[ROCm 10 is a production Core SDK release built through TheRock](https://rocm.docs.amd.com/en/latest/about/transition-guide-TheRock.html).
+It changes more than the base-image tag:
+
+| Area | ROCm 7 baseline | ROCm 10 work to qualify |
+| --- | --- | --- |
+| SDK packaging | Legacy packages such as `amd-smi-lib`, `rocm-cmake`, and `hipify-clang`; `/opt/rocm` paths | Core SDK under `/opt/rocm/core-10.0`; packages such as `amdrocm-amdsmi`, `amdrocm-base`, `amdrocm-hipify`, `amdrocm-blas`, and `amdrocm-rccl`. Package-manager installs provide compatibility symlinks; tarballs/wheels need explicit path discovery. |
+| Source builds | Separate RCCL, rocBLAS, hipBLASLt and HIP clones | Pin a coherent TheRock release and its dependencies. Math libraries now live in [rocm-libraries](https://github.com/ROCm/rocm-libraries); runtime, HIP and management/profiling components in [rocm-systems](https://github.com/ROCm/rocm-systems). Do not assume old branches, `install.sh` options, or the 7.2 standalone hipBLASLt client shim remain applicable. |
+| Device libraries | Prebuilt gfx942/gfx950 kernels plus locally compiled benchmarks | Install the matching device kernel packs as well as host libraries, compiler, headers and benchmark clients. Confirm each requested target is actually in the shipped artifacts. Keep MI300X as a regression target. |
+| Frameworks | PyTorch 2.9.1; TE `v2.4_rocm` / `v2.10_rocm`; CK attention disabled | Select matched PyTorch, Triton, TE and attention-library releases. Current [TE development](https://github.com/ROCm/TransformerEngine/blob/03afd8f813300417ee1a41a4471d89be71c88f2d/README.rst) uses hipBLASLt for GEMM and AITER/CK JIT for attention; warm and record JIT caches before timing. AOTriton remains version/ABI-sensitive and its development builds add FlyDSL dependencies. |
+| Monitoring | Python device manager already uses AMD SMI, but system-info collection invokes `rocm-smi` | ROCm SMI is removed from Core SDK. Port system-info commands and parsers to AMD SMI; retest enumeration, power units, ECC, topology and partition identifiers. |
+| Profiling | Runner builds `rocprofv2` commands | Qualify ROCprofiler-SDK / `rocprofv3`, its CLI arguments and output formats; update runner tests and trace collection rather than only renaming the executable. |
+| Host integration | Container uses the host's kernel driver and network devices | Qualify the OS, AMDGPU driver/firmware and user-space compatibility together. Preserve matched OFED/RDMA libraries and test single-node then multi-node RCCL; installing a newer SDK inside a container does not update the host driver. |
+
+For Python-distributed SDKs, TheRock now separates `rocm-sdk-core`,
+`rocm-sdk-libraries`, `rocm-sdk-devel`, and `rocm-sdk-device-*`.
+[TheRock's release instructions](https://github.com/ROCm/TheRock/blob/68ac349433a9a1f8434010c2751404d0f6192916/RELEASES.md)
+describe `rocm[libraries,devel,device-gfx942,device-gfx950]`, `rocm-sdk init`,
+`rocm-sdk test`, and `rocm-sdk path` for discovery. Pin the release/index;
+nightly package availability does not establish hardware qualification.
+Do not mix a wheel SDK with unrelated `/opt/rocm` libraries through
+`LD_LIBRARY_PATH`.
+
+#### RVS and the validation matrix
+
+[RVS and TransferBench are ROCm Extras](https://rocm.docs.amd.com/en/latest/components/extras.html),
+not part of the Core SDK install. The current
+[RVS installation guide](https://rocm.docs.amd.com/projects/ROCmValidationSuite/en/latest/install/installation.html)
+uses the separate Extras repository, package `amdrocm10-rvs`, and
+`/opt/rocm/extras-10`. RVS includes TransferBench; source builds make its
+standalone CLI optional.
+
+ROCm Bandwidth Test is end-of-life, with RVS/TransferBench the recommended
+replacements. SuperBench's current `mem-bw` is a **different legacy path**:
+it builds `hipBusBandwidth` from the HIP 5.5 samples. Replace that dependency
+with an explicit RVS-backed benchmark/parser rather than assuming the old
+command and metric format work unchanged.
+
+| Coverage | Candidate RVS module / retained test |
+| --- | --- |
+| Inventory, configuration and PCIe qualification | GPUP, RCQT, PEQT; AMD SMI inventory and telemetry |
+| Host/device and peer transfers | PEBB and PBQT, now using TransferBench; retain SuperBench SM/DMA copy correctness checks |
+| HBM bandwidth and integrity | BABEL (BabelStream) and MEM; qualify duration, allocation size and fault reporting |
+| Sustained compute, power and thermal behavior | GST, IET and TST with per-SKU limits and opt-in durations |
+| Communication and application regressions | Retain RCCL correctness/scaling, RDMA tests, rocBLAS/hipBLASLt precision checks, and PyTorch/TE forward/backward/attention tests |
+
+See the [RVS module descriptions](https://rocm.docs.amd.com/projects/ROCmValidationSuite/en/latest/features.html)
+and [TransferBench integration notes](https://rocm.docs.amd.com/projects/ROCmValidationSuite/en/latest/transferbench.html).
+The documented TransferBench default offload targets do not include gfx1250
+or gfx1251; verify actual package contents or build with explicitly supported
+targets before claiming new-GPU coverage. RVS is not a replacement for all
+SuperBench application/network tests. Keep stress tests opt-in on shared nodes,
+preserve units and GPU identifiers in new parsers, and establish new per-SKU
+thresholds rather than reusing MI300X baselines.

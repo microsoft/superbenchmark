@@ -136,7 +136,7 @@ ifneq (,$(wildcard perftest/autogen.sh))
 endif
 rocm_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
-	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm=/opt/rocm --prefix=$(SB_MICRO_PATH) && make -j && make install
+	cd perftest && ./autogen.sh && ./configure --enable-rocm --with-rocm="$(ROCM_PATH)" --prefix=$(SB_MICRO_PATH) && make -j && make install
 endif
 cpu_perftest:
 ifneq (,$(wildcard perftest/autogen.sh))
