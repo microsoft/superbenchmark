@@ -64,6 +64,12 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul) or [`hipblasLt-bench`](https://github.com/ROCm/hipBLASLt/blob/develop/clients/benchmarks/README.md).
 
+The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1, and INT8 inputs.
+FP4 requires CUDA 12.8 or later; an available cuBLASLt algorithm for each input type and
+GPU must still be confirmed at runtime. CUDA 13.4 builds the benchmark for SM 107.
+FP6 and block-scaled MXFP formats are not covered by this benchmark's current matrix
+initialization and cuBLASLt configuration.
+
 #### Metrics
 
 | Name                                                      | Unit           | Description                     |
@@ -103,6 +109,19 @@ The supported functions for cuDNN are as follows:
  - cudnnConvolutionBackwardFilter
  - cudnnConvolutionBackwardData
  - cudnnConvolutionForward
+
+The benchmark already supports `--enable_auto_algo` (off by default), which calls
+`cudnnFindConvolution*Algorithm` before timing to choose an algorithm for each
+convolution. Without it, the configured legacy convolution algorithm is used.
+This option predates CUDA 13.4; it does not benchmark the algorithm search itself.
+
+With cuDNN 9.26 in the CUDA 13.4 image, these convolution benchmarks can use
+compute capability 10.7. The
+[cuDNN 9.26 release notes](https://docs.nvidia.com/deeplearning/cudnn/backend/v9.26.0/release-notes.html#cudnn-9-26-0)
+announce SM 107 and CUDA 13.4 support, but do not introduce new legacy convolution
+algorithms or deprecate existing ones. Backend graph features (such as attention and
+FP8 pointwise fusion) are not covered by this convolution-only benchmark; the notes
+also flag limitations for FP8 pointwise fusion and certain SM 107 attention engines.
 
 #### Metrics
 
@@ -292,6 +311,29 @@ Performed by [High-Performance Linpack Benchmark for Distributed-Memory Computer
 
 Measure of memory bandwidth and computation rate for simple vector kernels.
 performed by [University of Virginia STREAM benchmark](https://www.cs.virginia.edu/stream/ref.html).
+
+#### Architectures
+
+The `--cpu_arch` parameter selects which STREAM binary is run. All binaries are built from the same checksum-verified `stream.c`
+by `third_party/stream-tests/Makefile`.
+
+| `--cpu_arch` | Binary           | Array size (doubles) | Built when                                                                                              |
+|--------------|------------------|----------------------|---------------------------------------------------------------------------------------------------------|
+| `other`      | `stream`         | 120M                 | Always.                                                                                                 |
+| `zen3`       | `streamZen3`     | 400M                 | AMD AOCC is installed (amd64 images).                                                                   |
+| `zen4`       | `streamZen4`     | 800M                 | AMD AOCC is installed (amd64 images).                                                                   |
+| `neo2`       | `streamNeo2`     | 120M                 | ARM64 images (Neoverse V2, e.g. Grace).                                                                 |
+| `olympus`    | `streamOlympus`  | 400M                 | ARM64 images whose compiler supports `-mcpu=olympus`. In `cuda13.4` it is built with GCC 15 in a separate build stage. |
+| `native`     | `streamNative`   | `NATIVE_ARRAY_SIZE`  | ARM64 only; build explicitly with `make NATIVE` on the host that will run it (see below).                       |
+
+`native` is tuned for the CPU of the build host, so it is not part of the published images. To use it, build it on the target host
+(`third_party` and `build-essential` are in the image), sizing the arrays to at least 4x the host's total cache:
+
+```bash
+cd ${SB_HOME}/third_party/stream-tests
+make NATIVE NATIVE_ARRAY_SIZE=400000000
+cp streamNative ${SB_MICRO_PATH}/bin/
+```
 
 #### Metrics
 

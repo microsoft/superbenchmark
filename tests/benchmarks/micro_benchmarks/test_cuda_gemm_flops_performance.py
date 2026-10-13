@@ -4,6 +4,7 @@
 """Tests for gemm-flops benchmark."""
 
 import unittest
+from unittest import mock
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
@@ -93,3 +94,17 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
 
         # Negative case - Add invalid raw output.
         assert (benchmark._process_raw_result(3, 'Invalid raw output') is False)
+
+    def test_flops_performance_cuda_sm107(self):
+        """Test gemm-flops benchmark selects kernels for compute capability 10.7."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='--precision fp32 fp16_tc')
+        assert (10.7 in benchmark._CudaGemmFlopsBenchmark__kernel_map)
+
+        with mock.patch.object(dm.device_manager, 'get_device_compute_capability', return_value=10.7):
+            assert (benchmark._preprocess() is True)
+        assert (benchmark.return_code == ReturnCode.SUCCESS)

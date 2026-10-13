@@ -4,6 +4,7 @@
 """Tests for ROCm 6.4 Dockerfile build configuration."""
 
 import os
+import shlex
 import subprocess
 import unittest
 from pathlib import Path
@@ -91,6 +92,42 @@ class Rocm64DockerfileTestCase(unittest.TestCase):
         self.assertIn('ARG AMDGPU_TARGETS="gfx942"', self.dockerfile)
         self.assertIn('NVTE_FUSED_ATTN_AOTRITON="${nvte_fused_attn_aotriton}"', self.dockerfile)
         self.assertIn('NVTE_ROCM_ARCH="${transformer_engine_architectures}"', self.dockerfile)
+
+    def test_mlc_checksum_verification(self):
+        """Test MLC integrity, executable installation, and cleanup."""
+        mlc_url = 'https://downloadmirror.intel.com/926327/mlc_v3.13.tgz'
+        mlc_sha256 = 'a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019'
+        mlc_marker = '# Install Intel MLC'
+        self.assertIn(mlc_marker, self.dockerfile)
+        mlc_start = self.dockerfile.index(mlc_marker) + len(mlc_marker)
+        mlc_install = self.dockerfile[mlc_start:].split('\n\n', 1)[0]
+        mlc_lexer = shlex.shlex((mlc_install + '\n').replace('\\\n', ' '), posix=True, punctuation_chars='|&;')
+        mlc_lexer.wordchars += ':'
+        mlc_tokens = list(mlc_lexer)
+        expected_commands = [
+            ['wget', '-q', mlc_url, '-O', 'mlc.tgz', '&&'],
+            ['echo', '{}  mlc.tgz'.format(mlc_sha256), '|', 'sha256sum', '-c', '-', '&&'],
+            ['tar', 'xzf', 'mlc.tgz', 'Linux/mlc', '&&'],
+            ['install', '-m', '755', './Linux/mlc', '/usr/local/bin/', '&&'],
+            ['rm', '-rf', './Linux', 'mlc.tgz'],
+        ]
+        command_cursor = 0
+        for expected_command in expected_commands:
+            matches = [
+                token_index for token_index in range(command_cursor,
+                                                     len(mlc_tokens) - len(expected_command) + 1)
+                if mlc_tokens[token_index:token_index + len(expected_command)] == expected_command
+            ]
+            self.assertTrue(matches, 'Missing or out-of-order MLC command: {}'.format(' '.join(expected_command)))
+            command_cursor = matches[0] + len(expected_command)
+        self.assertEqual(self.dockerfile.count(mlc_url), 1)
+        self.assertEqual(self.dockerfile.count(mlc_sha256), 1)
+
+    def test_rocm_build_refreshes_package_index(self):
+        """Test APT metadata is refreshed before installing ROCm dependencies."""
+        build_command = 'RUN apt-get update && \\\n    make RCCL_HOME=/opt/rccl/build/ '
+        self.assertIn(build_command, self.dockerfile)
+        self.assertEqual(self.dockerfile.count('make RCCL_HOME='), 1)
 
 
 if __name__ == '__main__':
