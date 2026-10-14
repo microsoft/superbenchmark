@@ -32,6 +32,10 @@ including the following categories:
 For inference, supported percentiles include
 50<sup>th</sup>, 90<sup>th</sup>, 95<sup>th</sup>, 99<sup>th</sup>, and 99.9<sup>th</sup>.
 
+If model creation fails for a requested precision, inference stops with
+`MODEL_CREATION_FAILURE` and does not publish measurements for that precision.
+A model left over from an earlier successful precision is not reused.
+
 **New: Support fp8_hybrid and fp8_e4m3 precision for BERT models.**
 
 **New: Deterministic Training Support**
@@ -162,4 +166,3 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 | megatron-gpt/${precision}_train_tflops            | tflops/s               | The average training tflops per second per iteration.   |
 | megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
 | megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
-
