@@ -4,11 +4,57 @@
 """Tests for file handler module in analyzer."""
 
 import unittest
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
+import pytest
+from openpyxl import load_workbook
 
 import superbench.analyzer.file_handler as file_handler
+
+
+@pytest.mark.parametrize('function', ['value', 'variance'])
+@pytest.mark.parametrize('threshold', [-1.25, 0, 2.5])
+@pytest.mark.parametrize(
+    'operator,excel_operator',
+    [('>', 'greaterThan'), ('<', 'lessThan'), ('>=', 'greaterThanOrEqual'),
+     ('<=', 'lessThanOrEqual'), ('==', 'equal'), ('!=', 'notEqual')]
+)
+def test_excel_comparison_operators(function, threshold, operator, excel_operator):
+    """Preserve all supported comparison operators in actual XLSX formatting."""
+    rules = {'rule': {'function': function, 'metrics': {'bench/value': None},
+                      'criteria': 'lambda x: x {} {}'.format(operator, threshold)}}
+    with BytesIO() as output:
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            file_handler.output_excel_data_not_accept(writer, pd.DataFrame({'bench/value': [2.0]}), rules)
+        output.seek(0)
+        workbook = load_workbook(output)
+        try:
+            worksheet = workbook['Not Accept']
+            conditions = [
+                rule for cell_range in worksheet.conditional_formatting
+                for rule in worksheet.conditional_formatting[cell_range] if rule.type == 'cellIs'
+            ]
+            assert len(conditions) == 1
+            assert conditions[0].operator == excel_operator
+            assert float(conditions[0].formula[0]) == threshold
+        finally:
+            workbook.close()
+
+
+def test_excel_empty_results():
+    """Keep empty diagnostic reports valid without comparison formatting."""
+    rules = {'rule': {'function': 'value', 'metrics': {'bench/value': None}, 'criteria': 'lambda x: x >= 1'}}
+    with BytesIO() as output:
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            file_handler.output_excel_data_not_accept(writer, pd.DataFrame(columns=['bench/value']), rules)
+        output.seek(0)
+        workbook = load_workbook(output)
+        try:
+            assert not workbook['Not Accept'].conditional_formatting
+        finally:
+            workbook.close()
 
 
 class TestFileHandler(unittest.TestCase):
