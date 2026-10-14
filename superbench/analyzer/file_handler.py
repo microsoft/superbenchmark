@@ -140,7 +140,7 @@ def output_excel_data_not_accept(writer, data_not_accept_df, rules):
                             )
                         # Apply red format if the value violates the rule.
                         if rules[rule]['function'] == 'value' or rules[rule]['function'] == 'variance':
-                            match = re.search(r'(>|<|<=|>=|==|!=)(.+)', rules[rule]['criteria'])
+                            match = re.search(r'(<=|>=|==|!=|>|<)(.+)', rules[rule]['criteria'])
                             if not match:
                                 continue
                             symbol = match.group(1)
