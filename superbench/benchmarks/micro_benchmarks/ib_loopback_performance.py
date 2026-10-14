@@ -22,15 +22,21 @@ def get_numa_cores(numa_index):
     Return:
         list: The available cores from different physical cpu core of NUMA<numa_index>.
         None if no available cores or numa index.
+
+    Raises:
+        ValueError: The CPU list contains a malformed or descending range.
     """
     try:
         with Path(f'/sys/devices/system/node/node{numa_index}/cpulist').open('r') as f:
             cores = []
             core_ranges = f.read().strip().split(',')
             for core_range in core_ranges:
-                start, end = core_range.split('-')
-                for core in range(int(start), int(end) + 1):
-                    cores.append(core)
+                start, separator, end = core_range.partition('-')
+                start = int(start)
+                end = int(end) if separator else start
+                if end < start:
+                    raise ValueError('Invalid NUMA CPU range: {}'.format(core_range))
+                cores.extend(range(start, end + 1))
         return cores
     except IOError:
         return None
