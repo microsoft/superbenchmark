@@ -439,6 +439,39 @@ class RunnerTestCase(unittest.TestCase):
         }
         self.assertEqual(self.runner._SuperBenchRunner__merge_monitor_metrics(path), expected)
 
+    def test_merge_monitor_metrics_multiple_files(self):
+        """Combine all files and reduce LAST by timestamps rather than file order."""
+        samples = [
+            {'time': '2026-01-01 00:00:01', 'gpu_temperature:0': 90,
+             'gpu_power_limit:0': 260, 'gpu_corrected_ecc:0': 9},
+            {'time': '2026-01-01 00:00:02', 'gpu_temperature:0': 40,
+             'gpu_power_limit:0': 220, 'gpu_corrected_ecc:0': 3},
+        ]
+        files = [Path(self.sb_output_dir) / name for name in ('early.jsonl', 'late.jsonl', 'empty.jsonl')]
+        for path, sample in zip(files, samples):
+            path.write_text(json.dumps(sample) + '\n')
+        files[2].write_text('')
+        expected = {'monitor/gpu_temperature:0': 90, 'monitor/gpu_power_limit:0': 220,
+                    'monitor/gpu_corrected_ecc:0': 3}
+        for order in (files[:2], list(reversed(files[:2])), files):
+            with self.subTest(order=[path.name for path in order]), \
+                    mock.patch.object(Path, 'glob', return_value=order):
+                self.assertEqual(
+                    self.runner._SuperBenchRunner__merge_monitor_metrics(Path(self.sb_output_dir)), expected
+                )
+
+    def test_merge_monitor_metrics_invalid_file_is_atomic(self):
+        """Log malformed files without retaining their partially parsed samples."""
+        valid = Path(self.sb_output_dir) / 'valid.jsonl'
+        invalid = Path(self.sb_output_dir) / 'invalid.jsonl'
+        valid.write_text(json.dumps({'time': '1', 'gpu_temperature:0': 40}) + '\n')
+        invalid.write_text(json.dumps({'time': '2', 'gpu_temperature:0': 999}) + '\ninvalid json\n')
+        with mock.patch.object(Path, 'glob', return_value=[valid, invalid]), \
+                self.assertLogs('superbench', level='ERROR') as logs:
+            result = self.runner._SuperBenchRunner__merge_monitor_metrics(Path(self.sb_output_dir))
+        self.assertEqual(result, {'monitor/gpu_temperature:0': 40})
+        self.assertTrue(any('Invalid Jsonline file' in message for message in logs.output))
+
     def test_generate_metric_name(self):
         """Test __generate_metric_name."""
         """(self, benchmark_name, metric, rank_count, run_count, curr_rank, curr_run):"""
