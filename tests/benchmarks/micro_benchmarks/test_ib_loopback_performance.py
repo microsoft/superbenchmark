@@ -8,11 +8,37 @@ import numbers
 import unittest
 from unittest import mock
 
+import pytest
+
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, Platform, BenchmarkType, ReturnCode
 from superbench.common.utils import network
 from superbench.benchmarks.micro_benchmarks import ib_loopback_performance
+
+
+@pytest.mark.parametrize(
+    'cpulist,expected',
+    [('0-3', [0, 1, 2, 3]), ('0', [0]), ('0,2-3', [0, 2, 3]), ('0,2,4', [0, 2, 4]),
+     ('0-1,4,7-8\n', [0, 1, 4, 7, 8]), ('3-3', [3])]
+)
+def test_numa_cpulist_formats(cpulist, expected):
+    """Expand valid singleton, range and mixed Linux CPU lists."""
+    with mock.patch('pathlib.Path.open', mock.mock_open(read_data=cpulist)):
+        assert ib_loopback_performance.get_numa_cores(0) == expected
+
+
+@pytest.mark.parametrize('cpulist', ['', '0,', '-1', '3-1', 'a', '1-2-3', '1-'])
+def test_numa_cpulist_invalid(cpulist):
+    """Reject malformed and descending CPU ranges explicitly."""
+    with mock.patch('pathlib.Path.open', mock.mock_open(read_data=cpulist)), pytest.raises(ValueError):
+        ib_loopback_performance.get_numa_cores(0)
+
+
+def test_numa_cpulist_missing():
+    """Preserve the missing-sysfs-file result."""
+    with mock.patch('pathlib.Path.open', side_effect=FileNotFoundError):
+        assert ib_loopback_performance.get_numa_cores(0) is None
 
 
 class IBLoopbackBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
