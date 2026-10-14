@@ -114,12 +114,13 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
 
         try:
+            in_type = self._shapes_to_run[cmd_idx][-1]
             if not self._args.enable_ncu_profiling:
                 fields = raw_output.strip().split()
                 if len(fields) != 6 or not all(x.isdigit() for x in fields[:4]):
                     raise ValueError('Invalid result.')
                 self._result.add_result(
-                    f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                    f'{in_type}_{fields[3]}_{"_".join(fields[:3])}_flops',
                     float(fields[-1])
                 )
             else:
@@ -137,7 +138,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                         result = True
                         size = f'{fields[3]}_{"_".join(fields[:3])}'
                         self._result.add_result(
-                            f'{self._commands[cmd_idx].split()[-1]}_{fields[3]}_{"_".join(fields[:3])}_flops',
+                            f'{in_type}_{fields[3]}_{"_".join(fields[:3])}_flops',
                             float(fields[-1])
                         )
                 if not result:
@@ -156,7 +157,7 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
                         try:
                             float_value = float(value)
                             self._result.add_result(
-                                f'{self._commands[cmd_idx].split()[-1]}_{size}_{metric_name}', float_value
+                                f'{in_type}_{size}_{metric_name}', float_value
                             )
                         except ValueError:
                             pass
