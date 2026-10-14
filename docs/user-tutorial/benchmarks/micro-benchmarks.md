@@ -110,6 +110,8 @@ performance measurements.
 | cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops  | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 | hipblaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 
+For `cublaslt-gemm`, FLOPS and Nsight Compute metric names use the `--in_types` value as their prefix, even with autotuning.
+
 ### `cublas-function`
 
 #### Introduction
