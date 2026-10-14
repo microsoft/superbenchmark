@@ -85,6 +85,44 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                     self.assertIn(cmd(_t, _b, _m, 128, 128), benchmark._commands)
 
     @decorator.load_data('tests/data/cublaslt_ncu.log')
+    def test_precision_identity_with_autotune(self, ncu_output):
+        """Keep distinct precision keys across autotune and profiling modes."""
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        for iterations in (7, 50):
+            for autotune in (False, True):
+                for profiling in (False, True):
+                    with self.subTest(iterations=iterations, autotune=autotune, profiling=profiling):
+                        parameters = (
+                            '--in_types fp16 fp64 --shapes 2208,2048,5608 '
+                            '--num_steps_autotune {} --profiling_metrics DRAM_Throughput'
+                        ).format(iterations)
+                        if autotune:
+                            parameters += ' --enable_autotune'
+                        if profiling:
+                            parameters += ' --enable_ncu_profiling'
+                        benchmark = benchmark_cls(self.benchmark_name, parameters=parameters)
+                        self.assertTrue(benchmark._preprocess())
+                        self.assertEqual(len(benchmark._commands), 2)
+                        for index, (precision, value) in enumerate((('fp16', 123.0), ('fp64', 9.0))):
+                            output = ncu_output if profiling else '2208 2048 5608 0 1.0 {}'.format(value)
+                            self.assertTrue(benchmark._process_raw_result(index, output))
+                            key = '{}_0_2208_2048_5608_flops'.format(precision)
+                            self.assertIn(key, benchmark.result)
+                            self.assertEqual(len(benchmark.result[key]), 1)
+                            if profiling:
+                                metric = '{}_0_2208_2048_5608_DRAM_Throughput'.format(precision)
+                                self.assertEqual(benchmark.result[metric], [0.74])
+                            else:
+                                self.assertEqual(benchmark.result[key], [value])
+                        expected = {'return_code', 'fp16_0_2208_2048_5608_flops', 'fp64_0_2208_2048_5608_flops'}
+                        if profiling:
+                            expected.update({
+                                'fp16_0_2208_2048_5608_DRAM_Throughput',
+                                'fp64_0_2208_2048_5608_DRAM_Throughput',
+                            })
+                        self.assertEqual(set(benchmark.result), expected)
+
+    @decorator.load_data('tests/data/cublaslt_ncu.log')
     def test_cublaslt_gemm_result_parsing(self, raw_output):
         """Test cublaslt-gemm benchmark result parsing."""
         benchmark = self.get_benchmark()

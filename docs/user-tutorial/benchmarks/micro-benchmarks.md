@@ -77,6 +77,10 @@ initialization and cuBLASLt configuration.
 | cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops  | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 | hipblaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 
+For `cublaslt-gemm`, the dtype comes from the input type used to generate each
+command. Autotuning and Nsight Compute profiling preserve this precision identity
+in both FLOPs and profiling metric names.
+
 ### `cublas-function`
 
 #### Introduction
