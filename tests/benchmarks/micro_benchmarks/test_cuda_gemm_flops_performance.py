@@ -3,6 +3,7 @@
 
 """Tests for gemm-flops benchmark."""
 
+import fnmatch
 import unittest
 from unittest import mock
 
@@ -196,7 +197,7 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
 
     @decorator.cuda_test
     def test_flops_performance_cuda_nvfp4(self):
-        """Test gemm-flops benchmark NVFP4 (block-scaled FP4) kernel output parsing for SM103."""
+        """Test gemm-flops benchmark NVFP4 (block-scaled FP4) kernel selection and output parsing for SM103."""
         benchmark_name = 'gemm-flops'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
@@ -218,9 +219,14 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
 CSV Results:
 
 Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_f32_f32_256x256x96_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_nopf_epi_nosmem,passed,success,universal,16384,16384,16384,0.55,15998700
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_f32_f32_256x256x96_4x1x1_0_tnt_align32_o_vs16_ultra_2sm_tmapf_epi_nosmem,passed,success,universal,16384,16384,16384,0.53,16602100
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_nopf_epi_nosmem,passed,success,universal,16384,16384,16384,0.55,15998700
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_tmapf_epi_nosmem,passed,success,universal,16384,16384,16384,0.53,16602100
 """
+        # The SM10.3 --kernels pattern must select these real CUTLASS v4.3.5 names (matched like '*pattern*').
+        pattern = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.3]['nvfp4_tc']
+        names = [line.split(',')[3] for line in raw_output_sm103_nvfp4.splitlines() if line.startswith('1,')]
+        assert (names and all(fnmatch.fnmatchcase(name, '*' + pattern + '*') for name in names))
+
         assert (benchmark._process_raw_result(0, raw_output_sm103_nvfp4))
 
         assert (benchmark.result['nvfp4_tc_flops'][0] == 16602100)

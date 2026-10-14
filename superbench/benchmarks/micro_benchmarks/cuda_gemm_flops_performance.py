@@ -78,7 +78,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         # (auto-detected from the kernel name prefix in _preprocess).
         self.__kernel_map[10.3] = {k: v for k, v in self.__kernel_map[10.0].items() if k != 'int8_tc'}
         self.__kernel_map[10.3]['nvfp4_tc'] = \
-            'cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_f32_f32*256x*ultra_2sm*'
+            'cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32*256x*ultra_2sm*'
         # SM107 (CUDA 13.4+) runs the legacy SM80 kernels; cutlass.mk builds them for sm_107.
         self.__kernel_map[10.7] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         self.__parse_logline = [
