@@ -242,7 +242,8 @@ class ModelBenchmark(Benchmark):
         self._args.sample_count = math.ceil(self._args.sample_count / self._args.batch_size) * self._args.batch_size
 
         if not self._generate_dataset():
-            self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
+            if self._result.return_code == ReturnCode.SUCCESS:
+                self._result.set_return_code(ReturnCode.DATASET_GENERATION_FAILURE)
             return False
 
         if not self._init_dataloader():

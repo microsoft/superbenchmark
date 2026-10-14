@@ -4,6 +4,7 @@
 """Module of the hipBlasLt GEMM benchmark."""
 
 import os
+import re
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -110,7 +111,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             lines = raw_output.splitlines()
             index = None
 
-            # Find the line containing 'hipblaslt-Gflops'
+            # Find the header line containing 'hipblaslt-Gflops'
             for i, line in enumerate(lines):
                 if 'hipblaslt-Gflops' in line:
                     index = i
@@ -119,16 +120,53 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             if index is None:
                 raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
 
-            # Split the line into fields using a comma as the delimiter
+            # Parse the header and resolve every key column (batch_count/m/n/k/hipblaslt-Gflops)
+            # by name. This keeps the parser forward-compatible across known and future
+            # hipBLASLt output formats (v600: 23 columns; v1500: 34 columns with extra
+            # a_type/b_type/c_type/scaleA-D/amaxD/bias_type/aux_type/hipblaslt-GB/s),
+            # without relying on any fixed column position.
+            header_fields = lines[index].strip().split(',')
+            # Strip leading rank markers like '[0]' or '[0]:' from the first header field.
+            # Use a regex anchored at the start so a column name that legitimately contains
+            # ']' (unlikely, but defensive) is not truncated.
+            header_fields[0] = re.sub(r'^\s*\[\d+\]:?', '', header_fields[0])
+
+            # Build a name -> column-index map (first occurrence wins for any duplicates).
+            col_idx_by_name = {}
+            for col_idx, col_name in enumerate(header_fields):
+                col_idx_by_name.setdefault(col_name.strip(), col_idx)
+
+            required_columns = ['batch_count', 'm', 'n', 'k', 'hipblaslt-Gflops']
+            missing_columns = [c for c in required_columns if c not in col_idx_by_name]
+            if missing_columns:
+                raise ValueError(f'Required column(s) not found in header: {missing_columns}.')
+
+            # Ensure a data line follows the header (e.g., hipblaslt-bench may have
+            # crashed after printing the header).
+            if index + 1 >= len(lines):
+                raise ValueError('Data line missing after "hipblaslt-Gflops" header.')
+
+            # Split the data line into fields using a comma as the delimiter
             fields = lines[index + 1].strip().split(',')
 
-            # Check the number of fields and the format of the first two fields
-            if len(fields) != 23:
-                raise ValueError('Invalid result')
+            # Validate that the data line has the same number of columns as the header
+            if len(fields) != len(header_fields):
+                raise ValueError(
+                    f'Field count mismatch: header has {len(header_fields)} columns '
+                    f'but data has {len(fields)} columns'
+                )
+
+            # Resolve every key value by header name and strip whitespace from each, so
+            # any padding around CSV values does not bleed into the metric key.
+            batch_count = fields[col_idx_by_name['batch_count']].strip()
+            m_val = fields[col_idx_by_name['m']].strip()
+            n_val = fields[col_idx_by_name['n']].strip()
+            k_val = fields[col_idx_by_name['k']].strip()
+            gflops_col = col_idx_by_name['hipblaslt-Gflops']
 
             self._result.add_result(
-                f'{self._precision_in_commands[cmd_idx]}_{fields[3]}_{"_".join(fields[4:7])}_flops',
-                float(fields[-2]) / 1000
+                f'{self._precision_in_commands[cmd_idx]}_{batch_count}_{m_val}_{n_val}_{k_val}_flops',
+                float(fields[gflops_col]) / 1000
             )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)

@@ -8,8 +8,10 @@
 
 #include "gpu_stream.hpp"
 #include <cassert>
+#include <dlfcn.h>
 #include <iostream>
 #include <nvml.h>
+#include <sched.h>
 
 /**
  * @brief Destroys the CUDA events used for benchmarking.
@@ -28,15 +30,21 @@ template <typename T> int GpuStream::DestroyEvent(std::unique_ptr<BenchArgs<T>> 
     if (SetGpu(args->gpu_id)) {
         return -1;
     }
-    cuda_err = cudaEventDestroy(args->sub.start_event);
-    if (cuda_err != cudaSuccess) {
-        std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
-        return -1;
+    if (args->sub.start_event != nullptr) {
+        cuda_err = cudaEventDestroy(args->sub.start_event);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
+            return -1;
+        }
+        args->sub.start_event = nullptr;
     }
-    cuda_err = cudaEventDestroy(args->sub.end_event);
-    if (cuda_err != cudaSuccess) {
-        std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
-        return -1;
+    if (args->sub.end_event != nullptr) {
+        cuda_err = cudaEventDestroy(args->sub.end_event);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "DestroyEvent::cudaEventDestroy error: " << cuda_err << std::endl;
+            return -1;
+        }
+        args->sub.end_event = nullptr;
     }
     return 0;
 }
@@ -98,10 +106,8 @@ int GpuStream::GetGpuCount(int *gpu_count) {
  */
 template <typename T> int GpuStream::Destroy(std::unique_ptr<BenchArgs<T>> &args) {
     int ret = DestroyBufAndStream(args);
-    if (ret == 0) {
-        ret = DestroyEvent(args);
-    }
-    return ret;
+    int event_ret = DestroyEvent(args);
+    return (ret != 0) ? ret : event_ret;
 }
 
 /**
@@ -235,15 +241,25 @@ template <typename T> int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchAr
     cudaError_t cuda_err = cudaSuccess;
 
     if (args->check_data) {
-        // Generate data to copy
-        args->sub.data_buf = static_cast<T *>(numa_alloc_onnode(args->size * sizeof(T), args->numa_id));
+        // Generate data to copy - use local NUMA node for best CPU access
+        args->sub.data_buf = static_cast<T *>(numa_alloc_local(args->size));
+        if (args->sub.data_buf == nullptr) {
+            std::cerr << "PrepareBufAndStream::numa_alloc_local data_buf failed" << std::endl;
+            return -1;
+        }
 
-        for (int j = 0; j < args->size / sizeof(T); j++) {
+        for (uint64_t j = 0; j < args->size / sizeof(T); j++) {
             args->sub.data_buf[j] = static_cast<T>(j % kUInt8Mod);
         }
 
-        // Allocate check buffer
-        args->sub.check_buf = static_cast<T *>(numa_alloc_onnode(args->size * sizeof(T), args->numa_id));
+        // Allocate check buffer on local NUMA node
+        args->sub.check_buf = static_cast<T *>(numa_alloc_local(args->size));
+        if (args->sub.check_buf == nullptr) {
+            std::cerr << "PrepareBufAndStream::numa_alloc_local check_buf failed" << std::endl;
+            numa_free(args->sub.data_buf, args->size);
+            args->sub.data_buf = nullptr;
+            return -1;
+        }
     }
 
     // Allocate buffers
@@ -257,7 +273,7 @@ template <typename T> int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchAr
     // Allocate buffers
     for (auto &buf_ptr : args->sub.gpu_buf_ptrs) {
         T *raw_ptr = nullptr;
-        cuda_err = GpuMallocDataBuf(&raw_ptr, args->size * sizeof(T));
+        cuda_err = GpuMallocDataBuf(&raw_ptr, args->size);
         if (cuda_err != cudaSuccess) {
             std::cerr << "PrepareBufAndStream::cudaMalloc error: " << cuda_err << std::endl;
             return -1;
@@ -350,7 +366,12 @@ template <typename T> int GpuStream::CheckBuf(std::unique_ptr<BenchArgs<T>> &arg
         return -1;
     }
 
-    // Validate result by comparing the data buffer and check buffer
+    // Validate result by comparing the data buffer and check buffer.
+    // NOTE: memcmp is exact (byte-for-byte). This works because the current test values
+    // (j % 256, scalar = 11.0) are exactly representable in both float and double IEEE-754.
+    // If kUInt8Mod or scalar are changed to values that cause rounding differences between
+    // host (two separate ops) and GPU (FMA), this check will need a tolerance-based comparison
+    // for T = float.
     memcmp_result = memcmp(args->sub.validation_buf_ptrs[kernel_idx].data(), args->sub.check_buf, args->size);
     if (memcmp_result) {
         std::cerr << "CheckBuf::Memory check failed for kernel index " << kernel_idx << std::endl;
@@ -380,20 +401,29 @@ template <typename T> int GpuStream::DestroyBufAndStream(std::unique_ptr<BenchAr
     // Destroy original data buffer and check buffer
     if (args->sub.data_buf != nullptr) {
         numa_free(args->sub.data_buf, args->size);
+        args->sub.data_buf = nullptr;
     }
     if (args->sub.check_buf != nullptr) {
         numa_free(args->sub.check_buf, args->size);
+        args->sub.check_buf = nullptr;
     }
+
+    // Release GPU buffers immediately to free device memory
+    args->sub.gpu_buf_ptrs.clear();
+    args->sub.validation_buf_ptrs.clear();
 
     // Set to buffer device for GPU buffer
     if (SetGpu(args->gpu_id)) {
         return -1;
     }
 
-    cuda_err = cudaStreamDestroy(args->sub.stream);
-    if (cuda_err != cudaSuccess) {
-        std::cerr << "DestroyBufAndStream::cudaStreamDestroy error: " << cuda_err << std::endl;
-        return -1;
+    if (args->sub.stream != nullptr) {
+        cuda_err = cudaStreamDestroy(args->sub.stream);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "DestroyBufAndStream::cudaStreamDestroy error: " << cuda_err << std::endl;
+            return -1;
+        }
+        args->sub.stream = nullptr;
     }
 
     return ret;
@@ -419,11 +449,19 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
     uint64_t num_thread_blocks;
     int size_factor = 2;
 
+    if (num_threads_per_block == 0) {
+        std::cerr << "RunStreamKernel::num_threads_per_block must be > 0" << std::endl;
+        return -1;
+    }
+
     // Validate data size
-    uint64_t num_elements_in_thread_block = kNumLoopUnroll * num_threads_per_block;
-    uint64_t num_bytes_in_thread_block = num_elements_in_thread_block * sizeof(T);
+    // Each thread processes one VecT<T> element (128 bits / 16 bytes) for optimal memory bandwidth.
+    // Derived from VecT<T> so any vector type change is caught at compile time.
+    constexpr uint64_t kBytesPerThread = sizeof(VecT<T>);
+    static_assert(kBytesPerThread == 16, "Vector type must be 128-bit aligned for current PTX");
+    uint64_t num_bytes_in_thread_block = num_threads_per_block * kBytesPerThread;
     if (args->size % num_bytes_in_thread_block) {
-        std::cerr << "RunCopy: Data size should be multiple of " << num_bytes_in_thread_block << std::endl;
+        std::cerr << "RunStreamKernel: Data size should be multiple of " << num_bytes_in_thread_block << std::endl;
         return -1;
     }
     num_thread_blocks = args->size / num_bytes_in_thread_block;
@@ -435,7 +473,7 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
     }
 
     // Launch jobs and collect running time
-    for (int i = 0; i < args->num_loops + args->num_warm_up; i++) {
+    for (uint64_t i = 0; i < args->num_loops + args->num_warm_up; i++) {
 
         // Record start event once warm up iterations are done
         if (i == args->num_warm_up) {
@@ -448,30 +486,30 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
 
         switch (kernel) {
         case Kernel::kCopy:
-            CopyKernel<<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[0].get()));
+            CopyKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
+                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()));
             args->sub.kernel_name = "COPY";
             break;
         case Kernel::kScale:
-            ScaleKernel<<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[0].get()), static_cast<T>(scalar));
+            ScaleKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
+                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()), static_cast<T>(scalar));
             args->sub.kernel_name = "SCALE";
             break;
         case Kernel::kAdd:
-            AddKernel<<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[0].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[1].get()));
+            AddKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
+                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()),
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()));
             size_factor = 3;
             args->sub.kernel_name = "ADD";
             break;
         case Kernel::kTriad:
-            TriadKernel<<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[0].get()),
-                reinterpret_cast<T *>(args->sub.gpu_buf_ptrs[1].get()), static_cast<T>(scalar));
+            TriadKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
+                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()),
+                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()), static_cast<T>(scalar));
             size_factor = 3;
             args->sub.kernel_name = "TRIAD";
             break;
@@ -522,8 +560,17 @@ float GpuStream::GetActualMemoryClockRate(int gpu_id) {
         return -1.0f;
     }
 
-    // Get device handle
-    result = nvmlDeviceGetHandleByIndex(gpu_id, &device);
+    // Map CUDA device index to NVML device via PCI bus ID.
+    // NVML does not honour CUDA_VISIBLE_DEVICES, so nvmlDeviceGetHandleByIndex
+    // would return the wrong physical GPU when the env var is set.
+    char pci_bus_id[16];
+    cudaError_t cuda_err = cudaDeviceGetPCIBusId(pci_bus_id, sizeof(pci_bus_id), gpu_id);
+    if (cuda_err != cudaSuccess) {
+        std::cerr << "GetActualMemoryClockRate::cudaDeviceGetPCIBusId error: " << cuda_err << std::endl;
+        nvmlShutdown();
+        return -1.0f;
+    }
+    result = nvmlDeviceGetHandleByPciBusId(pci_bus_id, &device);
     if (result != NVML_SUCCESS) {
         std::cerr << "Failed to get device handle: " << nvmlErrorString(result) << std::endl;
         nvmlShutdown();
@@ -560,12 +607,14 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
     ret = PrepareBufAndStream<T>(args);
 
     if (ret != 0) {
-        return DestroyBufAndStream(args);
+        Destroy(args);
+        return -1;
     }
 
     ret = PrepareEvent(args);
     if (ret != 0) {
-        return DestroyEvent(args);
+        Destroy(args);
+        return -1;
     }
 
     // benchmark over the kThreadsPerBlock array
@@ -573,23 +622,29 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
         // run the stream benchmark over the stream kernels
         for (int i = 0; i < static_cast<int>(Kernel::kCount); ++i) {
             Kernel kernel = static_cast<Kernel>(i);
-            int ret = RunStreamKernel<T>(args, kernel, num_threads_in_block);
-            if (ret == 0 && args->check_data) {
-                // Compare buffer based on the kernel
+            ret = RunStreamKernel<T>(args, kernel, num_threads_in_block);
+            if (ret != 0) {
+                Destroy(args);
+                return ret;
+            }
+            if (args->check_data) {
                 ret = CheckBuf(args, i);
+                if (ret != 0) {
+                    Destroy(args);
+                    return ret;
+                }
             }
         }
     }
 
     // output formatted results to stdout
     // Tags are of format:
-    // STREAM_<Kernelname>_datatype_gpu_<gpu_id>_buffer_<buffer_size>_block_<block_size>
-    for (int i = 0; i < args->sub.times_in_ms.size(); i++) {
-        std::string tag = "STREAM_" + KernelToString(i) + "_" + data_type + "_gpu_" + std::to_string(args->gpu_id) +
-                          "_buffer_" + std::to_string(args->size);
-        for (int j = 0; j < args->sub.times_in_ms[i].size(); j++) {
+    // STREAM_<Kernelname>_datatype_buffer_<buffer_size>_block_<block_size>
+    for (size_t i = 0; i < args->sub.times_in_ms.size(); i++) {
+        std::string tag = "STREAM_" + KernelToString(i) + "_" + data_type + "_buffer_" + std::to_string(args->size);
+        for (size_t j = 0; j < args->sub.times_in_ms[i].size(); j++) {
             // Calculate and display bandwidth
-            double bw = args->size * args->num_loops / args->sub.times_in_ms[i][j] / 1e6;
+            double bw = static_cast<double>(args->size) * args->num_loops / args->sub.times_in_ms[i][j] / 1e6;
             std::cout << tag << "_block_" << kThreadsPerBlock[j] << "\t" << bw << "\t";
 
             if (peak_bw < 0) { // cannot get peak_bw -> prints -1 for efficiency
@@ -606,11 +661,32 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
 }
 
 /**
+ * @brief Creates and initializes a BenchArgs for the given type and adds it to bench_args_.
+ *
+ * @tparam T The data type (float or double) for the benchmark arguments.
+ */
+template <typename T> int GpuStream::CreateBenchArgs() {
+    auto args = std::make_unique<BenchArgs<T>>();
+    args->gpu_id = 0;
+    cudaError_t cuda_err = cudaGetDeviceProperties(&args->gpu_device_prop, 0);
+    if (cuda_err != cudaSuccess) {
+        std::cerr << "CreateBenchArgs::cudaGetDeviceProperties error: " << cuda_err << std::endl;
+        return -1;
+    }
+    args->num_warm_up = opts_.num_warm_up;
+    args->num_loops = opts_.num_loops;
+    args->size = opts_.size;
+    args->check_data = opts_.check_data;
+    bench_args_ = std::move(args);
+    return 0;
+}
+
+/**
  * @brief Runs the Stream benchmark.
  *
- * @details This function processes the input args, validates and composes the BenchArgs structure for the
- availavble
- * GPUs, and runs the benchmark.
+ * @details This function processes the input args, validates and composes the BenchArgs structure for
+ * the first visible GPU (CUDA device 0). When running under Superbench's default_local_mode,
+ * CUDA_VISIBLE_DEVICES is set per process, so device 0 maps to the assigned physical GPU.
  *
  * @return int The status code indicating success or failure of the benchmark execution.
  * */
@@ -631,71 +707,102 @@ int GpuStream::Run() {
         return ret;
     }
 
-    // find all GPUs and compose the Benchmarking data structure
-    for (int j = 0; j < gpu_count; j++) {
-        auto args = std::make_unique<BenchArgs<double>>();
-        args->numa_id = 0;
-        args->gpu_id = j;
-        cudaGetDeviceProperties(&args->gpu_device_prop, j);
-
-        args->num_warm_up = opts_.num_warm_up;
-        args->num_loops = opts_.num_loops;
-        args->size = opts_.size;
-        args->check_data = opts_.check_data;
-        args->numa_id = 0;
-        args->gpu_id = j;
-
-        // add data to vector
-        bench_args_.emplace_back(std::move(args));
-    }
-
-    bool has_error = false;
-    // Run the benchmark for all the configured data
-    for (auto &variant_args : bench_args_) {
-        std::visit(
-            [&](auto &curr_args) {
-                // Get memory clock rate once for both bandwidth computation and display
-                float memory_clock_mhz = GetMemoryClockRate(curr_args->gpu_id, curr_args->gpu_device_prop);
-
-                // Compute theoretical bandwidth using the memory clock rate
-                float peak_bw = -1.0f;
-                if (memory_clock_mhz > 0.0f) {
-                    // Calculate theoretical bandwidth: memory_clock_mhz * bus_width_bytes * 2 (DDR) / 1000 (convert to
-                    // GB/s)
-                    peak_bw = memory_clock_mhz * (curr_args->gpu_device_prop.memoryBusWidth / 8) * 2 / 1000.0;
-                }
-
-                // Print device info with both the memory clock and peak bandwidth
-                PrintCudaDeviceInfo(curr_args->gpu_id, curr_args->gpu_device_prop, memory_clock_mhz, peak_bw);
-
-                // Set the NUMA node
-                ret = numa_run_on_node(curr_args->numa_id);
-                if (ret != 0) {
-                    std::cerr << "Run::numa_run_on_node error: " << errno << std::endl;
-                    has_error = true;
-                    return;
-                }
-
-                // Run the stream benchmark for the configured data, passing the peak bandwidth
-                if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<float>>) {
-                    ret = RunStream<float>(curr_args, "float", peak_bw);
-                } else if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<double>>) {
-                    ret = RunStream<double>(curr_args, "double", peak_bw);
-                } else {
-                    std::cerr << "Run::Unknown type error" << std::endl;
-                    has_error = true;
-                    return;
-                }
-
-                if (ret != 0) {
-                    std::cerr << "Run::RunStream error: " << errno << std::endl;
-                    has_error = true;
-                }
-            },
-            variant_args);
-    }
-    if (has_error) {
+    if (gpu_count < 1) {
+        std::cerr << "Run::No GPU available" << std::endl;
         return -1;
     }
+
+    // Run on CUDA device 0 (the visible GPU assigned by CUDA_VISIBLE_DEVICES).
+    if (opts_.data_type == "float") {
+        ret = CreateBenchArgs<float>();
+    } else if (opts_.data_type == "double") {
+        ret = CreateBenchArgs<double>();
+    } else {
+        std::cerr << "Run::Invalid data_type: " << opts_.data_type << std::endl;
+        return -1;
+    }
+    if (ret != 0) {
+        return ret;
+    }
+
+    // Pin the thread to the GPU's NUMA node for optimal host↔device bandwidth.
+    // Query GPU 0's preferred CPU NUMA node via NVML; fall back to the process's
+    // current node if the NVML query fails (e.g. NUMA disabled, older driver).
+    int target_node = -1;
+    // Resolve nvmlDeviceGetNumaNodeId at runtime via dlsym so the binary
+    // remains loadable on systems whose NVML driver predates this symbol.
+    // Map CUDA device 0 to NVML via PCI bus ID because NVML does not
+    // honour CUDA_VISIBLE_DEVICES.
+    {
+        using NvmlGetNumaNodeId_t = nvmlReturn_t (*)(nvmlDevice_t, unsigned int *);
+        auto nvmlGetNumaNodeId = reinterpret_cast<NvmlGetNumaNodeId_t>(dlsym(RTLD_DEFAULT, "nvmlDeviceGetNumaNodeId"));
+        if (nvmlGetNumaNodeId != nullptr) {
+            char pci_bus_id[16];
+            cudaError_t cuda_err = cudaDeviceGetPCIBusId(pci_bus_id, sizeof(pci_bus_id), 0);
+            if (cuda_err == cudaSuccess) {
+                nvmlDevice_t nvml_dev;
+                unsigned int gpu_numa_node = 0;
+                if (nvmlInit() == NVML_SUCCESS) {
+                    if (nvmlDeviceGetHandleByPciBusId(pci_bus_id, &nvml_dev) == NVML_SUCCESS &&
+                        nvmlGetNumaNodeId(nvml_dev, &gpu_numa_node) == NVML_SUCCESS) {
+                        target_node = static_cast<int>(gpu_numa_node);
+                    }
+                    nvmlShutdown();
+                }
+            }
+        }
+    }
+    if (target_node < 0) {
+        // Fallback: use the node where this process is currently scheduled
+        int cpu = sched_getcpu();
+        if (cpu < 0) {
+            std::cerr << "Run::sched_getcpu failed" << std::endl;
+            return -1;
+        }
+        target_node = numa_node_of_cpu(cpu);
+        if (target_node < 0) {
+            std::cerr << "Run::numa_node_of_cpu failed for cpu " << cpu << std::endl;
+            return -1;
+        }
+    }
+    if (numa_run_on_node(target_node) != 0) {
+        std::cerr << "Run::numa_run_on_node failed for node " << target_node << std::endl;
+        return -1;
+    }
+
+    // Run the benchmark for the configured data
+    std::visit(
+        [&](auto &curr_args) {
+            // Get memory clock rate once for both bandwidth computation and display
+            float memory_clock_mhz = GetMemoryClockRate(curr_args->gpu_id, curr_args->gpu_device_prop);
+
+            // Compute theoretical bandwidth using the memory clock rate
+            float peak_bw = -1.0f;
+            if (memory_clock_mhz > 0.0f) {
+                // Calculate theoretical bandwidth: memory_clock_mhz * bus_width_bytes * 2 (DDR) / 1000 (convert to
+                // GB/s)
+                peak_bw = memory_clock_mhz * (curr_args->gpu_device_prop.memoryBusWidth / 8) * 2 / 1000.0;
+            }
+
+            // Print device info with both the memory clock and peak bandwidth
+            PrintCudaDeviceInfo(curr_args->gpu_id, curr_args->gpu_device_prop, memory_clock_mhz, peak_bw);
+
+            // Run the stream benchmark for the configured data, passing the peak bandwidth
+            if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<float>>) {
+                ret = RunStream<float>(curr_args, "float", peak_bw);
+            } else if constexpr (std::is_same_v<std::decay_t<decltype(*curr_args)>, BenchArgs<double>>) {
+                ret = RunStream<double>(curr_args, "double", peak_bw);
+            } else {
+                std::cerr << "Run::Unknown type error" << std::endl;
+                ret = -1;
+                return;
+            }
+
+            if (ret != 0) {
+                std::cerr << "Run::RunStream error: " << ret << std::endl;
+            }
+        },
+        bench_args_);
+
     return ret;
 }

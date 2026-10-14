@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Device Managerment Library Utility."""
+"""Device Management Library Utility."""
 
+import numbers
 from typing import Optional
 
 from superbench.common.utils import logger
@@ -14,6 +15,26 @@ if gpu.vendor == 'nvidia' or gpu.vendor == 'nvidia-graphics':
     import py3nvml.py3nvml as nvml
 elif gpu.vendor == 'amd' or gpu.vendor == 'amd-graphics':
     import amdsmi as rocml
+
+# amdsmi reports power in microwatts on some ROCm versions and in watts on
+# others. Any plausible per-GPU watt value is well below 100,000, while µW
+# values for real cards are tens of millions, so we use a magnitude-based
+# heuristic to detect µW and convert.
+_AMDSMI_MICROWATTS_PER_WATT = 1_000_000
+_AMDSMI_MICROWATTS_THRESHOLD = 100_000
+
+
+def _amdsmi_power_to_watts(value):
+    """Convert an amdsmi power value to integer watts.
+
+    Returns None if value is not a plausible numeric reading (e.g. 'N/A' or bool).
+    Applies the µW->W heuristic above so callers never have to guess units.
+    """
+    if not isinstance(value, numbers.Real) or isinstance(value, bool):
+        return None
+    if value > _AMDSMI_MICROWATTS_THRESHOLD:
+        value = value // _AMDSMI_MICROWATTS_PER_WATT
+    return int(value)
 
 
 class DeviceManager:
@@ -332,7 +353,14 @@ class AmdDeviceManager(DeviceManager):
 
     def __del__(self):
         """Destructor."""
-        rocml.amdsmi_shut_down()
+        # Be defensive at interpreter shutdown / partial-import time: the
+        # module-level ``rocml`` global may have been torn down, or may never
+        # have been imported (e.g., when this class is constructed via
+        # __new__ in tests). Swallow any error so GC never raises.
+        try:
+            rocml.amdsmi_shut_down()
+        except Exception:
+            pass
 
     def get_device_count(self):
         """Get the number of device.
@@ -389,10 +417,19 @@ class AmdDeviceManager(DeviceManager):
         """
         try:
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
+            # amdsmi sets fields to 'N/A' when the hardware reports 0xFFFF (unsupported).
+            # On MI300X, average_socket_power is unsupported, so fall back to current_socket_power.
+            for key in ('average_socket_power', 'current_socket_power'):
+                if key not in power_measure:
+                    logger.warning('amdsmi power_info missing expected key: {}'.format(key))
+                    continue
+                watts = _amdsmi_power_to_watts(power_measure[key])
+                if watts is not None:
+                    return watts
+            return None
         except Exception as err:
             logger.warning('Get device power failed: {}'.format(str(err)))
             return None
-        return int(power_measure['average_socket_power'])
 
     def get_device_power_limit(self, idx):
         """Get the power management limit of device, unit: watt.
@@ -405,10 +442,13 @@ class AmdDeviceManager(DeviceManager):
         """
         try:
             power_measure = rocml.amdsmi_get_power_info(self._device_handlers[idx])
+            if 'power_limit' not in power_measure:
+                logger.warning('amdsmi power_info missing expected key: power_limit')
+                return None
+            return _amdsmi_power_to_watts(power_measure['power_limit'])
         except Exception as err:
             logger.warning('Get device power limit failed: {}'.format(str(err)))
             return None
-        return int(power_measure['power_limit'])
 
     def get_device_memory(self, idx):
         """Get the memory information of device, unit: byte.

@@ -14,7 +14,7 @@ FROM nvcr.io/nvidia/pytorch:25.02-py3
 #   - MOFED_VERSION; 5.4-rdmacore39.0
 #   - HPC-X: v2.21.0-CUDA12.x
 # Intel:
-#   - mlc: v3.12
+#   - mlc: v3.13
 
 LABEL maintainer="SuperBench"
 
@@ -61,6 +61,27 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
+# Install CMake 3.30.4 for nvbench compatibility
+RUN apt-get update && \
+    apt-get remove -y cmake cmake-data && \
+    apt-get autoremove -y && \
+    cd /tmp && \
+    ARCH=$(uname -m) && \
+    case ${ARCH} in \
+        "aarch64"|"arm64") CMAKE_ARCH="aarch64"; CMAKE_SHA256="510537b32f8ae82100a2eb25e422575477e994a033754d3c8091ca66698bca29" ;; \
+        "x86_64") CMAKE_ARCH="x86_64"; CMAKE_SHA256="c959e6d15714f798424960cd296632634f3ef57c2712559a7945170f0bcad205" ;; \
+        *) echo "Unsupported architecture: ${ARCH}"; exit 1 ;; \
+    esac && \
+    echo "Detected architecture: ${ARCH}, using CMAKE_ARCH: ${CMAKE_ARCH}" && \
+    wget -q https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
+    echo "${CMAKE_SHA256}  cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz" | sha256sum -c - && \
+    tar -xzf cmake-3.30.4-linux-${CMAKE_ARCH}.tar.gz && \
+    mv cmake-3.30.4-linux-${CMAKE_ARCH} /opt/cmake && \
+    ln -sf /opt/cmake/bin/* /usr/local/bin/ && \
+    rm -rf cmake-3.30.4-linux-${CMAKE_ARCH}* && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 ARG NUM_MAKE_JOBS=
 ARG TARGETPLATFORM
 ARG TARGETARCH
@@ -105,9 +126,10 @@ RUN TARGETARCH_HW=$(uname -m) && \
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     # Install Intel MLC
     cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
+    echo "a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019  mlc.tgz" | sha256sum -c - && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz && \
     # Install AOCC compiler
     wget https://download.amd.com/developer/eula/aocc-compiler/aocc-compiler-4.0.0_1_amd64.deb && \

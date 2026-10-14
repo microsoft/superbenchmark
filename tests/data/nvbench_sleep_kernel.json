@@ -1,0 +1,138 @@
+{
+    "benchmarks": [
+        {
+            "name": "sleep_benchmark",
+            "states": [
+                {
+                    "name": "Device=0 Duration (us)=25",
+                    "is_skipped": false,
+                    "axis_values": [
+                        {
+                            "name": "Duration (us)",
+                            "type": "int64",
+                            "value": "25"
+                        }
+                    ],
+                    "summaries": [
+                        {
+                            "tag": "nv/cold/time/cpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "4.2123e-05"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "2.5321e-05"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/batch/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "2.3456e-05"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Device=0 Duration (us)=50",
+                    "is_skipped": false,
+                    "axis_values": [
+                        {
+                            "name": "Duration (us)",
+                            "type": "int64",
+                            "value": "50"
+                        }
+                    ],
+                    "summaries": [
+                        {
+                            "tag": "nv/cold/time/cpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "6.8456e-05"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "5.0654e-05"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/batch/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "4.9321e-05"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Device=0 Duration (us)=75",
+                    "is_skipped": false,
+                    "axis_values": [
+                        {
+                            "name": "Duration (us)",
+                            "type": "int64",
+                            "value": "75"
+                        }
+                    ],
+                    "summaries": [
+                        {
+                            "tag": "nv/cold/time/cpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "9.0789e-05"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/cold/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "7.5987e-05"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "nv/batch/time/gpu/mean",
+                            "data": [
+                                {
+                                    "name": "value",
+                                    "type": "float64",
+                                    "value": "7.7862e-05"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -6,7 +6,7 @@
 import os
 
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
 
@@ -52,9 +52,20 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         )
 
         self._parser.add_argument(
+            '--data_type',
+            type=str,
+            default='double',
+            choices=['float', 'double'],
+            required=False,
+            help='Data type of the buffer elements.',
+        )
+
+        self._parser.add_argument(
             '--check_data',
             action='store_true',
-            help='Enable data checking',
+            help='Enable data checking. Note: allocates 6x --size bytes of host memory per process '
+            '(data_buf + check_buf + 4 validation buffers, e.g. 24 GiB with default 4 GiB --size). '
+            'Recommend using a small --size such as 1048576 (1 MiB) when this flag is enabled.',
         )
 
     def _preprocess(self):
@@ -68,8 +79,8 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
 
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
 
-        args = '--size %d --num_warm_up %d --num_loops %d ' % (
-            self._args.size, self._args.num_warm_up, self._args.num_loops
+        args = '--size %d --num_warm_up %d --num_loops %d --data_type %s' % (
+            self._args.size, self._args.num_warm_up, self._args.num_loops, self._args.data_type
         )
 
         if self._args.check_data:
@@ -116,4 +127,4 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         return True
 
 
-BenchmarkRegistry.register_benchmark('gpu-stream', GpuStreamBenchmark)
+BenchmarkRegistry.register_benchmark('gpu-stream', GpuStreamBenchmark, platform=Platform.CUDA)
