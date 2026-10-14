@@ -98,13 +98,7 @@ class BaselineGeneration(DataDiagnosis):
                     data_df_of_rule = pd.DataFrame(columns=metrics)
                     # restore the columns of data_fd to full metric names
                     for metric in metrics:
-                        short = ''
-                        match = re.search(pattern, metric)
-                        if match:
-                            metric_in_list = list(metric)
-                            for i in range(1, len(match.groups()) + 1):
-                                metric_in_list[match.start(i):match.end(i)] = '*'
-                            short = ''.join(metric_in_list)
+                        short = data_analysis.aggregate_metric_name(metric, pattern)
                         data_df_of_rule[metric] = data_df_of_rule_with_short_name[short]
             aggregated_df = pd.concat([aggregated_df, data_df_of_rule], axis=1)
         return aggregated_df
