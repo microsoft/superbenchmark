@@ -83,7 +83,17 @@ space := $(subst ,, )
 .PHONY: cuda_cutlass
 
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
+	# -----------------------------------------------------------------------
+	# Blackwell GB200 (SM100a) + GB300 (SM103a) + SM107 — CUTLASS v4.3.5
+	# -----------------------------------------------------------------------
+	# SM107 runs the legacy SM80 kernels; see the 12.9 tier for the generator patch.
+	$(eval CUTLASS_TAG     := v4.3.5)
+	$(eval CUTLASS_ARCHS   := "100a;103a;107")
+	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)),$(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)))
+	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py)
+
+else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	# -----------------------------------------------------------------------
 	# Blackwell GB200 (SM100a) + GB300 (SM103a) — CUTLASS v4.3.5
 	# -----------------------------------------------------------------------
@@ -107,11 +117,6 @@ ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval CUTLASS_ARCHS   := "100a;103a")
 	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
 	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py)
-ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
-	# SM107 (CUDA 13.4+) uses the legacy SM80 kernels, compiled for plain sm_107.
-	$(eval CUTLASS_ARCHS   := "100a;103a;107")
-	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)),$(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)))
-endif
 
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	# -----------------------------------------------------------------------
