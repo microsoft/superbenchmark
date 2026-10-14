@@ -4,6 +4,8 @@
 """SuperBench Executor test."""
 
 import json
+import argparse
+import shlex
 import unittest
 import shutil
 import tempfile
@@ -93,6 +95,34 @@ class ExecutorTestCase(unittest.TestCase):
                     self.executor._SuperBenchExecutor__get_arguments(test_case['parameters']),
                     test_case['expected_args']
                 )
+
+    def test_get_arguments_numeric_lists(self):
+        """Round-trip supported list values through plain dict and real ListConfig."""
+        parameters = {
+            'msg_size': [8, 16], 'ratios': [0.5, 2.0], 'labels': ['a', 'b'],
+            'enabled': True, 'disabled': False, 'unset': None, 'empty': [],
+        }
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--msg_size', nargs='+', type=int)
+        parser.add_argument('--ratios', nargs='+', type=float)
+        parser.add_argument('--labels', nargs='+')
+        parser.add_argument('--enabled', action='store_true')
+        parser.add_argument('--disabled', action='store_true')
+        parser.add_argument('--unset')
+        parser.add_argument('--empty', nargs='*')
+        for config in (parameters, OmegaConf.create(parameters)):
+            with self.subTest(config_type=type(config).__name__):
+                arguments = self.executor._SuperBenchExecutor__get_arguments(config)
+                parsed = parser.parse_args(shlex.split(arguments))
+                self.assertEqual(vars(parsed), parameters)
+
+    def test_get_arguments_rejects_unsupported_list_values(self):
+        """Keep nested, null and boolean list elements from becoming string arguments."""
+        for values in ([['nested']], [{'nested': 1}], [None], [True]):
+            for config in ({'values': values}, OmegaConf.create({'values': values})):
+                with self.subTest(values=values, config_type=type(config).__name__):
+                    with self.assertRaises(TypeError):
+                        self.executor._SuperBenchExecutor__get_arguments(config)
 
     def test_create_benchmark_dir(self):
         """Test __create_benchmark_dir."""
