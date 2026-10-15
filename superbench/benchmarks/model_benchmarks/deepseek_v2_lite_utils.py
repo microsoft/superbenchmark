@@ -98,6 +98,11 @@ def configure_cache(cache: Path) -> None:
     cache.mkdir(parents=True, exist_ok=True)
     if any(cache.iterdir()):
         raise ValueError('Cold-start cache must be empty: {}'.format(cache))
+    set_cache_environment(cache)
+
+
+def set_cache_environment(cache: Path) -> None:
+    """Select the same isolated cache in each distributed worker."""
     for variable, directory in {
         'HF_HOME': 'hf',
         'HF_HUB_CACHE': 'hub',

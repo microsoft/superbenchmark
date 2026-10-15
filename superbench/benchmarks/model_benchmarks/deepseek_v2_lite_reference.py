@@ -21,14 +21,18 @@ def load_model(checkpoint, dtype):
     if version('transformers') != '4.46.3':
         raise RuntimeError('The official-code reference requires transformers==4.46.3.')
     validate_config(read_json(Path(checkpoint) / 'config.json'))
-    model = AutoModelForCausalLM.from_pretrained(
+    model, loading = AutoModelForCausalLM.from_pretrained(
         checkpoint,
         torch_dtype=dtype,
         trust_remote_code=True,
         local_files_only=True,
         use_safetensors=True,
         attn_implementation='eager',
+        output_loading_info=True,
     )
+    for key in ('missing_keys', 'unexpected_keys', 'mismatched_keys', 'error_msgs'):
+        if key not in loading or loading[key]:
+            raise RuntimeError('Official checkpoint loading failed: {}={!r}.'.format(key, loading.get(key)))
     if sum(parameter.numel() for parameter in model.parameters()) != PARAMETER_COUNT:
         raise RuntimeError('Loaded parameter count differs from the complete official V2-Lite.')
     if not all(parameter.requires_grad for parameter in model.parameters()):
@@ -76,10 +80,16 @@ def training_reference(model, checkpoint):
             and torch.count_nonzero(gradient).item() > 0
         )
         if name in required or selected_expert:
-            values = gradient.detach().flatten()[:1024].float().cpu()
+            flat = gradient.detach().flatten()
+            nonzero = torch.nonzero(flat, as_tuple=False).flatten()[:512]
+            spread = torch.linspace(0, flat.numel() - 1, 256, device=flat.device).long()
+            indices = torch.unique(torch.cat((nonzero, spread)))
+            values = flat[indices].float().cpu()
             if not torch.isfinite(values).all().item():
                 raise RuntimeError('Nonfinite reference gradient: {}'.format(name))
-            probes[name] = {'shape': list(parameter.shape), 'values': values.tolist()}
+            probes[name] = {
+                'shape': list(parameter.shape), 'indices': indices.cpu().tolist(), 'values': values.tolist()
+            }
             if selected_expert:
                 expert_probe = True
     if not required.issubset(probes) or not expert_probe:
