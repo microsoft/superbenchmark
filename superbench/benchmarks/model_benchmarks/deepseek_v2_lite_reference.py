@@ -6,7 +6,6 @@
 import argparse
 import gc
 import os
-from importlib.metadata import version
 from pathlib import Path
 
 from deepseek_v2_lite_utils import (
@@ -16,6 +15,8 @@ from deepseek_v2_lite_utils import (
 
 def load_model(checkpoint, dtype):
     """Load official causal-LM weights with no quantization or model reduction."""
+    from importlib.metadata import version
+
     import torch
     from transformers import AutoModelForCausalLM
 
