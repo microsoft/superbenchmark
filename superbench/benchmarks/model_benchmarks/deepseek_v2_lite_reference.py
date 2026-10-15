@@ -5,6 +5,7 @@
 
 import argparse
 import gc
+import os
 from importlib.metadata import version
 from pathlib import Path
 
@@ -106,7 +107,7 @@ def inference_reference(model, requests):
     model.eval()
     comparisons = []
     with torch.no_grad():
-        for request in requests:
+        for request_index, request in enumerate(requests):
             prompt = request['prompt_token_ids']
             completion = request['token_ids']
             logprobs = request['logprobs']
@@ -115,21 +116,33 @@ def inference_reference(model, requests):
             prefix = torch.tensor([prompt], device='cuda', dtype=torch.long)
             cache = None
             for step, token in enumerate(completion):
-                output = model(input_ids=prefix if step == 0 else prefix[:, -1:], past_key_values=cache, use_cache=True)
+                attention_mask = torch.ones_like(prefix)
+                output = model(
+                    input_ids=prefix if step == 0 else prefix[:, -1:], attention_mask=attention_mask,
+                    past_key_values=cache, use_cache=True
+                )
                 cache = output.past_key_values
                 cached = output.logits[:, -1, :].float()
-                full = model(input_ids=prefix, use_cache=False).logits[:, -1, :].float()
+                full = model(input_ids=prefix, attention_mask=attention_mask, use_cache=False).logits[:, -1, :].float()
                 if not torch.isfinite(cached).all().item() or not torch.isfinite(full).all().item():
                     raise RuntimeError('Nonfinite reference logits.')
                 torch.testing.assert_close(cached, full, rtol=0.02, atol=0.05)
+                if full[0].argmax().item() != token:
+                    raise RuntimeError(
+                        'Engine greedy token differs at request {} step {}.'.format(request_index, step)
+                    )
                 expected = torch.log_softmax(full[0], dim=-1)
                 ids = [int(value) for value in logprobs[step]]
                 if token not in ids or not ids:
                     raise ValueError('Missing selected-token engine log probability.')
                 actual = torch.tensor([logprobs[step][str(value)] for value in ids], device='cuda')
                 target = expected[ids]
-                torch.testing.assert_close(actual, target, rtol=0.02, atol=0.05)
+                torch.testing.assert_close(
+                    actual, target, rtol=0.02, atol=0.05,
+                    msg=lambda message: 'Engine/reference request {} step {}:\n{}'.format(request_index, step, message),
+                )
                 comparisons.append({
+                    'request': request_index,
                     'step': step,
                     'logprob_positions': len(ids),
                     'cache_max_abs_error': (cached - full).abs().max().item(),
@@ -150,7 +163,10 @@ def main():
     parser.add_argument('--output', required=True)
     args = parser.parse_args()
     torch.cuda.set_device(0)
-    model = load_model(args.checkpoint, torch.bfloat16).cuda()
+    os.environ['TORCH_ALLOW_TF32_CUBLAS_OVERRIDE'] = '0'
+    torch.backends.cuda.matmul.allow_tf32 = False
+    dtype = torch.bfloat16 if args.mode == 'training' else torch.float32
+    model = load_model(args.checkpoint, dtype).cuda()
     try:
         if args.mode == 'training':
             result = training_reference(model, args.checkpoint)
@@ -166,6 +182,8 @@ def main():
         torch.cuda.synchronize()
     result['correctness_passed'] = True
     result['teardown_complete'] = True
+    result['reference_dtype'] = str(dtype)
+    result['tf32_allowed'] = False
     write_json(Path(args.output), result)
 
 
