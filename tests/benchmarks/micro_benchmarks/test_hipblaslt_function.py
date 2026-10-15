@@ -3,6 +3,7 @@
 
 """Tests for hipblaslt-bench benchmark."""
 
+import shlex
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -55,12 +56,26 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     def mxfp4_output(self, overrides=None, missing=(), reverse=False):
         """Build synthetic CSV, not a captured GPU result."""
         row = {
-            'transA': 'T', 'transB': 'N', 'grouped_gemm': '0', 'batch_count': '1',
-            'm': '128', 'n': '128', 'k': '128', 'a_type': 'f4_r', 'b_type': 'f4_r',
-            'c_type': 'f32_r', 'd_type': 'f32_r', 'compute_type': 'f32_r',
-            'scaleA': '3', 'scaleB': '3', 'use_gpu_timer': '1',
-            'hipblaslt-Gflops': '1048.576', 'us': '4', 'norm_error': '1e-6',
-            'atol': '0.0001', 'rtol': '0.0001',
+            'transA': 'T',
+            'transB': 'N',
+            'grouped_gemm': '0',
+            'batch_count': '1',
+            'm': '128',
+            'n': '128',
+            'k': '128',
+            'a_type': 'f4_r',
+            'b_type': 'f4_r',
+            'c_type': 'f32_r',
+            'd_type': 'f32_r',
+            'compute_type': 'f32_r',
+            'scaleA': '3',
+            'scaleB': '3',
+            'use_gpu_timer': '1',
+            'hipblaslt-Gflops': '1048.576',
+            'us': '4',
+            'norm_error': '1e-6',
+            'atol': '0.0001',
+            'rtol': '0.0001',
         }
         row.update(overrides or {})
         for column in missing:
@@ -134,11 +149,25 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             ' --a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
             ' --scaleA 3 --scaleB 3 --scaleABlockRowSize 32 --scaleABlockColSize 1'
             ' --scaleBBlockRowSize 1 --scaleBBlockColSize 32 --alpha 1 --beta 0'
-            ' --algo_method heuristic --requested_solution 1 --verify 1 --use_gpu_timer 1 --print_kernel_info 1'
+            ' --algo_method heuristic --requested_solution 1 --verify --use_gpu_timer --print_kernel_info'
             ' --transA T --transB N --initialization hpl'
         )
         self.assertEqual(benchmark._commands[0], expected)
         self.assertEqual(benchmark.raw_data['mxfp4_gpu_arch'][0], 'gfx950')
+
+    def test_mxfp4_boolean_flags_are_switches(self):
+        """Require standalone boolean switches rather than value-consuming options."""
+        benchmark, result = self.preprocess_mxfp4()
+        self.assertTrue(result)
+        tokens = shlex.split(benchmark._commands[0])
+        for option in ['--verify', '--use_gpu_timer', '--print_kernel_info']:
+            with self.subTest(option=option):
+                self.assertEqual(tokens.count(option), 1)
+                next_index = tokens.index(option) + 1
+                self.assertTrue(
+                    next_index == len(tokens) or tokens[next_index].startswith('-'),
+                    '{} must not consume a value'.format(option),
+                )
 
     def test_mxfp4_invalid_arguments(self):
         """Reject missing opt-in and unsupported layouts, initialization, shapes, or counts."""
@@ -191,9 +220,16 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 self.assertEqual(benchmark._commands, [])
 
         options = [
-            '--scaleA', '--scaleB', '--scaleABlockRowSize', '--scaleABlockColSize',
-            '--scaleBBlockRowSize', '--scaleBBlockColSize', '--verify', '--use_gpu_timer',
-            '--print_kernel_info', '3 = block',
+            '--scaleA',
+            '--scaleB',
+            '--scaleABlockRowSize',
+            '--scaleABlockColSize',
+            '--scaleBBlockRowSize',
+            '--scaleBBlockColSize',
+            '--verify',
+            '--use_gpu_timer',
+            '--print_kernel_info',
+            '3 = block',
         ]
         for missing in options:
             with self.subTest(missing=missing):
@@ -207,7 +243,8 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     def test_mxfp4_subprocess_status(self):
         """Propagate client and verification failures without emitting performance metrics."""
         for returncode, raw_output in [
-            (0, self.mxfp4_output()), (1, 'No supported solutions found'),
+            (0, self.mxfp4_output()),
+            (1, 'No supported solutions found'),
             (0, self.mxfp4_output({'atol': 'failed'})),
         ]:
             with self.subTest(returncode=returncode, raw_output=raw_output):
@@ -230,9 +267,9 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             with self.subTest(reverse=reverse, norm=norm):
                 benchmark, result = self.preprocess_mxfp4()
                 self.assertTrue(result)
-                self.assertTrue(benchmark._process_raw_result(
-                    0, self.mxfp4_output({'norm_error': norm}, reverse=reverse)
-                ))
+                self.assertTrue(
+                    benchmark._process_raw_result(0, self.mxfp4_output({'norm_error': norm}, reverse=reverse))
+                )
                 self.assertAlmostEqual(benchmark.result['mxfp4_1_128_128_128_flops'][0], 1.048576)
                 self.assertEqual(benchmark.result['mxfp4_1_128_128_128_time'], [4])
                 self.assertEqual(benchmark.result['mxfp4_1_128_128_128_norm_error'], [float(norm)])
@@ -242,17 +279,105 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     def test_mxfp4_invalid_results(self):
         """Reject wrong cases, fallback dtypes, invalid metrics, and failed CPU verification."""
         overrides = [
-            {'m': '256'}, {'n': '256'}, {'k': '256'}, {'batch_count': '2'},
-            {'transA': 'N'}, {'transB': 'T'}, {'grouped_gemm': '1'},
-            {'a_type': 'f16_r'}, {'b_type': 'f16_r'}, {'c_type': 'f16_r'},
-            {'d_type': 'f16_r'}, {'compute_type': 'f16_r'}, {'scaleA': '0'},
-            {'scaleB': '1'}, {'use_gpu_timer': '0'},
-            {'us': '0'}, {'us': '-1'}, {'us': 'nan'}, {'us': 'inf'},
-            {'hipblaslt-Gflops': '0'}, {'hipblaslt-Gflops': '-1'},
-            {'hipblaslt-Gflops': 'nan'}, {'hipblaslt-Gflops': 'inf'},
-            {'hipblaslt-Gflops': '10'},
-            {'norm_error': '1e-5'}, {'norm_error': '-1'}, {'norm_error': 'nan'}, {'norm_error': 'inf'},
-            {'atol': 'failed'}, {'rtol': 'failed'}, {'atol': 'nan'}, {'rtol': 'inf'}, {'rtol': '-1'},
+            {
+                'm': '256'
+            },
+            {
+                'n': '256'
+            },
+            {
+                'k': '256'
+            },
+            {
+                'batch_count': '2'
+            },
+            {
+                'transA': 'N'
+            },
+            {
+                'transB': 'T'
+            },
+            {
+                'grouped_gemm': '1'
+            },
+            {
+                'a_type': 'f16_r'
+            },
+            {
+                'b_type': 'f16_r'
+            },
+            {
+                'c_type': 'f16_r'
+            },
+            {
+                'd_type': 'f16_r'
+            },
+            {
+                'compute_type': 'f16_r'
+            },
+            {
+                'scaleA': '0'
+            },
+            {
+                'scaleB': '1'
+            },
+            {
+                'use_gpu_timer': '0'
+            },
+            {
+                'us': '0'
+            },
+            {
+                'us': '-1'
+            },
+            {
+                'us': 'nan'
+            },
+            {
+                'us': 'inf'
+            },
+            {
+                'hipblaslt-Gflops': '0'
+            },
+            {
+                'hipblaslt-Gflops': '-1'
+            },
+            {
+                'hipblaslt-Gflops': 'nan'
+            },
+            {
+                'hipblaslt-Gflops': 'inf'
+            },
+            {
+                'hipblaslt-Gflops': '10'
+            },
+            {
+                'norm_error': '1e-5'
+            },
+            {
+                'norm_error': '-1'
+            },
+            {
+                'norm_error': 'nan'
+            },
+            {
+                'norm_error': 'inf'
+            },
+            {
+                'atol': 'failed'
+            },
+            {
+                'rtol': 'failed'
+            },
+            {
+                'atol': 'nan'
+            },
+            {
+                'rtol': 'inf'
+            },
+            {
+                'rtol': '-1'
+            },
         ]
         for override in overrides:
             with self.subTest(override=override):
@@ -270,10 +395,16 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             self.mxfp4_output(missing=[column])
             for column in ['a_type', 'scaleA', 'norm_error', 'atol', 'rtol', 'us', 'use_gpu_timer']
         ]
-        invalid.extend([
-            header + '\n', header + '\n' + row + ',extra\n',
-            header + ',m\n' + row + ',128\n', output + output, output + row + '\n', 'No supported solutions found',
-        ])
+        invalid.extend(
+            [
+                header + '\n',
+                header + '\n' + row + ',extra\n',
+                header + ',m\n' + row + ',128\n',
+                output + output,
+                output + row + '\n',
+                'No supported solutions found',
+            ]
+        )
         for raw_output in invalid:
             with self.subTest(raw_output=raw_output):
                 benchmark, result = self.preprocess_mxfp4()

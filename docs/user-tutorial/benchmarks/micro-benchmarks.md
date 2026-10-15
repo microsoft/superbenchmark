@@ -98,7 +98,9 @@ Example wrapper parameters for an experimental smoke case:
 --transA T --transB N --initialization hpl --num_warmup 20 --num_steps 50
 ```
 
-The wrapper always requests CPU verification for MXFP4. The pinned benchmark
+The wrapper enables the standalone client flags `--verify`, `--use_gpu_timer`,
+and `--print_kernel_info` without trailing values. The wrapper always requests
+CPU verification for MXFP4. The pinned benchmark
 reports verification errors without asserting the norm check, so SuperBench
 requires a finite relative Frobenius `norm_error < 1e-5` and finite, non-negative
 `atol`/`rtol` fields (not `failed`). The norm threshold follows the vendor's FP32

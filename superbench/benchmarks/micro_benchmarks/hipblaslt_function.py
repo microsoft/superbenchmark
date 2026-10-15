@@ -30,14 +30,19 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         self._bin_name = 'hipblaslt-bench'
         self._in_types = ['fp32', 'fp16', 'bf16', 'fp8', 'mxfp4']
         self._in_type_map = {
-            'fp16': '--a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r',
-            'fp32': '--a_type f32_r --b_type f32_r --c_type f32_r --d_type f32_r --compute_type f32_r',
-            'bf16': '--a_type bf16_r --b_type bf16_r --c_type bf16_r --d_type bf16_r --compute_type f32_r',
-            'fp8': '--a_type f8_r --b_type f8_r --c_type f8_r --d_type f8_r --compute_type f32_r',
-            'mxfp4': '--a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
+            'fp16':
+            '--a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r',
+            'fp32':
+            '--a_type f32_r --b_type f32_r --c_type f32_r --d_type f32_r --compute_type f32_r',
+            'bf16':
+            '--a_type bf16_r --b_type bf16_r --c_type bf16_r --d_type bf16_r --compute_type f32_r',
+            'fp8':
+            '--a_type f8_r --b_type f8_r --c_type f8_r --d_type f8_r --compute_type f32_r',
+            'mxfp4':
+            '--a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
             ' --scaleA 3 --scaleB 3 --scaleABlockRowSize 32 --scaleABlockColSize 1'
             ' --scaleBBlockRowSize 1 --scaleBBlockColSize 32 --alpha 1 --beta 0'
-            ' --algo_method heuristic --requested_solution 1 --verify 1 --use_gpu_timer 1 --print_kernel_info 1',
+            ' --algo_method heuristic --requested_solution 1 --verify --use_gpu_timer --print_kernel_info',
         }
 
     def add_parser_arguments(self):
@@ -109,9 +114,9 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         if arch != 'gfx950':
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
-            logger.error('Experimental MXFP4 only allows gfx950 - benchmark: {}, architecture: {}.'.format(
-                self._name, arch
-            ))
+            logger.error(
+                'Experimental MXFP4 only allows gfx950 - benchmark: {}, architecture: {}.'.format(self._name, arch)
+            )
             return False
 
         output = run_command(f'{shlex.quote(self.__bin_path)} --help', quiet=True)
@@ -123,16 +128,23 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             )
             return False
         required_options = [
-            '--scaleA', '--scaleB', '--scaleABlockRowSize', '--scaleABlockColSize',
-            '--scaleBBlockRowSize', '--scaleBBlockColSize', '--verify', '--use_gpu_timer',
-            '--print_kernel_info', '3 = block',
+            '--scaleA',
+            '--scaleB',
+            '--scaleABlockRowSize',
+            '--scaleABlockColSize',
+            '--scaleBBlockRowSize',
+            '--scaleBBlockColSize',
+            '--verify',
+            '--use_gpu_timer',
+            '--print_kernel_info',
+            '3 = block',
         ]
         missing = [option for option in required_options if not re.search(re.escape(option) + r'\b', output.stdout)]
         if missing:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error('MXFP4 client is missing required options - benchmark: {}, missing: {}.'.format(
-                self._name, missing
-            ))
+            logger.error(
+                'MXFP4 client is missing required options - benchmark: {}, missing: {}.'.format(self._name, missing)
+            )
             return False
         self._result.add_raw_data('mxfp4_gpu_arch', arch, self._args.log_raw_data)
         return True
@@ -186,8 +198,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         header_fields = [field.strip() for field in lines[index].split(',')]
         header_fields[0] = re.sub(r'^\s*\[\d+\]:?', '', header_fields[0]).strip()
         if precision == 'mxfp4' and (
-            len(set(header_fields)) != len(header_fields)
-            or sum('hipblaslt-Gflops' in line for line in lines) != 1
+            len(set(header_fields)) != len(header_fields) or sum('hipblaslt-Gflops' in line for line in lines) != 1
             or any(len(line.split(',')) == len(header_fields) for line in lines[index + 2:])
         ):
             raise ValueError('MXFP4 requires unique columns and exactly one result.')
@@ -213,10 +224,21 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         """Require the requested MXFP4 case, valid timing, and CPU verification."""
         m, n, k, _, _ = self._shapes_to_run[cmd_idx]
         expected = {
-            'transA': 'T', 'transB': 'N', 'grouped_gemm': '0', 'batch_count': '1',
-            'm': str(m), 'n': str(n), 'k': str(k), 'a_type': 'f4_r', 'b_type': 'f4_r',
-            'c_type': 'f32_r', 'd_type': 'f32_r', 'compute_type': 'f32_r',
-            'scaleA': '3', 'scaleB': '3', 'use_gpu_timer': '1',
+            'transA': 'T',
+            'transB': 'N',
+            'grouped_gemm': '0',
+            'batch_count': '1',
+            'm': str(m),
+            'n': str(n),
+            'k': str(k),
+            'a_type': 'f4_r',
+            'b_type': 'f4_r',
+            'c_type': 'f32_r',
+            'd_type': 'f32_r',
+            'compute_type': 'f32_r',
+            'scaleA': '3',
+            'scaleB': '3',
+            'use_gpu_timer': '1',
         }
         for column, value in expected.items():
             if row.get(column) != value:
