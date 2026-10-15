@@ -163,3 +163,96 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 | megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
 | megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
 
+## Official-checkpoint V2-Lite Training
+
+### `deepseek-v2-lite-training`
+
+This opt-in, standalone MODEL benchmark downloads and hash-verifies the complete
+`deepseek-ai/DeepSeek-V2-Lite` checkpoint at
+`604d5664dddd88a0433dbae533b7fe9472482de0`, then performs full-parameter causal-LM
+training. It is not the Megatron benchmark, a classifier-head workload, LoRA, or
+the reduced hidden-size configuration from PR #765.
+
+The model has 15,706,484,224 parameters, hidden size 2048, 27 layers, MLA and MoE.
+The four BF16 weight files total 31,413,626,576 bytes. Initial optimizer state is
+new: this is short training from pretrained weights, not a resume of DeepSeek's
+original optimizer or an attempt to train a converged model within an hour.
+The small `fixed-text-v1` fixture uses the official tokenizer and packed token
+sequences without padding. It is reproducible, not a production-data accuracy
+or representativeness evaluation. Mock data and mocked subprocesses are used
+only in auxiliary unit tests.
+
+#### Runtime And Execution
+
+Use a separate worker environment; do not replace the legacy SuperBench
+framework dependencies. The worker requires Python 3.10+, a GPU-compatible
+PyTorch 2.5+ build, and the pinned packages in
+[`deepseek-v2-lite-reference.txt`](../../../dockerfile/requirements/deepseek-v2-lite-reference.txt).
+The supplied
+[`worker Dockerfile`](../../../dockerfile/deepseek-v2-lite-training.dockerfile)
+pins the CUDA PyTorch base by digest and prepares that environment. It is a
+worker image, not a replacement for the full SuperBench image.
+
+```bash
+python3 -m venv --system-site-packages /opt/deepseek-reference
+/opt/deepseek-reference/bin/pip install -r dockerfile/requirements/deepseek-v2-lite-reference.txt
+sb exec --config-file superbench/config/deepseek-v2-lite-training.yaml
+```
+
+The command assumes SuperBench is already installed in the controller's
+environment. Change `runtime_python` if the prepared worker environment lives
+elsewhere. Install a compatible CUDA/ROCm PyTorch build before preparing the
+worker, rather than letting a generic package install choose the GPU backend.
+
+Select the
+[`training profile`](../../../superbench/config/deepseek-v2-lite-training.yaml)
+as its own benchmark entry, with one local launcher. The worker launches
+`torchrun --standalone` across `num_gpus` local GPUs. Do not launch this entry
+once per GPU or combine it with other models, precisions or actions under the
+same deadline. `batch_size` is the microbatch per GPU.
+
+FSDP shards the full model, gradients and FP32 AdamW master/optimizer state.
+Activation checkpointing is enabled for the measured workload. This is not
+expert parallelism and does not qualify a Megatron or all-to-all dispatch path.
+The default example uses four GPUs and microbatch two, retaining a global batch
+of eight sequences. The complete profile also runs an unsharded BF16 loss and
+gradient reference on one GPU; use 80GB-class GPUs for this initial example.
+This is not a minimum-card proof or a recommendation to replicate the full
+model with DDP: FP32 AdamW training state must fit across the selected shards.
+Registration for CUDA/ROCm denotes an implementation route, not certification
+of every GPU, runtime or memory configuration.
+
+#### Correctness, Timing And Results
+
+Before optimization, an unsharded official-code BF16 reference checks the
+complete model's loss and sampled embedding, dense, MLA, router and active-expert
+gradients against FSDP. Gradient probes include nonzero and distributed positions;
+they are not an exhaustive comparison of every parameter. Every training step
+requires finite loss and a finite nonzero global gradient norm. The first update
+must change model parameters. No checkpoint missing-key or shape mismatch is
+accepted.
+The one-time pre-update parameter snapshot is stored in host memory and checked
+after the update. Model parameters, gradients and optimizer state remain on the
+GPUs; this is validation storage, not training-state CPU offload.
+
+Every invocation creates its own empty HF/Hub/Xet/module cache and keeps its
+report and logs under a new directory in `cache_root`. Shared caches are not
+deleted. `duration` covers download, SHA256 verification, loading, correctness,
+warmup, measured training and worker/rank teardown. It must be below 3600 seconds;
+the controller reserves 20 seconds for cleanup. A watchdog exit is a failure.
+Image pulling, dependency preparation and SuperBench installation are separate
+runtime-preparation steps, not certified by the model-cold timer.
+
+| Metric | Unit | Scope |
+| --- | --- | --- |
+| `bf16_train_step_time` | ms | Mean of the slowest synchronized rank per measured step |
+| `bf16_train_tokens_per_second` | loss tokens/s | Global next-token targets, excluding each sequence's first position |
+| `bf16_train_loss` | loss | Global mean causal-LM loss |
+| `bf16_train_gradient_norm` | norm | Global gradient norm before clipping |
+| `end_to_end_seconds` | s | Complete worker launch through exit and report validation |
+| `checkpoint_bytes` | bytes | Complete weight files, not measured network traffic or GPU memory |
+
+Step timing includes forward, backward, clipping and the optimizer update.
+Input preparation/copy and reference/update checks are excluded from the
+steady step metric but included in the complete-job time. Keep model-cold
+acceptance, per-GPU utilization and model quality as separate conclusions.
