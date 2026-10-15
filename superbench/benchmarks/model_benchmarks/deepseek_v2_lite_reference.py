@@ -9,7 +9,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from deepseek_v2_lite_utils import (
-    FIXED_TEXTS, PARAMETER_COUNT, packed_tokens, read_json, validate_config, write_json
+    FIXED_TEXTS, PARAMETER_COUNT, packed_tokens, read_json, uniform_indices, validate_config, write_json
 )
 
 
@@ -82,7 +82,7 @@ def training_reference(model, checkpoint):
         if name in required or selected_expert:
             flat = gradient.detach().flatten()
             nonzero = torch.nonzero(flat, as_tuple=False).flatten()[:512]
-            spread = torch.linspace(0, flat.numel() - 1, 256, device=flat.device).long()
+            spread = torch.tensor(uniform_indices(flat.numel()), device=flat.device, dtype=torch.long)
             indices = torch.unique(torch.cat((nonzero, spread)))
             values = flat[indices].float().cpu()
             if not torch.isfinite(values).all().item():

@@ -187,6 +187,13 @@ def numeric_series(report, name: str, count: int, positive: bool = True) -> List
     return [float(value) for value in values]
 
 
+def uniform_indices(length: int, count: int = 256) -> List[int]:
+    """Sample large tensor offsets with integer arithmetic, never FP32 rounding."""
+    if length < 1 or count < 2:
+        raise ValueError('Invalid tensor length or sample count.')
+    return [position * (length - 1) // (count - 1) for position in range(count)]
+
+
 def terminate_worker(process: subprocess.Popen) -> None:
     """Terminate only this job's process group, including torchrun workers."""
     try:
