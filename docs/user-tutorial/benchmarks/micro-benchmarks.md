@@ -143,7 +143,11 @@ Currently the following models are supported:
 > squeezenet1_0, squeezenet1_1, vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19_bn, vgg19
 > lstm, bert-base, bert-large, gpt2-small
 
-> Do not support large models like `gpt2-large` currently because models larger than 2GB (maximum protobuf size) cannot be exported in one ONNX file.
+#### Hugging Face models
+
+Run a compatible Hugging Face model with `--model_source huggingface --model_identifier <model-id>`. Set `HF_TOKEN` for gated models and use `--revision <commit-sha>` to pin a model version. `--allow_remote_code` executes code from the model repository and should only be used with trusted models.
+
+TensorRT derives dynamic input shapes from the exported ONNX graph and supports external data for models larger than 2 GB. Distributed processes use rank-specific export directories. Hugging Face models support `fp16` and `fp32`; `int8` is rejected because this path does not generate calibration data or a Q/DQ ONNX model.
 
 #### Metrics
 
@@ -166,6 +170,12 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 > mnasnet1_0, mobilenet_v2, resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d,
 > resnext101_32x8d, wide_resnet50_2, wide_resnet101_2, shufflenet_v2_x0_5, shufflenet_v2_x1_0,
 > squeezenet1_0, squeezenet1_1, vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19_bn, vgg19
+
+#### Hugging Face models
+
+Run a compatible Hugging Face model with `--model_source huggingface --model_identifier <model-id>`. Set `HF_TOKEN` for gated models and use `--revision <commit-sha>` to pin a model version. `--allow_remote_code` executes code from the model repository and should only be used with trusted models.
+
+When CUDA or the ONNX Runtime CUDA execution provider is unavailable, the benchmark falls back to an available provider and exports the model in `float32`. Use `--require_cuda` to fail instead of falling back.
 
 The supported percentiles are 50, 90, 95, 99, and 99.9.
 
