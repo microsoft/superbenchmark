@@ -15,6 +15,8 @@
 #   SM90/100+ (3x)  : cutlass3x_sm{arch}_tensorop_{core_name}_{dtype}_*
 #     Note: TF32 kernels use "tf32gemm" (intermediate type before "gemm"),
 #     e.g. cutlass3x_sm100_tensorop_tf32gemm_f32_f32_*
+#   "f8"/"f4" element names mark runtime-typed kernels; the profiler takes the
+#     actual type from --runtime_input_datatype_a/b.
 #
 # ---------------------------------------------------------------------------
 # Shared kernel lists (reusable fragments)
@@ -63,11 +65,48 @@ CUTLASS_KERNELS_SM100 := \
 	cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_*ultra_2sm*,\
 	cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_ue4m3xf4_f32_void_f32_*ultra_2sm*
 
+# SM107 Rubin 3x UMMA GEMM kernels (CUTLASS v4.8.0, "107a" build only)
+#   - TF32/FP16/BF16: CUTLASS has no native SM107 generator; it retargets the
+#     SM100 generators to Sm107 when a 107 arch is built, so the names match
+#     the SM100 list with sm107.
+#   - FP8 and NVFP4: native SM107 kernels (Rubin MMA shapes with B-matrix
+#     reuse schedules).  Only native names contain "breuse" (or "no_breuse").
+#     The FP8 ones are runtime-typed (f8_f8).  NVFP4 = e2m1 with ue4m3 scale
+#     and 16-element blocks (vs16).
+#   - No INT8: CuTe enables tcgen05 kind::i8 only for SM100a/SM101a/SM110.
+CUTLASS_KERNELS_SM107 := \
+	cutlass3x_sm107_tensorop_tf32gemm_f32_f32_f32_f32_f32_*,\
+	cutlass3x_sm107_tensorop_gemm_f16_f16_f32_f16_f16_*,\
+	cutlass3x_sm107_tensorop_gemm_bf16_bf16_f32_bf16_bf16_*,\
+	cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_*breuse_*,\
+	cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_*_o_vs16_*breuse_*
+
+# Install prefix of the Rubin build; cuda_gemm_flops_performance.py uses it for CC 10.7.
+CUTLASS_SM107_PREFIX = $(SB_MICRO_PATH)/cutlass_sm107
+
 # Strip spaces that Make inserts from the line-continuation backslashes.
 # Without this, cmake receives "cutlass_simt_dgemm..., cutlass_simt_sgemm..."
 # (note the space after each comma) which breaks CUTLASS's kernel filter.
 _strip_spaces = $(subst $(space),,$1)
 space := $(subst ,, )
+
+# $(call cutlass_build,<NVCC archs>,<kernel filter>,<install prefix>,<build dir>)
+# Configures, builds and installs ./cutlass into <install prefix>/{bin,lib}.
+cutlass_build = cmake -DCMAKE_INSTALL_BINDIR=$(3)/bin \
+		-DCMAKE_INSTALL_LIBDIR=$(3)/lib \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCUTLASS_NVCC_ARCHS=$(1) \
+		-DCUTLASS_ENABLE_EXAMPLES=OFF \
+		-DCUTLASS_ENABLE_TESTS=OFF \
+		-DCUTLASS_BUILD_SHARED_LIBS=ON \
+		-DCUTLASS_BUILD_STATIC_LIBS=OFF \
+		-DCMAKE_CXX_FLAGS="-fno-asynchronous-unwind-tables -fno-unwind-tables" \
+		-DCMAKE_CUDA_FLAGS="-Xcompiler=-fno-asynchronous-unwind-tables -Xcompiler=-fno-unwind-tables" \
+		-S ./cutlass \
+		-B $(4) \
+		"-DCUTLASS_LIBRARY_KERNELS=$(2)" && \
+	cmake --build $(4) -j $(NUM_MAKE_JOBS) --target install && \
+	rm -rf $(4)
 
 # ---------------------------------------------------------------------------
 # cuda_cutlass target
@@ -77,6 +116,8 @@ space := $(subst ,, )
 #   CUTLASS_ARCHS   — semicolon-separated NVCC arch list
 #   CUTLASS_KERNS   — comma-separated kernel filter patterns
 #   CUTLASS_PATCHES — optional post-clone fixups (sed commands, etc.)
+#   CUTLASS_SM107_KERNS — optional Rubin kernel filter; when set, a second
+#                     "107a" build is installed into $(CUTLASS_SM107_PREFIX)
 #
 # After the version-specific block, a shared section clones, patches,
 # configures, builds, and installs.
@@ -86,13 +127,23 @@ space := $(subst ,, )
 cuda_cutlass:
 ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
 	# -----------------------------------------------------------------------
-	# Blackwell GB200 (SM100a) + GB300 (SM103a) + SM107 — CUTLASS v4.3.5
+	# Blackwell GB200/GB300 + Rubin (SM107a) — CUTLASS v4.8.0, two folders
 	# -----------------------------------------------------------------------
-	# SM107 runs the legacy SM80 kernels; see the 12.9 tier for the generator patch.
-	$(eval CUTLASS_TAG     := v4.3.5)
-	$(eval CUTLASS_ARCHS   := "100a;103a;107")
-	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)),$(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)))
-	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py)
+	# v4.8.0 is the first release with SM107.  With any 107 arch in the list,
+	# it retargets the SM100 generators to SM107 (generator.py
+	# resolve_sm10x_arch_range), so the SM100 kernels disappear from that build.
+	# cutlass_profiler only runs kernels from its own libcutlass.so, so one
+	# clone is built twice into separate folders:
+	#   - "100a;103a" -> $(SB_MICRO_PATH)/{bin,lib}         (GB200, GB300)
+	#   - "107a"      -> $(CUTLASS_SM107_PREFIX)/{bin,lib}  (Rubin)
+	# v4.8.0 extended the INT8 gate to ['100f', '101f', '103a', '107f'].
+	# Dropping '103a' keeps SM100a INT8 as in the 12.9 tier; the grep stops
+	# the build if the patch no longer applies.
+	$(eval CUTLASS_TAG     := v4.8.0)
+	$(eval CUTLASS_ARCHS   := "100a;103a")
+	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
+	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a', '107f'\]/arch_family_cc = ['100f', '101f', '107f']/" cutlass/python/cutlass_library/generator.py && grep -q "arch_family_cc = \['100f', '101f', '107f'\]" cutlass/python/cutlass_library/generator.py)
+	$(eval CUTLASS_SM107_KERNS := $(call _strip_spaces,$(CUTLASS_KERNELS_SM107)))
 
 else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	# -----------------------------------------------------------------------
@@ -152,24 +203,12 @@ endif
 	# -----------------------------------------------------------------------
 	# Shared clone → patch → build → install pipeline
 	# -----------------------------------------------------------------------
-	# With the narrowed kernel filter (~3,900 objects, max ~614 per sub-group),
-	# shared per-family libraries stay under the R_AARCH64_PREL32 ±2 GB limit
-	# on aarch64.  Unwind table suppression further reduces .eh_frame pressure.
+	# With the narrowed kernel filters (Blackwell ~3,800 objects, Rubin ~2,700;
+	# max ~840 per sub-group), shared per-family libraries stay under the
+	# R_AARCH64_PREL32 ±2 GB limit on aarch64.  Unwind table suppression
+	# further reduces .eh_frame pressure.
 	if [ -d cutlass ]; then rm -rf cutlass; fi
 	git clone --branch $(CUTLASS_TAG) --depth 1 https://github.com/NVIDIA/cutlass.git
 	$(CUTLASS_PATCHES)
-	cmake -DCMAKE_INSTALL_BINDIR=$(SB_MICRO_PATH)/bin \
-		-DCMAKE_INSTALL_LIBDIR=$(SB_MICRO_PATH)/lib \
-		-DCMAKE_BUILD_TYPE=Release \
-		-DCUTLASS_NVCC_ARCHS=$(CUTLASS_ARCHS) \
-		-DCUTLASS_ENABLE_EXAMPLES=OFF \
-		-DCUTLASS_ENABLE_TESTS=OFF \
-		-DCUTLASS_BUILD_SHARED_LIBS=ON \
-		-DCUTLASS_BUILD_STATIC_LIBS=OFF \
-		-DCMAKE_CXX_FLAGS="-fno-asynchronous-unwind-tables -fno-unwind-tables" \
-		-DCMAKE_CUDA_FLAGS="-Xcompiler=-fno-asynchronous-unwind-tables -Xcompiler=-fno-unwind-tables" \
-		-S ./cutlass \
-		-B ./cutlass/build \
-		"-DCUTLASS_LIBRARY_KERNELS=$(CUTLASS_KERNS)"
-	cmake --build ./cutlass/build -j $(NUM_MAKE_JOBS) --target install
-	rm -rf ./cutlass/build
+	$(call cutlass_build,$(CUTLASS_ARCHS),$(CUTLASS_KERNS),$(SB_MICRO_PATH),./cutlass/build)
+	$(if $(CUTLASS_SM107_KERNS),$(call cutlass_build,"107a",$(CUTLASS_SM107_KERNS),$(CUTLASS_SM107_PREFIX),./cutlass/build_sm107))

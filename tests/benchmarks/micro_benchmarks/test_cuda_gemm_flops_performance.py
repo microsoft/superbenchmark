@@ -4,6 +4,7 @@
 """Tests for gemm-flops benchmark."""
 
 import fnmatch
+import os
 import unittest
 from unittest import mock
 
@@ -20,7 +21,7 @@ class CudaGemmFlopsBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Hook method for setting up class fixture before running tests in the class."""
         super().setUpClass()
         cls.createMockEnvs(cls)
-        cls.createMockFiles(cls, ['bin/cutlass_profiler'])
+        cls.createMockFiles(cls, ['bin/cutlass_profiler', 'cutlass_sm107/bin/cutlass_profiler'])
 
     @decorator.cuda_test
     def test_flops_performance_cuda(self):
@@ -231,16 +232,126 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
 
         assert (benchmark.result['nvfp4_tc_flops'][0] == 16602100)
 
-    def test_flops_performance_cuda_sm107(self):
-        """Test gemm-flops benchmark selects kernels for compute capability 10.7."""
+    def test_flops_performance_cuda_sm107_kernels(self):
+        """Test gemm-flops benchmark selects native SM107 (Rubin) kernels and parses their output."""
         benchmark_name = 'gemm-flops'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        benchmark = benchmark_class(benchmark_name, parameters='--precision fp32 fp16_tc')
-        assert (10.7 in benchmark._CudaGemmFlopsBenchmark__kernel_map)
+        precisions = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'fp8_tc', 'nvfp4_tc']
+        benchmark = benchmark_class(benchmark_name, parameters='--precision ' + ' '.join(precisions))
+        kernel_map = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.7]
+        assert (sorted(kernel_map) == sorted(precisions))
+        # No legacy SM80 (Ampere) selectors on the Rubin performance path.
+        assert (all(pattern.startswith('cutlass3x_sm107_') for pattern in kernel_map.values()))
 
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = precisions
+
+        # Kernel names from CUTLASS v4.8.0 generated for "107a"; FP8 and NVFP4 are native SM107 B-reuse kernels.
+        raw_output_tf32_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_tf32gemm_f32_f32_f32_f32_f32_256x256x32_0x0x1_0_ntn_align4_stream_k_2sm,passed,success,universal,16384,16384,16384,8.0,1100000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_tf32gemm_f32_f32_f32_f32_f32_256x256x32_4x4x1_0_tnn_align4_stream_k_2sm,passed,success,universal,16384,16384,16384,8.8,1000000
+"""
+        raw_output_bf16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_bf16_bf16_f32_bf16_bf16_256x256x64_0x0x1_0_ntn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.4,2000000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_bf16_bf16_f32_bf16_bf16_256x256x64_4x4x1_0_tnn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.2,2100000
+"""
+        raw_output_fp16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f16_f16_f32_f16_f16_256x256x64_0x0x1_0_ntn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.2,2100000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f16_f16_f32_f16_f16_256x256x64_4x4x1_0_tnn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.0,2200000
+"""
+        raw_output_fp8_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.2,4000000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_512x256x128_4x4x1_0_tnn_align16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.0,4400000
+"""
+        raw_output_nvfp4_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.6,14000000
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.5,16000000
+"""
+        raw_outputs = [
+            raw_output_tf32_tc, raw_output_bf16_tc, raw_output_fp16_tc, raw_output_fp8_tc, raw_output_nvfp4_tc
+        ]
+        for idx, raw_output in enumerate(raw_outputs):
+            # The --kernels pattern must select the real names (matched like '*pattern*').
+            pattern = kernel_map[precisions[idx]]
+            names = [line.split(',')[3] for line in raw_output.splitlines() if line.startswith('1,')]
+            assert (names and all(fnmatch.fnmatchcase(name, '*' + pattern + '*') for name in names))
+            assert (benchmark._process_raw_result(idx, raw_output))
+
+        assert (benchmark.result['tf32_tc_flops'][0] == 1100000)
+        assert (benchmark.result['bf16_tc_flops'][0] == 2100000)
+        assert (benchmark.result['fp16_tc_flops'][0] == 2200000)
+        assert (benchmark.result['fp8_tc_flops'][0] == 4400000)
+        assert (benchmark.result['nvfp4_tc_flops'][0] == 16000000)
+
+        # Retargeted SM100-style FP8/NVFP4, 1SM, vs32 and MXFP4 (ue8m0) kernels are not selected.
+        unselected = """
+fp8_tc,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_stream_k_2sm
+fp8_tc,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_breuse_1sm
+nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_2sm
+nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
+nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
+"""
+        for line in unselected.split():
+            precision, name = line.split(',')
+            assert (not fnmatch.fnmatchcase(name, '*' + kernel_map[precision] + '*'))
+
+    def test_flops_performance_cuda_sm107_commands(self):
+        """Test gemm-flops benchmark runs the cutlass_sm107 install on Rubin and skips unsupported precisions."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        prefix = os.path.join(self._tmp_dir, 'cutlass_sm107')
         with mock.patch.object(dm.device_manager, 'get_device_compute_capability', return_value=10.7):
-            assert (benchmark._preprocess() is True)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
+            with mock.patch.dict(os.environ):
+                benchmark = benchmark_class(
+                    benchmark_name, parameters='--precision tf32_tc fp8_tc nvfp4_tc int8_tc int4_tc'
+                )
+                assert (benchmark._preprocess() is True)
+                assert (os.environ['LD_LIBRARY_PATH'].split(os.pathsep)[0] == os.path.join(prefix, 'lib'))
+            assert (benchmark.return_code == ReturnCode.SUCCESS)
+            # SM107 has no INT8/INT4 kernels, so they are skipped.
+            assert (benchmark._precision_need_to_run == ['tf32_tc', 'fp8_tc', 'nvfp4_tc'])
+            assert (benchmark._args.bin_dir == os.path.join(prefix, 'bin'))
+            kernel_map = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.7]
+            tf32_cmd, fp8_cmd, nvfp4_cmd = benchmark._commands
+            assert (tf32_cmd.startswith(os.path.join(prefix, 'bin', 'cutlass_profiler') + ' '))
+            assert ('--operation=gemm ' in tf32_cmd and tf32_cmd.endswith(' --kernels=' + kernel_map['tf32_tc']))
+            assert ('--operation=gemm ' in fp8_cmd)
+            assert (fp8_cmd.endswith(' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'))
+            assert ('--operation=block_scaled_gemm ' in nvfp4_cmd and 'runtime_input_datatype' not in nvfp4_cmd)
+
+            with mock.patch.dict(os.environ):
+                benchmark = benchmark_class(benchmark_name, parameters='--precision int8_tc')
+                assert (benchmark._preprocess() is False)
+            assert (benchmark.return_code == ReturnCode.NO_SUPPORTED_PRECISION)
+
+            # An explicit --bin_dir takes precedence over the per-architecture install.
+            bin_dir = os.path.join(self._tmp_dir, 'bin')
+            with mock.patch.dict(os.environ):
+                benchmark = benchmark_class(benchmark_name, parameters='--precision fp16_tc --bin_dir ' + bin_dir)
+                assert (benchmark._preprocess() is True)
+            assert (benchmark._args.bin_dir == bin_dir)

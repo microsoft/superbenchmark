@@ -54,7 +54,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self.__kernel_map[9.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         # FP8 (e4m3) on Hopper SM90: CUTLASS 3x WGMMA kernels (CUTLASS v3.9.2+).
         self.__kernel_map[9.0]['fp8_tc'] = 'cutlass3x_sm90_tensorop_gemm_e4m3_*'
-        # Blackwell (SM100/SM103): CUTLASS v4.3.5 UMMA TensorOp kernels.
+        # Blackwell (SM100/SM103): CUTLASS v4.3.5 (v4.8.0 with CUDA 13.4+) UMMA TensorOp kernels.
         # Runtime --kernels patterns select stream_k + 2sm kernels for peak FLOPS.
         # TF32/FP16/BF16: 256x256 tiles only (best for 32/64-byte K-tiles).
         # INT8/FP8: include 128x256 + 256x256 because their larger K-tile (128)
@@ -79,25 +79,36 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self.__kernel_map[10.3] = {k: v for k, v in self.__kernel_map[10.0].items() if k != 'int8_tc'}
         self.__kernel_map[10.3]['nvfp4_tc'] = \
             'cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32*256x*ultra_2sm*'
-        # SM107 (CUDA 13.4+) runs the legacy SM80 kernels; cutlass.mk builds them for sm_107.
-        self.__kernel_map[10.7] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
+        # Rubin SM107a: CUTLASS v4.8.0 kernels from the separate cutlass_sm107 install (third_party/cutlass.mk).
+        #   - TF32/FP16/BF16: SM100 generators retargeted to Sm107, selected like SM100.
+        #   - FP8/NVFP4: native SM107 kernels (B-reuse schedules, no stream-K), N=256 2SM tiles.
+        #   - No INT8: CuTe enables tcgen05 kind::i8 only for SM100a/SM101a/SM110.
+        self.__kernel_map[10.7] = {
+            'tf32_tc': 'cutlass3x_sm107_tensorop_tf32gemm*256x256x*stream_k_2sm*',
+            'bf16_tc': 'cutlass3x_sm107_tensorop_gemm_bf16_bf16_f32_bf16_bf16*256x256x*stream_k_2sm*',
+            'fp16_tc': 'cutlass3x_sm107_tensorop_gemm_f16_f16_f32_f16_f16*256x256x*stream_k_2sm*',
+            'fp8_tc': 'cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32*x256x128_*breuse_2sm*',
+            'nvfp4_tc':
+            'cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32*x256x256_*o_vs16_*breuse_2sm*',
+        }
+        # Compute capabilities whose CUTLASS build lives in its own SB_MICRO_PATH subfolder.
+        self.__cutlass_subdir = {10.7: 'cutlass_sm107'}
+        self.__capability = None
+        # '<OperationKind>,<kernel name prefix>' of CSV rows to parse: legacy SM70/SM80, SM90, SM100, SM103, SM107.
         self.__parse_logline = [
-            # SM70/SM80 kernels (legacy 2x naming: cutlass_tensorop_*)
             'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
             'gemm,cutlass_simt_hgemm_256x128_8x2', 'gemm,cutlass_tensorop_d884gemm_128x128_16x3',
             'gemm,cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3',
             'gemm,cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3', 'gemm,cutlass_tensorop_h16816gemm_256x128_32x3',
             'gemm,cutlass_tensorop_h884gemm_256x128_32x2', 'gemm,cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3',
-            'gemm,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3',
-            # SM90 (Hopper) WGMMA kernels (3x naming: cutlass3x_sm90_tensorop_gemm_{dtype}_*)
-            'gemm,cutlass3x_sm90_tensorop_gemm_e4m3_',
-            # SM100 (Blackwell) UMMA kernels
+            'gemm,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3', 'gemm,cutlass3x_sm90_tensorop_gemm_e4m3_',
             'gemm,cutlass3x_sm100_tensorop_tf32gemm_', 'gemm,cutlass3x_sm100_tensorop_gemm_f16_',
             'gemm,cutlass3x_sm100_tensorop_gemm_bf16_', 'gemm,cutlass3x_sm100_tensorop_gemm_s8_',
             'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_',
-            # SM103 (Blackwell Ultra) NVFP4 block-scaled UMMA kernels
             'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_',
-            'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_',
+            'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_', 'gemm,cutlass3x_sm107_tensorop_tf32gemm_',
+            'gemm,cutlass3x_sm107_tensorop_gemm_f16_', 'gemm,cutlass3x_sm107_tensorop_gemm_bf16_',
+            'gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_', 'block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_'
         ]
 
     def add_parser_arguments(self):
@@ -123,6 +134,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             )
             return False
 
+        self.__capability = capability
         self._support_precisions = list(self.__kernel_map[capability].keys())
         # 'support_precisions' are precise only after getting capability,
         #  and then using super.preprocess() to check if the precision in arguments are supported to run
@@ -141,9 +153,26 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             command += (' --k=' + str(self._args.k))
             command += (' --m=' + str(self._args.m))
             command += (' --kernels=' + self.__kernel_map[capability][p])
+            # Runtime-typed FP8 kernels ("f8" elements) take the A/B type at launch.
+            if '_f8_f8_' in self.__kernel_map[capability][p]:
+                command += ' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'
             self._commands.append(command)
 
         return True
+
+    def _set_binary_path(self):
+        """Search cutlass_profiler in the per-architecture CUTLASS install unless --bin_dir is given.
+
+        Return:
+            True if the binary exists.
+        """
+        subdir = self.__cutlass_subdir.get(self.__capability)
+        if subdir and self._args.bin_dir is None and os.getenv('SB_MICRO_PATH'):
+            prefix = os.path.join(os.getenv('SB_MICRO_PATH'), subdir)
+            self._args.bin_dir = os.path.join(prefix, 'bin')
+            # LD_LIBRARY_PATH outranks RUNPATH, so put this build's libcutlass*.so ahead of SB_MICRO_PATH/lib.
+            os.environ['LD_LIBRARY_PATH'] = os.path.join(prefix, 'lib') + os.pathsep + os.getenv('LD_LIBRARY_PATH', '')
+        return super()._set_binary_path()
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
