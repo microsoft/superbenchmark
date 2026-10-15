@@ -34,12 +34,10 @@ CUTLASS_KERNELS_LEGACY := \
 	cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3_*,\
 	cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3_*
 
-# SM70–80 Volta/Turing subset (no Ampere+ TensorOp)
-CUTLASS_KERNELS_VOLTA := \
-	cutlass_simt_dgemm_128x128_8x2_*,\
-	cutlass_simt_sgemm_128x128_8x2_*,\
-	cutlass_simt_hgemm_256x128_8x2_*,\
-	cutlass_tensorop_h884gemm_256x128_32x2_*
+# SM90 Hopper FP8 WGMMA kernels (e4m3 in, f32 out); they need the "90a" arch.
+# CUTLASS v3.x names put the MMA shape before "gemm" (s64x256x32gemm), v4.x
+# names do not, hence the "*" before "gemm".
+CUTLASS_KERNELS_SM90 := cutlass3x_sm90_tensorop_*gemm_e4m3_e4m3_f32_f32_f32_*
 
 # SM100 Blackwell 3x UMMA GEMM kernels
 # Optimized for peak-FLOPS benchmarking on GB200/GB300:
@@ -172,19 +170,35 @@ else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	# -----------------------------------------------------------------------
-	# Hopper SM90 + Blackwell SM100 — CUTLASS v3.9.2
+	# Ampere SM80 + Hopper SM90a + Blackwell SM100a — CUTLASS v4.3.5
 	# -----------------------------------------------------------------------
 	# SM90 non-FP8 precisions use legacy SM80 kernel names (SIMT + TensorOp)
 	# which are backward-compatible on Hopper.  SM90 FP8 and SM100 use 3x naming.
+	# v4.3.5 gives the same SM100 names as the 12.9 tier; v3.9.2 puts the MMA
+	# shape before "gemm" (s128x256x8tf32gemm), which the SM100 filters and
+	# gemm-flops patterns do not match.  The "a" archs are required: plain "90"
+	# builds the WGMMA kernels as stubs and plain "100" generates no SM100
+	# kernels.  Without 103a the INT8 gate does not fire, so no patch is needed.
+	$(eval CUTLASS_TAG     := v4.3.5)
+	$(eval CUTLASS_ARCHS   := "80;90a;100a")
+	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)),$(CUTLASS_KERNELS_SM90),$(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
+	$(eval CUTLASS_PATCHES := @true)
+
+else ifeq ($(shell echo $(CUDA_VER)">=12.0" | bc -l), 1)
+	# -----------------------------------------------------------------------
+	# Volta through Hopper (SM70–SM90a) — CUTLASS v3.9.2
+	# -----------------------------------------------------------------------
+	# "90a" is needed for the Hopper FP8 WGMMA kernels (plain "90" builds stubs).
 	$(eval CUTLASS_TAG     := v3.9.2)
-	$(eval CUTLASS_ARCHS   := "80;90;100")
-	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)),cutlass3x_sm90_tensorop_gemm_e4m3_*,$(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
+	$(eval CUTLASS_ARCHS   := "70;75;80;86;89;90a")
+	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)),$(CUTLASS_KERNELS_SM90))
 	$(eval CUTLASS_PATCHES := @true)
 
 else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 	# -----------------------------------------------------------------------
-	# Volta through Ada (SM70–SM90)
+	# Volta through Ada (SM70–SM90) — CUTLASS v3.9.2
 	# -----------------------------------------------------------------------
+	# CUDA 11.8 has no sm_90a, so there are no Hopper FP8 kernels here.
 	$(eval CUTLASS_TAG     := v3.9.2)
 	$(eval CUTLASS_ARCHS   := "70;75;80;86;89;90")
 	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)))
@@ -192,11 +206,13 @@ else ifeq ($(shell echo $(CUDA_VER)">=11.8" | bc -l), 1)
 
 else
 	# -----------------------------------------------------------------------
-	# Volta/Turing subset (SM70–SM86)
+	# Volta through Ampere (SM70–SM86) — CUTLASS v2.4.0
 	# -----------------------------------------------------------------------
-	$(eval CUTLASS_TAG     := v3.9.2)
+	# v2.4.0 is the third_party/cutlass submodule commit; CUTLASS 3.x needs
+	# CUDA 11.4+ and CMake 3.19+.
+	$(eval CUTLASS_TAG     := v2.4.0)
 	$(eval CUTLASS_ARCHS   := "70;75;80;86")
-	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_VOLTA)))
+	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_LEGACY)))
 	$(eval CUTLASS_PATCHES := @true)
 
 endif

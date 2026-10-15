@@ -52,8 +52,8 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self.__kernel_map[8.9] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'fp64' not in k}
         # Skip INT4 for Hopper due to no native CUDA/Tensor Cores
         self.__kernel_map[9.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
-        # FP8 (e4m3) on Hopper SM90: CUTLASS 3x WGMMA kernels (CUTLASS v3.9.2+).
-        self.__kernel_map[9.0]['fp8_tc'] = 'cutlass3x_sm90_tensorop_gemm_e4m3_*'
+        # FP8 (e4m3) on Hopper SM90a: CUTLASS 3x WGMMA kernels; v3.x names put the MMA shape before "gemm".
+        self.__kernel_map[9.0]['fp8_tc'] = 'cutlass3x_sm90_tensorop_*gemm_e4m3_e4m3_f32_f32_f32_*'
         # Blackwell (SM100/SM103): CUTLASS v4.3.5 (v4.8.0 with CUDA 13.4+) UMMA TensorOp kernels.
         # Runtime --kernels patterns select stream_k + 2sm kernels for peak FLOPS.
         # TF32/FP16/BF16: 256x256 tiles only (best for 32/64-byte K-tiles).
@@ -101,7 +101,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'gemm,cutlass_tensorop_tf32_s1688gemm_tf32_256x128_16x3',
             'gemm,cutlass_tensorop_bf16_s16816gemm_bf16_256x128_32x3', 'gemm,cutlass_tensorop_h16816gemm_256x128_32x3',
             'gemm,cutlass_tensorop_h884gemm_256x128_32x2', 'gemm,cutlass_tensorop_s8_i16832gemm_s8_256x128_64x3',
-            'gemm,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3', 'gemm,cutlass3x_sm90_tensorop_gemm_e4m3_',
+            'gemm,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3', 'gemm,cutlass3x_sm90_tensorop_',
             'gemm,cutlass3x_sm100_tensorop_tf32gemm_', 'gemm,cutlass3x_sm100_tensorop_gemm_f16_',
             'gemm,cutlass3x_sm100_tensorop_gemm_bf16_', 'gemm,cutlass3x_sm100_tensorop_gemm_s8_',
             'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_',

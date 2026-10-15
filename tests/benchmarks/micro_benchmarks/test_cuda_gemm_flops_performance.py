@@ -174,14 +174,17 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
         benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
         benchmark._precision_need_to_run = ['fp8_tc', 'fp8_tc']
 
-        # SM90 Hopper WGMMA 3x kernel: cutlass3x_sm90_tensorop_gemm_e4m3_{a}_{b}_{acc}_{c}_{d}_{tile}_...
+        # SM90 Hopper WGMMA 3x kernels from CUTLASS v3.9.2 (MMA shape before "gemm") and v4.3.5.
         raw_output_sm90_fp8 = """
 CSV Results:
 
 Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,gemm,cutlass3x_sm90_tensorop_gemm_e4m3_e4m3_f32_bf16_bf16_128x128x64_2x1x1_0_tnn_align16_warpspecialized_cooperative_epi_tma,passed,success,universal,16384,16384,16384,3.85,2281500
-1,CUTLASS,gemm,cutlass3x_sm90_tensorop_gemm_e4m3_e4m3_f32_f16_f16_128x128x64_2x1x1_0_tnn_align16_warpspecialized_cooperative_epi_tma,passed,success,universal,16384,16384,16384,3.79,2317200
+1,CUTLASS,gemm,cutlass3x_sm90_tensorop_s64x256x32gemm_e4m3_e4m3_f32_f32_f32_128x256x128_2x1x1_0_tnn_align16_warpspecialized_cooperative_fp8_fastaccum_epi_nosmem,passed,success,universal,16384,16384,16384,3.79,2317200
+1,CUTLASS,gemm,cutlass3x_sm90_tensorop_gemm_e4m3_e4m3_f32_f32_f32_128x256x128_2x1x1_0_tnn_align16_warpspecialized_cooperative_fp8_fastaccum_epi_nosmem,passed,success,universal,16384,16384,16384,3.85,2281500
 """
+        pattern = benchmark._CudaGemmFlopsBenchmark__kernel_map[9.0]['fp8_tc']
+        names = [line.split(',')[3] for line in raw_output_sm90_fp8.splitlines() if line.startswith('1,')]
+        assert (names and all(fnmatch.fnmatchcase(name, '*' + pattern + '*') for name in names))
         # SM100 Blackwell UMMA 3x kernel: cutlass3x_sm100_tensorop_gemm_e4m3_{a}_{b}_{acc}_{c}_{d}_{tile}_...
         raw_output_sm100_fp8 = """
 CSV Results:
