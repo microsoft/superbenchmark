@@ -88,6 +88,11 @@ CUTLASS_SM107_PREFIX = $(SB_MICRO_PATH)/cutlass_sm107
 _strip_spaces = $(subst $(space),,$1)
 space := $(subst ,, )
 
+# CUTLASS v4.3.5 generates the GB300 (SM103) FP4 Ultra kernels only for CUDA 13.0+,
+# but CUTLASS enables SM103 from CUDA 12.9 and they compile to real UTCOMMA kernels
+# with it.  Lower only that generator's gate; the grep fails if it no longer applies.
+CUTLASS_SM103_ULTRA_PATCH = sed -i "/^def GenerateSM103_TensorOp_fp4_ultra_UMMA_gemm_with_block_scaled/,/return/s/(cuda_version, 13, 0)/(cuda_version, 12, 9)/" cutlass/python/cutlass_library/generator.py && grep -A3 "^def GenerateSM103_TensorOp_fp4_ultra_UMMA_gemm_with_block_scaled" cutlass/python/cutlass_library/generator.py | grep -q "(cuda_version, 12, 9)"
+
 # $(call cutlass_build,<NVCC archs>,<kernel filter>,<install prefix>,<build dir>)
 # Configures, builds and installs ./cutlass into <install prefix>/{bin,lib}.
 cutlass_build = cmake -DCMAKE_INSTALL_BINDIR=$(3)/bin \
@@ -163,10 +168,11 @@ else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	# On a GB300 the profiler will load the SM103a cubin and correctly
 	# report the kernel as "failed"; cuda_gemm_flops_performance.py
 	# excludes int8_tc from the SM10.3 kernel map so it is never run.
+	# CUTLASS_SM103_ULTRA_PATCH lets CUDA 12.9 generate the GB300 NVFP4 kernels.
 	$(eval CUTLASS_TAG     := v4.3.5)
 	$(eval CUTLASS_ARCHS   := "100a;103a")
 	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
-	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py)
+	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py && $(CUTLASS_SM103_ULTRA_PATCH))
 
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	# -----------------------------------------------------------------------
