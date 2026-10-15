@@ -86,6 +86,15 @@ def test_report_requires_correctness_and_teardown():
         utils.validate_identity(report)
 
 
+@pytest.mark.parametrize('length', [1, 512, 209715200, 15706484224])
+def test_large_tensor_probe_indices(length):
+    """FP32-rounded endpoints must never index beyond a real full-model tensor."""
+    indices = utils.uniform_indices(length)
+    assert len(indices) == 256
+    assert indices[0] == 0 and indices[-1] == length - 1
+    assert all(0 <= index < length for index in indices)
+
+
 def test_atomic_json_rejects_nonfinite_values(tmp_path):
     """A malformed report must not replace a complete report."""
     path = tmp_path / 'report.json'
