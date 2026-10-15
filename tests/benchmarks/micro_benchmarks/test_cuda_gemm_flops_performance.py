@@ -242,7 +242,7 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        precisions = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'fp8_tc', 'nvfp4_tc']
+        precisions = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'fp8_tc', 'nvfp4_tc', 'nvfp4_ue5m3_tc', 'mxfp8_tc', 'mxfp4_tc']
         benchmark = benchmark_class(benchmark_name, parameters='--precision ' + ' '.join(precisions))
         kernel_map = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.7]
         assert (sorted(kernel_map) == sorted(precisions))
@@ -256,7 +256,7 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
         benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
         benchmark._precision_need_to_run = precisions
 
-        # Kernel names from CUTLASS v4.8.0 generated for "107a"; FP8 and NVFP4 are native SM107 B-reuse kernels.
+        # Kernel names from CUTLASS v4.8.0 generated for "107a"; the FP8/FP4 ones are native SM107 B-reuse kernels.
         raw_output_tf32_tc = """
 CSV Results:
 
@@ -292,8 +292,30 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
 1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.6,14000000
 1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.5,16000000
 """
+        raw_output_nvfp4_ue5m3_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.6,15000000
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.5,15500000
+"""
+        raw_output_mxfp8_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_256x256x128_0x0x1_0_tnn_align16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.2,4100000
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_512x256x128_4x4x1_0_tnn_align16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.0,4300000
+"""
+        raw_output_mxfp4_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.6,14500000
+1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs32_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.5,15800000
+"""
         raw_outputs = [
-            raw_output_tf32_tc, raw_output_bf16_tc, raw_output_fp16_tc, raw_output_fp8_tc, raw_output_nvfp4_tc
+            raw_output_tf32_tc, raw_output_bf16_tc, raw_output_fp16_tc, raw_output_fp8_tc, raw_output_nvfp4_tc,
+            raw_output_nvfp4_ue5m3_tc, raw_output_mxfp8_tc, raw_output_mxfp4_tc
         ]
         for idx, raw_output in enumerate(raw_outputs):
             # The --kernels pattern must select the real names (matched like '*pattern*').
@@ -307,14 +329,22 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
         assert (benchmark.result['fp16_tc_flops'][0] == 2200000)
         assert (benchmark.result['fp8_tc_flops'][0] == 4400000)
         assert (benchmark.result['nvfp4_tc_flops'][0] == 16000000)
+        assert (benchmark.result['nvfp4_ue5m3_tc_flops'][0] == 15500000)
+        assert (benchmark.result['mxfp8_tc_flops'][0] == 4300000)
+        assert (benchmark.result['mxfp4_tc_flops'][0] == 15800000)
 
-        # Retargeted SM100-style FP8/NVFP4, 1SM, vs32 and MXFP4 (ue8m0) kernels are not selected.
+        # Retargeted SM100-style kernels, 1SM kernels and other scale types or block sizes are not selected.
         unselected = """
 fp8_tc,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_stream_k_2sm
 fp8_tc,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_breuse_1sm
 nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_2sm
 nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
 nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
+nvfp4_ue5m3_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma
+nvfp4_ue5m3_tc,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
+mxfp8_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_256x256x128_0x0x1_0_tnn_align16_breuse_1sm
+mxfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma
+mxfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_2sm
 """
         for line in unselected.split():
             precision, name = line.split(',')
@@ -331,21 +361,26 @@ nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x
         with mock.patch.object(dm.device_manager, 'get_device_compute_capability', return_value=10.7):
             with mock.patch.dict(os.environ):
                 benchmark = benchmark_class(
-                    benchmark_name, parameters='--precision tf32_tc fp8_tc nvfp4_tc int8_tc int4_tc'
+                    benchmark_name,
+                    parameters='--precision tf32_tc fp8_tc nvfp4_tc nvfp4_ue5m3_tc mxfp8_tc mxfp4_tc int8_tc int4_tc'
                 )
                 assert (benchmark._preprocess() is True)
                 assert (os.environ['LD_LIBRARY_PATH'].split(os.pathsep)[0] == os.path.join(prefix, 'lib'))
             assert (benchmark.return_code == ReturnCode.SUCCESS)
             # SM107 has no INT8/INT4 kernels, so they are skipped.
-            assert (benchmark._precision_need_to_run == ['tf32_tc', 'fp8_tc', 'nvfp4_tc'])
+            expected = ['tf32_tc', 'fp8_tc', 'nvfp4_tc', 'nvfp4_ue5m3_tc', 'mxfp8_tc', 'mxfp4_tc']
+            assert (benchmark._precision_need_to_run == expected)
             assert (benchmark._args.bin_dir == os.path.join(prefix, 'bin'))
             kernel_map = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.7]
-            tf32_cmd, fp8_cmd, nvfp4_cmd = benchmark._commands
+            tf32_cmd, fp8_cmd, nvfp4_cmd, nvfp4_ue5m3_cmd, mxfp8_cmd, mxfp4_cmd = benchmark._commands
+            runtime_e4m3 = ' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'
             assert (tf32_cmd.startswith(os.path.join(prefix, 'bin', 'cutlass_profiler') + ' '))
             assert ('--operation=gemm ' in tf32_cmd and tf32_cmd.endswith(' --kernels=' + kernel_map['tf32_tc']))
-            assert ('--operation=gemm ' in fp8_cmd)
-            assert (fp8_cmd.endswith(' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'))
-            assert ('--operation=block_scaled_gemm ' in nvfp4_cmd and 'runtime_input_datatype' not in nvfp4_cmd)
+            assert ('--operation=gemm ' in fp8_cmd and fp8_cmd.endswith(runtime_e4m3))
+            for cmd in [nvfp4_cmd, nvfp4_ue5m3_cmd, mxfp4_cmd]:
+                assert ('--operation=block_scaled_gemm ' in cmd and 'runtime_input_datatype' not in cmd)
+            # MXFP8 kernels are block-scaled and runtime-typed.
+            assert ('--operation=block_scaled_gemm ' in mxfp8_cmd and mxfp8_cmd.endswith(runtime_e4m3))
 
             with mock.patch.dict(os.environ):
                 benchmark = benchmark_class(benchmark_name, parameters='--precision int8_tc')

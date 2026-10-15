@@ -4,6 +4,7 @@
 """Module of the FLOPs performance benchmarks."""
 
 import os
+import re
 
 from superbench.common.utils import logger
 from superbench.common.utils import device_manager as dm
@@ -81,7 +82,8 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32*256x*ultra_2sm*'
         # Rubin SM107a: CUTLASS v4.8.0 kernels from the separate cutlass_sm107 install (third_party/cutlass.mk).
         #   - TF32/FP16/BF16: SM100 generators retargeted to Sm107, selected like SM100.
-        #   - FP8/NVFP4: native SM107 kernels (B-reuse schedules, no stream-K), N=256 2SM tiles.
+        #   - FP8, NVFP4 (UE4M3 or UE5M3 scales, 16-element blocks) and MXFP8/MXFP4 (UE8M0 scales, 32-element
+        #     blocks): native SM107 kernels (B-reuse schedules, no stream-K), N=256 2SM tiles.
         #   - No INT8: CuTe enables tcgen05 kind::i8 only for SM100a/SM101a/SM110.
         self.__kernel_map[10.7] = {
             'tf32_tc': 'cutlass3x_sm107_tensorop_tf32gemm*256x256x*stream_k_2sm*',
@@ -90,6 +92,11 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'fp8_tc': 'cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32*x256x128_*breuse_2sm*',
             'nvfp4_tc':
             'cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32*x256x256_*o_vs16_*breuse_2sm*',
+            'nvfp4_ue5m3_tc':
+            'cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32*x256x256_*o_vs16_*breuse_2sm*',
+            'mxfp8_tc': 'cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32*x256x128_*breuse_2sm*',
+            'mxfp4_tc':
+            'cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32*x256x256_*o_vs32_*breuse_2sm*',
         }
         # Compute capabilities whose CUTLASS build lives in its own SB_MICRO_PATH subfolder.
         self.__cutlass_subdir = {10.7: 'cutlass_sm107'}
@@ -108,7 +115,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_',
             'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_', 'gemm,cutlass3x_sm107_tensorop_tf32gemm_',
             'gemm,cutlass3x_sm107_tensorop_gemm_f16_', 'gemm,cutlass3x_sm107_tensorop_gemm_bf16_',
-            'gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_', 'block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_'
+            'gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_', 'block_scaled_gemm,cutlass3x_sm107_bstensorop_'
         ]
 
     def add_parser_arguments(self):
@@ -142,19 +149,18 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             return False
 
         for p in self._precision_need_to_run:
+            kernels = self.__kernel_map[capability][p]
             command = os.path.join(self._args.bin_dir, self._bin_name)
             command += (' --warmup-iterations=' + str(self._args.num_warmup))
-            # NVFP4 (and MXFP4) require the block_scaled_gemm operation kind
-            # in cutlass_profiler — they have separate kernel registries from
-            # the standard gemm operation.
-            operation = 'block_scaled_gemm' if p in ('nvfp4_tc', 'mxfp4_tc') else 'gemm'
+            # Block-scaled kernels (bstensorop) are only listed under the block_scaled_gemm operation.
+            operation = 'block_scaled_gemm' if '_bstensorop_' in kernels else 'gemm'
             command += (' --operation=' + operation)
             command += (' --n=' + str(self._args.n))
             command += (' --k=' + str(self._args.k))
             command += (' --m=' + str(self._args.m))
-            command += (' --kernels=' + self.__kernel_map[capability][p])
-            # Runtime-typed FP8 kernels ("f8" elements) take the A/B type at launch.
-            if '_f8_f8_' in self.__kernel_map[capability][p]:
+            command += (' --kernels=' + kernels)
+            # Runtime-typed FP8 kernels ("f8" elements: gemm_f8_f8, ue8m0xf8) take the A/B type at launch.
+            if re.search(r'[_x]f8_', kernels):
                 command += ' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'
             self._commands.append(command)
 

@@ -71,13 +71,18 @@ CUTLASS_KERNELS_SM100 := \
 #     reuse schedules).  Only native names contain "breuse" (or "no_breuse").
 #     The FP8 ones are runtime-typed (f8_f8).  NVFP4 = e2m1 with ue4m3 scale
 #     and 16-element blocks (vs16).
+#   - NVFP4 with UE5M3 scales (vs16), MXFP4 (e2m1, ue8m0, vs32) and MXFP8
+#     (runtime-typed f8, ue8m0): native 2SM kernels only, to bound build time.
 #   - No INT8: CuTe enables tcgen05 kind::i8 only for SM100a/SM101a/SM110.
 CUTLASS_KERNELS_SM107 := \
 	cutlass3x_sm107_tensorop_tf32gemm_f32_f32_f32_f32_f32_*,\
 	cutlass3x_sm107_tensorop_gemm_f16_f16_f32_f16_f16_*,\
 	cutlass3x_sm107_tensorop_gemm_bf16_bf16_f32_bf16_bf16_*,\
 	cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_*breuse_*,\
-	cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_*_o_vs16_*breuse_*
+	cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_*_o_vs16_*breuse_*,\
+	cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_*_o_vs16_*breuse_2sm*,\
+	cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_*_o_vs32_*breuse_2sm*,\
+	cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_*breuse_2sm*
 
 # Install prefix of the Rubin build; cuda_gemm_flops_performance.py uses it for CC 10.7.
 CUTLASS_SM107_PREFIX = $(SB_MICRO_PATH)/cutlass_sm107
@@ -225,7 +230,7 @@ endif
 	# -----------------------------------------------------------------------
 	# Shared clone → patch → build → install pipeline
 	# -----------------------------------------------------------------------
-	# With the narrowed kernel filters (Blackwell ~3,800 objects, Rubin ~2,700;
+	# With the narrowed kernel filters (Blackwell ~3,800 objects, Rubin ~3,400;
 	# max ~840 per sub-group), shared per-family libraries stay under the
 	# R_AARCH64_PREL32 ±2 GB limit on aarch64.  Unwind table suppression
 	# further reduces .eh_frame pressure.

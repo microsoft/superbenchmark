@@ -21,7 +21,7 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
 
         self._support_precisions = [
             'fp64', 'fp32', 'fp16', 'fp64_tc', 'tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc', 'int4_tc', 'fp8_tc',
-            'nvfp4_tc'
+            'nvfp4_tc', 'nvfp4_ue5m3_tc', 'mxfp8_tc', 'mxfp4_tc'
         ]
         self._precision_need_to_run = list()
         self._metric_map = {
@@ -36,6 +36,9 @@ class GemmFlopsBenchmark(MicroBenchmarkWithInvoke):
             'int4_tc': 'int4_tc_iops',
             'fp8_tc': 'fp8_tc_flops',
             'nvfp4_tc': 'nvfp4_tc_flops',
+            'nvfp4_ue5m3_tc': 'nvfp4_ue5m3_tc_flops',
+            'mxfp8_tc': 'mxfp8_tc_flops',
+            'mxfp4_tc': 'mxfp4_tc_flops',
             'fp32_xdlops': 'fp32_xdlops_flops',
             'fp16_xdlops': 'fp16_xdlops_flops',
             'bf16_xdlops': 'bf16_xdlops_flops',
