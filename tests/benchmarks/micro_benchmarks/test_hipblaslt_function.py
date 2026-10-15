@@ -65,7 +65,9 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         row.update(overrides or {})
         for column in missing:
             del row[column]
-        columns = list(reversed(row)) if reverse else list(row)
+        columns = list(row)
+        if reverse:
+            columns.reverse()
         return '[0]:' + ','.join(columns) + '\n' + ','.join(row[column] for column in columns) + '\n'
 
     def test_hipblaslt_gemm_cls(self):
