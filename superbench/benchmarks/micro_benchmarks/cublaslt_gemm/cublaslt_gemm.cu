@@ -14,6 +14,17 @@
 using fp4e2m1 = __nv_fp4_e2m1;
 #endif
 
+#if CUDA_VERSION >= 12080 && __has_include(<cuda_fp6.h>)
+#include <cuda_fp6.h>
+#define SUPERBENCH_HAS_CUDA_FP6 1
+#else
+#define SUPERBENCH_HAS_CUDA_FP6 0
+#endif
+
+#ifndef SUPERBENCH_HAS_MXFP8_MN_K4_SCALE
+#define SUPERBENCH_HAS_MXFP8_MN_K4_SCALE 0
+#endif
+
 #include "cublaslt_utils.h"
 
 using fp64 = double;
@@ -88,10 +99,45 @@ void process_args(int argc, char **argv, Args *args) {
     }
 }
 
+template <typename T> __host__ __device__ constexpr size_t matrix_bytes(size_t count) {
+#if SUPERBENCH_HAS_CUDA_FP6
+    if constexpr (std::is_same_v<T, __nv_fp6_e2m3> || std::is_same_v<T, __nv_fp6_e3m2>) {
+        return (count / 4) * 3 + ((count % 4) * 6 + 7) / 8;
+    }
+#endif
+    return count * sizeof(T);
+}
+
+#if SUPERBENCH_HAS_CUDA_FP6
+__host__ __device__ constexpr uint32_t pack_fp6(uint8_t value) {
+    const auto bits = static_cast<uint32_t>(value & 0x3f);
+    return bits | (bits << 6) | (bits << 12) | (bits << 18);
+}
+
+static_assert(matrix_bytes<__nv_fp6_e2m3>(4) == 3, "FP6 must pack four values into three bytes");
+static_assert(matrix_bytes<__nv_fp6_e3m2>(5) == 4, "FP6 allocation must include a partial byte");
+static_assert(matrix_bytes<__nv_fp6_e2m3>(6) == 5, "FP6 allocation must round up partial bytes");
+static_assert(matrix_bytes<__nv_fp6_e3m2>(7) == 6, "FP6 allocation must round up partial bytes");
+static_assert(pack_fp6(0x15) == 0x555555, "Unexpected FP6 bit packing");
+static_assert(pack_fp6(0xff) == 0xffffff, "FP6 packing must discard storage padding bits");
+#endif
+
 template <typename T> __global__ void init_matrix(T *matrix, const fp32 val, const size_t N) {
     size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
-    for (size_t i = tid; i < N; i += gridDim.x * blockDim.x) {
-        matrix[i] = T(val);
+#if SUPERBENCH_HAS_CUDA_FP6
+    if constexpr (std::is_same_v<T, __nv_fp6_e2m3> || std::is_same_v<T, __nv_fp6_e3m2>) {
+        // cuBLASLt consumes contiguous six-bit values, not byte-sized CUDA FP6 objects.
+        const auto packed = pack_fp6(T(val).__x);
+        auto *bytes = reinterpret_cast<uint8_t *>(matrix);
+        for (size_t i = tid; i < matrix_bytes<T>(N); i += gridDim.x * blockDim.x) {
+            bytes[i] = static_cast<uint8_t>(packed >> (8 * (i % 3)));
+        }
+    } else
+#endif
+    {
+        for (size_t i = tid; i < N; i += gridDim.x * blockDim.x) {
+            matrix[i] = T(val);
+        }
     }
 }
 
@@ -112,6 +158,12 @@ template <typename T> cudaDataType_t get_datatype() {
     if (std::is_same<T, fp4e2m1>::value)
         return CUDA_R_4F_E2M1;
 #endif
+#if SUPERBENCH_HAS_CUDA_FP6
+    if (std::is_same<T, __nv_fp6_e2m3>::value)
+        return CUDA_R_6F_E2M3;
+    if (std::is_same<T, __nv_fp6_e3m2>::value)
+        return CUDA_R_6F_E3M2;
+#endif
     if (std::is_same<T, int8>::value)
         return CUDA_R_8I;
     throw std::invalid_argument("Unknown type");
@@ -119,7 +171,12 @@ template <typename T> cudaDataType_t get_datatype() {
 
 template <typename Ta, typename Tb, typename Tout, typename Tc>
 float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, int iter, bool autotune,
-                       int iter_autotune, int warmup_autotune) {
+                       int iter_autotune, int warmup_autotune
+#if CUDA_VERSION >= 12080
+                       ,
+                       cublasLtGemm::MatrixScaleModes scale_modes = {}
+#endif
+) {
     // init matrix
     Ta *matrix_a = nullptr;
     Tb *matrix_b = nullptr;
@@ -127,14 +184,14 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     Tout *matrix_out = nullptr;
     bool own_matrix_c = false;
     batch = std::max<size_t>(batch, 1);
-    cudaMalloc(&matrix_a, m * k * batch * sizeof(Ta));
-    cudaMalloc(&matrix_b, k * n * batch * sizeof(Tb));
-    cudaMalloc(&matrix_out, m * n * batch * sizeof(Tout));
+    cudaMalloc(&matrix_a, matrix_bytes<Ta>(m * k * batch));
+    cudaMalloc(&matrix_b, matrix_bytes<Tb>(k * n * batch));
+    cudaMalloc(&matrix_out, matrix_bytes<Tout>(m * n * batch));
 
     // cuBLASLt in-place (C == D) requires identical C/D descriptors, so a separate C buffer
     // is only needed when Tc differs from Tout (e.g. fp4 inputs with fp16 C and fp4 D).
     if constexpr (!std::is_same_v<Tc, Tout>) {
-        cudaMalloc(&matrix_c, m * n * batch * sizeof(Tc));
+        cudaMalloc(&matrix_c, matrix_bytes<Tc>(m * n * batch));
         own_matrix_c = true;
     } else {
         matrix_c = reinterpret_cast<Tc *>(matrix_out);
@@ -151,6 +208,9 @@ float timing_matmul_tn(size_t m, size_t n, size_t k, size_t batch, int warmup, i
     gemm->Init();
     gemm->Setup(m, n, k, batch, lda, ldb, ldc, ldd, get_datatype<Ta>(), get_datatype<Tb>(), get_datatype<Tc>(),
                 get_datatype<Tout>(), CUBLAS_OP_T, CUBLAS_OP_N, CUBLASLT_EPILOGUE_DEFAULT);
+#if CUDA_VERSION >= 12080
+    gemm->SetupScaleModes(scale_modes, CUBLAS_OP_T, CUBLAS_OP_N);
+#endif
 
     void *workspace = nullptr;
     size_t workspace_size;
@@ -202,6 +262,26 @@ template <typename Ta, typename Tb = Ta, typename Tout = Ta, typename Tc = Tout>
            float(args->m) * float(args->n) * float(2 * args->k - 1) / 1e6 / time_us * std::max(args->batch, 1));
 }
 
+#if CUDA_VERSION >= 12080
+template <typename Ta, typename Tb = Ta, typename Tout = Ta, typename Tc = Tout>
+void run_scaled(const Args *args, cublasLtMatmulMatrixScale_t input_scale_mode,
+                cublasLtMatmulMatrixScale_t output_scale_mode) {
+    cublasLtGemm::MatrixScaleModes scale_modes;
+    scale_modes.enabled = true;
+    scale_modes.a = input_scale_mode;
+    scale_modes.b = input_scale_mode;
+    scale_modes.d = CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F;
+    scale_modes.d_out = output_scale_mode;
+
+    float time_us =
+        timing_matmul_tn<Ta, Tb, Tout, Tc>(args->m, args->n, args->k, args->batch, args->warmup, args->iter,
+                                           args->autotune, args->iter_autotune, args->warmup_autotune, scale_modes);
+    // m n k batch time_us tflops
+    printf("%d\t%d\t%d\t%d\t%f\t%f\n", args->m, args->n, args->k, args->batch, time_us,
+           float(args->m) * float(args->n) * float(2 * args->k - 1) / 1e6 / time_us * std::max(args->batch, 1));
+}
+#endif
+
 int main(int argc, char **argv) {
     Args args;
     process_args(argc, argv, &args);
@@ -220,9 +300,47 @@ int main(int argc, char **argv) {
         run<fp8e5m2, fp8e4m3, fp16>(&args);
 #if CUDA_VERSION >= 12080
     else if (args.in_type == "fp4e2m1")
-        run<fp4e2m1, fp4e2m1, fp4e2m1, fp16>(&args);
+        run_scaled<fp4e2m1, fp4e2m1, fp4e2m1, fp16>(&args, CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3,
+                                                    CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3);
 #endif
-    else if (args.in_type == "int8")
+    else if (args.in_type == "fp6e2m3") {
+#if SUPERBENCH_HAS_CUDA_FP6
+        run_scaled<__nv_fp6_e2m3, __nv_fp6_e2m3, fp16>(&args, CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0,
+                                                       CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F);
+#else
+        throw std::runtime_error("Input type fp6e2m3 requires CUDA FP6 header and cuBLASLt FP6 datatype support");
+#endif
+    } else if (args.in_type == "fp6e3m2") {
+#if SUPERBENCH_HAS_CUDA_FP6
+        run_scaled<__nv_fp6_e3m2, __nv_fp6_e3m2, fp16>(&args, CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0,
+                                                       CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F);
+#else
+        throw std::runtime_error("Input type fp6e3m2 requires CUDA FP6 header and cuBLASLt FP6 datatype support");
+#endif
+    } else if (args.in_type == "mxfp8_vec32_mn_k4_ue8m0") {
+#if SUPERBENCH_HAS_MXFP8_MN_K4_SCALE
+        run_scaled<fp8e4m3, fp8e4m3, fp8e4m3, fp16>(&args, CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_MN_K4_UE8M0,
+                                                    CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0);
+#else
+        throw std::runtime_error(
+            "Input type mxfp8_vec32_mn_k4_ue8m0 requires CUDA/cuBLASLt support for VEC32_MN_K4_UE8M0 scaling");
+#endif
+    } else if (args.in_type == "mxfp8_vec128_mn_k4_ue8m0") {
+#if SUPERBENCH_HAS_MXFP8_MN_K4_SCALE
+        run_scaled<fp8e4m3, fp8e4m3, fp8e4m3, fp16>(&args, CUBLASLT_MATMUL_MATRIX_SCALE_VEC128_MN_K4_UE8M0,
+                                                    CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0);
+#else
+        throw std::runtime_error(
+            "Input type mxfp8_vec128_mn_k4_ue8m0 requires CUDA/cuBLASLt support for VEC128_MN_K4_UE8M0 scaling");
+#endif
+    } else if (args.in_type == "nvfp4_vec16_ue4m3") {
+#if CUDA_VERSION >= 12080
+        run_scaled<fp4e2m1, fp4e2m1, fp4e2m1, fp16>(&args, CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3,
+                                                    CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3);
+#else
+        throw std::runtime_error("Input type nvfp4_vec16_ue4m3 requires CUDA/cuBLASLt support for block-scaled FP4");
+#endif
+    } else if (args.in_type == "int8")
         run<int8>(&args);
     else
         throw std::invalid_argument("Unknown type " + args.in_type);

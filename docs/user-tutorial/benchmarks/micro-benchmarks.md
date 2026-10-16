@@ -64,11 +64,45 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul) or [`hipblasLt-bench`](https://github.com/ROCm/hipBLASLt/blob/develop/clients/benchmarks/README.md).
 
-The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1, and INT8 inputs.
-FP4 requires CUDA 12.8 or later; an available cuBLASLt algorithm for each input type and
-GPU must still be confirmed at runtime. CUDA 13.4 builds the benchmark for SM 107.
-FP6 and block-scaled MXFP formats are not covered by this benchmark's current matrix
-initialization and cuBLASLt configuration.
+The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1, FP6 E2M3/E3M2,
+explicit MXFP8 block-scaled modes, explicit NVFP4 block-scaled mode, and INT8 inputs. The
+supported `--in_types` names are `fp64`, `fp32`, `fp16`, `bf16`, `fp8e4m3`, `fp8e5m2`,
+`fp4e2m1`, `fp6e2m3`, `fp6e3m2`, `mxfp8_vec32_mn_k4_ue8m0`,
+`mxfp8_vec128_mn_k4_ue8m0`, `nvfp4_vec16_ue4m3`, and `int8`.
+
+FP4 and NVFP4 require CUDA 12.8 or later. The explicit MXFP8 `MN_K4_UE8M0` scale modes require
+cuBLASLt headers and runtime support for the corresponding matrix scale enum. FP6 requires CUDA
+FP6 headers and cuBLASLt FP6 datatype support. Both FP6 modes use packed six-bit inputs with
+VEC32 UE8M0 block scaling and FP16 output. MN_K4 input scale buffers pad both the M/N dimension
+and the K-scale count to multiples of four. An available cuBLASLt algorithm for each input type,
+scaling mode, and GPU must still be confirmed at runtime; unsupported combinations fail during the
+native benchmark rather than running a different datatype.
+
+INT8 input/output uses INT32 accumulation with FP32 alpha/beta scalars. Block-scaled FP8
+uses the implicit unit scalar D scale (a null D-scale pointer); its output block scales are
+specified separately through the D-out scale mode and pointer.
+
+By default, the benchmark stops at the first failed datatype/shape command. To probe multiple
+datatypes on a new GPU or CUDA version, add `tolerant_fail: true` under the benchmark's
+`parameters` in the YAML configuration (or pass `--tolerant_fail` on the command line):
+
+```yaml
+cublaslt-gemm:
+  parameters:
+    tolerant_fail: true
+    in_types: [fp16, fp6e2m3, nvfp4_vec16_ue4m3, int8]
+    shapes: ["4096,4096,4096"]
+```
+
+With failure tolerance enabled, all datatype/shape commands are attempted and successful results
+are retained, but failed commands are still logged and the benchmark return code remains nonzero.
+This option does not make unsupported configurations supported or substitute another algorithm
+or datatype. For a fully successful benchmark, remove the configurations that fail on the target
+GPU and library combination.
+
+For quick execution checks, set `num_warmup: 1` and `num_steps: 5` under `parameters`.
+These shorter runs are useful for diagnosing support and configuration errors, not stable
+performance measurements.
 
 #### Metrics
 
