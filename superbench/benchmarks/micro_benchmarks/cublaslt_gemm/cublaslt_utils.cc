@@ -149,7 +149,10 @@ void cublasLtGemm::SetupScaleModes(const MatrixScaleModes &scale_modes, cublasOp
     } else {
         AllocateScaleBuffer(b_scale_size, sizeof(ue8m0_one), &ue8m0_one, &b_scale_dev);
     }
-    AllocateScaleBuffer(d_scale_size, sizeof(fp32_one), &fp32_one, &d_scale_dev);
+    // A null scalar D scale is implicitly one; block-scaled FP8 rejects a custom scalar pointer.
+    if (scale_modes.d != CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {
+        AllocateScaleBuffer(d_scale_size, sizeof(fp32_one), &fp32_one, &d_scale_dev);
+    }
     if (scale_modes.d_out == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3) {
         AllocateScaleBuffer(d_out_scale_size, sizeof(ue4m3_one), &ue4m3_one, &d_out_scale_dev);
     } else {
@@ -249,7 +252,7 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         scale_type = CUDA_R_64F;
     } else if (a_type == CUDA_R_8I) {
         gemm_compute_type = CUBLAS_COMPUTE_32I;
-        scale_type = CUDA_R_32I;
+        scale_type = d_type == CUDA_R_8I ? CUDA_R_32F : CUDA_R_32I;
     } else {
         gemm_compute_type = CUBLAS_COMPUTE_32F_FAST_TF32;
         scale_type = CUDA_R_32F;

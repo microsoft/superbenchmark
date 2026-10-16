@@ -76,6 +76,32 @@ FP6 headers and cuBLASLt FP6 datatype support. An available cuBLASLt algorithm f
 scaling mode, and GPU must still be confirmed at runtime; unsupported combinations fail during the
 native benchmark rather than running a different datatype.
 
+INT8 input/output uses INT32 accumulation with FP32 alpha/beta scalars. Block-scaled FP8
+uses the implicit unit scalar D scale (a null D-scale pointer); its output block scales are
+specified separately through the D-out scale mode and pointer.
+
+By default, the benchmark stops at the first failed datatype/shape command. To probe multiple
+datatypes on a new GPU or CUDA version, add `tolerant_fail: true` under the benchmark's
+`parameters` in the YAML configuration (or pass `--tolerant_fail` on the command line):
+
+```yaml
+cublaslt-gemm:
+  parameters:
+    tolerant_fail: true
+    in_types: [fp16, fp6e2m3, nvfp4_vec16_ue4m3, int8]
+    shapes: ["4096,4096,4096"]
+```
+
+With failure tolerance enabled, all datatype/shape commands are attempted and successful results
+are retained, but failed commands are still logged and the benchmark return code remains nonzero.
+This option does not make unsupported configurations supported or substitute another algorithm
+or datatype. For a fully successful benchmark, remove the configurations that fail on the target
+GPU and library combination.
+
+For quick execution checks, set `num_warmup: 1` and `num_steps: 5` under `parameters`.
+These shorter runs are useful for diagnosing support and configuration errors, not stable
+performance measurements.
+
 #### Metrics
 
 | Name                                                      | Unit           | Description                     |
