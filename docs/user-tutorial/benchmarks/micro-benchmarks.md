@@ -72,7 +72,9 @@ supported `--in_types` names are `fp64`, `fp32`, `fp16`, `bf16`, `fp8e4m3`, `fp8
 
 FP4 and NVFP4 require CUDA 12.8 or later. The explicit MXFP8 `MN_K4_UE8M0` scale modes require
 cuBLASLt headers and runtime support for the corresponding matrix scale enum. FP6 requires CUDA
-FP6 headers and cuBLASLt FP6 datatype support. An available cuBLASLt algorithm for each input type,
+FP6 headers and cuBLASLt FP6 datatype support. Both FP6 modes use packed six-bit inputs with
+VEC32 UE8M0 block scaling and FP16 output. MN_K4 input scale buffers pad both the M/N dimension
+and the K-scale count to multiples of four. An available cuBLASLt algorithm for each input type,
 scaling mode, and GPU must still be confirmed at runtime; unsupported combinations fail during the
 native benchmark rather than running a different datatype.
 

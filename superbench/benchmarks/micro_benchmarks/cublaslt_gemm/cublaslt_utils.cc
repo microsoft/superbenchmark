@@ -22,11 +22,15 @@ constexpr size_t DivideRoundUp(size_t value, size_t divisor) {
 constexpr size_t RoundUp(size_t value, size_t alignment) { return DivideRoundUp(value, alignment) * alignment; }
 
 constexpr size_t GetMnK4ScaleTensorSize(size_t inner, size_t outer, size_t vector_size) {
-    return RoundUp(outer, 4) * DivideRoundUp(inner, vector_size);
+    return RoundUp(outer, 4) * RoundUp(DivideRoundUp(inner, vector_size), 4);
 }
 
-static_assert(GetMnK4ScaleTensorSize(160, 5, 32) == 40, "Unexpected VEC32 MN_K4 scale tensor size");
-static_assert(GetMnK4ScaleTensorSize(257, 5, 128) == 24, "Unexpected VEC128 MN_K4 scale tensor size");
+static_assert(GetMnK4ScaleTensorSize(160, 5, 32) == 64, "Unexpected VEC32 MN_K4 scale tensor size");
+static_assert(GetMnK4ScaleTensorSize(257, 5, 128) == 32, "Unexpected VEC128 MN_K4 scale tensor size");
+static_assert(GetMnK4ScaleTensorSize(160, 128, 32) == 1024, "Unexpected VEC32 MN_K4 K-pack padding");
+static_assert(GetMnK4ScaleTensorSize(256, 128, 128) == 512, "Unexpected VEC128 MN_K4 K-pack padding");
+static_assert(GetMnK4ScaleTensorSize(128, 128, 32) == 512, "Unexpected aligned VEC32 MN_K4 scale tensor size");
+static_assert(GetMnK4ScaleTensorSize(512, 128, 128) == 512, "Unexpected aligned VEC128 MN_K4 scale tensor size");
 
 size_t GetScaleTensorSize(size_t inner, size_t outer, cublasLtMatmulMatrixScale_t scale_mode) {
     if (scale_mode == CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {
@@ -155,7 +159,7 @@ void cublasLtGemm::SetupScaleModes(const MatrixScaleModes &scale_modes, cublasOp
     }
     if (scale_modes.d_out == CUBLASLT_MATMUL_MATRIX_SCALE_VEC16_UE4M3) {
         AllocateScaleBuffer(d_out_scale_size, sizeof(ue4m3_one), &ue4m3_one, &d_out_scale_dev);
-    } else {
+    } else if (scale_modes.d_out != CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F) {
         AllocateScaleBuffer(d_out_scale_size, sizeof(ue8m0_one), &ue8m0_one, &d_out_scale_dev);
     }
 
