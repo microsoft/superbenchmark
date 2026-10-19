@@ -6,10 +6,14 @@
 import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 import pytest
 
-torch = pytest.importorskip('torch')
+if TYPE_CHECKING:
+    import torch
+else:
+    torch = pytest.importorskip('torch')
 
 
 @pytest.fixture

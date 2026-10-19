@@ -182,6 +182,14 @@ sequences without padding. It is reproducible, not a production-data accuracy
 or representativeness evaluation. Mock data and mocked subprocesses are used
 only in auxiliary unit tests.
 
+#### Validation Status
+
+This is a draft implementation with isolated H100 80GB evidence. A four-GPU
+full-model worker and real SuperBench frontend run completed, but the original
+outer acceptance report was not collected successfully. Repeated cold-run
+qualification, steady-state utilization acceptance and the final reproducible
+controller runtime remain pending. This is not cross-SKU qualification.
+
 #### Runtime And Execution
 
 Use a separate worker environment; do not replace the legacy SuperBench
