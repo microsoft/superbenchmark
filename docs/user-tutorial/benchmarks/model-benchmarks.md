@@ -163,3 +163,113 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 | megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
 | megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
 
+## Official-checkpoint V2-Lite Generative Inference
+
+### `deepseek-v2-lite-inference`
+
+This opt-in standalone MODEL benchmark loads the complete official
+`deepseek-ai/DeepSeek-V2-Lite` checkpoint at
+`604d5664dddd88a0433dbae533b7fe9472482de0`, with four BF16 weight files totaling
+31,413,626,576 bytes. It benchmarks prefill and multi-token cached generation,
+not repeated forward passes on randomly initialized weights. No Megatron,
+training implementation, quantization or CPU offload is required.
+
+Use the
+[`inference profile`](../../../superbench/config/deepseek-v2-lite-inference.yaml)
+as its own entry, with one local controller and one GPU inference replica.
+`batch_size` is the number of simultaneous requests in each measured batch.
+The versioned, small fixed-text fixture controls prompt token lengths; it is
+not a model-quality or production-request-distribution benchmark.
+Generated counts come from actual output token IDs, including EOS when emitted,
+not `batch_size * max_new_tokens`. EOS and maximum-length termination remain
+enabled; all-first-token-EOS output does not satisfy the cached-decode workload.
+
+#### Validation Status
+
+This is a draft implementation, not a numerically qualified inference profile.
+Generation and shutdown have executed on H100, but the independent
+engine/reference log-probability check has not passed. Its current numerical
+cases use 16/23/32-token prompts and at most four generated tokens; representative
+coverage of the configured 512-token prompts, batch eight and later decode
+positions is still required. Repeated cold-run and steady-state utilization
+qualification also remain pending. Do not replace numerical validation with
+matching generated tokens or a successful process exit.
+
+#### Isolated Runtime
+
+The engine requires vLLM 0.31.0 and a compatible CUDA/ROCm/PyTorch installation.
+Do not install vLLM over the existing SuperBench training environment.
+Set `runtime_python` to the interpreter in its separate engine environment.
+Set `reference_python` to a separate environment containing the pinned
+[`official-code reference packages`](../../../dockerfile/requirements/deepseek-v2-lite-reference.txt).
+The controller only imports standard-library worker helpers, not vLLM.
+
+The optional
+[`worker Dockerfile`](../../../dockerfile/deepseek-v2-lite-inference.dockerfile)
+prepares the engine and reference environments. This worker image does not
+include the full SuperBench controller. The example native configuration uses
+`/opt/vllm/bin/python`; when executing a worker directly in the image, use its
+engine `python3` interpreter instead. CUDA/ROCm registration is not certification
+of every GPU or runtime combination.
+
+```bash
+sb exec --config-file superbench/config/deepseek-v2-lite-inference.yaml
+```
+
+The command assumes SuperBench and both worker environments are already prepared
+and accessible on the same host. In a container, mount the updated checkout
+read-only and provide a writable, dedicated result/cache directory.
+
+#### Correctness And Lifecycle
+
+The engine exercises variable-length batched prompts, single requests and forced
+EOS termination. Outputs must match the submitted prompt token IDs. A separate
+unsharded official-code FP32 reference, with TF32 disabled, then checks
+prefill and multiple decode steps on the same token prefixes, comparing cached
+and complete-prefix logits across the vocabulary and sampled engine top-token
+log probabilities and requires greedy token agreement. Sampled engine
+probabilities do not constitute an exhaustive
+comparison of the engine's full vocabulary logits or all expert routing paths.
+Correctness, complete requests, finite timestamps and actual token counts must
+all pass; a plausible generated sentence or process exit zero is insufficient.
+
+Engine model residency is BF16, with no quantized or offloaded fallback.
+Inter-request prefix caching and chunked prefill are disabled for this initial
+profile; within-request decode state is retained. Changing those policies or
+using tensor/expert parallelism requires a separately named validation profile.
+
+vLLM 0.31.0 reports engine-core monotonic timestamps and provides explicit worker
+joining through its engine-core client. This version-specific access is
+intentional: incompatible metrics or shutdown APIs fail rather than supplying
+default timings. The engine is shut down before the independent reference is
+loaded, so their full model copies do not simultaneously consume GPU memory.
+The FP32 reference has approximately 62.8GB of parameter storage alone, so this
+initial complete validation profile needs an 80GB-class GPU even if the BF16
+engine could fit on a smaller device. That is a reference-profile requirement,
+not a claim that the model intrinsically requires H100 or eight GPUs.
+
+#### Timing And Metrics
+
+Every invocation uses a new empty HF/Hub/Xet/module cache without deleting shared
+caches. One `duration <3600s` covers model download, complete weight hashes,
+loading, graph/kernel preparation, warmup, measured generation, reference checks,
+result writing and worker teardown. The controller reserves cleanup time and
+rejects watchdog exits. Image pulls, dependency installation and controller
+installation are separate preparation steps, not certified by the model-cold
+timer.
+
+| Metric | Unit | Scope |
+| --- | --- | --- |
+| `bf16_inference_step_time` | ms | Mean complete synchronized generation batch |
+| `bf16_inference_output_tokens_per_second` | tokens/s | Actual outputs divided by measured batch time |
+| `bf16_inference_request_prefill_time` | ms | Engine scheduled-to-first-token interval |
+| `bf16_inference_ttft` | ms | Engine first-token latency, including frontend/queue effects |
+| `bf16_inference_decode_tpot` | ms/token | First-to-last-token span divided by actual decode intervals |
+| `successful_requests` | requests | Completed measured requests |
+| `actual_output_tokens` | tokens | Actual measured output IDs, not the configured maximum |
+| `end_to_end_seconds` | s | Complete worker launch through teardown/report validation |
+
+Request prefill/decode timestamps are not isolated GPU kernel timings.
+One-token EOS requests contribute to total tokens and latency but not to TPOT.
+Keep cold-start time, steady per-GPU utilization and model quality separate;
+GPU device busy time is not MFU.
