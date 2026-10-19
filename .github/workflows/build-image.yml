@@ -144,7 +144,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "cache_to=${CACHE_TO}" >> "$GITHUB_OUTPUT"
       - name: Echo build args
-        run: echo ${{ steps.metadata.outputs.build_args }}
+        run: echo "build args: ${{ steps.metadata.outputs.build_args }} (uid=$(id -u) host=$(hostname))"
       - name: Echo image tag
         run: echo ${{ steps.metadata.outputs.tags }}
       - name: Set up Docker Buildx
