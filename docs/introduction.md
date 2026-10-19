@@ -18,8 +18,8 @@ __SuperBench__ is a validation and profiling tool for AI infrastructure, which s
   * Provide comprehensive performance comparison between different existing hardware
   * Provide insights for hardware and software co-design
 
-It provides micro-benchmark for primitive computation and communication benchmarking,
-as well as model-benchmark to measure domain-aware end-to-end deep learning workloads.
+It provides micro-benchmarks for primitive computation and communication benchmarking,
+as well as model-benchmarks to measure domain-aware end-to-end deep learning workloads.
 
 
 ## Overview
