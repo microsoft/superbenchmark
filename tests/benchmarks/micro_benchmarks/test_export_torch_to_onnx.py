@@ -366,7 +366,8 @@ def test_export_huggingface_model_vision_routes_to_vision_helper(exporter, tmp_p
     assert model.config.use_cache is False
 
 
-def test_export_huggingface_model_nlp_routes_to_nlp_helper(exporter, tmp_path):
+@pytest.mark.parametrize('input_dtype', [torch.int64, torch.int32])
+def test_export_huggingface_model_nlp_routes_to_nlp_helper(exporter, tmp_path, input_dtype):
     """NLP model (main_input_name='input_ids') uses the NLP helper."""
     model = _TinyNLPModel()
 
@@ -385,6 +386,7 @@ def test_export_huggingface_model_nlp_routes_to_nlp_helper(exporter, tmp_path):
             batch_size=2,
             seq_length=8,
             output_dir=str(tmp_path),
+            input_dtype=input_dtype,
         )
 
     assert result == str(tmp_path / 'bert-tiny.onnx')
@@ -392,10 +394,13 @@ def test_export_huggingface_model_nlp_routes_to_nlp_helper(exporter, tmp_path):
     input_ids, attention_mask = captured['args']
     assert tuple(input_ids.shape) == (2, 8)
     assert tuple(attention_mask.shape) == (2, 8)
+    assert input_ids.dtype == input_dtype
+    assert attention_mask.dtype == input_dtype
     assert captured['kwargs']['input_names'] == ['input_ids', 'attention_mask']
 
 
-def test_export_huggingface_model_seq2seq_includes_decoder_inputs(exporter, tmp_path):
+@pytest.mark.parametrize('input_dtype', [torch.int64, torch.int32])
+def test_export_huggingface_model_seq2seq_includes_decoder_inputs(exporter, tmp_path, input_dtype):
     """Encoder-decoder models export with the required decoder input IDs."""
     captured = {}
 
@@ -412,12 +417,32 @@ def test_export_huggingface_model_seq2seq_includes_decoder_inputs(exporter, tmp_
             batch_size=2,
             seq_length=8,
             output_dir=str(tmp_path),
+            input_dtype=input_dtype,
         )
 
     assert result == str(tmp_path / 't5-tiny.onnx')
     assert len(captured['args']) == 3
+    assert all(arg.dtype == input_dtype for arg in captured['args'])
     assert captured['kwargs']['input_names'] == ['input_ids', 'attention_mask', 'decoder_input_ids']
     assert tuple(captured['output'].shape) == (2, 8, 8)
+
+
+def test_export_huggingface_model_int32_graph(exporter, tmp_path):
+    """Actual ONNX export preserves TensorRT-compatible INT32 runtime inputs."""
+    onnx = pytest.importorskip('onnx')
+    path = exporter.export_huggingface_model(
+        model=_TinyNLPModel(),
+        model_name='int32-inputs',
+        batch_size=1,
+        seq_length=4,
+        output_dir=str(tmp_path),
+        input_dtype=torch.int32
+    )
+    assert path
+    model = onnx.load(path)
+    assert model.graph.input
+    assert all(inp.type.tensor_type.elem_type == onnx.TensorProto.INT32 for inp in model.graph.input)
+    onnx.checker.check_model(model)
 
 
 def test_export_huggingface_model_default_output_dir(exporter):

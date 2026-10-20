@@ -26,7 +26,7 @@ from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.common.utils import logger
 
 
-def run_inhouse_benchmark(precision='fp16', batch_size=32, seq_length=512, iterations=2048):
+def run_inhouse_benchmark(precision='int8', batch_size=32, seq_length=512, iterations=2048):
     """Run TensorRT inference with in-house torchvision models."""
     context = BenchmarkRegistry.create_benchmark_context(
         'tensorrt-inference',
@@ -90,11 +90,19 @@ if __name__ == '__main__':
     parser.add_argument(
         '--model_identifier', type=str, default='bert-base-uncased', help='HuggingFace model identifier'
     )
-    parser.add_argument('--precision', type=str, default='fp16', choices=['fp32', 'fp16', 'int8'])
+    parser.add_argument(
+        '--precision',
+        type=str,
+        default=None,
+        choices=['fp32', 'fp16', 'int8'],
+        help='Default: int8 for in-house models, fp16 for Hugging Face models.'
+    )
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--seq_length', type=int, default=512)
     parser.add_argument('--iterations', type=int, default=2048)
     args = parser.parse_args()
+    if args.precision is None:
+        args.precision = 'fp16' if args.model_source == 'huggingface' else 'int8'
 
     if args.model_source == 'huggingface' and args.precision == 'int8':
         parser.error(

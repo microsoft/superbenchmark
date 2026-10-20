@@ -4,6 +4,7 @@
 """Tests for tensorrt-inference benchmark."""
 
 import importlib
+import runpy
 import unittest
 import tempfile
 from pathlib import Path
@@ -50,6 +51,21 @@ def test_inhouse_example_forwards_cli_parameters():
     parameters = context.call_args[1]['parameters']
     for expected in ('--precision fp32', '--batch_size 4', '--seq_length 16', '--iterations 8'):
         assert expected in parameters
+    with patch.object(example.BenchmarkRegistry, 'create_benchmark_context') as context, \
+            patch.object(example.BenchmarkRegistry, 'launch_benchmark', return_value=None):
+        example.run_inhouse_benchmark()
+    assert '--precision int8' in context.call_args[1]['parameters']
+
+
+def test_example_precision_defaults_depend_on_model_source():
+    """CLI defaults preserve in-house INT8 and Hugging Face FP16 behavior."""
+    example = importlib.import_module('examples.benchmarks.tensorrt_inference_performance')
+    for source, precision in [('in-house', 'int8'), ('huggingface', 'fp16')]:
+        with patch('sys.argv', [example.__file__, '--model_source', source]), \
+                patch.object(example.BenchmarkRegistry, 'create_benchmark_context') as context, \
+                patch.object(example.BenchmarkRegistry, 'launch_benchmark', return_value=None):
+            runpy.run_path(example.__file__, run_name='__main__')
+        assert f'--precision {precision}' in context.call_args[1]['parameters']
 
 
 class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
@@ -374,6 +390,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         export_kwargs = mock_exporter.export_huggingface_model.call_args[1]
         self.assertEqual(8, export_kwargs['batch_size'])
         self.assertEqual(128, export_kwargs['seq_length'])
+        self.assertIs(export_kwargs['input_dtype'], mock_torch.int32)
         # _derive_trt_input_shapes was invoked with the exported ONNX path.
         mock_derive.assert_called_once_with('/tmp/torchhub/checkpoints/trt_rank_0/m.onnx')
         # Exactly one command appended, containing the expected flags.
@@ -484,9 +501,10 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         onnx.TensorProto.INT64 = 7
         inputs = []
         for name, dtype in [
-            ('input_ids', onnx.TensorProto.INT64),
+            ('input_ids', onnx.TensorProto.INT32),
             ('attention_mask', onnx.TensorProto.INT32),
-            ('decoder_input_ids', onnx.TensorProto.INT64),
+            ('decoder_input_ids', onnx.TensorProto.INT32),
+            ('token_type_ids', onnx.TensorProto.INT32),
         ]:
             metadata = _make_onnx_input(name, [2, 4])
             metadata.type.tensor_type.elem_type = dtype
@@ -495,15 +513,30 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.dict('sys.modules', {'onnx': onnx}):
             path = Path(directory) / 'model.onnx'
             result = benchmark._write_trt_input_files(
-                str(path), 'input_ids:2x4,attention_mask:2x4,decoder_input_ids:2x4'
+                str(path), 'input_ids:2x4,attention_mask:2x4,decoder_input_ids:2x4,token_type_ids:2x4'
             )
             self.assertIn(f'input_ids:{path.parent / "input_ids.bin"}', result)
             for name in ('input_ids', 'decoder_input_ids'):
-                data = np.fromfile(str(path.parent / f'{name}.bin'), dtype=np.int64)
+                data = np.fromfile(str(path.parent / f'{name}.bin'), dtype=np.int32)
                 self.assertEqual(8, data.size)
                 self.assertTrue(np.all((0 <= data) & (data < 7)))
             mask = np.fromfile(str(path.parent / 'attention_mask.bin'), dtype=np.int32)
             np.testing.assert_array_equal(mask, np.ones(8, dtype=np.int32))
+            token_types = np.fromfile(str(path.parent / 'token_type_ids.bin'), dtype=np.int32)
+            np.testing.assert_array_equal(token_types, np.zeros(8, dtype=np.int32))
+
+    def test_write_trt_input_files_rejects_invalid_type_and_vocabulary(self):
+        """INT64 bindings and invalid vocabularies fail before input files are written."""
+        benchmark = self._make_benchmark()
+        metadata = _make_onnx_input('input_ids', [2, 4])
+        onnx = MagicMock()
+        onnx.TensorProto.INT32 = 6
+        onnx.load.return_value = _make_onnx_model([metadata])
+        for elem_type, vocab_size, error in [(7, 7, 'INT32'), (6, 0, 'vocab_size')]:
+            metadata.type.tensor_type.elem_type = elem_type
+            benchmark._hf_config = SimpleNamespace(vocab_size=vocab_size)
+            with patch.dict('sys.modules', {'onnx': onnx}), self.assertRaisesRegex(ValueError, error):
+                benchmark._write_trt_input_files('/tmp/not-written/model.onnx', 'input_ids:2x4')
 
     def test_build_trtexec_command_for_hf_rejects_invalid_proc_rank(self):
         """A path-like PROC_RANK is rejected before loading or exporting a model."""

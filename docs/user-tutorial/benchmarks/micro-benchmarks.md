@@ -151,7 +151,7 @@ TensorRT derives dynamic input shapes from the exported ONNX graph and supports 
 
 Each local rank loads and exports a full model independently. Budget N times the host RAM and ONNX disk space for N local processes; TensorRT exports in fp32 (about 28 GB of weights per rank for a 7B model, before export overhead). The preflight estimate includes the requested batch and sequence length's logits and transformer intermediates, but is not a guarantee against OOM and does not aggregate concurrent ranks or check disk space. Reduce batch size, sequence length, or local process count when needed. Multiple-choice architectures are rejected before weight download because this exporter does not support their 3D inputs.
 
-TensorRT NLP benchmarks write rank-local binary input files and pass them to `trtexec --loadInputs`, using tokens within the configured vocabulary and binary attention masks. Model downloads use the standard Hugging Face cache (`HF_HUB_CACHE`, or `$HF_HOME/hub`).
+TensorRT NLP benchmarks export INT32 runtime inputs and write matching rank-local binary input files passed to `trtexec --loadInputs`, using tokens within the configured vocabulary and binary attention masks. ORT exports retain INT64 NLP inputs. Model downloads use the standard Hugging Face cache (`HF_HUB_CACHE`, or `$HF_HOME/hub`).
 
 #### Metrics
 

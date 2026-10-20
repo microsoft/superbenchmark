@@ -274,7 +274,9 @@ class torch2onnxExporter():
         torch.cuda.empty_cache()
         return file_name
 
-    def export_huggingface_model(self, model, model_name, batch_size=1, seq_length=512, output_dir=None):
+    def export_huggingface_model(
+        self, model, model_name, batch_size=1, seq_length=512, output_dir=None, input_dtype=torch.int64
+    ):
         """Export a HuggingFace model to ONNX format.
 
         Args:
@@ -283,6 +285,7 @@ class torch2onnxExporter():
             batch_size (int): Batch size of input. Defaults to 1.
             seq_length (int): Sequence length of input. Defaults to 512.
             output_dir (str): Output directory path. If None, uses default path.
+            input_dtype (torch.dtype): NLP input type; TensorRT uses int32, ORT defaults to int64.
 
         Returns:
             str: Exported ONNX model file path, or empty string if export fails.
@@ -319,7 +322,7 @@ class torch2onnxExporter():
                 )
             else:
                 wrapped_model, export_args, input_names, dynamic_axes = self._build_nlp_export_inputs(
-                    model, batch_size, seq_length, device
+                    model, batch_size, seq_length, device, input_dtype
                 )
 
             export_kwargs = self._build_onnx_export_kwargs(model, input_names, dynamic_axes)
@@ -374,11 +377,11 @@ class torch2onnxExporter():
 
         return VisionModelWrapper(model), (dummy_input, ), input_names, dynamic_axes
 
-    def _build_nlp_export_inputs(self, model, batch_size, seq_length, device):
+    def _build_nlp_export_inputs(self, model, batch_size, seq_length, device, input_dtype=torch.int64):
         """Build the dummy inputs and wrapper module for exporting an NLP HuggingFace model."""
         # NLP models: use input_ids and attention_mask
-        dummy_input = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
-        attention_mask = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
+        dummy_input = torch.ones((batch_size, seq_length), dtype=input_dtype, device=device)
+        attention_mask = torch.ones((batch_size, seq_length), dtype=input_dtype, device=device)
         is_encoder_decoder = bool(getattr(model.config, 'is_encoder_decoder', False))
         input_names = ['input_ids', 'attention_mask']
         export_args = (dummy_input, attention_mask)
@@ -398,7 +401,7 @@ class torch2onnxExporter():
         }
 
         if is_encoder_decoder:
-            decoder_input_ids = torch.ones((batch_size, seq_length), dtype=torch.int64, device=device)
+            decoder_input_ids = torch.ones((batch_size, seq_length), dtype=input_dtype, device=device)
             input_names.append('decoder_input_ids')
             export_args += (decoder_input_ids, )
             dynamic_axes['decoder_input_ids'] = {0: 'batch_size', 1: 'decoder_seq_length'}
@@ -438,9 +441,12 @@ class torch2onnxExporter():
             'output_names': ['output'],
             'dynamic_axes': dynamic_axes,
         }
+        sig = inspect.signature(torch.onnx.export)
+        if 'dynamo' in sig.parameters:
+            # These wrappers and dynamic_axes target the legacy tracer, including on newer torch releases.
+            export_kwargs['dynamo'] = False
         if use_external_data:
             # PyTorch 1.11-2.4 enable external data automatically for path outputs.
-            sig = inspect.signature(torch.onnx.export)
             if 'external_data' in sig.parameters:
                 export_kwargs['external_data'] = True
             elif 'use_external_data_format' in sig.parameters:

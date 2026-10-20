@@ -342,6 +342,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             batch_size=self._args.batch_size,
             seq_length=self._args.seq_length,
             output_dir=output_dir,
+            input_dtype=torch.int32,
         )
 
         if not onnx_path:
@@ -392,9 +393,9 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 continue
             dims = tuple(int(dim) for dim in shape.split('x'))
             elem_type = input_types[name]
-            if elem_type not in (onnx.TensorProto.INT32, onnx.TensorProto.INT64):
-                raise ValueError(f'Unsupported TensorRT NLP input type for {name}: {elem_type}')
-            dtype = np.int32 if elem_type == onnx.TensorProto.INT32 else np.int64
+            if elem_type != onnx.TensorProto.INT32:
+                raise ValueError(f'TensorRT NLP input {name} must be exported as INT32, got {elem_type}.')
+            dtype = np.int32
             if name in ('input_ids', 'decoder_input_ids'):
                 vocab_size = getattr(self._hf_config, 'vocab_size', None)
                 if not isinstance(vocab_size, int) or vocab_size <= 0:
