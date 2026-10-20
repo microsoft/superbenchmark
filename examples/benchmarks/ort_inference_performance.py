@@ -26,10 +26,12 @@ from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.common.utils import logger
 
 
-def run_inhouse_benchmark():
+def run_inhouse_benchmark(precision='float16', batch_size=32):
     """Run ORT inference with in-house torchvision models."""
     context = BenchmarkRegistry.create_benchmark_context(
-        'ort-inference', platform=Platform.CUDA, parameters='--pytorch_models resnet50 resnet101 --precision float16'
+        'ort-inference',
+        platform=Platform.CUDA,
+        parameters=f'--pytorch_models resnet50 resnet101 --precision {precision} --batch_size {batch_size}'
     )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:
@@ -91,4 +93,4 @@ if __name__ == '__main__':
     if args.model_source == 'huggingface':
         run_huggingface_benchmark(args.model_identifier, args.precision, args.batch_size, args.seq_length)
     else:
-        run_inhouse_benchmark()
+        run_inhouse_benchmark(args.precision, args.batch_size)

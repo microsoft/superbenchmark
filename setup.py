@@ -185,6 +185,7 @@ setup(
         'packaging>=21.0',
         'pandas>=1.1.5',
         'protobuf',
+        'psutil>=5.8.0',
         'pssh @ git+https://github.com/lilydjwg/pssh.git@v2.3.4',
         'pyyaml>=5.3',
         'requests>=2.27.1',

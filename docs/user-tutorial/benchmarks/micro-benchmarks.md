@@ -149,6 +149,10 @@ Run a compatible Hugging Face model with `--model_source huggingface --model_ide
 
 TensorRT derives dynamic input shapes from the exported ONNX graph and supports external data for models larger than 2 GB. Distributed processes use rank-specific export directories. Hugging Face models support `fp16` and `fp32`; `int8` is rejected because this path does not generate calibration data or a Q/DQ ONNX model.
 
+Each local rank loads and exports a full model independently. Budget N times the host RAM and ONNX disk space for N local processes; TensorRT exports in fp32 (about 28 GB of weights per rank for a 7B model, before export overhead). The preflight estimate includes the requested batch and sequence length's logits and transformer intermediates, but is not a guarantee against OOM and does not aggregate concurrent ranks or check disk space. Reduce batch size, sequence length, or local process count when needed. Multiple-choice architectures are rejected before weight download because this exporter does not support their 3D inputs.
+
+TensorRT NLP benchmarks write rank-local binary input files and pass them to `trtexec --loadInputs`, using tokens within the configured vocabulary and binary attention masks. Model downloads use the standard Hugging Face cache (`HF_HUB_CACHE`, or `$HF_HOME/hub`).
+
 #### Metrics
 
 | Name                                             | Unit      | Description                                                                                              |
@@ -176,6 +180,10 @@ Inference performance of the torchvision models using ONNXRuntime. Currently the
 Run a compatible Hugging Face model with `--model_source huggingface --model_identifier <model-id>`. Set `HF_TOKEN` for gated models and use `--revision <commit-sha>` to pin a model version. `--allow_remote_code` executes code from the model repository and should only be used with trusted models.
 
 When CUDA or the ONNX Runtime CUDA execution provider is unavailable, the benchmark falls back to an available provider and exports the model in `float32`. Use `--require_cuda` to fail instead of falling back.
+
+The created session is also checked for successful CUDA provider initialization, so `--require_cuda` rejects CPU-only sessions even when CUDA support is compiled into ONNX Runtime. Without the flag, a fallback warning is logged. CPU preflight checks available system RAM using `psutil`.
+
+As with TensorRT, each local rank loads and exports a full model into its own directory: budget N times the host RAM and ONNX disk space for N local processes. Memory estimates include requested batch/sequence output and activation tensors, but do not aggregate concurrent ranks or check disk capacity. Multiple-choice architectures are not supported. Downloads use the standard Hugging Face cache (`HF_HUB_CACHE`, or `$HF_HOME/hub`).
 
 The supported percentiles are 50, 90, 95, 99, and 99.9.
 

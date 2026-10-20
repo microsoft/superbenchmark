@@ -3,6 +3,7 @@
 
 """Tests for ort-inference benchmark."""
 
+import importlib
 import shutil
 from pathlib import Path
 from types import SimpleNamespace
@@ -46,7 +47,7 @@ def test_ort_inference_performance(mock_ort_session_run, mock_get_dir):
     assert (benchmark._ORTInferenceBenchmark__model_cache_path == Path(torch.hub.get_dir()) / 'checkpoints')
     for model in benchmark._args.pytorch_models:
         assert (hasattr(torchvision.models, model))
-        file_name = '{model}.{precision}.onnx'.format(model=model, precision=benchmark._args.precision)
+        file_name = '{model}.{precision}.onnx'.format(model=model, precision=benchmark._args.precision.value)
         assert ((benchmark._ORTInferenceBenchmark__model_cache_path / file_name).is_file())
 
     # Check parameters specified in BenchmarkContext.
@@ -135,6 +136,17 @@ def test_preprocess_inhouse_int8_uses_enum_value_in_filename(tmp_path):
     quantization.quantize_dynamic.assert_called_once_with(
         str(tmp_path / 'resnet50.float32.onnx'), str(tmp_path / 'resnet50.int8.onnx')
     )
+
+
+def test_inhouse_example_forwards_precision_and_batch_size():
+    """Example CLI values reach the in-house benchmark context."""
+    example = importlib.import_module('examples.benchmarks.ort_inference_performance')
+    with patch.object(example.BenchmarkRegistry, 'create_benchmark_context') as context, \
+            patch.object(example.BenchmarkRegistry, 'launch_benchmark', return_value=None):
+        example.run_inhouse_benchmark(precision='int8', batch_size=4)
+    parameters = context.call_args[1]['parameters']
+    assert '--precision int8' in parameters
+    assert '--batch_size 4' in parameters
 
 
 # ---------------------------------------------------------------------------
@@ -528,6 +540,24 @@ def test_benchmark_uses_precision_value_in_onnx_path(tmp_path):
 
     session_path = ort.InferenceSession.call_args[0][0]
     assert session_path.endswith('test_model.float16.onnx')
+
+
+@pytest.mark.parametrize('require_cuda', [True, False])
+def test_benchmark_detects_cuda_session_initialization_failure(require_cuda, caplog):
+    """A compiled-in CUDA provider is insufficient when the created session is CPU-only."""
+    benchmark = _make_ort_benchmark(pytorch_models=['test_model'], require_cuda=require_cuda)
+    benchmark._ORTInferenceBenchmark__graph_opt_level = {3: MagicMock()}
+    ort = MagicMock()
+    ort.get_available_providers.return_value = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+    ort.InferenceSession.return_value.get_providers.return_value = ['CPUExecutionProvider']
+    with patch.dict('sys.modules', {'onnxruntime': ort}), \
+            patch.object(benchmark, '_ORTInferenceBenchmark__inference', return_value=[1.0]) as inference, \
+            patch.object(benchmark, '_process_numeric_result', return_value=True):
+        assert benchmark._benchmark() is not require_cuda
+    assert 'CUDAExecutionProvider failed to initialize' in caplog.text
+    if require_cuda:
+        assert benchmark.return_code == ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE
+        inference.assert_not_called()
 
 
 def test_inference_omits_unexpected_attention_mask():

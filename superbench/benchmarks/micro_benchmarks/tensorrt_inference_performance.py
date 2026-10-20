@@ -6,8 +6,10 @@
 import os
 import re
 import subprocess
+import shlex
 from pathlib import Path
 
+import numpy as np
 import torch
 
 from superbench.common.utils import logger
@@ -256,7 +258,13 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             # ONNX export is always done in float32 (see _build_trtexec_command_for_hf), so gate
             # the pre-download check on fp32 memory regardless of the requested runtime precision.
             fits, _, _, _ = HuggingFaceModelLoader.check_memory_fits(
-                self._args.model_identifier, hf_config, 'fp32', mode='inference', token=hf_token
+                self._args.model_identifier,
+                hf_config,
+                'fp32',
+                mode='inference',
+                token=hf_token,
+                batch_size=self._args.batch_size,
+                seq_length=self._args.seq_length
             )
             if not fits:
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
@@ -348,6 +356,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             torch.cuda.empty_cache()
 
         input_shapes = self._derive_trt_input_shapes(onnx_path)
+        input_files = self._write_trt_input_files(onnx_path, input_shapes)
 
         # Build TensorRT command with correct input name
         args = [
@@ -357,18 +366,46 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             f'--optShapes={input_shapes}',
             f'--maxShapes={input_shapes}',
             f'--shapes={input_shapes}',
+            f'--loadInputs={input_files}' if input_files else None,
             self.__workspace_flag,
             None if self._args.precision == 'fp32' else f'--{self._args.precision}',
             f'--iterations={self._args.iterations}',
             '--percentile=99',
         ]
-        self._commands.append(' '.join(filter(None, args)))
+        self._commands.append(' '.join(shlex.quote(arg) for arg in args if arg))
 
         # Store model name for result processing
         self._args.pytorch_models = [self._args.model_identifier.replace('/', '_')]
 
         logger.info('Successfully prepared HuggingFace model for TensorRT inference')
         return True
+
+    def _write_trt_input_files(self, onnx_path, input_shapes):
+        """Write valid NLP inputs using the exported graph's integer types and shapes."""
+        import onnx
+        model = onnx.load(onnx_path, load_external_data=False)
+        input_types = {inp.name: inp.type.tensor_type.elem_type for inp in model.graph.input}
+        files = []
+        for entry in input_shapes.split(','):
+            name, shape = entry.split(':')
+            if name not in ('input_ids', 'attention_mask', 'decoder_input_ids', 'token_type_ids'):
+                continue
+            dims = tuple(int(dim) for dim in shape.split('x'))
+            elem_type = input_types[name]
+            if elem_type not in (onnx.TensorProto.INT32, onnx.TensorProto.INT64):
+                raise ValueError(f'Unsupported TensorRT NLP input type for {name}: {elem_type}')
+            dtype = np.int32 if elem_type == onnx.TensorProto.INT32 else np.int64
+            if name in ('input_ids', 'decoder_input_ids'):
+                vocab_size = getattr(self._hf_config, 'vocab_size', None)
+                if not isinstance(vocab_size, int) or vocab_size <= 0:
+                    raise ValueError('A positive vocab_size is required to generate TensorRT token inputs.')
+                data = np.random.randint(0, vocab_size, size=dims).astype(dtype)
+            else:
+                data = np.full(dims, 1 if name == 'attention_mask' else 0, dtype=dtype)
+            path = Path(onnx_path).parent / f'{name}.bin'
+            data.tofile(str(path))
+            files.append(f'{name}:{path}')
+        return ','.join(files)
 
     def _derive_trt_input_shapes(self, onnx_path):
         """Inspect the exported ONNX graph and produce the trtexec ``--optShapes`` value.

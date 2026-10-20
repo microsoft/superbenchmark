@@ -439,10 +439,10 @@ class torch2onnxExporter():
             'dynamic_axes': dynamic_axes,
         }
         if use_external_data:
-            # PyTorch 2.8+ renamed 'use_external_data_format' to 'external_data'
+            # PyTorch 1.11-2.4 enable external data automatically for path outputs.
             sig = inspect.signature(torch.onnx.export)
             if 'external_data' in sig.parameters:
                 export_kwargs['external_data'] = True
-            else:
+            elif 'use_external_data_format' in sig.parameters:
                 export_kwargs['use_external_data_format'] = True
         return export_kwargs

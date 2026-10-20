@@ -61,7 +61,10 @@ def validate_model_identifier(model_identifier: Optional[str]) -> str:
             rejects path-traversal sequences and characters that could let
             ``from_pretrained`` load attacker-staged files from disk.
     """
-    if not model_identifier or not _SAFE_MODEL_ID_RE.match(model_identifier):
+    if (
+        not model_identifier or not _SAFE_MODEL_ID_RE.fullmatch(model_identifier) or '..' in model_identifier
+        or any(part == '.' for part in model_identifier.split('/'))
+    ):
         raise ValueError(
             f'Invalid model_identifier {model_identifier!r}. '
             'Must be a HuggingFace repo id matching '
@@ -70,7 +73,8 @@ def validate_model_identifier(model_identifier: Optional[str]) -> str:
         )
     if Path(model_identifier).exists():
         raise ValueError(
-            f'Invalid model_identifier {model_identifier!r}. Refusing to treat an existing local path as a Hub repo id.'
+            f'Invalid model_identifier {model_identifier!r}. A local path with this name exists relative to '
+            'the current working directory; refusing to load it as a Hub repo id.'
         )
     return model_identifier
 
@@ -120,12 +124,13 @@ class HuggingFaceModelLoader:
                 ``trust_remote_code=True``. Default False. Only enable for
                 trusted ``--model_identifier`` values; pin ``--revision <sha>``.
         """
-        self.cache_dir = cache_dir or os.getenv('HF_HOME') or os.path.expanduser('~/.cache/huggingface')
+        self.cache_dir = cache_dir
         self.token = token or os.getenv('HF_TOKEN') or os.getenv('HUGGING_FACE_HUB_TOKEN')
         self.allow_remote_code = bool(allow_remote_code)
 
         # Ensure cache directory exists
-        Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
+        if self.cache_dir is not None:
+            Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
 
         logger.info(f'HuggingFaceModelLoader initialized with cache_dir: {self.cache_dir}')
         if self.token:
@@ -186,13 +191,13 @@ class HuggingFaceModelLoader:
             else:
                 logger.info('Using pre-downloaded model configuration.')
 
+            model_class = self._get_auto_model_class(config)
             tokenizer = self._try_load_tokenizer(model_identifier, load_kwargs)
 
             # Load model
             logger.info(f'Loading model weights (dtype={torch_dtype}, device={device})...')
             model_kwargs, effective_device_map = self._build_model_kwargs(load_kwargs, device, device_map, config)
 
-            model_class = self._get_auto_model_class(config)
             model = model_class.from_pretrained(model_identifier, **model_kwargs)
 
             # Move to device if not using device_map
@@ -268,6 +273,8 @@ class HuggingFaceModelLoader:
     def _get_auto_model_class(config):
         """Select the task-specific auto class declared by the model architecture."""
         architectures = getattr(config, 'architectures', None) or []
+        if any(architecture.endswith('ForMultipleChoice') for architecture in architectures):
+            raise ModelIncompatibleError('Multiple-choice models require unsupported 3D inputs.')
         task_classes = (
             ('GPT2LMHeadModel', 'AutoModelForCausalLM'),
             ('ForConditionalGeneration', 'AutoModelForSeq2SeqLM'),
@@ -275,7 +282,6 @@ class HuggingFaceModelLoader:
             ('ForCausalLM', 'AutoModelForCausalLM'),
             ('ForImageClassification', 'AutoModelForImageClassification'),
             ('ForMaskedLM', 'AutoModelForMaskedLM'),
-            ('ForMultipleChoice', 'AutoModelForMultipleChoice'),
             ('ForObjectDetection', 'AutoModelForObjectDetection'),
             ('ForQuestionAnswering', 'AutoModelForQuestionAnswering'),
             ('ForSemanticSegmentation', 'AutoModelForSemanticSegmentation'),
@@ -289,7 +295,9 @@ class HuggingFaceModelLoader:
         for architecture in architectures:
             for suffix, class_name in task_classes:
                 if architecture.endswith(suffix):
-                    return getattr(transformers, class_name, AutoModel)
+                    model_class = getattr(transformers, class_name, None)
+                    if model_class is not None and type(config) in model_class._model_mapping:
+                        return model_class
         return AutoModel
 
     def load_model_from_config(
@@ -448,13 +456,32 @@ class HuggingFaceModelLoader:
             norm_params = 2 * hidden
             layer_params = qkv_params + attn_out + mlp_params + norm_params
 
-            # MoE: if num_local_experts > 1, MLP is replicated per expert
-            num_experts = getattr(hf_config, 'num_local_experts', 1)
+            # MoE weights include every expert, not just the experts active per token.
+            expert_counts = [
+                getattr(hf_config, attr) for attr in ('num_local_experts', 'num_experts', 'n_routed_experts')
+                if getattr(hf_config, attr, None) is not None
+            ]
+            if any(not isinstance(count, int) or count < 1 for count in expert_counts):
+                return None
+            num_experts = max(expert_counts, default=1)
             if num_experts > 1:
+                # DeepSeek's low-rank attention is not covered by the dense attention formula.
+                if getattr(hf_config, 'kv_lora_rank', None) is not None:
+                    return None
+                expert_intermediate = getattr(hf_config, 'moe_intermediate_size', None) or intermediate
+                if not isinstance(expert_intermediate, int) or expert_intermediate <= 0:
+                    return None
+                expert_params = (3 if has_gate else 2) * hidden * expert_intermediate
+                shared_intermediate = getattr(hf_config, 'shared_expert_intermediate_size', None) or 0
+                shared_experts = getattr(hf_config, 'n_shared_experts', None) or 0
+                shared_params = (3 if has_gate else
+                                 2) * hidden * (shared_intermediate + shared_experts * expert_intermediate)
                 # Router + replicated MLP experts (attention is shared)
                 router_params = hidden * num_experts
                 layer_params = qkv_params + attn_out + norm_params + \
-                    num_experts * mlp_params + router_params
+                    num_experts * expert_params + shared_params + router_params
+                # Some configs interleave dense and MoE layers; use the larger layer as an upper bound.
+                layer_params = max(layer_params, qkv_params + attn_out + norm_params + mlp_params)
 
             total_params = embed_params + layers * layer_params
             # LM head (often tied to embedding, but count it for safety)
@@ -468,7 +495,7 @@ class HuggingFaceModelLoader:
             return None
 
     @staticmethod
-    def estimate_memory(param_count, precision_str, mode='training'):
+    def estimate_memory(param_count, precision_str, mode='training', activation_bytes=0):
         """Estimate GPU memory required for a model.
 
         For training: weights + gradients + optimizer states (Adam uses 2x) = 4x multiplier.
@@ -478,6 +505,7 @@ class HuggingFaceModelLoader:
             param_count (int): Number of model parameters.
             precision_str (str): Precision string ('float32', 'float16', 'bfloat16', 'fp16', 'fp32', 'int8').
             mode (str): 'training' or 'inference'.
+            activation_bytes (int): Additional forward/output tensor memory for inference export.
 
         Returns:
             tuple: (estimated_bytes, gpu_total_bytes, fits) where fits is True if
@@ -498,28 +526,24 @@ class HuggingFaceModelLoader:
             # inference: weights + runtime overhead (~20%)
             multiplier = 1.2
 
-        estimated_bytes = int(param_count * bytes_per_param * multiplier)
+        estimated_bytes = int(param_count * bytes_per_param * multiplier) + activation_bytes
 
         gpu_available = torch.cuda.is_available()
         if not gpu_available:
-            try:
-                import psutil
-                sys_mem = psutil.virtual_memory().total
-            except ImportError:
-                logger.warning('psutil not installed — cannot check system memory. Skipping memory check.')
-                return estimated_bytes, 0, True
-            max_gpu_mem = 80 * (1024**3)    # 80GB — largest common single-GPU memory
-            effective_mem = min(sys_mem, max_gpu_mem)
-            fits = (estimated_bytes / effective_mem) < 0.85
-            return estimated_bytes, effective_mem, fits
+            import psutil
+            sys_mem = psutil.virtual_memory().available
+            fits = estimated_bytes < sys_mem * 0.85
+            return estimated_bytes, sys_mem, fits
 
-        gpu_mem = torch.cuda.get_device_properties(0).total_memory
+        gpu_mem = torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory
         # Use 85% threshold to leave headroom for activations, framework overhead, etc.
         fits = (estimated_bytes / gpu_mem) < 0.85
         return estimated_bytes, gpu_mem, fits
 
     @staticmethod
-    def check_memory_fits(model_identifier, hf_config, precision_str, mode='training', token=None):
+    def check_memory_fits(
+        model_identifier, hf_config, precision_str, mode='training', token=None, batch_size=1, seq_length=512
+    ):
         """Check if a model fits in GPU memory before downloading weights.
 
         Downloads only the config (few KB) via hf_config, estimates memory, and returns
@@ -532,21 +556,41 @@ class HuggingFaceModelLoader:
             precision_str (str): Precision string ('float32', 'float16', etc.).
             mode (str): 'training' or 'inference'.
             token (str, optional): HF token (unused, kept for API consistency).
+            batch_size (int): Requested inference batch size.
+            seq_length (int): Requested inference sequence length.
 
         Returns:
             tuple: (fits, param_count_millions, estimated_gb, available_gb)
                    fits is True if model is estimated to fit.
         """
+        HuggingFaceModelLoader._get_auto_model_class(hf_config)
         param_count = HuggingFaceModelLoader.estimate_param_count_from_config(hf_config)
         if param_count is None:
+            if any(
+                getattr(hf_config, attr, None) is not None
+                for attr in ('num_local_experts', 'num_experts', 'n_routed_experts')
+            ):
+                logger.error(f'Cannot safely estimate MoE memory for {model_identifier}; refusing weight download.')
+                return False, 0, 0, 0
             logger.warning(
                 f'Could not estimate param count from config for {model_identifier}. '
                 f'Proceeding with download — memory check skipped.'
             )
             return True, 0, 0, 0
 
+        activation_bytes = 0
+        if mode == 'inference':
+            hidden = hf_config.hidden_size
+            layers = hf_config.num_hidden_layers
+            heads = hf_config.num_attention_heads
+            # Budget fp32 logits and attention/hidden intermediates even for fp16 exports.
+            activation_bytes = 4 * batch_size * (
+                seq_length * hf_config.vocab_size + layers * (2 * heads * seq_length**2 + 8 * seq_length * hidden)
+            )
+            if getattr(hf_config, 'is_encoder_decoder', False):
+                activation_bytes *= 3
         estimated_bytes, available_bytes, fits = HuggingFaceModelLoader.estimate_memory(
-            param_count, precision_str, mode=mode
+            param_count, precision_str, mode=mode, activation_bytes=activation_bytes
         )
 
         param_millions = param_count / 1e6
@@ -560,10 +604,10 @@ class HuggingFaceModelLoader:
             )
         else:
             mem_type = 'GPU memory' if torch.cuda.is_available() else 'system RAM'
+            overhead = 'gradients + optimizer states' if mode == 'training' else 'runtime/output/activation memory'
             logger.error(
                 f'Model {model_identifier} ({param_millions:.1f}M params) estimated to need '
-                f'~{estimated_gb:.1f}GB for {mode} (weights'
-                f'{" + gradients + optimizer states" if mode == "training" else " + runtime overhead"}), '
+                f'~{estimated_gb:.1f}GB for {mode} (weights + {overhead}), '
                 f'which exceeds available {mem_type} ({available_gb:.1f}GB). '
                 f'Skipping benchmark. Use a smaller model variant or a machine with more memory.'
             )

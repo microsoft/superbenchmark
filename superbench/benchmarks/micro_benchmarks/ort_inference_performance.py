@@ -260,7 +260,13 @@ class ORTInferenceBenchmark(MicroBenchmark):
 
             precision_str = self._args.precision.value if self._args.precision != Precision.INT8 else 'float32'
             fits, _, _, _ = HuggingFaceModelLoader.check_memory_fits(
-                self._args.model_identifier, hf_config, precision_str, mode='inference', token=hf_token
+                self._args.model_identifier,
+                hf_config,
+                precision_str,
+                mode='inference',
+                token=hf_token,
+                batch_size=self._args.batch_size,
+                seq_length=self._args.seq_length
             )
             if not fits:
                 self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
@@ -414,6 +420,15 @@ class ORTInferenceBenchmark(MicroBenchmark):
             sess_options.graph_optimization_level = self.__graph_opt_level[self._args.graph_opt_level]
             file_name = '{model}.{precision}.onnx'.format(model=model, precision=self._args.precision.value)
             ort_sess = ort.InferenceSession(f'{self.__model_cache_path / file_name}', sess_options, providers=providers)
+            if cuda_available and 'CUDAExecutionProvider' not in ort_sess.get_providers():
+                msg = 'CUDAExecutionProvider failed to initialize; session providers: {}.'.format(
+                    ort_sess.get_providers()
+                )
+                if self._args.require_cuda:
+                    logger.error(msg + ' --require_cuda was set, aborting.')
+                    self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+                    return False
+                logger.warning(msg + ' Running with fallback providers.')
 
             elapse_times = self.__inference(ort_sess)
 

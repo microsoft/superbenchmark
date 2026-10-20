@@ -12,7 +12,10 @@ from unittest.mock import MagicMock, patch
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
     ModelNotFoundError,
+    ModelLoadError,
+    ModelIncompatibleError,
     get_process_rank,
+    validate_model_identifier,
 )
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
 
@@ -35,6 +38,29 @@ class TestHuggingFaceModelLoader:
         monkeypatch.setenv('HF_HOME', str(tmp_path / 'hf_cache'))
         loader = HuggingFaceModelLoader()
         assert loader.token == 'env_token'
+        assert loader.cache_dir is None
+
+    def test_default_cache_delegates_to_huggingface(self, monkeypatch, tmp_path):
+        """Environment cache selection remains with Hugging Face, including offline caches."""
+        monkeypatch.setenv('HF_HOME', str(tmp_path / 'home'))
+        monkeypatch.setenv('HF_HUB_CACHE', str(tmp_path / 'hub'))
+        loader = HuggingFaceModelLoader()
+        assert loader._build_load_kwargs(None, None, {})['cache_dir'] is None
+        assert not (tmp_path / 'home').exists()
+        assert not (tmp_path / 'hub').exists()
+
+    @pytest.mark.parametrize('identifier', ['org/.', 'org/..', 'org/model..name', 'model\n'])
+    def test_invalid_identifier_segments(self, identifier):
+        """Malformed repository segments are rejected before Hub access."""
+        with pytest.raises(ValueError, match='Invalid model_identifier'):
+            validate_model_identifier(identifier)
+
+    def test_identifier_collision_mentions_working_directory(self, tmp_path, monkeypatch):
+        """A local directory collision gives an actionable error."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / 'gpt2').mkdir()
+        with pytest.raises(ValueError, match='current working directory'):
+            validate_model_identifier('gpt2')
 
     def test_get_process_rank_uses_executor_precedence(self, monkeypatch):
         """Process rank resolution matches the executor's environment precedence."""
@@ -62,10 +88,11 @@ class TestHuggingFaceModelLoader:
         with pytest.raises(ValueError, match='Invalid dtype'):
             loader._get_torch_dtype('invalid_dtype')
 
+    @pytest.mark.parametrize('torch_dtype', [None, 'float16'])
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModel')
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoConfig')
     @patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoTokenizer')
-    def test_load_model_success(self, mock_tokenizer, mock_config, mock_model, loader):
+    def test_load_model_success(self, mock_tokenizer, mock_config, mock_model, loader, torch_dtype):
         """Test successful model loading."""
         # Mock config
         mock_cfg = MagicMock()
@@ -82,7 +109,7 @@ class TestHuggingFaceModelLoader:
         mock_tok = MagicMock()
         mock_tokenizer.from_pretrained.return_value = mock_tok
 
-        model, config, tokenizer = loader.load_model('test/model', device='cpu')
+        model, config, tokenizer = loader.load_model('test/model', device='cpu', torch_dtype=torch_dtype)
 
         assert model == mock_mdl
         assert config == mock_cfg
@@ -101,6 +128,8 @@ class TestHuggingFaceModelLoader:
         model_call_kwargs = mock_model.from_pretrained.call_args
         assert model_call_kwargs[1]['trust_remote_code'] is False
         assert model_call_kwargs[1]['cache_dir'] == loader.cache_dir
+        if torch_dtype:
+            assert model_call_kwargs[1]['torch_dtype'] == torch.float16
 
         mock_tokenizer.from_pretrained.assert_called_once()
 
@@ -113,6 +142,7 @@ class TestHuggingFaceModelLoader:
     def test_load_model_uses_causal_lm_architecture(self, mock_tokenizer, mock_model, mock_causal_model, loader):
         """Causal-LM configs load the model with its language-model head."""
         config = MagicMock(architectures=['Qwen2ForCausalLM'])
+        mock_causal_model._model_mapping = {type(config): object()}
         model = MagicMock()
         model.parameters.return_value = []
         model.to.return_value = model
@@ -132,6 +162,7 @@ class TestHuggingFaceModelLoader:
     def test_load_model_preserves_image_classification_head(self, mock_tokenizer, mock_model, mock_image_model, loader):
         """Image-classification configs load the model with its task head."""
         config = MagicMock(architectures=['ResNetForImageClassification'])
+        mock_image_model._model_mapping = {type(config): object()}
         model = MagicMock()
         model.parameters.return_value = []
         model.to.return_value = model
@@ -144,17 +175,34 @@ class TestHuggingFaceModelLoader:
         mock_model.from_pretrained.assert_not_called()
 
     @pytest.mark.parametrize(
-        'architecture, auto_class_name',
+        'config_class, architecture, auto_class_name',
         [
-            ('GPT2LMHeadModel', 'AutoModelForCausalLM'),
-            ('T5ForConditionalGeneration', 'AutoModelForSeq2SeqLM'),
+            ('GPT2Config', 'GPT2LMHeadModel', 'AutoModelForCausalLM'),
+            ('T5Config', 'T5ForConditionalGeneration', 'AutoModelForSeq2SeqLM'),
         ],
     )
-    def test_get_auto_model_class_supports_legacy_architecture_names(self, architecture, auto_class_name):
+    def test_get_auto_model_class_supports_legacy_architecture_names(self, config_class, architecture, auto_class_name):
         """Legacy architecture names retain their language-model task heads."""
-        config = SimpleNamespace(architectures=[architecture])
+        config = getattr(transformers, config_class)(architectures=[architecture])
 
         assert HuggingFaceModelLoader._get_auto_model_class(config) is getattr(transformers, auto_class_name)
+
+    def test_conditional_generation_requires_registered_config(self):
+        """Conditional-generation suffixes must not force multimodal configs into seq2seq."""
+        config = transformers.PretrainedConfig(architectures=['UnsupportedForConditionalGeneration'])
+        assert HuggingFaceModelLoader._get_auto_model_class(config) is transformers.AutoModel
+
+    def test_multiple_choice_rejected_before_weights(self, loader):
+        """Unsupported multiple-choice inputs fail at preflight and before weight download."""
+        config = transformers.BertConfig(architectures=['BertForMultipleChoice'])
+        with patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.AutoModel') as model, \
+                patch.object(loader, '_try_load_tokenizer') as tokenizer:
+            with pytest.raises(ModelIncompatibleError, match='3D inputs'):
+                loader.check_memory_fits('test/model', config, 'fp32', mode='inference')
+            with pytest.raises(ModelLoadError, match='3D inputs'):
+                loader.load_model('test/model', device='cpu', config=config)
+        model.from_pretrained.assert_not_called()
+        tokenizer.assert_not_called()
 
     def test_estimate_param_count_requires_attention_heads(self):
         """Configs without usable attention-head metadata are not estimated."""
@@ -206,7 +254,7 @@ class TestHuggingFaceModelLoader:
     def test_estimate_memory_for_cpu_and_gpu(self):
         """Memory estimates apply precision/mode multipliers and device capacity."""
         psutil = MagicMock()
-        psutil.virtual_memory.return_value = SimpleNamespace(total=8 * 1024**3)
+        psutil.virtual_memory.return_value = SimpleNamespace(available=8 * 1024**3)
         with patch.dict('sys.modules', {'psutil': psutil}), \
                 patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.torch.cuda') as cuda:
             cuda.is_available.return_value = False
@@ -222,10 +270,54 @@ class TestHuggingFaceModelLoader:
             assert available == 1_000_000
             assert fits is False
 
+    @pytest.mark.parametrize('expert_attribute', ['num_local_experts', 'num_experts', 'n_routed_experts'])
+    def test_moe_estimate_counts_all_experts(self, expert_attribute):
+        """All common expert-count names and expert-specific widths affect the estimate."""
+        config = transformers.BertConfig(
+            vocab_size=1000,
+            hidden_size=64,
+            num_hidden_layers=2,
+            intermediate_size=256,
+            num_attention_heads=8,
+            hidden_act='silu',
+            moe_intermediate_size=128
+        )
+        setattr(config, expert_attribute, 8)
+        count = HuggingFaceModelLoader.estimate_param_count_from_config(config)
+        assert count is not None
+        assert count >= 2 * 8 * 3 * 64 * 128
+        config.kv_lora_rank = 16
+        assert HuggingFaceModelLoader.estimate_param_count_from_config(config) is None
+        assert HuggingFaceModelLoader.check_memory_fits('test/moe', config, 'fp32')[0] is False
+
+    def test_memory_preflight_accounts_for_batch_sequence_and_outputs(self):
+        """Large logits and attention tensors can fail preflight even when weights alone fit."""
+        config = transformers.BertConfig(
+            vocab_size=1000, hidden_size=64, num_hidden_layers=2, intermediate_size=256, num_attention_heads=8
+        )
+        with patch('torch.cuda.is_available', return_value=False), \
+                patch('psutil.virtual_memory', return_value=SimpleNamespace(available=100_000_000)):
+            small = HuggingFaceModelLoader.check_memory_fits(
+                'test/model', config, 'fp32', mode='inference', batch_size=1, seq_length=8
+            )
+            large = HuggingFaceModelLoader.check_memory_fits(
+                'test/model', config, 'fp32', mode='inference', batch_size=32, seq_length=512
+            )
+        assert small[0] is True
+        assert large[0] is False
+        assert large[2] > small[2]
+
+    def test_cpu_memory_check_fails_when_available_ram_is_low(self):
+        """Free RAM, not total system capacity, gates CPU downloads."""
+        with patch('torch.cuda.is_available', return_value=False), \
+                patch('psutil.virtual_memory', return_value=SimpleNamespace(available=1_000_000)):
+            assert HuggingFaceModelLoader.estimate_memory(1_000_000, 'fp32', 'inference')[2] is False
+
     def test_check_memory_fits_reports_fit_failure_and_unknown(self):
         """Preflight reports fit status and skips only genuinely unestimable configs."""
         with patch.object(HuggingFaceModelLoader, 'estimate_param_count_from_config', return_value=None):
-            assert HuggingFaceModelLoader.check_memory_fits('test/model', MagicMock(), 'fp16') == (True, 0, 0, 0)
+            config = transformers.PretrainedConfig()
+            assert HuggingFaceModelLoader.check_memory_fits('test/model', config, 'fp16') == (True, 0, 0, 0)
 
         with patch.object(HuggingFaceModelLoader, 'estimate_param_count_from_config', return_value=2_000_000), \
                 patch.object(

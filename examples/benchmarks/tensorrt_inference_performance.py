@@ -26,9 +26,14 @@ from superbench.benchmarks import BenchmarkRegistry, Platform
 from superbench.common.utils import logger
 
 
-def run_inhouse_benchmark():
+def run_inhouse_benchmark(precision='fp16', batch_size=32, seq_length=512, iterations=2048):
     """Run TensorRT inference with in-house torchvision models."""
-    context = BenchmarkRegistry.create_benchmark_context('tensorrt-inference', platform=Platform.CUDA)
+    context = BenchmarkRegistry.create_benchmark_context(
+        'tensorrt-inference',
+        platform=Platform.CUDA,
+        parameters=f'--precision {precision} --batch_size {batch_size} --seq_length {seq_length} '
+        f'--iterations {iterations}'
+    )
     benchmark = BenchmarkRegistry.launch_benchmark(context)
     if benchmark:
         logger.info(
@@ -102,4 +107,4 @@ if __name__ == '__main__':
             args.model_identifier, args.precision, args.batch_size, args.seq_length, args.iterations
         )
     else:
-        run_inhouse_benchmark()
+        run_inhouse_benchmark(args.precision, args.batch_size, args.seq_length, args.iterations)

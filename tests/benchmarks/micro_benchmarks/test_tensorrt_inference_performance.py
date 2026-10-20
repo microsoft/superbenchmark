@@ -3,10 +3,15 @@
 
 """Tests for tensorrt-inference benchmark."""
 
+import importlib
 import unittest
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+
+import numpy as np
+import onnx
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
@@ -35,6 +40,17 @@ def _make_onnx_model(inputs, initializer_names=()):
     """Build an ONNX model mock with the given graph inputs and initializers."""
     initializers = [SimpleNamespace(name=n) for n in initializer_names]
     return SimpleNamespace(graph=SimpleNamespace(input=list(inputs), initializer=initializers))
+
+
+def test_inhouse_example_forwards_cli_parameters():
+    """Example precision, shape and iteration values reach the in-house context."""
+    example = importlib.import_module('examples.benchmarks.tensorrt_inference_performance')
+    with patch.object(example.BenchmarkRegistry, 'create_benchmark_context') as context, \
+            patch.object(example.BenchmarkRegistry, 'launch_benchmark', return_value=None):
+        example.run_inhouse_benchmark(precision='fp32', batch_size=4, seq_length=16, iterations=8)
+    parameters = context.call_args[1]['parameters']
+    for expected in ('--precision fp32', '--batch_size 4', '--seq_length 16', '--iterations 8'):
+        assert expected in parameters
 
 
 class TensorRTInferenceBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
@@ -327,7 +343,8 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         derived_shapes = 'input_ids:8x128,attention_mask:8x128'
         with loader_p as mock_loader_cls, msc_p as mock_msc, exporter_p as mock_exporter_cls, \
                 makedirs_p as mock_makedirs, torch_p as mock_torch, \
-                patch.object(benchmark, '_derive_trt_input_shapes', return_value=derived_shapes) as mock_derive:
+                patch.object(benchmark, '_derive_trt_input_shapes', return_value=derived_shapes) as mock_derive, \
+                patch.object(benchmark, '_write_trt_input_files', return_value='input_ids:/tmp/ids.bin'):
             mock_torch.hub.get_dir.return_value = '/tmp/torchhub'
             mock_torch.cuda.is_available.return_value = False
 
@@ -369,6 +386,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         self.assertIn(f'--optShapes={derived_shapes}', cmd)
         self.assertIn(f'--maxShapes={derived_shapes}', cmd)
         self.assertIn(f'--shapes={derived_shapes}', cmd)
+        self.assertIn('--loadInputs=input_ids:/tmp/ids.bin', cmd)
         self.assertIn('--memPoolSize=workspace:8192', cmd)
         self.assertIn('--fp16', cmd)
         self.assertIn('--iterations=128', cmd)
@@ -383,7 +401,8 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         loader_p, msc_p, exporter_p, makedirs_p, torch_p = self._patch_build_dependencies()
         with loader_p as mock_loader_cls, msc_p, exporter_p as mock_exporter_cls, \
                 makedirs_p, torch_p as mock_torch, \
-                patch.object(benchmark, '_derive_trt_input_shapes', return_value='input_ids:8x128'):
+                patch.object(benchmark, '_derive_trt_input_shapes', return_value='input_ids:8x128'), \
+                patch.object(benchmark, '_write_trt_input_files', return_value='input_ids:/tmp/ids.bin'):
             mock_torch.hub.get_dir.return_value = '/tmp/torchhub'
             mock_torch.cuda.is_available.return_value = False
             mock_loader_cls.return_value.load_model_from_config.return_value = (MagicMock(), MagicMock(), None)
@@ -423,6 +442,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         with loader_p as mock_loader_cls, msc_p, exporter_p as mock_exporter_cls, \
                 makedirs_p as mock_makedirs, torch_p as mock_torch, \
                 patch.object(benchmark, '_derive_trt_input_shapes', return_value='input_ids:8x128'), \
+                patch.object(benchmark, '_write_trt_input_files', return_value='input_ids:/tmp/ids.bin'), \
                 patch.dict('os.environ', {'CUDA_VISIBLE_DEVICES': '0', 'PROC_RANK': '3'}, clear=False):
             mock_torch.hub.get_dir.return_value = '/tmp/torchhub'
             mock_torch.cuda.is_available.return_value = False
@@ -443,6 +463,7 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         with loader_p as mock_loader_cls, msc_p, exporter_p as mock_exporter_cls, \
                 makedirs_p as mock_makedirs, torch_p as mock_torch, \
                 patch.object(benchmark, '_derive_trt_input_shapes', return_value='input_ids:8x128'), \
+                patch.object(benchmark, '_write_trt_input_files', return_value='input_ids:/tmp/ids.bin'), \
                 patch.dict('os.environ', {'LOCAL_RANK': '5'}, clear=True):
             mock_torch.hub.get_dir.return_value = '/tmp/torchhub'
             mock_torch.cuda.is_available.return_value = False
@@ -454,6 +475,32 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
             self.assertTrue(benchmark._build_trtexec_command_for_hf(None, False))
 
         self.assertTrue(mock_makedirs.call_args[0][0].endswith('trt_rank_5'))
+
+    def test_write_trt_input_files_uses_valid_tokens_masks_and_types(self):
+        """Real binary files preserve ONNX integer types and valid NLP values."""
+        benchmark = self._make_benchmark()
+        benchmark._hf_config = SimpleNamespace(vocab_size=7)
+        inputs = [
+            onnx.helper.make_tensor_value_info(name, dtype, [2, 4]) for name, dtype in [
+                ('input_ids', onnx.TensorProto.INT64),
+                ('attention_mask', onnx.TensorProto.INT32),
+                ('decoder_input_ids', onnx.TensorProto.INT64),
+            ]
+        ]
+        model = onnx.helper.make_model(onnx.helper.make_graph([], 'inputs', inputs, []))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'model.onnx'
+            onnx.save(model, str(path))
+            result = benchmark._write_trt_input_files(
+                str(path), 'input_ids:2x4,attention_mask:2x4,decoder_input_ids:2x4'
+            )
+            self.assertIn(f'input_ids:{path.parent / "input_ids.bin"}', result)
+            for name in ('input_ids', 'decoder_input_ids'):
+                data = np.fromfile(str(path.parent / f'{name}.bin'), dtype=np.int64)
+                self.assertEqual(8, data.size)
+                self.assertTrue(np.all((0 <= data) & (data < 7)))
+            mask = np.fromfile(str(path.parent / 'attention_mask.bin'), dtype=np.int32)
+            np.testing.assert_array_equal(mask, np.ones(8, dtype=np.int32))
 
     def test_build_trtexec_command_for_hf_rejects_invalid_proc_rank(self):
         """A path-like PROC_RANK is rejected before loading or exporting a model."""

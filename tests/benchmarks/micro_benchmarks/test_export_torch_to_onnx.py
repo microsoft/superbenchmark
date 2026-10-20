@@ -295,7 +295,7 @@ def test_build_onnx_export_kwargs_large_model_uses_external_data_modern(exporter
 
 
 def test_build_onnx_export_kwargs_large_model_uses_external_data_legacy(exporter):
-    """For >2GB models on older PyTorch, ``use_external_data_format`` is used instead."""
+    """Torch <=1.10 accepts the legacy external-data keyword."""
     fake_model = MagicMock()
     big_param = SimpleNamespace(
         numel=lambda: int(3 * (1024**3) / 4),
@@ -311,6 +311,22 @@ def test_build_onnx_export_kwargs_large_model_uses_external_data_legacy(exporter
 
     assert kwargs['use_external_data_format'] is True
     assert 'external_data' not in kwargs
+
+
+def test_build_onnx_export_kwargs_large_model_torch_111_to_24(exporter):
+    """Torch 1.11-2.4 accepts neither external-data keyword and enables it automatically."""
+    model = MagicMock()
+    model.parameters.return_value = [SimpleNamespace(numel=lambda: 3 * 1024**3 // 4, element_size=lambda: 4)]
+    signature = inspect.Signature(
+        parameters=[
+            inspect.Parameter(name, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+            for name in ('model', 'args', 'f', 'opset_version')
+        ]
+    )
+    with patch(f'{_EXPORTER_MODULE}.inspect.signature', return_value=signature):
+        kwargs = exporter._build_onnx_export_kwargs(model, ['input_ids'], {})
+    assert 'external_data' not in kwargs
+    assert 'use_external_data_format' not in kwargs
 
 
 # ---------------------------------------------------------------------------

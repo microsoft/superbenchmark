@@ -81,15 +81,11 @@ class TestHuggingFaceE2E:
         assert hf_config.model_type == 'bert'
 
     def test_load_model_with_dtype(self, loader):
-        """Test loading model and converting dtype after load."""
-        model, _, _ = loader.load_model('prajjwal1/bert-tiny', device='cpu')
+        """Test that the requested dtype is applied during model loading."""
+        model, _, _ = loader.load_model('prajjwal1/bert-tiny', torch_dtype='float16', device='cpu')
 
-        # Convert to float32 after loading
-        model = model.float()
-
-        # Check model parameters are float32
         param = next(model.parameters())
-        assert param.dtype == torch.float32
+        assert param.dtype == torch.float16
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='Requires GPU')
     def test_load_model_to_gpu(self, loader):
