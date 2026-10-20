@@ -11,7 +11,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import numpy as np
-import onnx
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
@@ -480,17 +479,21 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
         """Real binary files preserve ONNX integer types and valid NLP values."""
         benchmark = self._make_benchmark()
         benchmark._hf_config = SimpleNamespace(vocab_size=7)
-        inputs = [
-            onnx.helper.make_tensor_value_info(name, dtype, [2, 4]) for name, dtype in [
-                ('input_ids', onnx.TensorProto.INT64),
-                ('attention_mask', onnx.TensorProto.INT32),
-                ('decoder_input_ids', onnx.TensorProto.INT64),
-            ]
-        ]
-        model = onnx.helper.make_model(onnx.helper.make_graph([], 'inputs', inputs, []))
-        with tempfile.TemporaryDirectory() as directory:
+        onnx = MagicMock()
+        onnx.TensorProto.INT32 = 6
+        onnx.TensorProto.INT64 = 7
+        inputs = []
+        for name, dtype in [
+            ('input_ids', onnx.TensorProto.INT64),
+            ('attention_mask', onnx.TensorProto.INT32),
+            ('decoder_input_ids', onnx.TensorProto.INT64),
+        ]:
+            metadata = _make_onnx_input(name, [2, 4])
+            metadata.type.tensor_type.elem_type = dtype
+            inputs.append(metadata)
+        onnx.load.return_value = _make_onnx_model(inputs)
+        with tempfile.TemporaryDirectory() as directory, patch.dict('sys.modules', {'onnx': onnx}):
             path = Path(directory) / 'model.onnx'
-            onnx.save(model, str(path))
             result = benchmark._write_trt_input_files(
                 str(path), 'input_ids:2x4,attention_mask:2x4,decoder_input_ids:2x4'
             )
