@@ -20,7 +20,6 @@ from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
 
 class DeepSeekV2LiteTraining(Benchmark):
     """Run one official BF16 checkpoint through a separate FSDP worker runtime."""
-
     def __init__(self, name, parameters=''):
         """Initialize the fixed model benchmark without importing its new runtime."""
         super().__init__(name, parameters)
@@ -65,13 +64,30 @@ class DeepSeekV2LiteTraining(Benchmark):
         worker = Path(__file__).with_name('deepseek_v2_lite_training_worker.py')
         args = self._args
         return [
-            args.runtime_python, '-m', 'torch.distributed.run', '--standalone',
-            '--nproc_per_node={}'.format(args.num_gpus), str(worker),
-            '--cache_dir', str(job / 'cache'), '--output', str(job / 'report.json'),
-            '--num_gpus', str(args.num_gpus), '--batch_size', str(args.batch_size),
-            '--seq_len', str(args.seq_len), '--num_warmup', str(args.num_warmup),
-            '--num_steps', str(args.num_steps), '--learning_rate', str(args.learning_rate),
-            '--duration', str(args.duration),
+            args.runtime_python,
+            '-m',
+            'torch.distributed.run',
+            '--standalone',
+            '--nproc_per_node={}'.format(args.num_gpus),
+            str(worker),
+            '--cache_dir',
+            str(job / 'cache'),
+            '--output',
+            str(job / 'report.json'),
+            '--num_gpus',
+            str(args.num_gpus),
+            '--batch_size',
+            str(args.batch_size),
+            '--seq_len',
+            str(args.seq_len),
+            '--num_warmup',
+            str(args.num_warmup),
+            '--num_steps',
+            str(args.num_steps),
+            '--learning_rate',
+            str(args.learning_rate),
+            '--duration',
+            str(args.duration),
         ]
 
     def _benchmark(self):

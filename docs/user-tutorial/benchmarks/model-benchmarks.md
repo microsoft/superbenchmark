@@ -251,6 +251,13 @@ the controller reserves 20 seconds for cleanup. A watchdog exit is a failure.
 Image pulling, dependency preparation and SuperBench installation are separate
 runtime-preparation steps, not certified by the model-cold timer.
 
+A dedicated Linux child supervisor reaps the complete worker tree, including
+torchrun ranks that start separate sessions. A launcher exit with surviving
+descendants is a failure; timeout cleanup escalates from termination to forced
+exit and verifies that owned children were reaped without targeting other jobs.
+The worker records Unix timestamps bounding the measured phase for external
+GPU telemetry; the step durations continue to use the monotonic clock.
+
 | Metric | Unit | Scope |
 | --- | --- | --- |
 | `bf16_train_step_time` | ms | Mean of the slowest synchronized rank per measured step |

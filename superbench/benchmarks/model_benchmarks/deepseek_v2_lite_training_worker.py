@@ -132,12 +132,17 @@ def run_training(args, reference, checkpoint):
     local_rank = int(os.environ['LOCAL_RANK'])
     step_times, losses, norms = [], [], []
     updated_parameters = 0
+    measurement_start = None
+    measurement_end = None
     torch.cuda.reset_peak_memory_stats()
     try:
         for step in range(args.num_warmup + args.num_steps):
             offset = (step * dist.get_world_size() + dist.get_rank()) * args.batch_size * args.seq_len
             tokens = packed_tokens(documents, eos, args.seq_len, args.batch_size, offset)
             inputs = torch.tensor(tokens, device='cuda', dtype=torch.long)
+            if step == args.num_warmup:
+                torch.cuda.synchronize()
+                measurement_start = time.time()
             elapsed, loss, norm, changed = training_step(model, optimizer, inputs, verify_update=step == 0)
             updated_parameters += changed
             maximum_time = torch.tensor(elapsed, device='cuda', dtype=torch.float64)
@@ -146,6 +151,7 @@ def run_training(args, reference, checkpoint):
                 step_times.append(maximum_time.item())
                 losses.append(loss)
                 norms.append(norm)
+                measurement_end = time.time()
             if dist.get_rank() == 0:
                 print(
                     'step={} global_loss={:.6f} max_rank_ms={:.3f}'.format(step, loss, maximum_time.item()), flush=True
@@ -168,6 +174,8 @@ def run_training(args, reference, checkpoint):
             'optimizer': 'AdamW, FP32 master parameters and moments',
             'optimizer_resumed': False,
             'training_parallelism': 'FSDP full shard; no expert parallelism',
+            'measurement_start_unix_seconds': measurement_start,
+            'measurement_end_unix_seconds': measurement_end,
         }
     finally:
         del optimizer, model

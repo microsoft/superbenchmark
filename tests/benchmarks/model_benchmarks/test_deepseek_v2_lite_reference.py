@@ -35,7 +35,6 @@ def reference(monkeypatch):
 
 class ReferenceFixture:
     """Expose token-independent logits while checking cached attention shapes."""
-
     def __init__(self):
         """Track cache and full-prefix calls separately."""
         self.calls = []
@@ -59,8 +58,10 @@ def request_fixture():
     """Provide exact fixture probabilities rather than a model-quality claim."""
     probabilities = torch.tensor([0.0, 1.0, 2.0, 3.0]).log_softmax(-1).tolist()
     return {
-        'prompt_token_ids': [1, 2], 'token_ids': [3, 3],
-        'logprobs': [{str(index): value for index, value in enumerate(probabilities)} for _ in range(2)],
+        'prompt_token_ids': [1, 2],
+        'token_ids': [3, 3],
+        'logprobs': [{str(index): value
+                      for index, value in enumerate(probabilities)} for _ in range(2)],
     }
 
 

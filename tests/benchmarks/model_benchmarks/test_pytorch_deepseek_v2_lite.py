@@ -27,9 +27,16 @@ def successful_worker(command, log, timeout):
     """Supply a worker-contract fixture, not a claim of model execution."""
     output = Path(command[command.index('--output') + 1])
     report = dict(
-        identity_report(), status='success', correctness_passed=True, teardown_complete=True,
-        step_ms=[10.0, 20.0], loss=[2.0, 1.9], gradient_norm=[1.0, 0.9],
-        loss_token_count=2 * 8 * 63, updated_parameter_elements=100, world_size=4,
+        identity_report(),
+        status='success',
+        correctness_passed=True,
+        teardown_complete=True,
+        step_ms=[10.0, 20.0],
+        loss=[2.0, 1.9],
+        gradient_norm=[1.0, 0.9],
+        loss_token_count=2 * 8 * 63,
+        updated_parameter_elements=100,
+        world_size=4,
     )
     write_json(output, report)
 
@@ -46,9 +53,10 @@ def test_successful_adapter_metrics(benchmark, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    'parameters',
-    ['--seq_len 0', '--num_gpus 1', '--batch_size 0', '--num_steps 0', '--num_warmup -1',
-     '--learning_rate nan', '--duration 3600', '--run_count 2', '--hidden_size 1024']
+    'parameters', [
+        '--seq_len 0', '--num_gpus 1', '--batch_size 0', '--num_steps 0', '--num_warmup -1', '--learning_rate nan',
+        '--duration 3600', '--run_count 2', '--hidden_size 1024'
+    ]
 )
 def test_invalid_profiles(parameters):
     """Reject invalid shapes, architecture overrides and combined timing profiles."""
@@ -87,9 +95,10 @@ def test_timeout_is_failure(benchmark, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    'field,value',
-    [('step_ms', [-1, 20]), ('step_ms', [10]), ('correctness_passed', False),
-     ('teardown_complete', False), ('updated_parameter_elements', True), ('loss_token_count', 1024)]
+    'field,value', [
+        ('step_ms', [-1, 20]), ('step_ms', [10]), ('correctness_passed', False), ('teardown_complete', False),
+        ('updated_parameter_elements', True), ('loss_token_count', 1024)
+    ]
 )
 def test_invalid_worker_report(benchmark, monkeypatch, field, value):
     """Check required metric thresholds and shapes, not only process exit zero."""

@@ -90,7 +90,9 @@ def training_reference(model, checkpoint):
             if not torch.isfinite(values).all().item():
                 raise RuntimeError('Nonfinite reference gradient: {}'.format(name))
             probes[name] = {
-                'shape': list(parameter.shape), 'indices': indices.cpu().tolist(), 'values': values.tolist()
+                'shape': list(parameter.shape),
+                'indices': indices.cpu().tolist(),
+                'values': values.tolist()
             }
             if selected_expert:
                 expert_probe = True
@@ -119,8 +121,10 @@ def inference_reference(model, requests):
             for step, token in enumerate(completion):
                 attention_mask = torch.ones_like(prefix)
                 output = model(
-                    input_ids=prefix if step == 0 else prefix[:, -1:], attention_mask=attention_mask,
-                    past_key_values=cache, use_cache=True
+                    input_ids=prefix if step == 0 else prefix[:, -1:],
+                    attention_mask=attention_mask,
+                    past_key_values=cache,
+                    use_cache=True
                 )
                 cache = output.past_key_values
                 cached = output.logits[:, -1, :].float()
@@ -129,9 +133,7 @@ def inference_reference(model, requests):
                     raise RuntimeError('Nonfinite reference logits.')
                 torch.testing.assert_close(cached, full, rtol=0.02, atol=0.05)
                 if full[0].argmax().item() != token:
-                    raise RuntimeError(
-                        'Engine greedy token differs at request {} step {}.'.format(request_index, step)
-                    )
+                    raise RuntimeError('Engine greedy token differs at request {} step {}.'.format(request_index, step))
                 expected = torch.log_softmax(full[0], dim=-1)
                 ids = [int(value) for value in logprobs[step]]
                 if token not in ids or not ids:
@@ -139,16 +141,21 @@ def inference_reference(model, requests):
                 actual = torch.tensor([logprobs[step][str(value)] for value in ids], device='cuda')
                 target = expected[ids]
                 torch.testing.assert_close(
-                    actual, target, rtol=0.02, atol=0.05,
+                    actual,
+                    target,
+                    rtol=0.02,
+                    atol=0.05,
                     msg=lambda message: 'Engine/reference request {} step {}:\n{}'.format(request_index, step, message),
                 )
-                comparisons.append({
-                    'request': request_index,
-                    'step': step,
-                    'logprob_positions': len(ids),
-                    'cache_max_abs_error': (cached - full).abs().max().item(),
-                    'engine_logprob_max_abs_error': (actual - target).abs().max().item(),
-                })
+                comparisons.append(
+                    {
+                        'request': request_index,
+                        'step': step,
+                        'logprob_positions': len(ids),
+                        'cache_max_abs_error': (cached - full).abs().max().item(),
+                        'engine_logprob_max_abs_error': (actual - target).abs().max().item(),
+                    }
+                )
                 prefix = torch.cat((prefix, torch.tensor([[token]], device='cuda')), dim=1)
     return {'comparisons': comparisons, 'logprob_rtol': 0.02, 'logprob_atol': 0.05}
 

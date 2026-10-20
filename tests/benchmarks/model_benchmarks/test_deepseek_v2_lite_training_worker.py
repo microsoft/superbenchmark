@@ -44,7 +44,6 @@ def worker(monkeypatch):
 
 class UpdateFixture(torch.nn.Module):
     """Use a small real autograd/optimizer update, not a full-model proxy result."""
-
     def __init__(self):
         """Initialize a nonzero parameter and loss."""
         super().__init__()
