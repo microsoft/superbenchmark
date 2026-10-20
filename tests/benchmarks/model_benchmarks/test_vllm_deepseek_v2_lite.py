@@ -27,10 +27,18 @@ def successful_worker(command, log, timeout):
     """Provide validated-shaped fixtures, not actual GPU measurements."""
     output = Path(command[command.index('--output') + 1])
     report = dict(
-        identity_report(), status='success', correctness_passed=True, teardown_complete=True,
-        step_ms=[10.0, 20.0], input_token_counts=[64, 64, 64, 64], output_token_counts=[1, 4, 3, 2],
-        request_prefill_ms=[1.0] * 4, ttft_ms=[2.0] * 4, decode_tpot_ms=[3.0] * 3,
-        request_count=4, num_gpus=1,
+        identity_report(),
+        status='success',
+        correctness_passed=True,
+        teardown_complete=True,
+        step_ms=[10.0, 20.0],
+        input_token_counts=[64, 64, 64, 64],
+        output_token_counts=[1, 4, 3, 2],
+        request_prefill_ms=[1.0] * 4,
+        ttft_ms=[2.0] * 4,
+        decode_tpot_ms=[3.0] * 3,
+        request_count=4,
+        num_gpus=1,
     )
     write_json(output, report)
 
@@ -47,9 +55,10 @@ def test_counts_and_model_result_shape(benchmark, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    'parameters',
-    ['--seq_len 0', '--batch_size 0', '--max_new_tokens 1', '--num_steps 0', '--num_warmup -1',
-     '--gpu_memory_utilization nan', '--duration 3600', '--run_count 2', '--precision float16']
+    'parameters', [
+        '--seq_len 0', '--batch_size 0', '--max_new_tokens 1', '--num_steps 0', '--num_warmup -1',
+        '--gpu_memory_utilization nan', '--duration 3600', '--run_count 2', '--precision float16'
+    ]
 )
 def test_invalid_profiles(parameters):
     """Reject unsupported precisions, dimensions and multi-profile timing."""
@@ -59,10 +68,11 @@ def test_invalid_profiles(parameters):
 
 
 @pytest.mark.parametrize(
-    'field,value',
-    [('output_token_counts', [1, 4, 3, 65]), ('output_token_counts', [1, 4, 3, 1.5]),
-     ('input_token_counts', [63, 64, 64, 64]), ('ttft_ms', [0] * 4),
-     ('decode_tpot_ms', [3.0] * 4), ('correctness_passed', False), ('teardown_complete', False)]
+    'field,value', [
+        ('output_token_counts', [1, 4, 3, 65]), ('output_token_counts', [1, 4, 3, 1.5]),
+        ('input_token_counts', [63, 64, 64, 64]), ('ttft_ms', [0] * 4), ('decode_tpot_ms', [3.0] * 4),
+        ('correctness_passed', False), ('teardown_complete', False)
+    ]
 )
 def test_reject_invalid_generation_reports(benchmark, monkeypatch, field, value):
     """Validate output shapes and thresholds instead of accepting exit code zero."""

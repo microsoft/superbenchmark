@@ -4,6 +4,7 @@
 """CPU tests for generation counters and the pinned engine timing contract."""
 
 import importlib.util
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -28,14 +29,24 @@ def worker(monkeypatch):
 def response(tokens=(7, 8)):
     """Construct engine-response fixtures without simulating GPU success."""
     return SimpleNamespace(
-        finished=True, prompt_token_ids=[1, 2, 3],
-        outputs=[SimpleNamespace(
-            token_ids=list(tokens), finish_reason='length',
-            logprobs=[{token: SimpleNamespace(logprob=-0.5)} for token in tokens]
-        )],
+        finished=True,
+        prompt_token_ids=[1, 2, 3],
+        outputs=[
+            SimpleNamespace(
+                token_ids=list(tokens),
+                finish_reason='length',
+                logprobs=[{
+                    token: SimpleNamespace(logprob=-0.5)
+                } for token in tokens]
+            )
+        ],
         metrics=SimpleNamespace(
-            is_corrupted=False, num_generation_tokens=len(tokens),
-            scheduled_ts=10.0, first_token_ts=10.25, last_token_ts=10.5, first_token_latency=0.4
+            is_corrupted=False,
+            num_generation_tokens=len(tokens),
+            scheduled_ts=10.0,
+            first_token_ts=10.25,
+            last_token_ts=10.5,
+            first_token_latency=0.4
         ),
     )
 
@@ -50,7 +61,7 @@ def test_actual_output_tokens_not_maximum(worker):
 
 def test_eos_is_a_real_token(worker):
     """An EOS-only request has one output token and no decode denominator."""
-    output = response((100001,))
+    output = response((100001, ))
     output.outputs[0].finish_reason = 'stop'
     output.metrics.last_token_ts = output.metrics.first_token_ts
     assert worker.output_record(output, 64, [1, 2, 3])['token_ids'] == [100001]
@@ -93,9 +104,10 @@ def test_missing_logprobs(worker):
 
 
 @pytest.mark.parametrize(
-    'field,value',
-    [('is_corrupted', True), ('num_generation_tokens', 64), ('first_token_ts', 0.0),
-     ('first_token_latency', float('nan')), ('last_token_ts', 10.0)]
+    'field,value', [
+        ('is_corrupted', True), ('num_generation_tokens', 64), ('first_token_ts', 0.0),
+        ('first_token_latency', float('nan')), ('last_token_ts', 10.0)
+    ]
 )
 def test_invalid_statistics(worker, field, value):
     """Never substitute zero/default durations or hide corrupted logits."""
@@ -103,3 +115,50 @@ def test_invalid_statistics(worker, field, value):
     setattr(output.metrics, field, value)
     with pytest.raises(RuntimeError):
         worker.request_times(output)
+
+
+def test_measured_generation_excludes_warmup_and_counts_actual_tokens(worker, monkeypatch):
+    """Aggregate only measured requests, retaining EOS counts without a false TPOT."""
+    monkeypatch.setitem(sys.modules, 'torch', SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda: None)))
+    monkeypatch.setitem(sys.modules, 'vllm', SimpleNamespace(SamplingParams=SimpleNamespace))
+    clock = iter([0.0, 0.1, 1.0, 1.2, 2.0, 2.3])
+    monkeypatch.setattr(worker.time, 'monotonic', lambda: next(clock))
+    lengths = iter([(4, 4), (1, 3), (2, 1)])
+    submitted = []
+    monkeypatch.setattr(worker.time, 'time', lambda: 1000.0 + 100 * len(submitted))
+
+    class Engine:
+        def generate(self, prompts, parameters, use_tqdm):
+            submitted.append(prompts)
+            outputs = []
+            for prompt, count in zip(prompts, next(lengths)):
+                output = response(tuple(range(7, 7 + count)))
+                output.prompt_token_ids = prompt['prompt_token_ids']
+                if count == 1:
+                    output.outputs[0].finish_reason = 'stop'
+                    output.metrics.last_token_ts = output.metrics.first_token_ts
+                outputs.append(output)
+            return outputs
+
+    args = SimpleNamespace(num_warmup=1, num_steps=2, seq_len=32, batch_size=2, max_new_tokens=4)
+    report = worker.measured_generation(Engine(), [[1, 2, 3], [4, 5]], 99, args)
+    assert len(submitted) == 3
+    assert report['step_ms'] == pytest.approx([200, 300])
+    assert report['request_count'] == 4
+    assert report['input_token_counts'] == [32, 32, 32, 32]
+    assert report['output_token_counts'] == [1, 3, 2, 1]
+    assert report['request_prefill_ms'] == [250, 250, 250, 250]
+    assert report['ttft_ms'] == [400, 400, 400, 400]
+    assert report['decode_tpot_ms'] == [125, 250]
+    assert report['measurement_start_unix_seconds'] == 1100
+    assert report['measurement_end_unix_seconds'] == 1300
+
+
+def test_measured_generation_rejects_missing_requests(worker, monkeypatch):
+    """A partial generation batch cannot become a valid throughput sample."""
+    monkeypatch.setitem(sys.modules, 'torch', SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda: None)))
+    monkeypatch.setitem(sys.modules, 'vllm', SimpleNamespace(SamplingParams=SimpleNamespace))
+    engine = SimpleNamespace(generate=lambda *args, **kwargs: [])
+    args = SimpleNamespace(num_warmup=0, num_steps=1, seq_len=32, batch_size=2, max_new_tokens=4)
+    with pytest.raises(RuntimeError, match='fewer requests'):
+        worker.measured_generation(engine, [[1, 2, 3]], 99, args)

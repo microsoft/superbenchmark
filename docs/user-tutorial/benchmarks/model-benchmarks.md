@@ -258,6 +258,12 @@ rejects watchdog exits. Image pulls, dependency installation and controller
 installation are separate preparation steps, not certified by the model-cold
 timer.
 
+A dedicated Linux child supervisor reaps worker descendants even when they start
+separate sessions. A successful launcher exit with surviving children is rejected.
+Worker measurement-phase Unix timestamps allow external telemetry to exclude
+setup, correctness and warmup; the timed generation durations use a monotonic
+clock. CPU regression tests cover warmup exclusion and mixed EOS/decode counts.
+
 | Metric | Unit | Scope |
 | --- | --- | --- |
 | `bf16_inference_step_time` | ms | Mean complete synchronized generation batch |

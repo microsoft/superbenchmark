@@ -6,7 +6,10 @@
 import copy
 import importlib.util
 import math
+import os
+import signal
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -118,7 +121,8 @@ def test_timeout_reaps_worker(tmp_path):
     """A timeout must terminate the created process rather than leave a worker."""
     pid_file = tmp_path / 'pid'
     command = [
-        sys.executable, '-c',
+        sys.executable,
+        '-c',
         'import os,time; from pathlib import Path; Path({!r}).write_text(str(os.getpid())); time.sleep(60)'.format(
             str(pid_file)
         ),
@@ -135,9 +139,10 @@ def test_worker_argv_is_not_a_shell(tmp_path):
     output = tmp_path / 'argv'
     value = 'a=b; this is one value'
     utils.run_worker(
-        [sys.executable, '-c', 'import sys; from pathlib import Path; Path(sys.argv[1]).write_text(sys.argv[2])',
-         str(output), value],
-        tmp_path / 'worker.log', 5
+        [
+            sys.executable, '-c', 'import sys; from pathlib import Path; Path(sys.argv[1]).write_text(sys.argv[2])',
+            str(output), value
+        ], tmp_path / 'worker.log', 5
     )
     assert output.read_text() == value
 
@@ -145,8 +150,93 @@ def test_worker_argv_is_not_a_shell(tmp_path):
 def test_success_with_live_child_is_rejected(tmp_path):
     """A leader's exit code zero is insufficient when its child remains alive."""
     command = [
-        sys.executable, '-c',
+        sys.executable,
+        '-c',
         'import subprocess,sys; subprocess.Popen([sys.executable,"-c","import time; time.sleep(60)"])',
     ]
-    with pytest.raises(RuntimeError, match='subprocess group'):
+    with pytest.raises(RuntimeError, match='descendant processes'):
         utils.run_worker(command, tmp_path / 'worker.log', 5)
+
+
+@pytest.mark.parametrize('launcher_exits', [False, True])
+def test_separate_session_child_is_reaped(tmp_path, launcher_exits):
+    """Own escaped rank sessions even when their launcher exits or ignores termination."""
+    pid_file = tmp_path / 'rank.pid'
+    rank = (
+        'import os,signal,time; from pathlib import Path; '
+        'signal.signal(signal.SIGTERM, signal.SIG_IGN); '
+        'Path({!r}).write_text(str(os.getpid())); time.sleep(60)'
+    ).format(str(pid_file))
+    launcher = (
+        'import signal,subprocess,sys,time; from pathlib import Path; '
+        'signal.signal(signal.SIGTERM, signal.SIG_IGN); '
+        'subprocess.Popen([sys.executable, "-c", {!r}], start_new_session=True); '
+        'ready=Path({!r})\n'
+        'while not ready.exists(): time.sleep(0.01)\n'
+        '{}'
+    ).format(rank, str(pid_file), 'sys.exit(0)' if launcher_exits else 'time.sleep(60)')
+    try:
+        expected = RuntimeError if launcher_exits else TimeoutError
+        with pytest.raises(expected):
+            utils.run_worker([sys.executable, '-c', launcher], tmp_path / 'worker.log', 1)
+        pid = int(pid_file.read_text())
+        with pytest.raises(ProcessLookupError):
+            os.kill(pid, 0)
+    finally:
+        if pid_file.exists():
+            pid = int(pid_file.read_text())
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+
+def test_worker_signal_does_not_kill_unrelated_process(tmp_path):
+    """Timeout cleanup must be scoped to the supervised job, not the controller's children."""
+    unrelated = utils.subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])
+    try:
+        with pytest.raises(TimeoutError):
+            utils.run_worker([sys.executable, '-c', 'import time; time.sleep(60)'], tmp_path / 'worker.log', 0.2)
+        assert unrelated.poll() is None
+    finally:
+        unrelated.terminate()
+        unrelated.wait(timeout=5)
+
+
+def test_controller_death_reaps_owned_worker(tmp_path):
+    """A killed controller must not leave its independently supervised job alive."""
+    pid_file = tmp_path / 'worker.pid'
+    worker = ('import os,time; from pathlib import Path; '
+              'Path({!r}).write_text(str(os.getpid())); time.sleep(60)').format(str(pid_file))
+    controller = (
+        'import sys; from pathlib import Path; sys.path.insert(0, {!r}); '
+        'from deepseek_v2_lite_utils import run_worker; '
+        'run_worker([sys.executable, "-c", {!r}], Path({!r}), 60)'
+    ).format(str(WORKER_PATH.parent), worker, str(tmp_path / 'worker.log'))
+    process = utils.subprocess.Popen([sys.executable, '-c', controller])
+    try:
+        deadline = time.monotonic() + 5
+        while not pid_file.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert pid_file.exists()
+        pid = int(pid_file.read_text())
+        process.kill()
+        process.wait(timeout=5)
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.02)
+        else:
+            pytest.fail('The worker survived its controller.')
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+        if pid_file.exists():
+            try:
+                os.kill(int(pid_file.read_text()), signal.SIGKILL)
+            except ProcessLookupError:
+                pass

@@ -12,8 +12,8 @@ import time
 from pathlib import Path
 
 from deepseek_v2_lite_utils import (
-    FIXED_TEXTS, configure_cache, download_checkpoint, identity_report, interrupt_worker, packed_tokens,
-    read_json, run_worker, write_json
+    FIXED_TEXTS, configure_cache, download_checkpoint, identity_report, interrupt_worker, packed_tokens, read_json,
+    run_worker, write_json
 )
 
 
@@ -28,7 +28,8 @@ def output_record(output, maximum, prompt_token_ids, include_logprobs=False):
     if not 0 < len(tokens) <= maximum or completion.finish_reason not in ('stop', 'length'):
         raise RuntimeError('Invalid completion count or finish reason.')
     record = {
-        'prompt_token_ids': list(output.prompt_token_ids), 'token_ids': tokens,
+        'prompt_token_ids': list(output.prompt_token_ids),
+        'token_ids': tokens,
         'finish_reason': completion.finish_reason,
     }
     if include_logprobs:
@@ -98,21 +99,24 @@ def measured_generation(engine, documents, eos, args):
 
     parameters = SamplingParams(temperature=0, max_tokens=args.max_new_tokens, seed=20261015)
     step_times, input_counts, output_counts, prefills, ttfts, tpots = [], [], [], [], [], []
+    measurement_start = None
+    measurement_end = None
     for step in range(args.num_warmup + args.num_steps):
         sequences = packed_tokens(documents, eos, args.seq_len, args.batch_size, offset=step * args.seq_len)
         prompts = [{'prompt_token_ids': sequence} for sequence in sequences]
         torch.cuda.synchronize()
+        if step == args.num_warmup:
+            measurement_start = time.time()
         start = time.monotonic()
         outputs = engine.generate(prompts, parameters, use_tqdm=False)
         torch.cuda.synchronize()
         elapsed = (time.monotonic() - start) * 1000
         if len(outputs) != len(prompts):
             raise RuntimeError('Generation returned fewer requests than submitted.')
-        rows = [
-            output_record(output, args.max_new_tokens, sequence) for output, sequence in zip(outputs, sequences)
-        ]
+        rows = [output_record(output, args.max_new_tokens, sequence) for output, sequence in zip(outputs, sequences)]
         timings = [request_times(output) for output in outputs]
         if step >= args.num_warmup:
+            measurement_end = time.time()
             step_times.append(elapsed)
             for row, (prefill, ttft, tpot) in zip(rows, timings):
                 input_counts.append(len(row['prompt_token_ids']))
@@ -121,16 +125,24 @@ def measured_generation(engine, documents, eos, args):
                 ttfts.append(ttft)
                 if tpot is not None:
                     tpots.append(tpot)
-        print('generation_batch={} actual_output_tokens={}'.format(
-            step, sum(len(row['token_ids']) for row in rows)
-        ), flush=True)
+        print(
+            'generation_batch={} actual_output_tokens={}'.format(step, sum(len(row['token_ids']) for row in rows)),
+            flush=True
+        )
     if not tpots:
         raise RuntimeError('The profile never exercised multi-token cached decode.')
     return {
-        'step_ms': step_times, 'input_token_counts': input_counts, 'output_token_counts': output_counts,
-        'request_prefill_ms': prefills, 'ttft_ms': ttfts, 'decode_tpot_ms': tpots,
-        'request_count': len(output_counts), 'num_gpus': 1,
+        'step_ms': step_times,
+        'input_token_counts': input_counts,
+        'output_token_counts': output_counts,
+        'request_prefill_ms': prefills,
+        'ttft_ms': ttfts,
+        'decode_tpot_ms': tpots,
+        'request_count': len(output_counts),
+        'num_gpus': 1,
         'metric_scope': 'engine scheduled-to-first-token and first-to-last-token; not isolated GPU kernel time',
+        'measurement_start_unix_seconds': measurement_start,
+        'measurement_end_unix_seconds': measurement_end,
     }
 
 
@@ -172,12 +184,20 @@ def main():
     report['download_verify_seconds'] = time.monotonic() - download_start
     engine_start = time.monotonic()
     engine = LLM(
-        model=str(checkpoint), tokenizer=str(checkpoint), dtype='bfloat16',
-        tensor_parallel_size=1, quantization=None, cpu_offload_gb=0,
+        model=str(checkpoint),
+        tokenizer=str(checkpoint),
+        dtype='bfloat16',
+        tensor_parallel_size=1,
+        quantization=None,
+        cpu_offload_gb=0,
         gpu_memory_utilization=args.gpu_memory_utilization,
         max_model_len=args.seq_len + args.max_new_tokens,
-        max_num_seqs=args.batch_size, enable_prefix_caching=False, enable_chunked_prefill=False,
-        disable_log_stats=False, seed=20261015, trust_remote_code=False,
+        max_num_seqs=args.batch_size,
+        enable_prefix_caching=False,
+        enable_chunked_prefill=False,
+        disable_log_stats=False,
+        seed=20261015,
+        trust_remote_code=False,
     )
     try:
         if engine.llm_engine.model_config.dtype != torch.bfloat16 or engine.llm_engine.model_config.quantization:
@@ -202,10 +222,15 @@ def main():
     write_json(requests, records)
     reference_start = time.monotonic()
     run_worker(
-        [args.reference_python, str(Path(__file__).with_name('deepseek_v2_lite_reference.py')),
-         '--checkpoint', str(checkpoint), '--mode', 'inference',
-         '--requests', str(requests), '--output', str(reference)],
-        args.output.parent / 'reference.log', args.duration - (time.monotonic() - start) - 20,
+        [
+            args.reference_python,
+            str(Path(__file__).with_name('deepseek_v2_lite_reference.py')), '--checkpoint',
+            str(checkpoint), '--mode', 'inference', '--requests',
+            str(requests), '--output',
+            str(reference)
+        ],
+        args.output.parent / 'reference.log',
+        args.duration - (time.monotonic() - start) - 20,
     )
     result = read_json(reference)
     if result.get('correctness_passed') is not True or result.get('teardown_complete') is not True:

@@ -20,7 +20,6 @@ from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
 
 class DeepSeekV2LiteInference(Benchmark):
     """Benchmark one BF16 inference replica, not a training or forward-only loop."""
-
     def __init__(self, name, parameters=''):
         """Initialize without importing vLLM into the legacy SuperBench process."""
         super().__init__(name, parameters)
@@ -64,12 +63,28 @@ class DeepSeekV2LiteInference(Benchmark):
         """Keep executable paths and every worker argument separate."""
         args = self._args
         return [
-            args.runtime_python, str(Path(__file__).with_name('deepseek_v2_lite_inference_worker.py')),
-            '--cache_dir', str(job / 'cache'), '--output', str(job / 'report.json'),
-            '--reference_python', args.reference_python, '--batch_size', str(args.batch_size),
-            '--seq_len', str(args.seq_len), '--max_new_tokens', str(args.max_new_tokens),
-            '--num_warmup', str(args.num_warmup), '--num_steps', str(args.num_steps),
-            '--gpu_memory_utilization', str(args.gpu_memory_utilization), '--duration', str(args.duration),
+            args.runtime_python,
+            str(Path(__file__).with_name('deepseek_v2_lite_inference_worker.py')),
+            '--cache_dir',
+            str(job / 'cache'),
+            '--output',
+            str(job / 'report.json'),
+            '--reference_python',
+            args.reference_python,
+            '--batch_size',
+            str(args.batch_size),
+            '--seq_len',
+            str(args.seq_len),
+            '--max_new_tokens',
+            str(args.max_new_tokens),
+            '--num_warmup',
+            str(args.num_warmup),
+            '--num_steps',
+            str(args.num_steps),
+            '--gpu_memory_utilization',
+            str(args.gpu_memory_utilization),
+            '--duration',
+            str(args.duration),
         ]
 
     def _benchmark(self):

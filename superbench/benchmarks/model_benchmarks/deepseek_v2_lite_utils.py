@@ -9,6 +9,8 @@ import math
 import os
 import signal
 import subprocess
+import sys
+import time
 from pathlib import Path
 from typing import Dict, List, Sequence
 
@@ -146,8 +148,8 @@ def download_checkpoint(cache: Path) -> Path:
         local_dir=str(checkpoint),
         cache_dir=str(cache / 'hub'),
         allow_patterns=list(WEIGHT_FILES) + [
-            'config.json', 'generation_config.json', 'model.safetensors.index.json',
-            'tokenizer*', 'special_tokens_map.json', '*.py'
+            'config.json', 'generation_config.json', 'model.safetensors.index.json', 'tokenizer*',
+            'special_tokens_map.json', '*.py'
         ],
         token=False,
         max_workers=4,
@@ -156,9 +158,11 @@ def download_checkpoint(cache: Path) -> Path:
     return checkpoint
 
 
-def packed_tokens(
-    documents: Sequence[Sequence[int]], eos: int, length: int, count: int, offset: int = 0
-) -> List[List[int]]:
+def packed_tokens(documents: Sequence[Sequence[int]],
+                  eos: int,
+                  length: int,
+                  count: int,
+                  offset: int = 0) -> List[List[int]]:
     """Pack deterministic real-text tokens without padding a pressure workload."""
     if length < 2 or count < 1 or offset < 0 or not documents or eos < 0:
         raise ValueError('Invalid packed-input dimensions or documents.')
@@ -169,8 +173,7 @@ def packed_tokens(
         stream.extend(document)
         stream.append(eos)
     return [
-        [stream[(offset + row * length + column) % len(stream)] for column in range(length)]
-        for row in range(count)
+        [stream[(offset + row * length + column) % len(stream)] for column in range(length)] for row in range(count)
     ]
 
 
@@ -180,8 +183,8 @@ def numeric_series(report, name: str, count: int, positive: bool = True) -> List
     if not isinstance(values, list) or len(values) != count:
         raise ValueError('Expected {} {} samples.'.format(count, name))
     if any(
-        isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
-        or (positive and value <= 0) for value in values
+        isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or
+        (positive and value <= 0) for value in values
     ):
         raise ValueError('Invalid numeric metric: {}'.format(name))
     return [float(value) for value in values]
@@ -194,32 +197,82 @@ def uniform_indices(length: int, count: int = 256) -> List[int]:
     return [position * (length - 1) // (count - 1) for position in range(count)]
 
 
-def terminate_worker(process: subprocess.Popen) -> None:
-    """Terminate only this job's process group, including torchrun workers."""
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        process.wait()
-        return
-    try:
-        process.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        pass
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        process.wait()
-        return
-    process.wait(timeout=5)
+def _owned_children() -> List[int]:
+    """Read the dedicated supervisor's direct and adopted children."""
+    path = Path('/proc/self/task/{}/children'.format(os.getpid()))
+    return [int(pid) for pid in path.read_text().split()]
 
 
-def worker_group_exists(pid: int) -> bool:
-    """Check the specific job group, including children of an exited leader."""
+def _reap_children() -> None:
+    """Reap exited owned children so no stale PID is treated as running."""
+    while True:
+        try:
+            pid, _ = os.waitpid(-1, os.WNOHANG)
+        except ChildProcessError:
+            return
+        if pid == 0:
+            return
+
+
+def _stop_children() -> None:
+    """Reap all job descendants, including ranks that created new sessions."""
+    graceful_deadline = time.monotonic() + 10
+    deadline = graceful_deadline + 5
+    while True:
+        children = _owned_children()
+        if not children:
+            return
+        current = time.monotonic()
+        if current >= deadline:
+            raise RuntimeError('Owned worker descendants did not exit: {}.'.format(children))
+        signum = signal.SIGTERM if current < graceful_deadline else signal.SIGKILL
+        for pid in children:
+            try:
+                os.kill(pid, signum)
+            except ProcessLookupError:
+                pass
+        _reap_children()
+        time.sleep(0.02)
+
+
+def supervise_worker(command: List[str], timeout: float, parent_pid: int) -> int:
+    """Contain Linux worker descendants in a separate single-threaded supervisor."""
+    import ctypes
+
+    if sys.platform != 'linux':
+        raise RuntimeError('The isolated model worker supervisor requires Linux.')
+    libc = ctypes.CDLL(None, use_errno=True)
+    interrupted = False
+
+    def stop(signum, frame):
+        nonlocal interrupted
+        interrupted = True
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    # Adopt orphaned rank sessions and clean up if the controller itself dies.
+    for option, value in [(36, 1), (1, signal.SIGTERM)]:    # PR_SET_CHILD_SUBREAPER, PR_SET_PDEATHSIG
+        if libc.prctl(option, ctypes.c_ulong(value), ctypes.c_ulong(0), ctypes.c_ulong(0), ctypes.c_ulong(0)) != 0:
+            error = ctypes.get_errno()
+            raise OSError(error, os.strerror(error))
+    if os.getppid() != parent_pid:
+        return 124
+    deadline = time.monotonic() + timeout
+    process = subprocess.Popen(command)
     try:
-        os.killpg(pid, 0)
-    except ProcessLookupError:
-        return False
-    return True
+        while process.poll() is None:
+            if interrupted or time.monotonic() >= deadline:
+                return 124
+            time.sleep(0.02)
+        code = process.wait()
+        _reap_children()
+        if code == 0 and _owned_children():
+            print('Worker exited with live descendant processes.', file=sys.stderr, flush=True)
+            return 125
+        return code if code >= 0 else 128 - code
+    finally:
+        _stop_children()
+        process.wait()
 
 
 def interrupt_worker(signum, frame) -> None:
@@ -228,23 +281,43 @@ def interrupt_worker(signum, frame) -> None:
 
 
 def run_worker(command: List[str], log: Path, timeout: float) -> None:
-    """Run an isolated process group under one deadline, preserving failure logs."""
-    if timeout <= 0:
+    """Supervise the whole worker tree under one deadline, preserving failure logs."""
+    if not math.isfinite(timeout) or timeout <= 0:
         raise TimeoutError('No time remains for the worker.')
+    if not command:
+        raise ValueError('The model worker command must not be empty.')
+    supervisor = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        '--worker-timeout',
+        str(timeout),
+        '--parent-pid',
+        str(os.getpid()),
+        '--',
+        *command,
+    ]
     with log.open('w') as stream:
-        process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+        process = subprocess.Popen(supervisor, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
         try:
             try:
-                code = process.wait(timeout=timeout)
+                code = process.wait(timeout=timeout + 20)
             except subprocess.TimeoutExpired as error:
-                raise TimeoutError('Model worker exceeded the download-inclusive deadline.') from error
+                raise TimeoutError('Model worker supervisor exceeded its cleanup deadline.') from error
+            if code == 124:
+                raise TimeoutError('Model worker exceeded the download-inclusive deadline.')
+            if code == 125:
+                raise RuntimeError('Model worker left descendant processes running; see {}.'.format(log))
             if code != 0:
                 raise RuntimeError('Model worker exited with code {}; see {}.'.format(code, log))
-            if worker_group_exists(process.pid):
-                raise RuntimeError('Model worker left its subprocess group running; see {}.'.format(log))
         finally:
-            if worker_group_exists(process.pid):
-                terminate_worker(process)
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=20)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
+                    raise RuntimeError('Model worker supervisor did not complete descendant cleanup.')
 
 
 def identity_report() -> Dict[str, object]:
@@ -253,7 +326,8 @@ def identity_report() -> Dict[str, object]:
         'model_id': MODEL_ID,
         'revision': REVISION,
         'weight_bytes': WEIGHT_BYTES,
-        'weight_sha256': {name: digest for name, (_, digest) in WEIGHT_FILES.items()},
+        'weight_sha256': {name: digest
+                          for name, (_, digest) in WEIGHT_FILES.items()},
         'parameter_count': PARAMETER_COUNT,
         'precision': 'bfloat16',
         'input_dataset': 'fixed-text-v1',
@@ -271,3 +345,17 @@ def validate_identity(report) -> None:
         raise ValueError('Worker report does not match the official checkpoint/input contract.')
     if report.get('correctness_passed') is not True or report.get('teardown_complete') is not True:
         raise ValueError('Correctness or worker teardown was not completed.')
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Supervise one isolated model worker command.')
+    parser.add_argument('--worker-timeout', type=float, required=True)
+    parser.add_argument('--parent-pid', type=int, required=True)
+    parser.add_argument('command', nargs=argparse.REMAINDER)
+    arguments = parser.parse_args()
+    worker_command = arguments.command[1:] if arguments.command[:1] == ['--'] else arguments.command
+    if not worker_command or not math.isfinite(arguments.worker_timeout) or arguments.worker_timeout <= 0:
+        parser.error('A worker command and finite positive timeout are required.')
+    sys.exit(supervise_worker(worker_command, arguments.worker_timeout, arguments.parent_pid))
