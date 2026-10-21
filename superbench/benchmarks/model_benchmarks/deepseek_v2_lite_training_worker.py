@@ -99,6 +99,16 @@ def run_training(args, reference, checkpoint):
     from torch.distributed.fsdp import FullyShardedDataParallel as FSDP, MixedPrecision, ShardingStrategy
     from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
+    world_size = dist.get_world_size()
+    if (
+        reference.get('batch_size') != args.batch_size or reference.get('seq_len') != args.seq_len
+        or reference.get('world_size') != world_size
+    ):
+        raise ValueError('Training reference does not match the actual global profile.')
+    rank = dist.get_rank()
+    rank_tokens = reference['tokens'][rank * args.batch_size:(rank + 1) * args.batch_size]
+    if len(reference['tokens']) != world_size * args.batch_size or len(rank_tokens) != args.batch_size:
+        raise ValueError('Training reference has an incomplete global batch.')
     model = load_model(str(checkpoint), torch.float32)
     decoder_type = type(model.model.layers[0])
     model = FSDP(
@@ -111,20 +121,26 @@ def run_training(args, reference, checkpoint):
         limit_all_gathers=True,
     )
     model.train()
-    correctness_inputs = torch.tensor(reference['tokens'], device='cuda', dtype=torch.long)
-    output = model(input_ids=correctness_inputs, labels=correctness_inputs, use_cache=False)
-    torch.testing.assert_close(
-        output.loss.float(), torch.tensor(reference['loss'], device='cuda'), rtol=0.005, atol=0.01
-    )
-    output.loss.backward()
-    gradient_error = compare_gradients(model, reference)
-    model.zero_grad(set_to_none=True)
-    del output, correctness_inputs
     apply_activation_checkpointing(
         model,
         checkpoint_wrapper_fn=partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT),
         check_fn=lambda module: isinstance(module, decoder_type),
     )
+    correctness_inputs = torch.tensor(rank_tokens, device='cuda', dtype=torch.long)
+    output = model(input_ids=correctness_inputs, labels=correctness_inputs, use_cache=False)
+    torch.testing.assert_close(
+        output.loss.float(), torch.tensor(reference['loss_per_rank'][rank], device='cuda'), rtol=0.005, atol=0.01
+    )
+    global_loss = output.loss.detach().float().clone()
+    dist.all_reduce(global_loss)
+    global_loss /= world_size
+    torch.testing.assert_close(global_loss, torch.tensor(reference['loss'], device='cuda'), rtol=0.005, atol=0.01)
+    output.loss.backward()
+    gradient_error = compare_gradients(model, reference)
+    model.zero_grad(set_to_none=True)
+    del output, correctness_inputs, global_loss
+    gc.collect()
+    torch.cuda.empty_cache()
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=args.learning_rate, betas=(0.9, 0.95), weight_decay=0.1, foreach=False
     )
@@ -233,7 +249,10 @@ def main():
         if rank == 0:
             reference_model = load_model(str(checkpoint), torch.bfloat16).cuda()
             try:
-                write_json(reference_path, training_reference(reference_model, str(checkpoint)))
+                write_json(
+                    reference_path,
+                    training_reference(reference_model, str(checkpoint), args.batch_size, args.seq_len, args.num_gpus)
+                )
             finally:
                 del reference_model
                 gc.collect()

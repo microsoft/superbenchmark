@@ -184,11 +184,11 @@ only in auxiliary unit tests.
 
 #### Validation Status
 
-This is a draft implementation with isolated H100 80GB evidence. A four-GPU
-full-model worker and real SuperBench frontend run completed, but the original
-outer acceptance report was not collected successfully. Repeated cold-run
-qualification, steady-state utilization acceptance and the final reproducible
-controller runtime remain pending. This is not cross-SKU qualification.
+This is a draft implementation with historical four-H100 full-model worker and
+real frontend evidence, not complete qualification. The current global-batch
+reference changes, repeated cold runs, steady-state utilization and final
+reproducible controller runtime still require hardware acceptance. This is not
+cross-SKU qualification.
 
 #### Runtime And Execution
 
@@ -197,17 +197,36 @@ framework dependencies. The worker requires Python 3.10+, a GPU-compatible
 PyTorch 2.5+ build, and the pinned packages in
 [`deepseek-v2-lite-reference.txt`](../../../dockerfile/requirements/deepseek-v2-lite-reference.txt).
 The supplied
-[`worker Dockerfile`](../../../dockerfile/deepseek-v2-lite-training.dockerfile)
-pins the CUDA PyTorch base by digest and prepares that environment. It is a
-worker image, not a replacement for the full SuperBench image.
+[`model runtime Dockerfile`](../../../dockerfile/deepseek-v2-lite-training.dockerfile)
+pins the CUDA PyTorch base by digest and installs the Python SuperBench
+controller, runner and diagnosis entrypoints together with the worker/reference
+environment. The
+[`controller lock`](../../../dockerfile/requirements/deepseek-v2-lite-controller.txt)
+is specific to Python 3.12/Linux x86_64 and retains the base image's GPU
+Torch/torchvision builds. Its regeneration command is in the
+[`lock inputs`](../../../dockerfile/requirements/deepseek-v2-lite-controller.in).
+This opt-in model runtime does not replace the standard images or provide the
+complete compiled microbenchmark suite.
+The build checks the Torch/NumPy array bridge and the real runner/diagnosis CLI,
+not just successful package installation.
 
+```bash
+docker build -f dockerfile/deepseek-v2-lite-training.dockerfile -t sb-v2lite-training .
+docker run --rm --gpus '"device=0,1,2,3"' --shm-size 32g \
+  -v "$PWD/v2lite-results:/results" sb-v2lite-training exec \
+  --config-file superbench/config/deepseek-v2-lite-training.yaml \
+  --output-dir /results/sb-output \
+  -C superbench.benchmarks.deepseek-v2-lite-training.parameters.cache_root=/results/model-cache
+```
+
+For a separately prepared native installation:
 ```bash
 python3 -m venv --system-site-packages /opt/deepseek-reference
 /opt/deepseek-reference/bin/pip install -r dockerfile/requirements/deepseek-v2-lite-reference.txt
 sb exec --config-file superbench/config/deepseek-v2-lite-training.yaml
 ```
 
-The command assumes SuperBench is already installed in the controller's
+The native command assumes SuperBench is already installed in the controller's
 environment. Change `runtime_python` if the prepared worker environment lives
 elsewhere. Install a compatible CUDA/ROCm PyTorch build before preparing the
 worker, rather than letting a generic package install choose the GPU backend.
@@ -239,6 +258,13 @@ they are not an exhaustive comparison of every parameter. Every training step
 requires finite loss and a finite nonzero global gradient norm. The first update
 must change model parameters. No checkpoint missing-key or shape mismatch is
 accepted.
+The reference preserves every sequence of the actual global batch and its full
+context length, evaluating at most two sequences at a time on one GPU with
+activation checkpointing. Sequence-count-weighted loss and gradient probes are
+accumulated in FP32, including partial final chunks. The pinned zero-dropout,
+per-sequence auxiliary-loss configuration makes this decomposition valid.
+Per-rank and global losses are checked separately. Replicating one identical
+short input across ranks would not establish this distributed-reduction contract.
 The one-time pre-update parameter snapshot is stored in host memory and checked
 after the update. Model parameters, gradients and optimizer state remain on the
 GPUs; this is validation storage, not training-state CPU offload.
