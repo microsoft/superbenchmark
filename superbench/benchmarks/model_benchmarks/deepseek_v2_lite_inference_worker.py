@@ -39,6 +39,8 @@ def output_record(output, maximum, prompt_token_ids, include_logprobs=False):
         for token, probabilities in zip(tokens, completion.logprobs):
             if token not in probabilities:
                 raise RuntimeError('Selected token has no log probability.')
+            if not 20 <= len(probabilities) <= 21:
+                raise RuntimeError('Incomplete or oversized top-20 engine log probabilities.')
             row = {str(key): float(value.logprob) for key, value in probabilities.items()}
             if any(not math.isfinite(value) for value in row.values()):
                 raise RuntimeError('Nonfinite engine log probability.')
@@ -146,6 +148,29 @@ def measured_generation(engine, documents, eos, args):
     }
 
 
+def profile_checks(engine, documents, eos, args):
+    """Numerically sample the real prompt length and batching, including later decode."""
+    from vllm import SamplingParams
+
+    sequences = packed_tokens(documents, eos, args.seq_len, args.batch_size)
+    prompts = [{'prompt_token_ids': sequence} for sequence in sequences]
+    parameters = SamplingParams(temperature=0, max_tokens=args.max_new_tokens, logprobs=20, seed=20261015)
+    outputs = engine.generate(prompts, parameters, use_tqdm=False)
+    if len(outputs) != len(prompts):
+        raise RuntimeError('Numerical profile check lost a request.')
+    records = []
+    selected = {0, len(prompts) - 1}
+    for index, (output, sequence) in enumerate(zip(outputs, sequences)):
+        record = output_record(output, args.max_new_tokens, sequence, index in selected)
+        if index in selected:
+            count = len(record['token_ids'])
+            record['full_prefix_steps'] = sorted({0, min(1, count - 1), count // 2, count - 1})
+            record['profile_request_index'] = index
+            record['profile_batch_size'] = args.batch_size
+            records.append(record)
+    return records
+
+
 def main():
     """Include cold download, engine setup, generation, reference and shutdown."""
     from importlib.metadata import version
@@ -165,6 +190,9 @@ def main():
     start = time.monotonic()
     signal.signal(signal.SIGTERM, interrupt_worker)
     os.environ['TORCH_ALLOW_TF32_CUBLAS_OVERRIDE'] = '0'
+    os.environ['NVIDIA_TF32_OVERRIDE'] = '0'
+    os.environ['VLLM_FLOAT32_MATMUL_PRECISION'] = 'highest'
+    os.environ['TRITON_F32_DEFAULT'] = 'ieee'
     configure_cache(args.cache_dir)
     if args.batch_size < 1 or args.seq_len < 32 or args.num_warmup < 0 or args.num_steps < 1:
         raise ValueError('Invalid generative inference dimensions.')
@@ -198,6 +226,7 @@ def main():
         disable_log_stats=False,
         seed=20261015,
         trust_remote_code=False,
+        hf_overrides={'moe_router_dtype': 'float32'},
     )
     try:
         if engine.llm_engine.model_config.dtype != torch.bfloat16 or engine.llm_engine.model_config.quantization:
@@ -207,6 +236,7 @@ def main():
         eos = tokenizer.eos_token_id
         report['engine_setup_seconds'] = time.monotonic() - engine_start
         records = engine_checks(engine, documents, eos)
+        records.extend(profile_checks(engine, documents, eos, args))
         measurement_start = time.monotonic()
         report.update(measured_generation(engine, documents, eos, args))
         report['generation_seconds'] = time.monotonic() - measurement_start
@@ -240,6 +270,9 @@ def main():
     report['correctness_passed'] = True
     report['teardown_complete'] = True
     report['vllm_version'] = version('vllm')
+    report['router_dtype'] = 'float32'
+    report['float32_matmul_precision'] = 'highest'
+    report['triton_float32_precision'] = 'ieee'
     report['torch_version'] = torch.__version__
     report['gpu_name'] = torch.cuda.get_device_name(0)
     report['total_seconds'] = time.monotonic() - start

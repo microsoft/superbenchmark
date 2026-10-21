@@ -4,6 +4,8 @@
 """CPU-only tests for the standalone worker contract, without framework imports."""
 
 import copy
+import ctypes
+import hashlib
 import importlib.util
 import math
 import os
@@ -11,6 +13,8 @@ import signal
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -34,6 +38,15 @@ def test_checkpoint_identity():
     with pytest.raises(ValueError, match='quantized'):
         utils.validate_config(config)
     assert utils.WEIGHT_BYTES == 31413626576
+
+
+@pytest.mark.parametrize('field,value', [('seq_aux', False), ('aux_loss_alpha', 0.1), ('attention_dropout', 0.1)])
+def test_reference_batching_assumptions_are_part_of_model_identity(field, value):
+    """Do not silently split reference batches for changed auxiliary loss or dropout."""
+    config = dict(utils.EXPECTED_CONFIG, model_type='deepseek_v2')
+    config[field] = value
+    with pytest.raises(ValueError, match=field):
+        utils.validate_config(config)
 
 
 def test_packed_text_is_reproducible():
@@ -240,3 +253,93 @@ def test_controller_death_reaps_owned_worker(tmp_path):
                 os.kill(int(pid_file.read_text()), signal.SIGKILL)
             except ProcessLookupError:
                 pass
+
+
+@pytest.fixture
+def checkpoint_files(tmp_path, monkeypatch):
+    """Create small real files to test the checkpoint integrity contract."""
+    root = tmp_path / 'checkpoint'
+    root.mkdir()
+    contents = b'CPU checkpoint integrity fixture'
+    shard = root / 'weights.safetensors'
+    shard.write_bytes(contents)
+    monkeypatch.setattr(utils, 'WEIGHT_FILES', {
+        shard.name: (len(contents), hashlib.sha256(contents).hexdigest()),
+    })
+    utils.write_json(root / 'config.json', dict(utils.EXPECTED_CONFIG, model_type='deepseek_v2'))
+    utils.write_json(root / 'model.safetensors.index.json', {'weight_map': {'fixture.weight': shard.name}})
+    return root, shard
+
+
+def test_checkpoint_files_are_verified(checkpoint_files):
+    """Check file sizes, index membership and SHA256 without claiming model execution."""
+    root, _ = checkpoint_files
+    utils.verify_checkpoint(root)
+
+
+@pytest.mark.parametrize('failure', ['missing', 'size', 'hash', 'index'])
+def test_invalid_checkpoint_files_fail(checkpoint_files, failure):
+    """Corrupted, missing or misindexed shards must never become a valid checkpoint."""
+    root, shard = checkpoint_files
+    if failure == 'missing':
+        shard.unlink()
+    elif failure == 'size':
+        shard.write_bytes(b'short')
+    elif failure == 'hash':
+        shard.write_bytes(b'x' * shard.stat().st_size)
+    else:
+        utils.write_json(root / 'model.safetensors.index.json', {'weight_map': {'fixture.weight': 'other'}})
+    with pytest.raises(ValueError):
+        utils.verify_checkpoint(root)
+
+
+def test_download_uses_pinned_public_identity_and_then_verifies(checkpoint_files, monkeypatch):
+    """Disable implicit credentials and require the downloaded shard contract."""
+    root, shard = checkpoint_files
+    download = Mock()
+    monkeypatch.setitem(sys.modules, 'huggingface_hub', SimpleNamespace(snapshot_download=download))
+    assert utils.download_checkpoint(root.parent) == root
+    arguments = download.call_args[1]
+    assert arguments['repo_id'] == utils.MODEL_ID
+    assert arguments['revision'] == utils.REVISION
+    assert arguments['token'] is False
+    assert arguments['local_dir'] == str(root)
+    assert shard.name in arguments['allow_patterns']
+
+
+@pytest.mark.parametrize('length,count', [(0, 2), (1, 1)])
+def test_invalid_probe_dimensions_fail(length, count):
+    """Reject undefined probe endpoints instead of silently selecting positions."""
+    with pytest.raises(ValueError, match='tensor length'):
+        utils.uniform_indices(length, count)
+
+
+@pytest.mark.parametrize('timeout', [0, -1, float('nan')])
+def test_invalid_worker_deadline_fails_before_launch(tmp_path, timeout):
+    """A nonfinite or expired budget must not start a worker."""
+    with pytest.raises(TimeoutError):
+        utils.run_worker([sys.executable, '-c', 'pass'], tmp_path / 'worker.log', timeout)
+
+
+def test_empty_worker_command_fails(tmp_path):
+    """Do not launch a supervisor with no defined workload."""
+    with pytest.raises(ValueError, match='command'):
+        utils.run_worker([], tmp_path / 'worker.log', 1)
+
+
+def test_worker_interrupt_is_failure():
+    """A termination request must unwind the worker's normal success path."""
+    with pytest.raises(TimeoutError, match='interrupted'):
+        utils.interrupt_worker(signal.SIGTERM, None)
+
+
+def test_supervisor_requires_kernel_ownership_support(monkeypatch):
+    """Fail before spawning when kernel ownership setup is unavailable."""
+    monkeypatch.setattr(utils.signal, 'signal', Mock())
+    monkeypatch.setattr(ctypes, 'CDLL', lambda *args, **kwargs: SimpleNamespace(prctl=lambda *args: -1))
+    monkeypatch.setattr(ctypes, 'get_errno', lambda: 13)
+    spawn = Mock()
+    monkeypatch.setattr(utils.subprocess, 'Popen', spawn)
+    with pytest.raises(OSError):
+        utils.supervise_worker([sys.executable, '-c', 'pass'], 1, os.getppid())
+    spawn.assert_not_called()

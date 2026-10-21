@@ -4,8 +4,11 @@
 """CPU control-flow checks, not certification of full-model reference numerics."""
 
 import importlib.util
+import json
+import sys
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -95,3 +98,231 @@ def test_reference_does_not_ignore_probability_mismatch(reference):
     request['logprobs'][0]['3'] += 1.0
     with pytest.raises(AssertionError, match='request 0 step 0'):
         reference.inference_reference(ReferenceFixture(), [request])
+
+
+def test_long_decode_checks_every_engine_token_with_bounded_full_prefix_calls(reference):
+    """Only full-prefix recomputation is sampled, never engine probability validation."""
+    request = request_fixture()
+    request['token_ids'] *= 4
+    request['logprobs'] *= 4
+    request['full_prefix_steps'] = [0, 1, 4, 7]
+    model = ReferenceFixture()
+    result = reference.inference_reference(model, [request])
+    assert len(result['comparisons']) == 8
+    assert len(model.calls) == 12
+    assert [row['step'] for row in result['comparisons'] if row['full_prefix_checked']] == [0, 1, 4, 7]
+    assert all(row['cache_max_abs_error'] is None for row in result['comparisons'] if not row['full_prefix_checked'])
+    request['logprobs'][2] = dict(request['logprobs'][2], **{'3': 0.0})
+    with pytest.raises(AssertionError, match='request 0 step 2'):
+        reference.inference_reference(ReferenceFixture(), [request])
+
+
+@pytest.mark.parametrize('positions', [[], [0], [1], [0, 0, 1], [1, 0], [0, 2], [False, 1]])
+def test_invalid_full_prefix_sampling_fails(reference, positions):
+    """Do not accept malformed or first/final-step-incomplete numerical evidence."""
+    request = request_fixture()
+    request['full_prefix_steps'] = positions
+    with pytest.raises(ValueError, match='reference positions'):
+        reference.inference_reference(ReferenceFixture(), [request])
+
+
+class TrainingReferenceFixture:
+    """Small autograd fixture for global-batch partitioning, not GPU model validation."""
+    def __init__(self):
+        """Create the named parameters required by reference sampling."""
+        names = [
+            'model.embed_tokens.weight',
+            'model.layers.0.self_attn.q_proj.weight',
+            'model.layers.0.self_attn.kv_a_proj_with_mqa.weight',
+            'model.layers.0.mlp.down_proj.weight',
+            'model.layers.1.mlp.gate.weight',
+            'model.layers.1.mlp.experts.0.down_proj.weight',
+        ]
+        self.parameters = {name: torch.nn.Parameter(torch.ones(2, 2)) for name in names}
+        self.batches = []
+        self.checkpointing = False
+
+    def train(self):
+        """Expose the reference model's training-mode interface."""
+        return self
+
+    def gradient_checkpointing_enable(self, gradient_checkpointing_kwargs):
+        """Require the memory-bounded nonreentrant reference policy."""
+        assert gradient_checkpointing_kwargs == {'use_reentrant': False}
+        self.checkpointing = True
+
+    def named_parameters(self):
+        """Expose stable names for independently selected gradient probes."""
+        return self.parameters.items()
+
+    def get_parameter(self, name):
+        """Look up the same parameter on each logical rank batch."""
+        return self.parameters[name]
+
+    def zero_grad(self, set_to_none):
+        """Discard local gradients before the next reference batch."""
+        assert set_to_none
+        for parameter in self.parameters.values():
+            parameter.grad = None
+
+    def __call__(self, input_ids, labels, use_cache):
+        """Produce input-dependent gradients that differ between rank batches."""
+        assert not use_cache and torch.equal(input_ids, labels)
+        self.batches.append(input_ids.clone())
+        loss = sum(parameter.sum() for parameter in self.parameters.values()) * input_ids.float().mean()
+        return SimpleNamespace(loss=loss)
+
+
+def test_training_reference_averages_distinct_real_profile_rank_batches(reference, monkeypatch):
+    """Check different rank inputs and float32 gradient averaging rather than replicated tokens."""
+    monkeypatch.setattr(reference, 'fixed_documents', lambda checkpoint: ([[1, 2, 4, 8]], 16))
+    model = TrainingReferenceFixture()
+    result = reference.training_reference(model, 'unused', batch_size=2, seq_len=32, world_size=3)
+    expected = torch.tensor(result['tokens']).float().mean().item()
+    assert model.checkpointing
+    assert len(result['tokens']) == 6 and all(len(row) == 32 for row in result['tokens'])
+    assert len(model.batches) == 3 and not torch.equal(model.batches[0], model.batches[1])
+    assert result['world_size'] == 3 and result['batch_size'] == 2 and result['seq_len'] == 32
+    assert result['loss'] == pytest.approx(sum(result['loss_per_rank']) / 3)
+    for probe in result['gradients'].values():
+        assert probe['values'] == pytest.approx([expected] * len(probe['indices']))
+    assert all(parameter.grad is None for parameter in model.parameters.values())
+
+
+def test_reference_microbatches_preserve_all_tokens_and_uneven_weights(reference, monkeypatch):
+    """Bound memory without shortening context, dropping sequences or averaging chunks equally."""
+    monkeypatch.setattr(reference, 'fixed_documents', lambda checkpoint: ([[1, 2, 4, 8]], 16))
+    model = TrainingReferenceFixture()
+    result = reference.training_reference(model, 'unused', batch_size=3, seq_len=32, world_size=2)
+    assert [batch.shape[0] for batch in model.batches] == [2, 1, 2, 1]
+    assert all(batch.shape[1] == 32 for batch in model.batches)
+    assert torch.equal(torch.cat(model.batches), torch.tensor(result['tokens']))
+    expected = torch.tensor(result['tokens']).float().mean().item()
+    assert result['reference_microbatch_size'] == 2
+    assert result['loss'] == pytest.approx(expected * 24)
+    for probe in result['gradients'].values():
+        assert probe['values'] == pytest.approx([expected] * len(probe['indices']))
+
+
+@pytest.mark.parametrize('batch_size,seq_len,world_size', [(0, 32, 1), (1, 16, 1), (1, 32, 0)])
+def test_training_reference_rejects_invalid_profile(reference, batch_size, seq_len, world_size):
+    """Invalid global-batch definitions must fail before any model work."""
+    with pytest.raises(ValueError, match='reference profile'):
+        reference.training_reference(TrainingReferenceFixture(), 'unused', batch_size, seq_len, world_size)
+
+
+@pytest.fixture
+def loading_contract(reference, tmp_path, monkeypatch):
+    """Mock library boundaries while exercising all loader identity checks."""
+    if sys.version_info < (3, 10):
+        pytest.skip('The standalone model runtime requires Python 3.10 or later.')
+    import importlib.metadata
+    from deepseek_v2_lite_utils import EXPECTED_CONFIG
+
+    (tmp_path / 'config.json').write_text(json.dumps(dict(EXPECTED_CONFIG, model_type='deepseek_v2')))
+    parameter = SimpleNamespace(numel=lambda: reference.PARAMETER_COUNT, requires_grad=True)
+    model = SimpleNamespace(parameters=lambda: [parameter])
+    loading = {key: [] for key in ['missing_keys', 'unexpected_keys', 'mismatched_keys', 'error_msgs']}
+    loader = Mock(return_value=(model, loading))
+    tokenizer = SimpleNamespace(encode=Mock(return_value=[1, 2]), eos_token_id=9)
+    tokenizer_loader = Mock(return_value=tokenizer)
+    monkeypatch.setitem(
+        sys.modules, 'transformers',
+        SimpleNamespace(
+            AutoModelForCausalLM=SimpleNamespace(from_pretrained=loader),
+            AutoTokenizer=SimpleNamespace(from_pretrained=tokenizer_loader),
+        )
+    )
+    version = importlib.metadata.version
+    monkeypatch.setattr(
+        importlib.metadata, 'version', lambda name: '4.46.3' if name == 'transformers' else version(name)
+    )
+    monkeypatch.setattr(torch.cuda, 'is_available', lambda: True)
+    return SimpleNamespace(
+        path=tmp_path,
+        model=model,
+        parameter=parameter,
+        loading=loading,
+        loader=loader,
+        tokenizer=tokenizer,
+        tokenizer_loader=tokenizer_loader,
+    )
+
+
+def test_official_loader_contract(reference, loading_contract):
+    """Require local official-code loading and complete loading diagnostics."""
+    item = loading_contract
+    assert reference.load_model(str(item.path), torch.bfloat16) is item.model
+    options = item.loader.call_args[1]
+    assert options['torch_dtype'] == torch.bfloat16
+    assert options['local_files_only'] and options['trust_remote_code'] and options['use_safetensors']
+    assert options['attn_implementation'] == 'eager' and options['output_loading_info']
+    documents, eos = reference.fixed_documents(str(item.path))
+    assert len(documents) == len(reference.FIXED_TEXTS) and eos == 9
+    assert item.tokenizer_loader.call_args[1]['local_files_only']
+    assert item.tokenizer.encode.call_count == len(reference.FIXED_TEXTS)
+
+
+@pytest.mark.parametrize('field', ['missing_keys', 'unexpected_keys', 'mismatched_keys', 'error_msgs'])
+def test_loader_diagnostics_cannot_be_ignored(reference, loading_contract, field):
+    """Partial or incompatible loading must fail before reference execution."""
+    loading_contract.loading[field] = ['invalid checkpoint']
+    with pytest.raises(RuntimeError, match='checkpoint loading'):
+        reference.load_model(str(loading_contract.path), torch.bfloat16)
+
+
+@pytest.mark.parametrize('failure', ['count', 'frozen', 'gpu', 'version'])
+def test_loader_rejects_wrong_model_or_runtime(reference, loading_contract, monkeypatch, failure):
+    """Do not replace full-model GPU verification with a smaller or unsupported runtime."""
+    item = loading_contract
+    if failure == 'count':
+        item.parameter.numel = lambda: 1
+    elif failure == 'frozen':
+        item.parameter.requires_grad = False
+    elif failure == 'gpu':
+        monkeypatch.setattr(torch.cuda, 'is_available', lambda: False)
+    else:
+        import importlib.metadata
+        monkeypatch.setattr(importlib.metadata, 'version', lambda name: '0.0')
+    with pytest.raises(RuntimeError):
+        reference.load_model(str(item.path), torch.bfloat16)
+
+
+@pytest.mark.parametrize('mode', ['training', 'inference'])
+def test_reference_entrypoint_uses_expected_dtype_and_teardown(reference, tmp_path, monkeypatch, mode):
+    """Exercise orchestration with fake model work, not GPU numerical acceptance."""
+    model = Mock()
+    model.cuda.return_value = model
+    loader = Mock(return_value=model)
+    monkeypatch.setattr(reference, 'load_model', loader)
+    monkeypatch.setattr(reference, 'training_reference', Mock(return_value={'loss': 1.0}))
+    monkeypatch.setattr(reference, 'inference_reference', Mock(return_value={'comparisons': []}))
+    monkeypatch.setattr(torch.cuda, 'set_device', Mock())
+    monkeypatch.setattr(torch.cuda, 'synchronize', Mock())
+    cleanup = Mock()
+    monkeypatch.setattr(torch.cuda, 'empty_cache', cleanup)
+    monkeypatch.setattr(torch.backends.cuda.matmul, 'allow_tf32', False)
+    monkeypatch.setenv('TORCH_ALLOW_TF32_CUBLAS_OVERRIDE', '0')
+    requests = tmp_path / 'requests.json'
+    requests.write_text('[]')
+    output = tmp_path / 'report.json'
+    monkeypatch.setattr(
+        sys, 'argv', [
+            'reference',
+            '--checkpoint',
+            str(tmp_path),
+            '--mode',
+            mode,
+            '--requests',
+            str(requests),
+            '--output',
+            str(output),
+        ]
+    )
+    reference.main()
+    report = json.loads(output.read_text())
+    expected = torch.bfloat16 if mode == 'training' else torch.float32
+    assert loader.call_args[0][1] == expected
+    assert report['reference_dtype'] == str(expected)
+    assert report['correctness_passed'] and report['teardown_complete'] and not report['tf32_allowed']
+    cleanup.assert_called_once()

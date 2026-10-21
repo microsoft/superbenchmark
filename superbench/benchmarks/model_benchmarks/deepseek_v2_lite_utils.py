@@ -44,6 +44,9 @@ EXPECTED_CONFIG = {
     'qk_rope_head_dim': 64,
     'v_head_dim': 128,
     'vocab_size': 102400,
+    'seq_aux': True,
+    'aux_loss_alpha': 0.001,
+    'attention_dropout': 0.0,
 }
 FIXED_TEXTS = (
     'The engineering team measures a system before changing its configuration. '

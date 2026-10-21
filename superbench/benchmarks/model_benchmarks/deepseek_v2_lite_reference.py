@@ -6,6 +6,7 @@
 import argparse
 import gc
 import os
+from itertools import product
 from pathlib import Path
 
 from deepseek_v2_lite_utils import (
@@ -52,18 +53,10 @@ def fixed_documents(checkpoint):
     return [tokenizer.encode(text, add_special_tokens=False) for text in FIXED_TEXTS], tokenizer.eos_token_id
 
 
-def training_reference(model, checkpoint):
-    """Capture full-model loss and bounded gradient probes before optimization."""
+def _training_gradient_probes(model):
+    """Select fixed dense/MLA/router/active-expert positions from the first rank batch."""
     import torch
 
-    documents, eos = fixed_documents(checkpoint)
-    tokens = packed_tokens(documents, eos, 32, 1)
-    inputs = torch.tensor(tokens, device='cuda', dtype=torch.long)
-    model.train()
-    output = model(input_ids=inputs, labels=inputs, use_cache=False)
-    if output.loss is None or not torch.isfinite(output.loss).item():
-        raise RuntimeError('Nonfinite or missing reference causal-LM loss.')
-    output.loss.backward()
     required = {
         'model.embed_tokens.weight',
         'model.layers.0.self_attn.q_proj.weight',
@@ -92,13 +85,66 @@ def training_reference(model, checkpoint):
             probes[name] = {
                 'shape': list(parameter.shape),
                 'indices': indices.cpu().tolist(),
-                'values': values.tolist()
+                'values': torch.zeros_like(values)
             }
             if selected_expert:
                 expert_probe = True
     if not required.issubset(probes) or not expert_probe:
         raise RuntimeError('Required dense/MLA/router/expert reference gradients are missing.')
-    return {'tokens': tokens, 'loss': output.loss.item(), 'gradients': probes}
+    return probes
+
+
+def training_reference(model, checkpoint, batch_size=1, seq_len=32, world_size=1):
+    """Reference the actual global batch with memory-bounded per-rank accumulation."""
+    import torch
+
+    if batch_size < 1 or seq_len < 32 or world_size < 1:
+        raise ValueError('Invalid training reference profile.')
+    documents, eos = fixed_documents(checkpoint)
+    model.train()
+    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
+    tokens = packed_tokens(documents, eos, seq_len, batch_size * world_size)
+    losses, probes = [0.0] * world_size, {}
+    reference_batch_size = min(2, batch_size)
+    # The pinned config has zero dropout and per-sequence, not batch-level, auxiliary loss.
+    for rank, start in product(range(world_size), range(0, batch_size, reference_batch_size)):
+        offset = rank * batch_size + start
+        batch = tokens[offset:min(offset + reference_batch_size, (rank + 1) * batch_size)]
+        batch_weight = len(batch) / batch_size
+        inputs = torch.tensor(batch, device='cuda', dtype=torch.long)
+        model.zero_grad(set_to_none=True)
+        output = model(input_ids=inputs, labels=inputs, use_cache=False)
+        if output.loss is None or not torch.isfinite(output.loss).item():
+            raise RuntimeError('Nonfinite or missing reference causal-LM loss.')
+        losses[rank] += output.loss.item() * batch_weight
+        output.loss.backward()
+        if not probes:
+            probes = _training_gradient_probes(model)
+        for name, probe in probes.items():
+            gradient = model.get_parameter(name).grad
+            if gradient is None:
+                if '.experts.' not in name:
+                    raise RuntimeError('Missing reference gradient: {}'.format(name))
+                continue
+            indices = torch.tensor(probe['indices'], device=gradient.device, dtype=torch.long)
+            values = gradient.detach().flatten()[indices].float().cpu()
+            if not torch.isfinite(values).all().item():
+                raise RuntimeError('Nonfinite reference gradient: {}'.format(name))
+            probe['values'] += values * (batch_weight / world_size)
+        del output, inputs
+    model.zero_grad(set_to_none=True)
+    for probe in probes.values():
+        probe['values'] = probe['values'].tolist()
+    return {
+        'tokens': tokens,
+        'loss': sum(losses) / world_size,
+        'loss_per_rank': losses,
+        'gradients': probes,
+        'batch_size': batch_size,
+        'seq_len': seq_len,
+        'world_size': world_size,
+        'reference_microbatch_size': reference_batch_size,
+    }
 
 
 def inference_reference(model, requests):
@@ -116,6 +162,14 @@ def inference_reference(model, requests):
             logprobs = request['logprobs']
             if not prompt or not completion or len(completion) != len(logprobs):
                 raise ValueError('Incomplete inference reference request.')
+            full_prefix_steps = request.get('full_prefix_steps', list(range(len(completion))))
+            if (
+                not isinstance(full_prefix_steps, list) or not full_prefix_steps
+                or any(type(step) is not int
+                       for step in full_prefix_steps) or full_prefix_steps != sorted(set(full_prefix_steps))
+                or full_prefix_steps[0] != 0 or full_prefix_steps[-1] != len(completion) - 1
+            ):
+                raise ValueError('Full-prefix reference positions must include ordered first and final steps.')
             prefix = torch.tensor([prompt], device='cuda', dtype=torch.long)
             cache = None
             for step, token in enumerate(completion):
@@ -128,10 +182,15 @@ def inference_reference(model, requests):
                 )
                 cache = output.past_key_values
                 cached = output.logits[:, -1, :].float()
-                full = model(input_ids=prefix, attention_mask=attention_mask, use_cache=False).logits[:, -1, :].float()
+                check_full_prefix = step in full_prefix_steps
+                full = (
+                    model(input_ids=prefix, attention_mask=attention_mask, use_cache=False).logits[:, -1, :].float()
+                    if check_full_prefix else cached
+                )
                 if not torch.isfinite(cached).all().item() or not torch.isfinite(full).all().item():
                     raise RuntimeError('Nonfinite reference logits.')
-                torch.testing.assert_close(cached, full, rtol=0.02, atol=0.05)
+                if check_full_prefix:
+                    torch.testing.assert_close(cached, full, rtol=0.02, atol=0.05)
                 if full[0].argmax().item() != token:
                     raise RuntimeError('Engine greedy token differs at request {} step {}.'.format(request_index, step))
                 expected = torch.log_softmax(full[0], dim=-1)
@@ -152,7 +211,8 @@ def inference_reference(model, requests):
                         'request': request_index,
                         'step': step,
                         'logprob_positions': len(ids),
-                        'cache_max_abs_error': (cached - full).abs().max().item(),
+                        'full_prefix_checked': check_full_prefix,
+                        'cache_max_abs_error': (cached - full).abs().max().item() if check_full_prefix else None,
                         'engine_logprob_max_abs_error': (actual - target).abs().max().item(),
                     }
                 )
@@ -169,6 +229,9 @@ def main():
     parser.add_argument('--mode', choices=['training', 'inference'], required=True)
     parser.add_argument('--requests')
     parser.add_argument('--output', required=True)
+    parser.add_argument('--batch_size', type=int, default=1)
+    parser.add_argument('--seq_len', type=int, default=32)
+    parser.add_argument('--world_size', type=int, default=1)
     args = parser.parse_args()
     torch.cuda.set_device(0)
     os.environ['TORCH_ALLOW_TF32_CUBLAS_OVERRIDE'] = '0'
@@ -177,7 +240,7 @@ def main():
     model = load_model(args.checkpoint, dtype).cuda()
     try:
         if args.mode == 'training':
-            result = training_reference(model, args.checkpoint)
+            result = training_reference(model, args.checkpoint, args.batch_size, args.seq_len, args.world_size)
         else:
             if not args.requests:
                 raise ValueError('--requests is required for inference reference.')

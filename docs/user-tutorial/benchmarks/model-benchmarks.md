@@ -188,12 +188,12 @@ enabled; all-first-token-EOS output does not satisfy the cached-decode workload.
 
 This is a draft implementation, not a numerically qualified inference profile.
 Generation and shutdown have executed on H100, but the independent
-engine/reference log-probability check has not passed. Its current numerical
-cases use 16/23/32-token prompts and at most four generated tokens; representative
-coverage of the configured 512-token prompts, batch eight and later decode
-positions is still required. Repeated cold-run and steady-state utilization
-qualification also remain pending. Do not replace numerical validation with
-matching generated tokens or a successful process exit.
+engine/reference log-probability check has not passed. In addition to short
+variable-length cases, the candidate now exercises a full performance-shaped
+batch and retains complete token traces from its first and last requests.
+Hardware acceptance of that expanded coverage, repeated cold runs and steady-state
+utilization remain pending. Do not replace numerical validation with matching
+generated tokens or a successful process exit.
 
 #### Isolated Runtime
 
@@ -205,13 +205,31 @@ Set `reference_python` to a separate environment containing the pinned
 The controller only imports standard-library worker helpers, not vLLM.
 
 The optional
-[`worker Dockerfile`](../../../dockerfile/deepseek-v2-lite-inference.dockerfile)
-prepares the engine and reference environments. This worker image does not
-include the full SuperBench controller. The example native configuration uses
-`/opt/vllm/bin/python`; when executing a worker directly in the image, use its
-engine `python3` interpreter instead. CUDA/ROCm registration is not certification
-of every GPU or runtime combination.
+[`model runtime Dockerfile`](../../../dockerfile/deepseek-v2-lite-inference.dockerfile)
+installs the Python SuperBench controller and its `sb` entrypoint in the
+reference-compatible environment without replacing the engine's Transformers.
+`/opt/vllm/bin/python` selects the engine interpreter;
+`/opt/deepseek-reference/bin/python` selects the reference/controller interpreter.
+The
+[`controller lock`](../../../dockerfile/requirements/deepseek-v2-lite-controller.txt)
+retains the base GPU Torch/torchvision installation; its regeneration command is
+in the [lock inputs](../../../dockerfile/requirements/deepseek-v2-lite-controller.in).
+This is an opt-in model runtime, not the standard compiled microbenchmark image.
+CUDA/ROCm registration is not certification of every GPU/runtime combination.
+The build checks both interpreters' framework versions and Torch/NumPy array
+interoperability. Controller/reference package pins must not replace the engine's
+own environment.
 
+```bash
+docker build -f dockerfile/deepseek-v2-lite-inference.dockerfile -t sb-v2lite-inference .
+docker run --rm --gpus device=0 --shm-size 32g \
+  -v "$PWD/v2lite-results:/results" sb-v2lite-inference exec \
+  --config-file superbench/config/deepseek-v2-lite-inference.yaml \
+  --output-dir /results/sb-output \
+  -C superbench.benchmarks.deepseek-v2-lite-inference.parameters.cache_root=/results/model-cache
+```
+
+For a separately prepared native installation:
 ```bash
 sb exec --config-file superbench/config/deepseek-v2-lite-inference.yaml
 ```
@@ -232,8 +250,16 @@ probabilities do not constitute an exhaustive
 comparison of the engine's full vocabulary logits or all expert routing paths.
 Correctness, complete requests, finite timestamps and actual token counts must
 all pass; a plausible generated sentence or process exit zero is insufficient.
+Numerical records must contain the requested top-20 log probabilities, not only
+the selected token. For long selected requests, every generated token is checked
+against the cached FP32 reference; full-prefix recomputation checks the first,
+second, middle and final positions. A position without full-prefix recomputation
+is explicitly marked rather than reporting a fabricated zero cache error.
 
 Engine model residency is BF16, with no quantized or offloaded fallback.
+The router uses FP32 to match the official gate. NVIDIA TF32, vLLM FP32 matmul
+precision and Triton FP32 arithmetic are explicitly controlled; these settings
+do not turn the BF16 performance workload into full-FP32 inference.
 Inter-request prefix caching and chunked prefill are disabled for this initial
 profile; within-request decode state is retained. Changing those policies or
 using tensor/expert parallelism requires a separately named validation profile.
