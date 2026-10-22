@@ -30,8 +30,6 @@ class CublasLtBenchmark(BlasLtBaseBenchmark):
             'fp8e4m3',
             'fp8e5m2',
             'fp4e2m1',
-            'fp6e2m3',
-            'fp6e3m2',
             'mxfp8_vec32_mn_k4_ue8m0',
             'mxfp8_vec128_mn_k4_ue8m0',
             'nvfp4_vec16_ue4m3',

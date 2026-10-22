@@ -245,12 +245,6 @@ void cublasLtGemm::Setup(int m, int n, int k, int batch, int lda, int ldb, int l
         gemm_compute_type = CUBLAS_COMPUTE_32F;
         scale_type = CUDA_R_32F;
 #endif
-#if CUDA_VERSION >= 12080 && __has_include(<cuda_fp6.h>)
-    } else if (a_type == CUDA_R_6F_E2M3 || b_type == CUDA_R_6F_E2M3 || a_type == CUDA_R_6F_E3M2 ||
-               b_type == CUDA_R_6F_E3M2) {
-        gemm_compute_type = CUBLAS_COMPUTE_32F;
-        scale_type = CUDA_R_32F;
-#endif
     } else if (a_type == CUDA_R_64F || b_type == CUDA_R_64F) {
         gemm_compute_type = CUBLAS_COMPUTE_64F;
         scale_type = CUDA_R_64F;

@@ -75,8 +75,6 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             'fp8e4m3',
             'fp8e5m2',
             'fp4e2m1',
-            'fp6e2m3',
-            'fp6e3m2',
             'mxfp8_vec32_mn_k4_ue8m0',
             'mxfp8_vec128_mn_k4_ue8m0',
             'nvfp4_vec16_ue4m3',
@@ -142,13 +140,13 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters='--shapes 16,16,16 --in_types fp6e2m3 --enable_autotune',
+            parameters='--shapes 16,16,16 --in_types mxfp8_vec32_mn_k4_ue8m0 --enable_autotune',
         )
         self.assertTrue(benchmark._preprocess())
         benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
 
         self.assertTrue(benchmark._process_raw_result(0, '16   16    16    0       1.111      2.222'))
-        self.assertEqual(2.222, benchmark.result['fp6e2m3_0_16_16_16_flops'][0])
+        self.assertEqual(2.222, benchmark.result['mxfp8_vec32_mn_k4_ue8m0_0_16_16_16_flops'][0])
 
     def test_cublaslt_gemm_low_iteration_commands(self):
         """Test diagnostic runs use the requested short iteration counts."""
@@ -167,7 +165,7 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         for tolerant_fail in [False, True]:
             with self.subTest(tolerant_fail=tolerant_fail):
                 benchmark = self.get_benchmark(
-                    '--shapes 16,16,16 --in_types fp16 fp6e2m3 int8'
+                    '--shapes 16,16,16 --in_types fp16 nvfp4_vec16_ue4m3 int8'
                     + (' --tolerant_fail' if tolerant_fail else '')
                 )
                 outputs = [
@@ -183,7 +181,7 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 self.assertEqual(3 if tolerant_fail else 2, invoke.call_count)
                 self.assertEqual(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE, benchmark.return_code)
                 self.assertEqual([2.222], benchmark.result['fp16_0_16_16_16_flops'])
-                self.assertNotIn('fp6e2m3_0_16_16_16_flops', benchmark.result)
+                self.assertNotIn('nvfp4_vec16_ue4m3_0_16_16_16_flops', benchmark.result)
                 if tolerant_fail:
                     self.assertEqual([3.333], benchmark.result['int8_0_16_16_16_flops'])
                 else:
