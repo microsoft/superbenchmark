@@ -165,8 +165,8 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         for tolerant_fail in [False, True]:
             with self.subTest(tolerant_fail=tolerant_fail):
                 benchmark = self.get_benchmark(
-                    '--shapes 16,16,16 --in_types fp16 nvfp4_vec16_ue4m3 int8'
-                    + (' --tolerant_fail' if tolerant_fail else '')
+                    '--shapes 16,16,16 --in_types fp16 nvfp4_vec16_ue4m3 int8' +
+                    (' --tolerant_fail' if tolerant_fail else '')
                 )
                 outputs = [
                     CompletedProcess('', 0, stdout='16 16 16 0 1.111 2.222'),
