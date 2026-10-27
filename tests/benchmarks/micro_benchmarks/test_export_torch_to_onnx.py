@@ -341,6 +341,7 @@ def test_export_huggingface_model_vision_routes_to_vision_helper(exporter, tmp_p
     captured = {}
 
     def fake_export(wrapped_model, args, file_name, **kwargs):
+        assert not torch.is_grad_enabled()
         captured['wrapped_model'] = wrapped_model
         captured['args'] = args
         captured['file_name'] = file_name
@@ -357,6 +358,7 @@ def test_export_huggingface_model_vision_routes_to_vision_helper(exporter, tmp_p
         )
 
     assert result == str(tmp_path / 'vit-tiny.onnx')
+    assert torch.is_grad_enabled()
     # Vision shape: (B, C, H, W) tuple of length 1.
     assert len(captured['args']) == 1
     assert tuple(captured['args'][0].shape) == (2, 3, 32, 32)
@@ -374,6 +376,7 @@ def test_export_huggingface_model_nlp_routes_to_nlp_helper(exporter, tmp_path, i
     captured = {}
 
     def fake_export(wrapped_model, args, file_name, **kwargs):
+        assert not torch.is_grad_enabled()
         captured['args'] = args
         captured['file_name'] = file_name
         captured['kwargs'] = kwargs

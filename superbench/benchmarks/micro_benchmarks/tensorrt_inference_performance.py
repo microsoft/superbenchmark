@@ -20,6 +20,7 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
     get_process_rank,
+    get_huggingface_auth_kwargs,
     validate_model_identifier,
 )
 
@@ -245,9 +246,7 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
             # Step 1: Pre-download memory check — download only the config (a few KB)
             # and estimate whether the full model will fit in GPU memory.
             hf_token = os.environ.get('HF_TOKEN') or os.environ.get('HUGGING_FACE_HUB_TOKEN')
-            load_kwargs = {}
-            if hf_token:
-                load_kwargs['token'] = hf_token
+            load_kwargs = get_huggingface_auth_kwargs(hf_token)
 
             hf_config = AutoConfig.from_pretrained(
                 self._args.model_identifier,
@@ -397,7 +396,19 @@ class TensorRTInferenceBenchmark(MicroBenchmarkWithInvoke):
                 raise ValueError(f'TensorRT NLP input {name} must be exported as INT32, got {elem_type}.')
             dtype = np.int32
             if name in ('input_ids', 'decoder_input_ids'):
-                vocab_size = getattr(self._hf_config, 'vocab_size', None)
+                subconfig_name = 'decoder' if name == 'decoder_input_ids' else 'encoder'
+                subconfig = getattr(self._hf_config, subconfig_name, None)
+                configs = (
+                    subconfig, self._hf_config, getattr(self._hf_config, 'text_config',
+                                                        None), getattr(self._hf_config, 'decoder', None)
+                )
+                vocab_size = None
+                for config in configs:
+                    candidate = config.get('vocab_size') if isinstance(config, dict) else \
+                        getattr(config, 'vocab_size', None)
+                    if isinstance(candidate, int) and not isinstance(candidate, bool) and candidate > 0:
+                        vocab_size = candidate
+                        break
                 if not isinstance(vocab_size, int) or vocab_size <= 0:
                     raise ValueError('A positive vocab_size is required to generate TensorRT token inputs.')
                 data = np.random.randint(0, vocab_size, size=dims).astype(dtype)

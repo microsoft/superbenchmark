@@ -538,6 +538,35 @@ class TensorRTInferenceHuggingFaceTestCase(unittest.TestCase):
             with patch.dict('sys.modules', {'onnx': onnx}), self.assertRaisesRegex(ValueError, error):
                 benchmark._write_trt_input_files('/tmp/not-written/model.onnx', 'input_ids:2x4')
 
+    def test_write_trt_input_files_supports_composite_vocabularies(self):
+        """Composite models use the encoder/decoder or text vocabulary for valid INT32 IDs."""
+        benchmark = self._make_benchmark()
+        onnx = MagicMock()
+        onnx.TensorProto.INT32 = 6
+        names = ('input_ids', 'decoder_input_ids')
+        inputs = [_make_onnx_input(name, [2, 4]) for name in names]
+        for metadata in inputs:
+            metadata.type.tensor_type.elem_type = 6
+        onnx.load.return_value = _make_onnx_model(inputs)
+        cases = [
+            (SimpleNamespace(encoder=SimpleNamespace(vocab_size=3), decoder=SimpleNamespace(vocab_size=7)), (3, 7)),
+            (SimpleNamespace(decoder=SimpleNamespace(vocab_size=7)), (7, 7)),
+            (SimpleNamespace(vocab_size=0, text_config=SimpleNamespace(vocab_size=5)), (5, 5)),
+            (SimpleNamespace(text_config={'vocab_size': 5}), (5, 5)),
+        ]
+        for config, vocabularies in cases:
+            benchmark._hf_config = config
+            with tempfile.TemporaryDirectory() as directory, patch.dict('sys.modules', {'onnx': onnx}), \
+                    patch(f'{_TENSORRT_MODULE}.np.random.randint', wraps=np.random.randint) as random_ids:
+                benchmark._write_trt_input_files(
+                    str(Path(directory) / 'model.onnx'), 'input_ids:2x4,decoder_input_ids:2x4'
+                )
+                self.assertEqual(list(vocabularies), [call[0][1] for call in random_ids.call_args_list])
+                for name, vocab_size in zip(names, vocabularies):
+                    data = np.fromfile(str(Path(directory) / f'{name}.bin'), dtype=np.int32)
+                    self.assertEqual(8, data.size)
+                    self.assertTrue(np.all((data >= 0) & (data < vocab_size)))
+
     def test_build_trtexec_command_for_hf_rejects_invalid_proc_rank(self):
         """A path-like PROC_RANK is rejected before loading or exporting a model."""
         benchmark = self._make_benchmark()

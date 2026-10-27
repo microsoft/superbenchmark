@@ -10,6 +10,7 @@ from typing import Optional, Tuple
 
 import torch
 import transformers
+from packaging.version import Version
 from transformers import (
     AutoModel,
     AutoConfig,
@@ -28,6 +29,14 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 # as a local filesystem path by AutoConfig.from_pretrained (which silently
 # loads from disk when given a path that exists).
 _SAFE_MODEL_ID_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}(/[A-Za-z0-9._-]{1,128})?$')
+
+
+def get_huggingface_auth_kwargs(token):
+    """Use the authentication API supported by the installed Transformers version."""
+    if not token:
+        return {}
+    key = 'token' if Version(transformers.__version__) >= Version('4.32') else 'use_auth_token'
+    return {key: token}
 
 
 def validate_process_rank(process_rank: str) -> str:
@@ -225,8 +234,7 @@ class HuggingFaceModelLoader:
         """Assemble the base ``from_pretrained`` kwargs (cache_dir, token, dtype, revision)."""
         dtype = self._get_torch_dtype(torch_dtype) if torch_dtype else None
         load_kwargs = {'cache_dir': self.cache_dir, 'revision': revision, **extra_kwargs}
-        if self.token:
-            load_kwargs['token'] = self.token
+        load_kwargs.update(get_huggingface_auth_kwargs(self.token))
         if dtype:
             load_kwargs['torch_dtype'] = dtype
         return load_kwargs
@@ -296,9 +304,32 @@ class HuggingFaceModelLoader:
             for suffix, class_name in task_classes:
                 if architecture.endswith(suffix):
                     model_class = getattr(transformers, class_name, None)
-                    if model_class is not None and type(config) in model_class._model_mapping:
+                    auto_map = getattr(config, 'auto_map', None) or {}
+                    if model_class is not None and (
+                        type(config) in model_class._model_mapping or class_name in auto_map
+                    ):
                         return model_class
         return AutoModel
+
+    @staticmethod
+    def _is_moe_config(config):
+        """Recognize expert metadata in standalone and composite model configurations."""
+        if config is None:
+            return False
+        values = config if isinstance(config, dict) else vars(config)
+        if any(
+            values.get(attr) is not None for attr in
+            ('num_local_experts', 'num_experts', 'n_routed_experts', 'moe_num_experts', 'moe_intermediate_size')
+        ):
+            return True
+        model_type = values.get('model_type', '') if isinstance(config, dict) else getattr(config, 'model_type', '')
+        names = [model_type] + list(values.get('architectures') or [])
+        if any(marker in name.lower() for name in names for marker in ('moe', 'mixtral', 'dbrx', 'llama4')):
+            return True
+        return any(
+            HuggingFaceModelLoader._is_moe_config(values.get(attr))
+            for attr in ('text_config', 'ffn_config', 'encoder', 'decoder')
+        )
 
     def load_model_from_config(
         self,
@@ -415,6 +446,11 @@ class HuggingFaceModelLoader:
             int: Estimated number of parameters, or None if estimation is not possible.
         """
         try:
+            if any(
+                HuggingFaceModelLoader._is_moe_config(getattr(hf_config, attr, None))
+                for attr in ('text_config', 'ffn_config', 'encoder', 'decoder')
+            ):
+                return None
             vocab = getattr(hf_config, 'vocab_size', 0)
             hidden = getattr(hf_config, 'hidden_size', 0)
             layers = getattr(hf_config, 'num_hidden_layers', 0)
@@ -461,7 +497,10 @@ class HuggingFaceModelLoader:
                 getattr(hf_config, attr) for attr in ('num_local_experts', 'num_experts', 'n_routed_experts')
                 if getattr(hf_config, attr, None) is not None
             ]
-            if any(not isinstance(count, int) or count < 1 for count in expert_counts):
+            if (
+                any(not isinstance(count, int) or count < 1 for count in expert_counts)
+                or (not expert_counts and HuggingFaceModelLoader._is_moe_config(hf_config))
+            ):
                 return None
             num_experts = max(expert_counts, default=1)
             if num_experts > 1:
@@ -566,10 +605,7 @@ class HuggingFaceModelLoader:
         HuggingFaceModelLoader._get_auto_model_class(hf_config)
         param_count = HuggingFaceModelLoader.estimate_param_count_from_config(hf_config)
         if param_count is None:
-            if any(
-                getattr(hf_config, attr, None) is not None
-                for attr in ('num_local_experts', 'num_experts', 'n_routed_experts')
-            ):
+            if HuggingFaceModelLoader._is_moe_config(hf_config):
                 logger.error(f'Cannot safely estimate MoE memory for {model_identifier}; refusing weight download.')
                 return False, 0, 0, 0
             logger.warning(
@@ -581,11 +617,13 @@ class HuggingFaceModelLoader:
         activation_bytes = 0
         if mode == 'inference':
             hidden = hf_config.hidden_size
-            layers = hf_config.num_hidden_layers
             heads = hf_config.num_attention_heads
-            # Budget fp32 logits and attention/hidden intermediates even for fp16 exports.
+            intermediate = getattr(hf_config, 'intermediate_size', None) or hidden * 4
+            # no_grad export retains a working layer, not every layer's autograd graph.
+            # Budget fp32 logits and attention/MLP buffers even for fp16 exports.
             activation_bytes = 4 * batch_size * (
-                seq_length * hf_config.vocab_size + layers * (2 * heads * seq_length**2 + 8 * seq_length * hidden)
+                seq_length * hf_config.vocab_size + 2 * heads * seq_length**2 + seq_length *
+                (8 * hidden + 2 * intermediate)
             )
             if getattr(hf_config, 'is_encoder_decoder', False):
                 activation_bytes *= 3

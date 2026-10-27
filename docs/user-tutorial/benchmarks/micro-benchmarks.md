@@ -153,6 +153,8 @@ Each local rank loads and exports a full model independently. Budget N times the
 
 TensorRT NLP benchmarks export INT32 runtime inputs and write matching rank-local binary input files passed to `trtexec --loadInputs`, using tokens within the configured vocabulary and binary attention masks. ORT exports retain INT64 NLP inputs. Model downloads use the standard Hugging Face cache (`HF_HUB_CACHE`, or `$HF_HOME/hub`).
 
+Composite models use the encoder/decoder or text sub-config vocabulary when generating token inputs. Configurations indicating MoE whose parameter count cannot be estimated safely (including nested text/FFN configs) are rejected before downloading weights.
+
 #### Metrics
 
 | Name                                             | Unit      | Description                                                                                              |
@@ -184,6 +186,8 @@ When CUDA or the ONNX Runtime CUDA execution provider is unavailable, the benchm
 The created session is also checked for successful CUDA provider initialization, so `--require_cuda` rejects CPU-only sessions even when CUDA support is compiled into ONNX Runtime. Without the flag, a fallback warning is logged. CPU preflight checks available system RAM using `psutil`.
 
 As with TensorRT, each local rank loads and exports a full model into its own directory: budget N times the host RAM and ONNX disk space for N local processes. Memory estimates include requested batch/sequence output and activation tensors, but do not aggregate concurrent ranks or check disk capacity. Multiple-choice architectures are not supported. Downloads use the standard Hugging Face cache (`HF_HUB_CACHE`, or `$HF_HOME/hub`).
+
+ONNX export disables autograd; the activation estimate budgets live attention/MLP buffers and output tensors rather than retained gradients across all layers. Python 3.8+ requires Transformers 4.38 or newer; Python 3.7 retains Transformers 4.28-4.30 with the legacy `use_auth_token` API.
 
 The supported percentiles are 50, 90, 95, 99, and 99.9.
 

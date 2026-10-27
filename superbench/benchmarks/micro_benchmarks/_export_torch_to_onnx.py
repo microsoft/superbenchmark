@@ -327,12 +327,13 @@ class torch2onnxExporter():
 
             export_kwargs = self._build_onnx_export_kwargs(model, input_names, dynamic_axes)
 
-            torch.onnx.export(
-                wrapped_model,
-                export_args,
-                file_name,
-                **export_kwargs,
-            )
+            with torch.no_grad():
+                torch.onnx.export(
+                    wrapped_model,
+                    export_args,
+                    file_name,
+                    **export_kwargs,
+                )
 
             # Clean up
             del export_args

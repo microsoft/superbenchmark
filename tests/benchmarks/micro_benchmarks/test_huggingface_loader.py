@@ -15,6 +15,7 @@ from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     ModelLoadError,
     ModelIncompatibleError,
     get_process_rank,
+    get_huggingface_auth_kwargs,
     validate_model_identifier,
 )
 from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSourceConfig
@@ -191,6 +192,76 @@ class TestHuggingFaceModelLoader:
         """Conditional-generation suffixes must not force multimodal configs into seq2seq."""
         config = transformers.PretrainedConfig(architectures=['UnsupportedForConditionalGeneration'])
         assert HuggingFaceModelLoader._get_auto_model_class(config) is transformers.AutoModel
+
+    @pytest.mark.parametrize('include_backbone', [False, True])
+    @pytest.mark.parametrize('allow_remote_code', [False, True])
+    def test_remote_config_preserves_task_head(self, loader, include_backbone, allow_remote_code):
+        """Unregistered remote configs retain task selection without bypassing the trust opt-in."""
+        class RemoteConfig(transformers.PretrainedConfig):
+            pass
+
+        auto_map = {'AutoModelForCausalLM': 'modeling_remote.RemoteForCausalLM'}
+        if include_backbone:
+            auto_map['AutoModel'] = 'modeling_remote.RemoteModel'
+        config = RemoteConfig(architectures=['RemoteForCausalLM'], auto_map=auto_map)
+        assert HuggingFaceModelLoader._get_auto_model_class(config) is transformers.AutoModelForCausalLM
+        loader.allow_remote_code = allow_remote_code
+        with patch('transformers.AutoModelForCausalLM.from_pretrained') as load, \
+                patch.object(loader, '_try_load_tokenizer'):
+            load.return_value.parameters.return_value = []
+            loader.load_model('test/remote', device='cpu', config=config)
+        assert load.call_args[1]['trust_remote_code'] is allow_remote_code
+
+    @pytest.mark.parametrize(
+        'version, key',
+        [('4.28.0', 'use_auth_token'), ('4.31.0', 'use_auth_token'), ('4.32.0', 'token'), ('4.38.0', 'token')]
+    )
+    def test_authentication_matches_transformers_version(self, loader, version, key):
+        """Python 3.7-compatible Transformers uses its legacy authentication keyword."""
+        loader.token = 'test-token'
+        with patch('superbench.benchmarks.micro_benchmarks.huggingface_model_loader.transformers.__version__', version):
+            assert get_huggingface_auth_kwargs('test-token') == {key: 'test-token'}
+            assert get_huggingface_auth_kwargs(None) == {}
+            kwargs = loader._build_load_kwargs('fp32', None, {})
+        assert kwargs[key] == 'test-token'
+        assert ('token' if key == 'use_auth_token' else 'use_auth_token') not in kwargs
+
+    @pytest.mark.parametrize(
+        'config', [
+            transformers.PretrainedConfig(text_config={'num_local_experts': 16}, architectures=['Llama4ForCausalLM']),
+            transformers.PretrainedConfig(architectures=['UnknownMoEForCausalLM']),
+            transformers.PretrainedConfig(text_config={'model_type': 'unknown_moe'}),
+            transformers.PretrainedConfig(
+                vocab_size=1000,
+                hidden_size=64,
+                num_hidden_layers=2,
+                intermediate_size=256,
+                num_attention_heads=8,
+                ffn_config={'moe_num_experts': 16}
+            ),
+        ]
+    )
+    def test_nested_or_unknown_moe_refuses_download(self, config):
+        """Nested MoE metadata must not become a dense estimate or a skipped guard."""
+        assert HuggingFaceModelLoader.estimate_param_count_from_config(config) is None
+        assert HuggingFaceModelLoader.check_memory_fits('test/moe', config, 'fp32')[0] is False
+
+    def test_no_grad_activation_budget_is_independent_of_layer_count(self):
+        """Export budgets a live layer and output, not retained activations from every layer."""
+        config = transformers.BertConfig(
+            vocab_size=1000, hidden_size=64, num_hidden_layers=2, intermediate_size=256, num_attention_heads=8
+        )
+        with patch.object(HuggingFaceModelLoader, 'estimate_memory', return_value=(1, 100, True)) as estimate:
+            HuggingFaceModelLoader.check_memory_fits(
+                'test/model', config, 'fp32', mode='inference', batch_size=2, seq_length=8
+            )
+            activation_bytes = estimate.call_args[1]['activation_bytes']
+            config.num_hidden_layers = 20
+            HuggingFaceModelLoader.check_memory_fits(
+                'test/model', config, 'fp32', mode='inference', batch_size=2, seq_length=8
+            )
+        assert activation_bytes == 4 * 2 * (8 * 1000 + 2 * 8 * 8**2 + 8 * (8 * 64 + 2 * 256))
+        assert estimate.call_args[1]['activation_bytes'] == activation_bytes
 
     def test_multiple_choice_rejected_before_weights(self, loader):
         """Unsupported multiple-choice inputs fail at preflight and before weight download."""

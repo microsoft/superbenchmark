@@ -19,6 +19,7 @@ from superbench.benchmarks.micro_benchmarks.model_source_config import ModelSour
 from superbench.benchmarks.micro_benchmarks.huggingface_model_loader import (
     HuggingFaceModelLoader,
     get_process_rank,
+    get_huggingface_auth_kwargs,
     validate_model_identifier,
 )
 
@@ -237,9 +238,7 @@ class ORTInferenceBenchmark(MicroBenchmark):
             # Step 1: Pre-download memory check — download config only (few KB)
             from transformers import AutoConfig
             hf_token = os.environ.get('HF_TOKEN') or os.environ.get('HUGGING_FACE_HUB_TOKEN')
-            load_kwargs = {}
-            if hf_token:
-                load_kwargs['token'] = hf_token
+            load_kwargs = get_huggingface_auth_kwargs(hf_token)
             hf_config = AutoConfig.from_pretrained(
                 self._args.model_identifier,
                 trust_remote_code=allow_remote_code,

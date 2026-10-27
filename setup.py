@@ -233,7 +233,8 @@ setup(
                 'torch>=1.7.0a0,<2.13; python_version<"3.11"',
                 'torch>=1.7.0a0; python_version>="3.11"',
                 'torchvision>=0.8.0a0',
-                'transformers>=4.28.0; python_version<"3.12"',
+                'transformers>=4.28.0,<4.31; python_version<"3.8"',
+                'transformers>=4.38.0; python_version>="3.8" and python_version<"3.12"',
                 'transformers==4.52.4; python_version>="3.12"',
             ],
             'ort': [
