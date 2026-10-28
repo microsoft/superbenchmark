@@ -4,6 +4,7 @@
 """SuperBench adapter for isolated official-checkpoint V2-Lite generation."""
 
 import os
+import shutil
 import statistics
 import sys
 import tempfile
@@ -19,6 +20,22 @@ from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
 )
 
 
+def _remove_model_cache(cache):
+    """Delete one run's downloaded model cache after its worker exits, keeping reports and logs."""
+    if not cache.exists():
+        return
+    start = time.monotonic()
+    try:
+        shutil.rmtree(cache)
+    except TimeoutError:
+        # The SuperBench SIGTERM handler raises TimeoutError, an OSError subclass; keep it fatal.
+        raise
+    except OSError as error:
+        logger.error('Failed to remove the V2-Lite model cache %s: %s', cache, error)
+        return
+    logger.info('Removed the V2-Lite model cache %s in %.1f seconds.', cache, time.monotonic() - start)
+
+
 class DeepSeekV2LiteInference(Benchmark):
     """Benchmark one BF16 inference replica, not a training or forward-only loop."""
     def __init__(self, name, parameters=''):
@@ -32,20 +49,29 @@ class DeepSeekV2LiteInference(Benchmark):
         self._parser.set_defaults(duration=3300)
         self._parser.add_argument('--runtime_python', type=str, default=sys.executable)
         self._parser.add_argument('--reference_python', type=str, default='/opt/deepseek-reference/bin/python')
-        self._parser.add_argument('--cache_root', type=str, default='model-cache')
+        self._parser.add_argument(
+            '--cache_root',
+            type=str,
+            default=None,
+            help='Required directory for per-run reports, logs and the temporary model cache.',
+        )
         self._parser.add_argument('--batch_size', type=int, default=8)
         self._parser.add_argument('--seq_len', type=int, default=512)
         self._parser.add_argument('--max_new_tokens', type=int, default=64)
         self._parser.add_argument('--num_warmup', type=int, default=2)
         self._parser.add_argument('--num_steps', type=int, default=8)
         self._parser.add_argument('--gpu_memory_utilization', type=float, default=0.8)
-        self._parser.add_argument('--numerical_policy', choices=numerics.POLICIES, default='strict_fp32')
+        self._parser.add_argument('--numerical_policy', type=str, choices=numerics.POLICIES, default='strict_fp32')
 
     def _preprocess(self):
         """Reject duplicate launchers and unsupported profile settings explicitly."""
         if not super()._preprocess():
             return False
         args = self._args
+        if not args.cache_root:
+            logger.error('V2-Lite inference requires cache_root for its per-run model cache, reports and logs.')
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
         try:
             world_size = int(os.environ.get('WORLD_SIZE', os.environ.get('OMPI_COMM_WORLD_SIZE', '1')))
         except ValueError:
@@ -109,6 +135,7 @@ class DeepSeekV2LiteInference(Benchmark):
     def _benchmark(self):
         """Accept actual request/token counters and complete numeric validation."""
         start = time.monotonic()
+        job = None
         try:
             root = Path(self._args.cache_root).resolve()
             root.mkdir(parents=True, exist_ok=True)
@@ -159,6 +186,9 @@ class DeepSeekV2LiteInference(Benchmark):
             logger.error('V2-Lite inference failed: %s', error)
             self._result.set_return_code(ReturnCode.RUNTIME_EXCEPTION_ERROR)
             return False
+        finally:
+            if job is not None:
+                _remove_model_cache(job / 'cache')
 
 
 BenchmarkRegistry.register_benchmark('deepseek-v2-lite-inference', DeepSeekV2LiteInference, platform=Platform.CUDA)

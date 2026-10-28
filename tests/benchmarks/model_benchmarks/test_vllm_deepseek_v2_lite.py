@@ -61,11 +61,29 @@ def test_counts_and_model_result_shape(benchmark, monkeypatch):
         '--gpu_memory_utilization nan', '--duration 3600', '--run_count 2', '--precision float16'
     ]
 )
-def test_invalid_profiles(parameters):
+def test_invalid_profiles(tmp_path, parameters):
     """Reject unsupported precisions, dimensions and multi-profile timing."""
-    instance = adapter.DeepSeekV2LiteInference('deepseek-v2-lite-inference', parameters)
+    instance = adapter.DeepSeekV2LiteInference(
+        'deepseek-v2-lite-inference', '--cache_root "{}" {}'.format(tmp_path, parameters)
+    )
     assert not instance.run()
     assert instance.return_code == ReturnCode.INVALID_ARGUMENT
+
+
+def test_cache_root_is_required():
+    """Refuse to choose an implicit location for the per-run model cache."""
+    instance = adapter.DeepSeekV2LiteInference('deepseek-v2-lite-inference', '--num_steps 2')
+    assert not instance.run()
+    assert instance.return_code == ReturnCode.INVALID_ARGUMENT
+
+
+def test_parameters_render_in_help():
+    """Keep every option compatible with the typed SuperBench help formatter."""
+    instance = adapter.DeepSeekV2LiteInference('deepseek-v2-lite-inference')
+    instance.add_parser_arguments()
+    settings = instance.get_configurable_settings()
+    assert '--numerical_policy' in settings
+    assert '--cache_root' in settings
 
 
 @pytest.mark.parametrize(
@@ -99,9 +117,64 @@ def test_deadline_failure(benchmark, monkeypatch):
     assert benchmark.return_code == ReturnCode.KILLED_BY_TIMEOUT
 
 
-def test_h100_policy_cannot_use_an_unqualified_shape(benchmark):
+@pytest.mark.parametrize('outcome', ['success', 'failure', 'timeout'])
+def test_model_cache_is_removed_after_every_run(benchmark, monkeypatch, outcome):
+    """Delete the per-run checkpoint cache on every exit path while keeping reports and logs."""
+    jobs = []
+
+    def worker(command, log, timeout):
+        cache = Path(command[command.index('--cache_dir') + 1])
+        (cache / 'checkpoint').mkdir(parents=True)
+        (cache / 'checkpoint' / 'model-00001-of-000004.safetensors').write_bytes(b'weights')
+        log.write_text('worker log\n')
+        jobs.append(cache.parent)
+        if outcome == 'failure':
+            raise RuntimeError('worker failed')
+        if outcome == 'timeout':
+            raise TimeoutError('whole job deadline')
+        successful_worker(command, log, timeout)
+
+    monkeypatch.setattr(adapter, 'run_worker', worker)
+    assert benchmark.run() is (outcome == 'success')
+    assert not (jobs[0] / 'cache').exists()
+    assert (jobs[0] / 'worker.log').read_text() == 'worker log\n'
+    assert (jobs[0] / 'report.json').is_file() is (outcome == 'success')
+
+
+def test_cache_removal_failure_keeps_a_valid_measurement(benchmark, monkeypatch):
+    """Log a cleanup error without discarding metrics that were already validated."""
+    caches = []
+
+    def worker(command, log, timeout):
+        cache = Path(command[command.index('--cache_dir') + 1])
+        cache.mkdir(parents=True)
+        caches.append(cache)
+        successful_worker(command, log, timeout)
+
+    monkeypatch.setattr(adapter, 'run_worker', worker)
+    monkeypatch.setattr(adapter.shutil, 'rmtree', Mock(side_effect=PermissionError('read-only cache')))
+    assert benchmark.run()
+    assert benchmark.return_code == ReturnCode.SUCCESS
+    assert caches[0].is_dir()
+
+
+def test_sigterm_during_cache_removal_still_reports_timeout(benchmark, monkeypatch):
+    """A runner timeout during cleanup must not be reported as a completed run."""
+    def worker(command, log, timeout):
+        Path(command[command.index('--cache_dir') + 1]).mkdir(parents=True)
+        successful_worker(command, log, timeout)
+
+    monkeypatch.setattr(adapter, 'run_worker', worker)
+    monkeypatch.setattr(adapter.shutil, 'rmtree', Mock(side_effect=TimeoutError('Killed by SIGTERM or timeout!')))
+    benchmark.run()
+    assert benchmark.return_code == ReturnCode.KILLED_BY_TIMEOUT
+
+
+def test_h100_policy_cannot_use_an_unqualified_shape(benchmark, tmp_path):
     """Keep calibration/profile compatibility fail-closed in the frontend."""
-    instance = adapter.DeepSeekV2LiteInference('deepseek-v2-lite-inference', '--numerical_policy h100_bf16_v6')
+    instance = adapter.DeepSeekV2LiteInference(
+        'deepseek-v2-lite-inference', '--cache_root "{}" --numerical_policy h100_bf16_v6'.format(tmp_path)
+    )
     assert not instance.run()
     assert instance.return_code == ReturnCode.INVALID_ARGUMENT
 
