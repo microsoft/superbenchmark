@@ -15,7 +15,7 @@ from pathlib import Path
 if __package__:
     from .deepseek_v2_lite_utils import packed_tokens, read_json, write_json
 else:
-    from deepseek_v2_lite_utils import packed_tokens, read_json, write_json
+    from deepseek_v2_lite_utils import packed_tokens, read_json, write_json    # type: ignore[no-redef]
 
 METHOD = 'bf16-input-matched-probability-log-v6'
 POLICY = 'h100_bf16_v6'

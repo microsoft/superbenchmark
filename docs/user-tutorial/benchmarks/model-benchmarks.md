@@ -188,7 +188,7 @@ enabled; all-first-token-EOS output does not satisfy the cached-decode workload.
 
 #### Validation Status
 
-This remains a draft implementation. The explicit `h100_bf16_v6` numerical
+The explicit `h100_bf16_v6` numerical
 method has passed independent-reference checks and all six preregistered H100
 engine windows: 3,216 positive positions pass and all 6,438 fixed fault cases
 are rejected. The recorded public runtime completed a download-inclusive cold
@@ -196,8 +196,8 @@ bootstrap in 1323.74 seconds. Its opt-in internal package then passed three
 ordinary-entrypoint cold repetitions in 1339.17, 1342.39 and 1329.00 seconds,
 with complete diagnosis, 97.85-98.32% mean GPU busy and a maximum throughput
 deviation of 0.334% from the median. Each repetition includes all numerical checks.
-These results qualify the recorded local source/image/profile snapshot, not an
-unchanged older PR head, a later rebuilt image, another SKU or production deployment.
+These results apply to the recorded Standard_ND96isrf_H100_v5 source, image and
+profile, not to a rebuilt image, another SKU or production deployment.
 Do not replace numerical validation with matching generated tokens or exit code zero.
 
 The adapter default remains `numerical_policy=strict_fp32`, preserving the
@@ -206,7 +206,7 @@ H100, batch 8, sequence 512, maximum decode 64, two warmup batches and 256
 measured batches. It uses compiled, batch-invariant BF16 inference with the
 compressed-MLA implementation; there is no FP32 measured-model fallback.
 
-The [shipped numerical contract](../../../superbench/config/deepseek-v2-lite-h100-numerics.json)
+The shipped numerical contract, `superbench/config/deepseek-v2-lite-h100-numerics.json`,
 is bound to an exact SHA256 by the worker. After engine shutdown, independent
 official BF16 cached execution measures the precision discrepancy on the same
 fixed input prefixes; an FP32 model then recomputes every complete prefix.
@@ -307,8 +307,12 @@ not a claim that the model intrinsically requires H100 or eight GPUs.
 
 #### Timing And Metrics
 
-Every invocation uses a new empty HF/Hub/Xet/module cache without deleting shared
-caches. One `duration <3600s` covers model download, complete weight hashes,
+`cache_root` is required. Every invocation creates a new directory under it with
+an empty HF/Hub/Xet/module cache, its report and logs. After the worker exits,
+the adapter deletes that 31.4GB model cache and keeps the report and logs;
+shared caches outside `cache_root` are not touched.
+
+One `duration <3600s` covers model download, complete weight hashes,
 loading, graph/kernel preparation, warmup, measured generation, reference checks,
 result writing and worker teardown. The controller reserves cleanup time and
 rejects watchdog exits. Image pulls, dependency installation and controller
