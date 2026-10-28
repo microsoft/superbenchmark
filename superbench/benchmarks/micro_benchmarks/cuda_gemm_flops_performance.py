@@ -25,7 +25,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self._bin_name = 'cutlass_profiler'
 
         # TODO - To support more architectures
-        # Currently only support compute capability = 7.0, 7.5, 8.0, 8.6, 8.9, 9.0, 10.0
+        # Currently only support compute capability = 7.0, 7.5, 8.0, 8.6, 8.9, 9.0, 10.0, 10.3, 10.7
         self.__kernel_map = {
             7.0: {
                 'fp64': 'cutlass_simt_dgemm_128x128_8x2_*',
@@ -54,6 +54,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self.__kernel_map[9.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         self.__kernel_map[10.0] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         self.__kernel_map[10.3] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
+        self.__kernel_map[10.7] = {k: self.__kernel_map[8.0][k] for k in self.__kernel_map[8.0] if 'int4_tc' not in k}
         self.__parse_logline = [
             'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
             'gemm,cutlass_simt_hgemm_256x128_8x2', 'gemm,cutlass_tensorop_d884gemm_128x128_16x3',

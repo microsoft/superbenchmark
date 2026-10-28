@@ -23,7 +23,7 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         super().__init__(name, parameters)
 
         self._bin_name = 'stream'
-        self.__cpu_arch = ['other', 'zen3', 'zen4', 'neo2']
+        self.__cpu_arch = ['other', 'zen3', 'zen4', 'neo2', 'olympus', 'native']
 
     def add_parser_arguments(self):
         """Add the specified arguments."""
@@ -35,7 +35,10 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             default='other',
             required=False,
             help='The targeted cpu architectures to run \
-                STREAM. Default is zen4. Possible values are {}.'.format(' '.join(self.__cpu_arch))
+                STREAM. Default is other. Possible values are {}. \
+                streamNative is not shipped in images: build it on the host that will run it.'.format(
+                ' '.join(self.__cpu_arch)
+            )
         )
         core_link = 'https://techcommunity.microsoft.com/t5/azure-compute-blog/performance-\
         amp-scalability-of-hbv3-vms-with-milan-x-cpus/ba-p/2939814'
@@ -84,9 +87,9 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         omp_places = ','.join(f'{{{core}}}' for core in self._args.cores)
 
         envar = (
-            'OMP_SCHEDULE=static && OMP_DYNAMIC=false && '
-            'OMP_MAX_ACTIVE_LEVELS=1 && OMP_STACKSIZE=256M && '
-            'OMP_PROC_BIND=true && OMP_NUM_THREADS={} && '
+            'env OMP_SCHEDULE=static OMP_DYNAMIC=false '
+            'OMP_MAX_ACTIVE_LEVELS=1 OMP_STACKSIZE=256M '
+            'OMP_PROC_BIND=true OMP_NUM_THREADS={} '
             'OMP_PLACES={}'
         ).format(len(self._args.cores), omp_places)
 
@@ -103,6 +106,10 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
             self._bin_name = 'streamZen4'
         elif self._args.cpu_arch == 'neo2':
             self._bin_name = 'streamNeo2'
+        elif self._args.cpu_arch == 'olympus':
+            self._bin_name = 'streamOlympus'
+        elif self._args.cpu_arch == 'native':
+            self._bin_name = 'streamNative'
 
         binary_path = os.path.join(self._args.bin_dir, self._bin_name)
         command = f'{envar} {numa_cmd} {binary_path}'

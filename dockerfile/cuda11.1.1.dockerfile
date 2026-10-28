@@ -13,7 +13,7 @@ FROM nvcr.io/nvidia/pytorch:20.12-py3
 #   - HPC-X: v2.8.3
 #   - NCCL RDMA SHARP plugins: 7cccbc1
 # Intel:
-#   - mlc: v3.12
+#   - mlc: v3.13
 
 LABEL maintainer="SuperBench"
 
@@ -121,9 +121,10 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
+    echo "a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019  mlc.tgz" | sha256sum -c - && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
 ENV PATH="${PATH}" \

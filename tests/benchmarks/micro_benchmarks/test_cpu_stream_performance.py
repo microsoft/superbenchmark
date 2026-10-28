@@ -3,6 +3,7 @@
 
 """Tests for STREAM benchmark."""
 
+import tempfile
 import unittest
 
 from tests.helper import decorator
@@ -20,6 +21,8 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         cls.createMockFiles(cls, ['bin/stream'])
         cls.createMockFiles(cls, ['bin/streamZen3'])
         cls.createMockFiles(cls, ['bin/streamNeo2'])
+        cls.createMockFiles(cls, ['bin/streamOlympus'])
+        cls.createMockFiles(cls, ['bin/streamNative'])
         return True
 
     @decorator.load_data('tests/data/streamResultZen.log')
@@ -53,6 +56,8 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
 
         # Check command
         assert (1 == len(benchmark._commands))
+        assert (benchmark._commands[0].startswith('env '))
+        assert ('&&' not in benchmark._commands[0])
         assert ('OMP_PLACES' in benchmark._commands[0])
 
         # Check results
@@ -105,6 +110,36 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         for index in range(0, 4):
             result = float(benchmark.result[functions[index] + '_throughput'][0])
             assert (result == values[index])
+
+    def test_stream_arm64_binary_selection(self):
+        """Test STREAM benchmark binary selection for ARM64 architectures."""
+        benchmark_name = 'cpu-stream'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        for arch, binary_name in [('olympus', 'streamOlympus'), ('native', 'streamNative')]:
+            with self.subTest(cpu_arch=arch):
+                benchmark = benchmark_class(benchmark_name, parameters='--cpu_arch ' + arch + ' --cores 0')
+
+                assert (benchmark._preprocess() is True)
+                assert (benchmark._args.cpu_arch == arch)
+                assert (benchmark._bin_name == binary_name)
+                assert (binary_name in benchmark._commands[0])
+
+    def test_stream_missing_arm64_binary(self):
+        """Test STREAM benchmark fails when the selected ARM64 binary is not built, e.g. no GCC 15 for Olympus."""
+        benchmark_name = 'cpu-stream'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        with tempfile.TemporaryDirectory() as bin_dir:
+            benchmark = benchmark_class(
+                benchmark_name, parameters='--cpu_arch olympus --cores 0 --bin_dir {}'.format(bin_dir)
+            )
+            assert (benchmark._preprocess() is False)
+            assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_BINARY_NOT_EXIST)
 
 
 if __name__ == '__main__':

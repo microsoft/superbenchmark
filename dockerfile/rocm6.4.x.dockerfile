@@ -14,7 +14,7 @@ FROM ${BASE_IMAGE}
 #   - rocblas: release-staging/rocm-rel-6.4
 #   - openmpi: 4.1.x
 # Intel:
-#   - mlc: v3.12
+#   - mlc: v3.13
 # Network:
 #   - OFED: 25.10-3.1.8 user-space (via NVIDIA DOCA-Host 3.2.3, matches host)
 
@@ -143,9 +143,10 @@ RUN cd /tmp && \
 
 # Install Intel MLC
 RUN cd /tmp && \
-    wget -q https://downloadmirror.intel.com/866182/mlc_v3.12.tgz -O mlc.tgz && \
+    wget -q https://downloadmirror.intel.com/926327/mlc_v3.13.tgz -O mlc.tgz && \
+    echo "a8537e8ff3fad626d75a383fabc224ccc4cc98a0111c9989f7fb26b639f12019  mlc.tgz" | sha256sum -c - && \
     tar xzf mlc.tgz Linux/mlc && \
-    cp ./Linux/mlc /usr/local/bin/ && \
+    install -m 755 ./Linux/mlc /usr/local/bin/ && \
     rm -rf ./Linux mlc.tgz
 
 # Install RCCL
@@ -186,7 +187,8 @@ ADD third_party third_party
 # rocm_megatron_lm: skipped (broken upstream - pretrain_deepseek.py missing in rocm_dev branch).
 # apex_rocm: skipped - all apex imports in Megatron-DeepSpeed are guarded with try/except,
 #   superbench has zero direct apex usage, and PyTorch 2.7 has native fused optimizers/AMP.
-RUN make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
+RUN apt-get update && \
+    make RCCL_HOME=/opt/rccl/build/ ROCBLAS_BRANCH=release-staging/rocm-rel-6.4 HIPBLASLT_BRANCH=release-staging/rocm-rel-6.4 ROCM_VER=rocm-5.5.0 -C third_party rocm -o cpu_hpl -o cpu_stream -o megatron_lm -o rocm_hipblaslt -o rocm_megatron_lm -o apex_rocm
 
 # Build hipblaslt separately with the Tensile target-triple fix for the ROCm 6.4 clang.
 # Also work around a joblib race (github.com/joblib/joblib/issues/1788, fixed upstream in
