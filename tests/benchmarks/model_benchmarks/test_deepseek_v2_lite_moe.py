@@ -7,13 +7,17 @@ import importlib.util
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
 
 if sys.version_info < (3, 10):
     pytest.skip('The standalone V2-Lite training runtime requires Python 3.10 or later.', allow_module_level=True)
-torch = pytest.importorskip('torch')
+if TYPE_CHECKING:
+    import torch
+else:
+    torch = pytest.importorskip('torch')
 SPEC = importlib.util.spec_from_file_location(
     'sorted_dispatch',
     Path(__file__).resolve().parents[3] / 'superbench/benchmarks/model_benchmarks/deepseek_v2_lite_moe.py'
