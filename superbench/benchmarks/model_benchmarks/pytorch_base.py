@@ -4,7 +4,6 @@
 """Module of the Pytorch model-benchmark base class."""
 
 import os
-import shutil
 import statistics
 import time
 from datetime import timedelta
@@ -656,8 +655,9 @@ class PytorchBase(ModelBenchmark):
         with open(diag_agent_dump_file_path, 'w') as f:
             json.dump(diag_agent_events, f, sort_keys=True)
         if has_config_name:
-            config_trace_path = f'{dump_file_dir}/torch-profiler-sb-{self._name}__cfg={config_name}-{local_rank}.json'
-            shutil.copyfile(diag_agent_dump_file_path, config_trace_path)
+            config_trace_path = f'{dump_file_dir}/torch-profiler-sb-{self._name}__cfg={config_name}-{rank_dir[4:]}.json'
+            with open(config_trace_path, 'w') as trace_file:
+                json.dump(diag_agent_events, trace_file, sort_keys=True)
 
         # Handle post-run model log save/compare regardless of profiling
         self._post_run_model_log()
