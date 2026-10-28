@@ -1,3 +1,4 @@
 include LICENSE README.md
+include superbench/config/deepseek-v2-lite-h100-numerics.json
 recursive-include superbench *.py *.j2 *.yaml
 global-exclude *.py[cod] __pycache__
