@@ -4,6 +4,7 @@
 """Module of the Pytorch model-benchmark base class."""
 
 import os
+import shutil
 import statistics
 import time
 from datetime import timedelta
@@ -628,6 +629,12 @@ class PytorchBase(ModelBenchmark):
         # ROCm 6.3.4).
         dump_file_dir = os.environ.get('SB_TORCH_PROFILER_TRACE_DIR', '.')
         diag_agent_dump_file_path = f'{dump_file_dir}/torch-profiler-sb-{self._name}-{local_rank}.json'
+        benchmark_dir, rank_dir = os.path.split(os.getcwd())
+        config_name = os.path.basename(benchmark_dir)
+        has_config_name = (
+            os.path.basename(os.path.dirname(benchmark_dir)) == 'benchmarks' and rank_dir.startswith('rank')
+            and rank_dir[4:].isdigit()
+        )
         diag_agent_prof.__enter__()
 
         ret = super()._benchmark()
@@ -648,6 +655,9 @@ class PytorchBase(ModelBenchmark):
             diag_agent_events.append(diag_agent_event)
         with open(diag_agent_dump_file_path, 'w') as f:
             json.dump(diag_agent_events, f, sort_keys=True)
+        if has_config_name:
+            config_trace_path = f'{dump_file_dir}/torch-profiler-sb-{self._name}__cfg={config_name}-{local_rank}.json'
+            shutil.copyfile(diag_agent_dump_file_path, config_trace_path)
 
         # Handle post-run model log save/compare regardless of profiling
         self._post_run_model_log()
