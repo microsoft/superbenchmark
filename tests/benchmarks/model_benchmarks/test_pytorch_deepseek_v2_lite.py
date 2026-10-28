@@ -4,6 +4,7 @@
 """CPU adapter tests; complete model correctness is checked by the GPU worker."""
 
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -61,11 +62,29 @@ def test_successful_adapter_metrics(benchmark, monkeypatch):
         '--duration 3600', '--run_count 2', '--hidden_size 1024', '--moe_dispatch unknown'
     ]
 )
-def test_invalid_profiles(parameters):
+def test_invalid_profiles(tmp_path, parameters):
     """Reject invalid shapes, architecture overrides and combined timing profiles."""
-    benchmark = adapter.DeepSeekV2LiteTraining('deepseek-v2-lite-training', parameters)
+    benchmark = adapter.DeepSeekV2LiteTraining(
+        'deepseek-v2-lite-training', '--cache_root "{}" {}'.format(tmp_path, parameters)
+    )
     assert not benchmark.run()
     assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
+
+def test_cache_root_is_required():
+    """Refuse to choose an implicit location for the per-run model cache."""
+    benchmark = adapter.DeepSeekV2LiteTraining('deepseek-v2-lite-training', '--num_steps 2')
+    assert not benchmark.run()
+    assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+
+
+def test_parameters_render_in_help():
+    """Keep every option compatible with the typed SuperBench help formatter."""
+    benchmark = adapter.DeepSeekV2LiteTraining('deepseek-v2-lite-training')
+    benchmark.add_parser_arguments()
+    settings = benchmark.get_configurable_settings()
+    assert '--moe_dispatch' in settings
+    assert '--cache_root' in settings
 
 
 @pytest.mark.parametrize('world_size', ['8', 'not-an-integer'])
@@ -94,6 +113,59 @@ def test_timeout_is_failure(benchmark, monkeypatch):
 
     monkeypatch.setattr(adapter, 'run_worker', timed_out_worker)
     assert not benchmark.run()
+    assert benchmark.return_code == ReturnCode.KILLED_BY_TIMEOUT
+
+
+@pytest.mark.parametrize('outcome', ['success', 'failure', 'timeout'])
+def test_model_cache_is_removed_after_every_run(benchmark, monkeypatch, outcome):
+    """Delete the per-run checkpoint cache on every exit path while keeping reports and logs."""
+    jobs = []
+
+    def worker(command, log, timeout):
+        cache = Path(command[command.index('--cache_dir') + 1])
+        (cache / 'checkpoint').mkdir(parents=True)
+        (cache / 'checkpoint' / 'model-00001-of-000004.safetensors').write_bytes(b'weights')
+        log.write_text('worker log\n')
+        jobs.append(cache.parent)
+        if outcome == 'failure':
+            raise RuntimeError('worker failed')
+        if outcome == 'timeout':
+            raise TimeoutError('whole job deadline')
+        successful_worker(command, log, timeout)
+
+    monkeypatch.setattr(adapter, 'run_worker', worker)
+    assert benchmark.run() is (outcome == 'success')
+    assert not (jobs[0] / 'cache').exists()
+    assert (jobs[0] / 'worker.log').read_text() == 'worker log\n'
+    assert (jobs[0] / 'report.json').is_file() is (outcome == 'success')
+
+
+def test_cache_removal_failure_keeps_a_valid_measurement(benchmark, monkeypatch):
+    """Log a cleanup error without discarding metrics that were already validated."""
+    caches = []
+
+    def worker(command, log, timeout):
+        cache = Path(command[command.index('--cache_dir') + 1])
+        cache.mkdir(parents=True)
+        caches.append(cache)
+        successful_worker(command, log, timeout)
+
+    monkeypatch.setattr(adapter, 'run_worker', worker)
+    monkeypatch.setattr(adapter.shutil, 'rmtree', Mock(side_effect=PermissionError('read-only cache')))
+    assert benchmark.run()
+    assert benchmark.return_code == ReturnCode.SUCCESS
+    assert caches[0].is_dir()
+
+
+def test_sigterm_during_cache_removal_still_reports_timeout(benchmark, monkeypatch):
+    """A runner timeout during cleanup must not be reported as a completed run."""
+    def worker(command, log, timeout):
+        Path(command[command.index('--cache_dir') + 1]).mkdir(parents=True)
+        successful_worker(command, log, timeout)
+
+    monkeypatch.setattr(adapter, 'run_worker', worker)
+    monkeypatch.setattr(adapter.shutil, 'rmtree', Mock(side_effect=TimeoutError('Killed by SIGTERM or timeout!')))
+    benchmark.run()
     assert benchmark.return_code == ReturnCode.KILLED_BY_TIMEOUT
 
 

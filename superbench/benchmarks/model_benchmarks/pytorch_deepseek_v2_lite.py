@@ -4,6 +4,7 @@
 """SuperBench adapter for isolated official-checkpoint V2-Lite FSDP training."""
 
 import os
+import shutil
 import statistics
 import sys
 import tempfile
@@ -19,6 +20,22 @@ from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
 )
 
 
+def _remove_model_cache(cache):
+    """Delete one run's downloaded model cache after its worker exits, keeping reports and logs."""
+    if not cache.exists():
+        return
+    start = time.monotonic()
+    try:
+        shutil.rmtree(cache)
+    except TimeoutError:
+        # The SuperBench SIGTERM handler raises TimeoutError, an OSError subclass; keep it fatal.
+        raise
+    except OSError as error:
+        logger.error('Failed to remove the V2-Lite model cache %s: %s', cache, error)
+        return
+    logger.info('Removed the V2-Lite model cache %s in %.1f seconds.', cache, time.monotonic() - start)
+
+
 class DeepSeekV2LiteTraining(Benchmark):
     """Run one official BF16 checkpoint through a separate FSDP worker runtime."""
     def __init__(self, name, parameters=''):
@@ -31,20 +48,29 @@ class DeepSeekV2LiteTraining(Benchmark):
         super().add_parser_arguments()
         self._parser.set_defaults(duration=3300)
         self._parser.add_argument('--runtime_python', type=str, default=sys.executable)
-        self._parser.add_argument('--cache_root', type=str, default='model-cache')
+        self._parser.add_argument(
+            '--cache_root',
+            type=str,
+            default=None,
+            help='Required directory for per-run reports, logs and the temporary model cache.',
+        )
         self._parser.add_argument('--num_gpus', type=int, default=4)
         self._parser.add_argument('--batch_size', type=int, default=2, help='Microbatch per GPU.')
         self._parser.add_argument('--seq_len', type=int, default=512)
         self._parser.add_argument('--num_warmup', type=int, default=2)
         self._parser.add_argument('--num_steps', type=int, default=8)
         self._parser.add_argument('--learning_rate', type=float, default=1e-5)
-        self._parser.add_argument('--moe_dispatch', choices=MOE_DISPATCHES, default='official')
+        self._parser.add_argument('--moe_dispatch', type=str, choices=MOE_DISPATCHES, default='official')
 
     def _preprocess(self):
         """Reject unsupported execution modes and invalid shapes explicitly."""
         if not super()._preprocess():
             return False
         args = self._args
+        if not args.cache_root:
+            logger.error('V2-Lite training requires cache_root for its per-run model cache, reports and logs.')
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
         invalid = (
             args.run_count != 1 or not 30 < args.duration < 3600 or args.num_gpus < 2 or args.batch_size < 1
             or args.seq_len < 32 or args.num_warmup < 0 or args.num_steps < 1 or not 0 < args.learning_rate < 1
@@ -97,6 +123,7 @@ class DeepSeekV2LiteTraining(Benchmark):
     def _benchmark(self):
         """Accept only complete worker metrics and verified full-model training."""
         start = time.monotonic()
+        job = None
         try:
             root = Path(self._args.cache_root).resolve()
             root.mkdir(parents=True, exist_ok=True)
@@ -142,6 +169,9 @@ class DeepSeekV2LiteTraining(Benchmark):
             logger.error('V2-Lite training failed: %s', error)
             self._result.set_return_code(ReturnCode.RUNTIME_EXCEPTION_ERROR)
             return False
+        finally:
+            if job is not None:
+                _remove_model_cache(job / 'cache')
 
 
 BenchmarkRegistry.register_benchmark('deepseek-v2-lite-training', DeepSeekV2LiteTraining, platform=Platform.CUDA)

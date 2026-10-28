@@ -184,12 +184,13 @@ only in auxiliary unit tests.
 
 #### Validation Status
 
-This remains a draft implementation. Local H100 acceptance applies only to the
+H100 acceptance applies only to the
 recorded four-GPU stable-sorted/native-allocator profile, its exact runtime and
 the corresponding source/configuration identities. It does not qualify the
 default official-dispatch example, every H100 configuration or other SKUs.
-Publication and acceptance into delivery branches are separate from local
-hardware validation.
+That profile runs on Standard_ND96isrf_H100_v5 with `num_gpus=4`,
+`batch_size=36`, `seq_len=512`, `num_warmup=2`, `num_steps=128`,
+`moe_dispatch=stable_sorted` and `PYTORCH_CUDA_ALLOC_CONF=backend:native`.
 
 #### Runtime And Execution
 
@@ -283,9 +284,12 @@ The one-time pre-update parameter snapshot is stored in host memory and checked
 after the update. Model parameters, gradients and optimizer state remain on the
 GPUs; this is validation storage, not training-state CPU offload.
 
-Every invocation creates its own empty HF/Hub/Xet/module cache and keeps its
-report and logs under a new directory in `cache_root`. Shared caches are not
-deleted. `duration` covers download, SHA256 verification, loading, correctness,
+`cache_root` is required. Every invocation creates its own empty
+HF/Hub/Xet/module cache and keeps its report and logs under a new directory in
+`cache_root`. After the worker exits, the adapter deletes that 31.4GB model
+cache and keeps the report and logs; shared caches are not touched.
+
+`duration` covers download, SHA256 verification, loading, correctness,
 warmup, measured training and worker/rank teardown. It must be below 3600 seconds;
 the controller reserves 20 seconds for cleanup. A watchdog exit is a failure.
 Image pulling, dependency preparation and SuperBench installation are separate
