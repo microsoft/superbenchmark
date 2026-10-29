@@ -269,20 +269,30 @@ read-only and provide a writable, dedicated result/cache directory.
 #### Correctness And Lifecycle
 
 The engine exercises variable-length batched prompts, single requests and forced
-EOS termination. Outputs must match the submitted prompt token IDs. A separate
-unsharded official-code FP32 reference, with TF32 disabled, then checks
-prefill and multiple decode steps on the same token prefixes, comparing cached
-and complete-prefix logits across the vocabulary and sampled engine top-token
-log probabilities and requires greedy token agreement. Sampled engine
-probabilities do not constitute an exhaustive
-comparison of the engine's full vocabulary logits or all expert routing paths.
-Correctness, complete requests, finite timestamps and actual token counts must
-all pass; a plausible generated sentence or process exit zero is insufficient.
-Numerical records must contain the requested top-20 log probabilities, not only
-the selected token. For long selected requests, every generated token is checked
-against the cached FP32 reference; full-prefix recomputation checks the first,
-second, middle and final positions. A position without full-prefix recomputation
-is explicitly marked rather than reporting a fabricated zero cache error.
+EOS termination. Outputs must match the submitted prompt token IDs. The numerical
+checks depend on the selected policy:
+
+- `strict_fp32` (adapter default) uses a separate unsharded official-code FP32
+  reference with TF32 disabled and requires exact greedy-token agreement.
+  For long selected requests, every generated position is checked; cached FP32
+  execution supplies the reference between full-prefix checks at the first,
+  second, middle and final positions. Those full-prefix checks also compare
+  cached and complete-prefix logits across the vocabulary. Positions without
+  full-prefix recomputation are marked rather than given a fabricated zero
+  cache error.
+- `h100_bf16_v6` (supplied H100 profile) measures the input-matched discrepancy
+  with official BF16 cached execution and recomputes every retained prefix in
+  FP32, not just selected full-prefix positions. It can accept a different
+  greedy token when the token is greedy for the engine and its FP32 probability
+  gap is within the input-matched bound. All three numerical metrics and the
+  required fault rejections must also pass. A successful H100 check therefore
+  does not imply exact agreement with FP32-generated tokens.
+
+Both policies require the requested top-20 engine log probabilities, not only
+the selected token. These records are not an exhaustive comparison of the
+engine's full-vocabulary logits or all expert routing paths. Correctness,
+complete requests, finite timestamps and actual token counts must all pass;
+a plausible generated sentence or process exit zero is insufficient.
 
 Engine model residency is BF16, with no quantized or offloaded fallback.
 The router uses FP32 to match the official gate. NVIDIA TF32, vLLM FP32 matmul
@@ -309,13 +319,17 @@ not a claim that the model intrinsically requires H100 or eight GPUs.
 
 `cache_root` is required. Every invocation creates a new directory under it with
 an empty HF/Hub/Xet/module cache, its report and logs. After the worker exits,
-the adapter deletes that 31.4GB model cache and keeps the report and logs;
-shared caches outside `cache_root` are not touched.
+the adapter attempts to delete that 31.4GB model cache within the remaining
+job budget, including on failure paths, and keeps the report and logs.
+Shared caches outside `cache_root` are not touched. A cleanup timeout fails the
+run; other filesystem errors are logged without discarding validated measurements.
+Failed or interrupted cleanup can leave a cache at the logged path.
 
 One `duration <3600s` covers model download, complete weight hashes,
 loading, graph/kernel preparation, warmup, measured generation, reference checks,
-result writing and worker teardown. The controller reserves cleanup time and
-rejects watchdog exits. Image pulls, dependency installation and controller
+result writing, worker teardown and model-cache cleanup. The controller finalizes
+the total elapsed time and success result after cleanup and rejects watchdog
+exits. Image pulls, dependency installation and controller
 installation are separate preparation steps, not certified by the model-cold
 timer.
 
@@ -334,7 +348,7 @@ clock. CPU regression tests cover warmup exclusion and mixed EOS/decode counts.
 | `bf16_inference_decode_tpot` | ms/token | First-to-last-token span divided by actual decode intervals |
 | `successful_requests` | requests | Completed measured requests |
 | `actual_output_tokens` | tokens | Actual measured output IDs, not the configured maximum |
-| `end_to_end_seconds` | s | Complete worker launch through teardown/report validation |
+| `end_to_end_seconds` | s | Complete invocation through report validation and model-cache cleanup |
 
 Request prefill/decode timestamps are not isolated GPU kernel timings.
 One-token EOS requests contribute to total tokens and latency but not to TPOT.
