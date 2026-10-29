@@ -319,11 +319,14 @@ not a claim that the model intrinsically requires H100 or eight GPUs.
 
 `cache_root` is required. Every invocation creates a new directory under it with
 an empty HF/Hub/Xet/module cache, its report and logs. After the worker exits,
-the adapter attempts to delete that 31.4GB model cache within the remaining
-job budget, including on failure paths, and keeps the report and logs.
-Shared caches outside `cache_root` are not touched. A cleanup timeout fails the
-run; other filesystem errors are logged without discarding validated measurements.
-Failed or interrupted cleanup can leave a cache at the logged path.
+the adapter deletes that 31.4GB model cache and keeps the report and logs;
+shared caches outside `cache_root` are not touched. On a successful run, cleanup
+must finish within `duration`; otherwise the run fails as a timeout. After a
+failed or timed-out run, cleanup may continue until the job deadline or for
+60 seconds, whichever ends later; an unfinished cleanup is logged without
+replacing the original error. Other filesystem errors are logged without
+discarding validated measurements. Interrupted cleanup can leave a cache at the
+logged path.
 
 One `duration <3600s` covers model download, complete weight hashes,
 loading, graph/kernel preparation, warmup, measured generation, reference checks,
