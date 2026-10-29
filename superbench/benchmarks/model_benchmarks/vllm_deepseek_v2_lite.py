@@ -5,7 +5,6 @@
 
 import os
 import statistics
-import subprocess
 import sys
 import tempfile
 import time
@@ -15,42 +14,12 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, Platform, Re
 from superbench.benchmarks.base import Benchmark
 from superbench.common.utils import logger
 from superbench.benchmarks.model_benchmarks import deepseek_v2_lite_numerics as numerics
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_cache import (
+    remove_model_cache, remove_model_cache_after_failure
+)
 from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
     numeric_series, read_json, run_worker, validate_identity
 )
-
-
-def _remove_model_cache(cache: Path, deadline: float) -> None:
-    """Delete one run's model cache within the remaining budget, keeping reports and logs."""
-    start = time.monotonic()
-    remaining = deadline - start
-    if remaining <= 0:
-        raise TimeoutError('No time remains to remove the V2-Lite model cache at {}.'.format(cache))
-    try:
-        subprocess.run(
-            [
-                sys.executable, '-c',
-                'import os, shutil, sys\nif os.path.exists(sys.argv[1]):\n    shutil.rmtree(sys.argv[1])',
-                str(cache)
-            ],
-            timeout=remaining,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise TimeoutError('V2-Lite model cache cleanup exceeded the deadline at {}.'.format(cache)) from error
-    except TimeoutError:
-        # The SuperBench SIGTERM handler raises TimeoutError, an OSError subclass; keep it fatal.
-        raise
-    except subprocess.CalledProcessError as error:
-        logger.error('Failed to remove the V2-Lite model cache %s: %s', cache, error.output or error)
-        return
-    except OSError as error:
-        logger.error('Failed to remove the V2-Lite model cache %s: %s', cache, error)
-        return
-    logger.info('V2-Lite model cache cleanup completed for %s in %.1f seconds.', cache, time.monotonic() - start)
 
 
 class DeepSeekV2LiteInference(Benchmark):
@@ -183,8 +152,10 @@ class DeepSeekV2LiteInference(Benchmark):
                 ttfts = numeric_series(report, 'ttft_ms', requests)
                 decode_count = self._validate_generation_counts(report, inputs, outputs)
                 tpots = numeric_series(report, 'decode_tpot_ms', decode_count)
-            finally:
-                _remove_model_cache(job / 'cache', deadline)
+                remove_model_cache(job / 'cache', deadline)
+            except BaseException:
+                remove_model_cache_after_failure(job / 'cache', deadline)
+                raise
             total = time.monotonic() - start
             if total >= self._args.duration:
                 raise TimeoutError('Complete inference job exceeded its duration.')

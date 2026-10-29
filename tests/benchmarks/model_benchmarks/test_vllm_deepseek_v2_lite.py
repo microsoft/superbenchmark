@@ -4,8 +4,6 @@
 """CPU adapter tests for the standalone complete-generation profile."""
 
 import subprocess
-import sys
-import time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -13,6 +11,7 @@ from unittest.mock import Mock
 import pytest
 
 from superbench.benchmarks import BenchmarkType, ReturnCode
+from superbench.benchmarks.model_benchmarks import deepseek_v2_lite_cache as cache_cleanup
 from superbench.benchmarks.model_benchmarks import vllm_deepseek_v2_lite as adapter
 from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import identity_report, write_json
 
@@ -162,7 +161,7 @@ def test_cache_removal_failure_keeps_a_valid_measurement(benchmark, monkeypatch,
         successful_worker(command, log, timeout)
 
     monkeypatch.setattr(adapter, 'run_worker', worker)
-    monkeypatch.setattr(adapter.subprocess, 'run', Mock(side_effect=failure))
+    monkeypatch.setattr(cache_cleanup.subprocess, 'run', Mock(side_effect=failure))
     monkeypatch.setattr(adapter.logger, 'error', log_error)
     assert benchmark.run()
     assert benchmark.return_code == ReturnCode.SUCCESS
@@ -177,11 +176,13 @@ def test_sigterm_during_cache_removal_still_reports_timeout(benchmark, monkeypat
         Path(command[command.index('--cache_dir') + 1]).mkdir(parents=True)
         successful_worker(command, log, timeout)
 
+    cleanup = Mock(side_effect=TimeoutError('Killed by SIGTERM or timeout!'))
     monkeypatch.setattr(adapter, 'run_worker', worker)
-    monkeypatch.setattr(adapter.subprocess, 'run', Mock(side_effect=TimeoutError('Killed by SIGTERM or timeout!')))
+    monkeypatch.setattr(cache_cleanup.subprocess, 'run', cleanup)
     assert not benchmark.run()
     assert benchmark.return_code == ReturnCode.KILLED_BY_TIMEOUT
     assert 'end_to_end_seconds' not in benchmark.result
+    assert cleanup.call_count == 2
 
 
 @pytest.mark.parametrize('cleanup_seconds', [7, 50, 70])
@@ -202,9 +203,11 @@ def test_cache_cleanup_counts_toward_the_job_deadline(benchmark, monkeypatch, cl
         clock[0] += cleanup_seconds
         return result
 
-    monkeypatch.setattr(adapter, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+    fake_time = SimpleNamespace(monotonic=lambda: clock[0])
+    monkeypatch.setattr(adapter, 'time', fake_time)
+    monkeypatch.setattr(cache_cleanup, 'time', fake_time)
     monkeypatch.setattr(adapter, 'run_worker', worker)
-    monkeypatch.setattr(adapter.subprocess, 'run', cleanup)
+    monkeypatch.setattr(cache_cleanup.subprocess, 'run', cleanup)
     assert benchmark.run() is (cleanup_seconds < 50)
     if cleanup_seconds < 50:
         assert benchmark.return_code == ReturnCode.SUCCESS
@@ -216,11 +219,12 @@ def test_cache_cleanup_counts_toward_the_job_deadline(benchmark, monkeypatch, cl
         assert 'bf16_inference_output_tokens_per_second' not in benchmark.result
 
 
-def test_cache_cleanup_does_not_start_after_the_deadline(benchmark, monkeypatch):
-    """Retain the cache with an explicit timeout instead of starting unbounded cleanup."""
+def test_cleanup_after_the_deadline_uses_the_failure_grace(benchmark, monkeypatch):
+    """Fail an overrun job, then still remove its cache within the bounded failure grace."""
     clock = [100.0]
-    cleanup = Mock()
+    timeouts = []
     caches = []
+    run_cleanup = subprocess.run
 
     def worker(command, log, timeout):
         cache = Path(command[command.index('--cache_dir') + 1])
@@ -229,44 +233,44 @@ def test_cache_cleanup_does_not_start_after_the_deadline(benchmark, monkeypatch)
         successful_worker(command, log, timeout)
         clock[0] += 60
 
-    monkeypatch.setattr(adapter, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+    def cleanup(command, **kwargs):
+        timeouts.append(kwargs['timeout'])
+        return run_cleanup(command, **kwargs)
+
+    fake_time = SimpleNamespace(monotonic=lambda: clock[0])
+    monkeypatch.setattr(adapter, 'time', fake_time)
+    monkeypatch.setattr(cache_cleanup, 'time', fake_time)
     monkeypatch.setattr(adapter, 'run_worker', worker)
-    monkeypatch.setattr(adapter.subprocess, 'run', cleanup)
+    monkeypatch.setattr(cache_cleanup.subprocess, 'run', cleanup)
     assert not benchmark.run()
     assert benchmark.return_code == ReturnCode.KILLED_BY_TIMEOUT
-    assert caches[0].is_dir()
-    cleanup.assert_not_called()
+    assert 'end_to_end_seconds' not in benchmark.result
+    assert timeouts == [cache_cleanup.FAILURE_CLEANUP_GRACE_SECONDS]
+    assert not caches[0].exists()
 
 
-@pytest.mark.parametrize('interrupted', [False, True])
-def test_cache_cleanup_timeout_reaps_its_process(tmp_path, monkeypatch, interrupted):
-    """Stop and reap a real stalled cleanup child on either its deadline or controller interruption."""
-    cache = tmp_path / 'cache'
-    cache.mkdir()
-    children = []
-    popen = subprocess.Popen
+@pytest.mark.parametrize(
+    'failure,code', [
+        (RuntimeError('worker failed'), ReturnCode.RUNTIME_EXCEPTION_ERROR),
+        (TimeoutError('whole job deadline'), ReturnCode.KILLED_BY_TIMEOUT),
+    ]
+)
+def test_unfinished_failure_cleanup_keeps_the_original_error(benchmark, monkeypatch, failure, code):
+    """Report the worker failure rather than a later cleanup timeout, and log both."""
+    log_error = Mock()
 
-    def stalled_cleanup(command, **kwargs):
-        child = popen([sys.executable, '-c', 'import time; time.sleep(30)'], **kwargs)
-        children.append(child)
-        if interrupted:
-            monkeypatch.setattr(child, 'communicate', Mock(side_effect=TimeoutError('controller interrupted')))
-        return child
+    def worker(command, log, timeout):
+        Path(command[command.index('--cache_dir') + 1]).mkdir(parents=True)
+        raise failure
 
-    monkeypatch.setattr(adapter.subprocess, 'Popen', stalled_cleanup)
-    start = time.monotonic()
-    try:
-        with pytest.raises(TimeoutError):
-            adapter._remove_model_cache(cache, start + 0.25)
-        assert time.monotonic() - start < 3
-        assert len(children) == 1
-        assert children[0].returncode is not None
-        assert cache.is_dir()
-    finally:
-        for child in children:
-            if child.poll() is None:
-                child.kill()
-                child.wait(timeout=5)
+    monkeypatch.setattr(adapter, 'run_worker', worker)
+    monkeypatch.setattr(cache_cleanup.subprocess, 'run', Mock(side_effect=subprocess.TimeoutExpired(['cleanup'], 1)))
+    monkeypatch.setattr(adapter.logger, 'error', log_error)
+    assert not benchmark.run()
+    assert benchmark.return_code == code
+    messages = [call[0][0] % call[0][1:] for call in log_error.call_args_list]
+    assert any(str(failure) in message for message in messages)
+    assert any('after a failed run' in message for message in messages)
 
 
 def test_h100_policy_cannot_use_an_unqualified_shape(benchmark, tmp_path):
