@@ -1,0 +1,41 @@
+{
+  "h100": {
+    "buffer_size": 4294967296,
+    "kernels": {
+      "STREAM_COPY_float": {"block_size": 512, "unroll": 1},
+      "STREAM_SCALE_float": {"block_size": 512, "unroll": 1},
+      "STREAM_ADD_float": {"block_size": 128, "unroll": 1},
+      "STREAM_TRIAD_float": {"block_size": 1024, "unroll": 1},
+      "STREAM_COPY_double": {"block_size": 128, "unroll": 1},
+      "STREAM_SCALE_double": {"block_size": 128, "unroll": 1},
+      "STREAM_ADD_double": {"block_size": 128, "unroll": 1},
+      "STREAM_TRIAD_double": {"block_size": 128, "unroll": 1}
+    }
+  },
+  "gb300": {
+    "buffer_size": 8589934592,
+    "kernels": {
+      "STREAM_COPY_float": {"block_size": 1024, "unroll": 2},
+      "STREAM_SCALE_float": {"block_size": 1024, "unroll": 2},
+      "STREAM_ADD_float": {"block_size": 512, "unroll": 1},
+      "STREAM_TRIAD_float": {"block_size": 512, "unroll": 1},
+      "STREAM_COPY_double": {"block_size": 1024, "unroll": 2},
+      "STREAM_SCALE_double": {"block_size": 1024, "unroll": 2},
+      "STREAM_ADD_double": {"block_size": 512, "unroll": 1},
+      "STREAM_TRIAD_double": {"block_size": 512, "unroll": 1}
+    }
+  },
+  "vr": {
+    "buffer_size": 4294967296,
+    "kernels": {
+      "STREAM_COPY_float": {"block_size": 1024, "unroll": 4},
+      "STREAM_SCALE_float": {"block_size": 1024, "unroll": 8},
+      "STREAM_ADD_float": {"block_size": 1024, "unroll": 4},
+      "STREAM_TRIAD_float": {"block_size": 1024, "unroll": 4},
+      "STREAM_COPY_double": {"block_size": 1024, "unroll": 4},
+      "STREAM_SCALE_double": {"block_size": 1024, "unroll": 4},
+      "STREAM_ADD_double": {"block_size": 1024, "unroll": 4},
+      "STREAM_TRIAD_double": {"block_size": 1024, "unroll": 4}
+    }
+  }
+}
