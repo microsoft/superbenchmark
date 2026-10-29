@@ -163,90 +163,34 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 | megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
 | megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
 
-## Official-checkpoint V2-Lite Generative Inference
+## DeepSeek-V2-Lite Inference
 
 ### `deepseek-v2-lite-inference`
 
-This opt-in standalone MODEL benchmark loads the complete official
-`deepseek-ai/DeepSeek-V2-Lite` checkpoint at
-`604d5664dddd88a0433dbae533b7fe9472482de0`, with four BF16 weight files totaling
-31,413,626,576 bytes. It benchmarks prefill and multi-token cached generation,
-not repeated forward passes on randomly initialized weights. No Megatron,
-training implementation, quantization or CPU offload is required.
+#### Introduction
 
-Use the
-[`inference profile`](../../../superbench/config/deepseek-v2-lite-inference.yaml)
-as its own entry, with one local controller and one GPU inference replica.
-The supplied profile explicitly selects the qualified H100 numerical policy;
-it is not a generic CUDA/ROCm acceptance profile.
-`batch_size` is the number of simultaneous requests in each measured batch.
-The versioned, small fixed-text fixture controls prompt token lengths; it is
-not a model-quality or production-request-distribution benchmark.
-Generated counts come from actual output token IDs, including EOS when emitted,
-not `batch_size * max_new_tokens`. EOS and maximum-length termination remain
-enabled; all-first-token-EOS output does not satisfy the cached-decode workload.
+Run BF16 generative inference with the official
+[DeepSeek-V2-Lite](https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite) checkpoint at revision
+`604d5664dddd88a0433dbae533b7fe9472482de0` on one GPU with vLLM 0.31.0. Each measured batch sends
+`batch_size` fixed-text prompts of `seq_len` tokens and greedily generates up to `max_new_tokens`
+tokens per prompt, stopping early at EOS. The job downloads the checkpoint and verifies the SHA256 of
+its 31.4GB of weight files. Before measurement, the engine also answers fixed check requests; after
+the engine shuts down, an independent official-code reference checks those outputs. Any failed check
+fails the run.
 
-#### Validation Status
+`numerical_policy` defaults to `strict_fp32`, which requires the checked tokens to match the greedy
+tokens of an FP32 reference exactly. The supplied profile selects `h100_bf16_v6`, which also accepts a
+different token if it is the engine's greedy choice and its FP32 probability gap is within a bound
+calibrated from official BF16 execution on the same input. A pass therefore does not imply exact FP32
+token agreement. `h100_bf16_v6` accepts only the supplied profile's parameters and has been validated
+only on one H100 80GB GPU. The FP32 reference needs an 80GB-class GPU.
 
-The explicit `h100_bf16_v6` numerical
-method has passed independent-reference checks and all six preregistered H100
-engine windows: 3,216 positive positions pass and all 6,438 fixed fault cases
-are rejected. The recorded public runtime completed a download-inclusive cold
-bootstrap in 1323.74 seconds. Its opt-in internal package then passed three
-ordinary-entrypoint cold repetitions in 1339.17, 1342.39 and 1329.00 seconds,
-with complete diagnosis, 97.85-98.32% mean GPU busy and a maximum throughput
-deviation of 0.334% from the median. Each repetition includes all numerical checks.
-These results apply to the recorded Standard_ND96isrf_H100_v5 source, image and
-profile, not to a rebuilt image, another SKU or production deployment.
-Do not replace numerical validation with matching generated tokens or exit code zero.
+#### Usage
 
-The adapter default remains `numerical_policy=strict_fp32`, preserving the
-original pointwise FP32 checks. `h100_bf16_v6` is explicitly restricted to one
-H100, batch 8, sequence 512, maximum decode 64, two warmup batches and 256
-measured batches. It uses compiled, batch-invariant BF16 inference with the
-compressed-MLA implementation; there is no FP32 measured-model fallback.
-
-The shipped numerical contract, `superbench/config/deepseek-v2-lite-h100-numerics.json`,
-is bound to an exact SHA256 by the worker. After engine shutdown, independent
-official BF16 cached execution measures the precision discrepancy on the same
-fixed input prefixes; an FP32 model then recomputes every complete prefix.
-For each of the three probability/mass/normalized-log metrics, the budget is
-the independently calibrated reference budget plus that input's measured
-BF16/FP32 discrepancy. Engine probabilities never determine their own budget.
-The same budget must reject half-normalization, temperature-two and wrong-context
-faults. Excessive reference uncertainty fails explicitly rather than passing.
-
-Every runtime numerical check retains all requests and positions at offsets
-`0, 1024, 32768, 98304, 130560, 131584`, including short variable-length and
-single-request cases. These are windows of one fixed stream, not statistically
-independent datasets. Reference qualification also uses retained and fresh
-reference-only corpora; 1,152 non-anchor comparisons supplement the canonical
-cached-batch anchors. This empirical contract is not a universal BF16 error bound.
-
-#### Isolated Runtime
-
-The engine requires vLLM 0.31.0 and a compatible CUDA/ROCm/PyTorch installation.
-Do not install vLLM over the existing SuperBench training environment.
-Set `runtime_python` to the interpreter in its separate engine environment.
-Set `reference_python` to a separate environment containing the pinned
-[`official-code reference packages`](../../../dockerfile/requirements/deepseek-v2-lite-reference.txt).
-The controller only imports standard-library worker helpers, not vLLM.
-
-The optional
-[`model runtime Dockerfile`](../../../dockerfile/deepseek-v2-lite-inference.dockerfile)
-installs the Python SuperBench controller and its `sb` entrypoint in the
-reference-compatible environment without replacing the engine's Transformers.
-`/opt/vllm/bin/python` selects the engine interpreter;
-`/opt/deepseek-reference/bin/python` selects the reference/controller interpreter.
-The
-[`controller lock`](../../../dockerfile/requirements/deepseek-v2-lite-controller.txt)
-retains the base GPU Torch/torchvision installation; its regeneration command is
-in the [lock inputs](../../../dockerfile/requirements/deepseek-v2-lite-controller.in).
-This is an opt-in model runtime, not the standard compiled microbenchmark image.
-CUDA/ROCm registration is not certification of every GPU/runtime combination.
-The build checks both interpreters' framework versions and Torch/NumPy array
-interoperability. Controller/reference package pins must not replace the engine's
-own environment.
+Run the [inference profile](../../../superbench/config/deepseek-v2-lite-inference.yaml) as its own
+benchmark entry with one local process (`proc_num: 1`). The
+[model runtime Dockerfile](../../../dockerfile/deepseek-v2-lite-inference.dockerfile) provides
+separate vLLM and reference environments:
 
 ```bash
 docker build -f dockerfile/deepseek-v2-lite-inference.dockerfile -t sb-v2lite-inference .
@@ -257,103 +201,28 @@ docker run --rm --gpus device=0 --shm-size 32g \
   -C superbench.benchmarks.deepseek-v2-lite-inference.parameters.cache_root=/results/model-cache
 ```
 
-For a separately prepared native installation:
-```bash
-sb exec --config-file superbench/config/deepseek-v2-lite-inference.yaml
-```
+Outside Docker, set `runtime_python` to a vLLM 0.31.0 environment and `reference_python` to a separate
+environment with the [reference packages](../../../dockerfile/requirements/deepseek-v2-lite-reference.txt).
 
-The command assumes SuperBench and both worker environments are already prepared
-and accessible on the same host. In a container, mount the updated checkout
-read-only and provide a writable, dedicated result/cache directory.
+`cache_root` is required. Each run downloads the checkpoint into a new directory under it and deletes
+that model cache at the end, keeping the report and logs. If deletion fails, the cache path is logged
+for manual removal. `duration` must be below 3600 seconds and covers the whole job, from download to
+cache deletion.
 
-#### Correctness And Lifecycle
+#### Metrics
 
-The engine exercises variable-length batched prompts, single requests and forced
-EOS termination. Outputs must match the submitted prompt token IDs. The numerical
-checks depend on the selected policy:
-
-- `strict_fp32` (adapter default) uses a separate unsharded official-code FP32
-  reference with TF32 disabled and requires exact greedy-token agreement.
-  For long selected requests, every generated position is checked; cached FP32
-  execution supplies the reference between full-prefix checks at the first,
-  second, middle and final positions. Those full-prefix checks also compare
-  cached and complete-prefix logits across the vocabulary. Positions without
-  full-prefix recomputation are marked rather than given a fabricated zero
-  cache error.
-- `h100_bf16_v6` (supplied H100 profile) measures the input-matched discrepancy
-  with official BF16 cached execution and recomputes every retained prefix in
-  FP32, not just selected full-prefix positions. It can accept a different
-  greedy token when the token is greedy for the engine and its FP32 probability
-  gap is within the input-matched bound. All three numerical metrics and the
-  required fault rejections must also pass. A successful H100 check therefore
-  does not imply exact agreement with FP32-generated tokens.
-
-Both policies require the requested top-20 engine log probabilities, not only
-the selected token. These records are not an exhaustive comparison of the
-engine's full-vocabulary logits or all expert routing paths. Correctness,
-complete requests, finite timestamps and actual token counts must all pass;
-a plausible generated sentence or process exit zero is insufficient.
-
-Engine model residency is BF16, with no quantized or offloaded fallback.
-The router uses FP32 to match the official gate. NVIDIA TF32, vLLM FP32 matmul
-precision and Triton FP32 arithmetic are explicitly controlled; these settings
-do not turn the BF16 performance workload into full-FP32 inference.
-The worker enables `VLLM_RAISE_ON_LOGIT_NANS` before importing vLLM, so NaN
-logits fail the run even during measured requests that do not collect log
-probabilities. Corrupted request statistics also prevent a successful report.
-Inter-request prefix caching and chunked prefill are disabled for this initial
-profile; within-request decode state is retained. Changing those policies or
-using tensor/expert parallelism requires a separately named validation profile.
-
-vLLM 0.31.0 reports engine-core monotonic timestamps and provides explicit worker
-joining through its engine-core client. This version-specific access is
-intentional: incompatible metrics or shutdown APIs fail rather than supplying
-default timings. The engine is shut down before the independent reference is
-loaded, so their full model copies do not simultaneously consume GPU memory.
-The FP32 reference has approximately 62.8GB of parameter storage alone, so this
-initial complete validation profile needs an 80GB-class GPU even if the BF16
-engine could fit on a smaller device. That is a reference-profile requirement,
-not a claim that the model intrinsically requires H100 or eight GPUs.
-
-#### Timing And Metrics
-
-`cache_root` is required. Every invocation creates a new directory under it with
-an empty HF/Hub/Xet/module cache, its report and logs. After the worker exits,
-the adapter deletes that 31.4GB model cache and keeps the report and logs;
-shared caches outside `cache_root` are not touched. On a successful run, cleanup
-must finish within `duration`; otherwise the run fails as a timeout. After a
-failed or timed-out run, cleanup may continue until the job deadline or for
-60 seconds, whichever ends later; an unfinished cleanup is logged without
-replacing the original error. Other filesystem errors are logged without
-discarding validated measurements. Interrupted cleanup can leave a cache at the
-logged path.
-
-One `duration <3600s` covers model download, complete weight hashes,
-loading, graph/kernel preparation, warmup, measured generation, reference checks,
-result writing, worker teardown and model-cache cleanup. The controller finalizes
-the total elapsed time and success result after cleanup and rejects watchdog
-exits. Image pulls, dependency installation and controller
-installation are separate preparation steps, not certified by the model-cold
-timer.
-
-A dedicated Linux child supervisor reaps worker descendants even when they start
-separate sessions. A successful launcher exit with surviving children is rejected.
-Worker measurement-phase Unix timestamps allow external telemetry to exclude
-setup, correctness and warmup; the timed generation durations use a monotonic
-clock. CPU regression tests cover warmup exclusion and mixed EOS/decode counts.
-
-| Metric | Unit | Scope |
-| --- | --- | --- |
-| `bf16_inference_step_time` | ms | Mean complete synchronized generation batch |
-| `bf16_inference_output_tokens_per_second` | tokens/s | Actual outputs divided by measured batch time |
-| `bf16_inference_request_prefill_time` | ms | Engine scheduled-to-first-token interval |
-| `bf16_inference_ttft` | ms | Engine first-token latency, including frontend/queue effects |
-| `bf16_inference_decode_tpot` | ms/token | First-to-last-token span divided by actual decode intervals |
-| `successful_requests` | requests | Completed measured requests |
-| `actual_output_tokens` | tokens | Actual measured output IDs, not the configured maximum |
-| `end_to_end_seconds` | s | Complete invocation through report validation and model-cache cleanup |
-
-Request prefill/decode timestamps are not isolated GPU kernel timings.
-One-token EOS requests contribute to total tokens and latency but not to TPOT.
-Keep cold-start time, steady per-GPU utilization and model quality separate;
-GPU device busy time is not MFU.
+| Name | Unit | Description |
+|---|---|---|
+| deepseek-v2-lite-inference/bf16_inference_step_time | time (ms) | The average time to generate one measured batch. |
+| deepseek-v2-lite-inference/bf16_inference_output_tokens_per_second | throughput (tokens/s) | Generated tokens divided by the total measured batch time. |
+| deepseek-v2-lite-inference/bf16_inference_request_prefill_time | time (ms) | The average time from scheduling a request to its first token. |
+| deepseek-v2-lite-inference/bf16_inference_ttft | time (ms) | The average time from request arrival to its first token, including queueing. |
+| deepseek-v2-lite-inference/bf16_inference_decode_tpot | time (ms) | The average time per output token after the first; requests with one output token are excluded. |
+| deepseek-v2-lite-inference/bf16_inference_input_token_count | count | The average number of prompt tokens per request. |
+| deepseek-v2-lite-inference/bf16_inference_output_token_count | count | The average number of generated tokens per request, including EOS. |
+| deepseek-v2-lite-inference/successful_requests | count | The number of completed measured requests. |
+| deepseek-v2-lite-inference/actual_output_tokens | count | The total number of generated tokens in measured batches. |
+| deepseek-v2-lite-inference/end_to_end_seconds | time (s) | The complete job time, including checkpoint download and cache deletion. |
+| deepseek-v2-lite-inference/checkpoint_bytes | size (bytes) | The total size of the checkpoint weight files. |
+| deepseek-v2-lite-inference/numerical_reference_positions | count | `h100_bf16_v6` only: the number of generated positions that passed the reference check. |
+| deepseek-v2-lite-inference/numerical_fault_rejections | count | `h100_bf16_v6` only: the number of injected faults that the check rejected. |
