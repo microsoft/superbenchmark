@@ -1,166 +1,127 @@
-
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #include "gpu_stream_utils.hpp"
 
-namespace stream_config {
-/**
- * @brief Converts a kernel index to its corresponding string representation.
- *
- * @details This function takes an integer representing a kernel index and returns the corresponding
- * string representation of the kernel. The mapping between kernel indices and their string representations
- * should be defined within the function.
- *
- * @param[in] kernel_idx The index of the kernel to be converted to a string.
- *
- * @return std::string The string representation of the kernel.
- */
-std::string KernelToString(int kernel_idx) {
-    switch (kernel_idx) {
-    case static_cast<int>(Kernel::kCopy):
-        return "COPY";
-    case static_cast<int>(Kernel::kScale):
-        return "SCALE";
-    case static_cast<int>(Kernel::kAdd):
-        return "ADD";
-    case static_cast<int>(Kernel::kTriad):
-        return "TRIAD";
-    default:
-        return "UNKNOWN";
+#include <algorithm>
+#include <charconv>
+#include <cstring>
+#include <limits>
+
+namespace {
+bool ParseUnsigned(const char *text, uint64_t *value) {
+    const char *end = text + std::strlen(text);
+    const auto parsed = std::from_chars(text, end, *value);
+    return parsed.ec == std::errc{} && parsed.ptr == end;
+}
+
+template <size_t N> bool ParseChoice(const char *text, const std::array<int, N> &allowed, int *value) {
+    uint64_t parsed = 0;
+    if (!ParseUnsigned(text, &parsed) || parsed > static_cast<uint64_t>(std::numeric_limits<int>::max())) {
+        return false;
     }
+    if (std::find(allowed.begin(), allowed.end(), static_cast<int>(parsed)) == allowed.end()) {
+        return false;
+    }
+    *value = static_cast<int>(parsed);
+    return true;
+}
+} // namespace
+
+namespace stream_config {
+std::string KernelToString(int kernel_idx) {
+    const std::array<const char *, 4> names = {"COPY", "SCALE", "ADD", "TRIAD"};
+    return kernel_idx >= 0 && kernel_idx < static_cast<int>(names.size()) ? names[kernel_idx] : "UNKNOWN";
 }
 
-/**
- * @brief Print the usage of this program.
- *
- * @details Thus function prints the usage of this program.
- *
- * @return void.
- * */
 void PrintUsage() {
-    std::cout << "Usage: gpu_stream "
-              << "--size <size in bytes> "
-              << "--num_warm_up <num_warm_up> "
-              << "--num_loops <num_loops> "
-              << "[--data_type <float|double>] "
-              << "[--check_data]" << std::endl;
+    std::cout << "Usage: gpu_stream [--size <bytes>] [--num_warm_up <N>] [--num_loops <N>]\n"
+              << "  [--data_type <float|double|both>] [--check_data]\n"
+              << "  [--operation <copy|scale|add|triad|all>] [--block_size <N>] [--unroll <N>]\n";
 }
 
-/**
- * @brief Print the user provided inputs info.
- *
- * @details Thus function prints the parsed user provided inputs of this program..
- *
- * @param[in] opts The Opts struct that stores the parsed values.
- *
- * @return void
- * */
 void PrintInputInfo(Opts &opts) {
-    std::cout << "STREAM Benchmark" << std::endl;
-    std::cout << "Buffer size(bytes): " << opts.size << std::endl;
-    std::cout << "Number of warm up runs: " << opts.num_warm_up << std::endl;
-    std::cout << "Number of loops: " << opts.num_loops << std::endl;
-    std::cout << "Data type: " << opts.data_type << std::endl;
-    std::cout << "Check data: " << (opts.check_data ? "Yes" : "No") << std::endl;
+    std::cout << "STREAM Benchmark\nBuffer size(bytes): " << opts.size
+              << "\nNumber of warm up runs: " << opts.num_warm_up << "\nNumber of loops: " << opts.num_loops
+              << "\nData type: " << opts.data_type << "\nCheck data: " << (opts.check_data ? "Yes" : "No") << std::endl;
 }
 
-/**
- * @brief Parse the command line options.
- *
- * @details Thus function parses the command line options and stores the values in the Opts struct.
- *
- * @param[in] argc The number of command line options.
- * @param[in] argv The command line options.
- * @param[out] opts The Opts struct to store the parsed values.
- *
- * @return int The status code.
- * */
 int ParseOpts(int argc, char **argv, Opts *opts) {
-    enum class OptIdx { kSize, kNumWarmUp, kNumLoops, kEnableCheckData, kDataType };
-    const struct option options[] = {{"size", required_argument, nullptr, static_cast<int>(OptIdx::kSize)},
-                                     {"num_warm_up", required_argument, nullptr, static_cast<int>(OptIdx::kNumWarmUp)},
-                                     {"num_loops", required_argument, nullptr, static_cast<int>(OptIdx::kNumLoops)},
-                                     {"check_data", no_argument, nullptr, static_cast<int>(OptIdx::kEnableCheckData)},
-                                     {"data_type", required_argument, nullptr, static_cast<int>(OptIdx::kDataType)}};
-    int getopt_ret = 0;
-    int opt_idx = 0;
-    bool size_specified = false;
-    bool num_warm_up_specified = false;
-    bool num_loops_specified = false;
-
-    bool parse_err = false;
-    while (true) {
-        getopt_ret = getopt_long(argc, argv, "", options, &opt_idx);
-        if (getopt_ret == -1) {
-            if (!size_specified || !num_warm_up_specified || !num_loops_specified) {
-                parse_err = true;
-            }
+    enum OptIdx { kSize, kWarmup, kLoops, kCheck, kType, kBlock, kUnroll, kOperation };
+    const option options[] = {
+        {"size", required_argument, nullptr, kSize},
+        {"num_warm_up", required_argument, nullptr, kWarmup},
+        {"num_loops", required_argument, nullptr, kLoops},
+        {"check_data", no_argument, nullptr, kCheck},
+        {"data_type", required_argument, nullptr, kType},
+        {"block_size", required_argument, nullptr, kBlock},
+        {"unroll", required_argument, nullptr, kUnroll},
+        {"operation", required_argument, nullptr, kOperation},
+        {nullptr, 0, nullptr, 0},
+    };
+    int option_index = 0;
+    int token = 0;
+    while ((token = getopt_long(argc, argv, "", options, &option_index)) != -1) {
+        bool valid = true;
+        switch (token) {
+        case kSize:
+            valid = ParseUnsigned(optarg, &opts->size);
             break;
-        } else if (getopt_ret == '?') {
-            parse_err = true;
+        case kWarmup:
+            valid = ParseUnsigned(optarg, &opts->num_warm_up);
             break;
-        }
-        switch (opt_idx) {
-        case static_cast<int>(OptIdx::kSize):
-            if (1 != sscanf(optarg, "%lu", &(opts->size))) {
-                std::cerr << "Invalid size: " << optarg << std::endl;
-                parse_err = true;
-            } else {
-                size_specified = true;
-            }
+        case kLoops:
+            valid = ParseUnsigned(optarg, &opts->num_loops);
             break;
-        case static_cast<int>(OptIdx::kNumWarmUp):
-            if (1 != sscanf(optarg, "%lu", &(opts->num_warm_up))) {
-                std::cerr << "Invalid num_warm_up: " << optarg << std::endl;
-                parse_err = true;
-            } else {
-                num_warm_up_specified = true;
-            }
-            break;
-        case static_cast<int>(OptIdx::kNumLoops):
-            if (1 != sscanf(optarg, "%lu", &(opts->num_loops))) {
-                std::cerr << "Invalid num_loops: " << optarg << std::endl;
-                parse_err = true;
-            } else {
-                num_loops_specified = true;
-            }
-            break;
-        case static_cast<int>(OptIdx::kEnableCheckData):
+        case kCheck:
             opts->check_data = true;
             break;
-        case static_cast<int>(OptIdx::kDataType):
+        case kType:
             opts->data_type = optarg;
-            if (opts->data_type != "float" && opts->data_type != "double") {
-                std::cerr << "Invalid data_type: " << optarg << ". Must be 'float' or 'double'." << std::endl;
-                parse_err = true;
+            valid = opts->data_type == "float" || opts->data_type == "double" || opts->data_type == "both";
+            break;
+        case kBlock:
+            valid = ParseChoice(optarg, kThreadsPerBlock, &opts->block_size);
+            break;
+        case kUnroll:
+            valid = ParseChoice(optarg, kUnrollFactors, &opts->unroll);
+            break;
+        case kOperation: {
+            const std::array<const char *, 4> names = {"copy", "scale", "add", "triad"};
+            const auto found = std::find_if(names.begin(), names.end(),
+                                            [&](const char *name) { return std::strcmp(name, optarg) == 0; });
+            valid = found != names.end() || std::strcmp(optarg, "all") == 0;
+            if (found != names.end()) {
+                opts->operations = {static_cast<Kernel>(found - names.begin())};
+            } else if (valid) {
+                opts->operations = {Kernel::kCopy, Kernel::kScale, Kernel::kAdd, Kernel::kTriad};
             }
             break;
-        default:
-            parse_err = true;
         }
-        if (parse_err) {
-            break;
+        default:
+            PrintUsage();
+            return -1;
+        }
+        if (!valid) {
+            std::cerr << "Invalid value for --" << options[option_index].name << ": " << optarg << std::endl;
+            return -1;
         }
     }
-    if (parse_err) {
-        PrintUsage();
+    const uint64_t element_size = opts->data_type == "float" ? sizeof(float) : sizeof(double);
+    if (optind != argc || opts->size == 0 || opts->size % element_size != 0) {
+        std::cerr << "Size must be a positive multiple of " << element_size << " bytes; positional arguments are invalid"
+                  << std::endl;
+        return -1;
+    }
+    if (opts->num_loops == 0 || opts->num_warm_up > std::numeric_limits<uint64_t>::max() - opts->num_loops) {
+        std::cerr << "num_loops must be positive and num_warm_up + num_loops must not overflow" << std::endl;
         return -1;
     }
     return 0;
 }
-
 } // namespace stream_config
 
 unsigned long long getCurrentTimestampInMicroseconds() {
-    // Get the current time point
-    auto now = std::chrono::system_clock::now();
-
-    // Convert to time since epoch
-    auto duration = now.time_since_epoch();
-
-    // Convert to microseconds
-    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-
-    return static_cast<unsigned long long>(microseconds);
+    const auto duration = std::chrono::system_clock::now().time_since_epoch();
+    return static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::microseconds>(duration).count());
 }

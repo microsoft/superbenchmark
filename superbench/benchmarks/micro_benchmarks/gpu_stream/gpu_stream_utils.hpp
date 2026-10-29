@@ -29,8 +29,9 @@ struct GpuBufferDeleter {
 unsigned long long getCurrentTimestampInMicroseconds();
 
 namespace stream_config {
-constexpr std::array<int, 4> kThreadsPerBlock = {128, 256, 512, 1024}; // Threads per block
-constexpr uint64_t kDefaultBufferSizeInBytes = 4294967296;             // Default buffer size 4GB
+constexpr std::array<int, 4> kThreadsPerBlock = {128, 256, 512, 1024};
+constexpr std::array<int, 6> kUnrollFactors = {1, 2, 3, 4, 6, 8};
+constexpr uint64_t kDefaultBufferSizeInBytes = 8589934592; // 8 GiB per array
 constexpr int kNumBuffers = 3;                                         // Number of buffers for triad, add kernel
 constexpr int kNumValidationBuffers = 4;                          // Number of validation buffers, one for each kernel
 constexpr int kUInt8Mod = 256;                                    // Modulo for unsigned long data type
@@ -44,6 +45,11 @@ enum class Kernel {
     kAdd,
     kTriad,
     kCount // Add a count to keep track of the number of enums. Helpful for iterating over enums.
+};
+
+struct LaunchConfig {
+    int block_size = 0;
+    int unroll = 0;
 };
 
 // Arguments for each sub benchmark run.
@@ -72,9 +78,6 @@ template <typename T> struct SubBenchArgs {
     // CUDA event to record end time.
     cudaEvent_t end_event = nullptr;
 
-    // CUDA event to record end time.
-    std::vector<std::vector<float>> times_in_ms;
-
     // Stream Kernel name.
     std::string kernel_name;
 };
@@ -92,7 +95,7 @@ template <typename T> struct BenchArgs {
     uint64_t size = kDefaultBufferSizeInBytes;
 
     // Number of warm up rounds to run.
-    uint64_t num_warm_up = 0;
+    uint64_t num_warm_up = 10;
 
     // Number of loops to run.
     uint64_t num_loops = 1;
@@ -110,16 +113,18 @@ struct Opts {
     uint64_t size = kDefaultBufferSizeInBytes;
 
     // Number of warm up rounds to run.
-    uint64_t num_warm_up = 0;
+    uint64_t num_warm_up = 10;
 
     // Number of loops to run.
-    uint64_t num_loops = 0;
+    uint64_t num_loops = 40;
 
     // Whether check data after copy.
     bool check_data = false;
 
-    // Data type for the benchmark ("float" or "double").
-    std::string data_type = "double";
+    std::string data_type = "both";
+    int block_size = 0;
+    int unroll = 0;
+    std::vector<Kernel> operations{Kernel::kCopy, Kernel::kScale, Kernel::kAdd, Kernel::kTriad};
 };
 
 std::string KernelToString(int); // Function to convert enum to string

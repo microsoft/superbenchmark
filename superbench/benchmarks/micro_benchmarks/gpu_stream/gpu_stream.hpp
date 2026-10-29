@@ -51,7 +51,7 @@ class GpuStream {
     template <typename T> int Destroy(std::unique_ptr<BenchArgs<T>> &);
 
     // Benchmark functions
-    template <typename T> int RunStreamKernel(std::unique_ptr<BenchArgs<T>> &, Kernel, int);
+    template <typename T> int RunStreamKernel(std::unique_ptr<BenchArgs<T>> &, Kernel, const LaunchConfig &, float *);
     float GetActualMemoryClockRate(int gpu_id);
     template <typename T> int RunStream(std::unique_ptr<BenchArgs<T>> &, const std::string &data_type, float peak_bw);
 

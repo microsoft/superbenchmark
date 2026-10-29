@@ -8,10 +8,18 @@
 
 #include "gpu_stream.hpp"
 #include <cassert>
+#include <cmath>
 #include <dlfcn.h>
 #include <iostream>
 #include <nvml.h>
 #include <sched.h>
+
+namespace {
+void PrintConfiguration(const char *record, const std::string &tag, uint64_t size, const LaunchConfig &config) {
+    std::cout << record << "\t" << tag << "\t" << size << "\t" << config.block_size << "\t" << config.unroll
+              << "\t" << (size / 16) / (config.block_size * config.unroll);
+}
+} // namespace
 
 /**
  * @brief Destroys the CUDA events used for benchmarking.
@@ -303,6 +311,15 @@ template <typename T> int GpuStream::PrepareBufAndStream(std::unique_ptr<BenchAr
         std::cerr << "PrepareBufAndStream::cudaStreamCreate error: " << cuda_err << std::endl;
         return -1;
     }
+    if (!args->check_data) {
+        stream_kernels::InitializeData<T><<<args->gpu_device_prop.multiProcessorCount * 32, 256, 0, args->sub.stream>>>(
+            args->sub.gpu_buf_ptrs[0].get(), args->sub.gpu_buf_ptrs[1].get(), args->size / sizeof(T));
+        cuda_err = cudaGetLastError();
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "PrepareBufAndStream::InitializeData error: " << cudaGetErrorString(cuda_err) << std::endl;
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -438,40 +455,32 @@ template <typename T> int GpuStream::DestroyBufAndStream(std::unique_ptr<BenchAr
  * @param[in,out] args A unique pointer to a BenchArgs structure containing the necessary arguments for the
  benchmark.
  * @param[in] kernel The kernel function to be used for the benchmark.
- * @param[in] num_threads_per_block The number of threads per block to be used in the kernel execution.
+ * @param[in] config The selected packet-tile launch configuration.
+ * @param[out] elapsed_ms Total time of all timed STREAM iterations, including tails.
  *
  * @return int The status code indicating success or failure of the benchmark execution.
  */
 template <typename T>
-int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kernel, int num_threads_per_block) {
+int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kernel, const LaunchConfig &config,
+                               float *elapsed_ms) {
 
     cudaError_t cuda_err = cudaSuccess;
-    uint64_t num_thread_blocks;
-    int size_factor = 2;
 
-    if (num_threads_per_block == 0) {
-        std::cerr << "RunStreamKernel::num_threads_per_block must be > 0" << std::endl;
-        return -1;
-    }
-
-    // Each thread processes kUnroll VecT<T> elements (128 bits / 16 bytes each) per loop iteration
-    // via a grid-stride loop. The grid is sized as a small multiple of the SM count to keep all
-    // SMs busy with long-lived blocks, while the loop + unroll provides memory-level parallelism.
-    constexpr uint64_t kBytesPerThread = sizeof(VecT<T>);
-    static_assert(kBytesPerThread == 16, "Vector type must be 128-bit aligned for current PTX");
-
-    // Number of vector elements to process
-    uint64_t n = args->size / kBytesPerThread;
-
-    // Use a fixed grid: numSMs * kGridMultiplier blocks.
-    // This keeps blocks long-lived (many loop iterations) and minimizes scheduling overhead.
-    constexpr int kGridMultiplier = 4;
-    num_thread_blocks = static_cast<uint64_t>(args->gpu_device_prop.multiProcessorCount) * kGridMultiplier;
-
-    args->sub.times_in_ms.resize(static_cast<int>(Kernel::kCount));
+    const uint64_t count = args->size / sizeof(T);
+    T *output = args->sub.gpu_buf_ptrs[2].get();
+    const T *first = args->sub.gpu_buf_ptrs[0].get();
+    const T *second = args->sub.gpu_buf_ptrs[1].get();
+    const int max_grid_x = args->gpu_device_prop.maxGridSize[0];
 
     if (SetGpu(args->gpu_id)) {
         return -1;
+    }
+    if (args->check_data) {
+        cuda_err = cudaMemsetAsync(output, 0xff, args->size, args->sub.stream);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "RunStreamKernel::cudaMemsetAsync error: " << cudaGetErrorString(cuda_err) << std::endl;
+            return -1;
+        }
     }
 
     // Launch jobs and collect running time
@@ -488,36 +497,33 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
 
         switch (kernel) {
         case Kernel::kCopy:
-            CopyKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()), n);
+            cuda_err = stream_kernels::Launch<T, Kernel::kCopy>(
+                output, first, second, count, config, args->sub.stream, max_grid_x);
             args->sub.kernel_name = "COPY";
             break;
         case Kernel::kScale:
-            ScaleKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()), static_cast<T>(scalar), n);
+            cuda_err = stream_kernels::Launch<T, Kernel::kScale>(
+                output, first, second, count, config, args->sub.stream, max_grid_x);
             args->sub.kernel_name = "SCALE";
             break;
         case Kernel::kAdd:
-            AddKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()), n);
-            size_factor = 3;
+            cuda_err = stream_kernels::Launch<T, Kernel::kAdd>(
+                output, first, second, count, config, args->sub.stream, max_grid_x);
             args->sub.kernel_name = "ADD";
             break;
         case Kernel::kTriad:
-            TriadKernel<T><<<num_thread_blocks, num_threads_per_block, 0, args->sub.stream>>>(
-                reinterpret_cast<VecT<T> *>(args->sub.gpu_buf_ptrs[2].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[0].get()),
-                reinterpret_cast<const VecT<T> *>(args->sub.gpu_buf_ptrs[1].get()), static_cast<T>(scalar), n);
-            size_factor = 3;
+            cuda_err = stream_kernels::Launch<T, Kernel::kTriad>(
+                output, first, second, count, config, args->sub.stream, max_grid_x);
             args->sub.kernel_name = "TRIAD";
             break;
         default:
             std::cerr << "RunStreamKernel::Invalid kernel: " << std::endl;
-            break;
+            return -1;
+        }
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "RunStreamKernel::launch " << args->sub.kernel_name
+                      << " error: " << cudaGetErrorString(cuda_err) << std::endl;
+            return -1;
         }
 
         // Record end event at the end of iterations
@@ -545,7 +551,11 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
         return -1;
     }
 
-    args->sub.times_in_ms[static_cast<int>(kernel)].push_back(time_in_ms / size_factor);
+    if (!std::isfinite(time_in_ms) || time_in_ms <= 0) {
+        std::cerr << "RunStreamKernel::Invalid CUDA event duration: " << time_in_ms << std::endl;
+        return -1;
+    }
+    *elapsed_ms = time_in_ms;
 
     return 0;
 }
@@ -619,47 +629,73 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
         return -1;
     }
 
-    // benchmark over the kThreadsPerBlock array
-    for (const int num_threads_in_block : kThreadsPerBlock) {
-        // run the stream benchmark over the stream kernels
-        for (int i = 0; i < static_cast<int>(Kernel::kCount); ++i) {
-            Kernel kernel = static_cast<Kernel>(i);
-            ret = RunStreamKernel<T>(args, kernel, num_threads_in_block);
-            if (ret != 0) {
-                Destroy(args);
-                return ret;
+    struct BestResult {
+        double bandwidth = 0;
+        LaunchConfig config;
+    };
+    std::array<BestResult, static_cast<size_t>(Kernel::kCount)> best{};
+    for (const Kernel kernel : opts_.operations) {
+        const auto index = static_cast<size_t>(kernel);
+        const std::string tag = "STREAM_" + KernelToString(static_cast<int>(kernel)) + "_" + data_type;
+        for (const int block : kThreadsPerBlock) {
+            if (opts_.block_size != 0 && opts_.block_size != block) {
+                continue;
             }
-            if (args->check_data) {
-                ret = CheckBuf(args, i);
+            if (block > args->gpu_device_prop.maxThreadsPerBlock) {
+                std::cerr << "Skipping unsupported block size " << block << " for " << tag << std::endl;
+                continue;
+            }
+            for (const int unroll : kUnrollFactors) {
+                if (opts_.unroll != 0 && opts_.unroll != unroll) {
+                    continue;
+                }
+                const uint64_t tiles = (args->size / 16) / (block * unroll);
+                if (tiles > static_cast<uint64_t>(args->gpu_device_prop.maxGridSize[0])) {
+                    std::cerr << "Skipping grid exceeding the device limit for " << tag << std::endl;
+                    continue;
+                }
+                const LaunchConfig config{block, unroll};
+                float elapsed_ms = 0;
+                ret = RunStreamKernel<T>(args, kernel, config, &elapsed_ms);
+                if (ret == 0 && args->check_data) {
+                    ret = CheckBuf(args, static_cast<int>(kernel));
+                }
                 if (ret != 0) {
                     Destroy(args);
                     return ret;
                 }
+                const double bandwidth = static_cast<double>(args->size) * args->num_loops *
+                                         kBufferBwMultipliers[index] / elapsed_ms / 1e6;
+                if (!std::isfinite(bandwidth) || bandwidth <= 0) {
+                    std::cerr << "Invalid bandwidth for " << tag << std::endl;
+                    Destroy(args);
+                    return -1;
+                }
+                if (bandwidth > best[index].bandwidth) {
+                    best[index] = {bandwidth, config};
+                }
             }
+        }
+        if (best[index].bandwidth == 0) {
+            std::cerr << "No supported launch configuration for " << tag << std::endl;
+            Destroy(args);
+            return -1;
         }
     }
 
-    // output formatted results to stdout
-    // Tags are of format:
-    // STREAM_<Kernelname>_datatype_buffer_<buffer_size>_block_<block_size>
-    for (size_t i = 0; i < args->sub.times_in_ms.size(); i++) {
-        std::string tag = "STREAM_" + KernelToString(i) + "_" + data_type + "_buffer_" + std::to_string(args->size);
-        for (size_t j = 0; j < args->sub.times_in_ms[i].size(); j++) {
-            // Calculate and display bandwidth
-            double bw = static_cast<double>(args->size) * args->num_loops / args->sub.times_in_ms[i][j] / 1e6;
-            std::cout << tag << "_block_" << kThreadsPerBlock[j] << "\t" << bw << "\t";
-
-            if (peak_bw < 0) { // cannot get peak_bw -> prints -1 for efficiency
-                std::cout << "-1" << std::endl;
-            } else {
-                std::cout << std::fixed << std::setprecision(2) << bw / peak_bw * 100 << std::endl;
-            }
-        }
+    const uint64_t size = args->size;
+    ret = Destroy(args);
+    if (ret != 0) {
+        return ret;
     }
-    // cleanup buffer and streams for the curr arg
-    Destroy(args);
-
-    return ret;
+    for (const Kernel kernel : opts_.operations) {
+        const auto &winner = best[static_cast<size_t>(kernel)];
+        const std::string tag = "STREAM_" + KernelToString(static_cast<int>(kernel)) + "_" + data_type;
+        PrintConfiguration("GPU_STREAM_CONFIG", tag, size, winner.config);
+        std::cout << "\n" << tag << "\t" << std::defaultfloat << std::setprecision(9) << winner.bandwidth << "\t"
+                  << (peak_bw > 0 ? winner.bandwidth / peak_bw * 100 : -1) << std::endl;
+    }
+    return 0;
 }
 
 /**
@@ -713,18 +749,9 @@ int GpuStream::Run() {
         std::cerr << "Run::No GPU available" << std::endl;
         return -1;
     }
-
-    // Run on CUDA device 0 (the visible GPU assigned by CUDA_VISIBLE_DEVICES).
-    if (opts_.data_type == "float") {
-        ret = CreateBenchArgs<float>();
-    } else if (opts_.data_type == "double") {
-        ret = CreateBenchArgs<double>();
-    } else {
+    if (opts_.data_type != "float" && opts_.data_type != "double" && opts_.data_type != "both") {
         std::cerr << "Run::Invalid data_type: " << opts_.data_type << std::endl;
         return -1;
-    }
-    if (ret != 0) {
-        return ret;
     }
 
     // Pin the thread to the GPU's NUMA node for optimal host↔device bandwidth.
@@ -772,8 +799,14 @@ int GpuStream::Run() {
         return -1;
     }
 
-    // Run the benchmark for the configured data
-    std::visit(
+    const std::vector<std::string> data_types =
+        opts_.data_type == "both" ? std::vector<std::string>{"float", "double"} : std::vector<std::string>{opts_.data_type};
+    for (const auto &data_type : data_types) {
+        ret = data_type == "float" ? CreateBenchArgs<float>() : CreateBenchArgs<double>();
+        if (ret != 0) {
+            return ret;
+        }
+        std::visit(
         [&](auto &curr_args) {
             // Get memory clock rate once for both bandwidth computation and display
             float memory_clock_mhz = GetMemoryClockRate(curr_args->gpu_id, curr_args->gpu_device_prop);
@@ -804,7 +837,11 @@ int GpuStream::Run() {
                 std::cerr << "Run::RunStream error: " << ret << std::endl;
             }
         },
-        bench_args_);
+            bench_args_);
+        if (ret != 0) {
+            return ret;
+        }
+    }
 
     return ret;
 }

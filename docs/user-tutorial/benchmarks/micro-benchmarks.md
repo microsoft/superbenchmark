@@ -408,22 +408,20 @@ For measurements of peer-to-peer communication performance between AMD GPUs, GPU
 
 #### Introduction
 
-Measure the memory bandwidth of GPU using the STREAM benchmark. The benchmark tests various memory operations including copy, scale, add, and triad for double and float datatypes.
+Measures Copy, Scale, Add, and Triad bandwidth for float and double. Set `gpu_name: h100`, `gb300`, or `vr` to select [gpu_stream_profiles.json](../../../superbench/benchmarks/micro_benchmarks/gpu_stream_profiles.json), with one buffer size per GPU and block/unroll settings per workload. GPU names are not detected.
 
-__Note__: When `--check_data` is enabled, each process allocates 6× `--size` bytes of host memory (data\_buf + check\_buf + 4 validation buffers, e.g. 24 GiB with the default 4 GiB `--size`). Under `default_local_mode` with 8 GPUs this totals ~192 GiB of host RAM. Recommend using a small `--size` such as `1048576` (1 MiB) when `--check_data` is enabled.
+Omit `gpu_name` to autotune; unrecognized names and missing presets also use the fixed block/unroll sweep. `size` is bytes per array and overrides the preset buffer without disabling launch presets. If omitted, the GPU default is used (8 GiB without a profile). Both datatypes are selected unless `data_type` is specified.
+
+`check_data` checks output outside timing and needs 6x buffer size in host memory. Use small buffers for validation.
 
 #### Metrics
 
-| Metric Name                                                | Unit             | Description                                                                                                                             |
-|------------------------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| STREAM\_COPY\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw  | bandwidth (GB/s) | The memory bandwidth of the GPU for the copy operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
-| STREAM\_SCALE\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The memory bandwidth of the GPU for the scale operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
-| STREAM\_ADD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw   | bandwidth (GB/s) | The memory bandwidth of the GPU for the add operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
-| STREAM\_TRIAD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_bw | bandwidth (GB/s) | The memory bandwidth of the GPU for the triad operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
-| STREAM\_COPY\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio  | Efficiency (%) | The memory bandwidth efficiency of the GPU for the copy operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
-| STREAM\_SCALE\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The memory bandwidth efficiency of the GPU for the scale operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
-| STREAM\_ADD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio   | Efficiency (%) | The memory bandwidth efficiency of the GPU for the add operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
-| STREAM\_TRIAD\_(double\|float)\_buffer\_[0-9]+\_block\_[0-9]+\_ratio | Efficiency (%) | The memory bandwidth efficiency of the GPU for the triad operation with the selected data type (double for fp64, float for fp32), for the specified buffer size and block size.                         |
+| Metric Name | Unit | Description |
+|-------------|------|-------------|
+| STREAM\_(COPY\|SCALE\|ADD\|TRIAD)\_(double\|float)\_bw | GB/s | Fresh preset bandwidth or the highest measured bandwidth from the fixed sweep. |
+| STREAM\_(COPY\|SCALE\|ADD\|TRIAD)\_(double\|float)\_ratio | % | Efficiency from the same winning measurement; -1 if theoretical peak is unavailable. |
+
+For example: `gpu-stream:fp64/STREAM_ADD_double_bw`. Selected launch parameters stay in raw output.
 
 ### `ib-loopback`
 

@@ -1,3 +1,4 @@
 include LICENSE README.md
 recursive-include superbench *.py *.j2 *.yaml
+include superbench/benchmarks/micro_benchmarks/gpu_stream_profiles.json
 global-exclude *.py[cod] __pycache__
