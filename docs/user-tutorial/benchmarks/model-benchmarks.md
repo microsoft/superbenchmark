@@ -287,11 +287,19 @@ GPUs; this is validation storage, not training-state CPU offload.
 `cache_root` is required. Every invocation creates its own empty
 HF/Hub/Xet/module cache and keeps its report and logs under a new directory in
 `cache_root`. After the worker exits, the adapter deletes that 31.4GB model
-cache and keeps the report and logs; shared caches are not touched.
+cache and keeps the report and logs; shared caches are not touched. On a
+successful run, cleanup must finish within `duration`; otherwise the run fails
+as a timeout. After a failed or timed-out run, cleanup may continue until the
+job deadline or for 60 seconds, whichever ends later; an unfinished cleanup is
+logged without replacing the original error. Other filesystem errors are logged
+without discarding validated measurements. Interrupted cleanup can leave a cache
+at the logged path.
 
 `duration` covers download, SHA256 verification, loading, correctness,
-warmup, measured training and worker/rank teardown. It must be below 3600 seconds;
-the controller reserves 20 seconds for cleanup. A watchdog exit is a failure.
+warmup, measured training, worker/rank teardown and model-cache cleanup. It must
+be below 3600 seconds; the worker deadline leaves 20 seconds for teardown and
+cleanup, and the controller finalizes the elapsed time and success result after
+cleanup. A watchdog exit is a failure.
 Image pulling, dependency preparation and SuperBench installation are separate
 runtime-preparation steps, not certified by the model-cold timer.
 
@@ -308,7 +316,7 @@ GPU telemetry; the step durations continue to use the monotonic clock.
 | `bf16_train_tokens_per_second` | loss tokens/s | Global next-token targets, excluding each sequence's first position |
 | `bf16_train_loss` | loss | Global mean causal-LM loss |
 | `bf16_train_gradient_norm` | norm | Global gradient norm before clipping |
-| `end_to_end_seconds` | s | Complete worker launch through exit and report validation |
+| `end_to_end_seconds` | s | Complete invocation through report validation and model-cache cleanup |
 | `checkpoint_bytes` | bytes | Complete weight files, not measured network traffic or GPU memory |
 
 Step timing includes forward, backward, clipping and the optimizer update.
