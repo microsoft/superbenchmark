@@ -4,7 +4,6 @@
 """SuperBench adapter for isolated official-checkpoint V2-Lite FSDP training."""
 
 import os
-import shutil
 import statistics
 import sys
 import tempfile
@@ -14,26 +13,13 @@ from pathlib import Path
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, Platform, ReturnCode
 from superbench.benchmarks.base import Benchmark
 from superbench.common.utils import logger
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_cache import (
+    remove_model_cache, remove_model_cache_after_failure
+)
 from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_moe import MOE_DISPATCHES
 from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
     numeric_series, read_json, run_worker, validate_identity
 )
-
-
-def _remove_model_cache(cache):
-    """Delete one run's downloaded model cache after its worker exits, keeping reports and logs."""
-    if not cache.exists():
-        return
-    start = time.monotonic()
-    try:
-        shutil.rmtree(cache)
-    except TimeoutError:
-        # The SuperBench SIGTERM handler raises TimeoutError, an OSError subclass; keep it fatal.
-        raise
-    except OSError as error:
-        logger.error('Failed to remove the V2-Lite model cache %s: %s', cache, error)
-        return
-    logger.info('Removed the V2-Lite model cache %s in %.1f seconds.', cache, time.monotonic() - start)
 
 
 class DeepSeekV2LiteTraining(Benchmark):
@@ -120,36 +106,46 @@ class DeepSeekV2LiteTraining(Benchmark):
             str(args.duration),
         ]
 
+    def _validate_training_report(self, report):
+        """Check token accounting, the verified update, GPU count and MoE dispatch evidence."""
+        expected_tokens = (
+            self._args.num_steps * self._args.batch_size * self._args.num_gpus * (self._args.seq_len - 1)
+        )
+        updates = report.get('updated_parameter_elements')
+        if report.get('loss_token_count') != expected_tokens or type(updates) is not int or updates <= 0:
+            raise ValueError('Training token count or verified optimizer update is invalid.')
+        if report.get('world_size') != self._args.num_gpus:
+            raise ValueError('Worker used a different number of GPUs.')
+        rewritten = report.get('moe_layers_rewritten')
+        expected_layers = 26 if self._args.moe_dispatch == 'stable_sorted' else 0
+        if (
+            report.get('moe_dispatch') != self._args.moe_dispatch or type(rewritten) is not int
+            or rewritten != expected_layers
+        ):
+            raise ValueError('Worker MoE dispatch does not match the selected profile.')
+        return expected_tokens
+
     def _benchmark(self):
         """Accept only complete worker metrics and verified full-model training."""
         start = time.monotonic()
-        job = None
+        deadline = start + self._args.duration
         try:
             root = Path(self._args.cache_root).resolve()
             root.mkdir(parents=True, exist_ok=True)
             job = Path(tempfile.mkdtemp(prefix='v2lite-training-', dir=str(root)))
-            logger.info('V2-Lite training evidence and isolated cache: %s', job)
-            run_worker(self._worker_command(job), job / 'worker.log', self._args.duration - 20)
-            report = read_json(job / 'report.json')
-            validate_identity(report)
-            steps = numeric_series(report, 'step_ms', self._args.num_steps)
-            losses = numeric_series(report, 'loss', self._args.num_steps)
-            norms = numeric_series(report, 'gradient_norm', self._args.num_steps)
-            expected_tokens = (
-                self._args.num_steps * self._args.batch_size * self._args.num_gpus * (self._args.seq_len - 1)
-            )
-            updates = report.get('updated_parameter_elements')
-            if report.get('loss_token_count') != expected_tokens or type(updates) is not int or updates <= 0:
-                raise ValueError('Training token count or verified optimizer update is invalid.')
-            if report.get('world_size') != self._args.num_gpus:
-                raise ValueError('Worker used a different number of GPUs.')
-            rewritten = report.get('moe_layers_rewritten')
-            expected_layers = 26 if self._args.moe_dispatch == 'stable_sorted' else 0
-            if (
-                report.get('moe_dispatch') != self._args.moe_dispatch or type(rewritten) is not int
-                or rewritten != expected_layers
-            ):
-                raise ValueError('Worker MoE dispatch does not match the selected profile.')
+            try:
+                logger.info('V2-Lite training evidence and isolated cache: %s', job)
+                run_worker(self._worker_command(job), job / 'worker.log', deadline - time.monotonic() - 20)
+                report = read_json(job / 'report.json')
+                validate_identity(report)
+                steps = numeric_series(report, 'step_ms', self._args.num_steps)
+                losses = numeric_series(report, 'loss', self._args.num_steps)
+                norms = numeric_series(report, 'gradient_norm', self._args.num_steps)
+                expected_tokens = self._validate_training_report(report)
+                remove_model_cache(job / 'cache', deadline)
+            except BaseException:
+                remove_model_cache_after_failure(job / 'cache', deadline)
+                raise
             total = time.monotonic() - start
             if total >= self._args.duration:
                 raise TimeoutError('Complete worker job exceeded the profile duration.')
@@ -169,9 +165,6 @@ class DeepSeekV2LiteTraining(Benchmark):
             logger.error('V2-Lite training failed: %s', error)
             self._result.set_return_code(ReturnCode.RUNTIME_EXCEPTION_ERROR)
             return False
-        finally:
-            if job is not None:
-                _remove_model_cache(job / 'cache')
 
 
 BenchmarkRegistry.register_benchmark('deepseek-v2-lite-training', DeepSeekV2LiteTraining, platform=Platform.CUDA)
