@@ -4,8 +4,8 @@
 """SuperBench adapter for isolated official-checkpoint V2-Lite generation."""
 
 import os
-import shutil
 import statistics
+import subprocess
 import sys
 import tempfile
 import time
@@ -20,20 +20,37 @@ from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
 )
 
 
-def _remove_model_cache(cache):
-    """Delete one run's downloaded model cache after its worker exits, keeping reports and logs."""
-    if not cache.exists():
-        return
+def _remove_model_cache(cache: Path, deadline: float) -> None:
+    """Delete one run's model cache within the remaining budget, keeping reports and logs."""
     start = time.monotonic()
+    remaining = deadline - start
+    if remaining <= 0:
+        raise TimeoutError('No time remains to remove the V2-Lite model cache at {}.'.format(cache))
     try:
-        shutil.rmtree(cache)
+        subprocess.run(
+            [
+                sys.executable, '-c',
+                'import os, shutil, sys\nif os.path.exists(sys.argv[1]):\n    shutil.rmtree(sys.argv[1])',
+                str(cache)
+            ],
+            timeout=remaining,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise TimeoutError('V2-Lite model cache cleanup exceeded the deadline at {}.'.format(cache)) from error
     except TimeoutError:
         # The SuperBench SIGTERM handler raises TimeoutError, an OSError subclass; keep it fatal.
         raise
+    except subprocess.CalledProcessError as error:
+        logger.error('Failed to remove the V2-Lite model cache %s: %s', cache, error.output or error)
+        return
     except OSError as error:
         logger.error('Failed to remove the V2-Lite model cache %s: %s', cache, error)
         return
-    logger.info('Removed the V2-Lite model cache %s in %.1f seconds.', cache, time.monotonic() - start)
+    logger.info('V2-Lite model cache cleanup completed for %s in %.1f seconds.', cache, time.monotonic() - start)
 
 
 class DeepSeekV2LiteInference(Benchmark):
@@ -132,33 +149,42 @@ class DeepSeekV2LiteInference(Benchmark):
                 raise ValueError('The worker did not execute the selected H100 numerical policy.')
             numerics.validate_reference_result(report.get('reference'))
 
+    def _validate_generation_counts(self, report, inputs, outputs):
+        """Check the frozen request shape and return the number of requests with decode intervals."""
+        requests = self._args.num_steps * self._args.batch_size
+        decode_count = sum(value > 1 for value in outputs)
+        if decode_count == 0 or report.get('request_count') != requests or report.get('num_gpus') != 1:
+            raise ValueError('Generation did not complete the requested replica/cache workload.')
+        if any(value != self._args.seq_len for value in inputs):
+            raise ValueError('Input token counts differ from the frozen prompt shape.')
+        if any(not value.is_integer() or value > self._args.max_new_tokens for value in outputs):
+            raise ValueError('Actual generated token counts are invalid.')
+        return decode_count
+
     def _benchmark(self):
         """Accept actual request/token counters and complete numeric validation."""
         start = time.monotonic()
-        job = None
+        deadline = start + self._args.duration
         try:
             root = Path(self._args.cache_root).resolve()
             root.mkdir(parents=True, exist_ok=True)
             job = Path(tempfile.mkdtemp(prefix='v2lite-inference-', dir=str(root)))
-            logger.info('V2-Lite inference evidence and isolated cache: %s', job)
-            run_worker(self._worker_command(job), job / 'worker.log', self._args.duration - 20)
-            report = read_json(job / 'report.json')
-            validate_identity(report)
-            self._validate_numerical_report(report)
-            requests = self._args.num_steps * self._args.batch_size
-            steps = numeric_series(report, 'step_ms', self._args.num_steps)
-            inputs = numeric_series(report, 'input_token_counts', requests)
-            outputs = numeric_series(report, 'output_token_counts', requests)
-            prefills = numeric_series(report, 'request_prefill_ms', requests)
-            ttfts = numeric_series(report, 'ttft_ms', requests)
-            decode_count = sum(value > 1 for value in outputs)
-            tpots = numeric_series(report, 'decode_tpot_ms', decode_count)
-            if decode_count == 0 or report.get('request_count') != requests or report.get('num_gpus') != 1:
-                raise ValueError('Generation did not complete the requested replica/cache workload.')
-            if any(value != self._args.seq_len for value in inputs):
-                raise ValueError('Input token counts differ from the frozen prompt shape.')
-            if any(not value.is_integer() or value > self._args.max_new_tokens for value in outputs):
-                raise ValueError('Actual generated token counts are invalid.')
+            try:
+                logger.info('V2-Lite inference evidence and isolated cache: %s', job)
+                run_worker(self._worker_command(job), job / 'worker.log', deadline - time.monotonic() - 20)
+                report = read_json(job / 'report.json')
+                validate_identity(report)
+                self._validate_numerical_report(report)
+                requests = self._args.num_steps * self._args.batch_size
+                steps = numeric_series(report, 'step_ms', self._args.num_steps)
+                inputs = numeric_series(report, 'input_token_counts', requests)
+                outputs = numeric_series(report, 'output_token_counts', requests)
+                prefills = numeric_series(report, 'request_prefill_ms', requests)
+                ttfts = numeric_series(report, 'ttft_ms', requests)
+                decode_count = self._validate_generation_counts(report, inputs, outputs)
+                tpots = numeric_series(report, 'decode_tpot_ms', decode_count)
+            finally:
+                _remove_model_cache(job / 'cache', deadline)
             total = time.monotonic() - start
             if total >= self._args.duration:
                 raise TimeoutError('Complete inference job exceeded its duration.')
@@ -186,9 +212,6 @@ class DeepSeekV2LiteInference(Benchmark):
             logger.error('V2-Lite inference failed: %s', error)
             self._result.set_return_code(ReturnCode.RUNTIME_EXCEPTION_ERROR)
             return False
-        finally:
-            if job is not None:
-                _remove_model_cache(job / 'cache')
 
 
 BenchmarkRegistry.register_benchmark('deepseek-v2-lite-inference', DeepSeekV2LiteInference, platform=Platform.CUDA)
