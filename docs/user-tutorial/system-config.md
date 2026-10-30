@@ -22,7 +22,7 @@ This tool is to collect the system information automatically on the tested GPU n
 
 2. Start to collect the sys info using `sb node info --output-dir ${output-dir}` command using root privilege.
 
-3. After the command finished, you can find the output system info json file `sys-info.json` of local node under \${output_dir}.
+3. After the command finished, you can find the output system info json file `sys_info.json` of local node under \${output_dir}.
 
 ### Usage on multiple remote machines
 
@@ -38,7 +38,7 @@ This tool is to collect the system information automatically on the tested GPU n
   sb run --get-info -f host.ini --output-dir ${output-dir} -C superbench.enable=none
   ```
 
-4. After the command finished, you can find the output system info json file `sys-info.json` of each node under \${output_dir}/nodes/${node_name}.
+4. After the command finished, you can find the output system info json file `sys_info.json` of each node under \${output_dir}/nodes/${node_name}.
 
 ## Parameter and Details
 
