@@ -370,6 +370,7 @@ proc_num: int
 node_num: int
 env: dict
 mca: dict
+bind_to: string
 prefix: str
 parallel: bool
 ```
@@ -403,6 +404,7 @@ Some attributes may only be suitable for specific mode.
 | `prefix`   |    ✓    |          ✘          |   ✘   |
 | `env`      |    ✓    |          ✓          |   ✓   |
 | `mca`      |    ✘    |          ✘          |   ✓   |
+| `bind_to`  |    ✘    |          ✘          |   ✓   |
 | `parallel` |    ✓    |          ✘          |   ✘   |
 | `pattern`  |    ✘    |          ✘          |   ✓   |
 
@@ -451,6 +453,16 @@ Formatted string is also supported in value, available variables include:
 MCA (Modular Component Architecture) frameworks, components, or modules to use in MPI,
 in a flatten key-value dictionary.
 Only available for `mpi` mode.
+
+### `bind_to`
+
+Process binding policy passed to `mpirun -bind-to`.
+Only available for `mpi` mode.
+
+Use this option when a benchmark needs to override the runner's default MPI binding behavior,
+for example when the benchmark implements its own topology-aware CPU/NUMA affinity logic.
+
+* default value: `numa`
 
 ### `parallel`
 
