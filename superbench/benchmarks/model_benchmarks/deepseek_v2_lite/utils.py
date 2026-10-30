@@ -12,7 +12,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Sequence
+from typing import Dict, List, Optional, Sequence
 
 MODEL_ID = 'deepseek-ai/DeepSeek-V2-Lite'
 REVISION = '604d5664dddd88a0433dbae533b7fe9472482de0'
@@ -283,7 +283,15 @@ def interrupt_worker(signum, frame) -> None:
     raise TimeoutError('Model worker interrupted by signal {}.'.format(signum))
 
 
-def run_worker(command: List[str], log: Path, timeout: float) -> None:
+def worker_environment() -> Dict[str, str]:
+    """Let worker interpreters without SuperBench import this package by module name."""
+    environment = dict(os.environ)
+    paths = [str(Path(__file__).resolve().parents[1]), environment.get('PYTHONPATH', '')]
+    environment['PYTHONPATH'] = os.pathsep.join(path for path in paths if path)
+    return environment
+
+
+def run_worker(command: List[str], log: Path, timeout: float, env: Optional[Dict[str, str]] = None) -> None:
     """Supervise the whole worker tree under one deadline, preserving failure logs."""
     if not math.isfinite(timeout) or timeout <= 0:
         raise TimeoutError('No time remains for the worker.')
@@ -300,7 +308,7 @@ def run_worker(command: List[str], log: Path, timeout: float) -> None:
         *command,
     ]
     with log.open('w') as stream:
-        process = subprocess.Popen(supervisor, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+        process = subprocess.Popen(supervisor, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True, env=env)
         try:
             try:
                 code = process.wait(timeout=timeout + 20)

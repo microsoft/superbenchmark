@@ -12,9 +12,9 @@ from datetime import timedelta
 from functools import partial
 from pathlib import Path
 
-from deepseek_v2_lite_moe import MOE_DISPATCHES, install_sorted_dispatch
-from deepseek_v2_lite_reference import fixed_documents, load_model, training_reference
-from deepseek_v2_lite_utils import (
+from .moe import MOE_DISPATCHES, install_sorted_dispatch
+from .reference import fixed_documents, load_model, training_reference
+from .utils import (
     configure_cache, download_checkpoint, identity_report, interrupt_worker, packed_tokens, read_json,
     set_cache_environment, write_json
 )
