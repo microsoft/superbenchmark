@@ -12,10 +12,7 @@ import math
 import os
 from pathlib import Path
 
-if __package__:
-    from .deepseek_v2_lite_utils import packed_tokens, read_json, write_json
-else:
-    from deepseek_v2_lite_utils import packed_tokens, read_json, write_json    # type: ignore[no-redef]
+from .utils import packed_tokens, read_json, write_json
 
 METHOD = 'bf16-input-matched-probability-log-v6'
 POLICY = 'h100_bf16_v6'
@@ -46,7 +43,7 @@ def load_contract():
     """Require the shipped, qualified artifact rather than caller-supplied tolerances."""
     if not CONTRACT_SHA256:
         raise RuntimeError('The H100 numerical policy has not been installed as a qualified contract.')
-    path = Path(__file__).resolve().parents[2] / 'config/deepseek-v2-lite-h100-numerics.json'
+    path = Path(__file__).with_name('h100_bf16_v6.json')
     content = path.read_bytes()
     if hashlib.sha256(content).hexdigest() != CONTRACT_SHA256:
         raise ValueError('The qualified H100 numerical contract changed.')
@@ -402,10 +399,7 @@ def run_reference(checkpoint, requests, contract):
     """Keep measured BF16 inference separate from both independent reference models."""
     import torch
     from importlib.metadata import version
-    if __package__:
-        from .deepseek_v2_lite_reference import fixed_documents, load_model
-    else:
-        from deepseek_v2_lite_reference import fixed_documents, load_model
+    from .reference import fixed_documents, load_model
 
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.set_float32_matmul_precision('highest')
