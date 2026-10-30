@@ -353,7 +353,7 @@ def main_driver(worker, tmp_path, monkeypatch):
     loader = Mock(return_value=model)
     reference = Mock(return_value={'world_size': 2, 'batch_size': 2, 'seq_len': 64, 'reference_microbatch_size': 2})
     training = Mock(return_value={'world_size': 2, 'step_ms': [1.0, 2.0]})
-    monkeypatch.setattr(worker, 'load_model', loader)
+    monkeypatch.setattr(worker, 'load_training_model', loader)
     monkeypatch.setattr(worker, 'training_reference', reference)
     monkeypatch.setattr(worker, 'run_training', training)
     monkeypatch.setattr(torch.cuda, 'device_count', lambda: 2)
@@ -502,6 +502,60 @@ def test_gradient_probe_mapping_covers_root_and_checkpointed_layers(worker, monk
     layer.weight.grad = None
     with pytest.raises(RuntimeError, match='gradient'):
         worker.compare_gradients(model, reference)
+
+
+@pytest.fixture
+def training_loader(tmp_path, monkeypatch):
+    """Replace transformers with a fake loader while keeping every training loader check real."""
+    from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.utils import EXPECTED_CONFIG, PARAMETER_COUNT
+
+    (tmp_path / 'config.json').write_text(json.dumps(dict(EXPECTED_CONFIG, model_type='deepseek_v2')))
+    parameter = SimpleNamespace(numel=lambda: PARAMETER_COUNT, requires_grad=True)
+    model = SimpleNamespace(parameters=lambda: [parameter])
+    loading = {key: [] for key in ['missing_keys', 'unexpected_keys', 'mismatched_keys', 'error_msgs']}
+    loader = Mock(return_value=(model, loading))
+    monkeypatch.setitem(
+        sys.modules, 'transformers', SimpleNamespace(AutoModelForCausalLM=SimpleNamespace(from_pretrained=loader))
+    )
+    monkeypatch.setattr(torch.cuda, 'is_available', lambda: True)
+    return SimpleNamespace(path=tmp_path, model=model, parameter=parameter, loading=loading, loader=loader)
+
+
+@requires_python_310
+def test_training_loader_accepts_the_platform_transformers(training_loader, monkeypatch):
+    """Training loads official code with the SuperBench transformers, which the pinned reference loader rejects."""
+    import importlib.metadata
+    from superbench.benchmarks.model_benchmarks.deepseek_v2_lite import reference
+
+    item = training_loader
+    version = importlib.metadata.version
+    monkeypatch.setattr(
+        importlib.metadata, 'version', lambda name: '4.52.4' if name == 'transformers' else version(name)
+    )
+    assert training_worker.load_training_model(str(item.path), torch.float32) is item.model
+    options = item.loader.call_args[1]
+    assert options['torch_dtype'] == torch.float32
+    assert options['local_files_only'] and options['trust_remote_code'] and options['use_safetensors']
+    assert options['attn_implementation'] == 'eager' and options['output_loading_info']
+    with pytest.raises(RuntimeError, match='4.46.3'):
+        reference.load_model(str(item.path), torch.float32)
+
+
+@requires_python_310
+@pytest.mark.parametrize('failure', ['diagnostics', 'count', 'frozen', 'gpu'])
+def test_training_loader_rejects_incomplete_models(training_loader, monkeypatch, failure):
+    """Keep the complete-checkpoint, trainable-parameter and GPU checks of the reference loader."""
+    item = training_loader
+    if failure == 'diagnostics':
+        item.loading['missing_keys'] = ['model.norm.weight']
+    elif failure == 'count':
+        item.parameter.numel = lambda: 1
+    elif failure == 'frozen':
+        item.parameter.requires_grad = False
+    else:
+        monkeypatch.setattr(torch.cuda, 'is_available', lambda: False)
+    with pytest.raises(RuntimeError):
+        training_worker.load_training_model(str(item.path), torch.float32)
 
 
 # Stable MoE dispatch.

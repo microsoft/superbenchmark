@@ -14,7 +14,6 @@ superbench:
           parallel: false
       timeout: 3600
       parameters:
-        runtime_python: /opt/deepseek-reference/bin/python
         cache_root: /data/deepseek-v2-lite
         num_gpus: 4
         batch_size: 2
