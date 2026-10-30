@@ -13,12 +13,12 @@ from pathlib import Path
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, Platform, ReturnCode
 from superbench.benchmarks.base import Benchmark
 from superbench.common.utils import logger
-from superbench.benchmarks.model_benchmarks import deepseek_v2_lite_numerics as numerics
-from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_cache import (
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite import numerics
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.cache import (
     remove_model_cache, remove_model_cache_after_failure
 )
-from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
-    numeric_series, read_json, run_worker, validate_identity
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.utils import (
+    numeric_series, read_json, run_worker, validate_identity, worker_environment
 )
 
 
@@ -86,7 +86,8 @@ class DeepSeekV2LiteInference(Benchmark):
         args = self._args
         return [
             args.runtime_python,
-            str(Path(__file__).with_name('deepseek_v2_lite_inference_worker.py')),
+            '-m',
+            'deepseek_v2_lite.inference_worker',
             '--cache_dir',
             str(job / 'cache'),
             '--output',
@@ -140,7 +141,12 @@ class DeepSeekV2LiteInference(Benchmark):
             job = Path(tempfile.mkdtemp(prefix='v2lite-inference-', dir=str(root)))
             try:
                 logger.info('V2-Lite inference evidence and isolated cache: %s', job)
-                run_worker(self._worker_command(job), job / 'worker.log', deadline - time.monotonic() - 20)
+                run_worker(
+                    self._worker_command(job),
+                    job / 'worker.log',
+                    deadline - time.monotonic() - 20,
+                    env=worker_environment(),
+                )
                 report = read_json(job / 'report.json')
                 validate_identity(report)
                 self._validate_numerical_report(report)

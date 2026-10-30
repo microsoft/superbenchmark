@@ -11,8 +11,8 @@ import signal
 import time
 from pathlib import Path
 
-import deepseek_v2_lite_numerics as numerics
-from deepseek_v2_lite_utils import (
+from . import numerics
+from .utils import (
     FIXED_TEXTS, configure_cache, download_checkpoint, identity_report, interrupt_worker, packed_tokens, read_json,
     run_worker, write_json
 )
@@ -294,14 +294,12 @@ def main():
     reference_start = time.monotonic()
     reference_command = (
         [
-            args.reference_python,
-            str(Path(__file__).with_name('deepseek_v2_lite_numerics.py')), '--checkpoint',
+            args.reference_python, '-m', 'deepseek_v2_lite.numerics', '--checkpoint',
             str(checkpoint), '--requests',
             str(requests), '--output',
             str(reference)
         ] if contract else [
-            args.reference_python,
-            str(Path(__file__).with_name('deepseek_v2_lite_reference.py')), '--checkpoint',
+            args.reference_python, '-m', 'deepseek_v2_lite.reference', '--checkpoint',
             str(checkpoint), '--mode', 'inference', '--requests',
             str(requests), '--output',
             str(reference)
