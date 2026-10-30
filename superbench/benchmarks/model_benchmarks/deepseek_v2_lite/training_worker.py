@@ -13,11 +13,39 @@ from functools import partial
 from pathlib import Path
 
 from .moe import MOE_DISPATCHES, install_sorted_dispatch
-from .reference import fixed_documents, load_model, training_reference
+from .reference import fixed_documents, training_reference
 from .utils import (
-    configure_cache, download_checkpoint, identity_report, interrupt_worker, packed_tokens, read_json,
-    set_cache_environment, write_json
+    PARAMETER_COUNT, configure_cache, download_checkpoint, identity_report, interrupt_worker, packed_tokens, read_json,
+    set_cache_environment, validate_config, write_json
 )
+
+
+def load_training_model(checkpoint, dtype):
+    """Load the complete official checkpoint with the installed transformers for full-parameter training."""
+    # Same checks as reference.load_model, minus the transformers pin that the inference contract binds by hash.
+    import torch
+    from transformers import AutoModelForCausalLM
+
+    validate_config(read_json(Path(checkpoint) / 'config.json'))
+    model, loading = AutoModelForCausalLM.from_pretrained(
+        checkpoint,
+        torch_dtype=dtype,
+        trust_remote_code=True,
+        local_files_only=True,
+        use_safetensors=True,
+        attn_implementation='eager',
+        output_loading_info=True,
+    )
+    for key in ('missing_keys', 'unexpected_keys', 'mismatched_keys', 'error_msgs'):
+        if key not in loading or loading[key]:
+            raise RuntimeError('Official checkpoint loading failed: {}={!r}.'.format(key, loading.get(key)))
+    if sum(parameter.numel() for parameter in model.parameters()) != PARAMETER_COUNT:
+        raise RuntimeError('Loaded parameter count differs from the complete official V2-Lite.')
+    if not all(parameter.requires_grad for parameter in model.parameters()):
+        raise RuntimeError('The full-parameter profile must not freeze model parameters.')
+    if not torch.cuda.is_available():
+        raise RuntimeError('CUDA/ROCm GPU unavailable in the training environment.')
+    return model
 
 
 def compare_gradients(model, reference):
@@ -119,7 +147,7 @@ def run_training(args, reference, checkpoint):
         raise ValueError('Training reference has an incomplete global batch.')
     if args.moe_dispatch not in MOE_DISPATCHES:
         raise ValueError('Unsupported MoE training dispatch.')
-    model = load_model(str(checkpoint), torch.float32)
+    model = load_training_model(str(checkpoint), torch.float32)
     rewritten_layers = install_sorted_dispatch(model) if args.moe_dispatch == 'stable_sorted' else 0
     decoder_type = type(model.model.layers[0])
     model = FSDP(
@@ -263,7 +291,7 @@ def main():
         report['download_verify_seconds'] = time.monotonic() - download_start
         reference_start = time.monotonic()
         if rank == 0:
-            reference_model = load_model(str(checkpoint), torch.bfloat16).cuda()
+            reference_model = load_training_model(str(checkpoint), torch.bfloat16).cuda()
             try:
                 write_json(
                     reference_path,

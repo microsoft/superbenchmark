@@ -192,21 +192,9 @@ unsharded reference runs on one GPU, so use 80GB-class GPUs.
 #### Usage
 
 Run the [training profile](../../../superbench/config/deepseek-v2-lite-training.yaml) as its own
-benchmark entry with one local process (`proc_num: 1`). The
-[model runtime Dockerfile](../../../dockerfile/deepseek-v2-lite-training.dockerfile) provides the
-worker environment:
-
-```bash
-docker build -f dockerfile/deepseek-v2-lite-training.dockerfile -t sb-v2lite-training .
-docker run --rm --gpus '"device=0,1,2,3"' --shm-size 32g \
-  -v "$PWD/v2lite-results:/results" sb-v2lite-training exec \
-  --config-file superbench/config/deepseek-v2-lite-training.yaml \
-  --output-dir /results/sb-output \
-  -C superbench.benchmarks.deepseek-v2-lite-training.parameters.cache_root=/results/model-cache
-```
-
-Outside Docker, set `runtime_python` to a separate Python 3.10+ environment with a GPU build of
-PyTorch 2.5+ and the [reference packages](../../../dockerfile/requirements/deepseek-v2-lite-reference.txt).
+benchmark entry with one local process (`proc_num: 1`) in the SuperBench CUDA image. The worker uses
+the SuperBench Python by default (`runtime_python`), with its PyTorch and transformers loading the
+official model code; transformers 5 no longer supports that code.
 
 `cache_root` is required. Each run downloads the checkpoint into a new directory under it and deletes
 that model cache at the end, keeping the report and logs. If deletion fails, the cache path is logged

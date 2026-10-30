@@ -1,5 +1,0 @@
-# Separate worker environment; do not replace SuperBench's framework dependencies.
-transformers==4.46.3
-huggingface-hub==0.26.5
-accelerate==1.2.1
-safetensors==0.5.3
