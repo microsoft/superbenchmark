@@ -188,21 +188,11 @@ only on one H100 80GB GPU. The FP32 reference needs an 80GB-class GPU.
 #### Usage
 
 Run the [inference profile](../../../superbench/config/deepseek-v2-lite-inference.yaml) as its own
-benchmark entry with one local process (`proc_num: 1`). The
-[model runtime Dockerfile](../../../dockerfile/deepseek-v2-lite-inference.dockerfile) provides
-separate vLLM and reference environments:
-
-```bash
-docker build -f dockerfile/deepseek-v2-lite-inference.dockerfile -t sb-v2lite-inference .
-docker run --rm --gpus device=0 --shm-size 32g \
-  -v "$PWD/v2lite-results:/results" sb-v2lite-inference exec \
-  --config-file superbench/config/deepseek-v2-lite-inference.yaml \
-  --output-dir /results/sb-output \
-  -C superbench.benchmarks.deepseek-v2-lite-inference.parameters.cache_root=/results/model-cache
-```
-
-Outside Docker, set `runtime_python` to a vLLM 0.31.0 environment and `reference_python` to a separate
-environment with the [reference packages](../../../dockerfile/requirements/deepseek-v2-lite-reference.txt).
+benchmark entry with one local process (`proc_num: 1`) in the SuperBench CUDA 13.0 image. Its build runs
+`make -C third_party deepseek_v2_lite`, which installs vLLM 0.31.0 in `/opt/vllm` (`runtime_python`) and
+the official-code reference in `/opt/deepseek-reference` (`reference_python`). Both stay outside the
+SuperBench Python because vLLM pins its own PyTorch. Elsewhere, run that target or point both
+parameters at equivalent environments.
 
 `cache_root` is required. Each run downloads the checkpoint into a new directory under it and deletes
 that model cache at the end, keeping the report and logs. If deletion fails, the cache path is logged
