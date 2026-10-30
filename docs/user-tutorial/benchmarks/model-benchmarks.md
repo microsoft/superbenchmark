@@ -163,3 +163,39 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 | megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
 | megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
 
+## DeepSeek-V2-Lite Training
+
+### `deepseek-v2-lite-training`
+
+#### Introduction
+
+Run full-parameter BF16 training of the official
+[DeepSeek-V2-Lite](https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite) checkpoint (15.7B parameters)
+with FSDP and AdamW on `num_gpus` local GPUs. Each run downloads and verifies the 31.4GB checkpoint,
+checks the loss and sampled gradients against an unsharded official-code reference, then trains on fixed
+text; it measures training performance, not convergence. `batch_size` is the microbatch per GPU.
+`moe_dispatch=stable_sorted` replaces the official expert dispatch with a stable sort that keeps the
+same routing.
+
+Validated on four H100 80GB GPUs with `batch_size=36`, `num_steps=128`, `moe_dispatch=stable_sorted`
+and `PYTORCH_CUDA_ALLOC_CONF=backend:native`; the supplied profile is a smaller example. The reference
+needs an 80GB GPU.
+
+#### Usage
+
+Run the [training profile](../../../superbench/config/deepseek-v2-lite-training.yaml) as its own entry
+with one local process in the SuperBench CUDA 13.0 image. The worker uses the SuperBench Python
+(`runtime_python`), whose transformers 4.x runs the official model code. `cache_root` is required: each
+run downloads into a new directory under it and deletes the checkpoint at the end. `duration` must be
+below 3600 seconds and covers the whole job.
+
+#### Metrics
+
+| Name | Unit | Description |
+|---|---|---|
+| deepseek-v2-lite-training/bf16_train_step_time | time (ms) | The average training step time of the slowest GPU, including forward, backward, gradient clipping and the optimizer update. |
+| deepseek-v2-lite-training/bf16_train_tokens_per_second | throughput (tokens/s) | Next-token targets trained per second across all GPUs. |
+| deepseek-v2-lite-training/bf16_train_loss | loss | The average global causal-LM loss. |
+| deepseek-v2-lite-training/bf16_train_gradient_norm | norm | The average global gradient norm before clipping. |
+| deepseek-v2-lite-training/end_to_end_seconds | time (s) | The complete job time, including checkpoint download and cache deletion. |
+| deepseek-v2-lite-training/checkpoint_bytes | size (bytes) | The total size of the checkpoint weight files. |
