@@ -163,3 +163,56 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 | megatron-gpt/${precision}_train_mem_allocated     | GB                     | The average GPU memory allocated per iteration.         |
 | megatron-gpt/${precision}_train_max_mem_allocated | GB                     | The average maximum GPU memory allocated per iteration. |
 
+## DeepSeek-V2-Lite Inference
+
+### `deepseek-v2-lite-inference`
+
+#### Introduction
+
+Run BF16 generative inference with the official
+[DeepSeek-V2-Lite](https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite) checkpoint at revision
+`604d5664dddd88a0433dbae533b7fe9472482de0` on one GPU with vLLM 0.31.0. Each measured batch sends
+`batch_size` fixed-text prompts of `seq_len` tokens and greedily generates up to `max_new_tokens`
+tokens per prompt, stopping early at EOS. The job downloads the checkpoint and verifies the SHA256 of
+its 31.4GB of weight files. Before measurement, the engine also answers fixed check requests; after
+the engine shuts down, an independent official-code reference checks those outputs. Any failed check
+fails the run.
+
+`numerical_policy` defaults to `strict_fp32`, which requires the checked tokens to match the greedy
+tokens of an FP32 reference exactly. The supplied profile selects `h100_bf16_v6`, which also accepts a
+different token if it is the engine's greedy choice and its FP32 probability gap is within a bound
+calibrated from official BF16 execution on the same input. A pass therefore does not imply exact FP32
+token agreement. `h100_bf16_v6` accepts only the supplied profile's parameters and has been validated
+only on one H100 80GB GPU. The FP32 reference needs an 80GB-class GPU.
+
+#### Usage
+
+Run the [inference profile](../../../superbench/config/deepseek-v2-lite-inference.yaml) as its own
+benchmark entry with one local process (`proc_num: 1`) in the SuperBench CUDA 13.0 image. Its build runs
+`make -C third_party deepseek_v2_lite`, which installs vLLM 0.31.0 in `/opt/vllm` (`runtime_python`) and
+the official-code reference in `/opt/deepseek-reference` (`reference_python`). Both stay outside the
+SuperBench Python because vLLM pins its own PyTorch. Elsewhere, run that target or point both
+parameters at equivalent environments.
+
+`cache_root` is required. Each run downloads the checkpoint into a new directory under it and deletes
+that model cache at the end, keeping the report and logs. If deletion fails, the cache path is logged
+for manual removal. `duration` must be below 3600 seconds and covers the whole job, from download to
+cache deletion.
+
+#### Metrics
+
+| Name | Unit | Description |
+|---|---|---|
+| deepseek-v2-lite-inference/bf16_inference_step_time | time (ms) | The average time to generate one measured batch. |
+| deepseek-v2-lite-inference/bf16_inference_output_tokens_per_second | throughput (tokens/s) | Generated tokens divided by the total measured batch time. |
+| deepseek-v2-lite-inference/bf16_inference_request_prefill_time | time (ms) | The average time from scheduling a request to its first token. |
+| deepseek-v2-lite-inference/bf16_inference_ttft | time (ms) | The average time from request arrival to its first token, including queueing. |
+| deepseek-v2-lite-inference/bf16_inference_decode_tpot | time (ms) | The average time per output token after the first; requests with one output token are excluded. |
+| deepseek-v2-lite-inference/bf16_inference_input_token_count | count | The average number of prompt tokens per request. |
+| deepseek-v2-lite-inference/bf16_inference_output_token_count | count | The average number of generated tokens per request, including EOS. |
+| deepseek-v2-lite-inference/successful_requests | count | The number of completed measured requests. |
+| deepseek-v2-lite-inference/actual_output_tokens | count | The total number of generated tokens in measured batches. |
+| deepseek-v2-lite-inference/end_to_end_seconds | time (s) | The complete job time, including checkpoint download and cache deletion. |
+| deepseek-v2-lite-inference/checkpoint_bytes | size (bytes) | The total size of the checkpoint weight files. |
+| deepseek-v2-lite-inference/numerical_reference_positions | count | `h100_bf16_v6` only: the number of generated positions that passed the reference check. |
+| deepseek-v2-lite-inference/numerical_fault_rejections | count | `h100_bf16_v6` only: the number of injected faults that the check rejected. |
