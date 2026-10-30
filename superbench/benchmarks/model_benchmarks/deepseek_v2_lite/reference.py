@@ -8,7 +8,7 @@ import gc
 import os
 from pathlib import Path
 
-from deepseek_v2_lite_utils import (
+from .utils import (
     FIXED_TEXTS, PARAMETER_COUNT, packed_tokens, read_json, uniform_indices, validate_config, write_json
 )
 

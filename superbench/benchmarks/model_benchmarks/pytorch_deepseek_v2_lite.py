@@ -13,12 +13,12 @@ from pathlib import Path
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, Platform, ReturnCode
 from superbench.benchmarks.base import Benchmark
 from superbench.common.utils import logger
-from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_cache import (
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.cache import (
     remove_model_cache, remove_model_cache_after_failure
 )
-from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_moe import MOE_DISPATCHES
-from superbench.benchmarks.model_benchmarks.deepseek_v2_lite_utils import (
-    numeric_series, read_json, run_worker, validate_identity
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.moe import MOE_DISPATCHES
+from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.utils import (
+    numeric_series, read_json, run_worker, validate_identity, worker_environment
 )
 
 
@@ -75,7 +75,6 @@ class DeepSeekV2LiteTraining(Benchmark):
 
     def _worker_command(self, job):
         """Launch all local GPUs once, retaining argv boundaries."""
-        worker = Path(__file__).with_name('deepseek_v2_lite_training_worker.py')
         args = self._args
         return [
             args.runtime_python,
@@ -83,7 +82,8 @@ class DeepSeekV2LiteTraining(Benchmark):
             'torch.distributed.run',
             '--standalone',
             '--nproc_per_node={}'.format(args.num_gpus),
-            str(worker),
+            '--module',
+            'deepseek_v2_lite.training_worker',
             '--cache_dir',
             str(job / 'cache'),
             '--output',
@@ -135,7 +135,12 @@ class DeepSeekV2LiteTraining(Benchmark):
             job = Path(tempfile.mkdtemp(prefix='v2lite-training-', dir=str(root)))
             try:
                 logger.info('V2-Lite training evidence and isolated cache: %s', job)
-                run_worker(self._worker_command(job), job / 'worker.log', deadline - time.monotonic() - 20)
+                run_worker(
+                    self._worker_command(job),
+                    job / 'worker.log',
+                    deadline - time.monotonic() - 20,
+                    env=worker_environment(),
+                )
                 report = read_json(job / 'report.json')
                 validate_identity(report)
                 steps = numeric_series(report, 'step_ms', self._args.num_steps)
