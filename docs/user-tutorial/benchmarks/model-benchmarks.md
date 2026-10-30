@@ -169,37 +169,25 @@ Run GPT pretrain tasks with float32, float16, bfloat16 precisions with [Megatron
 
 #### Introduction
 
-Run full-parameter BF16 causal-LM training with the official
-[DeepSeek-V2-Lite](https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite) checkpoint at revision
-`604d5664dddd88a0433dbae533b7fe9472482de0` (15.7B parameters). The worker starts `torchrun` on
-`num_gpus` local GPUs (at least two) and trains on a small fixed-text dataset with fully sharded FSDP,
-AdamW and activation checkpointing; `batch_size` is the microbatch per GPU. The job downloads the
-checkpoint and verifies the SHA256 of its 31.4GB of weight files. Before training, the FSDP loss and
-sampled gradients must match an unsharded official-code reference, and every step must produce a
-finite loss and a finite, nonzero gradient norm. Training starts from the pretrained weights with a
-new optimizer state; it measures training performance, not convergence or model quality.
+Run full-parameter BF16 training of the official
+[DeepSeek-V2-Lite](https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite) checkpoint (15.7B parameters)
+with FSDP and AdamW on `num_gpus` local GPUs. Each run downloads and verifies the 31.4GB checkpoint,
+checks the loss and sampled gradients against an unsharded official-code reference, then trains on fixed
+text; it measures training performance, not convergence. `batch_size` is the microbatch per GPU.
+`moe_dispatch=stable_sorted` replaces the official expert dispatch with a stable sort that keeps the
+same routing.
 
-`moe_dispatch` defaults to `official`. `stable_sorted` groups routed tokens with a stable sort instead
-of repeated Boolean indexing; it keeps the same experts, routing and weights, and the reference check
-compares it with the official implementation.
-
-Validation covers one profile on four H100 80GB GPUs: `batch_size=36`, `seq_len=512`,
-`num_warmup=2`, `num_steps=128`, `moe_dispatch=stable_sorted` and
-`PYTORCH_CUDA_ALLOC_CONF=backend:native`. The supplied profile is a smaller example
-(`batch_size=2`, `num_steps=8`, official dispatch); other configurations are not validated. The
-unsharded reference runs on one GPU, so use 80GB-class GPUs.
+Validated on four H100 80GB GPUs with `batch_size=36`, `num_steps=128`, `moe_dispatch=stable_sorted`
+and `PYTORCH_CUDA_ALLOC_CONF=backend:native`; the supplied profile is a smaller example. The reference
+needs an 80GB GPU.
 
 #### Usage
 
-Run the [training profile](../../../superbench/config/deepseek-v2-lite-training.yaml) as its own
-benchmark entry with one local process (`proc_num: 1`) in the SuperBench CUDA image. The worker uses
-the SuperBench Python by default (`runtime_python`), with its PyTorch and transformers loading the
-official model code; transformers 5 no longer supports that code.
-
-`cache_root` is required. Each run downloads the checkpoint into a new directory under it and deletes
-that model cache at the end, keeping the report and logs. If deletion fails, the cache path is logged
-for manual removal. `duration` must be below 3600 seconds and covers the whole job, from download to
-cache deletion.
+Run the [training profile](../../../superbench/config/deepseek-v2-lite-training.yaml) as its own entry
+with one local process in the SuperBench CUDA 13.0 image. The worker uses the SuperBench Python
+(`runtime_python`), whose transformers 4.x runs the official model code. `cache_root` is required: each
+run downloads into a new directory under it and deletes the checkpoint at the end. `duration` must be
+below 3600 seconds and covers the whole job.
 
 #### Metrics
 
