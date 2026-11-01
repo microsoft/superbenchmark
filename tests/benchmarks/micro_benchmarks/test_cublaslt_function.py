@@ -4,7 +4,9 @@
 """Tests for cublaslt-gemm benchmark."""
 
 import unittest
+from subprocess import CompletedProcess
 from types import GeneratorType, SimpleNamespace
+from unittest.mock import patch
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
@@ -23,10 +25,10 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/cublaslt_gemm'])
 
-    def get_benchmark(self):
+    def get_benchmark(self, parameters=''):
         """Get Benchmark."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
-        return benchmark_cls(self.benchmark_name, parameters='')
+        return benchmark_cls(self.benchmark_name, parameters=parameters)
 
     def test_cublaslt_gemm_cls(self):
         """Test cublaslt-gemm benchmark class."""
@@ -65,9 +67,24 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
     def test_cublaslt_gemm_command_generation(self):
         """Test cublaslt-gemm benchmark command generation."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        in_types = [
+            'fp16',
+            'fp32',
+            'fp64',
+            'int8',
+            'fp8e4m3',
+            'fp8e5m2',
+            'fp4e2m1',
+            'mxfp8_vec32_mn_k4_ue8m0',
+            'mxfp8_vec128_mn_k4_ue8m0',
+            'nvfp4_vec16_ue4m3',
+        ]
         benchmark = benchmark_cls(
             self.benchmark_name,
-            parameters='--batch 2:16:2 --shapes 2:4,4:8,8:32 32:128:4,128,128 --in_types fp16 fp32 fp64 int8',
+            parameters=(
+                '--batch 2:16:2 --shapes 2:4,4:8,8:32 32:128:4,128,128 '
+                '--in_types {}'.format(' '.join(in_types))
+            ),
         )
         self.assertTrue(benchmark._preprocess())
         self.assertEqual(4 * (2 * 2 * 3 + 2) * len(benchmark._args.in_types), len(benchmark._commands))
@@ -75,7 +92,7 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         def cmd(t, b, m, n, k):
             return f'{benchmark._CublasLtBenchmark__bin_path} -m {m} -n {n} -k {k} -b {b} -w 20 -i 50 -t {t}'
 
-        for _t in ['fp16', 'fp32', 'fp64', 'int8']:
+        for _t in in_types:
             for _b in [2, 4, 8, 16]:
                 for _m in [2, 4]:
                     for _n in [4, 8]:
@@ -117,3 +134,55 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
         self.assertTrue(benchmark._process_raw_result(1, raw_output))
         self.assertEqual(0.74, benchmark.result['fp8e4m3_0_2208_2048_5608_DRAM_Throughput'][0])
+
+    def test_cublaslt_gemm_result_parsing_with_autotune(self):
+        """Test cublaslt-gemm result parsing uses precision names when autotune appends args."""
+        (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.CUDA)
+        benchmark = benchmark_cls(
+            self.benchmark_name,
+            parameters='--shapes 16,16,16 --in_types mxfp8_vec32_mn_k4_ue8m0 --enable_autotune',
+        )
+        self.assertTrue(benchmark._preprocess())
+        benchmark._result = BenchmarkResult(self.benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS, run_count=1)
+
+        self.assertTrue(benchmark._process_raw_result(0, '16   16    16    0       1.111      2.222'))
+        self.assertEqual(2.222, benchmark.result['mxfp8_vec32_mn_k4_ue8m0_0_16_16_16_flops'][0])
+
+    def test_cublaslt_gemm_low_iteration_commands(self):
+        """Test diagnostic runs use the requested short iteration counts."""
+        benchmark = self.get_benchmark(
+            '--shapes 4096,4096,4096 '
+            '--in_types int8 mxfp8_vec32_mn_k4_ue8m0 mxfp8_vec128_mn_k4_ue8m0 '
+            '--num_warmup 1 --num_steps 5'
+        )
+        self.assertTrue(benchmark._preprocess())
+        self.assertEqual(3, len(benchmark._commands))
+        for command in benchmark._commands:
+            self.assertIn(' -w 1 -i 5 ', command)
+
+    def test_cublaslt_gemm_failure_tolerance(self):
+        """Test failed commands do not hide later results when tolerance is enabled."""
+        for tolerant_fail in [False, True]:
+            with self.subTest(tolerant_fail=tolerant_fail):
+                benchmark = self.get_benchmark(
+                    '--shapes 16,16,16 --in_types fp16 nvfp4_vec16_ue4m3 int8' +
+                    (' --tolerant_fail' if tolerant_fail else '')
+                )
+                outputs = [
+                    CompletedProcess('', 0, stdout='16 16 16 0 1.111 2.222'),
+                    CompletedProcess('', 134, stdout='cublasLtMatmulAlgoGetHeuristic: not supported'),
+                    CompletedProcess('', 0, stdout='16 16 16 0 1.111 3.333'),
+                ]
+                with patch(
+                    'superbench.benchmarks.micro_benchmarks.micro_base.run_command', side_effect=outputs
+                ) as invoke:
+                    self.assertFalse(benchmark.run())
+
+                self.assertEqual(3 if tolerant_fail else 2, invoke.call_count)
+                self.assertEqual(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE, benchmark.return_code)
+                self.assertEqual([2.222], benchmark.result['fp16_0_16_16_16_flops'])
+                self.assertNotIn('nvfp4_vec16_ue4m3_0_16_16_16_flops', benchmark.result)
+                if tolerant_fail:
+                    self.assertEqual([3.333], benchmark.result['int8_0_16_16_16_flops'])
+                else:
+                    self.assertNotIn('int8_0_16_16_16_flops', benchmark.result)
