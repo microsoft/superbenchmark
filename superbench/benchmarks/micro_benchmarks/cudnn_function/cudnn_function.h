@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <tuple>
 
-#include "cudnn_config.h"
+#include "cudnn_execution_config.h"
 
 namespace cudnn_test {
 /**
@@ -32,11 +32,15 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
     /**
      * @brief Malloc cuda memory and fill in value for data params used in the cudnn function
      */
-    void prepare_input();
+    void prepare_input(const CudnnConvolutionWorkload &workload);
     /**
-     * @brief Generate some params used in the cudnn function
+     * @brief Create descriptors from the convolution workload
      */
-    void prepare_for_function();
+    void prepare_descriptors(const CudnnConvolutionWorkload &workload);
+    /**
+     * @brief Apply the existing math/algorithm policy and allocate workspace
+     */
+    void prepare_execution(const CudnnExecutionPolicy &policy);
     /**
      * @brief Get and set convolution algorithm and workspace size used in cudnn convolution functions
      */
@@ -78,21 +82,28 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
 };
 
 /**
- * @brief Generate some params used in the cudnn function
+ * @brief Create descriptors from the convolution workload
  */
-template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_function() {
+template <typename T1, typename T2>
+void CudnnFunction<T1, T2>::prepare_descriptors(const CudnnConvolutionWorkload &workload) {
     // Generate descriptor
-    conv_desc_ =
-        ConvolutionDescriptor<T2>(get_array_length(), get_padA(), get_filter_strideA(), get_dilationA(), get_mode());
-    x_desc_ = TensorDescriptorNd<T1>(get_input_dims(), get_input_stride());
-    w_desc_ = FilterDescriptorNd<T1>(get_filter_dims());
-    h_desc_ = TensorDescriptorNd<T1>(get_output_dims(), get_output_stride());
+    conv_desc_ = ConvolutionDescriptor<T2>(workload.array_length, workload.padding, workload.filter_stride,
+                                           workload.dilation, workload.mode);
+    x_desc_ = TensorDescriptorNd<T1>(workload.input_dims, workload.input_stride);
+    w_desc_ = FilterDescriptorNd<T1>(workload.filter_dims);
+    h_desc_ = TensorDescriptorNd<T1>(workload.output_dims, workload.output_stride);
+}
 
+/**
+ * @brief Apply the existing math/algorithm policy and allocate workspace
+ */
+template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_execution(const CudnnExecutionPolicy &policy) {
     // Set Convolution MathType
-    cudnnMathType_t algo = get_use_tensor_op() ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
-    CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), algo));
-    if (this->auto_algo_) {
+    CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), policy.math_type));
+    if (policy.auto_algo) {
         find_best_algo();
+    } else {
+        this->algo_ = policy.algorithm;
     }
     // Set convolution algorithm and workspace size
     this->get_workspace_size();
@@ -101,22 +112,26 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_func
 /**
  * @brief Malloc cuda memory and fill in value for data params used in the cudnn function
  */
-template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_input() {
+template <typename T1, typename T2>
+void CudnnFunction<T1, T2>::prepare_input(const CudnnConvolutionWorkload &workload) {
     // Allocate memory for filter data
-    rand<T1>(&filter, get_filter_dims(), random_seed);
+    rand<T1>(&filter, workload.filter_dims, random_seed);
     // Allocate memory for input data
-    rand<T1>(&x, get_input_dims(), random_seed);
+    rand<T1>(&x, workload.input_dims, random_seed);
     // Allocate memory for output data
-    rand<T1>(&h, get_output_dims(), random_seed);
+    rand<T1>(&h, workload.output_dims, random_seed);
 }
 /**
  * @brief The main procedure for cudnn function test, including warmup, function test and time measurement
  */
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
+    const CudnnConvolutionWorkload workload(*this);
+    const CudnnExecutionPolicy policy(*this);
     // Prepare some Prerequisites for function running
-    prepare_for_function();
+    prepare_descriptors(workload);
+    prepare_execution(policy);
     // Allocate memory and fill with data of input and output tensor
-    prepare_input();
+    prepare_input(workload);
 
     // Warm up
     for (int i = 0; i < warm_up; ++i) {
