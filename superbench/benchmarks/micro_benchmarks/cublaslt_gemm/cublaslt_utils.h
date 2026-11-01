@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <cublasLt.h>
+#include <cuda.h>
 
 #define CUBLAS_CHECK(func)                                                                                             \
     do {                                                                                                               \
@@ -43,12 +44,28 @@ class cublasLtGemm {
     using UniqueMatmulPreference =
         std::unique_ptr<std::remove_pointer<cublasLtMatmulPreference_t>::type, MatmulPreferenceDestroyer>;
 
+#if CUDA_VERSION >= 12080
+    struct MatrixScaleModes {
+        bool enabled = false;
+        cublasLtMatmulMatrixScale_t a = CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F;
+        cublasLtMatmulMatrixScale_t b = CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F;
+        cublasLtMatmulMatrixScale_t d = CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F;
+        cublasLtMatmulMatrixScale_t d_out = CUBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F;
+    };
+#endif
+
+    ~cublasLtGemm();
+
     void Init();
 
     void Setup(int m, int n, int k, int batch, int lda, int ldb, int ldc, int ldd, cudaDataType_t a_type,
                cudaDataType_t b_type, cudaDataType_t c_type, cudaDataType_t d_type, cublasOperation_t transa,
                cublasOperation_t transb, cublasLtEpilogue_t epilogue, void *a_scale_inverse = nullptr,
                void *b_scale_inverse = nullptr);
+
+#if CUDA_VERSION >= 12080
+    void SetupScaleModes(const MatrixScaleModes &scale_modes, cublasOperation_t transa, cublasOperation_t transb);
+#endif
 
     size_t GetAlgorithm(int max_algorithm_count, size_t max_workspace_size);
 
@@ -79,7 +96,13 @@ class cublasLtGemm {
     std::vector<AlgorithmMetrics> algo_metrics_;
     cublasComputeType_t compute_type_ = CUBLAS_COMPUTE_32F;
     cudaDataType_t scale_type_ = CUDA_R_32F;
+    std::vector<void *> scale_buffers_;
     int m_ = 0;
     int n_ = 0;
     int k_ = 0;
+
+#if CUDA_VERSION >= 12080
+    void ClearScaleBuffers();
+    void AllocateScaleBuffer(size_t element_count, size_t element_size, const void *fill_value, void **device_pointer);
+#endif
 };
