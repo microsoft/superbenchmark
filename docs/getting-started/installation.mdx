@@ -107,6 +107,13 @@ Here're the system requirements for all managed GPU nodes.
 * Compatible GPU drivers should be installed correctly, and group permission should be set to access GPU resources.
   You should be able to run `rocm-smi` and `rocminfo` directly to check GPU usage and information.
 * [Docker CE](https://docs.docker.com/engine/install/) version 20.10 or later (which can be checked by running `docker --version`).
+* NUMA auto-balancing should be disabled on the host, as AMD
+  [recommends](https://instinct.docs.amd.com/projects/amdgpu-docs/en/docs-30.20.1/system-optimization/mi300x.html#disable-numa-auto-balancing)
+  for MI200 and MI300 series systems. Hangs and unexpected behavior have also been seen on MI455X with the ROCm 10
+  image when it is enabled. This is a host kernel setting that the container cannot change.
+  `cat /proc/sys/kernel/numa_balancing` should print `0`. Disable it until the next reboot with
+  `sudo sysctl -w kernel.numa_balancing=0`, or persistently with
+  `echo 'kernel.numa_balancing = 0' | sudo tee /etc/sysctl.d/99-numa-balancing.conf && sudo sysctl --system`.
 
 </TabItem>
 </Tabs>
@@ -116,7 +123,8 @@ Here're the system requirements for all managed GPU nodes.
 `dockerfile/rocm10.1.x.dockerfile` starts from AMD's digest-pinned
 `rocm10.1.0_ubuntu26.04_py3.14_pytorch_release_2.13.0` image.
 It is a scaffold, not a feature-equivalent replacement for the ROCm 7 images,
-and is intentionally not yet in the release-image workflow matrix.
+and is intentionally not yet in the release-image workflow matrix. Hosts need
+the AMD GPU prerequisites above, including NUMA auto-balancing disabled.
 
 ```bash
 git submodule update --init --recursive
