@@ -12,7 +12,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Mapping, Optional, Sequence
 
 MODEL_ID = 'deepseek-ai/DeepSeek-V2-Lite'
 REVISION = '604d5664dddd88a0433dbae533b7fe9472482de0'
@@ -238,6 +238,20 @@ def _stop_children() -> None:
         time.sleep(0.02)
 
 
+def _wait_for_worker(process: subprocess.Popen, deadline: float, interrupted: Callable[[], bool]) -> int:
+    """Return the worker status, 124 at the deadline or on interruption, or 125 for live descendants."""
+    while process.poll() is None:
+        if interrupted() or time.monotonic() >= deadline:
+            return 124
+        time.sleep(0.02)
+    code = process.wait()
+    _reap_children()
+    if code == 0 and _owned_children():
+        print('Worker exited with live descendant processes.', file=sys.stderr, flush=True)
+        return 125
+    return code if code >= 0 else 128 - code
+
+
 def supervise_worker(command: List[str], timeout: float, parent_pid: int) -> int:
     """Contain Linux worker descendants in a separate single-threaded supervisor."""
     import ctypes
@@ -262,25 +276,44 @@ def supervise_worker(command: List[str], timeout: float, parent_pid: int) -> int
         return 124
     deadline = time.monotonic() + timeout
     process = subprocess.Popen(command)
+    stopped = False
     try:
-        while process.poll() is None:
-            if interrupted or time.monotonic() >= deadline:
-                return 124
-            time.sleep(0.02)
-        code = process.wait()
-        _reap_children()
-        if code == 0 and _owned_children():
-            print('Worker exited with live descendant processes.', file=sys.stderr, flush=True)
-            return 125
-        return code if code >= 0 else 128 - code
+        code = _wait_for_worker(process, deadline, lambda: interrupted)
     finally:
-        _stop_children()
-        process.wait()
+        try:
+            _stop_children()
+            stopped = True
+        except RuntimeError as error:
+            print(error, file=sys.stderr, flush=True)
+        if stopped:
+            process.wait()
+    if stopped:
+        return code
+    # Keep cleanup failures visible: 126 is a deadline whose cleanup also failed, and a clean exit becomes 125.
+    return 126 if code == 124 else code or 125
 
 
 def interrupt_worker(signum, frame) -> None:
     """Unwind subprocess waits so nested reference workers are cleaned up."""
     raise TimeoutError('Model worker interrupted by signal {}.'.format(signum))
+
+
+# SuperBench local ranks and the torch and MPI world sizes; any other value means another launcher.
+SINGLE_LAUNCHER = {'PROC_RANK': 0, 'WORLD_SIZE': 1, 'OMPI_COMM_WORLD_SIZE': 1}
+
+
+def validate_single_launcher(environment: Mapping[str, str]) -> None:
+    """Reject a second local process or a distributed group, checking every launcher variable."""
+    for name, expected in SINGLE_LAUNCHER.items():
+        value = environment.get(name)
+        if value is None:
+            continue
+        try:
+            single = int(value) == expected
+        except ValueError:
+            single = False
+        if not single:
+            raise ValueError('{}={!r} means another launcher; run one local process.'.format(name, value))
 
 
 def worker_environment() -> Dict[str, str]:
@@ -314,8 +347,9 @@ def run_worker(command: List[str], log: Path, timeout: float, env: Optional[Dict
                 code = process.wait(timeout=timeout + 20)
             except subprocess.TimeoutExpired as error:
                 raise TimeoutError('Model worker supervisor exceeded its cleanup deadline.') from error
-            if code == 124:
-                raise TimeoutError('Model worker exceeded the download-inclusive deadline.')
+            if code in (124, 126):
+                cleanup = ' and its descendants did not exit; see {}'.format(log) if code == 126 else ''
+                raise TimeoutError('Model worker exceeded the download-inclusive deadline{}.'.format(cleanup))
             if code == 125:
                 raise RuntimeError('Model worker left descendant processes running; see {}.'.format(log))
             if code != 0:

@@ -36,6 +36,7 @@ def benchmark(tmp_path, monkeypatch):
     """Use an isolated cache root and a single local launcher."""
     monkeypatch.delenv('WORLD_SIZE', raising=False)
     monkeypatch.delenv('OMPI_COMM_WORLD_SIZE', raising=False)
+    monkeypatch.delenv('PROC_RANK', raising=False)
     return adapter.DeepSeekV2LiteTraining(
         'deepseek-v2-lite-training',
         '--cache_root "{}" --num_steps 2 --seq_len 64 --duration 60'.format(tmp_path),
@@ -107,10 +108,13 @@ def test_parameters_render_in_help():
     assert '--cache_root' in settings
 
 
-@pytest.mark.parametrize('world_size', ['8', 'not-an-integer'])
-def test_duplicate_launcher_is_rejected(benchmark, monkeypatch, world_size):
-    """An MPI worker group must not launch eight independent full-model jobs."""
-    monkeypatch.setenv('WORLD_SIZE', world_size)
+@pytest.mark.parametrize(
+    'environment', ['WORLD_SIZE=8', 'WORLD_SIZE=not-an-integer', 'PROC_RANK=1', 'WORLD_SIZE=1 OMPI_COMM_WORLD_SIZE=8']
+)
+def test_duplicate_launcher_is_rejected(benchmark, monkeypatch, environment):
+    """Neither a second local process nor an MPI or torch group may start another full-model job."""
+    for item in environment.split():
+        monkeypatch.setenv(*item.split('=', 1))
     assert not benchmark.run()
     assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
 

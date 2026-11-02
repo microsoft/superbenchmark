@@ -18,7 +18,7 @@ from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.cache import (
 )
 from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.moe import MOE_DISPATCHES
 from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.utils import (
-    numeric_series, read_json, run_worker, validate_identity, worker_environment
+    numeric_series, read_json, run_worker, validate_identity, validate_single_launcher, worker_environment
 )
 
 
@@ -62,13 +62,13 @@ class DeepSeekV2LiteTraining(Benchmark):
             or args.seq_len < 32 or args.num_warmup < 0 or args.num_steps < 1 or not 0 < args.learning_rate < 1
         )
         try:
-            world_size = int(os.environ.get('WORLD_SIZE', os.environ.get('OMPI_COMM_WORLD_SIZE', '1')))
-        except ValueError:
-            logger.error('V2-Lite training launcher world size must be an integer.')
+            validate_single_launcher(os.environ)
+        except ValueError as error:
+            logger.error('V2-Lite training requires one local launcher: %s', error)
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
-        if invalid or world_size != 1:
-            logger.error('V2-Lite training requires one local launcher, valid positive dimensions and duration <3600s.')
+        if invalid:
+            logger.error('V2-Lite training requires valid positive dimensions and duration <3600s.')
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
         return True
