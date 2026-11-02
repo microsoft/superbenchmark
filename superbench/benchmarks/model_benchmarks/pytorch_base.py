@@ -30,6 +30,9 @@ from superbench.benchmarks.model_benchmarks.model_base import Optimizer, ModelBe
 
 class PytorchBase(ModelBenchmark):
     """The base class of Pytorch model benchmarks."""
+    # Number of DDP stores created in this process; keeps the keys of successive benchmarks apart.
+    _store_seq = 0
+
     def __init__(self, name, parameters=''):
         """Constructor.
 
@@ -354,16 +357,26 @@ class PytorchBase(ModelBenchmark):
                         ' distributed implementation: {}.'.format(self._name, self._args.distributed_impl)
                     )
                     return False
-                # torch >= 1.9.0a0 torch.distributed.elastic is used by default
-                port = int(os.environ.get('MASTER_PORT', '29500')) + 1
-                os.environ['MASTER_PORT'] = str(port)
+                port = int(os.environ.get('MASTER_PORT', '29500'))
                 addr = os.environ['MASTER_ADDR']
                 self._global_rank = int(os.environ['RANK'])
                 self._local_rank = int(os.environ['LOCAL_RANK'])
                 self._world_size = int(os.environ['WORLD_SIZE'])
-                logger.debug('ip:{},port:{},rank:{},world:{}'.format(addr, port, self._global_rank, self._world_size))
+                # Under torchrun the agent already hosts a TCPStore on MASTER_PORT, so join it as a client, the
+                # same way torch.distributed.rendezvous does. Binding a new server on another port can collide
+                # with an ephemeral port, and torch ignores that bind failure under TORCHELASTIC_USE_AGENT_STORE.
+                use_agent_store = os.environ.get('TORCHELASTIC_USE_AGENT_STORE') == str(True)
+                is_master = not use_agent_store and self._global_rank == 0
+                logger.debug(
+                    'ip:{},port:{},rank:{},world:{},agent_store:{}'.format(
+                        addr, port, self._global_rank, self._world_size, use_agent_store
+                    )
+                )
+                # The store can outlive one benchmark in the same process, so give each init its own key prefix.
+                PytorchBase._store_seq += 1
                 store = PrefixStore(
-                    self._name, TCPStore(addr, port, self._world_size, self._global_rank == 0, timedelta(seconds=300))
+                    '{}/{}'.format(self._name, PytorchBase._store_seq),
+                    TCPStore(addr, port, self._world_size, is_master, timedelta(seconds=300))
                 )
                 torch.distributed.init_process_group(
                     backend=self._args.distributed_backend.value,
