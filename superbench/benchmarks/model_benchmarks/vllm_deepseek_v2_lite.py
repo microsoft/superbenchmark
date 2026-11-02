@@ -18,7 +18,7 @@ from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.cache import (
     remove_model_cache, remove_model_cache_after_failure
 )
 from superbench.benchmarks.model_benchmarks.deepseek_v2_lite.utils import (
-    numeric_series, read_json, run_worker, validate_identity, worker_environment
+    numeric_series, read_json, run_worker, validate_identity, validate_single_launcher, worker_environment
 )
 
 
@@ -59,16 +59,18 @@ class DeepSeekV2LiteInference(Benchmark):
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
         try:
-            world_size = int(os.environ.get('WORLD_SIZE', os.environ.get('OMPI_COMM_WORLD_SIZE', '1')))
-        except ValueError:
-            world_size = 0
+            validate_single_launcher(os.environ)
+        except ValueError as error:
+            logger.error('V2-Lite inference requires one local replica: %s', error)
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            return False
         invalid = (
             args.run_count != 1 or not 30 < args.duration < 3600 or args.batch_size < 1 or args.seq_len < 32
             or args.max_new_tokens < 4 or args.num_warmup < 0 or args.num_steps < 1
-            or not 0 < args.gpu_memory_utilization <= 0.95 or world_size != 1
+            or not 0 < args.gpu_memory_utilization <= 0.95
         )
         if invalid:
-            logger.error('V2-Lite inference requires one local replica and a valid BF16 generation/deadline profile.')
+            logger.error('V2-Lite inference requires a valid BF16 generation/deadline profile.')
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             return False
         try:

@@ -30,6 +30,7 @@ def benchmark(tmp_path, monkeypatch):
     """Use one local replica and an isolated output root."""
     monkeypatch.delenv('WORLD_SIZE', raising=False)
     monkeypatch.delenv('OMPI_COMM_WORLD_SIZE', raising=False)
+    monkeypatch.delenv('PROC_RANK', raising=False)
     return adapter.DeepSeekV2LiteInference(
         'deepseek-v2-lite-inference',
         '--cache_root "{}" --num_steps 2 --batch_size 2 --seq_len 64 --duration 60'.format(tmp_path),
@@ -89,6 +90,17 @@ def test_cache_root_is_required():
     instance = adapter.DeepSeekV2LiteInference('deepseek-v2-lite-inference', '--num_steps 2')
     assert not instance.run()
     assert instance.return_code == ReturnCode.INVALID_ARGUMENT
+
+
+@pytest.mark.parametrize(
+    'environment', ['WORLD_SIZE=8', 'WORLD_SIZE=not-an-integer', 'PROC_RANK=1', 'WORLD_SIZE=1 OMPI_COMM_WORLD_SIZE=8']
+)
+def test_duplicate_launcher_is_rejected(benchmark, monkeypatch, environment):
+    """Neither a second local process nor an MPI or torch group may start another model replica."""
+    for item in environment.split():
+        monkeypatch.setenv(*item.split('=', 1))
+    assert not benchmark.run()
+    assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
 
 
 def test_parameters_render_in_help():
