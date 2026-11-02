@@ -230,20 +230,21 @@ class SuperBenchRunner():
             trace_command = self.__build_trace_command(
                 benchmark_name, f'_{mode.proc_rank}', enable_nsys, enable_rocprof, trace_dir, rocprof_trace_dir
             )
+            # Long options use double dashes, which Open MPI 4 accepts and Open MPI 5 (PRRTE) requires.
             mode_command = (
                 '{trace} '
                 'mpirun '    # use default OpenMPI in image
-                '-tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
-                '-allow-run-as-root '    # allow mpirun to run when executed by root user
+                '--tag-output '    # tag mpi output with [jobid,rank]<stdout/stderr> prefix
+                '--allow-run-as-root '    # allow mpirun to run when executed by root user
                 '{host_list} '    # use prepared hostfile or specify nodes and launch {proc_num} processes on each node
-                '-bind-to numa '    # bind processes to numa
+                '--bind-to numa '    # bind processes to numa
                 '{mca_list} {env_list} {command}'
             ).format(
                 trace=trace_command,
-                host_list=f'-host localhost:{mode.proc_num}' if 'node_num' in mode and mode.node_num == 1 else
-                f'-hostfile hostfile -map-by ppr:{mode.proc_num}:node' if 'host_list' not in mode else '-host ' +
+                host_list=f'--host localhost:{mode.proc_num}' if 'node_num' in mode and mode.node_num == 1 else
+                f'--hostfile hostfile --map-by ppr:{mode.proc_num}:node' if 'host_list' not in mode else '--host ' +
                 ','.join(f'{host}:{mode.proc_num}' for host in mode.host_list),
-                mca_list=' '.join(f'-mca {k} {v}' for k, v in mode.mca.items()),
+                mca_list=' '.join(f'--mca {k} {v}' for k, v in mode.mca.items()),
                 env_list=' '.join(
                     f'-x {k}={str(v).format(proc_rank=mode.proc_rank, proc_num=mode.proc_num)}'
                     if isinstance(v, str) else f'-x {k}' for k, v in mode.env.items()
