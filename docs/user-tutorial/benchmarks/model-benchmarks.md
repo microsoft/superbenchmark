@@ -177,9 +177,11 @@ text; it measures training performance, not convergence. `batch_size` is the mic
 `moe_dispatch=stable_sorted` replaces the official expert dispatch with a stable sort that keeps the
 same routing.
 
-Validated on four H100 80GB GPUs with `batch_size=36`, `num_steps=128`, `moe_dispatch=stable_sorted`
-and `PYTORCH_CUDA_ALLOC_CONF=backend:native`; the supplied profile is a smaller example. The reference
-needs an 80GB GPU.
+Validated on four H100 80GB GPUs in the SuperBench CUDA 13.0 image with `batch_size=36`, `num_steps=128`,
+`moe_dispatch=stable_sorted` and `PYTORCH_CUDA_ALLOC_CONF=backend:native`; the supplied profile is a
+smaller example. The reference needs an 80GB GPU. Each GPU's process first loads the full model in FP32
+on the host, about 63GB, before FSDP shards it; the validated four-GPU run used about 275GB of host
+memory at its peak.
 
 #### Usage
 
