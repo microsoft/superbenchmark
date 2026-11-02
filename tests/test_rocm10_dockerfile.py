@@ -18,7 +18,7 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
     def setUpClass(cls):
         """Load the Dockerfile and extract RCCL test architecture handling."""
         root = Path(__file__).resolve().parents[1]
-        cls.dockerfile = (root / 'dockerfile' / 'rocm10.0.x.dockerfile').read_text(encoding='utf-8')
+        cls.dockerfile = (root / 'dockerfile' / 'rocm10.1.x.dockerfile').read_text(encoding='utf-8')
         env_start = cls.dockerfile.index("printf 'export ROCM_PATH=%q")
         env_end = cls.dockerfile.index('\n\n', env_start)
         cls.environment_script = cls.dockerfile[env_start:env_end]
@@ -74,7 +74,7 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
 
     def test_all_device_sdk_uses_base_package_ecosystem(self):
         """Discover the installed wheel SDK without an alias or global loader override."""
-        self.assertIn('rocm10.0_ubuntu26.04_py3.14_pytorch_release_2.13.0@sha256:', self.dockerfile)
+        self.assertIn('rocm10.1.0_ubuntu26.04_py3.14_pytorch_release_2.13.0@sha256:', self.dockerfile)
         self.assertIn('"rocm[devel,libraries,device-all]==${ROCM_VERSION}"', self.dockerfile)
         self.assertIn('rocm-sdk init', self.dockerfile)
         self.assertIn('ROCM_PATH="$(rocm-sdk path --root)"', self.dockerfile)
@@ -90,16 +90,17 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             sdk_root = str(root / 'sdk with spaces')
-            bin_dir = root / 'venv' / 'bin'
+            bin_dir = root / 'usr' / 'local' / 'bin'
             bin_dir.mkdir(parents=True)
             sdk = bin_dir / 'rocm-sdk'
             sdk.write_text('#!/bin/sh\n[ "$1" = path ] && [ "$2" = --root ] || exit 2\n'
                            'printf "%s\\n" "$TEST_SDK_ROOT"\n')
             sdk.chmod(0o755)
             env = os.environ.copy()
-            env.pop('BASH_ENV', None)
+            # The 10.1 base runs the system interpreter, so the SDK CLI is not in a virtualenv.
+            for name in ('BASH_ENV', 'VIRTUAL_ENV'):
+                env.pop(name, None)
             env.update({
-                'VIRTUAL_ENV': str(root / 'venv'),
                 'TEST_SDK_ROOT': sdk_root,
                 'MPI_HOME': '/vendor/mpi',
                 'SB_MICRO_PATH': '/superbench',
@@ -162,8 +163,8 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         """Build RCCL and its tests from one revision that contains the MI455X fixes."""
         self.assertIn('ARG AMDGPU_TARGETS="gfx942 gfx950 gfx1250"', self.dockerfile)
         self.assertIn('test -r "${ROCM_PATH}/lib/librccl.so"', self.dockerfile)
-        self.assertIn('ARG ROCM_SYSTEMS_COMMIT=6b0e43f341195e203754e08f850e437ff2fc09f9', self.dockerfile)
-        # Merge commit of ROCm/rocm-systems#12051.
+        self.assertIn('ARG ROCM_SYSTEMS_COMMIT=7da43026e4f2ef7600433c38c820732f7a205d22', self.dockerfile)
+        # Merge commit of ROCm/rocm-systems#12051; therock-10.1 branched before it.
         self.assertIn('ARG RCCL_SOURCE_COMMIT=2a0c58ec63ea22487ea65458b68b92426119eb11', self.dockerfile)
         self.assertIn('RCCL_SOURCE_PREFIX=/opt/rccl', self.dockerfile)
         self.assertIn("rccl_projects='projects/rccl projects/rccl-tests'", self.dockerfile)
@@ -278,6 +279,26 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         positions = [self.dockerfile.index(step) for step in steps]
         self.assertEqual(positions, sorted(positions))
 
+    def test_framework_prerequisites_for_system_python(self):
+        """Provide TE's AOTriton and legacy ROCm SMI needs on the base's system interpreter."""
+        apt_start = self.dockerfile.index('RUN apt-get update')
+        apt = self.dockerfile[apt_start:self.dockerfile.index('\n\n', apt_start)]
+        for package in ('libdrm-dev', 'liblzma-dev', 'python3-venv'):
+            self.assertRegex(apt, r'\s{}\s'.format(package))
+        self.assertIn('pkg-config --exists liblzma', apt)
+        self.assertIn('/usr/bin/python3 -m venv /tmp/sb-aotriton-venv-check', apt)
+        self.assertEqual(self.dockerfile.count('apt-get install'), 3)
+
+        smi_start = self.dockerfile.index('RUN git init -q /tmp/rocm-smi-source')
+        smi = self.dockerfile[smi_start:self.dockerfile.index('\n\n', smi_start)]
+        self.assertIn('origin "${ROCM_SYSTEMS_COMMIT}"', smi)
+        self.assertIn('sparse-checkout set projects/rocm-smi-lib', smi)
+        self.assertIn('-DCMAKE_INSTALL_PREFIX=/usr/local', smi)
+        self.assertIn('ctypes.CDLL("/usr/local/lib/librocm_smi64.so").rsmi_init', smi)
+        self.assertIn('rm -rf /tmp/rocm-smi-source /tmp/rocm-smi-build', smi)
+        self.assertLess(smi_start, self.dockerfile.index('RUN framework_jobs='))
+        self.assertNotIn('pip wheel --verbose', self.dockerfile)
+
     def test_framework_runtime_configuration_survives_build_layers(self):
         """Keep the selected Megatron path and precise Triton FP32 mode at runtime."""
         self.assertIn('SB_MEGATRON_PATH=/opt/rocm10-frameworks/Megatron-LM', self.dockerfile)
@@ -335,10 +356,10 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
         start = self.dockerfile.index("python3 -c 'import sys; from importlib.metadata import version;")
         check = self.dockerfile[start:self.dockerfile.index(' && \\\n', start)]
         versions = {
-            'torch': '2.13.0+rocm10.0.0',
-            'triton': '3.8.0+git4cff872c.rocm10.0.0',
-            'rocm-sdk-core': '10.0.0',
-            'rocm-sdk-devel': '10.0.0',
+            'torch': '2.13.0+rocm10.1.0',
+            'triton': '3.8.0+git669b31ac.rocm10.1.0',
+            'rocm-sdk-core': '10.1.0',
+            'rocm-sdk-devel': '10.1.0',
         }
         for changed in (None, 'torch'):
             with self.subTest(changed=changed), tempfile.TemporaryDirectory() as directory:
@@ -351,7 +372,7 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
                 result = subprocess.run(['/bin/bash', '-c', check], env=env, capture_output=True, text=True)
                 if changed:
                     self.assertNotEqual(result.returncode, 0)
-                    self.assertIn('torch==2.13.0+rocm10.0.0 (found 0.0.0)', result.stderr)
+                    self.assertIn('torch==2.13.0+rocm10.1.0 (found 0.0.0)', result.stderr)
                 else:
                     self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -368,7 +389,7 @@ class Rocm10DockerfileTestCase(unittest.TestCase):
     def test_rvs_uses_signed_apt_repositories(self):
         """Install RVS and matching dependencies with APT, not a tarball or forced extraction."""
         self.assertIn('ARG RVS_VERSION=1.6.122-708', self.dockerfile)
-        self.assertIn('ARG ROCM_APT_VERSION=10.0.0-4', self.dockerfile)
+        self.assertIn('ARG ROCM_APT_VERSION=10.1.0-3', self.dockerfile)
         self.assertIn('https://stable.repo.amd.com/rocm/extras/rvs/packages/ubuntu2604/', self.dockerfile)
         self.assertIn('https://stable.repo.amd.com/rocm/core/packages/ubuntu2604/', self.dockerfile)
         self.assertIn('Signed-By: /etc/apt/keyrings/amdrocm.gpg', self.dockerfile)

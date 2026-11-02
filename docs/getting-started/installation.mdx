@@ -113,25 +113,28 @@ Here're the system requirements for all managed GPU nodes.
 
 ### Experimental ROCm 10 image scaffold
 
-`dockerfile/rocm10.0.x.dockerfile` starts from AMD's digest-pinned
-`rocm10.0_ubuntu26.04_py3.14_pytorch_release_2.13.0` image.
+`dockerfile/rocm10.1.x.dockerfile` starts from AMD's digest-pinned
+`rocm10.1.0_ubuntu26.04_py3.14_pytorch_release_2.13.0` image.
 It is a scaffold, not a feature-equivalent replacement for the ROCm 7 images,
 and is intentionally not yet in the release-image workflow matrix.
 
 ```bash
 git submodule update --init --recursive
 docker build --build-arg NUM_MAKE_JOBS=8 \
-  -f dockerfile/rocm10.0.x.dockerfile -t superbench:rocm10-scaffold .
+  -f dockerfile/rocm10.1.x.dockerfile -t superbench:rocm10-scaffold .
 ```
 
 The base contains a wheel-distributed SDK. The scaffold installs
-`rocm[devel,libraries,device-all]==10.0.0` and preserves the base's framework
-and SDK versions with pip constraints. **All-device GPU packages are the
+`rocm[devel,libraries,device-all]==10.1.0` and preserves the base's framework
+and SDK versions with pip constraints. Unlike the ROCm 10.0 base, which used a
+virtualenv under `/opt/venv`, the 10.1 base runs the system `/usr/bin/python3`,
+so SuperBench and the frameworks install into its site-packages and
+`python3-venv` is added for TransformerEngine's AOTriton build. **All-device GPU packages are the
 default**; this is not a multi-platform CPU image (the base is Linux x86_64).
 `rocm-sdk init` expands the development tree. `ROCM_PATH` (and `ROCM_HOME`,
 `HIP_PATH`) is set to the discovered wheel SDK root in
 `/etc/profile.d/rocm10-env.sh`; no `/opt/rocm` alias is created. The native
-`amdrocm-*` 10.0.0 runtime, base, AMD SMI, BLAS, rand and LLVM packages from
+`amdrocm-*` 10.1.0 runtime, base, AMD SMI, BLAS, rand and LLVM packages from
 AMD's APT repository are installed only as RVS dependencies; SuperBench builds
 and `LD_LIBRARY_PATH` use the wheel SDK. The core wheel's bundled AMD SMI Python
 bindings are registered in place with a `.pth` entry (until
@@ -141,12 +144,12 @@ bindings are registered in place with a `.pth` entry (until
 * RCCL and RCCL-tests are built from one `rocm-systems` revision
   (`RCCL_SOURCE_COMMIT`) and installed under `/opt/rccl` and
   `/opt/superbench/bin`. The default revision contains the gfx1250 (MI455X)
-  fixes merged after TheRock's `therock-10.0` release, including
+  fixes merged after TheRock's `therock-10.1` release branched, including
   [ROCm/rocm-systems#12051](https://github.com/ROCm/rocm-systems/pull/12051).
   `/opt/rccl/lib` precedes the SDK library on `LD_LIBRARY_PATH`, so RCCL-tests
   and other soname lookups, including SuperBench MPI launches, resolve it. Build with
   `--build-arg RCCL_SOURCE_COMMIT=` to keep AMD's prebuilt SDK RCCL and compile
-  only RCCL-tests from the `therock-10.0` revision.
+  only RCCL-tests from the `therock-10.1` revision.
 * Open MPI 5.0.10 from the DOCA 3.4.0 userspace packages retains
   `/usr/local/mpi`. Current built-in MPI calls exchange
   host metadata, timing/error values, and NumPy arrays; GPU collectives use
@@ -166,20 +169,28 @@ bindings are registered in place with a `.pth` entry (until
   archive, and TransformerEngine, AITER and Megatron-LM built in the Dockerfile
   from pinned revisions (`TE_COMMIT`, `AITER_COMMIT`, `MEGATRON_COMMIT`) against
   the base's PyTorch, Triton and SDK. No host driver is installed.
+* The pinned TransformerEngine revision still includes the legacy ROCm SMI
+  header, which the SDK no longer ships, so `rocm-smi-lib` is built from the
+  release's `rocm-systems` revision into `/usr/local` as a build compatibility
+  library, separate from the SDK and its AMD SMI.
 
 The following remain absent: Intel MLC (`cpu-memory-bw-latency`),
 Megatron-DeepSpeed, and the old HIP 5.5 `hipBusBandwidth` sample. Existing
 `rocm-smi` system-info collection and `rocprofv2` tracing still need their
 separate ROCm 10 migrations.
 
-Validation on 2026-09-30 used the earlier variant with AMD's packaged SDK RCCL
+The ROCm 10.1 image has been built and passed the current (26.10) SuperBench
+benchmark configuration, together with the PyTorch DDP store fix in the
+separate benchmark change.
+
+Earlier validation of the ROCm 10.0 variant on 2026-09-30 used AMD's packaged SDK RCCL
 (equivalent to `--build-arg RCCL_SOURCE_COMMIT=`): the image built successfully and passed `pip check`,
 34 targeted regression tests (three NVIDIA-only tests skipped), GEMM correctness
 on all eight MI300X GPUs, FP16/BF16 PyTorch flash SDPA forward/backward, and the
 SuperBench GPU-copy wrapper with data checking and 304 positive parsed metrics.
 An eight-rank Open MPI / packaged-RCCL all-reduce passed data checking
 (`NCCL_IB_DISABLE=1`, single node). RVS module/GPU discovery also worked.
-The default source-built RCCL path has not yet been built or run. These checks
+That 10.0 validation did not build or run the default source-built RCCL path. These checks
 do not qualify multi-node networking, additional GPU architectures,
 the omitted benchmarks, or sustained RVS stress workloads.
 

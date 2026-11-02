@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=rocm/pytorch:rocm10.0_ubuntu26.04_py3.14_pytorch_release_2.13.0@sha256:3174cb7061d94c427da96c0edef4adea28046fa3f3b2ff3948dc4e995665ff8c
+ARG BASE_IMAGE=rocm/pytorch:rocm10.1.0_ubuntu26.04_py3.14_pytorch_release_2.13.0@sha256:1d3ebef7da1df35f0c103ed038521933ebaeaf6f8c8d710168d8c294efdc59d9
 FROM ${BASE_IMAGE}
 
 LABEL maintainer="SuperBench"
@@ -9,11 +9,11 @@ SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
 # built kernels (SuperBench benchmarks, RCCL and TransformerEngine).
 ARG AMDGPU_TARGETS="gfx942 gfx950 gfx1250"
 ARG NUM_MAKE_JOBS=64
-ARG ROCM_VERSION=10.0.0
-# rocm-systems revision selected by TheRock's therock-10.0 release.
-ARG ROCM_SYSTEMS_COMMIT=6b0e43f341195e203754e08f850e437ff2fc09f9
-# MI455X (gfx1250) needs RCCL fixes merged to rocm-systems develop after that
-# release, including ROCm/rocm-systems#12051 (GPU->NIC distance and GDR on gfx1250
+ARG ROCM_VERSION=10.1.0
+# rocm-systems revision selected by TheRock's therock-10.1 release.
+ARG ROCM_SYSTEMS_COMMIT=7da43026e4f2ef7600433c38c820732f7a205d22
+# Retain the source override for MI455X (gfx1250) RCCL fixes, including
+# ROCm/rocm-systems#12051 (GPU->NIC distance and GDR on gfx1250
 # MLOPart partitions) and the gfx1250 symmetric-memory/VMM teardown fixes.
 # RCCL and RCCL-tests are built from this revision into RCCL_SOURCE_PREFIX.
 # Pass an empty value to keep the packaged RCCL with release-matched RCCL-tests.
@@ -31,15 +31,21 @@ ENV DEBIAN_FRONTEND=noninteractive \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
 
+# The 10.1 base runs the system /usr/bin/python3 (the 10.0 base used /opt/venv).
+# TE's AOTriton build creates a venv from that interpreter and needs liblzma.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         autoconf automake bc build-essential ca-certificates cmake curl \
         dmidecode flex gfortran git gnupg iproute2 jq libaio-dev \
         libatomic1 libboost-program-options-dev libcap2 libcurl4-openssl-dev \
-        libibumad-dev libibverbs-dev libnuma-dev libpci-dev libquadmath0 librdmacm-dev \
+        libdrm-dev libibumad-dev libibverbs-dev liblzma-dev libnuma-dev libpci-dev libquadmath0 librdmacm-dev \
         libssl-dev libtinfo6 libtool lshw net-tools ninja-build numactl \
-        openssh-client openssh-server pciutils pkg-config python3-dev rsync sudo \
+        openssh-client openssh-server pciutils pkg-config python3-dev python3-venv rsync sudo \
         util-linux wget && \
+    pkg-config --exists liblzma && \
+    /usr/bin/python3 -m venv /tmp/sb-aotriton-venv-check && \
+    /tmp/sb-aotriton-venv-check/bin/python -m pip --version && \
+    rm -rf /tmp/sb-aotriton-venv-check && \
     apt-get clean
 
 # Install the Docker CLI client only.
@@ -112,9 +118,9 @@ ENV SB_ROCM_MEM_BW_BACKEND=transferbench \
     USE_HIPBLAS_COMPUTETYPE=1
 
 # Install RVS through AMD's signed Ubuntu 26.04 repositories. Explicitly select
-# matching native dependencies instead of legacy distro packages or ROCm 10.1.
+# matching ROCm 10.1 native dependencies instead of legacy distro packages.
 ARG RVS_VERSION=1.6.122-708
-ARG ROCM_APT_VERSION=10.0.0-4
+ARG ROCM_APT_VERSION=10.1.0-3
 RUN install -d -m 0755 /etc/apt/keyrings && \
     curl -fsSL https://stable.repo.amd.com/rocm/gpg/packages.gpg | \
         gpg --batch --yes --dearmor -o /etc/apt/keyrings/amdrocm.gpg && \
@@ -198,7 +204,7 @@ RUN test -f third_party/fio/Makefile && \
 
 # Extract only matching prebuilt clients and their external GPU kernel packs.
 # The ELFs alone cannot initialize matrices without the blas_test_*.kpack files.
-ARG ROCM_TESTS_SHA256=47468ff71b8027eed4784de5052aa18684cb2ec0bfe0409ad7e62b9a6cf88f1f
+ARG ROCM_TESTS_SHA256=c6d6afe27474badb88793330278616caf74c40d647ea2d26457352d7dfc0ace8
 RUN curl -fsSL "https://stable.repo.amd.com/rocm/core/tarball/therock-dist-linux-multiarch-tests-${ROCM_VERSION}.tar.gz" -o /tmp/rocm-tests.tar.gz && \
     printf '%s  %s\n' "${ROCM_TESTS_SHA256}" /tmp/rocm-tests.tar.gz | sha256sum --check --strict && \
     tar -xzf /tmp/rocm-tests.tar.gz -C "${SB_HOME}" --wildcards --no-wildcards-match-slash \
@@ -215,9 +221,32 @@ COPY . .
 # The same constraints protect them while building the frameworks below.
 # The SDK supplies amdsmi via .pth, not a separate distribution; use the torch
 # extra so amdworker does not install a PyPI wrapper that shadows the SDK module.
-RUN python3 -m pip freeze | grep -Ei '^(torch|torchvision|torchaudio|triton|apex|rocm|rocm[-_][^=]+)==' > /tmp/rocm10-constraints.txt && \
+# Drop stale setuptools output from the build context before installing.
+RUN rm -rf build *.egg-info && \
+    python3 -m pip freeze | grep -Ei '^(torch|torchvision|torchaudio|triton|apex|rocm|rocm[-_][^=]+)==' > /tmp/rocm10-constraints.txt && \
     python3 -m pip install -c /tmp/rocm10-constraints.txt '.[torch]' && \
     python3 -m pip install pytest pytest-timeout vcrpy
+
+# This TE revision still includes the legacy ROCm SMI header, which the SDK omits.
+# Build that library from the release's rocm-systems revision under /usr/local,
+# separate from the SDK and its AMD SMI.
+RUN git init -q /tmp/rocm-smi-source && \
+    git -C /tmp/rocm-smi-source remote add origin https://github.com/ROCm/rocm-systems.git && \
+    git -C /tmp/rocm-smi-source sparse-checkout set projects/rocm-smi-lib && \
+    git -C /tmp/rocm-smi-source fetch -q --depth 1 --filter=blob:none origin "${ROCM_SYSTEMS_COMMIT}" && \
+    git -C /tmp/rocm-smi-source checkout -q --detach FETCH_HEAD && \
+    cmake -S /tmp/rocm-smi-source/projects/rocm-smi-lib -B /tmp/rocm-smi-build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCMAKE_INSTALL_LIBDIR=lib -DROCM_SMI_DISABLE=OFF -DBUILD_TESTS=OFF && \
+    cmake --build /tmp/rocm-smi-build -j"${NUM_MAKE_JOBS}" && \
+    cmake --install /tmp/rocm-smi-build && \
+    printf '%s\n' /usr/local/lib > /etc/ld.so.conf.d/superbench-rocm-smi.conf && \
+    ldconfig && \
+    test -r /usr/local/include/rocm_smi/rocm_smi.h && \
+    printf '#include <rocm_smi/rocm_smi.h>\n' | \
+        "${ROCM_PATH}/lib/llvm/bin/clang++" -x c++ -fsyntax-only - && \
+    python3 -c 'import ctypes; ctypes.CDLL("/usr/local/lib/librocm_smi64.so").rsmi_init' && \
+    rm -rf /tmp/rocm-smi-source /tmp/rocm-smi-build
 
 # Build TransformerEngine, AITER and Megatron-LM from pinned sources against the
 # base's PyTorch, Triton and SDK, without build isolation or dependency resolution.
@@ -246,7 +275,7 @@ RUN framework_jobs="${NUM_MAKE_JOBS}" && \
         TMPDIR=/tmp/rocm10-frameworks-scratch NVTE_USE_ROCM=1 NVTE_FRAMEWORK=pytorch \
         NVTE_ROCM_ARCH="${te_architectures}" NVTE_NO_LOCAL_VERSION=1 NVTE_CK_JIT=1 \
         NVTE_FUSED_ATTN_AOTRITON=1 PREBUILD_KERNELS=0 BUILD_TARGET=rocm RCCL_HOME="${ROCM_PATH}" && \
-    python3 -c 'import sys; from importlib.metadata import version; expected = {"torch": "2.13.0+rocm10.0.0", "triton": "3.8.0+git4cff872c.rocm10.0.0", "rocm-sdk-core": "10.0.0", "rocm-sdk-devel": "10.0.0"}; wrong = ["{}=={} (found {})".format(name, value, version(name)) for name, value in expected.items() if version(name) != value]; sys.exit("Unexpected base packages: " + ", ".join(wrong) if wrong else 0)' && \
+    python3 -c 'import sys; from importlib.metadata import version; expected = {"torch": "2.13.0+rocm10.1.0", "triton": "3.8.0+git669b31ac.rocm10.1.0", "rocm-sdk-core": "10.1.0", "rocm-sdk-devel": "10.1.0"}; wrong = ["{}=={} (found {})".format(name, value, version(name)) for name, value in expected.items() if version(name) != value]; sys.exit("Unexpected base packages: " + ", ".join(wrong) if wrong else 0)' && \
     mkdir -p "${TMPDIR}" && \
     python3 -m pip install \
         pybind11==3.0.1 pydantic==2.13.5 einops==0.8.2 psutil==7.2.2 mpi4py==4.1.1 \
