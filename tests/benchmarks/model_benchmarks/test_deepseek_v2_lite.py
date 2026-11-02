@@ -260,7 +260,7 @@ def test_invalid_checkpoint_files_fail(checkpoint_files, failure):
 
 
 def test_download_uses_pinned_public_identity_and_then_verifies(checkpoint_files, monkeypatch):
-    """Disable implicit credentials and require the downloaded shard contract."""
+    """Disable implicit credentials and reject a downloaded shard that fails verification."""
     root, shard = checkpoint_files
     download = Mock()
     monkeypatch.setitem(sys.modules, 'huggingface_hub', SimpleNamespace(snapshot_download=download))
@@ -271,6 +271,9 @@ def test_download_uses_pinned_public_identity_and_then_verifies(checkpoint_files
     assert arguments['token'] is False
     assert arguments['local_dir'] == str(root)
     assert shard.name in arguments['allow_patterns']
+    download.side_effect = lambda **kwargs: shard.write_bytes(b'x' * shard.stat().st_size)
+    with pytest.raises(ValueError, match='SHA256'):
+        utils.download_checkpoint(root.parent)
 
 
 @pytest.mark.parametrize('timeout', [0, -1, float('nan')])
@@ -296,6 +299,42 @@ def test_supervisor_requires_kernel_ownership_support(monkeypatch):
     with pytest.raises(OSError):
         utils.supervise_worker([sys.executable, '-c', 'pass'], 1, os.getppid())
     spawn.assert_not_called()
+
+
+def test_timeout_survives_failed_descendant_cleanup(tmp_path, monkeypatch, capsys):
+    """A cleanup failure after the deadline stays a timeout and keeps its own details."""
+    worker = SimpleNamespace(poll=lambda: None, wait=Mock())
+    monkeypatch.setattr(utils.signal, 'signal', Mock())
+    monkeypatch.setattr(ctypes, 'CDLL', lambda *args, **kwargs: SimpleNamespace(prctl=lambda *args: 0))
+    monkeypatch.setattr(utils.subprocess, 'Popen', lambda command: worker)
+    monkeypatch.setattr(utils, '_stop_children', Mock(side_effect=RuntimeError('descendants did not exit: [4242]')))
+    assert utils.supervise_worker([sys.executable, '-c', 'pass'], 0.05, os.getppid()) == 126
+    assert '[4242]' in capsys.readouterr().err
+    worker.wait.assert_not_called()
+    supervisor = SimpleNamespace(wait=lambda timeout: 126, poll=lambda: 126)
+    monkeypatch.setattr(utils.subprocess, 'Popen', lambda *args, **kwargs: supervisor)
+    with pytest.raises(TimeoutError, match='deadline and its descendants did not exit'):
+        utils.run_worker([sys.executable, '-c', 'pass'], tmp_path / 'worker.log', 5)
+
+
+@pytest.mark.parametrize(
+    'environment, accepted', [
+        ('', True),
+        ('PROC_RANK=0 WORLD_SIZE=1 OMPI_COMM_WORLD_SIZE=1', True),
+        ('PROC_RANK=1', False),
+        ('WORLD_SIZE=1 OMPI_COMM_WORLD_SIZE=8', False),
+        ('OMPI_COMM_WORLD_SIZE=1 WORLD_SIZE=2', False),
+        ('PROC_RANK=', False),
+    ]
+)
+def test_launcher_variables_are_checked_independently(environment, accepted):
+    """A local rank or any one distributed world size above one means another launcher."""
+    variables = dict(item.split('=', 1) for item in environment.split())
+    if accepted:
+        utils.validate_single_launcher(variables)
+    else:
+        with pytest.raises(ValueError, match='another launcher'):
+            utils.validate_single_launcher(variables)
 
 
 # Per-run model cache removal.
