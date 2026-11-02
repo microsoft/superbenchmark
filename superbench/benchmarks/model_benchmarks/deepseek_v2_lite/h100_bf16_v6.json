@@ -1,0 +1,124 @@
+{
+  "status": "qualified",
+  "calibrated_contract": {
+    "method": "bf16-input-matched-probability-log-v6",
+    "status": "candidate-not-heldout-qualified",
+    "reference_only": true,
+    "model_id": "deepseek-ai/DeepSeek-V2-Lite",
+    "revision": "604d5664dddd88a0433dbae533b7fe9472482de0",
+    "profile": {
+      "batch_size": 8,
+      "seq_len": 512,
+      "max_new_tokens": 64
+    },
+    "top_k": 20,
+    "limits": {
+      "max_probability_error": 0.07284170527726544,
+      "relative_probability_mass_error": 0.13143301942660637,
+      "normalized_logprob_error": 7.25253417079409
+    },
+    "probability_slack": 1e-06,
+    "calibration_cases_sha256": "0f853d935a28e6b4fbcf2454d47e0bf6872aa94aea931494f46d9f84a9df393d",
+    "script_sha256": "2dd64484cb0e0cbc00d726899c0b716f2c6326eb95b33ac9e2a6bdfd8f016222",
+    "runtime_identity": {
+      "torch_version": "2.13.0+cu130",
+      "transformers_version": "4.46.3",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "reference_loader_sha256": "19539a42ea67dc369b41c5ba5078ff3725dcac163057664937aa32413b5a49d6",
+      "tf32_allowed": false,
+      "bf16_reduced_precision_reduction": true
+    },
+    "fp32_oracle": "full-prefix at every position; no reference KV cache",
+    "logprob_normalization": {
+      "atol_scale": 0.05,
+      "rtol_scale": 0.02
+    },
+    "qualification_offsets": [
+      0,
+      1024,
+      32768,
+      98304,
+      130560,
+      131584
+    ],
+    "qualification_stream": {
+      "num_warmup": 2,
+      "num_steps": 256
+    },
+    "continuation_modes": [
+      "teacher-forced",
+      "fp32-greedy"
+    ],
+    "reference_validation_required": true,
+    "input_matched_limit_rule": "reference calibration budget + input-matched BF16 reference deviation",
+    "input_matched_reference": "Official BF16 cached execution in configured shape-matched batches",
+    "reference_holdout_corpora": [
+      "retained-v5",
+      "fresh-v6"
+    ],
+    "qualification_required": [
+      "different performance inputs",
+      "half-normalization faults",
+      "temperature faults",
+      "wrong-context faults",
+      "malformed/missing results"
+    ],
+    "frozen_limits_sha256": "f0916bfcdbfdac1ea3c888305cc0cb9641756b29559b57640cb8cbb02ee56533"
+  },
+  "reference_validation": {
+    "report_sha256": "819ef3e6180130828c956d05a73b314244fcd142568dab2ba1b4153bf3386791",
+    "holdout_cases_sha256": "5c0cd12116cd876ffc01fcbd1d010e5df6226556705ec6701a0ea5ce3715631d",
+    "comparisons": 2176,
+    "non_anchor_comparisons": 1152
+  },
+  "qualification": [
+    {
+      "profile_offset": 0,
+      "requests_sha256": "5bf572df5e5874bfb2e1c30c5778ff3cd93250e7d029d87f6967cd7706db6f35",
+      "report_sha256": "210d10db88b5f0ce01957047532fabcfd95cd2ea22772e939648f08088766f0b",
+      "positive_positions": 536,
+      "negative_positions": 1073,
+      "near_tie_positions": 0
+    },
+    {
+      "profile_offset": 1024,
+      "requests_sha256": "b12aeb6af0bb65fbb762e38c775e15dfcf16362491a37c138df7e60599f2876b",
+      "report_sha256": "7395f7d9e989ddac14e5ea528af8bd24fef9f09215e99bb9700a1aab8a3bfd6c",
+      "positive_positions": 536,
+      "negative_positions": 1073,
+      "near_tie_positions": 0
+    },
+    {
+      "profile_offset": 32768,
+      "requests_sha256": "8f0b5215ed3f5a5752bfa8157b86110cb806d644233d3f312e88adae04d57d5a",
+      "report_sha256": "9ffdf898774506893027f1991bb38f4f88b47318a9472dd28012a63b493249ed",
+      "positive_positions": 536,
+      "negative_positions": 1073,
+      "near_tie_positions": 0
+    },
+    {
+      "profile_offset": 98304,
+      "requests_sha256": "d352a40c0e315e01222910249f0de56de8185b544a1c96fb1629f1efa73b8c54",
+      "report_sha256": "5a6d0675c3a9ee5ce1e6a34224c041c7e315fa3c0e15d44ea3d8f52294a0f3b9",
+      "positive_positions": 536,
+      "negative_positions": 1073,
+      "near_tie_positions": 0
+    },
+    {
+      "profile_offset": 130560,
+      "requests_sha256": "df9b950e343ab6d7c0f77bfd563159d33e8bfb9793600b9fefc906413da58dd5",
+      "report_sha256": "dd0aa947578c603665e6701b3b50b7435dd8cf7a541cac4b351d4a3282c1ce9a",
+      "positive_positions": 536,
+      "negative_positions": 1073,
+      "near_tie_positions": 0
+    },
+    {
+      "profile_offset": 131584,
+      "requests_sha256": "e7d26e1f2316c46458e4c6ca884388c5af5a82ffdfbaca20e177a1ac1a55ee8f",
+      "report_sha256": "4b78db3a28ed12001d750a16e47f74c62e1692c2de3bcff781b41cf1a2150363",
+      "positive_positions": 536,
+      "negative_positions": 1073,
+      "near_tie_positions": 1
+    }
+  ]
+}
