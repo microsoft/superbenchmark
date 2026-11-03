@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
       - name: Setup nodejs
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2.5.2
         with:
           node-version: '14'
       - name: Test docs build
@@ -25,7 +25,7 @@ jobs:
           npm ci
           npm run build
       - name: Prepare ssh key
-        uses: webfactory/ssh-agent@v0.5.0
+        uses: webfactory/ssh-agent@6b2f2c5354ff41f1edbbf7a17ea9b6178c89be9f # v0.5.0
         if: ${{ github.event_name == 'push' }}
         with:
           ssh-private-key: ${{ secrets.GH_PAGES_KEY }}
