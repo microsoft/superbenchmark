@@ -105,6 +105,9 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
         benchmark = benchmark_class(benchmark_name, parameters='--precision fp32 fp16_tc')
         assert (10.7 in benchmark._CudaGemmFlopsBenchmark__kernel_map)
 
-        with mock.patch.object(dm.device_manager, 'get_device_compute_capability', return_value=10.7):
+        with mock.patch(
+            'superbench.benchmarks.micro_benchmarks.cuda_gemm_flops_performance.dm'
+        ) as mock_device_manager_module:
+            mock_device_manager_module.device_manager.get_device_compute_capability.return_value = 10.7
             assert (benchmark._preprocess() is True)
         assert (benchmark.return_code == ReturnCode.SUCCESS)
