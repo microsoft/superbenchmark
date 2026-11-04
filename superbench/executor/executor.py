@@ -97,7 +97,7 @@ class SuperBenchExecutor():
         """Get command line arguments for argparse.
 
         Args:
-            parameters (DictConfig): Parameters config dict.
+            parameters (DictConfig): Parameters config dict. List elements may be strings, ints or floats.
 
         Return:
             str: Command line arguments.
@@ -114,7 +114,9 @@ class SuperBenchExecutor():
             elif isinstance(val, (str, int, float)):
                 argv.append('--{} {}'.format(name, val))
             elif isinstance(val, (list, ListConfig)):
-                argv.append('--{} {}'.format(name, ' '.join(val)))
+                if any(not isinstance(value, (str, int, float)) or isinstance(value, bool) for value in val):
+                    logger.log_and_raise(TypeError, msg='Unsupported list argument: {}.'.format(name))
+                argv.append('--{} {}'.format(name, ' '.join(str(value) for value in val)))
         return ' '.join(argv)
 
     def __exec_benchmark(self, benchmark_full_name, context):
