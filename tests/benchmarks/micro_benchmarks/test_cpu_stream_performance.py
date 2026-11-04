@@ -25,6 +25,71 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         cls.createMockFiles(cls, ['bin/streamNative'])
         return True
 
+    def test_stream_core_selection(self):
+        """Test explicit core lists and inclusive start,end,step ranges."""
+        benchmark_name = 'cpu-stream'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        cases = [
+            ('88,151,1', list(range(88, 152))),
+            ('88,151,2', list(range(88, 152, 2))),
+            ('88,150,2', list(range(88, 151, 2))),
+            ('88,88,1', [88]),
+            ('0,3,2', [0, 2]),
+            ('88,90,10', [88]),
+            ('88 90 92', [88, 90, 92]),
+            ('92 88 90', [92, 88, 90]),
+            ('88', [88]),
+        ]
+        for cores, expected in cases:
+            with self.subTest(cores=cores):
+                benchmark = benchmark_class(
+                    benchmark_name, parameters='--cpu_arch native --numa_mem_nodes 1 --cores ' + cores
+                )
+                assert (benchmark._preprocess() is True)
+                assert (benchmark.return_code == ReturnCode.SUCCESS)
+                assert (benchmark._args.cores == expected)
+                assert (len(benchmark._commands) == 1)
+                command = benchmark._commands[0].split()
+                assert ('OMP_NUM_THREADS={}'.format(len(expected)) in command)
+                assert ('OMP_PLACES=' + ','.join(f'{{{core}}}' for core in expected) in command)
+                assert ('numactl -m1' in benchmark._commands[0])
+                assert ('streamNative' in benchmark._commands[0])
+
+    def test_stream_default_cores(self):
+        """Test that the default core configuration is unchanged."""
+        benchmark_name = 'cpu-stream'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name)
+        assert (benchmark._preprocess() is True)
+        assert (
+            benchmark._args.cores == [
+                0, 8, 16, 24, 32, 38, 44, 52, 60, 68, 76, 82, 88, 96, 104, 112, 120, 126, 132, 140, 148, 156, 164, 170
+            ]
+        )
+
+    def test_stream_invalid_cores(self):
+        """Test that malformed core selections fail argument validation."""
+        benchmark_name = 'cpu-stream'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CPU)
+        assert (benchmark_class)
+
+        for cores in [
+            '', '88,151', '88,151,1,2', '88,,1', 'a,151,1', '88,151,a', '88,151,0', '88,151,-1', '151,88,1',
+            '-1,151,1', '88,151,1 152', '88 90,100,2', '88 90 foo'
+        ]:
+            with self.subTest(cores=cores):
+                benchmark = benchmark_class(benchmark_name, parameters='--cores ' + cores)
+                assert (benchmark._preprocess() is False)
+                assert (benchmark.return_code == ReturnCode.INVALID_ARGUMENT)
+                assert (not benchmark._commands)
+
     @decorator.load_data('tests/data/streamResultZen.log')
     def test_stream_zen(self, results):
         """Test STREAM benchmark command generation."""
