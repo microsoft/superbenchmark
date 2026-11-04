@@ -315,7 +315,10 @@ class ModelBenchmark(Benchmark):
         Return:
             True if step_times list is not empty.
         """
-        self._create_model(precision)
+        if not self._create_model(precision):
+            self._result.set_return_code(ReturnCode.MODEL_CREATION_FAILURE)
+            return False
+
         # The unit of step time should be millisecond.
         step_times = self._inference_step(precision)
         step_times = self.__process_model_result(ModelAction.INFERENCE, precision, step_times)
