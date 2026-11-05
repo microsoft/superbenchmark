@@ -1,12 +1,11 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""GPU STREAM bandwidth with chip presets and a fixed fallback sweep."""
+"""GPU STREAM bandwidth with inline launch overrides and a fixed fallback sweep."""
 
 import json
 import math
 import os
-from pathlib import Path
 import re
 import shlex
 
@@ -34,55 +33,43 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
     def add_parser_arguments(self):
         """Retain the normal benchmark arguments; search dimensions are fixed."""
         super().add_parser_arguments()
-        self._parser.add_argument('--gpu_name', type=str.lower, default=None,
-                                 help='GPU preset key (h100, gb300, vr). Omit to autotune.')
-        self._parser.add_argument('--size', type=int, default=None,
-                                 help='Bytes per array; overrides the chip default without changing launch presets.')
+        self._parser.add_argument('--kernel_configs', type=str, default=None,
+                                  help='JSON mapping of workload tags to block_size/unroll. Omit to autotune.')
+        self._parser.add_argument('--size', type=int, default=_DEFAULT_SIZE,
+                                  help='Bytes per array, independent of launch overrides (default: 8 GiB).')
         self._parser.add_argument('--num_warm_up', type=int, default=20)
         self._parser.add_argument('--num_loops', type=int, default=100)
-        self._parser.add_argument('--data_type', choices=['float', 'double', 'both'], default='both')
+        self._parser.add_argument('--data_type', choices=['float', 'double'], default='double',
+                                  help='Element type; use one benchmark entry per data type.')
         self._parser.add_argument('--check_data', action='store_true',
-                                 help='Validate output. Requires 6x buffer size in host memory; use small sizes.')
+                                  help='Validate output. Requires 6x buffer size in host memory; use small sizes.')
 
     @staticmethod
     def _check_config(tag, config):
-        """Check only the parameters needed to launch a preset."""
+        """Check only the parameters needed to launch a workload."""
         match = _TAG.fullmatch(tag)
         if match is None or not isinstance(config, dict):
-            raise ValueError('Invalid chip configuration key: {}'.format(tag))
+            raise ValueError('Invalid workload configuration key: {}'.format(tag))
         if set(config) != {'block_size', 'unroll'} or any(type(value) is not int for value in config.values()):
             raise ValueError('{} needs integer block_size and unroll'.format(tag))
         if config['block_size'] not in _BLOCKS or config['unroll'] not in _UNROLLS:
             raise ValueError('Unsupported block size/unroll for {}'.format(tag))
 
-    def _gpu_config(self):
-        """Select only the GPU name supplied by the user."""
-        gpu_name = self._args.gpu_name
-        if gpu_name is None:
+    def _kernel_configs(self):
+        """Load explicit workload overrides for the selected data type only."""
+        if self._args.kernel_configs is None:
             return {}
-        if not gpu_name.strip():
-            raise ValueError('gpu_name must not be empty')
-        with Path(__file__).with_name('gpu_stream_profiles.json').open(encoding='utf-8') as stream:
-            profiles = json.load(stream)
-        if not isinstance(profiles, dict) or any(not isinstance(value, dict) for value in profiles.values()):
-            raise ValueError('Expected a chip-name to configuration mapping')
-        if gpu_name not in profiles:
-            logger.warning('No GPU STREAM preset for {}; using the fixed sweep.'.format(gpu_name))
-            return {}
-        profile = profiles[gpu_name]
-        if set(profile) != {'buffer_size', 'kernels'} or not isinstance(profile['kernels'], dict):
-            raise ValueError('Each chip needs one buffer_size and a kernels mapping')
-        size = profile['buffer_size']
-        if type(size) is not int or not 0 < size < 2**64 or size % 8:
-            raise ValueError('Chip buffer_size must be a positive multiple of 8 bytes')
-        configs = profile['kernels']
+        configs = json.loads(self._args.kernel_configs)
+        if not isinstance(configs, dict):
+            raise ValueError('Expected a workload-tag to configuration mapping')
         for tag, config in configs.items():
             self._check_config(tag, config)
-        logger.info('GPU STREAM {}: {}.'.format(gpu_name, 'preset' if configs else 'fallback sweep'))
-        return profile
+            if not tag.endswith('_' + self._args.data_type):
+                raise ValueError('{} does not match data_type {}'.format(tag, self._args.data_type))
+        return configs
 
     def _command(self, dtype, operation, size, config=None):
-        """Use singleton native parameters for presets, or the native fixed sweep."""
+        """Use singleton native parameters for overrides, or the native fixed sweep."""
         parts = [
             shlex.quote(self.__bin_path), '--size', str(size), '--data_type', dtype, '--operation', operation,
             '--num_warm_up', str(self._args.num_warm_up), '--num_loops', str(self._args.num_loops),
@@ -94,7 +81,7 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         return ' '.join(parts)
 
     def _preprocess(self):
-        """Resolve size once, independently of chip launch presets."""
+        """Resolve size once, independently of workload launch overrides."""
         if not super()._preprocess():
             return False
         self.__bin_path = os.path.join(self._args.bin_dir, self._bin_name)
@@ -104,25 +91,21 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
                     self._args.num_warm_up + self._args.num_loops >= 2**64):
                 raise ValueError('Invalid warm-up/loop counts')
             width = 4 if self._args.data_type == 'float' else 8
-            if self._args.size is not None and (not 0 < self._args.size < 2**64 or self._args.size % width):
+            if not 0 < self._args.size < 2**64 or self._args.size % width:
                 raise ValueError('Size must be a positive multiple of {} bytes'.format(width))
-            profile = self._gpu_config()
-            configs = profile.get('kernels', {})
-            size = self._args.size if self._args.size is not None else profile.get('buffer_size', _DEFAULT_SIZE)
-            dtypes = ['float', 'double'] if self._args.data_type == 'both' else [self._args.data_type]
+            configs = self._kernel_configs()
+            size, dtype = self._args.size, self._args.data_type
             commands, targets = [], []
             if not configs:
-                commands.append(self._command(self._args.data_type, 'all', size))
-                targets.append({'STREAM_{}_{}'.format(op.upper(), dtype) for dtype in dtypes for op in _OPERATIONS})
+                commands.append(self._command(dtype, 'all', size))
+                targets.append({'STREAM_{}_{}'.format(op.upper(), dtype) for op in _OPERATIONS})
             else:
-                for dtype in dtypes:
-                    for operation in _OPERATIONS:
-                        tag = 'STREAM_{}_{}'.format(operation.upper(), dtype)
-                        config = configs.get(tag)
-                        commands.append(self._command(dtype, operation, size, config))
-                        targets.append({tag})
+                for operation in _OPERATIONS:
+                    tag = 'STREAM_{}_{}'.format(operation.upper(), dtype)
+                    commands.append(self._command(dtype, operation, size, configs.get(tag)))
+                    targets.append({tag})
             self._commands, self._command_targets = commands, targets
-        except (OSError, ValueError) as error:
+        except ValueError as error:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             logger.error('Invalid GPU STREAM configuration: {}.'.format(error))
             return False

@@ -6,7 +6,8 @@
 Commands to run:
   python3 examples/benchmarks/gpu_stream.py
 
-Omit gpu_name to autotune; add --gpu_name h100, gb300, or vr to use a preset.
+Omit kernel_configs to autotune; supply --kernel_configs with a quoted JSON
+mapping of workload tags to block_size/unroll overrides to skip tuning.
 """
 
 from superbench.benchmarks import BenchmarkRegistry, Platform
@@ -14,7 +15,7 @@ from superbench.common.utils import logger
 
 if __name__ == '__main__':
     context = BenchmarkRegistry.create_benchmark_context(
-        'gpu-stream', platform=Platform.CUDA, parameters='--num_warm_up 10 --num_loops 40 --data_type both'
+        'gpu-stream', platform=Platform.CUDA, parameters='--num_warm_up 10 --num_loops 40 --data_type double'
     )
     # To enable data checking, please add '--check_data'.
 

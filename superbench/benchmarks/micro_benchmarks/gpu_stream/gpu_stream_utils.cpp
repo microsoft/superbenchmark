@@ -36,7 +36,7 @@ std::string KernelToString(int kernel_idx) {
 
 void PrintUsage() {
     std::cout << "Usage: gpu_stream [--size <bytes>] [--num_warm_up <N>] [--num_loops <N>]\n"
-              << "  [--data_type <float|double|both>] [--check_data]\n"
+              << "  [--data_type <float|double>] [--check_data]\n"
               << "  [--operation <copy|scale|add|triad|all>] [--block_size <N>] [--unroll <N>]\n";
 }
 
@@ -78,7 +78,7 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
             break;
         case kType:
             opts->data_type = optarg;
-            valid = opts->data_type == "float" || opts->data_type == "double" || opts->data_type == "both";
+            valid = opts->data_type == "float" || opts->data_type == "double";
             break;
         case kBlock:
             valid = ParseChoice(optarg, kThreadsPerBlock, &opts->block_size);

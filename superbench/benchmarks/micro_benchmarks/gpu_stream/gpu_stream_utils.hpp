@@ -121,7 +121,7 @@ struct Opts {
     // Whether check data after copy.
     bool check_data = false;
 
-    std::string data_type = "both";
+    std::string data_type = "double";
     int block_size = 0;
     int unroll = 0;
     std::vector<Kernel> operations{Kernel::kCopy, Kernel::kScale, Kernel::kAdd, Kernel::kTriad};
