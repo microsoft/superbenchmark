@@ -15,9 +15,10 @@
 #include <sched.h>
 
 namespace {
+// grid_size counts blocks of the main kernel; each thread moves `unroll` 16-byte vectors.
 void PrintConfiguration(const char *record, const std::string &tag, uint64_t size, const LaunchConfig &config) {
-    std::cout << record << "\t" << tag << "\t" << size << "\t" << config.block_size << "\t" << config.unroll
-              << "\t" << (size / 16) / (config.block_size * config.unroll);
+    std::cout << record << "\t" << tag << "\tsize=" << size << "\tblock_size=" << config.block_size
+              << "\tunroll=" << config.unroll << "\tgrid_size=" << (size / 16) / (config.block_size * config.unroll);
 }
 } // namespace
 
