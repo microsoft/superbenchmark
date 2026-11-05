@@ -441,18 +441,42 @@ For measurements of peer-to-peer communication performance between AMD GPUs, GPU
 
 #### Introduction
 
-Measures Copy, Scale, Add, and Triad bandwidth for float and double. Set `gpu_name: h100`, `gb300`, or `vr` to select [gpu_stream_profiles.json](../../../superbench/benchmarks/micro_benchmarks/gpu_stream_profiles.json), with one buffer size per GPU and block/unroll settings per workload. GPU names are not detected.
+Measures Copy, Scale, Add, and Triad memory bandwidth for one `data_type` (`float` or `double`, default `double`). Use a separate benchmark entry for each data type.
 
-Omit `gpu_name` to autotune; unrecognized names and missing presets also use the fixed block/unroll sweep. `size` is bytes per array and overrides the preset buffer without disabling launch presets. If omitted, the GPU default is used (8 GiB without a profile). Both datatypes are selected unless `data_type` is specified.
+By default, each operation sweeps block sizes (128, 256, 512, 1024) and unroll factors (1, 2, 3, 4, 6, 8) and reports the best result. `kernel_configs` sets `block_size` and `unroll` per operation as inline JSON; unlisted operations still sweep. `size` is bytes per array (default 8 GiB). `check_data` validates output outside timing and needs 6x `size` in host memory, so use small size like 1048576.
 
-`check_data` checks output outside timing and needs 6x buffer size in host memory. Use small buffers for validation.
+Native sweep:
+
+```yaml
+gpu-stream:fp64:
+  <<: *default_local_mode
+  parameters:
+    data_type: double
+```
+
+Fixed launch configuration:
+
+```yaml
+gpu-stream:fp64:
+  <<: *default_local_mode
+  parameters:
+    data_type: double
+    size: 4294967296
+    kernel_configs: >-
+      '{
+        "STREAM_COPY_double":  {"block_size": 256, "unroll": 2},
+        "STREAM_SCALE_double": {"block_size": 256, "unroll": 2},
+        "STREAM_ADD_double":   {"block_size": 256, "unroll": 2},
+        "STREAM_TRIAD_double": {"block_size": 256, "unroll": 2}
+      }'
+```
 
 #### Metrics
 
 | Metric Name | Unit | Description |
 |-------------|------|-------------|
-| STREAM\_(COPY\|SCALE\|ADD\|TRIAD)\_(double\|float)\_bw | GB/s | Fresh preset bandwidth or the highest measured bandwidth from the fixed sweep. |
-| STREAM\_(COPY\|SCALE\|ADD\|TRIAD)\_(double\|float)\_ratio | % | Efficiency from the same winning measurement; -1 if theoretical peak is unavailable. |
+| STREAM\_(COPY\|SCALE\|ADD\|TRIAD)\_(double\|float)\_bw | GB/s | Bandwidth with the configured launch, or the best bandwidth from the sweep. |
+| STREAM\_(COPY\|SCALE\|ADD\|TRIAD)\_(double\|float)\_ratio | % | Bandwidth as a percentage of theoretical peak; -1 if peak is unavailable. |
 
 For example: `gpu-stream:fp64/STREAM_ADD_double_bw`. Selected launch parameters stay in raw output.
 

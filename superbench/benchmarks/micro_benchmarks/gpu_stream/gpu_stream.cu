@@ -749,7 +749,7 @@ int GpuStream::Run() {
         std::cerr << "Run::No GPU available" << std::endl;
         return -1;
     }
-    if (opts_.data_type != "float" && opts_.data_type != "double" && opts_.data_type != "both") {
+    if (opts_.data_type != "float" && opts_.data_type != "double") {
         std::cerr << "Run::Invalid data_type: " << opts_.data_type << std::endl;
         return -1;
     }
@@ -799,14 +799,11 @@ int GpuStream::Run() {
         return -1;
     }
 
-    const std::vector<std::string> data_types =
-        opts_.data_type == "both" ? std::vector<std::string>{"float", "double"} : std::vector<std::string>{opts_.data_type};
-    for (const auto &data_type : data_types) {
-        ret = data_type == "float" ? CreateBenchArgs<float>() : CreateBenchArgs<double>();
-        if (ret != 0) {
-            return ret;
-        }
-        std::visit(
+    ret = opts_.data_type == "float" ? CreateBenchArgs<float>() : CreateBenchArgs<double>();
+    if (ret != 0) {
+        return ret;
+    }
+    std::visit(
         [&](auto &curr_args) {
             // Get memory clock rate once for both bandwidth computation and display
             float memory_clock_mhz = GetMemoryClockRate(curr_args->gpu_id, curr_args->gpu_device_prop);
@@ -837,11 +834,7 @@ int GpuStream::Run() {
                 std::cerr << "Run::RunStream error: " << ret << std::endl;
             }
         },
-            bench_args_);
-        if (ret != 0) {
-            return ret;
-        }
-    }
+        bench_args_);
 
     return ret;
 }
