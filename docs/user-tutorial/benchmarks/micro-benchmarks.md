@@ -368,6 +368,23 @@ make NATIVE NATIVE_ARRAY_SIZE=400000000
 cp streamNative ${SB_MICRO_PATH}/bin/
 ```
 
+#### Core selection
+
+The `cores` parameter accepts either the existing space-separated core list (for example, `cores: 88 90 92`)
+or a single compact `start,end,step` range:
+
+```yaml
+parameters:
+  cpu_arch: native
+  numa_mem_nodes: 1
+  cores: 88,151,1
+```
+
+The end is inclusive when reached by the step: `88,151,1` selects cores 88 through 151 (64 threads),
+while `88,151,2` selects 88, 90, 92, ..., 150 (32 threads).
+Ranges require nonnegative core IDs, `start <= end`, and a positive step. Do not mix a range with explicit core IDs.
+The same syntax works on the command line: `--cores 88,151,1`. The default core configuration is unchanged.
+
 #### Metrics
 
 | Name                                                     | Unit             | Description                                                    |
