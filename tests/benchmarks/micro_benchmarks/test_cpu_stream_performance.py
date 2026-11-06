@@ -81,8 +81,8 @@ class CpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark_class)
 
         for cores in [
-            '', '88,151', '88,151,1,2', '88,,1', 'a,151,1', '88,151,a', '88,151,0', '88,151,-1', '151,88,1',
-            '-1,151,1', '88,151,1 152', '88 90,100,2', '88 90 foo'
+            '', '88,151', '88,151,1,2', '88,,1', 'a,151,1', '88,151,a', '88,151,0', '88,151,-1', '151,88,1', '-1,151,1',
+            '88,151,1 152', '88 90,100,2', '88 90 foo'
         ]:
             with self.subTest(cores=cores):
                 benchmark = benchmark_class(benchmark_name, parameters='--cores ' + cores)
