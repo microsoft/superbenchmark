@@ -31,8 +31,8 @@ unsigned long long getCurrentTimestampInMicroseconds();
 namespace stream_config {
 constexpr std::array<int, 4> kThreadsPerBlock = {128, 256, 512, 1024};
 constexpr std::array<int, 6> kUnrollFactors = {1, 2, 3, 4, 6, 8};
-constexpr uint64_t kDefaultBufferSizeInBytes = 8589934592; // 8 GiB per array
-constexpr int kNumBuffers = 3;                                         // Number of buffers for triad, add kernel
+constexpr uint64_t kDefaultBufferSizeInBytes = 8589934592;        // 8 GiB per array
+constexpr int kNumBuffers = 3;                                    // Number of buffers for triad, add kernel
 constexpr int kNumValidationBuffers = 4;                          // Number of validation buffers, one for each kernel
 constexpr int kUInt8Mod = 256;                                    // Modulo for unsigned long data type
 constexpr std::array<int, 4> kBufferBwMultipliers = {2, 2, 3, 3}; // Buffer multiplier for triad, add kernel

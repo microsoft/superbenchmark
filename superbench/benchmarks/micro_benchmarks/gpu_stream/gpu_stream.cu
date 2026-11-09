@@ -498,23 +498,23 @@ int GpuStream::RunStreamKernel(std::unique_ptr<BenchArgs<T>> &args, Kernel kerne
 
         switch (kernel) {
         case Kernel::kCopy:
-            cuda_err = stream_kernels::Launch<T, Kernel::kCopy>(
-                output, first, second, count, config, args->sub.stream, max_grid_x);
+            cuda_err = stream_kernels::Launch<T, Kernel::kCopy>(output, first, second, count, config, args->sub.stream,
+                                                                max_grid_x);
             args->sub.kernel_name = "COPY";
             break;
         case Kernel::kScale:
-            cuda_err = stream_kernels::Launch<T, Kernel::kScale>(
-                output, first, second, count, config, args->sub.stream, max_grid_x);
+            cuda_err = stream_kernels::Launch<T, Kernel::kScale>(output, first, second, count, config, args->sub.stream,
+                                                                 max_grid_x);
             args->sub.kernel_name = "SCALE";
             break;
         case Kernel::kAdd:
-            cuda_err = stream_kernels::Launch<T, Kernel::kAdd>(
-                output, first, second, count, config, args->sub.stream, max_grid_x);
+            cuda_err = stream_kernels::Launch<T, Kernel::kAdd>(output, first, second, count, config, args->sub.stream,
+                                                               max_grid_x);
             args->sub.kernel_name = "ADD";
             break;
         case Kernel::kTriad:
-            cuda_err = stream_kernels::Launch<T, Kernel::kTriad>(
-                output, first, second, count, config, args->sub.stream, max_grid_x);
+            cuda_err = stream_kernels::Launch<T, Kernel::kTriad>(output, first, second, count, config, args->sub.stream,
+                                                                 max_grid_x);
             args->sub.kernel_name = "TRIAD";
             break;
         default:
@@ -665,8 +665,8 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
                     Destroy(args);
                     return ret;
                 }
-                const double bandwidth = static_cast<double>(args->size) * args->num_loops *
-                                         kBufferBwMultipliers[index] / elapsed_ms / 1e6;
+                const double bandwidth =
+                    static_cast<double>(args->size) * args->num_loops * kBufferBwMultipliers[index] / elapsed_ms / 1e6;
                 if (!std::isfinite(bandwidth) || bandwidth <= 0) {
                     std::cerr << "Invalid bandwidth for " << tag << std::endl;
                     Destroy(args);
@@ -693,7 +693,8 @@ int GpuStream::RunStream(std::unique_ptr<BenchArgs<T>> &args, const std::string 
         const auto &winner = best[static_cast<size_t>(kernel)];
         const std::string tag = "STREAM_" + KernelToString(static_cast<int>(kernel)) + "_" + data_type;
         PrintConfiguration("GPU_STREAM_CONFIG", tag, size, winner.config);
-        std::cout << "\n" << tag << "\t" << std::defaultfloat << std::setprecision(9) << winner.bandwidth << "\t"
+        std::cout << "\n"
+                  << tag << "\t" << std::defaultfloat << std::setprecision(9) << winner.bandwidth << "\t"
                   << (peak_bw > 0 ? winner.bandwidth / peak_bw * 100 : -1) << std::endl;
     }
     return 0;
