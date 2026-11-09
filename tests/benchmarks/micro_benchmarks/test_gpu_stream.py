@@ -46,16 +46,26 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         benchmark, ret = self.create('--size 1048576 --num_warm_up 5 --num_loops 10 --check_data')
         self.assertTrue(ret)
         self.assertEqual(len(benchmark._commands), 1)
-        for value in ['--size 1048576', '--data_type double', '--operation all', '--num_warm_up 5',
-                      '--num_loops 10', '--check_data']:
+        for value in [
+            '--size 1048576', '--data_type double', '--operation all', '--num_warm_up 5', '--num_loops 10',
+            '--check_data'
+        ]:
             self.assertIn(value, benchmark._commands[0])
         self.assertNotIn('--block_size', benchmark._commands[0])
         self.assertEqual(benchmark._command_targets, [set(_TAGS)])
 
     def test_kernel_configs(self):
         """Listed workloads use their launch config; unlisted workloads sweep."""
-        configs = {'STREAM_COPY_double': {'block_size': 256, 'unroll': 2},
-                   'STREAM_TRIAD_double': {'block_size': 512, 'unroll': 4}}
+        configs = {
+            'STREAM_COPY_double': {
+                'block_size': 256,
+                'unroll': 2
+            },
+            'STREAM_TRIAD_double': {
+                'block_size': 512,
+                'unroll': 4
+            }
+        }
         benchmark, ret = self.create('--size 1048576', configs)
         self.assertTrue(ret)
         self.assertEqual(benchmark._command_targets, [{tag} for tag in _TAGS])
@@ -92,7 +102,9 @@ parameters:
         """Invalid sizes, loops, and kernel_configs are rejected."""
         cases = ['--size 0', '--size 12', '--num_loops 0', '--num_warm_up -1']
         for value in [
-            '{', '[]', '{"STREAM_COPY_half": {"block_size": 256, "unroll": 2}}',
+            '{',
+            '[]',
+            '{"STREAM_COPY_half": {"block_size": 256, "unroll": 2}}',
             '{"STREAM_COPY_float": {"block_size": 256, "unroll": 2}}',
             '{"STREAM_COPY_double": {"block_size": 256}}',
             '{"STREAM_COPY_double": {"block_size": 64, "unroll": 2}}',

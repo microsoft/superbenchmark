@@ -3,21 +3,17 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <cstdint>
 #include <limits>
 #include <type_traits>
 
 #include "gpu_stream_utils.hpp"
 
 template <typename T> struct VectorType;
-template <> struct VectorType<double> {
-    using type = double2;
-};
-template <> struct VectorType<float> {
-    using type = float4;
-};
+template <> struct VectorType<double> { using type = double2; };
+template <> struct VectorType<float> { using type = float4; };
 template <typename T> using VecT = typename VectorType<T>::type;
 
 #ifdef __CUDACC__
@@ -52,7 +48,7 @@ template <typename T, Kernel OP> __device__ __forceinline__ VecT<T> TransformPac
 // Bounds checks and scalar remainders stay out of the complete-tile kernel.
 template <typename T, Kernel OP, int BLOCK, int UNROLL, typename Index>
 __global__ __launch_bounds__(BLOCK) void BulkKernel(VecT<T> *__restrict__ output, const VecT<T> *__restrict__ a,
-                                                   const VecT<T> *__restrict__ b) {
+                                                    const VecT<T> *__restrict__ b) {
     const Index base = static_cast<Index>(blockIdx.x) * (BLOCK * UNROLL) + threadIdx.x;
     VecT<T> first[UNROLL];
     VecT<T> second[UNROLL];
@@ -76,8 +72,8 @@ __global__ __launch_bounds__(BLOCK) void BulkKernel(VecT<T> *__restrict__ output
 }
 
 template <typename T, Kernel OP>
-__global__ void TailKernel(T *__restrict__ output, const T *__restrict__ a, const T *__restrict__ b,
-                           uint64_t begin, uint64_t count) {
+__global__ void TailKernel(T *__restrict__ output, const T *__restrict__ a, const T *__restrict__ b, uint64_t begin,
+                           uint64_t count) {
     const uint64_t i = begin + static_cast<uint64_t>(blockIdx.x) * blockDim.x + threadIdx.x;
     if (i < count) {
         T right = 0;
@@ -88,8 +84,7 @@ __global__ void TailKernel(T *__restrict__ output, const T *__restrict__ a, cons
     }
 }
 
-template <typename T>
-__global__ void InitializeData(T *a, T *b, uint64_t count) {
+template <typename T> __global__ void InitializeData(T *a, T *b, uint64_t count) {
     for (uint64_t i = static_cast<uint64_t>(blockIdx.x) * blockDim.x + threadIdx.x; i < count;
          i += static_cast<uint64_t>(gridDim.x) * blockDim.x) {
         a[i] = static_cast<T>(i % stream_config::kUInt8Mod);
@@ -140,7 +135,7 @@ cudaError_t LaunchUnroll(T *output, const T *a, const T *b, uint64_t count, cuda
 
 template <typename T, Kernel OP, int BLOCK>
 cudaError_t LaunchBlock(T *output, const T *a, const T *b, uint64_t count, cudaStream_t stream, int max_grid_x,
-                       const LaunchConfig &config) {
+                        const LaunchConfig &config) {
     switch (config.unroll) {
     case 1:
         return LaunchUnroll<T, OP, BLOCK, 1>(output, a, b, count, stream, max_grid_x);
@@ -160,8 +155,8 @@ cudaError_t LaunchBlock(T *output, const T *a, const T *b, uint64_t count, cudaS
 }
 
 template <typename T, Kernel OP>
-cudaError_t Launch(T *output, const T *a, const T *b, uint64_t count, const LaunchConfig &config,
-                   cudaStream_t stream, int max_grid_x) {
+cudaError_t Launch(T *output, const T *a, const T *b, uint64_t count, const LaunchConfig &config, cudaStream_t stream,
+                   int max_grid_x) {
     switch (config.block_size) {
     case 128:
         return LaunchBlock<T, OP, 128>(output, a, b, count, stream, max_grid_x, config);

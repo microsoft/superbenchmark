@@ -109,8 +109,8 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
     }
     const uint64_t element_size = opts->data_type == "float" ? sizeof(float) : sizeof(double);
     if (optind != argc || opts->size == 0 || opts->size % element_size != 0) {
-        std::cerr << "Size must be a positive multiple of " << element_size << " bytes; positional arguments are invalid"
-                  << std::endl;
+        std::cerr << "Size must be a positive multiple of " << element_size
+                  << " bytes; positional arguments are invalid" << std::endl;
         return -1;
     }
     if (opts->num_loops == 0 || opts->num_warm_up > std::numeric_limits<uint64_t>::max() - opts->num_loops) {
