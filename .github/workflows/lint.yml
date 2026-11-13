@@ -21,7 +21,7 @@ jobs:
       run: misspell -error .
   cpp:
     name: CPP code lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Install clang-format-14
       run: |
