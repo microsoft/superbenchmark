@@ -11,10 +11,11 @@ from superbench.benchmarks.model_benchmarks.pytorch_lstm import PytorchLSTM
 from superbench.benchmarks.model_benchmarks.megatron_gpt3 import MegatronGPT
 from superbench.benchmarks.model_benchmarks.pytorch_llama import PytorchLlama
 from superbench.benchmarks.model_benchmarks.pytorch_mixtral import PytorchMixtral
+from superbench.benchmarks.model_benchmarks.pytorch_deepseek_v2_lite import DeepSeekV2LiteTraining
 
 __all__ = [
     'ModelBenchmark', 'PytorchBERT', 'PytorchGPT2', 'PytorchCNN', 'PytorchLSTM', 'MegatronGPT', 'PytorchLlama',
-    'PytorchMixtral'
+    'PytorchMixtral', 'DeepSeekV2LiteTraining'
 ]
 
 if PytorchMixtral is not None:
