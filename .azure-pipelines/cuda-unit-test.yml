@@ -12,13 +12,15 @@ pool:
 
 container:
   image: nvcr.io/nvidia/pytorch:24.03-py3
-  options: '--name cuda-ci -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker:ro'
+  mapDockerSocket: true
+  options: '--name cuda-ci -v /usr/bin/docker:/usr/bin/docker:ro'
 
 steps:
   - script: |
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
+      set -e
       docker exec -t -u root -e DEBIAN_FRONTEND=noninteractive cuda-ci bash -c \
         "apt-get update -y -q && \
         yes '' | apt-get install -y -q sudo && \
