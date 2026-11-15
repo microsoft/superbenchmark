@@ -1,162 +1,150 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-"""Tests for gpu_stream benchmark."""
+"""Tests for gpu-stream benchmark."""
 
-import numbers
+import json
+from pathlib import Path
+import shlex
 import unittest
+
+from omegaconf import OmegaConf
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
-from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
+from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
+from superbench.executor import SuperBenchExecutor
+
+_TAGS = ['STREAM_COPY_double', 'STREAM_SCALE_double', 'STREAM_ADD_double', 'STREAM_TRIAD_double']
 
 
+@decorator.cuda_test
 class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
-    """Test class for gpu_stream benchmark."""
+    """Test command generation and result parsing with synthetic data."""
     @classmethod
     def setUpClass(cls):
-        """Hook method for setting up class fixture before running tests in the class."""
+        """Create mock binary environment."""
         super().setUpClass()
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/gpu_stream'])
 
-    def _test_gpu_stream_command_generation(self, platform, data_type='double'):
-        """Test gpu-stream benchmark command generation."""
-        benchmark_name = 'gpu-stream'
-        (benchmark_class,
-         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
-        assert (benchmark_class)
+    def create(self, parameters='', configs=None):
+        """Create a benchmark and run preprocess."""
+        if configs is not None:
+            parameters += ' --kernel_configs {}'.format(shlex.quote(json.dumps(configs)))
+        benchmark_class, _ = BenchmarkRegistry._BenchmarkRegistry__select_benchmark('gpu-stream', Platform.CUDA)
+        benchmark = benchmark_class('gpu-stream', parameters=parameters)
+        return benchmark, benchmark._preprocess()
 
-        num_warm_up = 5
-        num_loops = 10
-        size = 25769803776
+    @staticmethod
+    def output(tags, bandwidth=100):
+        """Build synthetic native output."""
+        return '\n'.join(['STREAM Benchmark'] + ['{}\t{}\t25'.format(tag, bandwidth) for tag in sorted(tags)])
 
-        parameters = '--num_warm_up %d --num_loops %d --size %d --data_type %s ' \
-            '--check_data' % \
-            (num_warm_up, num_loops, size, data_type)
-        benchmark = benchmark_class(benchmark_name, parameters=parameters)
+    def test_native_sweep(self):
+        """Without kernel_configs, one native command sweeps all operations."""
+        benchmark, ret = self.create('--size 1048576 --num_warm_up 5 --num_loops 10 --check_data')
+        self.assertTrue(ret)
+        self.assertEqual(len(benchmark._commands), 1)
+        for value in [
+            '--size 1048576', '--data_type double', '--operation all', '--num_warm_up 5', '--num_loops 10',
+            '--check_data'
+        ]:
+            self.assertIn(value, benchmark._commands[0])
+        self.assertNotIn('--block_size', benchmark._commands[0])
+        self.assertEqual(benchmark._command_targets, [set(_TAGS)])
 
-        # Check basic information
-        assert (benchmark)
-        ret = benchmark._preprocess()
-        assert (ret is True)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.name == benchmark_name)
-        assert (benchmark.type == BenchmarkType.MICRO)
-
-        # Check parameters specified in BenchmarkContext.
-        assert (benchmark._args.size == size)
-        assert (benchmark._args.num_warm_up == num_warm_up)
-        assert (benchmark._args.num_loops == num_loops)
-        assert (benchmark._args.check_data)
-        assert (benchmark._args.data_type == data_type)
-
-        # Check command
-        assert (1 == len(benchmark._commands))
-        assert (benchmark._commands[0].startswith(benchmark._GpuStreamBenchmark__bin_path))
-        assert ('--size %d' % size in benchmark._commands[0])
-        assert ('--num_warm_up %d' % num_warm_up in benchmark._commands[0])
-        assert ('--num_loops %d' % num_loops in benchmark._commands[0])
-        assert ('--data_type %s' % data_type in benchmark._commands[0])
-        assert ('--check_data' in benchmark._commands[0])
-
-    @decorator.cuda_test
-    def test_gpu_stream_command_generation_cuda(self):
-        """Test gpu-stream benchmark command generation, CUDA case."""
-        self._test_gpu_stream_command_generation(Platform.CUDA)
-
-    @decorator.cuda_test
-    def test_gpu_stream_command_generation_cuda_float(self):
-        """Test gpu-stream benchmark command generation with float, CUDA case."""
-        self._test_gpu_stream_command_generation(Platform.CUDA, data_type='float')
-
-    @decorator.load_data('tests/data/gpu_stream.log')
-    def _test_gpu_stream_result_parsing(self, platform, test_raw_output):
-        """Test gpu-stream benchmark result parsing."""
-        benchmark_name = 'gpu-stream'
-        (benchmark_class,
-         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
-        assert (benchmark_class)
-        benchmark = benchmark_class(benchmark_name, parameters='')
-        assert (benchmark)
-        ret = benchmark._preprocess()
-        assert (ret is True)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
-        assert (benchmark.name == 'gpu-stream')
-        assert (benchmark.type == BenchmarkType.MICRO)
-
-        # Positive case - valid raw output.
-        assert (benchmark._process_raw_result(0, test_raw_output))
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
-
-        assert (1 == len(benchmark.raw_data))
-        # print(test_raw_output.splitlines())
-        test_raw_output_dict = {
-            x.split()[0]: [float(x.split()[1]), float(x.split()[2])]
-            for x in test_raw_output.strip().splitlines() if x.startswith('STREAM_')
+    def test_kernel_configs(self):
+        """Listed workloads use their launch config; unlisted workloads sweep."""
+        configs = {
+            'STREAM_COPY_double': {
+                'block_size': 256,
+                'unroll': 2
+            },
+            'STREAM_TRIAD_double': {
+                'block_size': 512,
+                'unroll': 4
+            }
         }
-        assert (len(test_raw_output_dict) * 2 + benchmark.default_metric_count == len(benchmark.result))
-        for output_key in benchmark.result:
-            if output_key == 'return_code':
-                assert (benchmark.result[output_key] == [0])
+        benchmark, ret = self.create('--size 1048576', configs)
+        self.assertTrue(ret)
+        self.assertEqual(benchmark._command_targets, [{tag} for tag in _TAGS])
+        for command, tag in zip(benchmark._commands, _TAGS):
+            self.assertIn('--size 1048576', command)
+            self.assertIn('--operation {}'.format(tag.split('_')[1].lower()), command)
+            if tag in configs:
+                self.assertIn('--block_size {block_size} --unroll {unroll}'.format(**configs[tag]), command)
             else:
-                assert (len(benchmark.result[output_key]) == 1)
-                assert (isinstance(benchmark.result[output_key][0], numbers.Number))
-                if output_key.endswith('_bw'):
-                    assert (output_key[:-3] in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key[:-3]][0] == benchmark.result[output_key][0])
-                else:
-                    assert (output_key.endswith('_ratio'))
-                    assert (output_key[:-6] in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key[:-6]][1] == benchmark.result[output_key][0])
+                self.assertNotIn('--block_size', command)
 
-        # Negative case - invalid raw output.
-        assert (benchmark._process_raw_result(1, 'Invalid raw output') is False)
-        assert (benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+    def test_kernel_configs_from_yaml(self):
+        """Inline JSON in YAML survives executor argument conversion."""
+        config = OmegaConf.create(
+            """
+parameters:
+  data_type: double
+  kernel_configs: >-
+    '{
+      "STREAM_COPY_double":  {"block_size": 256, "unroll": 2},
+      "STREAM_SCALE_double": {"block_size": 256, "unroll": 2},
+      "STREAM_ADD_double":   {"block_size": 256, "unroll": 2},
+      "STREAM_TRIAD_double": {"block_size": 256, "unroll": 2}
+    }'
+"""
+        )
+        executor = SuperBenchExecutor.__new__(SuperBenchExecutor)
+        benchmark, ret = self.create(executor._SuperBenchExecutor__get_arguments(config.parameters))
+        self.assertTrue(ret)
+        self.assertEqual(len(benchmark._commands), 4)
+        self.assertTrue(all('--block_size 256 --unroll 2' in command for command in benchmark._commands))
 
-    @decorator.cuda_test
-    def test_gpu_stream_result_parsing_cuda(self):
-        """Test gpu-stream benchmark result parsing, CUDA case."""
-        self._test_gpu_stream_result_parsing(Platform.CUDA)
+    def test_invalid_arguments(self):
+        """Invalid sizes, loops, and kernel_configs are rejected."""
+        cases = ['--size 0', '--size 12', '--num_loops 0', '--num_warm_up -1']
+        for value in [
+            '{',
+            '[]',
+            '{"STREAM_COPY_half": {"block_size": 256, "unroll": 2}}',
+            '{"STREAM_COPY_float": {"block_size": 256, "unroll": 2}}',
+            '{"STREAM_COPY_double": {"block_size": 256}}',
+            '{"STREAM_COPY_double": {"block_size": 64, "unroll": 2}}',
+            '{"STREAM_COPY_double": {"block_size": 256, "unroll": 5}}',
+            '{"STREAM_COPY_double": {"block_size": true, "unroll": 2}}',
+        ]:
+            cases.append('--kernel_configs {}'.format(shlex.quote(value)))
+        for parameters in cases:
+            with self.subTest(parameters=parameters):
+                benchmark, ret = self.create(parameters)
+                self.assertFalse(ret)
+                self.assertEqual(benchmark.return_code, ReturnCode.INVALID_ARGUMENT)
+                self.assertEqual(benchmark._commands, [])
 
-    @decorator.load_data('tests/data/gpu_stream_float.log')
-    def _test_gpu_stream_result_parsing_float(self, platform, test_raw_output):
-        """Test gpu-stream benchmark result parsing for float data type."""
-        benchmark_name = 'gpu-stream'
-        (benchmark_class,
-         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, platform)
-        assert (benchmark_class)
-        benchmark = benchmark_class(benchmark_name, parameters='--data_type float')
-        assert (benchmark)
-        ret = benchmark._preprocess()
-        assert (ret is True)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
+    def test_result_parsing(self):
+        """Metrics come from canonical rows; launch details stay in raw output."""
+        for dtype, filename in [('float', 'gpu_stream_float.log'), ('double', 'gpu_stream.log')]:
+            with self.subTest(dtype=dtype):
+                benchmark, ret = self.create('--data_type {}'.format(dtype))
+                self.assertTrue(ret)
+                output = (Path(__file__).parents[2] / 'data' / filename).read_text()
+                self.assertTrue(benchmark._process_raw_result(0, output))
+                rows = [line.split() for line in output.splitlines() if line.startswith('STREAM_')]
+                self.assertEqual(len(rows), 4)
+                for tag, bandwidth, ratio in rows:
+                    self.assertEqual(benchmark.result[tag + '_bw'], [float(bandwidth)])
+                    self.assertEqual(benchmark.result[tag + '_ratio'], [float(ratio)])
+                self.assertEqual(len(benchmark.result), benchmark.default_metric_count + 8)
 
-        # Positive case - valid raw output with float tags.
-        assert (benchmark._process_raw_result(0, test_raw_output))
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
-
-        assert (1 == len(benchmark.raw_data))
-        test_raw_output_dict = {
-            x.split()[0]: [float(x.split()[1]), float(x.split()[2])]
-            for x in test_raw_output.strip().splitlines() if x.startswith('STREAM_')
-        }
-        assert (len(test_raw_output_dict) * 2 + benchmark.default_metric_count == len(benchmark.result))
-        for output_key in benchmark.result:
-            if output_key == 'return_code':
-                assert (benchmark.result[output_key] == [0])
-            else:
-                assert (len(benchmark.result[output_key]) == 1)
-                assert (isinstance(benchmark.result[output_key][0], numbers.Number))
-                if output_key.endswith('_bw'):
-                    assert (output_key[:-3] in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key[:-3]][0] == benchmark.result[output_key][0])
-                else:
-                    assert (output_key.endswith('_ratio'))
-                    assert (output_key[:-6] in test_raw_output_dict)
-                    assert (test_raw_output_dict[output_key[:-6]][1] == benchmark.result[output_key][0])
-
-    @decorator.cuda_test
-    def test_gpu_stream_result_parsing_cuda_float(self):
-        """Test gpu-stream benchmark result parsing for float, CUDA case."""
-        self._test_gpu_stream_result_parsing_float(Platform.CUDA)
+    def test_invalid_result(self):
+        """Missing, duplicate, and non-finite rows fail parsing."""
+        valid = self.output(_TAGS)
+        for output in [
+            '',
+            valid + '\nSTREAM_COPY_double\t300\t25',
+            valid.replace('\t100\t25', '\tnan\t25'),
+            valid.replace('\t100\t25', '\t-1\t25'),
+        ]:
+            with self.subTest(output=output):
+                benchmark, _ = self.create()
+                self.assertFalse(benchmark._process_raw_result(0, output))
+                self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+                self.assertNotIn('STREAM_COPY_double_bw', benchmark.result)
