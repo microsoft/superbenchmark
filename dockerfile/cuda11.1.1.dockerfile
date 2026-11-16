@@ -47,6 +47,7 @@ RUN apt-get update && \
     openssh-client \
     openssh-server \
     pciutils \
+    rsync \
     sudo \
     util-linux \
     vim \
@@ -166,7 +167,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
-    python3 -m pip install --no-cache-dir .[nvworker] && \
+    python3 -m pip install --no-cache-dir -c requirements/ansible.txt .[nvworker] && \
     make cppbuild && \
     make postinstall && \
     rm -rf .git

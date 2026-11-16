@@ -156,7 +156,7 @@ RUN make -C third_party cuda
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
-    python3 -m pip install --no-cache-dir .[nvworker] && \
+    python3 -m pip install --no-cache-dir -c requirements/ansible.txt .[nvworker] && \
     make cppbuild && \
     make postinstall && \
     rm -rf .git

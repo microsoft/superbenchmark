@@ -1,0 +1,51 @@
+name: Ansible Dependencies
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/ansible-dependencies.yml
+      - requirements/ansible*
+      - scripts/install_ansible.py
+      - setup.py
+      - Makefile
+      - superbench/runner/**
+      - tests/ansible/**
+  push:
+    branches:
+      - main
+      - release/*
+    paths:
+      - .github/workflows/ansible-dependencies.yml
+      - requirements/ansible*
+      - scripts/install_ansible.py
+      - setup.py
+      - Makefile
+      - superbench/runner/**
+      - tests/ansible/**
+
+permissions:
+  contents: read
+
+jobs:
+  collections:
+    name: Ansible Python ${{ matrix.python }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.7', '3.8', '3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install local test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends openssh-client rsync
+      - name: Install and exercise the dependency profile
+        run: |
+          python3 scripts/install_ansible.py
+          python3 -m unittest discover -s tests/ansible -p test_dependencies.py -v
+          python3 scripts/install_ansible.py --check

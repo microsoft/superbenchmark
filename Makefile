@@ -21,8 +21,4 @@ thirdparty:
 	cd ./third_party/ && make all
 
 postinstall:
-ifeq ($(shell which ansible-galaxy),)
-	$(error 'Cannot find ansible-galaxy')
-else
-	ansible-galaxy collection install ansible.posix ansible.utils community.crypto
-endif
+	python3 scripts/install_ansible.py

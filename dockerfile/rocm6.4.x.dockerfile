@@ -245,7 +245,7 @@ RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfu
 ADD . .
 ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
-RUN python3 -m pip install .[amdworker]  && \
+RUN python3 -m pip install -c requirements/ansible.txt .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall && \
     rm -rf .git

@@ -4,6 +4,7 @@
 """SuperBench Ansible Client test."""
 
 import os
+import sys
 import unittest
 import tempfile
 from pathlib import Path
@@ -158,3 +159,17 @@ class AnsibleClientTestCase(unittest.TestCase):
                 'playbook': str(self.ansible_client._playbook_path / 'play'),
             }
         )
+
+    def test_local_execution_and_failure_count(self):
+        """Exercise the real runner and preserve nonzero command failures."""
+        client = AnsibleClient(OmegaConf.create({'host_list': 'localhost'}))
+        with tempfile.TemporaryDirectory(prefix='sb-ansible-client-') as directory:
+            for command, expected in [('printf sb-ansible-smoke', 0), ('exit 7', 2)]:
+                config = client.get_shell_config(command)
+                config['extravars'] = {'ansible_python_interpreter': sys.executable}
+                config['envvars'] = {
+                    'ANSIBLE_LOCAL_TEMP': str(Path(directory) / 'local'),
+                    'ANSIBLE_REMOTE_TEMP': str(Path(directory) / 'remote'),
+                }
+                self.assertEqual(client.run(config), expected)
+        self.assertEqual(client.failure_count, 1)

@@ -143,7 +143,7 @@ RUN make RCCL_HOME=/opt/rocm ROCBLAS_BRANCH=release-staging/rocm-rel-6.3 HIPBLAS
 ADD . .
 ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
-RUN python3 -m pip install --no-build-isolation .[amdworker]  && \
+RUN python3 -m pip install --no-build-isolation -c requirements/ansible.txt .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
     make postinstall && \
     rm -rf .git

@@ -23,7 +23,8 @@ steps:
       echo "##vso[task.prependpath]$HOME/.local/bin"
     displayName: Export path
   - script: |
-      python3 -m pip install .[test]
+      set -e
+      python3 -m pip install -c requirements/ansible.txt .[test]
       make postinstall
     displayName: Install Ansible dependencies
   - script: |
