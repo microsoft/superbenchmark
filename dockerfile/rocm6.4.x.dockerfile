@@ -1,6 +1,6 @@
 ARG BASE_IMAGE=rocm/pytorch:rocm6.4.4_ubuntu24.04_py3.12_pytorch_release_2.7.1
 
-FROM ${BASE_IMAGE}
+FROM ${BASE_IMAGE} AS ansible-dependencies
 
 # OS:
 #   - Ubuntu: 24.04
@@ -65,6 +65,14 @@ RUN apt-get update && \
     && \
     apt-get clean && \
     rm -rf /tmp/*
+
+ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+COPY requirements /opt/sb-ansible/requirements
+COPY scripts/install_ansible.py /opt/sb-ansible/scripts/install_ansible.py
+RUN python3 /opt/sb-ansible/scripts/install_ansible.py
+
+FROM ansible-dependencies AS benchmark
 
 ARG NUM_MAKE_JOBS=64
 
@@ -246,10 +254,12 @@ ADD . .
 ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install -c requirements/ansible.txt .[amdworker]  && \
+    python3 /opt/sb-ansible/scripts/install_ansible.py --check && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
-    make postinstall && \
+    python3 -m unittest discover -s tests/ansible -p test_dependencies.py && \
     rm -rf .git
 
 # Fix stale hypothesis plugin from base image (imports removed pkg_resources)
 # and add test dependencies missing from the base image.
-RUN python3 -m pip install --upgrade hypothesis setuptools pytest-timeout vcrpy
+RUN python3 -m pip install --upgrade hypothesis setuptools pytest-timeout vcrpy && \
+    python3 /opt/sb-ansible/scripts/install_ansible.py --check

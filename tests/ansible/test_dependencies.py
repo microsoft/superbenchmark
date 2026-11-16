@@ -6,6 +6,7 @@
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -134,3 +135,53 @@ class InstalledCollectionsTest(unittest.TestCase):
                 command, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=120
             )
             self.assertEqual(result.returncode, 0, result.stdout)
+
+
+@unittest.skipUnless(os.name == 'posix', 'The build-cache check uses Bash.')
+class BuildCacheProbeTest(unittest.TestCase):
+    """Test cache-log assertions and input restoration without requiring Docker."""
+    def test_cache_decisions_and_input_restoration(self):
+        """Reject unexpected cache behavior and restore the checkout on every exit."""
+        for states, expected in [('DONE,CACHED,DONE', 0), ('CACHED', 1), ('DONE,DONE', 1), ('DONE,CACHED,CACHED', 1)]:
+            with self.subTest(states=states), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / 'tests' / 'ansible').mkdir(parents=True)
+                (root / 'requirements').mkdir()
+                (root / 'bin').mkdir()
+                readme = root / 'README.md'
+                requirements = root / 'requirements' / 'ansible.txt'
+                readme.write_text('original source\n')
+                requirements.write_text('original requirements\n')
+                (root / 'Dockerfile').touch()
+                counter = root / 'counter'
+                counter.write_text('0\n')
+                script = root / 'tests' / 'ansible' / 'check_build_cache.sh'
+                shutil.copyfile(Path(__file__).with_name('check_build_cache.sh'), script)
+                docker = root / 'bin' / 'docker'
+                docker.write_text(
+                    '#!/bin/sh\nset -eu\n'
+                    'count=$(cat "$CACHE_COUNTER"); count=$((count + 1))\n'
+                    'printf "%s\\n" "$count" > "$CACHE_COUNTER"\n'
+                    'state=$(printf "%s" "$CACHE_STATES" | cut -d, -f"$count")\n'
+                    'echo "#7 [ansible-dependencies 6/6] RUN python3 /opt/sb-ansible/scripts/install_ansible.py"\n'
+                    'if [ "$state" = CACHED ]; then echo "#7 CACHED"; else echo "#7 DONE 0.1s"; fi\n'
+                )
+                docker.chmod(0o755)
+                env = dict(
+                    os.environ,
+                    PATH=str(root / 'bin') + os.pathsep + os.environ['PATH'],
+                    CACHE_COUNTER=str(counter),
+                    CACHE_STATES=states
+                )
+                result = subprocess.run(
+                    ['bash', str(script), 'Dockerfile', 'linux/amd64'],
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=20
+                )
+                self.assertEqual(result.returncode, expected, result.stdout)
+                self.assertEqual(int(counter.read_text()), len(states.split(',')))
+                self.assertEqual(readme.read_text(), 'original source\n')
+                self.assertEqual(requirements.read_text(), 'original requirements\n')

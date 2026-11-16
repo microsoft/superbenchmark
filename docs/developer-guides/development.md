@@ -73,6 +73,29 @@ container-internal `--no-docker`, or GPU image validation.
 Version pins and cache reuse do not make a cold build offline. Hash-verified
 offline artifacts and broader image reproducibility are outside this change.
 
+### Dependency Layers in GPU Images
+
+Active GPU Dockerfiles install the profile in the `ansible-dependencies` stage,
+before application source and benchmark compilation. Both CUDA 13.4 build
+branches inherit that stage so its validation precedes the separate STREAM
+compiler build as well. Later pip operations inherit `PIP_CONSTRAINT`, and
+application installation is followed by a read-only profile check and local
+collection tests rather than another online collection installation.
+
+The Build Image workflow checks the actual stage on dependency-related PRs:
+a cold build must execute installation, an application-only edit must reuse it,
+and a requirements edit must invalidate it. Other PRs do not force cold
+dependency downloads. The check temporarily edits and restores two input files;
+run it only in a disposable checkout:
+
+```bash
+bash tests/ansible/check_build_cache.sh dockerfile/cuda11.1.1.dockerfile linux/amd64
+```
+
+Changing the parent image or dependency inputs can still invalidate the layer.
+The usual complete image matrix remains necessary to qualify both architectures
+and detect conflicts with preinstalled GPU-framework dependencies.
+
 ## Lint and Test
 
 Format code using yapf.
