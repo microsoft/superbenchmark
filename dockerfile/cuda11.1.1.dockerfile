@@ -62,6 +62,13 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /opt/cmake-3.14.6-Linux-x86_64
 
+ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+COPY requirements/ansible.txt /opt/sb-ansible/requirements/ansible.txt
+COPY Makefile /opt/sb-ansible/Makefile
+RUN python3 -m pip install --no-cache-dir -r "$PIP_CONSTRAINT" && \
+    make -C /opt/sb-ansible postinstall
+
 ARG NUM_MAKE_JOBS=
 
 # Install Docker
@@ -168,5 +175,4 @@ ADD . .
 RUN python3 -m pip install --upgrade setuptools==65.7 importlib_metadata==6.8.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
-    make postinstall && \
     rm -rf .git

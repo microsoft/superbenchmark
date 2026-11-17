@@ -66,6 +66,13 @@ RUN apt-get update && \
     && \
     rm -rf /tmp/*
 
+ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+COPY requirements/ansible.txt /opt/sb-ansible/requirements/ansible.txt
+COPY Makefile /opt/sb-ansible/Makefile
+RUN python3 -m pip install --no-cache-dir -r "$PIP_CONSTRAINT" && \
+    make -C /opt/sb-ansible postinstall
+
 # Install Docker
 ENV DOCKER_VERSION=27.5.1
 RUN cd /tmp && \
@@ -145,5 +152,4 @@ ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
 RUN python3 -m pip install --no-build-isolation .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
-    make postinstall && \
     rm -rf .git

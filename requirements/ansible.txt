@@ -1,0 +1,12 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+ansible-base==2.10.17; python_version < "3.11"
+ansible-core==2.19.15; python_version == "3.11"
+ansible-core==2.21.6; python_version == "3.12"
+ansible-core==2.22.0; python_version >= "3.13"
+ansible-runner==2.3.1; python_version < "3.11"
+ansible-runner==2.4.3; python_version >= "3.11"
+# Ansible 2.10 uses filter imports removed in Jinja2 3.1.
+Jinja2==3.0.3; python_version < "3.11"
+Jinja2==3.1.6; python_version >= "3.11"

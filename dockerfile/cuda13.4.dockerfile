@@ -116,6 +116,13 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
+ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
+    ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+COPY requirements/ansible.txt /opt/sb-ansible/requirements/ansible.txt
+COPY Makefile /opt/sb-ansible/Makefile
+RUN python3 -m pip install --no-cache-dir -r "$PIP_CONSTRAINT" && \
+    make -C /opt/sb-ansible postinstall
+
 # Number of parallel jobs for the NVBench build. Override with --build-arg NUM_MAKE_JOBS=...
 ARG NUM_MAKE_JOBS=64
 
@@ -202,5 +209,4 @@ ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
     python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
-    make postinstall && \
     rm -rf .git
