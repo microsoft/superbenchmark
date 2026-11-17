@@ -230,6 +230,7 @@ class SuperBenchRunner():
             trace_command = self.__build_trace_command(
                 benchmark_name, f'_{mode.proc_rank}', enable_nsys, enable_rocprof, trace_dir, rocprof_trace_dir
             )
+            # Long options use double dashes, which Open MPI 4 accepts and Open MPI 5 (PRRTE) requires.
             mode_command = (
                 '{trace} '
                 'mpirun '    # use default OpenMPI in image
