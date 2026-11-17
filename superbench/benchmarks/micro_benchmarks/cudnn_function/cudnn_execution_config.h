@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <numeric>
-
 #include "cudnn_config.h"
 
 namespace cudnn_test {
