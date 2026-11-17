@@ -1,4 +1,46 @@
-FROM nvcr.io/nvidia/pytorch:26.09-py3 AS ansible-dependencies
+# Build the streamOlympus STREAM variant in a separate stage. -mcpu=olympus needs GCC 15 and
+# binutils 2.46, while the base image ships GCC 13 / binutils 2.42. Building it here keeps
+# that toolchain (and its runtime libraries) out of the final image.
+FROM nvcr.io/nvidia/pytorch:26.09-py3 AS stream-olympus-builder
+
+ARG NUM_MAKE_JOBS=64
+ENV DEBIAN_FRONTEND=noninteractive \
+    BINUTILS_VERSION=2.46.1 \
+    BINUTILS_SHA256=e127a709cba24c76de8936cb7083dd768f28cd37eb010492e2f19b71eb1294e4
+
+COPY third_party/stream-tests/Makefile /build/Makefile
+
+RUN mkdir -p /out && \
+    if [ "$(uname -m)" != "aarch64" ]; then \
+    echo "Skipping streamOlympus for non-aarch64 architecture"; \
+    exit 0; \
+    fi && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    software-properties-common ca-certificates wget xz-utils zlib1g-dev libzstd-dev && \
+    add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends gcc-15 && \
+    cd /tmp && \
+    for base in https://sourceware.org/pub/binutils/releases https://mirrors.kernel.org/gnu/binutils https://ftp.gnu.org/gnu/binutils; do \
+    wget -nv --tries=3 --timeout=60 "${base}/binutils-${BINUTILS_VERSION}.tar.xz" -O binutils.tar.xz && break; \
+    done && \
+    echo "${BINUTILS_SHA256}  binutils.tar.xz" | sha256sum -c - && \
+    tar -xf binutils.tar.xz && \
+    cd binutils-${BINUTILS_VERSION} && \
+    ./configure --prefix=/opt/binutils-${BINUTILS_VERSION} \
+    --with-system-zlib \
+    --disable-werror \
+    --disable-gprofng && \
+    make -j "${NUM_MAKE_JOBS}" MAKEINFO=true && \
+    make install MAKEINFO=true && \
+    cd /build && \
+    gcc-15 --version | head -n1 && \
+    make OLYMPUS CC="gcc-15 -B/opt/binutils-${BINUTILS_VERSION}/bin/" && \
+    sha256sum stream.c streamOlympus && \
+    cp streamOlympus /out/
+
+FROM nvcr.io/nvidia/pytorch:26.09-py3
 
 # OS:
 #   - Ubuntu: 24.04
@@ -76,53 +118,10 @@ RUN apt-get update && \
 
 ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
-COPY requirements /opt/sb-ansible/requirements
-COPY scripts/install_ansible.py /opt/sb-ansible/scripts/install_ansible.py
-RUN python3 /opt/sb-ansible/scripts/install_ansible.py
-
-# Build the streamOlympus STREAM variant in a separate stage. -mcpu=olympus needs GCC 15 and
-# binutils 2.46, while the base image ships GCC 13 / binutils 2.42. Building it here keeps
-# that toolchain (and its runtime libraries) out of the final image.
-FROM ansible-dependencies AS stream-olympus-builder
-
-ARG NUM_MAKE_JOBS=64
-ENV DEBIAN_FRONTEND=noninteractive \
-    BINUTILS_VERSION=2.46.1 \
-    BINUTILS_SHA256=e127a709cba24c76de8936cb7083dd768f28cd37eb010492e2f19b71eb1294e4
-
-COPY third_party/stream-tests/Makefile /build/Makefile
-
-RUN mkdir -p /out && \
-    if [ "$(uname -m)" != "aarch64" ]; then \
-    echo "Skipping streamOlympus for non-aarch64 architecture"; \
-    exit 0; \
-    fi && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    software-properties-common ca-certificates wget xz-utils zlib1g-dev libzstd-dev && \
-    add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends gcc-15 && \
-    cd /tmp && \
-    for base in https://sourceware.org/pub/binutils/releases https://mirrors.kernel.org/gnu/binutils https://ftp.gnu.org/gnu/binutils; do \
-    wget -nv --tries=3 --timeout=60 "${base}/binutils-${BINUTILS_VERSION}.tar.xz" -O binutils.tar.xz && break; \
-    done && \
-    echo "${BINUTILS_SHA256}  binutils.tar.xz" | sha256sum -c - && \
-    tar -xf binutils.tar.xz && \
-    cd binutils-${BINUTILS_VERSION} && \
-    ./configure --prefix=/opt/binutils-${BINUTILS_VERSION} \
-    --with-system-zlib \
-    --disable-werror \
-    --disable-gprofng && \
-    make -j "${NUM_MAKE_JOBS}" MAKEINFO=true && \
-    make install MAKEINFO=true && \
-    cd /build && \
-    gcc-15 --version | head -n1 && \
-    make OLYMPUS CC="gcc-15 -B/opt/binutils-${BINUTILS_VERSION}/bin/" && \
-    sha256sum stream.c streamOlympus && \
-    cp streamOlympus /out/
-
-FROM ansible-dependencies AS benchmark
+COPY requirements/ansible.txt /opt/sb-ansible/requirements/ansible.txt
+COPY Makefile /opt/sb-ansible/Makefile
+RUN python3 -m pip install --no-cache-dir -r "$PIP_CONSTRAINT" && \
+    make -C /opt/sb-ansible postinstall
 
 # Number of parallel jobs for the NVBench build. Override with --build-arg NUM_MAKE_JOBS=...
 ARG NUM_MAKE_JOBS=64
@@ -208,8 +207,6 @@ RUN f=${SB_MICRO_PATH}/bin/streamOlympus; \
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
-    python3 -m pip install --no-cache-dir -c requirements/ansible.txt .[nvworker] && \
-    python3 /opt/sb-ansible/scripts/install_ansible.py --check && \
+    python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
-    python3 -m unittest discover -s tests/ansible -p test_dependencies.py && \
     rm -rf .git

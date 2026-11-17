@@ -1,6 +1,6 @@
 ARG BASE_IMAGE=rocm/pytorch:rocm6.4.4_ubuntu24.04_py3.12_pytorch_release_2.7.1
 
-FROM ${BASE_IMAGE} AS ansible-dependencies
+FROM ${BASE_IMAGE}
 
 # OS:
 #   - Ubuntu: 24.04
@@ -68,11 +68,10 @@ RUN apt-get update && \
 
 ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
-COPY requirements /opt/sb-ansible/requirements
-COPY scripts/install_ansible.py /opt/sb-ansible/scripts/install_ansible.py
-RUN python3 /opt/sb-ansible/scripts/install_ansible.py
-
-FROM ansible-dependencies AS benchmark
+COPY requirements/ansible.txt /opt/sb-ansible/requirements/ansible.txt
+COPY Makefile /opt/sb-ansible/Makefile
+RUN python3 -m pip install --no-cache-dir -r "$PIP_CONSTRAINT" && \
+    make -C /opt/sb-ansible postinstall
 
 ARG NUM_MAKE_JOBS=64
 
@@ -253,13 +252,10 @@ RUN python3 -c "import transformer_engine.pytorch; print('TE installed successfu
 ADD . .
 ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
-RUN python3 -m pip install -c requirements/ansible.txt .[amdworker]  && \
-    python3 /opt/sb-ansible/scripts/install_ansible.py --check && \
+RUN python3 -m pip install .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
-    python3 -m unittest discover -s tests/ansible -p test_dependencies.py && \
     rm -rf .git
 
 # Fix stale hypothesis plugin from base image (imports removed pkg_resources)
 # and add test dependencies missing from the base image.
-RUN python3 -m pip install --upgrade hypothesis setuptools pytest-timeout vcrpy && \
-    python3 /opt/sb-ansible/scripts/install_ansible.py --check
+RUN python3 -m pip install --upgrade hypothesis setuptools pytest-timeout vcrpy

@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:25.05-py3 AS ansible-dependencies
+FROM nvcr.io/nvidia/pytorch:25.05-py3
 
 # OS:
 #   - Ubuntu: 24.04
@@ -64,11 +64,10 @@ RUN apt-get update && \
 
 ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
-COPY requirements /opt/sb-ansible/requirements
-COPY scripts/install_ansible.py /opt/sb-ansible/scripts/install_ansible.py
-RUN python3 /opt/sb-ansible/scripts/install_ansible.py
-
-FROM ansible-dependencies AS benchmark
+COPY requirements/ansible.txt /opt/sb-ansible/requirements/ansible.txt
+COPY Makefile /opt/sb-ansible/Makefile
+RUN python3 -m pip install --no-cache-dir -r "$PIP_CONSTRAINT" && \
+    make -C /opt/sb-ansible postinstall
 
 # Install CMake 3.30.4 for nvbench compatibility
 RUN apt-get update && \
@@ -197,8 +196,6 @@ RUN make -C third_party cuda_with_msccl
 
 ADD . .
 RUN python3 -m pip install --upgrade setuptools==78.1.0 && \
-    python3 -m pip install --no-cache-dir -c requirements/ansible.txt .[nvworker] && \
-    python3 /opt/sb-ansible/scripts/install_ansible.py --check && \
+    python3 -m pip install --no-cache-dir .[nvworker] && \
     make cppbuild && \
-    python3 -m unittest discover -s tests/ansible -p test_dependencies.py && \
     rm -rf .git

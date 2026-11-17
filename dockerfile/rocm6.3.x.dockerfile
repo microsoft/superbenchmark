@@ -1,6 +1,6 @@
 ARG BASE_IMAGE=rocm/pytorch-training:v25.6
 
-FROM ${BASE_IMAGE} AS ansible-dependencies
+FROM ${BASE_IMAGE}
 
 # Base image: rocm/pytorch-training:v25.6
 # Pre-installed by base image:
@@ -68,11 +68,10 @@ RUN apt-get update && \
 
 ENV PIP_CONSTRAINT=/opt/sb-ansible/requirements/ansible.txt \
     ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
-COPY requirements /opt/sb-ansible/requirements
-COPY scripts/install_ansible.py /opt/sb-ansible/scripts/install_ansible.py
-RUN python3 /opt/sb-ansible/scripts/install_ansible.py
-
-FROM ansible-dependencies AS benchmark
+COPY requirements/ansible.txt /opt/sb-ansible/requirements/ansible.txt
+COPY Makefile /opt/sb-ansible/Makefile
+RUN python3 -m pip install --no-cache-dir -r "$PIP_CONSTRAINT" && \
+    make -C /opt/sb-ansible postinstall
 
 # Install Docker
 ENV DOCKER_VERSION=27.5.1
@@ -151,8 +150,6 @@ RUN make RCCL_HOME=/opt/rocm ROCBLAS_BRANCH=release-staging/rocm-rel-6.3 HIPBLAS
 ADD . .
 ENV USE_HIP_DATATYPE=1
 ENV USE_HIPBLAS_COMPUTETYPE=1
-RUN python3 -m pip install --no-build-isolation -c requirements/ansible.txt .[amdworker]  && \
-    python3 /opt/sb-ansible/scripts/install_ansible.py --check && \
+RUN python3 -m pip install --no-build-isolation .[amdworker]  && \
     CXX=/opt/rocm/bin/hipcc make cppbuild  && \
-    python3 -m unittest discover -s tests/ansible -p test_dependencies.py && \
     rm -rf .git

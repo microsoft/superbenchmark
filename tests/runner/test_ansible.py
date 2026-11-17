@@ -4,6 +4,7 @@
 """SuperBench Ansible Client test."""
 
 import os
+import subprocess
 import sys
 import unittest
 import tempfile
@@ -14,6 +15,61 @@ from omegaconf import OmegaConf
 from superbench.common.utils import LazyImport
 
 AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
+
+
+class AnsiblePostinstallTestCase(unittest.TestCase):
+    """Test the shared Makefile entry point without contacting Galaxy."""
+    def test_bounded_collection_retries(self):
+        """Stop on success and propagate exhausted installation failures."""
+        for codes in [[0], [1, 0], [1, 1, 0], [17, 17, 17], [124, 124, 124]]:
+            with self.subTest(codes=codes), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                attempts = root / 'attempts'
+                waits = root / 'waits'
+                status_codes = root / 'codes'
+                status_codes.write_text('\n'.join(map(str, codes)) + '\n')
+                waits.touch()
+                scripts = {
+                    'ansible-galaxy': (
+                        'printf "%s\\n" "$*" >> "$INSTALL_ATTEMPTS"\n'
+                        'attempt=$(wc -l < "$INSTALL_ATTEMPTS")\n'
+                        'exit "$(sed -n "${attempt}p" "$INSTALL_CODES")"\n'
+                    ),
+                    'sleep':
+                    'printf "%s\\n" "$1" >> "$INSTALL_WAITS"\n',
+                }
+                for name, body in scripts.items():
+                    script = root / name
+                    script.write_text('#!/bin/sh\nset -eu\n' + body)
+                    script.chmod(0o755)
+                env = dict(
+                    os.environ,
+                    PATH=str(root) + os.pathsep + os.environ['PATH'],
+                    INSTALL_ATTEMPTS=str(attempts),
+                    INSTALL_WAITS=str(waits),
+                    INSTALL_CODES=str(status_codes),
+                )
+                result = subprocess.run(
+                    ['make', '--no-print-directory', 'postinstall'],
+                    cwd=Path(__file__).resolve().parents[2],
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=30,
+                )
+                self.assertEqual(result.returncode == 0, codes[-1] == 0, result.stdout)
+                commands = attempts.read_text().splitlines()
+                self.assertEqual(len(commands), len(codes), result.stdout)
+                self.assertEqual(commands, [commands[0]] * len(codes))
+                self.assertRegex(
+                    commands[0],
+                    r'^collection install ansible\.posix:\d+\.\d+\.\d+ '
+                    r'ansible\.utils:\d+\.\d+\.\d+ community\.crypto:\d+\.\d+\.\d+$',
+                )
+                self.assertEqual(waits.read_text().splitlines(), ['10', '20'][:len(codes) - 1])
+                if codes[-1]:
+                    self.assertIn('attempt 3/3 failed (exit {}).'.format(codes[-1]), result.stdout)
 
 
 class AnsibleClientTestCase(unittest.TestCase):

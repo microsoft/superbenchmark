@@ -86,7 +86,6 @@ jobs:
         uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
         with:
           submodules: recursive
-          fetch-depth: 2
       - name: Free disk space
         run: |
           mkdir -p /tmp/emptydir
@@ -116,15 +115,6 @@ jobs:
             TAGS=$(sed "s/main:/dev:/g" <<< ${TAGS})
           fi
           DOCKERFILE=dockerfile/${{ matrix.dockerfile }}.dockerfile
-          ANSIBLE_CACHE_CHECK=false
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            CHANGED_ANSIBLE_INPUTS=$(git diff --name-only HEAD^1 HEAD -- \
-              requirements scripts/install_ansible.py tests/ansible/check_build_cache.sh \
-              .github/workflows/build-image.yml "$DOCKERFILE")
-            if [[ -n "$CHANGED_ANSIBLE_INPUTS" ]]; then
-              ANSIBLE_CACHE_CHECK=true
-            fi
-          fi
 
           BUILD_ARGS=${{ matrix.build_args }}
           if [[ "${{ matrix.extra_args }}" ]]; then
@@ -145,7 +135,6 @@ jobs:
           fi
 
           echo "dockerfile=${DOCKERFILE}" >> "$GITHUB_OUTPUT"
-          echo "ansible_cache_check=${ANSIBLE_CACHE_CHECK}" >> "$GITHUB_OUTPUT"
           echo "build_args=${BUILD_ARGS}" >> "$GITHUB_OUTPUT"
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
           {
@@ -176,10 +165,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check Ansible dependency layer cache
-        if: ${{ steps.metadata.outputs.ansible_cache_check == 'true' }}
-        timeout-minutes: 60
-        run: bash tests/ansible/check_build_cache.sh "${{ steps.metadata.outputs.dockerfile }}" "${{ matrix.platforms }}"
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a # v2.10.0

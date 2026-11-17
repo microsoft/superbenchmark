@@ -1,8 +1,0 @@
----
-collections:
-  - name: ansible.posix
-    version: 2.2.2
-  - name: ansible.utils
-    version: 6.1.1
-  - name: community.crypto
-    version: 3.5.1
