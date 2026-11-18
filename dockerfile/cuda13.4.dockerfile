@@ -64,6 +64,8 @@ FROM nvcr.io/nvidia/pytorch:26.09-py3
 #   - This machine is aarch64 (ARM). cpu_hpl, Intel MLC, AOCC and AMD BLIS auto-skip on aarch64.
 #   - CUDA 13.4 builds the in-tree CUDA benchmarks, CUTLASS, NVBench,
 #     cuBLASLt and NCCL tests for sm_107.
+#   - CUTLASS v4.8.0 is installed twice: GB200/GB300 into ${SB_MICRO_PATH}/{bin,lib}
+#     and Rubin (sm_107a) into ${SB_MICRO_PATH}/cutlass_sm107/{bin,lib}.
 #   - streamOlympus is built with GCC 15 in the stream-olympus-builder stage above.
 #
 # Build (from repo root), e.g.:
@@ -170,7 +172,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 # Add the base image's HPC-X 2.51 UCX and ompi to the library path and add mpicc to PATH.
 ENV MPI_HOME=/opt/hpcx/ompi
 ENV PATH="/opt/hpcx/ompi/bin:${PATH}" \
-    LD_LIBRARY_PATH="/opt/hpcx/ucx/lib:/opt/hpcx/ompi/lib:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="/opt/hpcx/ucx/lib:/opt/hpcx/ompi/lib:/opt/superbench/lib:${LD_LIBRARY_PATH}" \
     SB_HOME=/opt/superbench \
     SB_MICRO_PATH=/opt/superbench \
     ANSIBLE_DEPRECATION_WARNINGS=FALSE \
