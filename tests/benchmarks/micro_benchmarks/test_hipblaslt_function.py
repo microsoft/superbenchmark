@@ -3,11 +3,14 @@
 
 """Tests for hipblaslt-bench benchmark."""
 
+import shlex
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
+from superbench.benchmarks.micro_benchmarks import hipblaslt_function
 from superbench.benchmarks.result import BenchmarkResult
 
 
@@ -21,10 +24,66 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/hipblaslt-bench'])
 
-    def get_benchmark(self):
+    def get_benchmark(self, parameters=''):
         """Get Benchmark."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.ROCM)
-        return benchmark_cls(self.benchmark_name, parameters='')
+        return benchmark_cls(self.benchmark_name, parameters=parameters)
+
+    def preprocess_mxfp4(self, parameters=None, arch='gfx950:sramecc+:xnack-', help_result=None, available=True):
+        """Preprocess with synthetic ROCm device and client capability information."""
+        if parameters is None:
+            parameters = (
+                '--in_types mxfp4 --enable_experimental_fp4 --shapes 128,128,128'
+                ' --transA T --transB N --initialization hpl'
+            )
+        if help_result is None:
+            help_result = SimpleNamespace(
+                returncode=0,
+                stdout='--scaleA --scaleB 3 = block --scaleABlockRowSize --scaleABlockColSize'
+                ' --scaleBBlockRowSize --scaleBBlockColSize --verify --use_gpu_timer --print_kernel_info',
+            )
+        benchmark = self.get_benchmark(parameters)
+        with patch.object(hipblaslt_function.torch.version, 'hip', '7.2.4'), \
+                patch.object(hipblaslt_function.torch.cuda, 'is_available', return_value=available), \
+                patch.object(
+                    hipblaslt_function.torch.cuda, 'get_device_properties',
+                    return_value=SimpleNamespace(gcnArchName=arch)
+                ), \
+                patch.object(hipblaslt_function, 'run_command', return_value=help_result):
+            result = benchmark._preprocess()
+        return benchmark, result
+
+    def mxfp4_output(self, overrides=None, missing=(), reverse=False):
+        """Build synthetic CSV, not a captured GPU result."""
+        row = {
+            'transA': 'T',
+            'transB': 'N',
+            'grouped_gemm': '0',
+            'batch_count': '1',
+            'm': '128',
+            'n': '128',
+            'k': '128',
+            'a_type': 'f4_r',
+            'b_type': 'f4_r',
+            'c_type': 'f32_r',
+            'd_type': 'f32_r',
+            'compute_type': 'f32_r',
+            'scaleA': '3',
+            'scaleB': '3',
+            'use_gpu_timer': '1',
+            'hipblaslt-Gflops': '1048.576',
+            'us': '4',
+            'norm_error': '1e-6',
+            'atol': '0.0001',
+            'rtol': '0.0001',
+        }
+        row.update(overrides or {})
+        for column in missing:
+            del row[column]
+        columns = list(row)
+        if reverse:
+            columns.reverse()
+        return '[0]:' + ','.join(columns) + '\n' + ','.join(row[column] for column in columns) + '\n'
 
     def test_hipblaslt_gemm_cls(self):
         """Test hipblaslt-bench benchmark class."""
@@ -79,6 +138,291 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                         self.assertIn(cmd(_t, 0, _m, _n, _k), benchmark._commands)
                     for _k in [8, 12, 16, 20, 24, 28, 32]:
                         self.assertIn(cmd(_t, 0, _m, _n, _k), benchmark._commands)
+
+    def test_mxfp4_command_generation(self):
+        """Test explicit MXFP4 input, scale, verification, and device timing options."""
+        benchmark, result = self.preprocess_mxfp4()
+        self.assertTrue(result)
+        self.assertEqual(len(benchmark._commands), 1)
+        expected = (
+            f'{benchmark._HipBlasLtBenchmark__bin_path} -m 128 -n 128 -k 128 -j 20 -i 50'
+            ' --a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
+            ' --scaleA 3 --scaleB 3 --scaleABlockRowSize 32 --scaleABlockColSize 1'
+            ' --scaleBBlockRowSize 1 --scaleBBlockColSize 32 --alpha 1 --beta 0'
+            ' --algo_method heuristic --requested_solution 1 --verify --use_gpu_timer --print_kernel_info'
+            ' --transA T --transB N --initialization hpl'
+        )
+        self.assertEqual(benchmark._commands[0], expected)
+        self.assertEqual(benchmark.raw_data['mxfp4_gpu_arch'][0], 'gfx950')
+
+    def test_mxfp4_boolean_flags_are_switches(self):
+        """Require standalone boolean switches rather than value-consuming options."""
+        benchmark, result = self.preprocess_mxfp4()
+        self.assertTrue(result)
+        tokens = shlex.split(benchmark._commands[0])
+        for option in ['--verify', '--use_gpu_timer', '--print_kernel_info']:
+            with self.subTest(option=option):
+                self.assertEqual(tokens.count(option), 1)
+                next_index = tokens.index(option) + 1
+                self.assertTrue(
+                    next_index == len(tokens) or tokens[next_index].startswith('-'),
+                    '{} must not consume a value'.format(option),
+                )
+
+    def test_mxfp4_invalid_arguments(self):
+        """Reject missing opt-in and unsupported layouts, initialization, shapes, or counts."""
+        valid = (
+            '--in_types mxfp4 --enable_experimental_fp4 --shapes 128,128,128'
+            ' --transA T --transB N --initialization hpl'
+        )
+        invalid = [
+            valid.replace('--enable_experimental_fp4', ''),
+            valid.replace('--transA T', '--transA N'),
+            valid.replace('--transB N', '--transB T'),
+            valid.replace('--initialization hpl', '--initialization rand_int'),
+            valid.replace('128,128,128', '128,128,129'),
+            valid.replace('128,128,128', '0,128,128'),
+            valid + ' --batch 1',
+            valid + ' --num_warmup -1',
+            valid + ' --num_steps 0',
+        ]
+        for parameters in invalid:
+            with self.subTest(parameters=parameters):
+                benchmark, result = self.preprocess_mxfp4(parameters)
+                self.assertFalse(result)
+                self.assertEqual(benchmark.return_code, ReturnCode.INVALID_ARGUMENT)
+                self.assertEqual(benchmark._commands, [])
+
+    def test_mxfp4_unsupported_devices(self):
+        """Reject older GPUs and unqualified future architectures without generating commands."""
+        for arch in ['gfx908', 'gfx90a', 'gfx942', 'gfx1201', 'gfx999']:
+            with self.subTest(arch=arch):
+                benchmark, result = self.preprocess_mxfp4(arch=arch)
+                self.assertFalse(result)
+                self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
+                self.assertEqual(benchmark._commands, [])
+        benchmark, result = self.preprocess_mxfp4(available=False)
+        self.assertFalse(result)
+        self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+
+    def test_mxfp4_client_capabilities(self):
+        """Reject old client options and explicit capability-query failures."""
+        for output in [
+            SimpleNamespace(returncode=0, stdout='--scaleA --scaleB 0 = None, 1 = scalar, 2 = vector'),
+            SimpleNamespace(returncode=1, stdout='Cannot load hipBLASLt'),
+        ]:
+            with self.subTest(output=output):
+                benchmark, result = self.preprocess_mxfp4(help_result=output)
+                self.assertFalse(result)
+                expected = ReturnCode.INVALID_ARGUMENT if output.returncode == 0 else \
+                    ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE
+                self.assertEqual(benchmark.return_code, expected)
+                self.assertEqual(benchmark._commands, [])
+
+        options = [
+            '--scaleA',
+            '--scaleB',
+            '--scaleABlockRowSize',
+            '--scaleABlockColSize',
+            '--scaleBBlockRowSize',
+            '--scaleBBlockColSize',
+            '--verify',
+            '--use_gpu_timer',
+            '--print_kernel_info',
+            '3 = block',
+        ]
+        for missing in options:
+            with self.subTest(missing=missing):
+                help_result = SimpleNamespace(
+                    returncode=0, stdout=' '.join(option for option in options if option != missing)
+                )
+                benchmark, result = self.preprocess_mxfp4(help_result=help_result)
+                self.assertFalse(result)
+                self.assertEqual(benchmark.return_code, ReturnCode.INVALID_ARGUMENT)
+
+    def test_mxfp4_subprocess_status(self):
+        """Propagate client and verification failures without emitting performance metrics."""
+        for returncode, raw_output in [
+            (0, self.mxfp4_output()),
+            (1, 'No supported solutions found'),
+            (0, self.mxfp4_output({'atol': 'failed'})),
+        ]:
+            with self.subTest(returncode=returncode, raw_output=raw_output):
+                benchmark, result = self.preprocess_mxfp4()
+                self.assertTrue(result)
+                output = SimpleNamespace(returncode=returncode, stdout=raw_output)
+                with patch('superbench.benchmarks.micro_benchmarks.micro_base.run_command', return_value=output):
+                    success = benchmark._benchmark()
+                expected = returncode == 0 and 'failed' not in raw_output
+                self.assertEqual(success, expected)
+                if not expected:
+                    code = ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE if returncode else \
+                        ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE
+                    self.assertEqual(benchmark.return_code, code)
+                    self.assertEqual(set(benchmark.result), {'return_code'})
+
+    def test_mxfp4_result_parsing(self):
+        """Check reordered columns, exact metric units, and the norm threshold boundary."""
+        for reverse, norm in [(False, '1e-6'), (True, '9.999e-6')]:
+            with self.subTest(reverse=reverse, norm=norm):
+                benchmark, result = self.preprocess_mxfp4()
+                self.assertTrue(result)
+                self.assertTrue(
+                    benchmark._process_raw_result(0, self.mxfp4_output({'norm_error': norm}, reverse=reverse))
+                )
+                self.assertAlmostEqual(benchmark.result['mxfp4_1_128_128_128_flops'][0], 1.048576)
+                self.assertEqual(benchmark.result['mxfp4_1_128_128_128_time'], [4])
+                self.assertEqual(benchmark.result['mxfp4_1_128_128_128_norm_error'], [float(norm)])
+                self.assertEqual(benchmark.result['mxfp4_1_128_128_128_correctness'], [1])
+                self.assertEqual(benchmark.return_code, ReturnCode.SUCCESS)
+
+    def test_mxfp4_invalid_results(self):
+        """Reject wrong cases, fallback dtypes, invalid metrics, and failed CPU verification."""
+        overrides = [
+            {
+                'm': '256'
+            },
+            {
+                'n': '256'
+            },
+            {
+                'k': '256'
+            },
+            {
+                'batch_count': '2'
+            },
+            {
+                'transA': 'N'
+            },
+            {
+                'transB': 'T'
+            },
+            {
+                'grouped_gemm': '1'
+            },
+            {
+                'a_type': 'f16_r'
+            },
+            {
+                'b_type': 'f16_r'
+            },
+            {
+                'c_type': 'f16_r'
+            },
+            {
+                'd_type': 'f16_r'
+            },
+            {
+                'compute_type': 'f16_r'
+            },
+            {
+                'scaleA': '0'
+            },
+            {
+                'scaleB': '1'
+            },
+            {
+                'use_gpu_timer': '0'
+            },
+            {
+                'us': '0'
+            },
+            {
+                'us': '-1'
+            },
+            {
+                'us': 'nan'
+            },
+            {
+                'us': 'inf'
+            },
+            {
+                'hipblaslt-Gflops': '0'
+            },
+            {
+                'hipblaslt-Gflops': '-1'
+            },
+            {
+                'hipblaslt-Gflops': 'nan'
+            },
+            {
+                'hipblaslt-Gflops': 'inf'
+            },
+            {
+                'hipblaslt-Gflops': '10'
+            },
+            {
+                'norm_error': '1e-5'
+            },
+            {
+                'norm_error': '-1'
+            },
+            {
+                'norm_error': 'nan'
+            },
+            {
+                'norm_error': 'inf'
+            },
+            {
+                'atol': 'failed'
+            },
+            {
+                'rtol': 'failed'
+            },
+            {
+                'atol': 'nan'
+            },
+            {
+                'rtol': 'inf'
+            },
+            {
+                'rtol': '-1'
+            },
+        ]
+        for override in overrides:
+            with self.subTest(override=override):
+                benchmark, result = self.preprocess_mxfp4()
+                self.assertTrue(result)
+                self.assertFalse(benchmark._process_raw_result(0, self.mxfp4_output(override)))
+                self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+                self.assertEqual(set(benchmark.result), {'return_code'})
+
+    def test_mxfp4_incomplete_results(self):
+        """Reject absent verification columns, malformed CSV, and multiple algorithm results."""
+        output = self.mxfp4_output()
+        header, row = output.splitlines()
+        invalid = [
+            self.mxfp4_output(missing=[column])
+            for column in ['a_type', 'scaleA', 'norm_error', 'atol', 'rtol', 'us', 'use_gpu_timer']
+        ]
+        invalid.extend(
+            [
+                header + '\n',
+                header + '\n' + row + ',extra\n',
+                header + ',m\n' + row + ',128\n',
+                output + output,
+                output + row + '\n',
+                'No supported solutions found',
+            ]
+        )
+        for raw_output in invalid:
+            with self.subTest(raw_output=raw_output):
+                benchmark, result = self.preprocess_mxfp4()
+                self.assertTrue(result)
+                self.assertFalse(benchmark._process_raw_result(0, raw_output))
+                self.assertEqual(set(benchmark.result), {'return_code'})
+                self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+
+    def test_legacy_invalid_throughput(self):
+        """Reject non-finite or non-positive throughput without changing legacy metric names."""
+        for value in ['nan', 'inf', '-1', '0']:
+            with self.subTest(value=value):
+                benchmark = self.get_benchmark('--shapes 128,128,128')
+                self.assertTrue(benchmark._preprocess())
+                output = f'[0]:batch_count,m,n,k,hipblaslt-Gflops\n1,128,128,128,{value}\n'
+                self.assertFalse(benchmark._process_raw_result(0, output))
+                self.assertEqual(set(benchmark.result), {'return_code'})
+                self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 
     def test_hipblaslt_gemm_result_parsing(self):
         """Test hipblaslt-bench benchmark result parsing."""
