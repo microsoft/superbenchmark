@@ -8,6 +8,8 @@ HIP_HOME ?= /opt/rocm/hip
 RCCL_HOME ?= /opt/rocm/rccl
 HPCX_HOME ?= /opt/hpcx
 ROCM_PATH ?= /opt/rocm
+DEEPSEEK_V2_LITE_VLLM ?= /opt/vllm
+DEEPSEEK_V2_LITE_REFERENCE ?= /opt/deepseek-reference
 
 CUDA_VER ?= $(shell nvcc --version | grep 'release' | awk '{print $$6}' | cut -c2- | cut -d '.' -f1-2)
 ROCBLAS_BRANCH ?= rocm-$(shell dpkg -l | grep 'rocm-dev ' | awk '{print $$3}' | cut -d '.' -f1-3)
@@ -16,7 +18,7 @@ ROCM_VER ?= $(shell hipconfig -R | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 
 NUM_MAKE_JOBS ?= $(shell nproc --ignore=2)
 
-.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm cuda_nvbench
+.PHONY: all cuda_with_msccl cuda rocm common cuda_cutlass cuda_bandwidthTest cuda_nccl_tests cuda_perftest cuda_msccl rocm_perftest fio rocm_rccl_tests rocm_rocblas rocm_bandwidthTest gpcnet cuda_gpuburn cpu_stream cpu_hpl directx_amf_encoding_latency directx_amd rocm_hipblaslt megatron_lm megatron_deepspeed apex_rocm nvbandwidth rocm_megatron_lm cuda_nvbench deepseek_v2_lite
 
 # Build targets.
 all: cuda rocm
@@ -267,6 +269,25 @@ megatron_deepspeed:
 	apt install -y python3-mpi4py && \
 	python -m pip install --no-cache-dir -r requirements.txt && \
 	python -m pip install DeepSpeed
+
+# Install the vLLM engine and the official-code reference for DeepSeek-V2-Lite inference outside the SuperBench
+# Python: vLLM pins its own torch, and the qualified reference needs transformers 4.46.3 on that torch.
+deepseek_v2_lite:
+	python3 -m venv $(DEEPSEEK_V2_LITE_VLLM) && \
+	$(DEEPSEEK_V2_LITE_VLLM)/bin/python -m pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cu130 \
+		torch==2.13.0 torchvision==0.28.0 torchaudio==2.11.0 && \
+	$(DEEPSEEK_V2_LITE_VLLM)/bin/python -m pip install --no-cache-dir vllm==0.31.0 transformers==5.17.0 && \
+	python3 -m venv $(DEEPSEEK_V2_LITE_REFERENCE) && \
+	$(DEEPSEEK_V2_LITE_VLLM)/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))" > \
+		$$($(DEEPSEEK_V2_LITE_REFERENCE)/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))")/vllm-torch.pth && \
+	$(DEEPSEEK_V2_LITE_REFERENCE)/bin/python -m pip install --no-cache-dir --no-deps transformers==4.46.3 tokenizers==0.20.3 \
+		huggingface-hub==0.26.5 safetensors==0.5.3 accelerate==1.2.1 numpy==1.26.4 && \
+	$(DEEPSEEK_V2_LITE_VLLM)/bin/python -c "from importlib.metadata import version; import numpy, torch; \
+		assert (version('vllm'), version('transformers'), torch.__version__) == ('0.31.0', '5.17.0', '2.13.0+cu130'); \
+		assert torch.from_numpy(numpy.ones(1, dtype=numpy.float32)).numpy()[0] == 1" && \
+	$(DEEPSEEK_V2_LITE_REFERENCE)/bin/python -c "import numpy, torch, transformers; \
+		assert (transformers.__version__, torch.__version__) == ('4.46.3', '2.13.0+cu130'); \
+		assert torch.from_numpy(numpy.ones(1, dtype=numpy.float32)).numpy()[0] == 1"
 
 rocm_megatron_lm:
 	cd Megatron && mkdir -p rocm && cd rocm && \
