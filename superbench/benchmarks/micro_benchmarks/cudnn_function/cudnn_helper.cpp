@@ -77,10 +77,11 @@ template <> void rand(half **input, std::vector<int> dims_, int random_seed) {
     CUDA_SAFE_CALL(cudaMalloc((void **)input, sizeof(half) * size));
     half *host_input;
     CUDA_SAFE_CALL(cudaMallocHost(&host_input, sizeof(half) * size));
+    srand(random_seed);
     for (int i = 0; i < size; i++) {
         host_input[i] = __float2half((float)std::rand() / (float)(RAND_MAX));
     }
-    CUDA_SAFE_CALL(cudaMemcpy(host_input, *input, sizeof(half) * size, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(*input, host_input, sizeof(half) * size, cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaFreeHost(host_input));
 }
 } // namespace cudnn_test
