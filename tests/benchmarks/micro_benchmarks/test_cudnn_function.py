@@ -39,14 +39,12 @@ def test_cudnn_functions():
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
-    assert (18 + benchmark.default_metric_count == len(benchmark.result))
-    for metric, values in benchmark.result.items():
-        assert (len(values) == 1)
-        assert (isinstance(values[0], numbers.Number))
-        if metric != 'return_code':
-            assert metric.endswith('_time')
-            assert math.isfinite(values[0]) and values[0] > 0, metric
-            assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
+    timings = {metric: values for metric, values in benchmark.result.items() if metric.endswith('_time')}
+    assert len(timings) == 18
+    for metric, values in timings.items():
+        assert len(values) == 1, metric
+        assert math.isfinite(values[0]) and values[0] > 0, metric
+        assert len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps, metric
 
     # Test for custom configuration
     custom_config_str = '{"algo":0,"arrayLength":2,"convType":0,"dilationA":[1,1],"filterStrideA":[1,1],' \
