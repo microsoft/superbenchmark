@@ -3,6 +3,7 @@
 
 """Tests for cudnn-functions benchmark."""
 
+import math
 import numbers
 
 from tests.helper import decorator
@@ -38,11 +39,13 @@ def test_cudnn_functions():
     assert (len(benchmark.raw_data['raw_output_0']) == 1)
     assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
 
-    assert (18 <= len(benchmark.result))
-    for metric in list(benchmark.result.keys()):
-        assert (len(benchmark.result[metric]) == 1)
-        assert (isinstance(benchmark.result[metric][0], numbers.Number))
+    assert (18 + benchmark.default_metric_count == len(benchmark.result))
+    for metric, values in benchmark.result.items():
+        assert (len(values) == 1)
+        assert (isinstance(values[0], numbers.Number))
         if metric != 'return_code':
+            assert metric.endswith('_time')
+            assert math.isfinite(values[0]) and values[0] > 0, metric
             assert (len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps)
 
     # Test for custom configuration

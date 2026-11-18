@@ -148,6 +148,13 @@ The benchmark already supports `--enable_auto_algo` (off by default), which call
 convolution. Without it, the configured legacy convolution algorithm is used.
 This option predates CUDA 13.4; it does not benchmark the algorithm search itself.
 
+For the default FP32 forward and backward-data cases with a `32 x 128 x 3 x 3`
+filter, the benchmark uses fixed algorithm `1` for each operation. The previous
+Winograd algorithms (`6` for forward, `4` for backward-data) were unsupported
+for these cases on GB300 with cuDNN 9.12. The algorithm ID is part of the
+metric name: collect new baselines for these two timings rather than comparing
+them with the old Winograd timings.
+
 With cuDNN 9.26 in the CUDA 13.4 image, these convolution benchmarks can use
 compute capability 10.7. The
 [cuDNN 9.26 release notes](https://docs.nvidia.com/deeplearning/cudnn/backend/v9.26.0/release-notes.html#cudnn-9-26-0)
