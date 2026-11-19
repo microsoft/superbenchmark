@@ -148,10 +148,6 @@ The benchmark already supports `--enable_auto_algo` (off by default), which call
 convolution. Without it, the configured legacy convolution algorithm is used.
 This option predates CUDA 13.4; it does not benchmark the algorithm search itself.
 
-For the default FP32 `32 x 128 x 3 x 3` filter, the fixed algorithm changed from `6` to `1`
-for forward and from `4` to `1` for backward-data. Collect new baselines for the two renamed
-metrics because the old timings measured Winograd.
-
 With cuDNN 9.26 in the CUDA 13.4 image, these convolution benchmarks can use
 compute capability 10.7. The
 [cuDNN 9.26 release notes](https://docs.nvidia.com/deeplearning/cudnn/backend/v9.26.0/release-notes.html#cudnn-9-26-0)
@@ -165,6 +161,9 @@ also flag limitations for FP8 pointwise fusion and certain SM 107 attention engi
 | Name                                                      | Unit      | Description                                                      |
 |-----------------------------------------------------------|-----------|------------------------------------------------------------------|
 | cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
+
+For fixed-algorithm runs, use a baseline for the same GPU model and the full metric name.
+The name includes the convolution parameters and the configured algorithm ID.
 
 ### `tensorrt-inference`
 
