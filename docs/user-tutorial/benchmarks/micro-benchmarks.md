@@ -162,9 +162,6 @@ also flag limitations for FP8 pointwise fusion and certain SM 107 attention engi
 |-----------------------------------------------------------|-----------|------------------------------------------------------------------|
 | cudnn-function/name\_${function_name}\_${parameters}_time | time (us) | The mean time to execute the cudnn function with the parameters. |
 
-For fixed-algorithm runs, use a baseline for the same GPU model and the full metric name.
-The name includes the convolution parameters and the configured algorithm ID.
-
 ### `tensorrt-inference`
 
 #### Introduction
