@@ -23,6 +23,7 @@ def test_cudnn_functions():
     timings = {metric: values for metric, values in benchmark.result.items() if metric.endswith('_time')}
     assert len(timings) == 18
     for metric, values in timings.items():
+        # Unsupported convolutions still emit a timing metric with value -1.
         assert len(values) == 1 and 0 < values[0] < math.inf, metric
         assert len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps, metric
 
