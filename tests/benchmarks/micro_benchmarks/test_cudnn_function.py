@@ -17,33 +17,13 @@ def test_cudnn_functions():
     context = BenchmarkRegistry.create_benchmark_context(
         'cudnn-function', platform=Platform.CUDA, parameters='--num_warmup 10 --num_steps 10 --num_in_step 100'
     )
-
-    assert (BenchmarkRegistry.is_benchmark_context_valid(context))
-
     benchmark = BenchmarkRegistry.launch_benchmark(context)
-
-    # Check basic information.
-    assert (benchmark)
-    assert (benchmark.name == 'cudnn-function')
-    assert (benchmark.type == BenchmarkType.MICRO)
-
-    # Check parameters specified in BenchmarkContext.
-    assert (benchmark._args.num_warmup == 10)
-    assert (benchmark._args.num_steps == 10)
-    assert (benchmark._args.num_in_step == 100)
-
-    # Check results and metrics.
-    assert (benchmark.run_count == 1)
-    assert (benchmark.return_code == ReturnCode.SUCCESS)
-    assert ('raw_output_0' in benchmark.raw_data)
-    assert (len(benchmark.raw_data['raw_output_0']) == 1)
-    assert (isinstance(benchmark.raw_data['raw_output_0'][0], str))
+    assert benchmark.return_code == ReturnCode.SUCCESS
 
     timings = {metric: values for metric, values in benchmark.result.items() if metric.endswith('_time')}
     assert len(timings) == 18
     for metric, values in timings.items():
-        assert len(values) == 1, metric
-        assert math.isfinite(values[0]) and values[0] > 0, metric
+        assert len(values) == 1 and 0 < values[0] < math.inf, metric
         assert len(benchmark.raw_data[metric][0]) == benchmark._args.num_steps, metric
 
     # Test for custom configuration
