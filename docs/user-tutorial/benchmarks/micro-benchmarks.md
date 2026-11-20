@@ -587,6 +587,17 @@ with topology distance of 2, 4, 6, respectively.
 Measures bandwidth and latency for various memcpy patterns across different links using copy engine or kernel copy methods,
 performed by [nvbandwidth](https://github.com/NVIDIA/nvbandwidth)
 
+CUDA >=13.5 images use nvbandwidth v0.11.0. Bidirectional device-to-device tests retain the
+unsuffixed metrics below as aliases for the first matrix, and additionally report
+`<testcase>_read1_*`, `_read2_*`, `_write1_*`, `_write2_*` and `_total_*` metrics as applicable,
+including each matrix's `sum_bw`. GPU-local matrices report `<testcase>_gpu[0-9]_bw` without
+an artificial CPU axis. Bandwidth remains in GB/s and latency remains in ns.
+
+In v0.11.0, `device_local_copy_*` bandwidth counts both reads and writes (`2 * size`).
+These values are not directly comparable to older one-way-byte-count baselines.
+SuperBench's default buffer size remains 64 MiB, and the four custom batch cases still
+copy equal-sized buffers concurrently on all GPUs and report each GPU separately.
+
 #### Metrics
 
 | Metrics                                                 | Unit                   | Description                                                                                                                                                                |
