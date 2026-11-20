@@ -6,10 +6,12 @@
 import os
 
 import unittest
+from unittest import mock
 
 from tests.helper import decorator
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, ReturnCode, Platform
+from superbench.benchmarks.micro_benchmarks import NvBandwidthBenchmark
 
 
 class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
@@ -20,6 +22,14 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         super().setUpClass()
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/nvbandwidth'])
+        # Default discovery must return real case names, not an empty successful listing.
+        with open(os.path.join(cls._tmp_dir, 'bin/nvbandwidth'), 'w') as mock_binary:
+            mock_binary.write(
+                '#!/bin/sh\n'
+                'printf "0, host_to_device_memcpy_ce:\\n'
+                '1, device_to_host_memcpy_ce:\\n'
+                '2, host_device_latency_sm:\\n"\n'
+            )
 
     def test_nvbandwidth_preprocess(self):
         """Test NV Bandwidth benchmark preprocess."""
@@ -87,6 +97,153 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark.result['host_device_latency_sm_cpu0_gpu0_lat'][0] == 772.58
         assert benchmark.result['host_device_latency_sm_sum_lat'][0] == 772.58
 
+    @decorator.load_data('tests/data/nvbandwidth_v0.11.log')
+    def test_nvbandwidth_v011_single_node_output(self, results):
+        """Parse native directional, latency, local and custom batch matrices without losing legacy aliases."""
+        test_cases = (
+            'device_to_device_bidirectional_memcpy_read_ce '
+            'device_to_device_bidirectional_memcpy_write_sm '
+            'device_to_device_latency_sm device_to_device_latency_tma '
+            'device_local_copy device_local_read_sm '
+            'all_to_host_batch_memcpy_ce host_to_all_batch_memcpy_ce '
+            'all_to_host_batch_memcpy_sm host_to_all_batch_memcpy_sm'
+        )
+        benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases ' + test_cases)
+        assert benchmark._preprocess()
+        assert benchmark._process_raw_result(0, results)
+        assert benchmark.return_code == ReturnCode.SUCCESS
+
+        for case, direction, values in (
+            ('device_to_device_bidirectional_memcpy_read_ce', 'read', (41.0, 51.0, 92.0, 83.0, 103.0, 186.0)),
+            ('device_to_device_bidirectional_memcpy_write_sm', 'write', (61.0, 71.0, 132.0, 123.0, 143.0, 266.0)),
+        ):
+            with self.subTest(case=case):
+                assert benchmark.result[f'{case}_gpu0_gpu1_bw'] == [values[0]]
+                assert benchmark.result[f'{case}_sum_bw'] == [values[3]]
+                assert benchmark.result[f'{case}_{direction}1_gpu0_gpu1_bw'] == [values[0]]
+                assert benchmark.result[f'{case}_{direction}2_gpu0_gpu1_bw'] == [values[1]]
+                assert benchmark.result[f'{case}_total_gpu0_gpu1_bw'] == [values[2]]
+                assert benchmark.result[f'{case}_{direction}1_sum_bw'] == [values[3]]
+                assert benchmark.result[f'{case}_{direction}2_sum_bw'] == [values[4]]
+                assert benchmark.result[f'{case}_total_sum_bw'] == [values[5]]
+                assert f'{case}_gpu0_gpu0_bw' not in benchmark.result
+
+        assert benchmark.result['device_to_device_latency_sm_gpu0_gpu1_lat'] == [154.25]
+        assert benchmark.result['device_to_device_latency_sm_sum_lat'] == [310.0]
+        assert benchmark.result['device_to_device_latency_tma_gpu0_gpu1_lat'] == [108.25]
+        assert benchmark.result['device_to_device_latency_tma_sum_lat'] == [218.5]
+        assert benchmark.result['device_local_copy_gpu0_bw'] == [12000.0]
+        assert benchmark.result['device_local_copy_gpu1_bw'] == [12500.0]
+        assert benchmark.result['device_local_copy_sum_bw'] == [24500.0]
+        assert benchmark.result['device_local_read_sm_gpu1_bw'] == [14000.0]
+        for case in test_cases.split()[-4:]:
+            assert benchmark.result[f'{case}_cpu0_gpu0_bw'] == [130.0]
+            assert benchmark.result[f'{case}_cpu0_gpu1_bw'] == [140.0]
+            assert benchmark.result[f'{case}_sum_bw'] == [270.0]
+
+    def test_nvbandwidth_v011_matrix_lines(self):
+        """A new matrix resets its columns without overwriting the first matrix's legacy alias."""
+        benchmark = NvBandwidthBenchmark('nvbandwidth')
+        case = 'device_to_device_bidirectional_memcpy_read_ce'
+        status = {'test_name': case, 'matrix_index': 0, 'testcase_matrices': {case: set()}, 'results': {}}
+        benchmark._process_matrix_line('memcpy CE GPU(row) <-> GPU(column) Read1 bandwidth (GB/s)', status)
+        benchmark._process_matrix_line('0 1', status)
+        benchmark._process_matrix_line('0 N/A 41.00', status)
+        benchmark._process_matrix_line('memcpy CE GPU(row) <-> GPU(column) Read2 bandwidth (GB/s)', status)
+        benchmark._process_matrix_line('0 1', status)
+        benchmark._process_matrix_line('0 N/A 51.00', status)
+        assert status['results'] == {
+            f'{case}_gpu0_gpu1_bw': 41.0,
+            f'{case}_read1_gpu0_gpu1_bw': 41.0,
+            f'{case}_read2_gpu0_gpu1_bw': 51.0,
+        }
+
+    @decorator.load_data('tests/data/nvbandwidth_v0.11.log')
+    def test_nvbandwidth_v011_status_completeness(self, results):
+        """Keep valid measurements but fail unsupported, waived, failed and missing requested cases."""
+        statuses = (
+            ('ERROR missing_case: Testcase missing_case not found!', 'Not supported', ReturnCode.INVALID_ARGUMENT),
+            ('Waived missing_case: no accessible peers', 'waived', ReturnCode.INVALID_ARGUMENT),
+            ('Running missing_case.\nWaived: buffer not supported', 'waived', ReturnCode.INVALID_ARGUMENT),
+            ('Running missing_case.\nWaived:', 'waived', ReturnCode.INVALID_ARGUMENT),
+            (
+                'Running missing_case.\nError: verification failed',
+                'Error: verification failed',
+                ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE,
+            ),
+            ('Running missing_case.', 'waived', ReturnCode.INVALID_ARGUMENT),
+            ('', 'waived', ReturnCode.INVALID_ARGUMENT),
+        )
+        for status, raw_status, return_code in statuses:
+            with self.subTest(status=status):
+                benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases missing_case')
+                assert benchmark._preprocess()
+                assert benchmark._process_raw_result(0, results + '\n' + status)
+                assert benchmark.return_code == return_code
+                assert benchmark._result.raw_data['missing_case'] == [raw_status]
+                assert benchmark.result['device_local_copy_gpu0_bw'] == [12000.0]
+                assert not any(metric.startswith('missing_case_') for metric in benchmark.result)
+
+                empty_benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases missing_case')
+                assert empty_benchmark._preprocess()
+                assert not empty_benchmark._process_raw_result(0, status)
+                assert empty_benchmark.return_code != ReturnCode.SUCCESS
+
+        # A late status must not be hidden by an earlier valid SUM for the same testcase.
+        for status, return_code in (
+            ('Error: verification failed', ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE),
+            ('Waived: buffer not supported', ReturnCode.INVALID_ARGUMENT),
+            ('Waived:', ReturnCode.INVALID_ARGUMENT),
+        ):
+            with self.subTest(late_status=status):
+                benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases host_to_all_batch_memcpy_sm')
+                assert benchmark._preprocess()
+                assert benchmark._process_raw_result(0, results + '\n' + status)
+                assert benchmark.return_code == return_code
+                assert benchmark.result['host_to_all_batch_memcpy_sm_sum_bw'] == [270.0]
+
+    @decorator.load_data('tests/data/nvbandwidth_v0.11.log')
+    def test_nvbandwidth_v011_incomplete_matrices(self, results):
+        """A first bidirectional matrix is useful partial data, not a complete successful testcase."""
+        case = 'device_to_device_bidirectional_memcpy_read_ce'
+        benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases ' + case)
+        assert benchmark._preprocess()
+        first_matrix = results.split('memcpy CE GPU(row) <-> GPU(column) Read2 bandwidth (GB/s)')[0]
+        assert benchmark._process_raw_result(0, first_matrix)
+        assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
+        assert benchmark.result[f'{case}_gpu0_gpu1_bw'] == [41.0]
+        assert benchmark.result[f'{case}_read1_sum_bw'] == [83.0]
+        assert f'{case}_read2_sum_bw' not in benchmark.result
+        assert f'{case}_total_sum_bw' not in benchmark.result
+
+        # A native SUM of an all-N/A matrix is not a measured zero.
+        benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases device_to_device_memcpy_read_ce')
+        assert benchmark._preprocess()
+        raw_output = (
+            'Running device_to_device_memcpy_read_ce.\n'
+            'memcpy CE GPU(row) -> GPU(column) bandwidth (GB/s)\n'
+            '           0\n'
+            ' 0       N/A\n\n'
+            'SUM device_to_device_memcpy_read_ce 0.00\n'
+        )
+        assert not benchmark._process_raw_result(0, raw_output)
+        assert benchmark.return_code == ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE
+        assert set(benchmark.result) == {'return_code'}
+
+    def test_nvbandwidth_preprocess_discovery_failure(self):
+        """Do not launch an untracked run when discovery fails or returns no testcases."""
+        for return_code, stdout, stderr in ((0, '', ''), (0, 'Index, Name:\n', ''), (1, '', 'list failed')):
+            with self.subTest(return_code=return_code, stdout=stdout):
+                benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='')
+                with mock.patch('subprocess.run') as mock_run:
+                    mock_run.return_value.returncode = return_code
+                    mock_run.return_value.stdout = stdout
+                    mock_run.return_value.stderr = stderr
+                    with self.assertLogs('superbench', level='ERROR'):
+                        assert not benchmark._preprocess()
+                assert benchmark.return_code == ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE
+                assert benchmark._commands == []
+
     def test_nvbandwidth_process_raw_result_unsupported_testcases(self):
         """Test NV Bandwidth benchmark result parsing with unsupported test cases."""
         benchmark_name = 'nvbandwidth'
@@ -152,7 +309,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark._preprocess()
 
         # Mock subprocess.run for successful execution with valid output
-        with unittest.mock.patch('subprocess.run') as mock_run:
+        with mock.patch('subprocess.run') as mock_run:
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = (
                 '1, host_to_device_memcpy_ce:\n'
@@ -163,7 +320,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
             assert test_cases == ['host_to_device_memcpy_ce', 'device_to_host_bidirectional_memcpy_ce']
 
         # Mock subprocess.run for execution with non-zero return code
-        with unittest.mock.patch('subprocess.run') as mock_run:
+        with mock.patch('subprocess.run') as mock_run:
             mock_run.return_value.returncode = 1
             mock_run.return_value.stdout = ''
             mock_run.return_value.stderr = 'Error'
@@ -171,7 +328,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
             assert test_cases == []
 
         # Mock subprocess.run for execution with error message in stderr
-        with unittest.mock.patch('subprocess.run') as mock_run:
+        with mock.patch('subprocess.run') as mock_run:
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = ''
             mock_run.return_value.stderr = 'Error'

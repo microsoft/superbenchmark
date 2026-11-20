@@ -39,9 +39,14 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
+# CUDA >=13.5 uses stable CUTLASS v4.8.1; keep older CUDA release selections below.
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+ifeq ($(shell printf '%s\n' "13.5" "$(CUDA_VER)" | sort -V | head -n1),13.5)
+	$(eval ARCHS := "100;103a;107a")
+	if [ -d cutlass ]; then rm -rf cutlass; fi
+	git clone --branch v4.8.1 --depth 1 https://github.com/NVIDIA/cutlass.git && \
+		test "$$(git -C cutlass rev-parse HEAD)" = "2c85f497547eb441f0fe80bfb0fb2e6f9add1719"
+else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := "100;103")
 ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
 	$(eval ARCHS := "100;103;107")
@@ -342,8 +347,21 @@ endif
 
 # Build nvbandwidth.
 nvbandwidth: sb_micro_path
+ifeq ($(shell printf '%s\n' "13.5" "$(CUDA_VER)" | sort -V | head -n1),13.5)
+	if [ -d nvbandwidth ]; then rm -rf nvbandwidth; fi
+	git clone --branch v0.11.0 --depth 1 https://github.com/NVIDIA/nvbandwidth.git && \
+		test "$$(git -C nvbandwidth rev-parse HEAD)" = "201eaf7f25eda954d08a7c4fed9d8325e3c32ddf"
+	cd ./nvbandwidth && \
+		git apply ../nvbandwidth-0.11.0.patch && \
+		cp ../nvbandwidth_testcases_0.11.0.h ./testcases_patched.h && \
+		cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMULTINODE=OFF \
+			-DCMAKE_CUDA_ARCHITECTURES="100;103;107" && \
+		cmake --build build --parallel $(NUM_MAKE_JOBS)
+	cp -v ./nvbandwidth/build/nvbandwidth $(SB_MICRO_PATH)/bin
+else
 	cd ./nvbandwidth && git apply ../nvbandwidth.patch && cp ../nvbandwidth_testcases_patched.h ./testcases_patched.h && cmake . && make && cd ..
 	cp -v ./nvbandwidth/nvbandwidth $(SB_MICRO_PATH)/bin
+endif
 
 # Build nvbench
 cuda_nvbench: sb_micro_path

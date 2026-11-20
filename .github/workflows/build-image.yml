@@ -32,6 +32,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
+        - name: cuda13.5-arm64
+          dockerfile: cuda13.5
+          tags: superbench/main:cuda13.5-arm64
+          platforms: linux/arm64
+          runner: [self-hosted, linux/arm64]
+          build_args: "NUM_MAKE_JOBS=16"
+          registry_cache: true
         - name: cuda13.4-arm64
           dockerfile: cuda13.4
           tags: superbench/main:cuda13.4-arm64
@@ -197,6 +204,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+        - name: cuda13.5
+          tags: superbench/main:cuda13.5
+          sources: >-
+            superbench/main:cuda13.5-arm64
         - name: cuda13.4
           tags: superbench/main:cuda13.4
           sources: >-

@@ -15,11 +15,15 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
     """The NV Bandwidth Test benchmark class."""
     # Regular expressions for summary line and matrix header detection
-    re_block_start_pattern = re.compile(r'^Running\s+(.+)$')
-    re_matrix_header_line = re.compile(r'^(memcpy|memory latency)')
+    re_version_pattern = re.compile(r'^nvbandwidth Version:\s*v?(\d+)\.(\d+)', re.MULTILINE)
+    re_block_start_pattern = re.compile(r'^Running\s+(\w+)\.$')
+    re_matrix_header_line = re.compile(r'^(memcpy|memory latency|Device to Device Latency)\b', re.IGNORECASE)
+    re_matrix_axis_pattern = re.compile(r'\b(CPU|GPU)\((row|column)\)', re.IGNORECASE)
+    re_matrix_direction_pattern = re.compile(r'\b(Read[12]|Write[12]|Total) bandwidth\b', re.IGNORECASE)
     re_matrix_row_pattern = re.compile(r'^\s*\d')
-    re_summary_pattern = re.compile(r'SUM (\S+) (\d+\.\d+)')
-    re_unsupported_pattern = re.compile(r'ERROR: Testcase (\S+) not found!')
+    re_summary_pattern = re.compile(r'^SUM\s+(\S+)\s+([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)$')
+    re_unsupported_pattern = re.compile(r'^(?:ERROR: Testcase (\S+) not found!|ERROR (\S+): Testcase \S+ not found!)$')
+    re_status_pattern = re.compile(r'^(Waived|Error)(?:\s+(\w+))?:\s*(.*)$', re.IGNORECASE)
 
     def __init__(self, name, parameters=''):
         """Constructor.
@@ -109,17 +113,21 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             command += ' --testcase ' + ' '.join(self._args.test_cases)
         else:
             self._args.test_cases = self._get_all_test_cases()
+            if not self._args.test_cases:
+                logger.error('Cannot run nvbandwidth without discovered testcases.')
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+                return False
 
-        if self._args.skip_verification:
-            command += ' --skipVerification'
+        for enabled, flag in (
+            (self._args.skip_verification, '--skipVerification'),
+            (self._args.disable_affinity, '--disableAffinity'),
+            (self._args.use_mean, '--useMean'),
+        ):
+            if enabled:
+                command += ' ' + flag
 
-        if self._args.disable_affinity:
-            command += ' --disableAffinity'
-            if self._args.numa is not None:
-                command = f'numactl --cpunodebind={self._args.numa} --membind={self._args.numa} ' + command
-
-        if self._args.use_mean:
-            command += ' --useMean'
+        if self._args.disable_affinity and self._args.numa is not None:
+            command = f'numactl --cpunodebind={self._args.numa} --membind={self._args.numa} ' + command
 
         if self._args.num_loops:
             command += f' --testSamples {self._args.num_loops}'
@@ -127,6 +135,58 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         self._commands.append(command)
 
         return True
+
+    def _process_matrix_line(self, line, parse_status):
+        """Parse a single-node matrix header or row without ending its enclosing testcase.
+
+        Args:
+            line (str): Stripped output line.
+            parse_status (dict): Current testcase, matrix state and collected results.
+        """
+        test_name = parse_status['test_name']
+        if not test_name:
+            return
+
+        if self.re_matrix_header_line.match(line):
+            axes = {axis.lower(): name.lower() for name, axis in self.re_matrix_axis_pattern.findall(line)}
+            direction_match = self.re_matrix_direction_pattern.search(line)
+            suffix = direction_match.group(1).lower() if direction_match else ''
+            parse_status['matrix_index'] += 1
+            parse_status['matrix_name'] = test_name + ('_' + suffix if suffix else '')
+            parse_status['benchmark_type'] = 'bw' if 'bandwidth' in line.lower() else 'lat'
+            parse_status['matrix_header'] = []
+            parse_status['metrix_row'] = axes.get('row', '')
+            parse_status['metrix_col'] = axes.get('column', '')
+            parse_status['matrix_has_values'] = False
+            expected = parse_status['testcase_matrices'][test_name]
+            if suffix:
+                direction = 'read' if '_read_' in test_name else 'write'
+                expected.update((f'{test_name}_{direction}1', f'{test_name}_{direction}2', f'{test_name}_total'))
+            else:
+                expected.add(test_name)
+            return
+
+        if not parse_status['benchmark_type'] or not self.re_matrix_row_pattern.match(line):
+            return
+
+        row_data = line.split()
+        if not parse_status['matrix_header']:
+            parse_status['matrix_header'] = row_data
+            return
+
+        for col_index, value in enumerate(row_data[1:]):
+            if value == 'N/A':
+                continue
+            row_name = parse_status['metrix_row']
+            col_name = parse_status['metrix_col']
+            col_header = parse_status['matrix_header'][col_index]
+            row_metric = f'{row_name}{row_data[0]}_' if row_name else ''
+            metric = f'{row_metric}{col_name}{col_header}_{parse_status["benchmark_type"]}'
+            measurement = float(value)
+            parse_status['results'].setdefault(f'{parse_status["matrix_name"]}_{metric}', measurement)
+            if parse_status['matrix_index'] == 1:
+                parse_status['results'].setdefault(f'{test_name}_{metric}', measurement)
+            parse_status['matrix_has_values'] = True
 
     def _process_raw_line(self, line, parse_status):
         """Process a raw line of text and update the parse status accordingly.
@@ -141,67 +201,100 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         """
         line = line.strip()
 
-        # Detect unsupported test cases
-        if self.re_unsupported_pattern.match(line):
-            parse_status['unsupported_testcases'].add(self.re_unsupported_pattern.match(line).group(1).lower())
+        unsupported = self.re_unsupported_pattern.match(line)
+        if unsupported:
+            parse_status['unsupported_testcases'].add((unsupported.group(1) or unsupported.group(2)).lower())
             return
 
-        # Detect the start of a test
-        if self.re_block_start_pattern.match(line):
-            parse_status['test_name'] = self.re_block_start_pattern.match(line).group(1).lower()[:-1]
-            parse_status['excuted_testcases'].add(parse_status['test_name'])
+        running = self.re_block_start_pattern.match(line)
+        if running:
+            test_name = running.group(1).lower()
+            parse_status.update(
+                test_name=test_name,
+                matrix_name='',
+                matrix_index=0,
+                benchmark_type=None,
+                matrix_header=[],
+                matrix_has_values=False,
+            )
+            parse_status['testcase_matrices'].setdefault(test_name, set())
             return
 
-        # Detect the start of matrix data
-        if parse_status['test_name'] and self.re_matrix_header_line.match(line):
-            parse_status['benchmark_type'] = 'bw' if 'bandwidth' in line else 'lat'
-            # Parse the row and column name
-            tmp_idx = line.find('(row)')
-            parse_status['metrix_row'] = line[tmp_idx - 3:tmp_idx].lower()
-            tmp_idx = line.find('(column)')
-            parse_status['metrix_col'] = line[tmp_idx - 3:tmp_idx].lower()
+        status = self.re_status_pattern.match(line)
+        if status:
+            state, named_test, message = status.groups()
+            test_name = (named_test or parse_status['test_name']).lower()
+            completed = bool(
+                parse_status['testcase_matrices'].get(test_name, set()) & parse_status['completed_matrices']
+            )
+            # Legacy output has anonymous, empty waivers between completed testcases.
+            legacy_waiver = (
+                parse_status['legacy_waivers'] and state.lower() == 'waived' and not named_test and not message
+                and completed
+            )
+            if not test_name or legacy_waiver:
+                return
+            status_key = 'waived_testcases' if state.lower() == 'waived' else 'failed_testcases'
+            parse_status[status_key][test_name] = message
+            parse_status.update(test_name='', matrix_name='', benchmark_type=None, matrix_header=[])
             return
 
-        # Parse the matrix header
-        if (
-            parse_status['test_name'] and parse_status['benchmark_type'] and not parse_status['matrix_header']
-            and self.re_matrix_row_pattern.match(line)
-        ):
-            parse_status['matrix_header'] = line.split()
-            return
-
-        # Parse matrix rows
-        if parse_status['test_name'] and parse_status['benchmark_type'] and self.re_matrix_row_pattern.match(line):
-            row_data = line.split()
-            row_index = row_data[0]
-            for col_index, value in enumerate(row_data[1:], start=1):
-                # Skip 'N/A' values, 'N/A' indicates the test path is self to self.
-                if value == 'N/A':
-                    continue
-
-                col_header = parse_status['matrix_header'][col_index - 1]
-                test_name = parse_status['test_name']
-                benchmark_type = parse_status['benchmark_type']
-                row_name = parse_status['metrix_row']
-                col_name = parse_status['metrix_col']
-                metric_name = f'{test_name}_{row_name}{row_index}_{col_name}{col_header}_{benchmark_type}'
-                parse_status['results'][metric_name] = float(value)
-            return
-
-        # Parse summary results
-        if self.re_summary_pattern.match(line):
-            value = self.re_summary_pattern.match(line).group(2)
+        summary = self.re_summary_pattern.match(line)
+        if summary:
+            if not parse_status['matrix_name']:
+                return
+            matrix_name, value = summary.groups()
+            matrix_name = matrix_name.lower()
             test_name = parse_status['test_name']
             benchmark_type = parse_status['benchmark_type']
-            parse_status['results'][f'{test_name}_sum_{benchmark_type}'] = float(value)
-
-            # Reset parsing state for next test
-            parse_status['test_name'] = ''
-            parse_status['benchmark_type'] = None
-            parse_status['matrix_header'].clear()
-            parse_status['metrix_row'] = ''
-            parse_status['metrix_col'] = ''
+            if matrix_name != parse_status['matrix_name']:
+                parse_status['failed_testcases'][test_name] = f'Unexpected SUM identifier: {matrix_name}'
+            elif parse_status['matrix_has_values']:
+                parse_status['results'][f'{matrix_name}_sum_{benchmark_type}'] = float(value)
+                if parse_status['matrix_index'] == 1:
+                    parse_status['results'].setdefault(f'{test_name}_sum_{benchmark_type}', float(value))
+                parse_status['completed_matrices'].add(matrix_name)
+            # A SUM ends a matrix, not necessarily its enclosing testcase.
+            parse_status.update(matrix_name='', benchmark_type=None, matrix_header=[])
             return
+
+        self._process_matrix_line(line, parse_status)
+
+    def _get_testcase_return_code(self, parsing_status):
+        """Report unsupported, incomplete and failed testcases.
+
+        Args:
+            parsing_status (dict): Parsed testcase outcomes and completed matrices.
+
+        Return:
+            ReturnCode: Combined testcase status.
+        """
+        return_code = ReturnCode.SUCCESS
+        for testcase in parsing_status['unsupported_testcases']:
+            logger.warning(f'Test case {testcase} is not supported.')
+            return_code = ReturnCode.INVALID_ARGUMENT
+            self._result.add_raw_data(testcase, 'Not supported', self._args.log_raw_data)
+
+        # Running alone, or only one direction of a bidirectional test, is not success.
+        waived = set(parsing_status['waived_testcases'])
+        testcases = {name.lower() for name in self._args.test_cases} | set(parsing_status['testcase_matrices'])
+        for testcase in testcases:
+            expected = parsing_status['testcase_matrices'].get(testcase, set())
+            if not expected or not expected <= parsing_status['completed_matrices']:
+                waived.add(testcase)
+        waived -= parsing_status['unsupported_testcases'] | set(parsing_status['failed_testcases'])
+        for testcase in waived:
+            reason = parsing_status['waived_testcases'].get(testcase) or 'No complete results'
+            logger.warning(f'Test case {testcase} was waived or incomplete: {reason}.')
+            self._result.add_raw_data(testcase, 'waived', self._args.log_raw_data)
+            return_code = ReturnCode.INVALID_ARGUMENT
+
+        for testcase, message in parsing_status['failed_testcases'].items():
+            logger.error(f'Test case {testcase} failed: {message}.')
+            self._result.add_raw_data(testcase, f'Error: {message}', self._args.log_raw_data)
+            return_code = ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE
+
+        return return_code
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
@@ -218,12 +311,20 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         try:
             self._result.add_raw_data('raw_output_' + str(cmd_idx), raw_output, self._args.log_raw_data)
             content = raw_output.splitlines()
+            version = self.re_version_pattern.search(raw_output)
             parsing_status = {
                 'results': {},
-                'excuted_testcases': set(),
+                'legacy_waivers': bool(version and tuple(map(int, version.groups())) < (0, 11)),
                 'unsupported_testcases': set(),
+                'waived_testcases': {},
+                'failed_testcases': {},
+                'testcase_matrices': {},
+                'completed_matrices': set(),
                 'benchmark_type': None,
                 'matrix_header': [],
+                'matrix_name': '',
+                'matrix_index': 0,
+                'matrix_has_values': False,
                 'test_name': '',
                 'metrix_row': '',
                 'metrix_col': '',
@@ -232,26 +333,11 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
             for line in content:
                 self._process_raw_line(line, parsing_status)
 
-            return_code = ReturnCode.SUCCESS
-            # Log unsupported test cases
-            for testcase in parsing_status['unsupported_testcases']:
-                logger.warning(f'Test case {testcase} is not supported.')
-                return_code = ReturnCode.INVALID_ARGUMENT
-                self._result.add_raw_data(testcase, 'Not supported', self._args.log_raw_data)
-
-            # Check if the test case was waived
-            for testcase in self._args.test_cases:
-                if (
-                    testcase not in parsing_status['unsupported_testcases']
-                    and testcase not in parsing_status['excuted_testcases']
-                ):
-                    logger.warning(f'Test case {testcase} was waived.')
-                    self._result.add_raw_data(testcase, 'waived', self._args.log_raw_data)
-                    return_code = ReturnCode.INVALID_ARGUMENT
+            return_code = self._get_testcase_return_code(parsing_status)
 
             if not parsing_status['results']:
                 self._result.add_raw_data('nvbandwidth', 'No valid results found', self._args.log_raw_data)
-                return_code = ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
                 return False
 
             # Store parsed results
@@ -267,6 +353,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
                 )
             )
             self._result.add_result('abort', 1)
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             return False
 
     def _get_all_test_cases(self):
@@ -289,7 +376,10 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
                 return []
 
             # Parse the output
-            return [name for _, name in test_case_pattern.findall(result.stdout)]
+            test_cases = [name for _, name in test_case_pattern.findall(result.stdout)]
+            if not test_cases:
+                logger.error(f'{command} returned no testcases.')
+            return test_cases
         except Exception as e:
             logger.error(f'Failed to get all test case names: {e}')
             return []
