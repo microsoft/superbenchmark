@@ -102,6 +102,26 @@ class CublasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                     self.assertIn(cmd(_t, _b, _m, 128, 128), benchmark._commands)
 
     @decorator.load_data('tests/data/cublaslt_ncu.log')
+    def test_cublaslt_gemm_profiling_with_autotune(self, raw_output):
+        """Keep profiling results separate for two input types with the same shape."""
+        benchmark = self.get_benchmark(
+            '--shapes 2208,2048,5608 --in_types fp16 fp64 --enable_autotune '
+            '--enable_ncu_profiling --profiling_metrics DRAM_Throughput'
+        )
+        self.assertTrue(benchmark._preprocess())
+        self.assertTrue(benchmark._process_raw_result(0, raw_output))
+        self.assertTrue(benchmark._process_raw_result(1, raw_output))
+        self.assertEqual(
+            benchmark.result, {
+                'return_code': [ReturnCode.SUCCESS.value],
+                'fp16_0_2208_2048_5608_flops': [141.598150],
+                'fp64_0_2208_2048_5608_flops': [141.598150],
+                'fp16_0_2208_2048_5608_DRAM_Throughput': [0.74],
+                'fp64_0_2208_2048_5608_DRAM_Throughput': [0.74],
+            }
+        )
+
+    @decorator.load_data('tests/data/cublaslt_ncu.log')
     def test_cublaslt_gemm_result_parsing(self, raw_output):
         """Test cublaslt-gemm benchmark result parsing."""
         benchmark = self.get_benchmark()
