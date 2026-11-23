@@ -3,6 +3,7 @@
 
 """Module of the hipBlasLt GEMM benchmark."""
 
+import math
 import os
 import re
 
@@ -162,11 +163,12 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             m_val = fields[col_idx_by_name['m']].strip()
             n_val = fields[col_idx_by_name['n']].strip()
             k_val = fields[col_idx_by_name['k']].strip()
-            gflops_col = col_idx_by_name['hipblaslt-Gflops']
+            gflops = float(fields[col_idx_by_name['hipblaslt-Gflops']])
+            if not math.isfinite(gflops) or gflops <= 0:
+                raise ValueError('hipblaslt-Gflops must be finite and positive.')
 
             self._result.add_result(
-                f'{self._precision_in_commands[cmd_idx]}_{batch_count}_{m_val}_{n_val}_{k_val}_flops',
-                float(fields[gflops_col]) / 1000
+                f'{self._precision_in_commands[cmd_idx]}_{batch_count}_{m_val}_{n_val}_{k_val}_flops', gflops / 1000
             )
         except BaseException as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
