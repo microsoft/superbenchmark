@@ -30,8 +30,11 @@ steps:
         python3 -m pip install --upgrade setuptools==65.7
       fi
       python3 -m pip install --no-cache-dir .[test,cpuworker]
-      make postinstall
     displayName: Install dependencies
+  - script: |
+      make postinstall
+    displayName: Install Ansible collections
+    retryCountOnTaskFailure: 2
   - script: |
       python3 setup.py lint
     displayName: Run code lint

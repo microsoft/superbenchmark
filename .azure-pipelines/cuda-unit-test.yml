@@ -28,8 +28,11 @@ steps:
         ffmpeg libavcodec-dev libavformat-dev libavutil-dev libboost-program-options-dev libswresample-dev"
       python3 -m pip install --upgrade setuptools==65.7
       python3 -m pip install .[test,nvworker]
-      make postinstall
     displayName: Install dependencies
+  - script: |
+      make postinstall
+    displayName: Install Ansible collections
+    retryCountOnTaskFailure: 2
   - script: |
       python3 setup.py lint
     displayName: Run code lint

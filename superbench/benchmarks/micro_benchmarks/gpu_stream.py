@@ -47,6 +47,7 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument('--num_loops', type=int, default=100)
         self._parser.add_argument(
             '--data_type',
+            type=str,
             choices=['float', 'double'],
             default='double',
             help='Element type; use one benchmark entry per data type.'
