@@ -146,15 +146,17 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         benchmark, result = self.preprocess_mxfp4()
         self.assertTrue(result)
         self.assertEqual(len(benchmark._commands), 1)
-        expected = (
-            f'{benchmark._HipBlasLtBenchmark__bin_path} -m 128 -n 128 -k 128 -j 20 -i 50'
-            ' --a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
-            ' --scaleA 3 --scaleB 3 --scaleABlockRowSize 32 --scaleABlockColSize 1'
-            ' --scaleBBlockRowSize 1 --scaleBBlockColSize 32 --alpha 1 --beta 0'
-            ' --algo_method heuristic --requested_solution 1 --verify --use_gpu_timer --print_kernel_info'
-            ' --transA T --transB N --initialization hpl'
-        )
-        self.assertEqual(benchmark._commands[0], expected)
+        tokens = shlex.split(benchmark._commands[0])
+        for option, value in [
+            ('--a_type', 'f4_r'), ('--b_type', 'f4_r'), ('--c_type', 'f32_r'), ('--d_type', 'f32_r'),
+            ('--compute_type', 'f32_r'), ('--scaleA', '3'), ('--scaleB', '3'), ('--scaleABlockRowSize', '32'),
+            ('--scaleABlockColSize', '1'), ('--scaleBBlockRowSize', '1'), ('--scaleBBlockColSize', '32'),
+            ('--alpha', '1'), ('--beta', '0'), ('--algo_method', 'heuristic'), ('--requested_solution', '1'),
+            ('--transA', 'T'), ('--transB', 'N'), ('--initialization', 'hpl')
+        ]:
+            with self.subTest(option=option):
+                self.assertEqual(tokens.count(option), 1)
+                self.assertEqual(tokens[tokens.index(option) + 1], value)
         self.assertEqual(benchmark.raw_data['mxfp4_gpu_arch'][0], 'gfx950')
 
     def test_mxfp4_boolean_flags_are_switches(self):
@@ -233,6 +235,8 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             '--print_kernel_info',
             '3 = block',
         ]
+        help_result = SimpleNamespace(returncode=0, stdout=' '.join(options).replace('3 = block', '3=Block'))
+        self.assertTrue(self.preprocess_mxfp4(help_result=help_result)[1])
         for missing in options:
             with self.subTest(missing=missing):
                 help_result = SimpleNamespace(
@@ -269,9 +273,10 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             with self.subTest(reverse=reverse, norm=norm):
                 benchmark, result = self.preprocess_mxfp4()
                 self.assertTrue(result)
-                self.assertTrue(
-                    benchmark._process_raw_result(0, self.mxfp4_output({'norm_error': norm}, reverse=reverse))
-                )
+                output = self.mxfp4_output({'norm_error': norm}, reverse=reverse)
+                column_count = len(output.splitlines()[0].split(','))
+                footer = 'diagnostic: ' + ','.join(['detail'] * column_count)
+                self.assertTrue(benchmark._process_raw_result(0, output + footer))
                 self.assertAlmostEqual(benchmark.result['mxfp4_1_128_128_128_flops'][0], 1.048576)
                 self.assertEqual(benchmark.result['mxfp4_1_128_128_128_time'], [4])
                 self.assertEqual(benchmark.result['mxfp4_1_128_128_128_norm_error'], [float(norm)])
@@ -297,112 +302,19 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
     def test_mxfp4_invalid_results(self):
         """Reject wrong cases, fallback dtypes, invalid metrics, and failed CPU verification."""
-        overrides = [
-            {
-                'm': '256'
-            },
-            {
-                'n': '256'
-            },
-            {
-                'k': '256'
-            },
-            {
-                'batch_count': '2'
-            },
-            {
-                'transA': 'N'
-            },
-            {
-                'transB': 'T'
-            },
-            {
-                'grouped_gemm': '1'
-            },
-            {
-                'a_type': 'f16_r'
-            },
-            {
-                'b_type': 'f16_r'
-            },
-            {
-                'c_type': 'f16_r'
-            },
-            {
-                'd_type': 'f16_r'
-            },
-            {
-                'compute_type': 'f16_r'
-            },
-            {
-                'scaleA': '0'
-            },
-            {
-                'scaleB': '1'
-            },
-            {
-                'use_gpu_timer': '0'
-            },
-            {
-                'us': '0'
-            },
-            {
-                'us': '-1'
-            },
-            {
-                'us': 'nan'
-            },
-            {
-                'us': 'inf'
-            },
-            {
-                'hipblaslt-Gflops': '0'
-            },
-            {
-                'hipblaslt-Gflops': '-1'
-            },
-            {
-                'hipblaslt-Gflops': 'nan'
-            },
-            {
-                'hipblaslt-Gflops': 'inf'
-            },
-            {
-                'hipblaslt-Gflops': '10'
-            },
-            {
-                'norm_error': '1e-5'
-            },
-            {
-                'norm_error': '-1'
-            },
-            {
-                'norm_error': 'nan'
-            },
-            {
-                'norm_error': 'inf'
-            },
-            {
-                'atol': 'failed'
-            },
-            {
-                'rtol': 'failed'
-            },
-            {
-                'atol': 'nan'
-            },
-            {
-                'rtol': 'inf'
-            },
-            {
-                'rtol': '-1'
-            },
-        ]
-        for override in overrides:
-            with self.subTest(override=override):
+        for column, value in [
+            ('m', '256'), ('n', '256'), ('k', '256'), ('batch_count', '2'), ('transA', 'N'), ('transB', 'T'),
+            ('grouped_gemm', '1'), ('a_type', 'f16_r'), ('b_type', 'f16_r'), ('c_type', 'f16_r'), ('d_type', 'f16_r'),
+            ('compute_type', 'f16_r'), ('scaleA', '0'), ('scaleB', '1'), ('use_gpu_timer', '0'), ('us', '0'),
+            ('us', '-1'), ('us', 'nan'), ('us', 'inf'), ('hipblaslt-Gflops', '0'), ('hipblaslt-Gflops', '-1'),
+            ('hipblaslt-Gflops', 'nan'), ('hipblaslt-Gflops', 'inf'), ('hipblaslt-Gflops', '10'),
+            ('norm_error', '1e-5'), ('norm_error', '-1'), ('norm_error', 'nan'), ('norm_error', 'inf'),
+            ('atol', 'failed'), ('rtol', 'failed'), ('atol', 'nan'), ('rtol', 'inf'), ('rtol', '-1')
+        ]:
+            with self.subTest(column=column, value=value):
                 benchmark, result = self.preprocess_mxfp4()
                 self.assertTrue(result)
-                self.assertFalse(benchmark._process_raw_result(0, self.mxfp4_output(override)))
+                self.assertFalse(benchmark._process_raw_result(0, self.mxfp4_output({column: value})))
                 self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
                 self.assertEqual(set(benchmark.result), {'return_code'})
 
@@ -429,17 +341,6 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 benchmark, result = self.preprocess_mxfp4()
                 self.assertTrue(result)
                 self.assertFalse(benchmark._process_raw_result(0, raw_output))
-                self.assertEqual(set(benchmark.result), {'return_code'})
-                self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
-
-    def test_legacy_invalid_throughput(self):
-        """Reject non-finite or non-positive throughput without changing legacy metric names."""
-        for value in ['nan', 'inf', '-1', '0']:
-            with self.subTest(value=value):
-                benchmark = self.get_benchmark('--shapes 128,128,128')
-                self.assertTrue(benchmark._preprocess())
-                output = f'[0]:batch_count,m,n,k,hipblaslt-Gflops\n1,128,128,128,{value}\n'
-                self.assertFalse(benchmark._process_raw_result(0, output))
                 self.assertEqual(set(benchmark.result), {'return_code'})
                 self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
 

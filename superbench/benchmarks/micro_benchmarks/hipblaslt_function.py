@@ -8,7 +8,7 @@ import os
 import re
 import shlex
 from decimal import Decimal, InvalidOperation
-from typing import Dict, Tuple
+from typing import Dict
 
 from superbench.common.utils import LazyImport, logger, run_command
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -138,9 +138,10 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             '--verify',
             '--use_gpu_timer',
             '--print_kernel_info',
-            '3 = block',
         ]
         missing = [option for option in required_options if not re.search(re.escape(option) + r'\b', output.stdout)]
+        if not re.search(r'\b3\s*=\s*block\b', output.stdout, re.IGNORECASE):
+            missing.append('block scaling mode (3)')
         if missing:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             logger.error(
@@ -185,44 +186,8 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         return True
 
-    def _parse_result_row(self, raw_output: str, precision: str) -> Dict[str, str]:
-        """Parse one result using header names, preserving legacy column handling."""
-        lines = raw_output.splitlines()
-        index = None
-        for i, line in enumerate(lines):
-            if 'hipblaslt-Gflops' in line:
-                index = i
-                break
-        if index is None:
-            raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
-
-        header_fields = [field.strip() for field in lines[index].split(',')]
-        header_fields[0] = re.sub(r'^\s*\[\d+\]:?', '', header_fields[0]).strip()
-        if precision == 'mxfp4' and (
-            len(set(header_fields)) != len(header_fields) or sum('hipblaslt-Gflops' in line for line in lines) != 1
-            or any(len(line.split(',')) == len(header_fields) for line in lines[index + 2:])
-        ):
-            raise ValueError('MXFP4 requires unique columns and exactly one result.')
-
-        col_idx_by_name: Dict[str, int] = {}
-        for col_idx, col_name in enumerate(header_fields):
-            col_idx_by_name.setdefault(col_name, col_idx)
-        required_columns = ['batch_count', 'm', 'n', 'k', 'hipblaslt-Gflops']
-        missing_columns = [column for column in required_columns if column not in col_idx_by_name]
-        if missing_columns:
-            raise ValueError(f'Required column(s) not found in header: {missing_columns}.')
-        if index + 1 >= len(lines):
-            raise ValueError('Data line missing after "hipblaslt-Gflops" header.')
-
-        fields = [field.strip() for field in lines[index + 1].split(',')]
-        if len(fields) != len(header_fields):
-            raise ValueError(
-                f'Field count mismatch: header has {len(header_fields)} columns but data has {len(fields)} columns'
-            )
-        return {column: fields[col_idx] for column, col_idx in col_idx_by_name.items()}
-
-    def _validate_mxfp4_result(self, cmd_idx: int, row: Dict[str, str], gflops: float) -> Tuple[float, float]:
-        """Require the requested MXFP4 case, valid timing, and CPU verification."""
+    def _record_mxfp4_result(self, cmd_idx: int, row: Dict[str, str]) -> None:
+        """Record MXFP4 metrics only after the requested case, timing and verification match."""
         m, n, k, _, _ = self._shapes_to_run[cmd_idx]
         expected = {
             'transA': 'T',
@@ -250,6 +215,9 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             if not scalar.is_finite() or scalar != coefficient:
                 raise ValueError(f'MXFP4 column {column} must be {coefficient}, got {row[column]}.')
 
+        gflops = float(row['hipblaslt-Gflops'])
+        if not math.isfinite(gflops) or gflops <= 0:
+            raise ValueError('MXFP4 throughput must be finite and positive.')
         latency = float(row['us'])
         if not math.isfinite(latency) or latency <= 0:
             raise ValueError('MXFP4 latency must be finite and positive.')
@@ -264,7 +232,12 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             error = float(row[column])
             if not math.isfinite(error) or error < 0:
                 raise ValueError(f'MXFP4 verification column {column} must be finite and non-negative.')
-        return latency, norm_error
+
+        metric = f'mxfp4_{row["batch_count"]}_{m}_{n}_{k}'
+        self._result.add_result(f'{metric}_time', latency)
+        self._result.add_result(f'{metric}_norm_error', norm_error)
+        self._result.add_result(f'{metric}_correctness', 1)
+        self._result.add_result(f'{metric}_flops', gflops / 1000)
 
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
@@ -281,18 +254,50 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         self._result.add_raw_data(f'raw_output_{cmd_idx}', raw_output, self._args.log_raw_data)
 
         try:
-            precision = self._precision_in_commands[cmd_idx]
-            row = self._parse_result_row(raw_output, precision)
-            gflops = float(row['hipblaslt-Gflops'])
-            if not math.isfinite(gflops) or gflops <= 0:
-                raise ValueError('Throughput must be finite and positive.')
-            metric = f'{precision}_{row["batch_count"]}_{row["m"]}_{row["n"]}_{row["k"]}'
-            if precision == 'mxfp4':
-                latency, norm_error = self._validate_mxfp4_result(cmd_idx, row, gflops)
-                self._result.add_result(f'{metric}_time', latency)
-                self._result.add_result(f'{metric}_norm_error', norm_error)
-                self._result.add_result(f'{metric}_correctness', 1)
-            self._result.add_result(f'{metric}_flops', gflops / 1000)
+            lines = raw_output.splitlines()
+            index = next((i for i, line in enumerate(lines) if 'hipblaslt-Gflops' in line), None)
+            if index is None:
+                raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
+
+            header_fields = re.sub(r'^\s*\[\d+\]:?', '', lines[index]).split(',')
+            col_idx_by_name: Dict[str, int] = {}
+            for col_idx, col_name in enumerate(header_fields):
+                col_idx_by_name.setdefault(col_name.strip(), col_idx)
+            required_columns = ['batch_count', 'm', 'n', 'k', 'hipblaslt-Gflops']
+            missing_columns = [c for c in required_columns if c not in col_idx_by_name]
+            if missing_columns:
+                raise ValueError(f'Required column(s) not found in header: {missing_columns}.')
+            if index + 1 >= len(lines):
+                raise ValueError('Data line missing after "hipblaslt-Gflops" header.')
+            fields = lines[index + 1].split(',')
+            if len(fields) != len(header_fields):
+                raise ValueError(
+                    f'Field count mismatch: header has {len(header_fields)} columns but data has {len(fields)} columns'
+                )
+
+            if self._precision_in_commands[cmd_idx] == 'mxfp4':
+                if len(col_idx_by_name) != len(header_fields):
+                    raise ValueError('MXFP4 requires unique result columns.')
+                for line in lines[index + 2:]:
+                    extra = [v.strip() for v in re.sub(r'^\s*\[\d+\]:?', '', line).split(',')]
+                    if 'hipblaslt-Gflops' in extra or (
+                        len(extra) == len(fields)
+                        and all(extra[col_idx_by_name[t]] in ('N', 'T', 'C') for t in ('transA', 'transB'))
+                    ):
+                        raise ValueError('MXFP4 requires exactly one result.')
+                self._record_mxfp4_result(cmd_idx, {col: fields[i].strip() for col, i in col_idx_by_name.items()})
+                return True
+
+            batch_count = fields[col_idx_by_name['batch_count']].strip()
+            m_val = fields[col_idx_by_name['m']].strip()
+            n_val = fields[col_idx_by_name['n']].strip()
+            k_val = fields[col_idx_by_name['k']].strip()
+            gflops_col = col_idx_by_name['hipblaslt-Gflops']
+
+            self._result.add_result(
+                f'{self._precision_in_commands[cmd_idx]}_{batch_count}_{m_val}_{n_val}_{k_val}_flops',
+                float(fields[gflops_col]) / 1000
+            )
         except (IndexError, InvalidOperation, KeyError, TypeError, ValueError) as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(

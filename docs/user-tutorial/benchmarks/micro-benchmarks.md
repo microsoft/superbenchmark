@@ -103,58 +103,30 @@ For quick execution checks, set `num_warmup: 1` and `num_steps: 5` under `parame
 These shorter runs are useful for diagnosing support and configuration errors, not stable
 performance measurements.
 
-The ROCm benchmark retains `fp32`, `fp16`, `bf16`, and `fp8` inputs and adds an
-**experimental, opt-in `mxfp4`** input. Hardware validation is pending; this is not
-a production performance baseline or a claim of MI455X support. The initial path
-only allows `gfx950` (MI350X/MI355X/MI350P), TN layout, non-batched GEMM, positive
-dimensions with K divisible by 32, and `hpl` or `trig_float` initialization.
-Other architectures are explicitly rejected rather than converted to FP16.
+**ROCm: experimental MXFP4** is opt-in and has not been validated on hardware.
+It requires a `gfx950` ROCm PyTorch device and a block-scaling `hipblaslt-bench`
+client (based on [ROCm 7.2.4 with RocRoller](https://github.com/ROCm/hipBLASLt/tree/b9d797017b4d4d7c3692ccc5ac099ff9777ace0f)).
+The existing ROCm 6.4 image is not qualified. Use non-batched TN GEMM, positive
+dimensions, K divisible by 32, and `hpl` or `trig_float` initialization:
 
-The client contract is based on
-[hipBLASLt ROCm 7.2.4 at `b9d7970`](https://github.com/ROCm/hipBLASLt/tree/b9d797017b4d4d7c3692ccc5ac099ff9777ace0f)
-(library 1.2.2, with RocRoller enabled). A compatible ROCm PyTorch device and a
-`hipblaslt-bench` client with block-scaling options are required. Client option
-checks do not prove that an algorithm is available for a particular shape.
-The existing ROCm 6.4 image is not upgraded or certified for this mode.
-
-MXFP4 uses E2M1 A/B inputs, one E8M0 scale per 32 K elements, FP32 computation and
-C/D, `alpha=1`, and `beta=0`. Packing, scale-buffer layout, and the decoded-input
-CPU reference are supplied by the pinned vendor client, not a second SuperBench
-quantization implementation. GPU-event timing excludes CPU reference,
-initialization, and packing; no quantization-inclusive latency is reported.
-Kernel information and full client output are retained in raw data.
-
-Example wrapper parameters for an experimental smoke case:
-
-```text
---in_types mxfp4 --enable_experimental_fp4 --shapes 128,128,128
---transA T --transB N --initialization hpl --num_warmup 20 --num_steps 50
+```yaml
+hipblaslt-gemm:
+  parameters:
+    in_types: [mxfp4]
+    enable_experimental_fp4: true
+    shapes: ["128,128,128"]
+    transA: T
+    transB: N
+    initialization: hpl
 ```
 
-The wrapper enables the standalone client flags `--verify`, `--use_gpu_timer`,
-and `--print_kernel_info` without trailing values. The wrapper always requests
-CPU verification for MXFP4. The pinned benchmark
-reports verification errors without asserting the norm check, so SuperBench
-requires a finite relative Frobenius `norm_error < 1e-5` and finite, non-negative
-`atol`/`rtol` fields (not `failed`). The norm threshold follows the vendor's FP32
-output check and still requires calibration on real MXFP4 hardware. It checks
-kernel error against the decoded quantized inputs, not quantization error against
-the original unquantized inputs.
-
-MXFP4 results must match the requested shape, dtypes, layout and block-scale mode.
-The client must also report `alpha=1` and `beta=0`; missing or different coefficients
-are rejected before any performance or correctness metrics are recorded.
-Throughput must agree with `2*M*N*K / seconds` within 1% for printed-value rounding.
-Missing, malformed, duplicate, non-finite, unsupported or verification-failed
-results are errors and do not produce MXFP4 performance metrics. All ROCm input
-types now reject non-finite or non-positive throughput; existing valid metric
-names, units, commands and default input types remain unchanged.
-
-Before promoting this mode, run correctness and native-kernel checks on each
-claimed GPU/SDK combination, replace synthetic parser fixtures with actual
-versioned captures, and repeat a small fixed shape set at least three times.
-MI455X needs a separate SDK, format and architecture qualification. No production
-configuration or performance gate is enabled by this experimental path.
+The client uses E2M1 inputs, one E8M0 scale per 32 K elements, FP32 computation
+and output, `alpha=1` and `beta=0`. The wrapper checks the reported case and
+coefficients, positive finite throughput and latency, and agreement with
+`2*M*N*K / seconds` within 1%. GPU-event timing excludes initialization, packing,
+and CPU verification. Verification compares against the decoded quantized inputs:
+`norm_error` must be in `[0, 1e-5)` and `atol`/`rtol` finite and non-negative.
+The norm threshold still needs hardware calibration. A failed check emits no MXFP4 metrics.
 
 #### Metrics
 
