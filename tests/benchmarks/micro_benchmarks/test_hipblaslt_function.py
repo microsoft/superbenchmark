@@ -63,6 +63,8 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             'm': '128',
             'n': '128',
             'k': '128',
+            'alpha': '1',
+            'beta': '0',
             'a_type': 'f4_r',
             'b_type': 'f4_r',
             'c_type': 'f32_r',
@@ -276,6 +278,23 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 self.assertEqual(benchmark.result['mxfp4_1_128_128_128_correctness'], [1])
                 self.assertEqual(benchmark.return_code, ReturnCode.SUCCESS)
 
+    def test_mxfp4_result_coefficients(self):
+        """Accept equivalent printed scalars, but never report metrics for a different GEMM."""
+        benchmark, result = self.preprocess_mxfp4()
+        self.assertTrue(result)
+        self.assertTrue(benchmark._process_raw_result(0, self.mxfp4_output({'alpha': '1.00e+0', 'beta': '-0.0'})))
+
+        for column, value in [
+            ('alpha', '0'), ('beta', '1'), ('alpha', '1.0000000000000001'), ('beta', '1e-400'), ('alpha', 'nan'),
+            ('beta', 'inf'), ('alpha', 'invalid')
+        ]:
+            with self.subTest(column=column, value=value):
+                benchmark, result = self.preprocess_mxfp4()
+                self.assertTrue(result)
+                self.assertFalse(benchmark._process_raw_result(0, self.mxfp4_output({column: value})))
+                self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+                self.assertEqual(set(benchmark.result), {'return_code'})
+
     def test_mxfp4_invalid_results(self):
         """Reject wrong cases, fallback dtypes, invalid metrics, and failed CPU verification."""
         overrides = [
@@ -393,7 +412,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         header, row = output.splitlines()
         invalid = [
             self.mxfp4_output(missing=[column])
-            for column in ['a_type', 'scaleA', 'norm_error', 'atol', 'rtol', 'us', 'use_gpu_timer']
+            for column in ['alpha', 'beta', 'a_type', 'scaleA', 'norm_error', 'atol', 'rtol', 'us', 'use_gpu_timer']
         ]
         invalid.extend(
             [

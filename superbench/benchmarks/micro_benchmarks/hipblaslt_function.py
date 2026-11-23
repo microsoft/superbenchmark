@@ -7,6 +7,7 @@ import math
 import os
 import re
 import shlex
+from decimal import Decimal, InvalidOperation
 from typing import Dict, Tuple
 
 from superbench.common.utils import LazyImport, logger, run_command
@@ -244,6 +245,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             if row.get(column) != value:
                 raise ValueError(f'MXFP4 column {column} must be {value}, got {row.get(column)}.')
 
+        for column, coefficient in [('alpha', 1), ('beta', 0)]:
+            scalar = Decimal(row[column])
+            if not scalar.is_finite() or scalar != coefficient:
+                raise ValueError(f'MXFP4 column {column} must be {coefficient}, got {row[column]}.')
+
         latency = float(row['us'])
         if not math.isfinite(latency) or latency <= 0:
             raise ValueError('MXFP4 latency must be finite and positive.')
@@ -287,7 +293,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 self._result.add_result(f'{metric}_norm_error', norm_error)
                 self._result.add_result(f'{metric}_correctness', 1)
             self._result.add_result(f'{metric}_flops', gflops / 1000)
-        except (IndexError, KeyError, TypeError, ValueError) as e:
+        except (IndexError, InvalidOperation, KeyError, TypeError, ValueError) as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(

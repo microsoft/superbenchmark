@@ -142,6 +142,8 @@ kernel error against the decoded quantized inputs, not quantization error agains
 the original unquantized inputs.
 
 MXFP4 results must match the requested shape, dtypes, layout and block-scale mode.
+The client must also report `alpha=1` and `beta=0`; missing or different coefficients
+are rejected before any performance or correctness metrics are recorded.
 Throughput must agree with `2*M*N*K / seconds` within 1% for printed-value rounding.
 Missing, malformed, duplicate, non-finite, unsupported or verification-failed
 results are errors and do not produce MXFP4 performance metrics. All ROCm input
