@@ -25,8 +25,16 @@ which is defined as the time range from the beginning of the launch API call to 
 #### Introduction
 
 Measure the GPU GEMM FLOPS for different float and int data types, with or without Tensor Core (XDLOPS),
-performed by NVIDIA [cutlass](https://github.com/NVIDIA/cutlass/tree/ccb697bac77fcc898e9c897b2c90aa5b60ac72fb)
+performed by NVIDIA [CUTLASS](https://github.com/NVIDIA/cutlass)
 or AMD [rocblas-bench](https://github.com/ROCmSoftwarePlatform/rocBLAS/tree/develop/clients/benchmarks).
+
+Available precisions depend on the GPU architecture and the installed CUTLASS build. Vera Rubin (compute capability 10.7)
+requires CUDA 13.4 or later and the repository-managed CUTLASS build, including its MXFP8 runtime datatype fix.
+The benchmark automatically selects the dedicated `cutlass_sm107` profiler and its matching libraries on Rubin.
+
+Block-scaled modes (`nvfp4_tc`, `nvfp4_ue5m3_tc`, `mxfp8_tc`, and `mxfp4_tc`) disable CUTLASS verification during throughput
+measurement to avoid running a CPU reference GEMM for every selected kernel at the default matrix size.
+Run correctness checks separately with small matrices and `--verification-enabled=true` using the matching CUTLASS profiler.
 
 #### Metrics
 

@@ -93,6 +93,19 @@ CUTLASS_SM107_PREFIX = $(SB_MICRO_PATH)/cutlass_sm107
 _strip_spaces = $(subst $(space),,$1)
 space := $(subst ,, )
 
+CUTLASS_MK_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+# CUTLASS v4.8.0 generates SM107 MXFP8 (ue8m0xf8) as runtime-typed
+# MXF8F6F4Format kernels, but BlockScaledGemmUniversal3xOperationBase's
+# mapping() in tools/library/src/block_scaled_gemm_operation_3x.hpp omitted
+# kE4M3/kE5M2 and fell into CUTE_GCC_UNREACHABLE (host SIGSEGV in
+# can_implement()).  Backport NVIDIA/cutlass commit 555a0474 to map
+# kE5M2/kE4M3 and reject unsupported runtime datatypes with kErrorInvalidProblem.
+CUTLASS_V480_MXFP8_PATCH = git -C cutlass apply --check $(CUTLASS_MK_DIR)cutlass_v4.8.0_mxfp8.patch && \
+	git -C cutlass apply $(CUTLASS_MK_DIR)cutlass_v4.8.0_mxfp8.patch && \
+	grep -q "MXF8F6F4Format::E4M3" cutlass/tools/library/src/block_scaled_gemm_operation_3x.hpp && \
+	grep -q "is_supported(arguments->runtime_input_datatype_a)" cutlass/tools/library/src/block_scaled_gemm_operation_3x.hpp
+
 # CUTLASS v4.3.5 generates the GB300 (SM103) FP4 Ultra kernels only for CUDA 13.0+,
 # but CUTLASS enables SM103 from CUDA 12.9 and they compile to real UTCOMMA kernels
 # with it.  Lower only that generator's gate; the grep fails if it no longer applies.
@@ -146,11 +159,12 @@ ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
 	#   - "107a"      -> $(CUTLASS_SM107_PREFIX)/{bin,lib}  (Rubin)
 	# v4.8.0 extended the INT8 gate to ['100f', '101f', '103a', '107f'].
 	# Dropping '103a' keeps SM100a INT8 as in the 12.9 tier; the grep stops
-	# the build if the patch no longer applies.
+	# the build if the patch no longer applies.  CUTLASS_V480_MXFP8_PATCH
+	# fixes the v4.8.0 runtime-typed MXFP8 (ue8m0xf8) SIGSEGV in can_implement().
 	$(eval CUTLASS_TAG     := v4.8.0)
 	$(eval CUTLASS_ARCHS   := "100a;103a")
 	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
-	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a', '107f'\]/arch_family_cc = ['100f', '101f', '107f']/" cutlass/python/cutlass_library/generator.py && grep -q "arch_family_cc = \['100f', '101f', '107f'\]" cutlass/python/cutlass_library/generator.py)
+	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a', '107f'\]/arch_family_cc = ['100f', '101f', '107f']/" cutlass/python/cutlass_library/generator.py && grep -q "arch_family_cc = \['100f', '101f', '107f'\]" cutlass/python/cutlass_library/generator.py && $(CUTLASS_V480_MXFP8_PATCH))
 	$(eval CUTLASS_SM107_KERNS := $(call _strip_spaces,$(CUTLASS_KERNELS_SM107)))
 
 else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
@@ -177,7 +191,7 @@ else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval CUTLASS_TAG     := v4.3.5)
 	$(eval CUTLASS_ARCHS   := "100a;103a")
 	$(eval CUTLASS_KERNS   := $(call _strip_spaces,$(CUTLASS_KERNELS_SM100)))
-	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py && $(CUTLASS_SM103_ULTRA_PATCH))
+	$(eval CUTLASS_PATCHES := sed -i "s/arch_family_cc = \['100f', '101f', '103a'\]/arch_family_cc = ['100f', '101f']/" cutlass/python/cutlass_library/generator.py && grep -q "arch_family_cc = \['100f', '101f'\]" cutlass/python/cutlass_library/generator.py && $(CUTLASS_SM103_ULTRA_PATCH))
 
 else ifeq ($(shell echo $(CUDA_VER)">=12.8" | bc -l), 1)
 	# -----------------------------------------------------------------------

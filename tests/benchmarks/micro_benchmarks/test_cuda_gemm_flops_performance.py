@@ -56,7 +56,8 @@ class CudaGemmFlopsBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.k == 512)
         assert (benchmark._args.m == 2048)
         assert (benchmark._args.precision == ['fp32', 'tf32_tc', 'fp16_tc', 'int8_tc'])
-        benchmark._CudaGemmFlopsBenchmark__precision_need_to_run = ['fp32', 'tf32_tc', 'fp16_tc', 'int8_tc']
+        # Parse the outputs below as these precisions on any GPU architecture.
+        benchmark._precision_need_to_run = ['fp32', 'tf32_tc', 'fp16_tc', 'int8_tc']
 
         # Check results and metrics.
         raw_output_fp32 = """
@@ -218,13 +219,13 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
 
         # SM103 Blackwell Ultra NVFP4 block-scaled kernel:
         # cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_{acc}_{c}_{d}_{tile}_..._ultra_2sm_*
-        # OperationKind is "block_scaled_gemm" (not "gemm").
+        # cutlass_profiler reports OperationKind "gemm" for them and prints large GFLOPs in exponent notation.
         raw_output_sm103_nvfp4 = """
 CSV Results:
 
-Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_nopf_epi_nosmem,passed,success,universal,16384,16384,16384,0.55,15998700
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_tmapf_epi_nosmem,passed,success,universal,16384,16384,16384,0.53,16602100
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_nopf_epi_nosmem,not_verified,success,universal,16384,16384,16384,fe2m1:row,fe2m1:column,void:row,f32:row,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,768,2,1,1,2,1,1,4,4,1,1,256,256,128,103,1024,301989888,8796629893120,29128,0.55,511.364,1.59939e+07
+1,CUTLASS,gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_tmapf_epi_nosmem,not_verified,success,universal,16384,16384,16384,fe2m1:row,fe2m1:column,void:row,f32:row,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,768,2,1,1,2,1,1,4,4,1,1,256,256,128,103,1024,301989888,8796629893120,29128,0.52985,530.811,1.66021e+07
 """
         # The SM10.3 --kernels pattern must select these real CUTLASS v4.3.5 names (matched like '*pattern*').
         pattern = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.3]['nvfp4_tc']
@@ -285,33 +286,34 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
 1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.2,4000000
 1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_512x256x128_4x4x1_0_tnn_align16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.0,4400000
 """
+        # Block-scaled outputs use the real cutlass_profiler CSV layout from Rubin: OperationKind is 'gemm'.
         raw_output_nvfp4_tc = """
 CSV Results:
 
-Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.6,14000000
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.5,16000000
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,256,2,1,1,2,1,1,5,4,1,1,256,256,128,107,1024,294912,268959744,912,0.0057296,47.9367,46942.1
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,512,256,256,4,4,1,2,1,1,4,4,1,1,256,256,128,107,1024,294912,268959744,912,0.0061,45.0259,44091.8
 """
         raw_output_nvfp4_ue5m3_tc = """
 CSV Results:
 
-Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.6,15000000
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.5,15500000
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,256,2,1,1,2,1,1,5,4,1,1,256,256,128,107,1024,294912,268959744,912,0.005736,47.8832,46889.8
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,512,256,256,4,4,1,2,1,1,4,4,1,1,256,256,128,107,1024,294912,268959744,912,0.0062,44.2997,43380.6
 """
         raw_output_mxfp8_tc = """
 CSV Results:
 
-Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_256x256x128_0x0x1_0_tnn_align16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.2,4100000
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_512x256x128_4x4x1_0_tnn_align16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.0,4300000
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_256x256x128_0x0x1_0_tnn_align16_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,f8:row,f8:column,void:column,f32:column,1,0,serial,1,1,e4m3,e4m3,heuristic,1,false,invalid,f32,256,256,128,2,1,1,2,1,1,6,4,1,1,256,256,64,107,1024,540672,268959744,497,0.0071,70.9211,37881.7
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_512x256x128_4x4x1_0_tnn_align16_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,f8:row,f8:column,void:column,f32:column,1,0,serial,1,1,e4m3,e4m3,heuristic,1,false,invalid,f32,512,256,128,4,4,1,2,1,1,5,4,1,1,256,256,64,107,1024,540672,268959744,497,0.0066,76.2939,40751.5
 """
         raw_output_mxfp4_tc = """
 CSV Results:
 
-Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.6,14500000
-1,CUTLASS,block_scaled_gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs32_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,0.5,15800000
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,256,2,1,1,2,1,1,5,4,1,1,256,256,128,107,1024,278528,268959744,965,0.00568032,45.6663,47349.4
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs32_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,512,256,256,4,4,1,2,1,1,4,4,1,1,256,256,128,107,1024,278528,268959744,965,0.006,43.2332,44826.6
 """
         raw_outputs = [
             raw_output_tf32_tc, raw_output_bf16_tc, raw_output_fp16_tc, raw_output_fp8_tc, raw_output_nvfp4_tc,
@@ -328,10 +330,10 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runt
         assert (benchmark.result['bf16_tc_flops'][0] == 2100000)
         assert (benchmark.result['fp16_tc_flops'][0] == 2200000)
         assert (benchmark.result['fp8_tc_flops'][0] == 4400000)
-        assert (benchmark.result['nvfp4_tc_flops'][0] == 16000000)
-        assert (benchmark.result['nvfp4_ue5m3_tc_flops'][0] == 15500000)
-        assert (benchmark.result['mxfp8_tc_flops'][0] == 4300000)
-        assert (benchmark.result['mxfp4_tc_flops'][0] == 15800000)
+        assert (benchmark.result['nvfp4_tc_flops'][0] == 46942.1)
+        assert (benchmark.result['nvfp4_ue5m3_tc_flops'][0] == 46889.8)
+        assert (benchmark.result['mxfp8_tc_flops'][0] == 40751.5)
+        assert (benchmark.result['mxfp4_tc_flops'][0] == 47349.4)
 
         # Retargeted SM100-style kernels, 1SM kernels and other scale types or block sizes are not selected.
         unselected = """
@@ -374,13 +376,18 @@ mxfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x
             kernel_map = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.7]
             tf32_cmd, fp8_cmd, nvfp4_cmd, nvfp4_ue5m3_cmd, mxfp8_cmd, mxfp4_cmd = benchmark._commands
             runtime_e4m3 = ' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'
+            no_verification = ' --verification-enabled=false'
             assert (tf32_cmd.startswith(os.path.join(prefix, 'bin', 'cutlass_profiler') + ' '))
             assert ('--operation=gemm ' in tf32_cmd and tf32_cmd.endswith(' --kernels=' + kernel_map['tf32_tc']))
             assert ('--operation=gemm ' in fp8_cmd and fp8_cmd.endswith(runtime_e4m3))
+            # Dense kernels keep the default verification; block-scaled ones skip the slow host reference check.
+            assert (all('--verification-enabled' not in cmd for cmd in [tf32_cmd, fp8_cmd]))
             for cmd in [nvfp4_cmd, nvfp4_ue5m3_cmd, mxfp4_cmd]:
                 assert ('--operation=block_scaled_gemm ' in cmd and 'runtime_input_datatype' not in cmd)
+                assert (cmd.endswith(no_verification))
             # MXFP8 kernels are block-scaled and runtime-typed.
-            assert ('--operation=block_scaled_gemm ' in mxfp8_cmd and mxfp8_cmd.endswith(runtime_e4m3))
+            assert ('--operation=block_scaled_gemm ' in mxfp8_cmd)
+            assert (mxfp8_cmd.endswith(runtime_e4m3 + no_verification))
 
             with mock.patch.dict(os.environ):
                 benchmark = benchmark_class(benchmark_name, parameters='--precision int8_tc')

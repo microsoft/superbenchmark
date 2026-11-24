@@ -102,6 +102,7 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
         self.__cutlass_subdir = {10.7: 'cutlass_sm107'}
         self.__capability = None
         # '<OperationKind>,<kernel name prefix>' of CSV rows to parse: legacy SM70/SM80, SM90, SM100, SM103, SM107.
+        # Block-scaled kernels report OperationKind 'gemm' (substring matching also accepts 'block_scaled_gemm').
         self.__parse_logline = [
             'gemm,cutlass_simt_dgemm_128x128_8x2', 'gemm,cutlass_simt_sgemm_128x128_8x2',
             'gemm,cutlass_simt_hgemm_256x128_8x2', 'gemm,cutlass_tensorop_d884gemm_128x128_16x3',
@@ -111,11 +112,10 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             'gemm,cutlass_tensorop_s4_i16864gemm_s4_256x128_128x3', 'gemm,cutlass3x_sm90_tensorop_',
             'gemm,cutlass3x_sm100_tensorop_tf32gemm_', 'gemm,cutlass3x_sm100_tensorop_gemm_f16_',
             'gemm,cutlass3x_sm100_tensorop_gemm_bf16_', 'gemm,cutlass3x_sm100_tensorop_gemm_s8_',
-            'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_',
-            'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_',
-            'block_scaled_gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_', 'gemm,cutlass3x_sm107_tensorop_tf32gemm_',
+            'gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_', 'gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_',
+            'gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xf4_', 'gemm,cutlass3x_sm107_tensorop_tf32gemm_',
             'gemm,cutlass3x_sm107_tensorop_gemm_f16_', 'gemm,cutlass3x_sm107_tensorop_gemm_bf16_',
-            'gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_', 'block_scaled_gemm,cutlass3x_sm107_bstensorop_'
+            'gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_', 'gemm,cutlass3x_sm107_bstensorop_'
         ]
 
     def add_parser_arguments(self):
@@ -162,6 +162,10 @@ class CudaGemmFlopsBenchmark(GemmFlopsBenchmark):
             # Runtime-typed FP8 kernels ("f8" elements: gemm_f8_f8, ue8m0xf8) take the A/B type at launch.
             if re.search(r'[_x]f8_', kernels):
                 command += ' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'
+            # cutlass_profiler verifies block-scaled kernels only against a host (CPU) reference, which is impractically
+            # slow at the default problem size, so skip verification for these throughput runs.
+            if operation == 'block_scaled_gemm':
+                command += ' --verification-enabled=false'
             self._commands.append(command)
 
         return True
