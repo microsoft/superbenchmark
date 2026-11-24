@@ -3,6 +3,8 @@
 
 """Tests for gemm-flops benchmark."""
 
+import fnmatch
+import os
 import unittest
 from unittest import mock
 
@@ -19,7 +21,7 @@ class CudaGemmFlopsBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         """Hook method for setting up class fixture before running tests in the class."""
         super().setUpClass()
         cls.createMockEnvs(cls)
-        cls.createMockFiles(cls, ['bin/cutlass_profiler'])
+        cls.createMockFiles(cls, ['bin/cutlass_profiler', 'cutlass_sm107/bin/cutlass_profiler'])
 
     @decorator.cuda_test
     def test_flops_performance_cuda(self):
@@ -54,7 +56,8 @@ class CudaGemmFlopsBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         assert (benchmark._args.k == 512)
         assert (benchmark._args.m == 2048)
         assert (benchmark._args.precision == ['fp32', 'tf32_tc', 'fp16_tc', 'int8_tc'])
-        benchmark._CudaGemmFlopsBenchmark__precision_need_to_run = ['fp32', 'tf32_tc', 'fp16_tc', 'int8_tc']
+        # Parse the outputs below as these precisions on any GPU architecture.
+        benchmark._precision_need_to_run = ['fp32', 'tf32_tc', 'fp16_tc', 'int8_tc']
 
         # Check results and metrics.
         raw_output_fp32 = """
@@ -95,16 +98,305 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
         # Negative case - Add invalid raw output.
         assert (benchmark._process_raw_result(3, 'Invalid raw output') is False)
 
-    def test_flops_performance_cuda_sm107(self):
-        """Test gemm-flops benchmark selects kernels for compute capability 10.7."""
+    @decorator.cuda_test
+    def test_flops_performance_cuda_sm100(self):
+        """Test gemm-flops benchmark SM100 (Blackwell) UMMA kernel output parsing."""
         benchmark_name = 'gemm-flops'
         (benchmark_class,
          predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
         assert (benchmark_class)
 
-        benchmark = benchmark_class(benchmark_name, parameters='--precision fp32 fp16_tc')
-        assert (10.7 in benchmark._CudaGemmFlopsBenchmark__kernel_map)
+        benchmark = benchmark_class(benchmark_name, parameters='--precision tf32_tc bf16_tc fp16_tc int8_tc')
+        # Parse args so _args and _result are initialized for _process_raw_result().
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        from superbench.benchmarks import BenchmarkType, ReturnCode
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'int8_tc']
 
+        # SM100 UMMA 3x kernel naming:
+        #   cutlass3x_sm100_tensorop_gemm_{dtype_a}_{dtype_b}_{acc}_{c}_{d}_{tile}_{cluster}_{stages}_{layout}_align{al}_{schedule}
+        raw_output_tf32_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_128x256x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.21,1072500
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_256x128x32_1x2x1_0_ntn_align4_1sm,passed,success,universal,16384,16384,16384,8.45,1043800
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_tf32gemm_f32_f32_f32_f32_f32_128x256x32_1x2x1_0_ntn_align4_stream_k_1sm,passed,success,universal,16384,16384,16384,8.10,1086300
+"""
+        raw_output_bf16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_f32_f32_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.35,2024100
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_bf16_bf16_f32_void_f32_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.20,2096300
+"""
+        raw_output_fp16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_f16_f16_f16_f16_f16_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.31,2042000
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_f16_f16_f32_f32_f32_128x256x64_1x2x1_0_ntn_align8_1sm,passed,success,universal,16384,16384,16384,4.28,2056200
+"""
+        raw_output_int8_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_s8_s8_s32_s32_s32_128x256x128_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.20,3998400
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_s8_s8_s32_void_s32_128x256x128_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.15,4091600
+"""
+        assert (benchmark._process_raw_result(0, raw_output_tf32_tc))
+        assert (benchmark._process_raw_result(1, raw_output_bf16_tc))
+        assert (benchmark._process_raw_result(2, raw_output_fp16_tc))
+        assert (benchmark._process_raw_result(3, raw_output_int8_tc))
+
+        assert (benchmark.result['tf32_tc_flops'][0] == 1086300)
+        assert (benchmark.result['bf16_tc_flops'][0] == 2096300)
+        assert (benchmark.result['fp16_tc_flops'][0] == 2056200)
+        assert (benchmark.result['int8_tc_iops'][0] == 4091600)
+
+    @decorator.cuda_test
+    def test_flops_performance_cuda_fp8(self):
+        """Test gemm-flops benchmark FP8 (e4m3) kernel output parsing for SM90 and SM100."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='--precision fp8_tc')
+        # Parse args so _args and _result are initialized for _process_raw_result().
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        from superbench.benchmarks import BenchmarkType, ReturnCode
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = ['fp8_tc', 'fp8_tc']
+
+        # SM90 Hopper WGMMA 3x kernels from CUTLASS v3.9.2 (MMA shape before "gemm") and v4.3.5.
+        raw_output_sm90_fp8 = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm90_tensorop_s64x256x32gemm_e4m3_e4m3_f32_f32_f32_128x256x128_2x1x1_0_tnn_align16_warpspecialized_cooperative_fp8_fastaccum_epi_nosmem,passed,success,universal,16384,16384,16384,3.79,2317200
+1,CUTLASS,gemm,cutlass3x_sm90_tensorop_gemm_e4m3_e4m3_f32_f32_f32_128x256x128_2x1x1_0_tnn_align16_warpspecialized_cooperative_fp8_fastaccum_epi_nosmem,passed,success,universal,16384,16384,16384,3.85,2281500
+"""
+        pattern = benchmark._CudaGemmFlopsBenchmark__kernel_map[9.0]['fp8_tc']
+        names = [line.split(',')[3] for line in raw_output_sm90_fp8.splitlines() if line.startswith('1,')]
+        assert (names and all(fnmatch.fnmatchcase(name, '*' + pattern + '*') for name in names))
+        # SM100 Blackwell UMMA 3x kernel: cutlass3x_sm100_tensorop_gemm_e4m3_{a}_{b}_{acc}_{c}_{d}_{tile}_...
+        raw_output_sm100_fp8 = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_bf16_bf16_128x256x64_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.10,5296000
+1,CUTLASS,gemm,cutlass3x_sm100_tensorop_gemm_e4m3_e4m3_f32_f32_f32_128x256x64_1x2x1_0_ntn_align16_1sm,passed,success,universal,16384,16384,16384,2.05,5425400
+"""
+        assert (benchmark._process_raw_result(0, raw_output_sm90_fp8))
+        assert (benchmark._process_raw_result(1, raw_output_sm100_fp8))
+
+        assert (benchmark.result['fp8_tc_flops'][0] == 2317200)
+        assert (benchmark.result['fp8_tc_flops'][1] == 5425400)
+
+    @decorator.cuda_test
+    def test_flops_performance_cuda_nvfp4(self):
+        """Test gemm-flops benchmark NVFP4 (block-scaled FP4) kernel selection and output parsing for SM103."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        benchmark = benchmark_class(benchmark_name, parameters='--precision nvfp4_tc')
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        from superbench.benchmarks import BenchmarkType, ReturnCode
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = ['nvfp4_tc']
+
+        # SM103 Blackwell Ultra NVFP4 block-scaled kernel:
+        # cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_{acc}_{c}_{d}_{tile}_..._ultra_2sm_*
+        # cutlass_profiler reports OperationKind "gemm" for them and prints large GFLOPs in exponent notation.
+        raw_output_sm103_nvfp4 = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_nopf_epi_nosmem,not_verified,success,universal,16384,16384,16384,fe2m1:row,fe2m1:column,void:row,f32:row,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,768,2,1,1,2,1,1,4,4,1,1,256,256,128,103,1024,301989888,8796629893120,29128,0.55,511.364,1.59939e+07
+1,CUTLASS,gemm,cutlass3x_sm103_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x768_2x1x1_0_tnt_align32_o_vs16_ultra_2sm_tmapf_epi_nosmem,not_verified,success,universal,16384,16384,16384,fe2m1:row,fe2m1:column,void:row,f32:row,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,768,2,1,1,2,1,1,4,4,1,1,256,256,128,103,1024,301989888,8796629893120,29128,0.52985,530.811,1.66021e+07
+"""
+        # The SM10.3 --kernels pattern must select these real CUTLASS v4.3.5 names (matched like '*pattern*').
+        pattern = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.3]['nvfp4_tc']
+        names = [line.split(',')[3] for line in raw_output_sm103_nvfp4.splitlines() if line.startswith('1,')]
+        assert (names and all(fnmatch.fnmatchcase(name, '*' + pattern + '*') for name in names))
+
+        assert (benchmark._process_raw_result(0, raw_output_sm103_nvfp4))
+
+        assert (benchmark.result['nvfp4_tc_flops'][0] == 16602100)
+
+    def test_flops_performance_cuda_sm107_kernels(self):
+        """Test gemm-flops benchmark selects native SM107 (Rubin) kernels and parses their output."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        precisions = ['tf32_tc', 'bf16_tc', 'fp16_tc', 'fp8_tc', 'nvfp4_tc', 'nvfp4_ue5m3_tc', 'mxfp8_tc', 'mxfp4_tc']
+        benchmark = benchmark_class(benchmark_name, parameters='--precision ' + ' '.join(precisions))
+        kernel_map = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.7]
+        assert (sorted(kernel_map) == sorted(precisions))
+        # No legacy SM80 (Ampere) selectors on the Rubin performance path.
+        assert (all(pattern.startswith('cutlass3x_sm107_') for pattern in kernel_map.values()))
+
+        benchmark.add_parser_arguments()
+        ret, benchmark._args, _ = benchmark.parse_args()
+        assert ret
+        from superbench.benchmarks.result import BenchmarkResult
+        benchmark._result = BenchmarkResult(benchmark_name, BenchmarkType.MICRO, ReturnCode.SUCCESS)
+        benchmark._precision_need_to_run = precisions
+
+        # Kernel names from CUTLASS v4.8.0 generated for "107a"; the FP8/FP4 ones are native SM107 B-reuse kernels.
+        raw_output_tf32_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_tf32gemm_f32_f32_f32_f32_f32_256x256x32_0x0x1_0_ntn_align4_stream_k_2sm,passed,success,universal,16384,16384,16384,8.0,1100000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_tf32gemm_f32_f32_f32_f32_f32_256x256x32_4x4x1_0_tnn_align4_stream_k_2sm,passed,success,universal,16384,16384,16384,8.8,1000000
+"""
+        raw_output_bf16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_bf16_bf16_f32_bf16_bf16_256x256x64_0x0x1_0_ntn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.4,2000000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_bf16_bf16_f32_bf16_bf16_256x256x64_4x4x1_0_tnn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.2,2100000
+"""
+        raw_output_fp16_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f16_f16_f32_f16_f16_256x256x64_0x0x1_0_ntn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.2,2100000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f16_f16_f32_f16_f16_256x256x64_4x4x1_0_tnn_align8_stream_k_2sm,passed,success,universal,16384,16384,16384,4.0,2200000
+"""
+        raw_output_fp8_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,Runtime,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_no_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.2,4000000
+1,CUTLASS,gemm,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_512x256x128_4x4x1_0_tnn_align16_breuse_2sm_epi_tma,passed,success,universal,16384,16384,16384,2.0,4400000
+"""
+        # Block-scaled outputs use the real cutlass_profiler CSV layout from Rubin: OperationKind is 'gemm'.
+        raw_output_nvfp4_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,256,2,1,1,2,1,1,5,4,1,1,256,256,128,107,1024,294912,268959744,912,0.0057296,47.9367,46942.1
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,512,256,256,4,4,1,2,1,1,4,4,1,1,256,256,128,107,1024,294912,268959744,912,0.0061,45.0259,44091.8
+"""
+        raw_output_nvfp4_ue5m3_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,256,2,1,1,2,1,1,5,4,1,1,256,256,128,107,1024,294912,268959744,912,0.005736,47.8832,46889.8
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs16_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,512,256,256,4,4,1,2,1,1,4,4,1,1,256,256,128,107,1024,294912,268959744,912,0.0062,44.2997,43380.6
+"""
+        raw_output_mxfp8_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_256x256x128_0x0x1_0_tnn_align16_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,f8:row,f8:column,void:column,f32:column,1,0,serial,1,1,e4m3,e4m3,heuristic,1,false,invalid,f32,256,256,128,2,1,1,2,1,1,6,4,1,1,256,256,64,107,1024,540672,268959744,497,0.0071,70.9211,37881.7
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_512x256x128_4x4x1_0_tnn_align16_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,f8:row,f8:column,void:column,f32:column,1,0,serial,1,1,e4m3,e4m3,heuristic,1,false,invalid,f32,512,256,128,4,4,1,2,1,1,5,4,1,1,256,256,64,107,1024,540672,268959744,497,0.0066,76.2939,40751.5
+"""
+        raw_output_mxfp4_tc = """
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,runtime_input_datatype_a,runtime_input_datatype_b,raster_order,swizzle_size,use_pdl,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,cluster_m_fallback,cluster_n_fallback,cluster_k_fallback,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,256,256,256,2,1,1,2,1,1,5,4,1,1,256,256,128,107,1024,278528,268959744,965,0.00568032,45.6663,47349.4
+1,CUTLASS,gemm,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_512x256x256_4x4x1_0_tnn_align32_o_vs32_breuse_2sm_epi_tma,not_verified,success,universal,512,512,512,fe2m1:row,fe2m1:column,void:column,f32:column,1,0,serial,1,1,invalid,invalid,heuristic,1,false,invalid,f32,512,256,256,4,4,1,2,1,1,4,4,1,1,256,256,128,107,1024,278528,268959744,965,0.006,43.2332,44826.6
+"""
+        raw_outputs = [
+            raw_output_tf32_tc, raw_output_bf16_tc, raw_output_fp16_tc, raw_output_fp8_tc, raw_output_nvfp4_tc,
+            raw_output_nvfp4_ue5m3_tc, raw_output_mxfp8_tc, raw_output_mxfp4_tc
+        ]
+        for idx, raw_output in enumerate(raw_outputs):
+            # The --kernels pattern must select the real names (matched like '*pattern*').
+            pattern = kernel_map[precisions[idx]]
+            names = [line.split(',')[3] for line in raw_output.splitlines() if line.startswith('1,')]
+            assert (names and all(fnmatch.fnmatchcase(name, '*' + pattern + '*') for name in names))
+            assert (benchmark._process_raw_result(idx, raw_output))
+
+        assert (benchmark.result['tf32_tc_flops'][0] == 1100000)
+        assert (benchmark.result['bf16_tc_flops'][0] == 2100000)
+        assert (benchmark.result['fp16_tc_flops'][0] == 2200000)
+        assert (benchmark.result['fp8_tc_flops'][0] == 4400000)
+        assert (benchmark.result['nvfp4_tc_flops'][0] == 46942.1)
+        assert (benchmark.result['nvfp4_ue5m3_tc_flops'][0] == 46889.8)
+        assert (benchmark.result['mxfp8_tc_flops'][0] == 40751.5)
+        assert (benchmark.result['mxfp4_tc_flops'][0] == 47349.4)
+
+        # Retargeted SM100-style kernels, 1SM kernels and other scale types or block sizes are not selected.
+        unselected = """
+fp8_tc,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_stream_k_2sm
+fp8_tc,cutlass3x_sm107_tensorop_gemm_f8_f8_f32_f32_f32_256x256x128_0x0x1_0_ntn_align16_breuse_1sm
+nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_2sm
+nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
+nvfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
+nvfp4_ue5m3_tc,cutlass3x_sm107_bstensorop_gemm_ue4m3xe2m1_ue4m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma
+nvfp4_ue5m3_tc,cutlass3x_sm107_bstensorop_gemm_ue5m3xe2m1_ue5m3xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_no_breuse_2sm_epi_tma
+mxfp8_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xf8_ue8m0xf8_f32_void_f32_256x256x128_0x0x1_0_tnn_align16_breuse_1sm
+mxfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs16_no_breuse_2sm_epi_tma
+mxfp4_tc,cutlass3x_sm107_bstensorop_gemm_ue8m0xe2m1_ue8m0xe2m1_f32_void_f32_256x256x256_0x0x1_0_tnn_align32_o_vs32_2sm
+"""
+        for line in unselected.split():
+            precision, name = line.split(',')
+            assert (not fnmatch.fnmatchcase(name, '*' + kernel_map[precision] + '*'))
+
+    def test_flops_performance_cuda_sm107_commands(self):
+        """Test gemm-flops benchmark runs the cutlass_sm107 install on Rubin and skips unsupported precisions."""
+        benchmark_name = 'gemm-flops'
+        (benchmark_class,
+         predefine_params) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(benchmark_name, Platform.CUDA)
+        assert (benchmark_class)
+
+        prefix = os.path.join(self._tmp_dir, 'cutlass_sm107')
         with mock.patch.object(dm.device_manager, 'get_device_compute_capability', return_value=10.7):
-            assert (benchmark._preprocess() is True)
-        assert (benchmark.return_code == ReturnCode.SUCCESS)
+            with mock.patch.dict(os.environ):
+                benchmark = benchmark_class(
+                    benchmark_name,
+                    parameters='--precision tf32_tc fp8_tc nvfp4_tc nvfp4_ue5m3_tc mxfp8_tc mxfp4_tc int8_tc int4_tc'
+                )
+                assert (benchmark._preprocess() is True)
+                assert (os.environ['LD_LIBRARY_PATH'].split(os.pathsep)[0] == os.path.join(prefix, 'lib'))
+            assert (benchmark.return_code == ReturnCode.SUCCESS)
+            # SM107 has no INT8/INT4 kernels, so they are skipped.
+            expected = ['tf32_tc', 'fp8_tc', 'nvfp4_tc', 'nvfp4_ue5m3_tc', 'mxfp8_tc', 'mxfp4_tc']
+            assert (benchmark._precision_need_to_run == expected)
+            assert (benchmark._args.bin_dir == os.path.join(prefix, 'bin'))
+            kernel_map = benchmark._CudaGemmFlopsBenchmark__kernel_map[10.7]
+            tf32_cmd, fp8_cmd, nvfp4_cmd, nvfp4_ue5m3_cmd, mxfp8_cmd, mxfp4_cmd = benchmark._commands
+            runtime_e4m3 = ' --runtime_input_datatype_a=e4m3 --runtime_input_datatype_b=e4m3'
+            no_verification = ' --verification-enabled=false'
+            assert (tf32_cmd.startswith(os.path.join(prefix, 'bin', 'cutlass_profiler') + ' '))
+            assert ('--operation=gemm ' in tf32_cmd and tf32_cmd.endswith(' --kernels=' + kernel_map['tf32_tc']))
+            assert ('--operation=gemm ' in fp8_cmd and fp8_cmd.endswith(runtime_e4m3))
+            # Dense kernels keep the default verification; block-scaled ones skip the slow host reference check.
+            assert (all('--verification-enabled' not in cmd for cmd in [tf32_cmd, fp8_cmd]))
+            for cmd in [nvfp4_cmd, nvfp4_ue5m3_cmd, mxfp4_cmd]:
+                assert ('--operation=block_scaled_gemm ' in cmd and 'runtime_input_datatype' not in cmd)
+                assert (cmd.endswith(no_verification))
+            # MXFP8 kernels are block-scaled and runtime-typed.
+            assert ('--operation=block_scaled_gemm ' in mxfp8_cmd)
+            assert (mxfp8_cmd.endswith(runtime_e4m3 + no_verification))
+
+            with mock.patch.dict(os.environ):
+                benchmark = benchmark_class(benchmark_name, parameters='--precision int8_tc')
+                assert (benchmark._preprocess() is False)
+            assert (benchmark.return_code == ReturnCode.NO_SUPPORTED_PRECISION)
+
+            # An explicit --bin_dir takes precedence over the per-architecture install.
+            bin_dir = os.path.join(self._tmp_dir, 'bin')
+            with mock.patch.dict(os.environ):
+                benchmark = benchmark_class(benchmark_name, parameters='--precision fp16_tc --bin_dir ' + bin_dir)
+                assert (benchmark._preprocess() is True)
+            assert (benchmark._args.bin_dir == bin_dir)
