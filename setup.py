@@ -221,7 +221,7 @@ setup(
                 'types-pyyaml',
                 'typing-extensions>=3.10',
                 'urllib3<2.0',
-                'vcrpy>=4.1.1',
+                'vcrpy>=4.1.1, <9',
                 'yapf==0.31.0',
             ],
             'torch': [

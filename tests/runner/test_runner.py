@@ -163,7 +163,7 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to numa '
+                    'mpirun --tag-output --allow-run-as-root --hostfile hostfile --map-by ppr:8:node --bind-to numa '
                     ' -x PATH -x LD_LIBRARY_PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
@@ -186,8 +186,8 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -hostfile hostfile -map-by ppr:8:node -bind-to numa '
-                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
+                    'mpirun --tag-output --allow-run-as-root --hostfile hostfile --map-by ppr:8:node --bind-to numa '
+                    '--mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
@@ -210,8 +210,8 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -host localhost:8 -bind-to numa '
-                    '-mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
+                    'mpirun --tag-output --allow-run-as-root --host localhost:8 --bind-to numa '
+                    '--mca coll_hcoll_enable 0 -x SB_MICRO_PATH=/sb -x FOO=BAR -x RANK=2 -x NUM=8 '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
             },
@@ -232,7 +232,7 @@ class RunnerTestCase(unittest.TestCase):
                     },
                 },
                 'expected_command': (
-                    'mpirun -tag-output -allow-run-as-root -host node0:8,node1:8 -bind-to numa '
+                    'mpirun --tag-output --allow-run-as-root --host node0:8,node1:8 --bind-to numa '
                     ' -x PATH -x LD_LIBRARY_PATH '
                     f'sb exec --output-dir {self.sb_output_dir} -c sb.config.yaml -C superbench.enable=foo'
                 ),
