@@ -16,6 +16,13 @@ from superbench.benchmarks.micro_benchmarks import BlasLtBaseBenchmark
 
 torch = LazyImport('torch')
 
+_MXFP4_ARGS = (
+    '--a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
+    ' --scaleA 3 --scaleB 3 --scaleABlockRowSize 32 --scaleABlockColSize 1'
+    ' --scaleBBlockRowSize 1 --scaleBBlockColSize 32 --alpha 1 --beta 0'
+    ' --algo_method heuristic --requested_solution 1 --verify --use_gpu_timer --print_kernel_info'
+)
+
 
 class HipBlasLtBenchmark(BlasLtBaseBenchmark):
     """The hipBlasLt GEMM benchmark class."""
@@ -31,19 +38,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         self._bin_name = 'hipblaslt-bench'
         self._in_types = ['fp32', 'fp16', 'bf16', 'fp8', 'mxfp4']
         self._in_type_map = {
-            'fp16':
-            '--a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r',
-            'fp32':
-            '--a_type f32_r --b_type f32_r --c_type f32_r --d_type f32_r --compute_type f32_r',
-            'bf16':
-            '--a_type bf16_r --b_type bf16_r --c_type bf16_r --d_type bf16_r --compute_type f32_r',
-            'fp8':
-            '--a_type f8_r --b_type f8_r --c_type f8_r --d_type f8_r --compute_type f32_r',
-            'mxfp4':
-            '--a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
-            ' --scaleA 3 --scaleB 3 --scaleABlockRowSize 32 --scaleABlockColSize 1'
-            ' --scaleBBlockRowSize 1 --scaleBBlockColSize 32 --alpha 1 --beta 0'
-            ' --algo_method heuristic --requested_solution 1 --verify --use_gpu_timer --print_kernel_info',
+            'fp16': '--a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r',
+            'fp32': '--a_type f32_r --b_type f32_r --c_type f32_r --d_type f32_r --compute_type f32_r',
+            'bf16': '--a_type bf16_r --b_type bf16_r --c_type bf16_r --d_type bf16_r --compute_type f32_r',
+            'fp8': '--a_type f8_r --b_type f8_r --c_type f8_r --d_type f8_r --compute_type f32_r',
+            'mxfp4': _MXFP4_ARGS,
         }
 
     def add_parser_arguments(self):
@@ -115,23 +114,14 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         if arch != 'gfx950':
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
-            logger.error(
-                'Experimental MXFP4 only allows gfx950 - benchmark: {}, architecture: {}.'.format(self._name, arch)
-            )
+            logger.error(f'Experimental MXFP4 only allows gfx950 - benchmark: {self._name}, architecture: {arch}.')
             return False
 
         output = run_command(f'{shlex.quote(self.__bin_path)} --help', quiet=True)
-        required_options = [
-            '--scaleA',
-            '--scaleB',
-            '--scaleABlockRowSize',
-            '--scaleABlockColSize',
-            '--scaleBBlockRowSize',
-            '--scaleBBlockColSize',
-            '--verify',
-            '--use_gpu_timer',
-            '--print_kernel_info',
-        ]
+        required_options = (
+            '--scaleA', '--scaleB', '--scaleABlockRowSize', '--scaleABlockColSize', '--scaleBBlockRowSize',
+            '--scaleBBlockColSize', '--verify', '--use_gpu_timer', '--print_kernel_info'
+        )
         missing = [option for option in required_options if not re.search(re.escape(option) + r'\b', output.stdout)]
         if not re.search(r'\b3\s*=\s*block\b', output.stdout, re.IGNORECASE):
             missing.append('block scaling mode (3)')
@@ -139,15 +129,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             self._result.add_raw_data('mxfp4_client_help', output.stdout, self._args.log_raw_data)
         if output.returncode != 0:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
-            logger.error(
-                'Cannot query MXFP4 client options - benchmark: {}, output: {}.'.format(self._name, output.stdout)
-            )
+            logger.error(f'Cannot query MXFP4 client options - benchmark: {self._name}, output: {output.stdout}.')
             return False
         if missing:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error(
-                'MXFP4 client is missing required options - benchmark: {}, missing: {}.'.format(self._name, missing)
-            )
+            logger.error(f'MXFP4 client is missing required options - benchmark: {self._name}, missing: {missing}.')
             return False
         self._result.add_raw_data('mxfp4_gpu_arch', arch, self._args.log_raw_data)
         return True
@@ -203,24 +189,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
     def _record_mxfp4_result(self, cmd_idx: int, row: Dict[str, str]) -> None:
         """Record MXFP4 metrics only after the requested case, timing and verification match."""
         m, n, k, _, _ = self._shapes_to_run[cmd_idx]
-        expected = {
-            'transA': 'T',
-            'transB': 'N',
-            'grouped_gemm': '0',
-            'batch_count': '1',
-            'm': str(m),
-            'n': str(n),
-            'k': str(k),
-            'a_type': 'f4_r',
-            'b_type': 'f4_r',
-            'c_type': 'f32_r',
-            'd_type': 'f32_r',
-            'compute_type': 'f32_r',
-            'scaleA': '3',
-            'scaleB': '3',
-            'use_gpu_timer': '1',
-        }
-        for column, value in expected.items():
+        for column, value in (
+            ('transA', 'T'), ('transB', 'N'), ('grouped_gemm', '0'), ('batch_count', '1'), ('m', str(m)), ('n', str(n)),
+            ('k', str(k)), ('a_type', 'f4_r'), ('b_type', 'f4_r'), ('c_type', 'f32_r'), ('d_type', 'f32_r'),
+            ('compute_type', 'f32_r'), ('scaleA', '3'), ('scaleB', '3'), ('use_gpu_timer', '1')
+        ):
             if row.get(column) != value:
                 raise ValueError(f'MXFP4 column {column} must be {value}, got {row.get(column)}.')
 
@@ -267,24 +240,48 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         try:
             lines = raw_output.splitlines()
-            index = next((i for i, line in enumerate(lines) if 'hipblaslt-Gflops' in line), None)
-            if index is None:
+
+            # Find the header line containing 'hipblaslt-Gflops'
+            for index, line in enumerate(lines):
+                if 'hipblaslt-Gflops' in line:
+                    break
+            else:
                 raise ValueError('Line with "hipblaslt-Gflops" not found in the log.')
 
-            header_fields = re.sub(r'^\s*\[\d+\]:?', '', lines[index]).split(',')
-            col_idx_by_name: Dict[str, int] = {}
+            # Parse the header and resolve every key column (batch_count/m/n/k/hipblaslt-Gflops)
+            # by name. This keeps the parser forward-compatible across known and future
+            # hipBLASLt output formats (v600: 23 columns; v1500: 34 columns with extra
+            # a_type/b_type/c_type/scaleA-D/amaxD/bias_type/aux_type/hipblaslt-GB/s),
+            # without relying on any fixed column position.
+            header_fields = lines[index].strip().split(',')
+            # Strip leading rank markers like '[0]' or '[0]:' from the first header field.
+            # Use a regex anchored at the start so a column name that legitimately contains
+            # ']' (unlikely, but defensive) is not truncated.
+            header_fields[0] = re.sub(r'^\s*\[\d+\]:?', '', header_fields[0])
+
+            # Build a name -> column-index map (first occurrence wins for any duplicates).
+            col_idx_by_name = {}
             for col_idx, col_name in enumerate(header_fields):
                 col_idx_by_name.setdefault(col_name.strip(), col_idx)
+
             required_columns = ['batch_count', 'm', 'n', 'k', 'hipblaslt-Gflops']
             missing_columns = [c for c in required_columns if c not in col_idx_by_name]
             if missing_columns:
                 raise ValueError(f'Required column(s) not found in header: {missing_columns}.')
+
+            # Ensure a data line follows the header (e.g., hipblaslt-bench may have
+            # crashed after printing the header).
             if index + 1 >= len(lines):
                 raise ValueError('Data line missing after "hipblaslt-Gflops" header.')
-            fields = lines[index + 1].split(',')
+
+            # Split the data line into fields using a comma as the delimiter
+            fields = lines[index + 1].strip().split(',')
+
+            # Validate that the data line has the same number of columns as the header
             if len(fields) != len(header_fields):
                 raise ValueError(
-                    f'Field count mismatch: header has {len(header_fields)} columns but data has {len(fields)} columns'
+                    f'Field count mismatch: header has {len(header_fields)} columns '
+                    f'but data has {len(fields)} columns'
                 )
 
             if self._precision_in_commands[cmd_idx] == 'mxfp4':
@@ -292,6 +289,8 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 self._record_mxfp4_result(cmd_idx, row)
                 return True
 
+            # Resolve every key value by header name and strip whitespace from each, so
+            # any padding around CSV values does not bleed into the metric key.
             batch_count = fields[col_idx_by_name['batch_count']].strip()
             m_val = fields[col_idx_by_name['m']].strip()
             n_val = fields[col_idx_by_name['n']].strip()

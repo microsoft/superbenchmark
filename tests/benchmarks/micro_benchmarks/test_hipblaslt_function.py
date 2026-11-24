@@ -33,10 +33,10 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/hipblaslt-bench'])
 
-    def get_benchmark(self, parameters=''):
+    def get_benchmark(self):
         """Get Benchmark."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.ROCM)
-        return benchmark_cls(self.benchmark_name, parameters=parameters)
+        return benchmark_cls(self.benchmark_name, parameters='')
 
     def preprocess_mxfp4(
         self, parameters=_MXFP4_PARAMETERS, arch='gfx950:sramecc+:xnack-', help_result=None, available=True
@@ -44,7 +44,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         """Preprocess with synthetic ROCm device and client capability information."""
         if help_result is None:
             help_result = SimpleNamespace(returncode=0, stdout=' '.join(_MXFP4_HELP_OPTIONS))
-        benchmark = self.get_benchmark(parameters)
+        benchmark = hipblaslt_function.HipBlasLtBenchmark(self.benchmark_name, parameters=parameters)
         with patch.object(hipblaslt_function, 'torch') as torch, \
                 patch.object(hipblaslt_function, 'run_command', return_value=help_result):
             torch.version.hip = '7.2.4'

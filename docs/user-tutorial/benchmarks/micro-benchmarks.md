@@ -103,40 +103,12 @@ For quick execution checks, set `num_warmup: 1` and `num_steps: 5` under `parame
 These shorter runs are useful for diagnosing support and configuration errors, not stable
 performance measurements.
 
-**ROCm: experimental MXFP4** is opt-in and has not been validated on hardware.
-It requires a `gfx950` ROCm PyTorch device and a block-scaling `hipblaslt-bench`
-client (based on [ROCm 7.2.4 with RocRoller](https://github.com/ROCm/hipBLASLt/tree/b9d797017b4d4d7c3692ccc5ac099ff9777ace0f)).
-The existing ROCm 6.4 image is not qualified. Use non-batched TN GEMM, positive
-dimensions, K divisible by 32, and `hpl` or `trig_float` initialization:
-
-```yaml
-hipblaslt-gemm:
-  parameters:
-    in_types: [mxfp4]
-    enable_experimental_fp4: true
-    shapes: ["128,128,128"]
-    transA: T
-    transB: N
-    initialization: hpl
-```
-
-The client uses E2M1 inputs, one E8M0 scale per 32 K elements, FP32 computation
-and output, `alpha=1` and `beta=0`. The wrapper checks the reported case and
-coefficients, positive finite throughput and latency, and agreement with
-`2*M*N*K / seconds` within 1%. GPU-event timing excludes initialization, packing,
-and CPU verification. Verification compares against the decoded quantized inputs:
-`norm_error` must be in `[0, 1e-5)` and `atol`/`rtol` finite and non-negative.
-The norm threshold still needs hardware calibration. A failed check emits no MXFP4 metrics.
-
 #### Metrics
 
 | Name                                                      | Unit           | Description                     |
 |-----------------------------------------------------------|----------------|---------------------------------|
 | cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops  | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 | hipblaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
-| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_time            | time (us)      | GEMM-only GPU-event latency. |
-| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_norm_error      | ratio          | Relative Frobenius error against the vendor CPU reference. |
-| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_correctness     | flag           | 1 after all MXFP4 checks pass. |
 
 ### `cublas-function`
 
