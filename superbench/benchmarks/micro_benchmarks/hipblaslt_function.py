@@ -18,9 +18,8 @@ torch = LazyImport('torch')
 
 _MXFP4_ARGS = (
     '--a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
-    ' --scaleA 3 --scaleB 3 --scaleABlockRowSize 32 --scaleABlockColSize 1'
-    ' --scaleBBlockRowSize 1 --scaleBBlockColSize 32 --alpha 1 --beta 0'
-    ' --algo_method heuristic --requested_solution 1 --verify --use_gpu_timer --print_kernel_info'
+    ' --scaleA 3 --scaleB 3 --alpha 1 --beta 0 --algo_method heuristic --requested_solution 1'
+    ' --verify --verify_strict --use_gpu_timer --print_kernel_info'
 )
 
 
@@ -61,7 +60,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             '--initialization',
             type=str,
             default='rand_int',
-            choices=['trig_float', 'rand_int', 'hpl'],
+            choices=['trig_float', 'rand_int', 'hpl', 'maf2_0'],
             required=False,
             help='Initialize matrix data.',
         )
@@ -86,8 +85,8 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         """Validate the experimental non-batched, TN MXFP4 case contract."""
         if (self._args.transA, self._args.transB) != ('T', 'N'):
             raise ValueError('MXFP4 currently requires --transA T --transB N.')
-        if self._args.initialization not in ['hpl', 'trig_float']:
-            raise ValueError('MXFP4 requires --initialization hpl or trig_float.')
+        if self._args.initialization not in ['hpl', 'trig_float', 'maf2_0']:
+            raise ValueError('MXFP4 requires --initialization hpl, trig_float or maf2_0.')
         if self._args.num_warmup < 0 or self._args.num_steps < 1:
             raise ValueError('MXFP4 requires non-negative warmup and positive measurement iterations.')
         for m, n, k, batch, precision in self._shapes_to_run:
@@ -105,19 +104,21 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             logger.error('Cannot identify the MXFP4 device - benchmark: {}, message: {}.'.format(self._name, str(e)))
             return False
 
-        if arch != 'gfx950':
+        if arch != 'gfx1250':
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
-            logger.error(f'Experimental MXFP4 only allows gfx950 - benchmark: {self._name}, architecture: {arch}.')
+            logger.error(f'MI455X MXFP4 requires gfx1250 - benchmark: {self._name}, architecture: {arch}.')
             return False
 
         output = run_command(f'{shlex.quote(self.__bin_path)} --help', quiet=True)
+        b32e8 = r'[^\n]*\b3[ \t]*=[ \t]*(?i:B32E8)\b'
         required_options = (
-            '--scaleA', '--scaleB', '--scaleABlockRowSize', '--scaleABlockColSize', '--scaleBBlockRowSize',
-            '--scaleBBlockColSize', '--verify', '--use_gpu_timer', '--print_kernel_info'
+            ('--scaleA', b32e8), ('--scaleB', b32e8), ('--initialization', rf'[^\n]*\b{self._args.initialization}\b'),
+            ('--verify', ''), ('--verify_strict', ''), ('--use_gpu_timer', ''), ('--print_kernel_info', '')
         )
-        missing = [option for option in required_options if not re.search(re.escape(option) + r'\b', output.stdout)]
-        if not re.search(r'\b3\s*=\s*block\b', output.stdout, re.IGNORECASE):
-            missing.append('block scaling mode (3)')
+        missing = [
+            option for option, value in required_options
+            if not re.search(rf'^[ \t]*{option}\b{value}', output.stdout, re.MULTILINE)
+        ]
         if output.returncode != 0 or missing or self._args.log_raw_data:
             self._result.add_raw_data('mxfp4_client_help', output.stdout, self._args.log_raw_data)
         if output.returncode != 0:
@@ -126,7 +127,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             return False
         if missing:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error(f'MXFP4 client is missing required options - benchmark: {self._name}, missing: {missing}.')
+            logger.error(f'MXFP4 client lacks B32E8 or required options - benchmark: {self._name}, missing: {missing}.')
             return False
         self._result.add_raw_data('mxfp4_gpu_arch', arch, self._args.log_raw_data)
         return True
@@ -144,6 +145,12 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         self._commands = []
         self._precision_in_commands = []
+        if self._args.initialization == 'maf2_0' and any(t != 'mxfp4' for t in self._args.in_types):
+            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
+            logger.error(
+                f'Use a separate MXFP4 benchmark instance for maf2_0 initialization - benchmark: {self._name}.'
+            )
+            return False
         if 'mxfp4' in self._args.in_types:
             try:
                 self._validate_mxfp4_arguments()
@@ -171,6 +178,8 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         """Require one result row with unique columns; kernel diagnostics may follow it."""
         if len(columns) != len(fields):
             raise ValueError('MXFP4 requires unique result columns.')
+        if not any(re.match(r'^\s*--kernel name:\s*\S', line) for line in trailer):
+            raise ValueError('MXFP4 requires the client to report the selected kernel.')
         for line in trailer:
             extra = [v.strip() for v in re.sub(r'^\s*\[\d+\]:?', '', line).split(',')]
             if 'hipblaslt-Gflops' in extra or (
@@ -202,7 +211,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         if not math.isclose(gflops, 2 * m * n * k / latency / 1000, rel_tol=0.01):
             raise ValueError('MXFP4 throughput does not match 2*M*N*K and the reported latency.')
 
-        # hipblaslt-bench reports verification errors without asserting them.
+        # Keep the wrapper's conservative FP32-output bound in addition to the client's strict verification.
         norm_error = float(row['norm_error'])
         if not 0 <= norm_error < 1e-5:
             raise ValueError('MXFP4 FP32-output relative Frobenius norm error must be finite and below 1e-5.')
