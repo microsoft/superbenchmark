@@ -81,16 +81,9 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             required=False,
             help='Transpose matrix B.',
         )
-        self._parser.add_argument(
-            '--enable_experimental_fp4',
-            action='store_true',
-            help='Opt in to unvalidated MXFP4 on gfx950 with a block-scaling hipblaslt-bench client.',
-        )
 
     def _validate_mxfp4_arguments(self) -> None:
         """Validate the experimental non-batched, TN MXFP4 case contract."""
-        if not self._args.enable_experimental_fp4:
-            raise ValueError('MXFP4 requires --enable_experimental_fp4; hardware validation is pending.')
         if (self._args.transA, self._args.transB) != ('T', 'N'):
             raise ValueError('MXFP4 currently requires --transA T --transB N.')
         if self._args.initialization not in ['hpl', 'trig_float']:

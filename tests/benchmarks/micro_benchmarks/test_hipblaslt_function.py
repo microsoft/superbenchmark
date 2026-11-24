@@ -13,10 +13,7 @@ from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, 
 from superbench.benchmarks.micro_benchmarks import hipblaslt_function
 from superbench.benchmarks.result import BenchmarkResult
 
-_MXFP4_PARAMETERS = (
-    '--in_types mxfp4 --enable_experimental_fp4 --shapes 64,128,256'
-    ' --transA T --transB N --initialization hpl'
-)
+_MXFP4_PARAMETERS = '--in_types mxfp4 --shapes 64,128,256 --transA T --transB N --initialization hpl'
 _MXFP4_HELP_OPTIONS = (
     '--scaleA', '--scaleB', '--scaleABlockRowSize', '--scaleABlockColSize', '--scaleBBlockRowSize',
     '--scaleBBlockColSize', '--verify', '--use_gpu_timer', '--print_kernel_info', '3 = block'
@@ -158,7 +155,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                         self.assertIn(cmd(_t, 0, _m, _n, _k), benchmark._commands)
 
     def test_mxfp4_command_generation(self):
-        """Test explicit MXFP4 input, scale, verification, and device timing options."""
+        """Select MXFP4 by input type alone and check its scale, verification and device timing options."""
         benchmark, result = self.preprocess_mxfp4()
         self.assertTrue(result)
         self.assertEqual(len(benchmark._commands), 1)
@@ -192,10 +189,9 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 )
 
     def test_mxfp4_invalid_arguments(self):
-        """Reject missing opt-in and unsupported layouts, initialization, shapes, or counts."""
+        """Reject unsupported layouts, initialization, shapes, or counts."""
         valid = _MXFP4_PARAMETERS
         invalid = [
-            valid.replace('--enable_experimental_fp4', ''),
             valid.replace('--transA T', '--transA N'),
             valid.replace('--transB N', '--transB T'),
             valid.replace('--initialization hpl', '--initialization rand_int'),
