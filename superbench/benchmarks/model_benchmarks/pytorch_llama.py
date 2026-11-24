@@ -62,6 +62,7 @@ class PytorchLlama(PytorchBase):
         self._supported_precision = [
             Precision.FLOAT32,
             Precision.FLOAT16,
+            Precision.BFLOAT16,
             Precision.FP8_HYBRID,
             Precision.FP8_E4M3,
         ]

@@ -240,7 +240,9 @@ class MegatronGPT(ModelBenchmark):
                     os.getenv('SB_MICRO_PATH'), 'third_party/Megatron/Megatron-DeepSpeed/'
                 )
             else:
-                self._args.code_base = os.path.join(os.getenv('SB_MICRO_PATH'), 'third_party/Megatron/Megatron-LM')
+                self._args.code_base = os.getenv('SB_MEGATRON_PATH') or os.path.join(
+                    os.getenv('SB_MICRO_PATH'), 'third_party/Megatron/Megatron-LM'
+                )
 
         if not os.path.exists(self._args.code_base) or not os.path.exists(
             os.path.join(self._args.code_base, f'pretrain_{self._args.model}.py')
@@ -540,6 +542,8 @@ class MegatronGPT(ModelBenchmark):
         else:
             command = f'torchrun {self._distributed_args} {script_path} {megatron_options} {self._data_options}'
 
+        if self._args.extra:
+            command += f' {self._args.extra}'
         return command
 
     def _train_step(self, precision):    # noqa: E501
@@ -547,8 +551,19 @@ class MegatronGPT(ModelBenchmark):
         command = self._megatron_command(precision)
         local_rank = os.environ.pop('OMPI_COMM_WORLD_LOCAL_RANK', None)
         logger.info('Running command: {}.'.format(command))
-        output = run_command(command, flush_output=True)
-        os.environ['OMPI_COMM_WORLD_LOCAL_RANK'] = local_rank
+        try:
+            output = run_command(command, flush_output=True)
+        finally:
+            if local_rank is not None:
+                os.environ['OMPI_COMM_WORLD_LOCAL_RANK'] = local_rank
+        if output.returncode != 0:
+            # Return no timings so ModelBenchmark.__train() fails; Benchmark.run() does not fail on exceptions.
+            logger.error(
+                'Megatron training failed - model: {}, precision: {}, exit code: {}.'.format(
+                    self._name, precision, output.returncode
+                )
+            )
+            return [], {}
 
         iteration_times = []
         info = {}
@@ -644,6 +659,8 @@ class MegatronGPT(ModelBenchmark):
         Return:
             True if dataset is created successfully.
         """
+        if not self._args.code_base and not self._args.deepspeed:
+            self._args.code_base = os.getenv('SB_MEGATRON_PATH') or self._args.code_base
         # Validate num_workers unconditionally so a negative value is rejected even when
         # dataset files already exist (it would otherwise be emitted as `--num-workers -1`
         # into the Megatron training command).

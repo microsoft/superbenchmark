@@ -3,7 +3,9 @@
 
 """Tests for BenchmarkRegistry module."""
 
+import os
 import numbers
+from unittest import mock
 
 import torch
 import transformers
@@ -244,6 +246,44 @@ def test_pytorch_base():
 
     # Test _postprocess().
     assert (benchmark._postprocess())
+
+
+@decorator.pytorch_test
+def test_pytorch_ddp_store():
+    """Test the TCPStore used for DDP initialization with and without the torchrun agent store."""
+    benchmark = PytorchMNIST('pytorch-mnist', parameters='--no_gpu')
+    assert (benchmark._preprocess())
+    benchmark._args.distributed_impl = DistributedImpl.DDP
+    benchmark._args.distributed_backend = DistributedBackend.NCCL
+    module = 'superbench.benchmarks.model_benchmarks.pytorch_base'
+    base_env = {'WORLD_SIZE': '2', 'RANK': '0', 'LOCAL_RANK': '0', 'MASTER_ADDR': 'localhost', 'MASTER_PORT': '29600'}
+
+    def init(env):
+        with mock.patch.dict(os.environ, env), \
+                mock.patch(f'{module}.TCPStore') as tcp_store, \
+                mock.patch(f'{module}.PrefixStore') as prefix_store, \
+                mock.patch('torch.distributed.init_process_group') as init_process_group:
+            assert (benchmark._init_distributed_setting() is True)
+            assert (os.environ['MASTER_PORT'] == '29600')
+            assert (init_process_group.call_args.kwargs['store'] is prefix_store.return_value)
+            return tcp_store.call_args.args, prefix_store.call_args.args[0]
+
+    # Under torchrun every rank, including rank 0, joins the agent store on MASTER_PORT.
+    for rank in ['0', '1']:
+        args, _ = init({**base_env, 'RANK': rank, 'TORCHELASTIC_USE_AGENT_STORE': 'True'})
+        assert (args[:4] == ('localhost', 29600, 2, False))
+
+    # Without an agent store, rank 0 hosts the store on MASTER_PORT.
+    with mock.patch.dict(os.environ):
+        os.environ.pop('TORCHELASTIC_USE_AGENT_STORE', None)
+        args, first_prefix = init(base_env)
+        assert (args[:4] == ('localhost', 29600, 2, True))
+        args, second_prefix = init({**base_env, 'RANK': '1', 'TORCHELASTIC_USE_AGENT_STORE': 'False'})
+        assert (args[:4] == ('localhost', 29600, 2, False))
+
+    # Each initialization uses a distinct key prefix.
+    assert (first_prefix.startswith('pytorch-mnist/'))
+    assert (first_prefix != second_prefix)
 
 
 @decorator.cuda_test
