@@ -662,10 +662,10 @@ copy equal-sized buffers concurrently on all GPUs and report each GPU separately
 | one_to_all_write_sm_sum_bw                         | GB/s                | Sum of the output matrix                                           |
 | one_to_all_read_sm_gpu[0-9]_gpu[0-9]_bw            | GB/s                | Measures the total bandwidth of copies from a single device to all accessible peers, for each device. Bandwidth is reported as the total inbound bandwidth for each device. Read tests launch a copy from the peer device to the target using the target's context. |
 | one_to_all_read_sm_sum_bw                          | GB/s                | Sum of the output matrix                                           |
-| host_device_latency_sm_cpu[0-9]_gpu[0-9]_lat       | µs                  | Host - device SM copy latency using a ptr chase kernel            |
-| host_device_latency_sm_sum_lat                     | µs                  | Sum of the output matrix                                           |
-| device_to_device_latency_sm_gpu[0-9]_gpu[0-9]_lat  | µs                  | Measures latency of a pointer dereference operation between each pair of accessible peers. Memory is allocated on a GPU and is accessed by the peer GPU to determine latency. |
-| device_to_device_latency_sm_sum_lat                | µs                  | Sum of the output matrix                                           |
+| host_device_latency_sm_cpu[0-9]_gpu[0-9]_lat       | ns                  | Host - device SM copy latency using a ptr chase kernel            |
+| host_device_latency_sm_sum_lat                     | ns                  | Sum of the output matrix                                           |
+| device_to_device_latency_sm_gpu[0-9]_gpu[0-9]_lat  | ns                  | Measures latency of a pointer dereference operation between each pair of accessible peers. Memory is allocated on a GPU and is accessed by the peer GPU to determine latency. |
+| device_to_device_latency_sm_sum_lat                | ns                  | Sum of the output matrix                                           |
 | device_to_device_latency_counted_gpu[0-9]_gpu[0-9]_lat | ns              | nvbandwidth v0.11.0 counted-write device-to-device latency between each pair of accessible peers (UBLKCP, or fabric logical endpoint on systems that use it). |
 | device_to_device_latency_counted_sum_lat           | ns                  | Sum of the output matrix                                           |
 

@@ -22,7 +22,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
     )
     re_matrix_axis_pattern = re.compile(r'\b(CPU|GPU)\((row|column)\)', re.IGNORECASE)
     # v0.11 UBLKCP/fabric latency titles label both axes at once, e.g. GPU(row->col).
-    re_matrix_pair_axis_pattern = re.compile(r'\b(CPU|GPU)\(row->col(?:umn)?\)', re.IGNORECASE)
+    re_matrix_pair_axis_pattern = re.compile(r'\b(CPU|GPU)\(row->col\)', re.IGNORECASE)
     re_matrix_direction_pattern = re.compile(r'\b(Read[12]|Write[12]|Total) bandwidth\b', re.IGNORECASE)
     re_matrix_row_pattern = re.compile(r'^\s*\d')
     re_summary_pattern = re.compile(r'^SUM\s+(\S+)\s+([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)$')
