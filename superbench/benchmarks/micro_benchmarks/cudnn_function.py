@@ -139,7 +139,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                 'mode': 1
             }, {
                 'name': 'cudnnConvolutionBackwardData',
-                'algo': 4,
+                'algo': 1,
                 'filterDims': [32, 128, 3, 3],
                 'inputType': 0,
                 'inputDims': [32, 32, 14, 14],
@@ -232,7 +232,7 @@ class CudnnBenchmark(MicroBenchmarkWithInvoke):
                 'tensorOp': False,
                 'inputType': 0,
                 'convType': 0,
-                'algo': 6
+                'algo': 1
             }, {
                 'name': 'cudnnConvolutionForward',
                 'inputDims': [32, 128, 14, 14],
