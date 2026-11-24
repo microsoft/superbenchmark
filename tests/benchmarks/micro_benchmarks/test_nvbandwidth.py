@@ -246,13 +246,22 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         """Keep parsed results and explicit outcomes through the invocation path, including nonzero exits."""
         case = 'device_local_copy'
         local_copy = results.split('Running device_local_read_sm.')[0].split(f'Running {case}.')[1]
-        # The first case is a completed matrix followed by a CUDA assertion that aborts the binary.
+        # Case 1: a completed matrix, then a CUDA assertion aborts the binary.
+        # Cases 3-4: exit 0 with kept measurements, but a late testcase outcome still fails the invocation.
         cases = (
             (
                 f'Running {case}.' + local_copy + 'CUDA_ERROR_ILLEGAL_ADDRESS\n', 1, False,
                 ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE, True
             ),
             (f'Running {case}.' + local_copy, 0, True, ReturnCode.SUCCESS, True),
+            (
+                f'Running {case}.' + local_copy + 'Error: verification failed\n', 0, False,
+                ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE, True
+            ),
+            (
+                f'Running {case}.' + local_copy + 'ERROR: Testcase missing_case not found!\n', 0, False,
+                ReturnCode.INVALID_ARGUMENT, True
+            ),
             (
                 f'Running {case}.\nError: verification failed\n', 0, False, ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE,
                 False

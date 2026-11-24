@@ -311,7 +311,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
         set by the parser, including explicit testcase outcomes, are not replaced by a generic parsing failure.
 
         Return:
-            True if every command exited successfully and produced parsable results.
+            True if every command exited successfully and all requested testcases completed.
         """
         ret = True
         for cmd_idx, command in enumerate(self._commands):
@@ -326,7 +326,7 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
                     f'Microbenchmark execution failed - round: {self._curr_run_index}, benchmark: {self._name}, '
                     f'return code: {output.returncode}.'
                 )
-            if output.returncode != 0 or not parsed:
+            if output.returncode != 0 or not parsed or self._result.return_code != ReturnCode.SUCCESS:
                 ret = False
                 if not self._args.tolerant_fail:
                     return False
