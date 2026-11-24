@@ -7,7 +7,7 @@ import os
 import subprocess
 import re
 
-from superbench.common.utils import logger
+from superbench.common.utils import logger, run_command
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 
@@ -303,6 +303,35 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         return return_code
 
+    def _benchmark(self):
+        """Run nvbandwidth and parse its output even after a nonzero exit.
+
+        nvbandwidth aborts on a later CUDA error after printing earlier complete matrices, so those
+        measurements are kept while the run still reports MICROBENCHMARK_EXECUTION_FAILURE. Return codes
+        set by the parser, including explicit testcase outcomes, are not replaced by a generic parsing failure.
+
+        Return:
+            True if every command exited successfully and produced parsable results.
+        """
+        ret = True
+        for cmd_idx, command in enumerate(self._commands):
+            logger.info(
+                f'Execute command - round: {self._curr_run_index}, benchmark: {self._name}, command: {command}.'
+            )
+            output = run_command(command, flush_output=self._args.log_flushing, cwd=self._args.bin_dir)
+            parsed = self._process_raw_result(cmd_idx, output.stdout)
+            if output.returncode != 0:
+                self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+                logger.error(
+                    f'Microbenchmark execution failed - round: {self._curr_run_index}, benchmark: {self._name}, '
+                    f'return code: {output.returncode}.'
+                )
+            if output.returncode != 0 or not parsed:
+                ret = False
+                if not self._args.tolerant_fail:
+                    return False
+        return ret
+
     def _process_raw_result(self, cmd_idx, raw_output):
         """Function to parse raw results and save the summarized results.
 
@@ -344,7 +373,12 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
             if not parsing_status['results']:
                 self._result.add_raw_data('nvbandwidth', 'No valid results found', self._args.log_raw_data)
-                self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+                explicit_outcome = any(
+                    parsing_status[key] for key in ('unsupported_testcases', 'waived_testcases', 'failed_testcases')
+                )
+                self._result.set_return_code(
+                    return_code if explicit_outcome else ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE
+                )
                 return False
 
             # Store parsed results

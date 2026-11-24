@@ -183,21 +183,37 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
 
     @decorator.load_data('tests/data/nvbandwidth_v0.11.log')
     def test_nvbandwidth_v011_status_completeness(self, results):
-        """Keep valid measurements but fail unsupported, waived, failed and missing requested cases."""
+        """Keep valid measurements but fail unsupported, waived, failed and missing requested cases.
+
+        Without measurements, explicit outcomes keep their code; output with neither is a parsing failure.
+        """
         statuses = (
-            ('ERROR missing_case: Testcase missing_case not found!', 'Not supported', ReturnCode.INVALID_ARGUMENT),
-            ('Waived missing_case: no accessible peers', 'waived', ReturnCode.INVALID_ARGUMENT),
-            ('Running missing_case.\nWaived: buffer not supported', 'waived', ReturnCode.INVALID_ARGUMENT),
-            ('Running missing_case.\nWaived:', 'waived', ReturnCode.INVALID_ARGUMENT),
+            (
+                'ERROR missing_case: Testcase missing_case not found!', 'Not supported', ReturnCode.INVALID_ARGUMENT,
+                ReturnCode.INVALID_ARGUMENT
+            ),
+            (
+                'Waived missing_case: no accessible peers', 'waived', ReturnCode.INVALID_ARGUMENT,
+                ReturnCode.INVALID_ARGUMENT
+            ),
+            (
+                'Running missing_case.\nWaived: buffer not supported', 'waived', ReturnCode.INVALID_ARGUMENT,
+                ReturnCode.INVALID_ARGUMENT
+            ),
+            ('Running missing_case.\nWaived:', 'waived', ReturnCode.INVALID_ARGUMENT, ReturnCode.INVALID_ARGUMENT),
             (
                 'Running missing_case.\nError: verification failed',
                 'Error: verification failed',
                 ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE,
+                ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE,
             ),
-            ('Running missing_case.', 'waived', ReturnCode.INVALID_ARGUMENT),
-            ('', 'waived', ReturnCode.INVALID_ARGUMENT),
+            (
+                'Running missing_case.', 'waived', ReturnCode.INVALID_ARGUMENT,
+                ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE
+            ),
+            ('', 'waived', ReturnCode.INVALID_ARGUMENT, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE),
         )
-        for status, raw_status, return_code in statuses:
+        for status, raw_status, return_code, empty_return_code in statuses:
             with self.subTest(status=status):
                 benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases missing_case')
                 assert benchmark._preprocess()
@@ -210,7 +226,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
                 empty_benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases missing_case')
                 assert empty_benchmark._preprocess()
                 assert not empty_benchmark._process_raw_result(0, status)
-                assert empty_benchmark.return_code != ReturnCode.SUCCESS
+                assert empty_benchmark.return_code == empty_return_code
 
         # A late status must not be hidden by an earlier valid SUM for the same testcase.
         for status, return_code in (
@@ -224,6 +240,38 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
                 assert benchmark._process_raw_result(0, results + '\n' + status)
                 assert benchmark.return_code == return_code
                 assert benchmark.result['host_to_all_batch_memcpy_sm_sum_bw'] == [270.0]
+
+    @decorator.load_data('tests/data/nvbandwidth_v0.11.log')
+    def test_nvbandwidth_benchmark_invocation_status(self, results):
+        """Keep parsed results and explicit outcomes through the invocation path, including nonzero exits."""
+        case = 'device_local_copy'
+        local_copy = results.split('Running device_local_read_sm.')[0].split(f'Running {case}.')[1]
+        # The first case is a completed matrix followed by a CUDA assertion that aborts the binary.
+        cases = (
+            (
+                f'Running {case}.' + local_copy + 'CUDA_ERROR_ILLEGAL_ADDRESS\n', 1, False,
+                ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE, True
+            ),
+            (f'Running {case}.' + local_copy, 0, True, ReturnCode.SUCCESS, True),
+            (
+                f'Running {case}.\nError: verification failed\n', 0, False, ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE,
+                False
+            ),
+            (f'Waived {case}: no accessible peers\n', 0, False, ReturnCode.INVALID_ARGUMENT, False),
+            ('unrecognized output\n', 0, False, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE, False),
+            ('', 1, False, ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE, False),
+        )
+        for stdout, exit_code, expected_ret, return_code, has_results in cases:
+            with self.subTest(stdout=stdout, exit_code=exit_code):
+                benchmark = NvBandwidthBenchmark('nvbandwidth', parameters=f'--test_cases {case}')
+                assert benchmark._preprocess()
+                with mock.patch('superbench.benchmarks.micro_benchmarks.nvbandwidth.run_command') as run_command:
+                    run_command.return_value.returncode = exit_code
+                    run_command.return_value.stdout = stdout
+                    assert benchmark._benchmark() == expected_ret
+                assert benchmark.return_code == return_code
+                assert benchmark._result.raw_data['raw_output_0'] == [stdout]
+                assert (benchmark.result.get('device_local_copy_sum_bw') == [24500.0]) == has_results
 
     @decorator.load_data('tests/data/nvbandwidth_v0.11.log')
     def test_nvbandwidth_v011_incomplete_matrices(self, results):
@@ -286,6 +334,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
 
         # Parse the provided raw output
         assert not benchmark._process_raw_result(0, raw_output)
+        assert benchmark.return_code == ReturnCode.INVALID_ARGUMENT
 
         # Validate unsupported test cases
         assert 'unsupported_testcase_1' in benchmark._result.raw_data
