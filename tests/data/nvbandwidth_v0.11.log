@@ -63,6 +63,14 @@ Device to Device Latency TMA GPU(row) <-> GPU(column) (ns)
 
 SUM device_to_device_latency_tma 218.50
 
+Running device_to_device_latency_counted.
+fabric device-to-device counted (put_counted -> fabric_submit, unicast LE) latency GPU(row->col) (ns)
+           0         1
+ 0       N/A    160.50
+ 1    162.50       N/A
+
+SUM device_to_device_latency_counted 323.00
+
 Running device_local_copy.
 memcpy CE local GPU(column) bandwidth (GB/s)
            0         1

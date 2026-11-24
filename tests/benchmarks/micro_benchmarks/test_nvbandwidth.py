@@ -103,7 +103,7 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         test_cases = (
             'device_to_device_bidirectional_memcpy_read_ce '
             'device_to_device_bidirectional_memcpy_write_sm '
-            'device_to_device_latency_sm device_to_device_latency_tma '
+            'device_to_device_latency_sm device_to_device_latency_tma device_to_device_latency_counted '
             'device_local_copy device_local_read_sm '
             'all_to_host_batch_memcpy_ce host_to_all_batch_memcpy_ce '
             'all_to_host_batch_memcpy_sm host_to_all_batch_memcpy_sm'
@@ -132,6 +132,10 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
         assert benchmark.result['device_to_device_latency_sm_sum_lat'] == [310.0]
         assert benchmark.result['device_to_device_latency_tma_gpu0_gpu1_lat'] == [108.25]
         assert benchmark.result['device_to_device_latency_tma_sum_lat'] == [218.5]
+        assert benchmark.result['device_to_device_latency_counted_gpu0_gpu1_lat'] == [160.5]
+        assert benchmark.result['device_to_device_latency_counted_gpu1_gpu0_lat'] == [162.5]
+        assert benchmark.result['device_to_device_latency_counted_sum_lat'] == [323.0]
+        assert 'device_to_device_latency_counted_gpu0_gpu0_lat' not in benchmark.result
         assert benchmark.result['device_local_copy_gpu0_bw'] == [12000.0]
         assert benchmark.result['device_local_copy_gpu1_bw'] == [12500.0]
         assert benchmark.result['device_local_copy_sum_bw'] == [24500.0]
@@ -157,6 +161,25 @@ class TestNvBandwidthBenchmark(BenchmarkTestCase, unittest.TestCase):
             f'{case}_read1_gpu0_gpu1_bw': 41.0,
             f'{case}_read2_gpu0_gpu1_bw': 51.0,
         }
+
+    def test_nvbandwidth_v011_ublkcp_latency_title(self):
+        """The non-LE counted latency title maps GPU(row->col) to GPU row and column axes."""
+        benchmark = NvBandwidthBenchmark('nvbandwidth', parameters='--test_cases device_to_device_latency_counted')
+        assert benchmark._preprocess()
+        output = (
+            'Running device_to_device_latency_counted.\n'
+            'UBLKCP device-to-device counted latency GPU(row->col) (ns)\n'
+            '           0         1\n'
+            ' 0       N/A    900.50\n'
+            ' 1    901.50       N/A\n'
+            '\n'
+            'SUM device_to_device_latency_counted 1802.00\n'
+        )
+        assert benchmark._process_raw_result(0, output)
+        assert benchmark.return_code == ReturnCode.SUCCESS
+        assert benchmark.result['device_to_device_latency_counted_gpu0_gpu1_lat'] == [900.5]
+        assert benchmark.result['device_to_device_latency_counted_gpu1_gpu0_lat'] == [901.5]
+        assert benchmark.result['device_to_device_latency_counted_sum_lat'] == [1802.0]
 
     @decorator.load_data('tests/data/nvbandwidth_v0.11.log')
     def test_nvbandwidth_v011_status_completeness(self, results):

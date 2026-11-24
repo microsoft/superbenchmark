@@ -17,8 +17,12 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
     # Regular expressions for summary line and matrix header detection
     re_version_pattern = re.compile(r'^nvbandwidth Version:\s*v?(\d+)\.(\d+)', re.MULTILINE)
     re_block_start_pattern = re.compile(r'^Running\s+(\w+)\.$')
-    re_matrix_header_line = re.compile(r'^(memcpy|memory latency|Device to Device Latency)\b', re.IGNORECASE)
+    re_matrix_header_line = re.compile(
+        r'^(memcpy|memory latency|Device to Device Latency|(?:UBLKCP|fabric) device-to-device)\b', re.IGNORECASE
+    )
     re_matrix_axis_pattern = re.compile(r'\b(CPU|GPU)\((row|column)\)', re.IGNORECASE)
+    # v0.11 UBLKCP/fabric latency titles label both axes at once, e.g. GPU(row->col).
+    re_matrix_pair_axis_pattern = re.compile(r'\b(CPU|GPU)\(row->col(?:umn)?\)', re.IGNORECASE)
     re_matrix_direction_pattern = re.compile(r'\b(Read[12]|Write[12]|Total) bandwidth\b', re.IGNORECASE)
     re_matrix_row_pattern = re.compile(r'^\s*\d')
     re_summary_pattern = re.compile(r'^SUM\s+(\S+)\s+([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)$')
@@ -149,6 +153,9 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         if self.re_matrix_header_line.match(line):
             axes = {axis.lower(): name.lower() for name, axis in self.re_matrix_axis_pattern.findall(line)}
+            pair_axis = self.re_matrix_pair_axis_pattern.search(line)
+            if pair_axis:
+                axes = {'row': pair_axis.group(1).lower(), 'column': pair_axis.group(1).lower()}
             direction_match = self.re_matrix_direction_pattern.search(line)
             suffix = direction_match.group(1).lower() if direction_match else ''
             parse_status['matrix_index'] += 1
