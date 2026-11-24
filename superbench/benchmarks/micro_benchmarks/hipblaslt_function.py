@@ -8,7 +8,7 @@ import os
 import re
 import shlex
 from decimal import Decimal, InvalidOperation
-from typing import Dict
+from typing import Dict, List
 
 from superbench.common.utils import LazyImport, logger, run_command
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -186,6 +186,19 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         return True
 
+    @staticmethod
+    def _mxfp4_result_row(columns: Dict[str, int], fields: List[str], trailer: List[str]) -> Dict[str, str]:
+        """Require one result row with unique columns; kernel diagnostics may follow it."""
+        if len(columns) != len(fields):
+            raise ValueError('MXFP4 requires unique result columns.')
+        for line in trailer:
+            extra = [v.strip() for v in re.sub(r'^\s*\[\d+\]:?', '', line).split(',')]
+            if 'hipblaslt-Gflops' in extra or (
+                len(extra) == len(fields) and all(extra[columns[t]] in ('N', 'T', 'C') for t in ('transA', 'transB'))
+            ):
+                raise ValueError('MXFP4 requires exactly one result.')
+        return {col: fields[i].strip() for col, i in columns.items()}
+
     def _record_mxfp4_result(self, cmd_idx: int, row: Dict[str, str]) -> None:
         """Record MXFP4 metrics only after the requested case, timing and verification match."""
         m, n, k, _, _ = self._shapes_to_run[cmd_idx]
@@ -216,11 +229,9 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 raise ValueError(f'MXFP4 column {column} must be {coefficient}, got {row[column]}.')
 
         gflops = float(row['hipblaslt-Gflops'])
-        if not math.isfinite(gflops) or gflops <= 0:
-            raise ValueError('MXFP4 throughput must be finite and positive.')
         latency = float(row['us'])
-        if not math.isfinite(latency) or latency <= 0:
-            raise ValueError('MXFP4 latency must be finite and positive.')
+        if not all(math.isfinite(value) and value > 0 for value in (gflops, latency)):
+            raise ValueError('MXFP4 throughput and latency must be finite and positive.')
         if not math.isclose(gflops, 2 * m * n * k / latency / 1000, rel_tol=0.01):
             raise ValueError('MXFP4 throughput does not match 2*M*N*K and the reported latency.')
 
@@ -276,16 +287,8 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 )
 
             if self._precision_in_commands[cmd_idx] == 'mxfp4':
-                if len(col_idx_by_name) != len(header_fields):
-                    raise ValueError('MXFP4 requires unique result columns.')
-                for line in lines[index + 2:]:
-                    extra = [v.strip() for v in re.sub(r'^\s*\[\d+\]:?', '', line).split(',')]
-                    if 'hipblaslt-Gflops' in extra or (
-                        len(extra) == len(fields)
-                        and all(extra[col_idx_by_name[t]] in ('N', 'T', 'C') for t in ('transA', 'transB'))
-                    ):
-                        raise ValueError('MXFP4 requires exactly one result.')
-                self._record_mxfp4_result(cmd_idx, {col: fields[i].strip() for col, i in col_idx_by_name.items()})
+                row = self._mxfp4_result_row(col_idx_by_name, fields, lines[index + 2:])
+                self._record_mxfp4_result(cmd_idx, row)
                 return True
 
             batch_count = fields[col_idx_by_name['batch_count']].strip()
