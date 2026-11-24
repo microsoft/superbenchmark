@@ -117,17 +117,20 @@ class SuperBenchExecutor():
                 argv.append('--{} {}'.format(name, ' '.join(val)))
         return ' '.join(argv)
 
-    def __exec_benchmark(self, benchmark_full_name, context):
+    def __exec_benchmark(self, benchmark_full_name, context, benchmark_config_name):
         """Launch benchmark for context.
 
         Args:
             benchmark_full_name (str): Benchmark full name.
             context (BenchmarkContext): Benchmark context to launch.
+            benchmark_config_name (str): Original configuration key, including annotations.
 
         Return:
             dict: Benchmark result.
         """
+        previous_config_name = os.environ.get('SB_BENCHMARK_CONFIG_NAME')
         try:
+            os.environ['SB_BENCHMARK_CONFIG_NAME'] = benchmark_config_name
             benchmark = BenchmarkRegistry.launch_benchmark(context)
             if benchmark:
                 logger.info(
@@ -146,6 +149,11 @@ class SuperBenchExecutor():
         except Exception as e:
             logger.error(e)
             logger.error('Executor failed in %s.', benchmark_full_name)
+        finally:
+            if previous_config_name is None:
+                os.environ.pop('SB_BENCHMARK_CONFIG_NAME', None)
+            else:
+                os.environ['SB_BENCHMARK_CONFIG_NAME'] = previous_config_name
         return None
 
     def __get_rank_id(self):
@@ -244,7 +252,7 @@ class SuperBenchExecutor():
                                 {} if 'parameters' not in benchmark_config else benchmark_config.parameters
                             )
                         )
-                        result = self.__exec_benchmark(full_name, context)
+                        result = self.__exec_benchmark(full_name, context, benchmark_name)
                         benchmark_results.append(result)
                 else:
                     full_name = benchmark_name
@@ -256,7 +264,7 @@ class SuperBenchExecutor():
                         parameters=self.
                         __get_arguments({} if 'parameters' not in benchmark_config else benchmark_config.parameters)
                     )
-                    result = self.__exec_benchmark(full_name, context)
+                    result = self.__exec_benchmark(full_name, context, benchmark_name)
                     benchmark_results.append(result)
 
             if monitor:

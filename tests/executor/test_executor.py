@@ -4,10 +4,12 @@
 """SuperBench Executor test."""
 
 import json
+import os
 import unittest
 import shutil
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import yaml
@@ -135,6 +137,36 @@ class ExecutorTestCase(unittest.TestCase):
         """Test execute empty benchmarks, nothing should happen."""
         self.executor._sb_enabled = []
         self.executor.exec()
+
+    @mock.patch('superbench.benchmarks.BenchmarkRegistry.launch_benchmark')
+    def test_exec_benchmark_configuration_scope(self, mock_launch_benchmark):
+        """Restore the caller's configuration identity after success or failure."""
+        configuration = 'model-benchmarks:experiment/fp16'
+        for previous_name in [None, 'outer-configuration']:
+            for should_fail in [False, True]:
+                with self.subTest(previous_name=previous_name, should_fail=should_fail):
+                    with mock.patch.dict(os.environ, {}, clear=True):
+                        if previous_name is not None:
+                            os.environ['SB_BENCHMARK_CONFIG_NAME'] = previous_name
+
+                        def launch(context):
+                            self.assertIs(context, mock.sentinel.context)
+                            self.assertEqual(os.environ['SB_BENCHMARK_CONFIG_NAME'], configuration)
+                            if should_fail:
+                                raise RuntimeError('Test benchmark failure.')
+                            return SimpleNamespace(
+                                name='mnist', return_code=ReturnCode.SUCCESS, result={}, serialized_result='{}'
+                            )
+
+                        mock_launch_benchmark.side_effect = launch
+                        result = self.executor._SuperBenchExecutor__exec_benchmark(
+                            configuration + '/pytorch-mnist', mock.sentinel.context, configuration
+                        )
+                        if should_fail:
+                            self.assertIsNone(result)
+                        else:
+                            self.assertEqual(result['name'], configuration + '/pytorch-mnist')
+                        self.assertEqual(os.environ.get('SB_BENCHMARK_CONFIG_NAME'), previous_name)
 
     @mock.patch('superbench.benchmarks.BenchmarkRegistry.launch_benchmark')
     def test_exec_default_benchmarks(self, mock_launch_benchmark):
