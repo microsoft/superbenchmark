@@ -121,13 +121,6 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             return False
 
         output = run_command(f'{shlex.quote(self.__bin_path)} --help', quiet=True)
-        self._result.add_raw_data('mxfp4_client_help', output.stdout, self._args.log_raw_data)
-        if output.returncode != 0:
-            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
-            logger.error(
-                'Cannot query MXFP4 client options - benchmark: {}, output: {}.'.format(self._name, output.stdout)
-            )
-            return False
         required_options = [
             '--scaleA',
             '--scaleB',
@@ -142,6 +135,14 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         missing = [option for option in required_options if not re.search(re.escape(option) + r'\b', output.stdout)]
         if not re.search(r'\b3\s*=\s*block\b', output.stdout, re.IGNORECASE):
             missing.append('block scaling mode (3)')
+        if output.returncode != 0 or missing or self._args.log_raw_data:
+            self._result.add_raw_data('mxfp4_client_help', output.stdout, self._args.log_raw_data)
+        if output.returncode != 0:
+            self._result.set_return_code(ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+            logger.error(
+                'Cannot query MXFP4 client options - benchmark: {}, output: {}.'.format(self._name, output.stdout)
+            )
+            return False
         if missing:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
             logger.error(

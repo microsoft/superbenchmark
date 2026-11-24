@@ -134,14 +134,9 @@ The norm threshold still needs hardware calibration. A failed check emits no MXF
 |-----------------------------------------------------------|----------------|---------------------------------|
 | cublaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops  | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
 | hipblaslt-gemm/${dtype}\_${batch}\_${m}\_${n}\_${k}_flops | FLOPS (TFLOPS) | TFLOPS of measured GEMM kernel. |
-
-MXFP4 additionally reports the following metrics only after validation succeeds:
-
-| Name | Unit | Description |
-|------|------|-------------|
-| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_time | time (us) | GEMM-only GPU-event latency. |
-| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_norm_error | ratio | Relative Frobenius error against the vendor CPU reference. |
-| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_correctness | flag | 1 after the wrapper verification checks pass; failed cases return an error without performance metrics. |
+| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_time            | time (us)      | GEMM-only GPU-event latency. |
+| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_norm_error      | ratio          | Relative Frobenius error against the vendor CPU reference. |
+| hipblaslt-gemm/mxfp4\_1\_${m}\_${n}\_${k}_correctness     | flag           | 1 after all MXFP4 checks pass. |
 
 ### `cublas-function`
 
