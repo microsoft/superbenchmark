@@ -21,10 +21,10 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         cls.createMockEnvs(cls)
         cls.createMockFiles(cls, ['bin/hipblaslt-bench'])
 
-    def get_benchmark(self, parameters=''):
+    def get_benchmark(self):
         """Get Benchmark."""
         (benchmark_cls, _) = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.ROCM)
-        return benchmark_cls(self.benchmark_name, parameters=parameters)
+        return benchmark_cls(self.benchmark_name, parameters='')
 
     def test_hipblaslt_gemm_cls(self):
         """Test hipblaslt-bench benchmark class."""
@@ -197,10 +197,13 @@ N,N,0,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r,n
 
     def test_invalid_throughput(self):
         """Reject invalid client throughput without publishing a TFLOPS metric."""
+        benchmark_cls, _ = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.ROCM)
         for precision in ['fp32', 'fp16', 'bf16', 'fp8']:
             for value in ['0', '-1', 'nan', 'inf', '-inf']:
                 with self.subTest(precision=precision, value=value):
-                    benchmark = self.get_benchmark(f'--in_types {precision} --shapes 128,128,128')
+                    benchmark = benchmark_cls(
+                        self.benchmark_name, parameters=f'--in_types {precision} --shapes 128,128,128'
+                    )
                     self.assertTrue(benchmark._preprocess())
                     csv = f'[0]:batch_count,m,n,k,hipblaslt-Gflops\n1,128,128,128,{value}'
                     self.assertFalse(benchmark._process_raw_result(0, csv))
