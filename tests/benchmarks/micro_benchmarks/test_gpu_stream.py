@@ -54,6 +54,15 @@ class GpuStreamBenchmarkTest(BenchmarkTestCase, unittest.TestCase):
         self.assertNotIn('--block_size', benchmark._commands[0])
         self.assertEqual(benchmark._command_targets, [set(_TAGS)])
 
+    def test_default_size_is_native(self):
+        """Without --size, commands let the native binary size buffers from free device memory."""
+        for configs in [None, {'STREAM_COPY_double': {'block_size': 256, 'unroll': 2}}]:
+            with self.subTest(configs=configs):
+                benchmark, ret = self.create('', configs)
+                self.assertTrue(ret)
+                self.assertTrue(benchmark._commands)
+                self.assertTrue(all('--size' not in command for command in benchmark._commands))
+
     def test_kernel_configs(self):
         """Listed workloads use their launch config; unlisted workloads sweep."""
         configs = {

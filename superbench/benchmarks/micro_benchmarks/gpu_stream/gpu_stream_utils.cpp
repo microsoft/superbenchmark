@@ -41,7 +41,9 @@ void PrintUsage() {
 }
 
 void PrintInputInfo(Opts &opts) {
-    std::cout << "STREAM Benchmark\nBuffer size(bytes): " << opts.size
+    std::cout << "STREAM Benchmark\nBuffer size(bytes): "
+              << (opts.size_explicit ? std::to_string(opts.size)
+                                     : "auto (up to " + std::to_string(kDefaultBufferSizeInBytes) + ")")
               << "\nNumber of warm up runs: " << opts.num_warm_up << "\nNumber of loops: " << opts.num_loops
               << "\nData type: " << opts.data_type << "\nCheck data: " << (opts.check_data ? "Yes" : "No") << std::endl;
 }
@@ -66,6 +68,7 @@ int ParseOpts(int argc, char **argv, Opts *opts) {
         switch (token) {
         case kSize:
             valid = ParseUnsigned(optarg, &opts->size);
+            opts->size_explicit = true;
             break;
         case kWarmup:
             valid = ParseUnsigned(optarg, &opts->num_warm_up);

@@ -31,7 +31,9 @@ unsigned long long getCurrentTimestampInMicroseconds();
 namespace stream_config {
 constexpr std::array<int, 4> kThreadsPerBlock = {128, 256, 512, 1024};
 constexpr std::array<int, 6> kUnrollFactors = {1, 2, 3, 4, 6, 8};
-constexpr uint64_t kDefaultBufferSizeInBytes = 8589934592;        // 8 GiB per array
+constexpr uint64_t kDefaultBufferSizeInBytes = 8589934592;        // 8 GiB per array; upper bound when --size is omitted
+constexpr uint64_t kAutoSizeAlignmentInBytes = 2097152;           // Auto size is aligned down to 2 MiB
+constexpr uint64_t kAutoSizeFreeMemoryPercent = 90;               // Auto size leaves headroom in free device memory
 constexpr int kNumBuffers = 3;                                    // Number of buffers for triad, add kernel
 constexpr int kNumValidationBuffers = 4;                          // Number of validation buffers, one for each kernel
 constexpr int kUInt8Mod = 256;                                    // Modulo for unsigned long data type
@@ -111,6 +113,9 @@ template <typename T> struct BenchArgs {
 struct Opts {
     // Data buffer size for copy benchmark.
     uint64_t size = kDefaultBufferSizeInBytes;
+
+    // Whether --size was given; otherwise size is capped by free device memory.
+    bool size_explicit = false;
 
     // Number of warm up rounds to run.
     uint64_t num_warm_up = 10;

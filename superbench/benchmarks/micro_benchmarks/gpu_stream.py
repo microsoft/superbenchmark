@@ -16,7 +16,6 @@ from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
 _OPERATIONS = ['copy', 'scale', 'add', 'triad']
 _BLOCKS = [128, 256, 512, 1024]
 _UNROLLS = [1, 2, 3, 4, 6, 8]
-_DEFAULT_SIZE = 8 * 1024**3
 _TAG = re.compile(r'^STREAM_(COPY|SCALE|ADD|TRIAD)_(float|double)$')
 
 
@@ -40,8 +39,11 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--size',
             type=int,
-            default=_DEFAULT_SIZE,
-            help='Bytes per array, independent of launch overrides (default: 8 GiB).'
+            default=None,
+            help=(
+                'Bytes per array, independent of launch overrides. Default: the native binary uses '
+                'min(8 GiB, 90%% of free GPU memory / 3), aligned down to 2 MiB.'
+            )
         )
         self._parser.add_argument('--num_warm_up', type=int, default=20)
         self._parser.add_argument('--num_loops', type=int, default=100)
@@ -84,10 +86,10 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
 
     def _command(self, dtype, operation, size, config=None):
         """Use singleton native parameters for overrides, or the native fixed sweep."""
-        parts = [
-            shlex.quote(self.__bin_path),
-            '--size',
-            str(size),
+        parts = [shlex.quote(self.__bin_path)]
+        if size is not None:
+            parts.extend(['--size', str(size)])
+        parts += [
             '--data_type',
             dtype,
             '--operation',
@@ -116,7 +118,7 @@ class GpuStreamBenchmark(MicroBenchmarkWithInvoke):
             ):
                 raise ValueError('Invalid warm-up/loop counts')
             width = 4 if self._args.data_type == 'float' else 8
-            if not 0 < self._args.size < 2**64 or self._args.size % width:
+            if self._args.size is not None and (not 0 < self._args.size < 2**64 or self._args.size % width):
                 raise ValueError('Size must be a positive multiple of {} bytes'.format(width))
             configs = self._kernel_configs()
             size, dtype = self._args.size, self._args.data_type

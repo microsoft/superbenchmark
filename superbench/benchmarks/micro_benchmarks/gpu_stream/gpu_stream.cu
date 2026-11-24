@@ -7,6 +7,7 @@
 // kernels.
 
 #include "gpu_stream.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <dlfcn.h>
@@ -715,6 +716,24 @@ template <typename T> int GpuStream::CreateBenchArgs() {
     }
     args->num_warm_up = opts_.num_warm_up;
     args->num_loops = opts_.num_loops;
+    if (!opts_.size_explicit) {
+        size_t free_bytes = 0;
+        size_t total_bytes = 0;
+        cuda_err = cudaMemGetInfo(&free_bytes, &total_bytes);
+        if (cuda_err != cudaSuccess) {
+            std::cerr << "CreateBenchArgs::cudaMemGetInfo error: " << cudaGetErrorString(cuda_err) << std::endl;
+            return -1;
+        }
+        const uint64_t per_buffer = static_cast<uint64_t>(free_bytes) / 100 * kAutoSizeFreeMemoryPercent / kNumBuffers;
+        const uint64_t capped = per_buffer / kAutoSizeAlignmentInBytes * kAutoSizeAlignmentInBytes;
+        if (capped == 0) {
+            std::cerr << "CreateBenchArgs::Insufficient free device memory for auto size: " << free_bytes << std::endl;
+            return -1;
+        }
+        opts_.size = std::min(kDefaultBufferSizeInBytes, capped);
+        std::cout << "Auto buffer size(bytes): " << opts_.size << " (free device memory(bytes): " << free_bytes << ")"
+                  << std::endl;
+    }
     args->size = opts_.size;
     args->check_data = opts_.check_data;
     bench_args_ = std::move(args);

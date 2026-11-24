@@ -460,7 +460,7 @@ For measurements of peer-to-peer communication performance between AMD GPUs, GPU
 
 Measures Copy, Scale, Add, and Triad memory bandwidth for one `data_type` (`float` or `double`, default `double`). Use a separate benchmark entry for each data type.
 
-By default, each operation sweeps block sizes (128, 256, 512, 1024) and unroll factors (1, 2, 3, 4, 6, 8) and reports the best result. `kernel_configs` sets `block_size` and `unroll` per operation as inline JSON; unlisted operations still sweep. `size` is bytes per array (default 8 GiB). `check_data` validates output outside timing and needs 6x `size` in host memory, so use small size like 1048576.
+By default, each operation sweeps block sizes (128, 256, 512, 1024) and unroll factors (1, 2, 3, 4, 6, 8) and reports the best result. `kernel_configs` sets `block_size` and `unroll` per operation as inline JSON; unlisted operations still sweep. `size` is bytes per array. If omitted, the binary uses min(8 GiB, 90% of free GPU memory / 3), aligned down to 2 MiB, and prints the chosen value as `Auto buffer size(bytes)`; set `size` explicitly to compare results across GPUs with different memory capacity. `check_data` validates output outside timing and needs 6x `size` in host memory, so use small size like 1048576.
 
 Native sweep:
 
