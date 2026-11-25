@@ -19,7 +19,7 @@ torch = LazyImport('torch')
 _MXFP4_ARGS = (
     '--a_type f4_r --b_type f4_r --c_type f32_r --d_type f32_r --compute_type f32_r'
     ' --scaleA 3 --scaleB 3 --alpha 1 --beta 0 --algo_method heuristic --requested_solution 1'
-    ' --verify --verify_strict --use_gpu_timer --print_kernel_info'
+    ' --verify_strict --use_gpu_timer --print_kernel_info'
 )
 
 
@@ -166,7 +166,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
         return True
 
     @staticmethod
-    def _mxfp4_result_row(columns: Dict[str, int], fields: List[str], trailer: List[str]) -> Dict[str, str]:
+    def _parse_mxfp4_result_row(columns: Dict[str, int], fields: List[str], trailer: List[str]) -> Dict[str, str]:
         """Require one result row with unique columns; kernel diagnostics may follow it."""
         if len(columns) != len(fields):
             raise ValueError('MXFP4 requires unique result columns.')
@@ -279,7 +279,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 )
 
             if self._precision_in_commands[cmd_idx] == 'mxfp4':
-                row = self._mxfp4_result_row(col_idx_by_name, fields, lines[index + 2:])
+                row = self._parse_mxfp4_result_row(col_idx_by_name, fields, lines[index + 2:])
                 self._record_mxfp4_result(cmd_idx, row)
                 return True
 

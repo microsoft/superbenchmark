@@ -49,7 +49,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             result = benchmark._preprocess()
         return benchmark, result
 
-    def mxfp4_parser(self):
+    def make_mxfp4_result_benchmark(self):
         """Make a fresh result collector for one requested shape without probing a device or client."""
         benchmark = hipblaslt_function.HipBlasLtBenchmark(self.benchmark_name)
         benchmark._args = SimpleNamespace(log_raw_data=False)
@@ -60,7 +60,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
     def assert_invalid_mxfp4(self, output):
         """Check that a rejected row publishes neither correctness nor performance metrics."""
-        benchmark = self.mxfp4_parser()
+        benchmark = self.make_mxfp4_result_benchmark()
         self.assertFalse(benchmark._process_raw_result(0, output))
         self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
         self.assertEqual(set(benchmark.result), {'return_code'})
@@ -169,7 +169,8 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             with self.subTest(option=option):
                 self.assertEqual(tokens.count(option), 1)
                 self.assertEqual(tokens[tokens.index(option) + 1], value)
-        for option in ['--verify', '--verify_strict', '--use_gpu_timer', '--print_kernel_info']:
+        self.assertNotIn('--verify', tokens)
+        for option in ['--verify_strict', '--use_gpu_timer', '--print_kernel_info']:
             with self.subTest(option=option):
                 self.assertEqual(tokens.count(option), 1)
                 next_index = tokens.index(option) + 1
@@ -264,7 +265,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         """Check reordered columns, exact metric units, and the norm threshold boundary."""
         for reverse, norm in [(False, '1e-6'), (True, '9.999e-6')]:
             with self.subTest(reverse=reverse, norm=norm):
-                benchmark = self.mxfp4_parser()
+                benchmark = self.make_mxfp4_result_benchmark()
                 output = self.mxfp4_output({'norm_error': norm}, reverse=reverse)
                 column_count = len(output.splitlines()[0].split(','))
                 footer = 'diagnostic: ' + ','.join(['detail'] * column_count)
@@ -280,11 +281,11 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         """Do not report wrapper bookkeeping errors as malformed client output."""
         for index, error in [(1, IndexError), (None, TypeError)]:
             with self.subTest(index=index), self.assertRaises(error):
-                self.mxfp4_parser()._process_raw_result(index, self.mxfp4_output())
+                self.make_mxfp4_result_benchmark()._process_raw_result(index, self.mxfp4_output())
 
     def test_mxfp4_result_coefficients(self):
         """Accept equivalent printed scalars, but never report metrics for a different GEMM."""
-        benchmark = self.mxfp4_parser()
+        benchmark = self.make_mxfp4_result_benchmark()
         self.assertTrue(benchmark._process_raw_result(0, self.mxfp4_output({'alpha': '1.00e+0', 'beta': '-0.0'})))
 
         for column, value in [
