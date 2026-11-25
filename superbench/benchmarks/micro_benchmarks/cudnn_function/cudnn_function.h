@@ -42,17 +42,14 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
      */
     void prepare_execution(const CudnnExecutionPolicy &policy);
     /**
-     * @brief Get and set convolution algorithm and workspace size used in cudnn convolution functions
+     * @brief Select the operation-specific algorithm used by both the workspace query and the convolution
      */
-    virtual void get_workspace_size() {}
+    virtual void select_algorithm(const CudnnExecutionPolicy &policy) = 0;
+    virtual size_t get_workspace_size() const = 0;
     /**
      * @brief launch the kernel/function
      */
-    virtual void kernel_entry() {}
-    /**
-     * @brief Find the best algorithm for cudnn convolution functions
-     */
-    virtual void find_best_algo() {}
+    virtual void kernel_entry() = 0;
 
   public:
     /**
@@ -100,13 +97,8 @@ void CudnnFunction<T1, T2>::prepare_descriptors(const CudnnConvolutionWorkload &
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_execution(const CudnnExecutionPolicy &policy) {
     // Set Convolution MathType
     CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), policy.math_type));
-    if (policy.auto_algo) {
-        find_best_algo();
-    } else {
-        this->algo_ = policy.algorithm;
-    }
-    // Set convolution algorithm and workspace size
-    this->get_workspace_size();
+    select_algorithm(policy);
+    fwd_workspace_size_ = get_workspace_size();
     zeros<float>(&fwd_workspace_, std::vector<int>{static_cast<int>(this->fwd_workspace_size_ / sizeof(float)), 1});
 }
 /**

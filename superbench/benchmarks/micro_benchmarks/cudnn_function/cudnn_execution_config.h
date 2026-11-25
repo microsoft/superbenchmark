@@ -24,11 +24,15 @@ struct CudnnConvolutionWorkload {
 struct CudnnExecutionPolicy {
     const cudnnMathType_t math_type;
     const bool auto_algo;
-    const int algorithm;
+    const int requested_algorithm;
 
     // Automatic selection does not require a configured algorithm index.
     explicit CudnnExecutionPolicy(CudnnConfig &config)
         : math_type(config.get_use_tensor_op() ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH),
-          auto_algo(config.get_auto_algo()), algorithm(auto_algo ? 0 : config.get_algo()) {}
+          auto_algo(config.get_auto_algo()), requested_algorithm(auto_algo ? 0 : config.get_algo()) {}
+
+    template <typename FindAlgorithm> auto resolve_algorithm(FindAlgorithm find) const -> decltype(find()) {
+        return auto_algo ? find() : static_cast<decltype(find())>(requested_algorithm);
+    }
 };
 } // namespace cudnn_test
