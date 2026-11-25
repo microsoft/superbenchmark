@@ -6,7 +6,7 @@
 import shlex
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tests.helper.testcase import BenchmarkTestCase
 from superbench.benchmarks import BenchmarkRegistry, BenchmarkType, ReturnCode, Platform
@@ -36,17 +36,16 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
         return benchmark_cls(self.benchmark_name, parameters='')
 
     def preprocess_mxfp4(
-        self, parameters=_MXFP4_PARAMETERS, arch='gfx1250:sramecc+:xnack-', help_result=None, available=True
+        self, parameters=_MXFP4_PARAMETERS, arch='gfx1250:sramecc+:xnack-', help_result=None, device_error=None
     ):
         """Preprocess with synthetic ROCm device and client capability information."""
         if help_result is None:
             help_result = SimpleNamespace(returncode=0, stdout='\n'.join(_MXFP4_HELP_OPTIONS))
         benchmark = hipblaslt_function.HipBlasLtBenchmark(self.benchmark_name, parameters=parameters)
-        with patch.object(hipblaslt_function, 'torch') as torch, \
+        properties = Mock(return_value=SimpleNamespace(gcnArchName=arch), side_effect=device_error)
+        cuda = SimpleNamespace(get_device_properties=properties)
+        with patch.object(hipblaslt_function, 'torch', SimpleNamespace(cuda=cuda)), \
                 patch.object(hipblaslt_function, 'run_command', return_value=help_result):
-            torch.version.hip = 'test-rocm'
-            torch.cuda.is_available.return_value = available
-            torch.cuda.get_device_properties.return_value.gcnArchName = arch
             result = benchmark._preprocess()
         return benchmark, result
 
@@ -212,9 +211,10 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 self.assertFalse(result)
                 self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_UNSUPPORTED_ARCHITECTURE)
                 self.assertEqual(benchmark._commands, [])
-        benchmark, result = self.preprocess_mxfp4(available=False)
+        benchmark, result = self.preprocess_mxfp4(device_error=AssertionError('Invalid device id'))
         self.assertFalse(result)
         self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
+        self.assertEqual(benchmark._commands, [])
 
     def test_mxfp4_client_capabilities(self):
         """Reject old client options and explicit capability-query failures."""
@@ -275,6 +275,12 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 self.assertEqual(benchmark.result['mxfp4_1_64_128_256_correctness'], [1])
                 self.assertEqual(benchmark.return_code, ReturnCode.SUCCESS)
         self.assert_invalid_mxfp4(self.mxfp4_output({'m': '128', 'n': '64'}))
+
+    def test_mxfp4_result_requires_valid_command_index(self):
+        """Do not report wrapper bookkeeping errors as malformed client output."""
+        for index, error in [(1, IndexError), (None, TypeError)]:
+            with self.subTest(index=index), self.assertRaises(error):
+                self.mxfp4_parser()._process_raw_result(index, self.mxfp4_output())
 
     def test_mxfp4_result_coefficients(self):
         """Accept equivalent printed scalars, but never report metrics for a different GEMM."""

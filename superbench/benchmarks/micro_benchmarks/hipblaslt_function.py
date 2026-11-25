@@ -8,7 +8,7 @@ import os
 import re
 import shlex
 from decimal import Decimal, InvalidOperation
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from superbench.common.utils import LazyImport, logger, run_command
 from superbench.benchmarks import BenchmarkRegistry, Platform, ReturnCode
@@ -81,25 +81,27 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             help='Transpose matrix B.',
         )
 
-    def _validate_mxfp4_arguments(self) -> None:
-        """Validate the experimental non-batched, TN MXFP4 case contract."""
-        if (self._args.transA, self._args.transB) != ('T', 'N'):
-            raise ValueError('MXFP4 currently requires --transA T --transB N.')
-        if self._args.initialization not in ['hpl', 'trig_float', 'maf2_0']:
-            raise ValueError('MXFP4 requires --initialization hpl, trig_float or maf2_0.')
-        if self._args.num_warmup < 0 or self._args.num_steps < 1:
-            raise ValueError('MXFP4 requires non-negative warmup and positive measurement iterations.')
+    def _mxfp4_argument_error(self) -> Optional[str]:
+        """Return the first MXFP4 argument error, or None for a supported case."""
+        args = self._args
+        if args.initialization == 'maf2_0' and any(t != 'mxfp4' for t in args.in_types):
+            return 'Use a separate MXFP4 benchmark instance for maf2_0 initialization.'
+        if (args.transA, args.transB) != ('T', 'N'):
+            return 'MXFP4 currently requires --transA T --transB N.'
+        if args.initialization not in ('hpl', 'trig_float', 'maf2_0'):
+            return 'MXFP4 requires --initialization hpl, trig_float or maf2_0.'
+        if args.num_warmup < 0 or args.num_steps < 1:
+            return 'MXFP4 requires non-negative warmup and positive measurement iterations.'
         for m, n, k, batch, precision in self._shapes_to_run:
             if precision == 'mxfp4' and (batch != 0 or min(m, n, k) <= 0 or k % 32 != 0):
-                raise ValueError('MXFP4 requires --batch 0, positive dimensions, and K divisible by 32.')
+                return 'MXFP4 requires --batch 0, positive dimensions, and K divisible by 32.'
+        return None
 
     def _check_mxfp4_support(self) -> bool:
         """Check the selected ROCm device and the client's block-scaling options."""
         try:
-            if torch.version.hip is None or not torch.cuda.is_available():
-                raise RuntimeError('MXFP4 requires a working ROCm PyTorch device.')
             arch = torch.cuda.get_device_properties(0).gcnArchName.split(':')[0]
-        except (AttributeError, RuntimeError) as e:
+        except (AssertionError, AttributeError, ImportError, RuntimeError) as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_DEVICE_GETTING_FAILURE)
             logger.error('Cannot identify the MXFP4 device - benchmark: {}, message: {}.'.format(self._name, str(e)))
             return False
@@ -142,18 +144,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
 
         self._commands = []
         self._precision_in_commands = []
-        if self._args.initialization == 'maf2_0' and any(t != 'mxfp4' for t in self._args.in_types):
-            self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error(
-                f'Use a separate MXFP4 benchmark instance for maf2_0 initialization - benchmark: {self._name}.'
-            )
-            return False
-        if 'mxfp4' in self._args.in_types:
-            try:
-                self._validate_mxfp4_arguments()
-            except ValueError as e:
+        if 'mxfp4' in self._args.in_types or self._args.initialization == 'maf2_0':
+            error = self._mxfp4_argument_error()
+            if error:
                 self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-                logger.error('Invalid MXFP4 arguments - benchmark: {}, message: {}.'.format(self._name, str(e)))
+                logger.error('Invalid MXFP4 arguments - benchmark: %s, message: %s', self._name, error)
                 return False
             if not self._check_mxfp4_support():
                 return False
@@ -300,7 +295,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
                 f'{self._precision_in_commands[cmd_idx]}_{batch_count}_{m_val}_{n_val}_{k_val}_flops',
                 float(fields[gflops_col]) / 1000
             )
-        except (IndexError, InvalidOperation, KeyError, TypeError, ValueError) as e:
+        except (InvalidOperation, KeyError, ValueError) as e:
             self._result.set_return_code(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
             logger.error(
                 'The result format is invalid - round: {}, benchmark: {}, raw output: {}, message: {}.'.format(
