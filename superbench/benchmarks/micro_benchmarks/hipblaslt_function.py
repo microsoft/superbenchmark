@@ -110,14 +110,11 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             return False
 
         output = run_command(f'{shlex.quote(self.__bin_path)} --help', quiet=True)
-        b32e8 = r'[^\n]*\b3[ \t]*=[ \t]*(?i:B32E8)\b'
-        required_options = (
-            ('--scaleA', b32e8), ('--scaleB', b32e8), ('--initialization', rf'[^\n]*\b{self._args.initialization}\b'),
-            ('--verify', ''), ('--verify_strict', ''), ('--use_gpu_timer', ''), ('--print_kernel_info', '')
-        )
+        b32e8 = r'3[ \t]*=[ \t]*(?i:B32E8)'
+        required_values = (('--scaleA', b32e8), ('--scaleB', b32e8), ('--initialization', self._args.initialization))
         missing = [
-            option for option, value in required_options
-            if not re.search(rf'^[ \t]*{option}\b{value}', output.stdout, re.MULTILINE)
+            option for option, value in required_values
+            if not re.search(rf'^[ \t]*{option}\b.*\b{value}\b', output.stdout, re.MULTILINE)
         ]
         if output.returncode != 0 or missing or self._args.log_raw_data:
             self._result.add_raw_data('mxfp4_client_help', output.stdout, self._args.log_raw_data)
@@ -127,7 +124,7 @@ class HipBlasLtBenchmark(BlasLtBaseBenchmark):
             return False
         if missing:
             self._result.set_return_code(ReturnCode.INVALID_ARGUMENT)
-            logger.error(f'MXFP4 client lacks B32E8 or required options - benchmark: {self._name}, missing: {missing}.')
+            logger.error(f'Client lacks B32E8 or {self._args.initialization} for {missing} - benchmark: {self._name}.')
             return False
         self._result.add_raw_data('mxfp4_gpu_arch', arch, self._args.log_raw_data)
         return True

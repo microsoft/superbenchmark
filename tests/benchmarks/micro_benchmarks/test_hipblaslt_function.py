@@ -16,8 +16,7 @@ from superbench.benchmarks.result import BenchmarkResult
 _MXFP4_PARAMETERS = '--in_types mxfp4 --shapes 64,128,256 --transA T --transB N --initialization maf2_0'
 _MXFP4_HELP_OPTIONS = (
     '--scaleA <value> 0 = None, 3 = B32E8, 4 = B16E8', '--scaleB <value> 0 = None, 3 = B32E8, 4 = B16E8',
-    '--initialization <value> hpl, trig_float, maf2_0', '--verify |-v', '--verify_strict', '--use_gpu_timer',
-    '--print_kernel_info'
+    '--initialization <value> hpl, trig_float, maf2_0'
 )
 
 
