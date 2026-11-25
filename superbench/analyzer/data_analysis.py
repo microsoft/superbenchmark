@@ -219,6 +219,28 @@ def round_significant_decimal_places(df, digit, cols):
     return df
 
 
+def aggregate_metric_name(metric, pattern=None):
+    """Build the shared key for rank or regex-group aggregation.
+
+    Args:
+        metric (str): Original metric name.
+        pattern (str, optional): Regex with capture groups; otherwise use rank aggregation.
+
+    Returns:
+        str: Aggregated metric name.
+    """
+    short = metric.strip(metric.split(':')[-1]).strip(':')
+    if pattern:
+        match = re.search(pattern, metric)
+        if match:
+            metric_in_list = list(metric)
+            # Replace right-to-left to preserve the remaining groups' offsets.
+            for i in range(len(match.groups()), 0, -1):
+                metric_in_list[match.start(i):match.end(i)] = '*'
+            short = ''.join(metric_in_list)
+    return short
+
+
 def aggregate(raw_data_df, pattern=None):
     r"""Aggregate data of multiple ranks or multiple devices.
 
@@ -238,14 +260,7 @@ def aggregate(raw_data_df, pattern=None):
         metric_store = {}
         metrics = list(raw_data_df.columns)
         for metric in metrics:
-            short = metric.strip(metric.split(':')[-1]).strip(':')
-            if pattern:
-                match = re.search(pattern, metric)
-                if match:
-                    metric_in_list = list(metric)
-                    for i in range(len(match.groups()), 0, -1):
-                        metric_in_list[match.start(i):match.end(i)] = '*'
-                    short = ''.join(metric_in_list)
+            short = aggregate_metric_name(metric, pattern)
             if short not in metric_store:
                 metric_store[short] = []
             metric_store[short].extend(raw_data_df[metric].tolist())
