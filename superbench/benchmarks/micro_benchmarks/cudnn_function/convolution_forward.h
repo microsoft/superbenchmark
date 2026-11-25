@@ -35,15 +35,10 @@ template <typename T1, typename T2> class ConvolutionForwardFunction : public Cu
     /**
      * @brief Resolve the forward algorithm before querying workspace or running the convolution
      */
-    void select_algorithm(const CudnnExecutionPolicy &policy) override {
-        selected_algorithm_ = policy.resolve_algorithm([this]() -> cudnnConvolutionFwdAlgo_t {
-            int algo_count;
-            cudnnConvolutionFwdAlgoPerf_t perf_results;
-            CHECK_CUDNN_ERROR(cudnnFindConvolutionForwardAlgorithm(
-                this->cudnn_handle, this->x_desc_.desc(), this->w_desc_.desc(), this->conv_desc_.desc(),
-                this->h_desc_.desc(), 1, &algo_count, &perf_results));
-            return perf_results.algo;
-        });
+    void select_algorithm() override {
+        selected_algorithm_ = select_convolution_algorithm<cudnnConvolutionFwdAlgoPerf_t>(
+            *this, cudnnFindConvolutionForwardAlgorithm, this->cudnn_handle, this->x_desc_.desc(), this->w_desc_.desc(),
+            this->conv_desc_.desc(), this->h_desc_.desc());
     }
 
   public:

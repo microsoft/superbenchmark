@@ -36,15 +36,10 @@ template <typename T1, typename T2> class ConvolutionBackwardDataFunction : publ
     /**
      * @brief Resolve the backward-data algorithm before querying workspace or running the convolution
      */
-    void select_algorithm(const CudnnExecutionPolicy &policy) override {
-        selected_algorithm_ = policy.resolve_algorithm([this]() -> cudnnConvolutionBwdDataAlgo_t {
-            int algo_count;
-            cudnnConvolutionBwdDataAlgoPerf_t perf_results;
-            CHECK_CUDNN_ERROR(cudnnFindConvolutionBackwardDataAlgorithm(
-                this->cudnn_handle, this->w_desc_.desc(), this->x_desc_.desc(), this->conv_desc_.desc(),
-                this->h_desc_.desc(), 1, &algo_count, &perf_results));
-            return perf_results.algo;
-        });
+    void select_algorithm() override {
+        selected_algorithm_ = select_convolution_algorithm<cudnnConvolutionBwdDataAlgoPerf_t>(
+            *this, cudnnFindConvolutionBackwardDataAlgorithm, this->cudnn_handle, this->w_desc_.desc(),
+            this->x_desc_.desc(), this->conv_desc_.desc(), this->h_desc_.desc());
     }
 
   public:
