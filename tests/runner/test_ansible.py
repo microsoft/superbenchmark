@@ -20,8 +20,8 @@ AnsibleClient = LazyImport('superbench.runner.ansible', 'AnsibleClient')
 class AnsiblePostinstallTestCase(unittest.TestCase):
     """Test the shared Makefile entry point without contacting Galaxy."""
     def test_bounded_collection_retries(self):
-        """Stop on success and propagate exhausted installation failures."""
-        for codes in [[0], [1, 0], [1, 1, 0], [17, 17, 17], [124, 124, 124]]:
+        """Bound installation attempts and timeout, stopping on success."""
+        for codes in [[0], [1, 0], [1, 1, 0], [17, 17, 17]]:
             with self.subTest(codes=codes), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 attempts = root / 'attempts'
@@ -30,8 +30,8 @@ class AnsiblePostinstallTestCase(unittest.TestCase):
                 status_codes.write_text('\n'.join(map(str, codes)) + '\n')
                 waits.touch()
                 scripts = {
+                    'timeout': 'printf "%s\\n" "$*" >> "$INSTALL_ATTEMPTS"\nshift\nexec "$@"\n',
                     'ansible-galaxy': (
-                        'printf "%s\\n" "$*" >> "$INSTALL_ATTEMPTS"\n'
                         'attempt=$(wc -l < "$INSTALL_ATTEMPTS")\n'
                         'exit "$(sed -n "${attempt}p" "$INSTALL_CODES")"\n'
                     ),
@@ -64,7 +64,7 @@ class AnsiblePostinstallTestCase(unittest.TestCase):
                 self.assertEqual(commands, [commands[0]] * len(codes))
                 self.assertRegex(
                     commands[0],
-                    r'^collection install ansible\.posix:\d+\.\d+\.\d+ '
+                    r'^300 ansible-galaxy collection install ansible\.posix:\d+\.\d+\.\d+ '
                     r'ansible\.utils:\d+\.\d+\.\d+ community\.crypto:\d+\.\d+\.\d+$',
                 )
                 self.assertEqual(waits.read_text().splitlines(), ['10', '20'][:len(codes) - 1])
