@@ -190,10 +190,17 @@ class NvBandwidthBenchmark(MicroBenchmarkWithInvoke):
 
         # Parse summary results
         if self.re_summary_pattern.match(line):
-            value = self.re_summary_pattern.match(line).group(2)
-            test_name = parse_status['test_name']
+            match = self.re_summary_pattern.match(line)
+            value = match.group(2)
+            # Use test_name from parse_status, fallback to group(1) from SUM line
+            test_name = parse_status['test_name'] or match.group(1).lower()
             benchmark_type = parse_status['benchmark_type']
-            parse_status['results'][f'{test_name}_sum_{benchmark_type}'] = float(value)
+            # Infer benchmark_type from test_name if not set (e.g., after waived tests)
+            if benchmark_type is None:
+                benchmark_type = 'lat' if 'latency' in test_name else 'bw'
+            # Only add result when we have valid metric name (avoid _sum_None or sum_None)
+            if test_name and benchmark_type:
+                parse_status['results'][f'{test_name}_sum_{benchmark_type}'] = float(value)
 
             # Reset parsing state for next test
             parse_status['test_name'] = ''
