@@ -4,6 +4,9 @@
 """Tests for BenchmarkRegistry module."""
 
 import json
+from unittest.mock import call, patch
+
+import pytest
 
 from superbench.benchmarks import Platform, Framework, Precision, BenchmarkRegistry, BenchmarkType, ReturnCode
 from superbench.benchmarks.model_benchmarks import ModelBenchmark
@@ -299,6 +302,37 @@ def test_inference():
     assert (benchmark._preprocess())
     assert (benchmark._ModelBenchmark__inference(Precision.FLOAT16) is False)
     assert (json.loads(benchmark.serialized_result) == json.loads(expected_result))
+
+
+@pytest.mark.parametrize('previous_success', [False, True])
+def test_inference_model_creation_failure(previous_success):
+    """Reject failed creation before inference, including after a successful precision."""
+    precisions = 'float32 fp8_hybrid' if previous_success else 'fp8_hybrid'
+    benchmark = create_benchmark('--num_steps 2 --model_action inference --precision ' + precisions)
+    benchmark._supported_precision.append(Precision.FP8_HYBRID)
+    assert benchmark._preprocess()
+    creation_results = [True, False] if previous_success else [False]
+    with patch.object(benchmark, '_create_model', side_effect=creation_results), \
+            patch.object(benchmark, '_inference_step', wraps=benchmark._inference_step) as inference:
+        assert benchmark._benchmark() is False
+    assert benchmark.return_code == ReturnCode.MODEL_CREATION_FAILURE
+    assert inference.call_args_list == ([call(Precision.FLOAT32)] if previous_success else [])
+    assert not any(name.startswith('fp8_') for name in benchmark.result)
+    assert not any(name.startswith('fp8_') for name in benchmark.raw_data)
+    if previous_success:
+        assert benchmark.result['fp32_inference_step_time'] == [4.0]
+
+
+def test_inference_precision_sequence():
+    """Preserve successful inference for both requested ordinary precisions."""
+    benchmark = create_benchmark('--num_steps 2 --model_action inference --precision float32 float16')
+    assert benchmark._preprocess()
+    with patch.object(benchmark, '_inference_step', wraps=benchmark._inference_step) as inference:
+        assert benchmark._benchmark()
+    assert benchmark.return_code == ReturnCode.SUCCESS
+    assert inference.call_args_list == [call(Precision.FLOAT32), call(Precision.FLOAT16)]
+    assert benchmark.result['fp32_inference_step_time'] == [4.0]
+    assert benchmark.result['fp16_inference_step_time'] == [4.0]
 
 
 def test_benchmark():
