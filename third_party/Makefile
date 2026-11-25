@@ -39,9 +39,13 @@ sb_micro_path:
 	mkdir -p $(SB_MICRO_PATH)/lib
 
 # Build cutlass.
-# for cuda 12.9 and later Build from commit v3.9 (3.9 release commit) for blackwell support
+# CUDA 13.3 uses v4.7.0; other 12.9+ toolkits retain v4.1.0.
 cuda_cutlass:
-ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
+ifeq ($(CUDA_VER), 13.3)
+	$(eval ARCHS := "100;103")
+	if [ -d cutlass ]; then rm -rf cutlass; fi
+	git clone --branch v4.7.0 --depth 1 https://github.com/NVIDIA/cutlass.git && cd cutlass
+else ifeq ($(shell echo $(CUDA_VER)">=12.9" | bc -l), 1)
 	$(eval ARCHS := "100;103")
 ifeq ($(shell echo $(CUDA_VER)">=13.4" | bc -l), 1)
 	$(eval ARCHS := "100;103;107")
