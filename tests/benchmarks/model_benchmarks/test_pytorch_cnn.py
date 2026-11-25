@@ -3,8 +3,11 @@
 
 """Tests for CNN model benchmarks."""
 
+import pytest
+import torch
+
 from tests.helper import decorator
-from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, ReturnCode
+from superbench.benchmarks import BenchmarkRegistry, Platform, Framework, BenchmarkType, Precision, ReturnCode
 from superbench.benchmarks.model_benchmarks.pytorch_cnn import PytorchCNN
 
 
@@ -35,6 +38,31 @@ def test_pytorch_cnn_no_gpu():
             'fp32_train_step_time', 'fp32_train_throughput', 'fp32_inference_step_time', 'fp32_inference_throughput'
         ]
     )
+
+
+@decorator.pytorch_test
+@pytest.mark.parametrize('model_type', ['resnet18', 'mobilenet_v2', 'squeezenet1_1'])
+@pytest.mark.parametrize('num_classes', [None, 5, 1001])
+def test_pytorch_cnn_class_count(model_type, num_classes):
+    """Match actual CNN logits and labels to the requested class count."""
+    parameters = '--model_type {} --batch_size 1 --sample_count 1 --image_size 64 --no_gpu'.format(model_type)
+    if num_classes is not None:
+        parameters += ' --num_classes {}'.format(num_classes)
+    benchmark = PytorchCNN('pytorch-' + model_type, parameters)
+    assert benchmark._preprocess()
+    try:
+        assert benchmark._create_model(Precision.FLOAT32)
+        benchmark._model.eval()
+        with torch.no_grad():
+            logits = benchmark._model(torch.zeros(1, 3, 64, 64))
+        expected_classes = 1000 if num_classes is None else num_classes
+        assert logits.shape == (1, expected_classes)
+        assert torch.all(benchmark._target >= 0)
+        assert torch.all(benchmark._target < expected_classes)
+        loss = benchmark._loss_fn(logits, torch.tensor([expected_classes - 1]))
+        assert torch.isfinite(loss)
+    finally:
+        benchmark._postprocess()
 
 
 def run_pytorch_cnn(models=[], parameters='', check_metrics=[]):
