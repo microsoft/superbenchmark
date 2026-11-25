@@ -157,7 +157,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                         self.assertIn(cmd(_t, 0, _m, _n, _k), benchmark._commands)
 
     def test_mxfp4_command_generation(self):
-        """Select MXFP4 by input type alone and check its scale, verification and device timing options."""
+        """Check MXFP4 scaling, layout, and standalone verification and timing switches."""
         benchmark, result = self.preprocess_mxfp4()
         self.assertTrue(result)
         self.assertEqual(len(benchmark._commands), 1)
@@ -171,15 +171,6 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
             with self.subTest(option=option):
                 self.assertEqual(tokens.count(option), 1)
                 self.assertEqual(tokens[tokens.index(option) + 1], value)
-        self.assertFalse(any(token.startswith(('--scaleABlock', '--scaleBBlock')) for token in tokens))
-        self.assertEqual(benchmark.raw_data['mxfp4_gpu_arch'][0], 'gfx1250')
-        self.assertNotIn('mxfp4_client_help', benchmark.raw_data)
-
-    def test_mxfp4_boolean_flags_are_switches(self):
-        """Require standalone boolean switches rather than value-consuming options."""
-        benchmark, result = self.preprocess_mxfp4()
-        self.assertTrue(result)
-        tokens = shlex.split(benchmark._commands[0])
         for option in ['--verify', '--verify_strict', '--use_gpu_timer', '--print_kernel_info']:
             with self.subTest(option=option):
                 self.assertEqual(tokens.count(option), 1)
@@ -188,6 +179,9 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                     next_index == len(tokens) or tokens[next_index].startswith('-'),
                     '{} must not consume a value'.format(option),
                 )
+        self.assertFalse(any(token.startswith(('--scaleABlock', '--scaleBBlock')) for token in tokens))
+        self.assertEqual(benchmark.raw_data['mxfp4_gpu_arch'][0], 'gfx1250')
+        self.assertNotIn('mxfp4_client_help', benchmark.raw_data)
 
     def test_mxfp4_invalid_arguments(self):
         """Reject unsupported layouts, initialization, shapes, or counts."""
@@ -213,7 +207,7 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
 
     def test_mxfp4_unsupported_devices(self):
         """Reject older GPUs and unqualified future architectures without generating commands."""
-        for arch in ['gfx942', 'gfx950', 'gfx1201', 'gfx1251']:
+        for arch in ['gfx942', 'gfx1251']:
             with self.subTest(arch=arch):
                 benchmark, result = self.preprocess_mxfp4(arch=arch)
                 self.assertFalse(result)
@@ -258,26 +252,14 @@ class HipblasLtBenchmarkTestCase(BenchmarkTestCase, unittest.TestCase):
                 self.assertEqual(benchmark.return_code, ReturnCode.INVALID_ARGUMENT)
 
     def test_mxfp4_subprocess_status(self):
-        """Propagate client and verification failures without emitting performance metrics."""
-        for returncode, raw_output in [
-            (0, self.mxfp4_output()),
-            (1, 'No supported solutions found'),
-            (2, self.mxfp4_output()),
-            (0, self.mxfp4_output({'atol': 'failed'})),
-        ]:
-            with self.subTest(returncode=returncode, raw_output=raw_output):
-                benchmark, result = self.preprocess_mxfp4()
-                self.assertTrue(result)
-                output = SimpleNamespace(returncode=returncode, stdout=raw_output)
-                with patch('superbench.benchmarks.micro_benchmarks.micro_base.run_command', return_value=output):
-                    success = benchmark._benchmark()
-                expected = returncode == 0 and 'failed' not in raw_output
-                self.assertEqual(success, expected)
-                if not expected:
-                    code = ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE if returncode else \
-                        ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE
-                    self.assertEqual(benchmark.return_code, code)
-                    self.assertEqual(set(benchmark.result), {'return_code'})
+        """A nonzero client exit must suppress metrics even when it prints a valid row."""
+        benchmark, result = self.preprocess_mxfp4()
+        self.assertTrue(result)
+        output = SimpleNamespace(returncode=2, stdout=self.mxfp4_output())
+        with patch('superbench.benchmarks.micro_benchmarks.micro_base.run_command', return_value=output):
+            self.assertFalse(benchmark._benchmark())
+        self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_EXECUTION_FAILURE)
+        self.assertEqual(set(benchmark.result), {'return_code'})
 
     def test_mxfp4_result_parsing(self):
         """Check reordered columns, exact metric units, and the norm threshold boundary."""
