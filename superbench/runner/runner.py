@@ -492,7 +492,7 @@ class SuperBenchRunner():
         for results_file in file_list:
             try:
                 with jsonlines.open(results_file) as reader:
-                    all_samples = list(reader)
+                    all_samples.extend(list(reader))
             except BaseException as e:
                 logger.error('Invalid Jsonline file: {}, error message: {}'.format(results_file, str(e)))
                 continue
