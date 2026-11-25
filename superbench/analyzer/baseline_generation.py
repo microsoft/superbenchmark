@@ -42,7 +42,7 @@ class BaselineGeneration(DataDiagnosis):
         """
         if single_metric_with_baseline['metrics'][metric] \
                 is not None and single_metric_with_baseline['metrics'][metric] != -1:
-            return single_metric_with_baseline['metrics'][metric]
+            return single_metric_with_baseline['metrics'][metric], data_series
         tmp_single_metric_with_baseline = deepcopy(single_metric_with_baseline)
         tmp_single_metric_with_baseline['metrics'] = {}
         clean = False
@@ -128,7 +128,7 @@ class BaselineGeneration(DataDiagnosis):
             mean_df = self._raw_data_df.mean()
             for metric in self._raw_data_df.columns:
                 if metric in baseline:
-                    return baseline[metric]
+                    continue
                 baseline[metric] = mean_df[metric]
         elif algo == 'fix_threshold':
             # read diagnosis rules
@@ -209,3 +209,4 @@ class BaselineGeneration(DataDiagnosis):
 
         except Exception as e:
             logger.error('Analyzer: generate baseline failed, msg: {}'.format(str(e)))
+            raise

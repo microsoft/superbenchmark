@@ -38,6 +38,10 @@ Raw data file can be found at ${output-dir}/results-summary.jsonl after each suc
 
 - **Previous Baseline File(optional)**: It is baseline file in json format that got from previous run and plan to merge into the latest baseline.
 
+Existing numeric values, including zero, take precedence over newly calculated
+values for the same metric; other metrics are generated normally. The
+`fix_threshold` algorithm still treats unset values and `-1` as needing generation.
+
 ### Rule File
 
 **Summary Rule File** is the same with rule file defined in [Result Summary](./result-summary.md)
@@ -47,3 +51,6 @@ Raw data file can be found at ${output-dir}/results-summary.jsonl after each suc
 ## Output
 
 The baseline file (baseline.json) from multiple machines will be generated under ${output_dir}.
+
+Generation errors propagate to the caller. The presence of an older
+`baseline.json` file is not evidence that the current invocation succeeded.
