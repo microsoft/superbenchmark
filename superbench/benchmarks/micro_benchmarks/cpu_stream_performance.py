@@ -4,11 +4,32 @@
 """Module for running the University of Virginia STREAM tool. It measures sustainable main memory \
     bandwidth in MB/s and the corresponding computation rate for simple vector kernels."""
 
+import argparse
 import os
 
 from superbench.common.utils import logger
 from superbench.benchmarks import BenchmarkRegistry
 from superbench.benchmarks.micro_benchmarks import MicroBenchmarkWithInvoke
+
+
+class _CoreListAction(argparse.Action):
+    """Parse an explicit core list or a single inclusive start,end,step range."""
+    def __call__(self, parser, namespace, values, option_string=None):
+        """Store the selected cores as a flat list of integers."""
+        try:
+            if len(values) == 1 and ',' in values[0]:
+                start, end, step = map(int, values[0].split(','))
+                if start < 0 or end < start or step <= 0:
+                    raise ValueError('Invalid core range bounds or step.')
+                cores = list(range(start, end + 1, step))
+            else:
+                cores = [int(value) for value in values]
+        except ValueError as error:
+            raise argparse.ArgumentError(
+                self, 'Expected space-separated core IDs or a single start,end,step range '
+                'with 0 <= start <= end and step > 0 (end inclusive).'
+            ) from error
+        setattr(namespace, self.dest, cores)
 
 
 class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
@@ -46,12 +67,14 @@ class CpuStreamBenchmark(MicroBenchmarkWithInvoke):
         self._parser.add_argument(
             '--cores',
             nargs='+',
-            type=int,
+            type=str,
+            action=_CoreListAction,
             default=[
                 0, 8, 16, 24, 32, 38, 44, 52, 60, 68, 76, 82, 88, 96, 104, 112, 120, 126, 132, 140, 148, 156, 164, 170
             ],
             required=False,
-            help='List of cores to perform test. Default core configuration is for HBv4/Zen4 SKU offering. \
+            help='Space-separated core IDs or a single start,end,step range (end inclusive, positive step). \
+            Default core configuration is for HBv4/Zen4 SKU offering. \
             For HBv3/Zen3 please see: ' + core_link
         )
 
