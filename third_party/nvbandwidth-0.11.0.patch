@@ -1,0 +1,40 @@
+diff --git a/nvbandwidth.cpp b/nvbandwidth.cpp
+--- a/nvbandwidth.cpp
++++ b/nvbandwidth.cpp
+@@ -36,6 +36,7 @@
+ #include "nvbandwidth_version.h"
+ #include "output.h"
+ #include "testcase.h"
++#include "testcases_patched.h"
+ #include "test_settings.h"
+ #include "inline_common.h"
+ 
+@@ -79,6 +80,8 @@ std::vector<Testcase*> createNodeTestcases() {
+         new AllToHostTransfer(CopyInitiator::CE),
+         new AllToHostBidirTransfer(CopyInitiator::CE),
++        new AllToHostBatchCE(),
+         new HostToAllTransfer(CopyInitiator::CE),
+         new HostToAllBidirTransfer(CopyInitiator::CE),
++        new HostToAllBatchCE(),
+         new AllToOneTransfer(CopyInitiator::CE, AccessType::Write),
+         new AllToOneTransfer(CopyInitiator::CE, AccessType::Read),
+@@ -95,6 +98,8 @@ std::vector<Testcase*> createNodeTestcases() {
+         new AllToHostTransfer(CopyInitiator::SM),
+         new AllToHostBidirTransfer(CopyInitiator::SM),
++        new AllToHostBatchSM(),
+         new HostToAllTransfer(CopyInitiator::SM),
+         new HostToAllBidirTransfer(CopyInitiator::SM),
++        new HostToAllBatchSM(),
+         new AllToOneTransfer(CopyInitiator::SM, AccessType::Write),
+         new AllToOneTransfer(CopyInitiator::SM, AccessType::Read),
+diff --git a/testcase.h b/testcase.h
+--- a/testcase.h
++++ b/testcase.h
+@@ -524,6 +524,7 @@ class Testcase {
+     void allToOneHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues);
+     void oneToAllHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues);
+     void allHostHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
+     void allHostBidirHelper(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
++    void allHostHelperBatch(unsigned long long size, MemcpyOperation &memcpyInstance, PeerValueMatrix<double> &bandwidthValues, bool sourceIsHost);
+ 
+     // Copy the operation's worst coefficient of variation onto the result
