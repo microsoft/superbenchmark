@@ -9,16 +9,27 @@ on:
     branches:
     - main
     - release/*
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    - converted_to_draft
   release:
     types:
     - published
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   BUILDKIT_IMAGE: mcr.microsoft.com/oss/v2/moby/buildkit:v0.33.1-6@sha256:0bf1f35cb440e6f19c2e154ed007d798c206ad899c9495a2f8e9276eebfaaf69
 
 jobs:
   docker-build:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     name: Docker build ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 1200
@@ -193,7 +204,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
   docker-merge:
     needs: docker-build
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
     name: Docker merge ${{ matrix.name }}
     runs-on: self-hosted
     timeout-minutes: 300
