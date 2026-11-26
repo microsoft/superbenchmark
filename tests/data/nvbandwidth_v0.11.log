@@ -1,0 +1,114 @@
+nvbandwidth Version: v0.11.0
+Built from Git version: v0.11.0
+
+Running device_to_device_bidirectional_memcpy_read_ce.
+memcpy CE GPU(row) <-> GPU(column) Read1 bandwidth (GB/s)
+           0         1
+ 0       N/A     41.00
+ 1     42.00       N/A
+
+SUM device_to_device_bidirectional_memcpy_read_ce_read1 83.00
+COEFFICIENT_OF_VARIATION device_to_device_bidirectional_memcpy_read_ce_read1 0.012345
+
+memcpy CE GPU(row) <-> GPU(column) Read2 bandwidth (GB/s)
+           0         1
+ 0       N/A     51.00
+ 1     52.00       N/A
+
+SUM device_to_device_bidirectional_memcpy_read_ce_read2 103.00
+
+memcpy CE GPU(row) <-> GPU(column) Total bandwidth (GB/s)
+           0         1
+ 0       N/A     92.00
+ 1     94.00       N/A
+
+SUM device_to_device_bidirectional_memcpy_read_ce_total 186.00
+COEFFICIENT_OF_VARIATION device_to_device_bidirectional_memcpy_read_ce_total 0.023456
+
+Running device_to_device_bidirectional_memcpy_write_sm.
+memcpy SM GPU(row) <-> GPU(column) Write1 bandwidth (GB/s)
+           0         1
+ 0       N/A     61.00
+ 1     62.00       N/A
+
+SUM device_to_device_bidirectional_memcpy_write_sm_write1 123.00
+
+memcpy SM GPU(row) <-> GPU(column) Write2 bandwidth (GB/s)
+           0         1
+ 0       N/A     71.00
+ 1     72.00       N/A
+
+SUM device_to_device_bidirectional_memcpy_write_sm_write2 143.00
+
+memcpy SM GPU(row) <-> GPU(column) Total bandwidth (GB/s)
+           0         1
+ 0       N/A    132.00
+ 1    134.00       N/A
+
+SUM device_to_device_bidirectional_memcpy_write_sm_total 266.00
+
+Running device_to_device_latency_sm.
+Device to Device Latency SM GPU(row) <-> GPU(column) (ns)
+           0         1
+ 0       N/A    154.25
+ 1    155.75       N/A
+
+SUM device_to_device_latency_sm 310.00
+
+Running device_to_device_latency_tma.
+Device to Device Latency TMA GPU(row) <-> GPU(column) (ns)
+           0         1
+ 0       N/A    108.25
+ 1    110.25       N/A
+
+SUM device_to_device_latency_tma 218.50
+
+Running device_to_device_latency_counted.
+fabric device-to-device counted (put_counted -> fabric_submit, unicast LE) latency GPU(row->col) (ns)
+           0         1
+ 0       N/A    160.50
+ 1    162.50       N/A
+
+SUM device_to_device_latency_counted 323.00
+
+Running device_local_copy.
+memcpy CE local GPU(column) bandwidth (GB/s)
+           0         1
+ 0  12000.00  12500.00
+
+SUM device_local_copy 24500.00
+
+Running device_local_read_sm.
+memcpy SM local GPU(column) read-only bandwidth (GB/s)
+           0         1
+ 0  13500.00  14000.00
+
+SUM device_local_read_sm 27500.00
+
+Running all_to_host_batch_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) batch bandwidth (GB/s)
+           0         1
+ 0    130.00    140.00
+
+SUM all_to_host_batch_memcpy_ce 270.00
+
+Running host_to_all_batch_memcpy_ce.
+memcpy CE CPU(row) -> GPU(column) batch bandwidth (GB/s)
+           0         1
+ 0    130.00    140.00
+
+SUM host_to_all_batch_memcpy_ce 270.00
+
+Running all_to_host_batch_memcpy_sm.
+memcpy SM CPU(row) <- GPU(column) batch bandwidth (GB/s)
+           0         1
+ 0    130.00    140.00
+
+SUM all_to_host_batch_memcpy_sm 270.00
+
+Running host_to_all_batch_memcpy_sm.
+memcpy SM CPU(row) -> GPU(column) batch bandwidth (GB/s)
+           0         1
+ 0    130.00    140.00
+
+SUM host_to_all_batch_memcpy_sm 270.00
