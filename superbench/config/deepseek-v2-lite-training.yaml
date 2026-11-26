@@ -1,0 +1,24 @@
+version: v0.12
+superbench:
+  enable: [deepseek-v2-lite-training]
+  monitor:
+    enable: true
+    sample_duration: 1
+    sample_interval: 1
+  benchmarks:
+    deepseek-v2-lite-training:
+      enable: true
+      modes:
+        - name: local
+          proc_num: 1
+          parallel: false
+      timeout: 3600
+      parameters:
+        cache_root: /data/deepseek-v2-lite
+        num_gpus: 4
+        batch_size: 2
+        seq_len: 512
+        moe_dispatch: official
+        num_warmup: 2
+        num_steps: 8
+        duration: 3300
