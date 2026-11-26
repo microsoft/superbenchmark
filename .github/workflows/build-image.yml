@@ -23,8 +23,8 @@ on:
 
 # Cancel superseded pull request runs, including when a PR becomes a draft or is
 # closed; PR builds never push images or caches. Other events never cancel an
-# in-progress run, so images publish in commit order: a newer run for the same
-# ref waits, and only the latest waiting run is kept.
+# in-progress run: runs for the same event and ref execute one at a time, and
+# only the most recently queued waiting run is kept.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.ref) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
