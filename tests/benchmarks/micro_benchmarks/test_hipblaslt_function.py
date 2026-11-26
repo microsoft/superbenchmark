@@ -194,3 +194,18 @@ N,N,0,896,896,896,1,896,802816,0,896,802816,896,802816,896,802816,fp16_r,f32_r,n
 """
         self.assertFalse(benchmark._process_raw_result(0, example_raw_output_missing_col))
         self.assertEqual(ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE, benchmark.return_code)
+
+    def test_invalid_throughput(self):
+        """Reject invalid client throughput without publishing a TFLOPS metric."""
+        benchmark_cls, _ = BenchmarkRegistry._BenchmarkRegistry__select_benchmark(self.benchmark_name, Platform.ROCM)
+        for precision in ['fp32', 'fp16', 'bf16', 'fp8']:
+            for value in ['0', '-1', 'nan', 'inf', '-inf']:
+                with self.subTest(precision=precision, value=value):
+                    benchmark = benchmark_cls(
+                        self.benchmark_name, parameters=f'--in_types {precision} --shapes 128,128,128'
+                    )
+                    self.assertTrue(benchmark._preprocess())
+                    csv = f'[0]:batch_count,m,n,k,hipblaslt-Gflops\n1,128,128,128,{value}'
+                    self.assertFalse(benchmark._process_raw_result(0, csv))
+                    self.assertEqual(benchmark.return_code, ReturnCode.MICROBENCHMARK_RESULT_PARSING_FAILURE)
+                    self.assertEqual(set(benchmark.result), {'return_code'})

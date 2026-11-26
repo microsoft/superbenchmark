@@ -64,6 +64,9 @@ Large scale matmul operation using `torch.matmul` with one GPU.
 
 Measure the GEMM performance of [`cublasLtMatmul`](https://docs.nvidia.com/cuda/cublas/#cublasltmatmul) or [`hipblasLt-bench`](https://github.com/ROCm/hipBLASLt/blob/develop/clients/benchmarks/README.md).
 
+If `hipblaslt-gemm` receives a non-finite or non-positive `hipblaslt-Gflops` value,
+it reports a result-parsing error and does not emit a TFLOPS metric for that command.
+
 The CUDA benchmark accepts FP64, FP32, FP16, BF16, FP8 E4M3/E5M2, FP4 E2M1,
 explicit MXFP8 block-scaled modes, explicit NVFP4 block-scaled mode, and INT8 inputs. The
 supported `--in_types` names are `fp64`, `fp32`, `fp16`, `bf16`, `fp8e4m3`, `fp8e5m2`,
