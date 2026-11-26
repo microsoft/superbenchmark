@@ -4,6 +4,8 @@
 cmake_minimum_required(VERSION 3.18)
 project(cudnn_benchmark LANGUAGES CXX)
 
+include(CTest)
+
 find_package(CUDAToolkit QUIET)
 if(CUDAToolkit_FOUND)
   include(../cuda_common.cmake)
@@ -30,5 +32,17 @@ if(CUDAToolkit_FOUND)
 
   add_executable(cudnn_benchmark cudnn_test.cpp)
   target_link_libraries(cudnn_benchmark ${TARGET_NAME} nlohmann_json::nlohmann_json CUDA::cudart ${CUDNN_LIBRARY})
+
+  set(CUDNN_CONFIG_TEST_SOURCE
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/benchmarks/micro_benchmarks/test_cudnn_execution_config.cpp)
+  if(BUILD_TESTING AND EXISTS "${CUDNN_CONFIG_TEST_SOURCE}")
+    add_executable(cudnn_config_test EXCLUDE_FROM_ALL ${CUDNN_CONFIG_TEST_SOURCE})
+    target_include_directories(cudnn_config_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_compile_features(cudnn_config_test PRIVATE cxx_std_14)
+    target_link_libraries(cudnn_config_test PRIVATE ${TARGET_NAME} CUDA::cudart ${CUDNN_LIBRARY})
+    add_test(NAME cudnn_config COMMAND cudnn_config_test)
+    add_test(NAME cudnn_algorithm_calls COMMAND cudnn_config_test --gpu)
+  endif()
+
   install(TARGETS cudnn_benchmark ${TARGET_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 endif()

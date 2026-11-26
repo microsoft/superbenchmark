@@ -7,8 +7,10 @@
 
 #pragma once
 
+#include <functional>
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -145,7 +147,7 @@ template <typename T> class FilterDescriptorNd {
         CHECK_CUDNN_ERROR(cudnnSetFilterNdDescriptor(*desc_, type, tensor_format, dim.size(), &dim[0]));
     }
 
-    cudnnFilterDescriptor_t desc() { return *desc_; }
+    cudnnFilterDescriptor_t desc() const { return *desc_; }
 };
 
 /**

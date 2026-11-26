@@ -5,11 +5,26 @@
 
 #include <chrono>
 #include <iomanip>
+#include <stdexcept>
 #include <tuple>
 
 #include "cudnn_config.h"
 
 namespace cudnn_test {
+template <typename Perf, typename Find, typename... Args>
+auto select_convolution_algorithm(CudnnConfig &config, Find find, Args... args) -> decltype(Perf::algo) {
+    if (!config.get_auto_algo())
+        return static_cast<decltype(Perf::algo)>(config.get_algo());
+
+    int count = 0;
+    Perf candidate;
+    CHECK_CUDNN_ERROR(find(args..., 1, &count, &candidate));
+    if (count != 1)
+        throw std::runtime_error(config.get_name() + ": expected one cuDNN algorithm, got " + std::to_string(count));
+    CHECK_CUDNN_ERROR(candidate.status);
+    return candidate.algo;
+}
+
 /**
  * @brief Generation of cudnn functions' params and run the benchmark of this function
  *
@@ -25,7 +40,7 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
     TensorDescriptorNd<T1> h_desc_;
     size_t fwd_workspace_size_;
     float *fwd_workspace_;
-    T1 *x, *filter, *h;
+    T1 *x = nullptr, *filter = nullptr, *h = nullptr;
     const float alpha_ = 1.f;
     const float beta_ = 0.f;
 
@@ -34,21 +49,22 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
      */
     void prepare_input();
     /**
-     * @brief Generate some params used in the cudnn function
+     * @brief Create descriptors from the convolution workload
      */
-    void prepare_for_function();
+    void prepare_descriptors();
     /**
-     * @brief Get and set convolution algorithm and workspace size used in cudnn convolution functions
+     * @brief Apply the existing math/algorithm policy and allocate workspace
      */
-    virtual void get_workspace_size() {}
+    void prepare_execution();
+    /**
+     * @brief Select the operation-specific algorithm used by both the workspace query and the convolution
+     */
+    virtual void select_algorithm() = 0;
+    virtual size_t get_workspace_size() const = 0;
     /**
      * @brief launch the kernel/function
      */
-    virtual void kernel_entry() {}
-    /**
-     * @brief Find the best algorithm for cudnn convolution functions
-     */
-    virtual void find_best_algo() {}
+    virtual void kernel_entry() = 0;
 
   public:
     /**
@@ -78,24 +94,24 @@ template <typename T1, typename T2> class CudnnFunction : public CudnnConfig {
 };
 
 /**
- * @brief Generate some params used in the cudnn function
+ * @brief Create descriptors from the convolution workload
  */
-template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_for_function() {
-    // Generate descriptor
+template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_descriptors() {
     conv_desc_ =
         ConvolutionDescriptor<T2>(get_array_length(), get_padA(), get_filter_strideA(), get_dilationA(), get_mode());
     x_desc_ = TensorDescriptorNd<T1>(get_input_dims(), get_input_stride());
     w_desc_ = FilterDescriptorNd<T1>(get_filter_dims());
     h_desc_ = TensorDescriptorNd<T1>(get_output_dims(), get_output_stride());
+}
 
-    // Set Convolution MathType
-    cudnnMathType_t algo = get_use_tensor_op() ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
-    CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), algo));
-    if (this->auto_algo_) {
-        find_best_algo();
-    }
-    // Set convolution algorithm and workspace size
-    this->get_workspace_size();
+/**
+ * @brief Apply the existing math/algorithm policy and allocate workspace
+ */
+template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_execution() {
+    const auto math_type = get_use_tensor_op() ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
+    CHECK_CUDNN_ERROR(cudnnSetConvolutionMathType(conv_desc_.desc(), math_type));
+    select_algorithm();
+    fwd_workspace_size_ = get_workspace_size();
     zeros<float>(&fwd_workspace_, std::vector<int>{static_cast<int>(this->fwd_workspace_size_ / sizeof(float)), 1});
 }
 /**
@@ -113,9 +129,8 @@ template <typename T1, typename T2> void CudnnFunction<T1, T2>::prepare_input() 
  * @brief The main procedure for cudnn function test, including warmup, function test and time measurement
  */
 template <typename T1, typename T2> void CudnnFunction<T1, T2>::benchmark() {
-    // Prepare some Prerequisites for function running
-    prepare_for_function();
-    // Allocate memory and fill with data of input and output tensor
+    prepare_descriptors();
+    prepare_execution();
     prepare_input();
 
     // Warm up

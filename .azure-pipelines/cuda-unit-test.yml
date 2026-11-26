@@ -37,6 +37,13 @@ steps:
       SB_MICRO_PATH=$PWD make cppbuild
     displayName: Build benchmarks
   - script: |
+      set -e
+      cd superbench/benchmarks/micro_benchmarks/cudnn_function/build
+      cmake --build . --target cudnn_config_test
+      ctest -R '^cudnn_config$' --output-on-failure --no-tests=error
+      ctest -R '^cudnn_algorithm_calls$' --output-on-failure --no-tests=error
+    displayName: Test cuDNN algorithm selection and execution
+  - script: |
       SB_MICRO_PATH=$PWD python3 setup.py test
     displayName: Run unit tests
     timeoutInMinutes: 60
