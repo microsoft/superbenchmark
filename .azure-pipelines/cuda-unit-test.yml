@@ -27,7 +27,7 @@ steps:
         apt-get install -y -q \
         ffmpeg libavcodec-dev libavformat-dev libavutil-dev libboost-program-options-dev libswresample-dev"
       python3 -m pip install --upgrade setuptools==65.7
-      python3 -m pip install .[test,nvworker]
+      python3 -m pip install -c requirements/ansible.txt .[test,nvworker]
       make postinstall
     displayName: Install dependencies
   - script: |
