@@ -10,8 +10,7 @@ pr:
   drafts: false
   branches:
     include:
-      - main
-      - release/*
+      - '*'
 
 pool:
   name: SuperBench CI

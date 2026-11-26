@@ -10,8 +10,7 @@ pr:
   drafts: false
   branches:
     include:
-      - main
-      - release/*
+      - '*'
 
 strategy:
   matrix:
