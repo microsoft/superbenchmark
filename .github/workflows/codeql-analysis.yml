@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   analyze:
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft }}
     name: CodeQL analyze ${{ matrix.language }}
     runs-on: ubuntu-latest
     permissions:
@@ -49,7 +49,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
   analyze-cpp:
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft }}
     name: CodeQL analyze cpp
     runs-on: ubuntu-latest
     container:

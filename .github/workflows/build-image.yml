@@ -21,10 +21,7 @@ on:
     - published
   workflow_dispatch:
 
-# Cancel superseded pull request runs, including when a PR becomes a draft or is
-# closed; PR builds never push images or caches. Other events never cancel an
-# in-progress run: runs for the same event and ref execute one at a time, and
-# only the most recently queued waiting run is kept.
+# Cancel superseded pull request runs; other events wait for the running one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.ref) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -34,7 +31,7 @@ env:
 
 jobs:
   docker-build:
-    if: ${{ github.event_name != 'pull_request' || (github.event.action != 'closed' && !github.event.pull_request.draft) }}
+    if: ${{ !github.event.pull_request.draft && github.event.action != 'closed' }}
     name: Docker build ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 1200
