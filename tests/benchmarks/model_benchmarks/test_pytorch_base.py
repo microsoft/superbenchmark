@@ -3,17 +3,28 @@
 
 """Tests for BenchmarkRegistry module."""
 
+import builtins
+import json
 import numbers
+from contextlib import contextmanager
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
+import pytest
 import torch
 import transformers
+from omegaconf import OmegaConf
 
 from tests.helper import decorator
 from superbench.common.utils import logger
-from superbench.benchmarks import BenchmarkRegistry, Precision, ReturnCode
-from superbench.benchmarks.model_benchmarks.model_base import Optimizer, DistributedImpl, DistributedBackend
+from superbench.benchmarks import BenchmarkRegistry, Platform, Precision, ReturnCode
+from superbench.benchmarks.model_benchmarks import pytorch_base
+from superbench.benchmarks.model_benchmarks.model_base import (
+    Optimizer, DistributedImpl, DistributedBackend, ModelBenchmark
+)
 from superbench.benchmarks.model_benchmarks.pytorch_base import PytorchBase
 from superbench.benchmarks.model_benchmarks.random_dataset import TorchRandomDataset
+from superbench.executor import SuperBenchExecutor
 
 
 class MNISTModel(torch.nn.Module):
@@ -244,6 +255,215 @@ def test_pytorch_base():
 
     # Test _postprocess().
     assert (benchmark._postprocess())
+
+
+@pytest.fixture(params=['cuda', 'hip'])
+def mocked_profiler(request, monkeypatch, tmp_path):
+    """Provide CPU-safe profiler events for the real trace exporter."""
+    event = SimpleNamespace(
+        device_type=torch.autograd.DeviceType.CPU,
+        name='capture',
+        input_shapes=[],
+        concrete_inputs=[],
+        cpu_time=2.0,
+        cuda_time=1.0,
+        time_range=SimpleNamespace(start=0.0)
+    )
+    profiler = MagicMock()
+    profiler.events.return_value = [event, SimpleNamespace(device_type=torch.autograd.DeviceType.CUDA)]
+    monkeypatch.setenv('SB_ENABLE_PYTORCH_PROFILER', '1')
+    monkeypatch.setenv('SB_TORCH_PROFILER_TRACE_DIR', str(tmp_path))
+    monkeypatch.delenv('SB_BENCHMARK_CONFIG_NAME', raising=False)
+    monkeypatch.setattr(torch.cuda, 'is_available', lambda: True)
+    monkeypatch.setattr(torch.version, 'cuda', '12.0' if request.param == 'cuda' else None)
+    monkeypatch.setattr(torch.version, 'hip', '6.4' if request.param == 'hip' else None, raising=False)
+    monkeypatch.setattr(torch.profiler, 'profile', lambda **kwargs: profiler)
+    monkeypatch.setattr(ModelBenchmark, '_benchmark', lambda self: True)
+    return PytorchMNIST('pytorch-mnist'), event
+
+
+@decorator.pytorch_test
+@pytest.mark.parametrize('distributed', [False, True])
+def test_pytorch_profiler_config_traces(mocked_profiler, monkeypatch, tmp_path, distributed):
+    """Keep configuration/rank traces distinct while preserving legacy writes."""
+    benchmark, event = mocked_profiler
+    captures = {}
+    for config_name in ['model-benchmarks:mnist@fp16', 'model-benchmarks:mnist@fp32']:
+        for rank in range(2):
+            work_dir = tmp_path / 'benchmarks' / config_name / f'rank{rank}'
+            work_dir.mkdir(parents=True)
+            monkeypatch.chdir(work_dir)
+            benchmark._local_rank = rank if distributed else None
+            benchmark._global_rank = rank if distributed else None
+            event.name = f'{config_name}-rank{rank}'
+            assert (benchmark._benchmark())
+            qualified, = set(tmp_path.glob('*__cfg=*.json')) - set(captures)
+            assert (qualified.name.endswith(f'-{rank}.json'))
+            legacy = tmp_path / f'torch-profiler-sb-pytorch-mnist-{rank if distributed else 0}.json'
+            assert (qualified.read_bytes() == legacy.read_bytes())
+            assert (qualified.stat().st_ino != legacy.stat().st_ino)
+            captures[qualified] = event.name
+    assert (len(list(tmp_path.glob('*__cfg=*.json'))) == 4)
+    for path, marker in captures.items():
+        events = json.loads(path.read_text(encoding='utf-8'))
+        assert (len(events) == 1)
+        assert (events[0]['name'] == marker)
+
+
+@decorator.pytorch_test
+@pytest.mark.parametrize('replacement', ['', '[{"name": "other-worker"}]'])
+def test_pytorch_profiler_shared_legacy(mocked_profiler, monkeypatch, tmp_path, replacement):
+    """Do not source qualified events from a concurrently changed legacy file."""
+    benchmark, event = mocked_profiler
+    work_dir = tmp_path / 'benchmarks' / 'model-benchmarks:mnist' / 'rank1'
+    work_dir.mkdir(parents=True)
+    monkeypatch.chdir(work_dir)
+    legacy = tmp_path / 'torch-profiler-sb-pytorch-mnist-0.json'
+
+    @contextmanager
+    def racing_open(path, *args, **kwargs):
+        with builtins.open(path, *args, **kwargs) as stream:
+            yield stream
+        if str(path) == str(legacy):
+            legacy.write_text(replacement, encoding='utf-8')
+
+    monkeypatch.setattr(pytorch_base, 'open', racing_open, raising=False)
+    assert (benchmark._benchmark())
+    qualified, = tmp_path.glob('*__cfg=*.json')
+    assert (qualified.name.endswith('-1.json'))
+    assert (json.loads(qualified.read_text(encoding='utf-8'))[0]['name'] == event.name)
+    assert (legacy.read_text(encoding='utf-8') == replacement)
+
+
+@decorator.pytorch_test
+@pytest.mark.parametrize('filename_limit', [255, 143])
+@pytest.mark.parametrize(
+    'config_name', [
+        'model-benchmarks:' + 'x' * 191,
+        'model-benchmarks:' + 'x' * 192,
+        'model-benchmarks:' + '\u00e9' * 100,
+        'model-benchmarks:mnist?*|<>"',
+    ]
+)
+def test_pytorch_profiler_portable_filenames(mocked_profiler, monkeypatch, tmp_path, config_name, filename_limit):
+    """Bound qualified filenames without failing otherwise valid captures."""
+    benchmark, event = mocked_profiler
+    benchmark._name = 'pytorch-resnet50'
+    work_dir = tmp_path / 'benchmarks' / config_name / 'rank0'
+    work_dir.mkdir(parents=True)
+    monkeypatch.chdir(work_dir)
+    monkeypatch.setattr(pytorch_base.os, 'pathconf', lambda *args: filename_limit, raising=False)
+
+    def portable_open(path, *args, **kwargs):
+        filename = pytorch_base.os.path.basename(path)
+        assert (filename.isascii())
+        assert (len(filename.encode('ascii')) <= filename_limit)
+        assert (not set('"\\/:|<>*?').intersection(filename))
+        return builtins.open(path, *args, **kwargs)
+
+    monkeypatch.setattr(pytorch_base, 'open', portable_open, raising=False)
+    assert (benchmark._benchmark())
+    qualified, = tmp_path.glob('*__cfg=*.json')
+    legacy = tmp_path / 'torch-profiler-sb-pytorch-resnet50-0.json'
+    assert (qualified.read_bytes() == legacy.read_bytes())
+    event.name = 'second-capture'
+    assert (benchmark._benchmark())
+    assert (list(tmp_path.glob('*__cfg=*.json')) == [qualified])
+    assert (json.loads(qualified.read_text(encoding='utf-8'))[0]['name'] == event.name)
+
+
+@decorator.pytorch_test
+def test_pytorch_profiler_configuration_identity(mocked_profiler, monkeypatch, tmp_path):
+    """Keep similar configuration names distinct on case-insensitive storage."""
+    benchmark, event = mocked_profiler
+    configurations = [
+        'model-benchmarks:MNIST', 'model-benchmarks:mnist', 'model-benchmarks%3Amnist',
+        'model-benchmarks:' + 'x' * 190 + 'a', 'model-benchmarks:' + 'x' * 190 + 'b'
+    ]
+    for config_name in configurations:
+        work_dir = tmp_path / 'benchmarks' / config_name / 'rank0'
+        work_dir.mkdir(parents=True)
+        monkeypatch.chdir(work_dir)
+        event.name = config_name
+        assert (benchmark._benchmark())
+    qualified = list(tmp_path.glob('*__cfg=*.json'))
+    assert (len({path.name.casefold() for path in qualified}) == len(configurations))
+    assert ({json.loads(path.read_text(encoding='utf-8'))[0]['name'] for path in qualified} == set(configurations))
+
+
+@decorator.pytorch_test
+def test_pytorch_profiler_nested_configurations(mocked_profiler, monkeypatch, tmp_path):
+    """Carry complete slash-containing configuration keys through the executor."""
+    benchmark, event = mocked_profiler
+    configurations = [
+        'model-benchmarks:experiment/fp16', 'model-benchmarks:experiment/fp32', 'model-benchmarks:other/fp16',
+        'model-benchmarks:experiment/benchmarks/fp16'
+    ]
+    executor = SuperBenchExecutor.__new__(SuperBenchExecutor)
+    executor._output_path = tmp_path / 'executor'
+    executor._sb_enabled = configurations
+    executor._sb_benchmarks = OmegaConf.create(
+        {name: {
+            'models': ['mnist'],
+            'frameworks': ['pytorch']
+        }
+         for name in configurations}
+    )
+    executor._sb_monitor_config = None
+    monkeypatch.setenv('PROC_RANK', '0')
+    monkeypatch.setenv('SB_BENCHMARK_CONFIG_NAME', 'outer-configuration')
+    monkeypatch.setattr(executor, '_SuperBenchExecutor__get_platform', lambda: Platform.CPU)
+
+    def launch(context):
+        event.name = pytorch_base.os.environ['SB_BENCHMARK_CONFIG_NAME']
+        assert (benchmark._benchmark())
+        return SimpleNamespace(name=benchmark.name, return_code=ReturnCode.SUCCESS, result={}, serialized_result='{}')
+
+    monkeypatch.setattr(BenchmarkRegistry, 'launch_benchmark', launch)
+    executor.exec()
+    qualified = list(tmp_path.glob('*__cfg=*.json'))
+    assert (len(qualified) == len(configurations))
+    assert ({json.loads(path.read_text(encoding='utf-8'))[0]['name'] for path in qualified} == set(configurations))
+    assert (pytorch_base.os.environ['SB_BENCHMARK_CONFIG_NAME'] == 'outer-configuration')
+
+
+@decorator.pytorch_test
+@pytest.mark.parametrize('local_rank', [0, 1])
+def test_pytorch_profiler_global_ranks(mocked_profiler, monkeypatch, tmp_path, local_rank):
+    """Preserve different nodes' traces when their local ranks coincide."""
+    benchmark, event = mocked_profiler
+    for global_rank in [local_rank, local_rank + 8]:
+        work_dir = (tmp_path / f'node{global_rank}' / 'benchmarks' / 'model-benchmarks:mnist' / f'rank{local_rank}')
+        work_dir.mkdir(parents=True)
+        monkeypatch.chdir(work_dir)
+        benchmark._local_rank = local_rank
+        benchmark._global_rank = global_rank
+        event.name = f'global-rank-{global_rank}'
+        assert (benchmark._benchmark())
+    qualified = list(tmp_path.glob('*__cfg=*.json'))
+    assert (len(qualified) == 2)
+    assert (
+        {json.loads(path.read_text(encoding='utf-8'))[0]['name']
+         for path in qualified} == {f'global-rank-{local_rank}', f'global-rank-{local_rank + 8}'}
+    )
+    legacy = tmp_path / f'torch-profiler-sb-pytorch-mnist-{local_rank}.json'
+    assert (json.loads(legacy.read_text(encoding='utf-8'))[0]['name'] == f'global-rank-{local_rank + 8}')
+
+
+@decorator.pytorch_test
+@pytest.mark.parametrize(
+    'directory', ['other', 'other/config/rank0', 'benchmarks/config/worker0', 'benchmarks/config/rankx']
+)
+def test_pytorch_profiler_legacy_fallback(mocked_profiler, monkeypatch, tmp_path, directory):
+    """Keep legacy-only output outside the recognized executor layout."""
+    benchmark, event = mocked_profiler
+    work_dir = tmp_path / directory
+    work_dir.mkdir(parents=True)
+    monkeypatch.chdir(work_dir)
+    assert (benchmark._benchmark())
+    legacy = tmp_path / 'torch-profiler-sb-pytorch-mnist-0.json'
+    assert ([path.name for path in tmp_path.glob('*.json')] == [legacy.name])
+    assert (json.loads(legacy.read_text(encoding='utf-8'))[0]['name'] == event.name)
 
 
 @decorator.cuda_test

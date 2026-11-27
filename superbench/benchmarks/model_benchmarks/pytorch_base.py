@@ -3,10 +3,13 @@
 
 """Module of the Pytorch model-benchmark base class."""
 
+import hashlib
+import json
 import os
 import statistics
 import time
 from datetime import timedelta
+from urllib.parse import quote
 
 import torch
 import transformers
@@ -585,6 +588,43 @@ class PytorchBase(ModelBenchmark):
             torch.cuda.synchronize()
         return time.time()
 
+    def _get_config_trace_path(self, dump_file_dir):
+        """Build a portable trace path from configuration and worker identity.
+
+        Args:
+            dump_file_dir (str): Directory containing profiler exports.
+
+        Return:
+            str or None: Qualified path, or None outside an executor context.
+        """
+        benchmark_dir, rank_dir = os.path.split(os.getcwd())
+        if not rank_dir.startswith('rank') or not rank_dir[4:].isdigit():
+            return None
+        config_name = os.environ.get('SB_BENCHMARK_CONFIG_NAME')
+        if config_name is None:
+            if os.path.basename(os.path.dirname(benchmark_dir)) != 'benchmarks':
+                return None
+            config_name = os.path.basename(benchmark_dir)
+
+        worker_rank = self._global_rank if self._global_rank is not None else int(rank_dir[4:])
+        identity = json.dumps([self._name, config_name], ensure_ascii=True).encode('ascii')
+        digest = hashlib.sha256(identity).hexdigest()
+        filename_limit = 255
+        try:
+            filesystem_limit = os.pathconf(dump_file_dir, 'PC_NAME_MAX')
+            if filesystem_limit > 0:
+                filename_limit = min(filename_limit, filesystem_limit)
+        except (AttributeError, OSError, ValueError):
+            pass
+        prefix = 'torch-profiler-sb-'
+        suffix = f'__{digest}-{worker_rank}.json'
+        label_budget = filename_limit - len(prefix + '__cfg=' + suffix)
+        if label_budget < 0:
+            raise ValueError('Filesystem filename limit is too small for a qualified profiler trace.')
+        model_label = quote(self._name, safe='')[:label_budget // 2]
+        config_label = quote(config_name, safe='')[:label_budget - len(model_label)]
+        return os.path.join(dump_file_dir, f'{prefix}{model_label}__cfg={config_label}{suffix}')
+
     def _benchmark(self):
         """Wrap super._benchmark with profiler context if enabled by environment variable.
 
@@ -615,7 +655,6 @@ class PytorchBase(ModelBenchmark):
 
         from torch.profiler import profile, ProfilerActivity
         from torch.autograd import DeviceType
-        import json
 
         if self._local_rank is None:
             local_rank = 0
@@ -628,6 +667,7 @@ class PytorchBase(ModelBenchmark):
         # ROCm 6.3.4).
         dump_file_dir = os.environ.get('SB_TORCH_PROFILER_TRACE_DIR', '.')
         diag_agent_dump_file_path = f'{dump_file_dir}/torch-profiler-sb-{self._name}-{local_rank}.json'
+        config_trace_path = self._get_config_trace_path(dump_file_dir)
         diag_agent_prof.__enter__()
 
         ret = super()._benchmark()
@@ -648,6 +688,9 @@ class PytorchBase(ModelBenchmark):
             diag_agent_events.append(diag_agent_event)
         with open(diag_agent_dump_file_path, 'w') as f:
             json.dump(diag_agent_events, f, sort_keys=True)
+        if config_trace_path is not None:
+            with open(config_trace_path, 'w') as trace_file:
+                json.dump(diag_agent_events, trace_file, sort_keys=True)
 
         # Handle post-run model log save/compare regardless of profiling
         self._post_run_model_log()
