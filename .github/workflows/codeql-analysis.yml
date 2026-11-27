@@ -9,11 +9,23 @@ on:
     branches:
       - main
       - release/*
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
+      - closed
   schedule:
     - cron: "30 1 * * 1"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
+    if: ${{ !github.event.pull_request.draft && github.event.action != 'closed' }}
     name: CodeQL analyze ${{ matrix.language }}
     runs-on: ubuntu-latest
     permissions:
@@ -38,6 +50,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
   analyze-cpp:
+    if: ${{ !github.event.pull_request.draft && github.event.action != 'closed' }}
     name: CodeQL analyze cpp
     runs-on: ubuntu-latest
     container:
